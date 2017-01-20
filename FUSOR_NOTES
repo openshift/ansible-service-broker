@@ -1,0 +1,12 @@
+Plans?
+  - via hack
+
+How to map an ansible app onto a service object? Need some metadata query on
+RHCC so that we can do a correct translation in the same way the template broker
+is able to interogate Openshift.
+
+Broker#provision actually responsible for doing the provisioning of an app?
+
+Fair to think of service <-> AnsibleApp as analagous?
+Only one AnsibleAppBroker, AnsibleAppBroker#catalog should return []Service,
+where each service corresponds to one ansibleapp that we know about?
