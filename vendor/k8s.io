@@ -1,1 +1,0 @@
-../origin/vendor/k8s.io
