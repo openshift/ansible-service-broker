@@ -1,3 +1,0 @@
-[submodule "origin"]
-	path = origin
-	url = https://github.com/openshift/origin.git
