@@ -1,0 +1,154 @@
+[Topic]
+
+Initial round of questions after studying the OSB spec
+
+[Attendees]
+
+paul morie
+jesus rodriguez
+erik nelson
+todd sanders
+john matthews
+
+[Summary]
+
+Q: What are plans? Is this a gap in the spec documentation?
+
+A: Plans are a "tier of service". Bronze, silver, gold plans. Ex: DBs on single
+   vs multitenant instances.
+
+--
+
+Q: Ansible App registry could have something like 15k apps in it. Does `/catalog`
+support pagination? How does it handle a response of that size?
+
+A: TBD. Typical brokers are about 1-10. Known production brokers typically max ~40.
+Definitely a gap in the spec, need to open an issue to start dialogue. **Action [1]**
+
+--
+
+Q: When deprovisioning, what to do with outstanding bindings?
+
+A: Spec is unclear and self contradicting here. Issue needs to be filed for discussion.
+**Action [2]**
+
+--
+
+Q: How are configuration parameters expected to be handled? Each Ansible App is going
+to have a different set of configuration params specific to that app.
+
+A: https://github.com/openservicebrokerapi/servicebroker/pull/74
+Proposed JSONSchema based spec for standardizing how to represent this.
+Could use `metadata` field in a `CatalogResponse` to pass through the schema.
+ASB should accept user provided params via `parameters` attr in `ProvisionRequeset`.
+
+cli-client is being worked on by atomic-openshift as client to Service Catalog
+
+--
+
+Q: When provisioning, how do we expose a route to the world so it's known where
+this service can be reached? Related to route bindings discussed in OSB spec?
+
+A: Route bindings are tightly coupled to CF. Not relevant here. Our (AnsibleApp)
+responsibility to add service and route in OpenShift for exposure.
+
+--
+
+Q: OSB spec discusses 4 types of bindings. Are these Cloud Foundry specific?
+Are these the only types of bindings possible?
+
+A: Don't mean much to us. CF specific.
+
+--
+
+* Decided to use etcd as storage instead of our own store if possible.
+
+* Requirements of an Ansible App Registry, in this case, RHCC
+  -> Registry must allow ASB to query for available AAs and filter non-AAs.
+  -> ASB must be able to retrieve full set of spec files representing the AAs
+  **without** having to pull full images.
+
+[Actions]
+
+Erik/Jesus file issues against OSB spec, tag Paul w/ direct email:
+https://github.com/openservicebrokerapi/servicebroker
+
+1. Issue: Start conversation re: handling large scale service offerings and `/catalog` pagination.
+
+2. Issue: Deprovision against a service that has outstanding bindings. What happens to
+the orphaned bindings?
+
+3. Scrum of scrums to be created to coordinate efforts.
+
+4. Meeting minutes should be captured and stored alongside github project.
+
+5. Make sure updates get pushed to ansible-apps mailing list.
+
+6. Send introduction email to mailing list with repos/irc etc.
+
+[Minutes]
+
+* went over design proposed service broker design diagram to confirm we were
+  going in the right direction. Paul confirmed we were indeed on the right path.
+
+* Question #1 how do we signal to the client what parameters we will need for
+  the service?
+  Answer: there is a PR open to propose JSON schema for parameters. There is
+  also a schema for payload return by the bindings.
+
+  cli-client is being done by atomic-openshift.
+
+* Question #2 was 'does catalog support pagination'. It is concievable that the
+  ansible service broker could get a 10k list of services.
+
+  Answer: Definitely a gap in the spec. typical brokers are 1-10. Someone using
+  brokers in production typically has a max of 40.
+  Action: jesus/erik open an issue against openbrokerapi, tag paul.
+
+* Question #3 How do we expose the service after provisioning it? Do we use a
+  routing service?
+  Answer: route binding is tightly coupled with CF. ansibleapp required to
+  setup route/service
+
+* Question #4: spec mentions only 4 types, are these the only supported ones?
+  Answer: mean nothing; cloud foundary specific. binding desc?
+
+* Question #5 Does deprovisioning care about outstanding bindings?
+  Answer: there is some confusion in the spec about this. One part states to
+  have all bindings deleted before allowing a deprovision. Another part of the
+  spec states orphan the bindings and deprovision the service.
+
+  Action: zeus/erik to create an issue with openbrokerapi, tag paul
+
+* Question #6 was 'what is a plan?'
+
+  Answer: a plan is a tier of a service. for example,
+  bronze plan could be you get your own DB space in a shared DB
+  silver plan could be you get your own DB
+  gold plan could be you get your on DB with super fast SSD storage
+
+* Discussed our thought of priming the service list in our own storage. It was
+  suggested that if we could get away with just using etcd from babynetes, use
+  that. etcd has an upper limit of 1MB/entry. We agreed that should be fine for
+  a service description.
+
+  Note: might need to look to see if etcd can perform well with 10k services
+
+  Also mentioned worst case we start talking about sharding service broker for
+  large scales.
+
+* Make sure metadata from CC has containers
+
+* Todd asked if broker comes with openshift
+  Answer: group of brokers, package with ocp install @ client site.
+  bootstrapping a meta broker that installs other brokers
+
+* There are 3 groups writing brokers
+  openshift ui, installer for this in openshift, etc.
+  Action: scrum of scrums to be created, zeus & john to attend.
+
+* broker api update
+  * going with broker sdk instead of babynetes
+  * plan is to fork service-catalog, remove resources and other bits not needed.
+  * we would fork babynetes which will become broker sdk
+  * Paul has bugs to do today, have a babynetes to fork & mutate early next week
