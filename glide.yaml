@@ -12,3 +12,5 @@ import:
   - pkg/api/errors
   - pkg/api/unversioned
   - pkg/util/logs
+- package: github.com/jessevdk/go-flags
+  version: ^1.1.0
