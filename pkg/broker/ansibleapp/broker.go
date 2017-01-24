@@ -1,11 +1,11 @@
 package ansibleapp
 
 type Broker struct {
-	name string
+	Name string
 }
 
 func NewBroker(name string) (*Broker, error) {
 	return &Broker{
-		name: name,
+		Name: name,
 	}, nil
 }
