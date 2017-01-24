@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/handler"
-	"github.com/golang/glog"
 	"github.com/spf13/pflag"
 	"k8s.io/kubernetes/pkg/util/logs"
 )
@@ -27,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	glog.Info("running")
+	fmt.Println("running")
 
 	err = http.Serve(l, handler.NewHandler(broker))
 	if err != nil {
