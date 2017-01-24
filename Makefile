@@ -10,4 +10,7 @@ clean:
 vendor:
 	@glide install
 
+test: vendor
+	go test ./pkg/...
+
 .PHONY: run broker clean
