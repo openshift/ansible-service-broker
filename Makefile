@@ -8,6 +8,6 @@ clean:
 	@rm -f ${GOPATH}/bin/broker
 
 vendor:
-	@glide update
+	@glide install
 
 .PHONY: run broker clean
