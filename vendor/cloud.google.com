@@ -1,1 +1,0 @@
-../origin/vendor/cloud.google.com
