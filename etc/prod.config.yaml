@@ -1,0 +1,12 @@
+---
+registry:
+  name: rhcc
+  url: http://rhcc.redhat.com/api
+dao:
+  etcd_host: etcd.prod.redhat.com
+  etcd_port: 2379
+logger:
+  log: /var/log/ansible-service-broker.log
+  stdout: false
+  level: info
+  color: false

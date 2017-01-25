@@ -1,8 +1,9 @@
 ${GOPATH}/bin/broker: $(shell find cmd pkg)
 	go install ./cmd/broker
 
+# Will default run to dev profile
 run: ${GOPATH}/bin/broker vendor
-	@${GOPATH}/bin/broker
+	@${GOPATH}/src/github.com/fusor/ansible-service-broker/scripts/runbroker.sh dev
 
 clean:
 	@rm -f ${GOPATH}/bin/broker
@@ -10,4 +11,7 @@ clean:
 vendor:
 	@glide install
 
-.PHONY: run broker clean
+test: vendor
+	go test ./pkg/...
+
+.PHONY: run clean test

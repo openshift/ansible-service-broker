@@ -1,5 +1,5 @@
-hash: 592e6adc542c7c78dad1f26c8c62f075625f9075dd4fdaf492aff87d494ab295
-updated: 2017-01-23T22:12:31.808190693-05:00
+hash: 5429a994766a0f6af05c2eae012f38c9c9a85a25d020c029594de925b51c1764
+updated: 2017-01-24T23:15:00.78019212-05:00
 imports:
 - name: github.com/emicklei/go-restful
   version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
@@ -50,12 +50,16 @@ imports:
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/mux
   version: 392c28fe23e1c45ddba891b0320b3b5df220beea
+- name: github.com/jessevdk/go-flags
+  version: 8bc97d602c3bfeb5fc6fc9b5a9c898f245495637
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
   - buffer
   - jlexer
   - jwriter
+- name: github.com/op/go-logging
+  version: b2cb9fa56473e98db8caba80237377e83fe44db5
 - name: github.com/pborman/uuid
   version: a97ce2ca70fa5a848076093f05e639a89ca34d06
 - name: github.com/PuerkitoBio/purell
@@ -110,10 +114,8 @@ imports:
   - pkg/util/errors
   - pkg/util/json
   - pkg/util/logs
-  - pkg/util/runtime
   - pkg/util/sets
   - pkg/util/validation
   - pkg/util/validation/field
-  - pkg/util/wait
   - third_party/forked/golang/reflect
 testImports: []
