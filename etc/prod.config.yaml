@@ -2,7 +2,7 @@
 registry:
   name: rhcc
   url: http://rhcc.redhat.com/api
-dal:
+dao:
   etcd_host: etcd.prod.redhat.com
   etcd_port: 2379
 logger:

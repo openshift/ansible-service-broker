@@ -2,7 +2,7 @@
 registry:
   name: dev
   url: http://localhost:1337
-dal:
+dao:
   etcd_host: localhost
   etcd_port: 2379
 log:
