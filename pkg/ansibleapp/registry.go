@@ -1,17 +1,26 @@
 package ansibleapp
 
+import (
+	"fmt"
+	"github.com/op/go-logging"
+)
+
 type RegistryConfig struct {
 	Name string
 	Url  string
 }
 
 type Registry interface {
-	Init(RegistryConfig) error
-	LoadApps() error
+	Init(RegistryConfig, *logging.Logger) error
+	LoadApps() ([]*Spec, error)
 }
 
-func CreateRegistry(config RegistryConfig) Registry {
+func NewRegistry(config RegistryConfig, log *logging.Logger) (Registry, error) {
 	var reg Registry
+
+	log.Info("== REGISTRY CX == ")
+	log.Info(fmt.Sprintf("Name: %s", config.Name))
+	log.Info(fmt.Sprintf("Url: %s", config.Url))
 
 	switch config.Name {
 	case "dev":
@@ -22,7 +31,10 @@ func CreateRegistry(config RegistryConfig) Registry {
 		panic("Unknown registry")
 	}
 
-	reg.Init(config)
+	err := reg.Init(config, log)
+	if err != nil {
+		return nil, err
+	}
 
-	return reg
+	return reg, err
 }

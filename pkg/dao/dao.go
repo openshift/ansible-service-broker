@@ -33,10 +33,10 @@ func NewDao(config DaoConfig, log *logging.Logger) (*Dao, error) {
 
 	dao.endpoints = []string{etcdEndpoint(config.EtcdHost, config.EtcdPort)}
 
-	log.Debug("Instantiating new Dao")
-	log.Debug(fmt.Sprintf("EtcdHost: %s", config.EtcdHost))
-	log.Debug(fmt.Sprintf("EtcdPort: %s", config.EtcdPort))
-	log.Debug(fmt.Sprintf("Endpoint: %v", dao.endpoints))
+	log.Info("== ETCD CX ==")
+	log.Info(fmt.Sprintf("EtcdHost: %s", config.EtcdHost))
+	log.Info(fmt.Sprintf("EtcdPort: %s", config.EtcdPort))
+	log.Info(fmt.Sprintf("Endpoints: %v", dao.endpoints))
 
 	dao.client, err = client.New(client.Config{
 		Endpoints:               dao.endpoints,

@@ -1,20 +1,33 @@
 package app
 
 import (
+	"fmt"
+	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
 	"os"
 )
 
 type App struct {
-	args   Args
-	config Config
-	log    *Log
-	dao    *dao.Dao
+	args     Args
+	config   Config
+	log      *Log
+	dao      *dao.Dao
+	registry ansibleapp.Registry
 }
 
 func CreateApp() App {
 	var err error
+
+	fmt.Println("============================================================")
+	fmt.Println("==           Starting Ansible Service Broker...           ==")
+	fmt.Println("============================================================")
+
 	app := App{}
+
+	// Writing directly to stderr because log has not been bootstrapped
+	if app.args, err = CreateArgs(); err != nil {
+		os.Stderr.WriteString("ERROR: Failed to validate input\n")
+	}
 
 	// Writing directly to stderr because log has not been bootstrapped
 	if app.args, err = CreateArgs(); err != nil {
@@ -36,10 +49,19 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
-	app.log.Debug("Instantiating and initializing dao...")
+	app.log.Debug("Connecting Dao")
 	if app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger); err != nil {
-		os.Stderr.WriteString("ERROR: Failed to initialize Dao\n")
-		os.Stderr.WriteString(err.Error())
+		app.log.Error("Failed to initialize Dao\n")
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+
+	app.log.Debug("Connecting Registry")
+	if app.registry, err = ansibleapp.NewRegistry(
+		app.config.Registry, app.log.Logger,
+	); err != nil {
+		app.log.Error("Failed to initialize Dao\n")
+		app.log.Error(err.Error())
 		os.Exit(1)
 	}
 
@@ -47,14 +69,8 @@ func CreateApp() App {
 }
 
 func (a *App) Start() {
-	var err error
-	a.log.Info("Starting application")
-
-	if err != nil {
-		a.log.Error("Something went wrong setting the value!")
-		a.log.Error(err.Error())
-	}
-
+	a.log.Notice("Ansible Service Broker Started")
+	a.registry.LoadApps()
 }
 
 func (a *App) GetArgs() Args {
