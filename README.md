@@ -1,5 +1,7 @@
 # Ansible Service Broker
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/9b0f6bca11c040d2ad7894d97353cd37)](https://www.codacy.com/app/eriknelson/ansible-service-broker?utm_source=github.com&utm_medium=referral&utm_content=fusor/ansible-service-broker&utm_campaign=badger)
+
 Work in progress.
 
 ## Usage
