@@ -3,6 +3,9 @@ engines:
     enabled: true
   golint:
     enabled: true
+    checks:
+      GoLint/Comments/DocComments:
+        enabled: false
   govet:
     enabled: true
   fixme:
