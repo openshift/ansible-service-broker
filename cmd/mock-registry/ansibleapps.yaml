@@ -1,0 +1,18 @@
+---
+ansibleapps:
+  - id: c9e3348c-b6fd-45d6-b2ba-a13b41f0b6e3
+    name: fusor/etherpad-ansibleapp
+    bindable: true
+    async: "optional"
+  - id: 138afbe2-4e33-4faa-b6ae-2e8d61f2bf1f
+    name: fusor/wordpress-ansibleapp
+    bindable: true
+    async: "optional"
+  - id: 507856c7-8e08-460c-a0b2-7d8af8c4318d
+    name: fusor/drupal-ansibleapp
+    bindable: false
+    async: "required"
+  - id: f819ddd5-37d1-4698-b3fb-a3cc99a35d2e
+    name: fusor/ghost-ansibleapp
+    bindable: false
+    async: "unsupported"

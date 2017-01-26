@@ -1,20 +1,33 @@
 package app
 
 import (
+	"fmt"
+	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
 	"os"
 )
 
 type App struct {
-	args   Args
-	config Config
-	log    *Log
-	dao    *dao.Dao
+	args     Args
+	config   Config
+	log      *Log
+	dao      *dao.Dao
+	registry ansibleapp.Registry
 }
 
 func CreateApp() App {
 	var err error
+
+	fmt.Println("============================================================")
+	fmt.Println("==           Starting Ansible Service Broker...           ==")
+	fmt.Println("============================================================")
+
 	app := App{}
+
+	// Writing directly to stderr because log has not been bootstrapped
+	if app.args, err = CreateArgs(); err != nil {
+		os.Stderr.WriteString("ERROR: Failed to validate input\n")
+	}
 
 	// Writing directly to stderr because log has not been bootstrapped
 	if app.args, err = CreateArgs(); err != nil {
@@ -36,11 +49,30 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
+	app.log.Debug("Connecting Dao")
+	if app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger); err != nil {
+		app.log.Error("Failed to initialize Dao\n")
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+
+	app.log.Debug("Connecting Registry")
+	if app.registry, err = ansibleapp.NewRegistry(
+		app.config.Registry, app.log.Logger,
+	); err != nil {
+		app.log.Error("Failed to initialize Dao\n")
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+
 	return app
 }
 
+// TODO: Picturing this method responsible for kicking off the REST server
+// on top of the business logic after initialization has taken place.
+// Stubbed for now until we're ready to bring up the REST server.
 func (a *App) Start() {
-	a.log.Info("Starting application")
+	a.log.Notice("Ansible Service Broker Started")
 }
 
 func (a *App) GetArgs() Args {

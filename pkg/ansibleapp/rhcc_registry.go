@@ -1,20 +1,22 @@
 package ansibleapp
 
 import (
-	"fmt"
+	"github.com/op/go-logging"
 )
 
 type RHCCRegistry struct {
 	config RegistryConfig
+	log    *logging.Logger
 }
 
-func (r *RHCCRegistry) Init(config RegistryConfig) error {
+func (r *RHCCRegistry) Init(config RegistryConfig, log *logging.Logger) error {
+	log.Debug("RHCCRegistry::Init")
 	r.config = config
-	fmt.Printf("RHCCRegistry::Init with url -> [ %s ] \n", r.config.Url)
+	r.log = log
 	return nil
 }
 
-func (r *RHCCRegistry) LoadApps() error {
-	fmt.Println("RHCCRegistry::LoadApps ")
-	return nil
+func (r *RHCCRegistry) LoadSpecs() ([]*Spec, error) {
+	r.log.Debug("RHCCRegistry::LoadSpecs")
+	return []*Spec{}, nil
 }

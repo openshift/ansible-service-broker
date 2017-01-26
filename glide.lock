@@ -1,6 +1,10 @@
-hash: 5429a994766a0f6af05c2eae012f38c9c9a85a25d020c029594de925b51c1764
-updated: 2017-01-24T23:15:00.78019212-05:00
+hash: 398ef648aae8a78fb3c6d93530cc7630cac9d3e8887ee1526f16c85748989ac7
+updated: 2017-01-25T21:50:06.56570205-05:00
 imports:
+- name: github.com/coreos/etcd
+  version: 8ba2897a21e4fc51b298ca553d251318425f93ae
+  subpackages:
+  - client
 - name: github.com/emicklei/go-restful
   version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
   subpackages:
@@ -68,6 +72,8 @@ imports:
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/spf13/pflag
   version: a232f6d9f87afaaa08bafaff5da685f974b83313
+- name: github.com/ugorji/go
+  version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
 - name: golang.org/x/net
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
