@@ -36,11 +36,25 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
+	app.log.Debug("Instantiating and initializing dao...")
+	if app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger); err != nil {
+		os.Stderr.WriteString("ERROR: Failed to initialize Dao\n")
+		os.Stderr.WriteString(err.Error())
+		os.Exit(1)
+	}
+
 	return app
 }
 
 func (a *App) Start() {
+	var err error
 	a.log.Info("Starting application")
+
+	if err != nil {
+		a.log.Error("Something went wrong setting the value!")
+		a.log.Error(err.Error())
+	}
+
 }
 
 func (a *App) GetArgs() Args {
