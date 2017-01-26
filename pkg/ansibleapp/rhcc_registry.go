@@ -16,7 +16,7 @@ func (r *RHCCRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 	return nil
 }
 
-func (r *RHCCRegistry) LoadApps() ([]*Spec, error) {
-	r.log.Debug("RHCCRegistry::LoadApps")
+func (r *RHCCRegistry) LoadSpecs() ([]*Spec, error) {
+	r.log.Debug("RHCCRegistry::LoadSpecs")
 	return []*Spec{}, nil
 }

@@ -23,8 +23,8 @@ func (r *DevRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 	return nil
 }
 
-func (r *DevRegistry) LoadApps() ([]*Spec, error) {
-	r.log.Debug("RHCCRegistry::LoadApps")
+func (r *DevRegistry) LoadSpecs() ([]*Spec, error) {
+	r.log.Debug("RHCCRegistry::LoadSpecs")
 
 	appsUrl := r.fullAppsPath()
 

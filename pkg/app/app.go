@@ -68,9 +68,11 @@ func CreateApp() App {
 	return app
 }
 
+// TODO: Picturing this method responsible for kicking off the REST server
+// on top of the business logic after initialization has taken place.
+// Stubbed for now until we're ready to bring up the REST server.
 func (a *App) Start() {
 	a.log.Notice("Ansible Service Broker Started")
-	a.registry.LoadApps()
 }
 
 func (a *App) GetArgs() Args {
