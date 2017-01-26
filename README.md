@@ -1,28 +1,30 @@
 # Ansible Service Broker
+[![Build Status](https://travis-ci.org/fusor/ansible-service-broker.svg?branch=master)](https://travis-ci.org/fusor/ansible-service-broker)
+[![Code Climate](https://codeclimate.com/github/fusor/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
+[![Issue Count](https://codeclimate.com/github/fusor/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
 
-Work in progress.
+An [Open Service Broker](https://github.com/openservicebrokerapi/servicebroker) implementation.
 
-## Usage
+## Prerequisites
 
-In terminal 1:
+[glide](https://glide.sh/) is used for dependency management. Binaries are available on the
+[releases page](https://github.com/Masterminds/glide/releases).
 
-```bash
-go get -u github.com/fusor/ansible-service-broker
-$GOPATH/bin/broker
+## Setup
+
+```
+mkdir -p $GOPATH/src/github.com/fusor
+git clone https://github.com/fusor/ansible-service-broker.git $GOPATH/src/github.com/fusor/ansible-service-broker`
+cd $GOPATH/src/github.com/fusor/ansible-service-broker && glide install
 ```
 
-In terminal 2:
+## Targets
 
-```bash
-cd $GOPATH/src/github.com/fusor/ansible-service-broker
-test/catalog.sh
-test/provision.sh
-test/bind.sh
-test/unbind.sh
-test/deprovision.sh
-```
+`make run`: Runs the broker with the defualt profile, configured via `/etc/dev.config.yaml`
+`make run-mock-registry`: Mock registry. Entirely separate binary.
+`make test`: Runs the test suite.
 
-## Links
+**Note**
 
-- [OpenShift Origin](https://github.com/openshift/origin)
-- [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker)
+Scripts found in `/test` can act as manual Service Catalog requests until a larger
+user scenario can be scripted.
