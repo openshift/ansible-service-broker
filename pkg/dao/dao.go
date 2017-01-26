@@ -88,7 +88,7 @@ func (d *Dao) SetSpec(id string, spec *ansibleapp.Spec) error {
 	return d.SetRaw(specKey(id), payload)
 }
 
-func (d *Dao) BatchSetSpec(specs map[string]*ansibleapp.Spec) error {
+func (d *Dao) BatchSetSpecs(specs ansibleapp.SpecManifest) error {
 	// TODO: Is there no batch insert in the etcd api?
 	for id, spec := range specs {
 		err := d.SetSpec(id, spec)

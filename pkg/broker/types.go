@@ -114,3 +114,8 @@ type DeprovisionResponse struct {
 type ErrorResponse struct {
 	Description string `json:"description"`
 }
+
+// TODO: What belongs on this thing?
+type BootstrapResponse struct {
+	SpecCount int
+}
