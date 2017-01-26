@@ -1,4 +1,4 @@
-package ansibleapp
+package broker
 
 import (
 	"github.com/fusor/ansible-service-broker/pkg/broker"
