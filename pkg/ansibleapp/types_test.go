@@ -8,13 +8,13 @@ import (
 	"testing"
 )
 
-const SPEC_ID = "ab094014-b740-495e-b178-946d5aa97ebf"
-const SPEC_NAME = "fusor/etherpad-ansibleapp"
-const SPEC_BINDABLE = false
-const SPEC_ASYNC = "optional"
-const SPEC_DESCRIPTION = "A note taking webapp"
+const SpecId = "ab094014-b740-495e-b178-946d5aa97ebf"
+const SpecName = "fusor/etherpad-ansibleapp"
+const SpecBindable = false
+const SpecAsync = "optional"
+const SpecDescription = "A note taking webapp"
 
-var SPEC_JSON = fmt.Sprintf(`
+var SpecJSON = fmt.Sprintf(`
 {
   "id": "%s",
 	"description": "%s",
@@ -22,32 +22,32 @@ var SPEC_JSON = fmt.Sprintf(`
   "bindable": %t,
   "async": "%s"
 }
-`, SPEC_ID, SPEC_DESCRIPTION, SPEC_NAME, SPEC_BINDABLE, SPEC_ASYNC)
+`, SpecId, SpecDescription, SpecName, SpecBindable, SpecAsync)
 
 func TestSpecLoadJSON(t *testing.T) {
 	s := Spec{}
-	s.LoadJSON(SPEC_JSON)
+	s.LoadJSON(SpecJSON)
 
-	ft.AssertEqual(t, s.Id, SPEC_ID)
-	ft.AssertEqual(t, s.Description, SPEC_DESCRIPTION)
-	ft.AssertEqual(t, s.Name, SPEC_NAME)
-	ft.AssertEqual(t, s.Bindable, SPEC_BINDABLE)
-	ft.AssertEqual(t, s.Async, SPEC_ASYNC)
+	ft.AssertEqual(t, s.Id, SpecId)
+	ft.AssertEqual(t, s.Description, SpecDescription)
+	ft.AssertEqual(t, s.Name, SpecName)
+	ft.AssertEqual(t, s.Bindable, SpecBindable)
+	ft.AssertEqual(t, s.Async, SpecAsync)
 }
 
 func TestSpecDumpJSON(t *testing.T) {
 	s := Spec{
-		Id:          SPEC_ID,
-		Description: SPEC_DESCRIPTION,
-		Name:        SPEC_NAME,
-		Bindable:    SPEC_BINDABLE,
-		Async:       SPEC_ASYNC,
+		Id:          SpecId,
+		Description: SpecDescription,
+		Name:        SpecName,
+		Bindable:    SpecBindable,
+		Async:       SpecAsync,
 	}
 
 	var knownMap interface{}
 	var subjectMap interface{}
 
-	json.Unmarshal([]byte(SPEC_JSON), &knownMap)
+	json.Unmarshal([]byte(SpecJSON), &knownMap)
 	json.Unmarshal([]byte(s.DumpJSON()), &subjectMap)
 
 	ft.AssertTrue(t, reflect.DeepEqual(knownMap, subjectMap))

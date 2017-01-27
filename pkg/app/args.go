@@ -29,7 +29,7 @@ func CreateArgs() (Args, error) {
 func validateArgs(args *Args) error {
 	var err error
 	if args.ConfigFile == "" {
-		err = errors.New("Must provide a config file location with -c, or --config\n")
+		err = errors.New("must provide a config file location with -c, or --config")
 	}
 
 	return err
