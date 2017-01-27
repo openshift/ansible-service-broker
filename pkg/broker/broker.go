@@ -42,6 +42,7 @@ func NewAnsibleBroker(
 // TODO: Response here? Async?
 // TODO: How do we handle a large amount of data on this side as well? Pagination?
 func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
+	a.log.Info("AnsibleBroker::Bootstrap")
 	var err error
 	var specs []*ansibleapp.Spec
 
@@ -57,7 +58,24 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 }
 
 func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
-	return nil, notImplemented
+	a.log.Info("AnsibleBroker::Catalog")
+
+	var specs []*ansibleapp.Spec
+	var err error
+	var services []Service
+	dir := "/spec"
+
+	if specs, err = a.dao.BatchGetSpecs(dir); err != nil {
+		a.log.Error("Something went real bad trying to retrieve batch specs...")
+		return nil, err
+	}
+
+	services = make([]Service, len(specs))
+	for i, spec := range specs {
+		services[i] = SpecToService(spec)
+	}
+
+	return &CatalogResponse{services}, nil
 }
 
 func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) (*ProvisionResponse, error) {

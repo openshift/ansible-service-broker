@@ -12,14 +12,3 @@ var plans = []Plan{
 		Free:        true,
 	},
 }
-
-// copied from github.com/openshift/origin/pkg/cmd/util/clientcmd/shortcut_restmapper.go
-//var userResourcesCopy = []string{
-//"buildconfigs", "builds",
-//"imagestreams",
-//"deploymentconfigs", "replicationcontrollers",
-//"routes", "services",
-//"pods",
-//}
-
-//var userResources = append(userResourcesCopy, "configmaps")
