@@ -8,14 +8,15 @@ engines:
         enabled: false
       GoLint/Naming/Initialisms:
         enabled: false
-      TODO:
-        enabled: false
-      HACK:
-        enabled: false
   govet:
     enabled: true
   fixme:
     enabled: true
+    checks:
+      TODO:
+        enabled: false
+      HACK:
+         enabled: false
 ratings:
   paths:
     - "**.go"
