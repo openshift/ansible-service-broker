@@ -26,7 +26,10 @@ var SpecJSON = fmt.Sprintf(`
 
 func TestSpecLoadJSON(t *testing.T) {
 	s := Spec{}
-	s.LoadJSON(SpecJSON)
+	err := LoadJSON(SpecJSON, &s)
+	if err != nil {
+		panic(err)
+	}
 
 	ft.AssertEqual(t, s.Id, SpecId)
 	ft.AssertEqual(t, s.Description, SpecDescription)
@@ -47,8 +50,12 @@ func TestSpecDumpJSON(t *testing.T) {
 	var knownMap interface{}
 	var subjectMap interface{}
 
+	raw, err := DumpJSON(&s)
+	if err != nil {
+		panic(err)
+	}
 	json.Unmarshal([]byte(SpecJSON), &knownMap)
-	json.Unmarshal([]byte(s.DumpJSON()), &subjectMap)
+	json.Unmarshal([]byte(raw), &subjectMap)
 
 	ft.AssertTrue(t, reflect.DeepEqual(knownMap, subjectMap))
 }

@@ -114,17 +114,59 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	////////////////////////////////////////////////////////////
 	// Provision Flow
 	// -> Retrieve Spec from etcd (if missing, 400, this returns err missing)
+	// -> TODO: Check to see if the spec supports or requires async, and reconcile
+	//    need a typed error condition so the REST server knows correct response
+	//    depending on the scenario
+	//    (async requested, unsupported, 422)
+	//    (async not requested, required, ?)
 	// -> Make entry in /instance, ID'd by instance. Value should be Instance type
 	//    Purpose is to make sure everything neeed to deprovision is available
 	//    in persistence.
-	//      TODO: Need to extend Dao to for instance get/set
-	//      TODO: Create Instance type.needs to contain
-	//      {instance_id, spec {name, id}, provision_blob{...}}
-	//      provision_blob is whatever blob was passed in for provisioning
-	// -> ansibleapp.Provision(*Spec, paramsblob)
+	// -> Provision!
 	////////////////////////////////////////////////////////////
 
-	return nil, notImplemented
+	var spec *ansibleapp.Spec
+	var err error
+
+	// Retrieve requested spec
+	specId := req.ServiceID.String()
+	if spec, err = a.dao.GetSpec(specId); err != nil {
+		// TODO: Handle unknown spec
+		return nil, err
+	}
+
+	// HACK: Figure out map[string]string -> Parameters typecast, because this is terrible
+	var JediMindTrick = func(in map[string]string) *ansibleapp.Parameters {
+		out := make(ansibleapp.Parameters)
+		for k, v := range in {
+			out[k] = v
+		}
+		return &out
+	}
+	// These aren't the droids you're looking for...
+	parameters := JediMindTrick(req.Parameters)
+
+	// Build and persist record of service instance
+	serviceInstance := &ansibleapp.ServiceInstance{
+		Id:         instanceUUID,
+		Spec:       spec,
+		Parameters: parameters,
+	}
+
+	err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Async? Bring in WorkEngine.
+	err = ansibleapp.Provision(spec, parameters, a.log)
+
+	// TODO: What data needs to be sent back on a respone?
+	// Not clear what dashboardURL means in an AnsibleApp context
+	// Operation needs to be present if this is an async provisioning
+	// 202 (Accepted), inprogress last_operation status
+	// Will need to come with a "state" update in etcd on the ServiceInstance
+	return &ProvisionResponse{}, nil
 }
 
 func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*UpdateResponse, error) {
@@ -133,6 +175,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*Upda
 
 func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {
 	return nil, notImplemented
+
 }
 
 func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {

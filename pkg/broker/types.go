@@ -1,12 +1,8 @@
 package broker
 
-import "github.com/pborman/uuid"
-
-// https://github.com/openservicebrokerapi/servicebroker/blob/174a252229602203600939600c7fa0379515b675/spec.md
-
-// TODO: the spec is rather unclear about what form ids are supposed to take.
-// For now, for better or worse, I've assumed UUIDs throughout (except for
-// DashboardClient), as I think this is the most likely intention.
+import (
+	"github.com/pborman/uuid"
+)
 
 type Service struct {
 	Name            string                 `json:"name"`
