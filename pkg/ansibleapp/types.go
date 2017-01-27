@@ -7,9 +7,10 @@ import (
 type SpecManifest map[string]*Spec
 
 type Spec struct {
-	Id       string `json:"id"`
-	Name     string `json:"name"`
-	Bindable bool   `json:"bindable"`
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Bindable    bool   `json:"bindable"`
+	Description string `json:"description"`
 
 	// required, optional, unsupported
 	Async string `json:"async"`
