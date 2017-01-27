@@ -73,6 +73,37 @@ func (d *Dao) GetRaw(key string) (string, error) {
 	return val, nil
 }
 
+// TODO: Streaming interface? Going to need to optimize all this for
+// a full-load catalog response of 10k
+// This is more likely to be paged given current proposal
+// In which case, we need paged Batch gets
+// 2 steps?
+// GET /spec/manifest [/*ordered ids*/]
+// BatchGet(offset, count)?
+func (d *Dao) BatchGetRaw(dir string) (*[]string, error) {
+	d.log.Debug("Dao::BatchGetRaw")
+
+	var res *client.Response
+	var err error
+
+	opts := &client.GetOptions{Recursive: true}
+	if res, err = d.kapi.Get(context.Background(), dir, opts); err != nil {
+		return nil, err
+	}
+
+	specNodes := res.Node.Nodes
+	specCount := len(specNodes)
+
+	d.log.Debug("Successfully loaded [ %d ] objects from etcd dir [ %s ]", specCount, dir)
+
+	payloads := make([]string, specCount)
+	for i, node := range specNodes {
+		payloads[i] = node.Value
+	}
+
+	return &payloads, nil
+}
+
 func (d *Dao) GetSpec(id string) (*ansibleapp.Spec, error) {
 	raw, err := d.GetRaw(specKey(id))
 	if err != nil {
@@ -98,6 +129,24 @@ func (d *Dao) BatchSetSpecs(specs ansibleapp.SpecManifest) error {
 	}
 
 	return nil
+}
+
+func (d *Dao) BatchGetSpecs(dir string) ([]*ansibleapp.Spec, error) {
+	var payloads *[]string
+	var err error
+	if payloads, err = d.BatchGetRaw(dir); err != nil {
+		return []*ansibleapp.Spec{}, err
+	}
+
+	specs := make([]*ansibleapp.Spec, len(*payloads))
+	for i, payload := range *payloads {
+		spec := &ansibleapp.Spec{}
+		spec.LoadJSON(payload)
+		specs[i] = spec
+		d.log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.Id)
+	}
+
+	return specs, nil
 }
 
 ////////////////////////////////////////////////////////////
