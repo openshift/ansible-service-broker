@@ -79,6 +79,51 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 }
 
 func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) (*ProvisionResponse, error) {
+	////////////////////////////////////////////////////////////
+	//type ProvisionRequest struct {
+
+	//-> OrganizationID    uuid.UUID
+	//-> SpaceID           uuid.UUID
+	// Used for determining where this service should be provisioned. Analagous to
+	// OCP's namespaces and projects. Re: OrganizationID, spec mentions
+	// "Most brokers will not use this field, it could be helpful in determining
+	// the data placement or applying custom business rules"
+
+	//-> PlanID            uuid.UUID
+	// Unclear how this is relevant
+
+	//-> ServiceID         uuid.UUID
+	// ServiceID maps directly to a Spec.Id found in etcd. Can pull Spec via
+	// Dao::GetSpec(id string)
+
+	//-> Parameters        map[string]string
+	// User provided configuration answers for the AnsibleApp
+
+	// -> AcceptsIncomplete bool
+	// true indicates both the SC and the requesting client (sc client). If param
+	// is not included in the req, and the broker can only provision an instance of
+	// the request plan asyncronously, broker should reject with a 422
+	// NOTE: Spec.Async should indicate what level of async support is available for
+	// a given ansible app
+
+	//}
+
+	// Summary:
+	// For our purposes right now, the ServiceID and the Params should be enough to
+	// Provision an ansible app.
+	////////////////////////////////////////////////////////////
+	// Provision Flow
+	// -> Retrieve Spec from etcd (if missing, 400, this returns err missing)
+	// -> Make entry in /instance, ID'd by instance. Value should be Instance type
+	//    Purpose is to make sure everything neeed to deprovision is available
+	//    in persistence.
+	//      TODO: Need to extend Dao to for instance get/set
+	//      TODO: Create Instance type.needs to contain
+	//      {instance_id, spec {name, id}, provision_blob{...}}
+	//      provision_blob is whatever blob was passed in for provisioning
+	// -> ansibleapp.Provision(*Spec, paramsblob)
+	////////////////////////////////////////////////////////////
+
 	return nil, notImplemented
 }
 
