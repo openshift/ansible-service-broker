@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 )
 
+type SpecManifest map[string]*Spec
+
 type Spec struct {
 	Id       string `json:"id"`
 	Name     string `json:"name"`
@@ -25,4 +27,12 @@ func (s *Spec) DumpJSON() string {
 	}
 
 	return string(payload)
+}
+
+func NewSpecManifest(specs []*Spec) SpecManifest {
+	manifest := make(map[string]*Spec)
+	for _, spec := range specs {
+		manifest[spec.Id] = spec
+	}
+	return manifest
 }
