@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const APPS_PATH = "/ansibleapps"
+const AppsPath = "/ansibleapps"
 
 type DevRegistry struct {
 	config RegistryConfig
@@ -53,7 +53,7 @@ func (r *DevRegistry) LoadSpecs() ([]*Spec, error) {
 }
 
 func (r *DevRegistry) fullAppsPath() string {
-	return fmt.Sprintf("%s%s", r.config.Url, APPS_PATH)
+	return fmt.Sprintf("%s%s", r.config.Url, AppsPath)
 }
 
 func loadSpecs(rawPayload []byte) []*Spec {

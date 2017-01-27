@@ -6,6 +6,12 @@ engines:
     checks:
       GoLint/Comments/DocComments:
         enabled: false
+      GoLint/Naming/Initialisms:
+        enabled: false
+      TODO:
+        enabled: false
+      HACK:
+        enabled: false
   govet:
     enabled: true
   fixme:

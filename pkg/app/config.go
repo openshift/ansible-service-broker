@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	Registry   ansibleapp.RegistryConfig
-	Dao        dao.DaoConfig
+	Dao        dao.Config
 	Log        LogConfig
 	ConfigFile string
 }

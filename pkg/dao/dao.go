@@ -9,20 +9,20 @@ import (
 	"time"
 )
 
-type DaoConfig struct {
+type Config struct {
 	EtcdHost string `yaml:"etcd_host"`
 	EtcdPort string `yaml:"etcd_port"`
 }
 
 type Dao struct {
-	config    DaoConfig
+	config    Config
 	log       *logging.Logger
 	endpoints []string
 	client    client.Client
 	kapi      client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
-func NewDao(config DaoConfig, log *logging.Logger) (*Dao, error) {
+func NewDao(config Config, log *logging.Logger) (*Dao, error) {
 	var err error
 	dao := Dao{
 		config: config,
