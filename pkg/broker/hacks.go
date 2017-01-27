@@ -1,11 +1,10 @@
-package ansibleapp
+package broker
 
 import (
-	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/pborman/uuid"
 )
 
-var plans = []broker.Plan{
+var plans = []Plan{
 	{
 		ID:          uuid.Parse("4c10ff42-be89-420a-9bab-27a9bef9aed8"),
 		Name:        "default",
