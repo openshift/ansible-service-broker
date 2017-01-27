@@ -5,6 +5,8 @@ import (
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
+	//"github.com/fusor/ansible-service-broker/pkg/handler"
+	//"net/http"
 	"os"
 )
 
@@ -81,20 +83,11 @@ func CreateApp() App {
 
 func (a *App) Start() {
 	a.log.Notice("Ansible Service Broker Started")
-}
 
-func (a *App) GetArgs() Args {
-	return a.args
-}
-
-func (a *App) GetConfig() Config {
-	return a.config
-}
-
-func (a *App) GetDao() *dao.Dao {
-	return a.dao
-}
-
-func (a *App) GetLog() *Log {
-	return a.log
+	////////////////////////////////////////////////////////////
+	// TODO: Expecting to start the http server here with the initialized broker.
+	////////////////////////////////////////////////////////////
+	//a.log.Notice("Listening on http://localhost:1338")
+	//http.ListenAndServe(":1338", handler.NewHandler(a.broker))
+	////////////////////////////////////////////////////////////
 }
