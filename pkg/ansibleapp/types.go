@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 )
 
+type SpecManifest map[string]*Spec
+
 type Spec struct {
-	Id       string `json:"id"`
-	Name     string `json:"name"`
-	Bindable bool   `json:"bindable"`
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Bindable    bool   `json:"bindable"`
+	Description string `json:"description"`
 
 	// required, optional, unsupported
 	Async string `json:"async"`
@@ -25,4 +28,12 @@ func (s *Spec) DumpJSON() string {
 	}
 
 	return string(payload)
+}
+
+func NewSpecManifest(specs []*Spec) SpecManifest {
+	manifest := make(map[string]*Spec)
+	for _, spec := range specs {
+		manifest[spec.Id] = spec
+	}
+	return manifest
 }

@@ -1,4 +1,4 @@
-package ansibleapp
+package broker
 
 import (
 	"net/http"

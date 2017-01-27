@@ -41,6 +41,7 @@ func GetAnsibleApps(w http.ResponseWriter, r *http.Request, args *Args, pApps *[
 	for i, app := range apps {
 		fmt.Printf("%d | ID: %s\n", i, app.Id)
 		fmt.Printf("%d | Name: %s\n", i, app.Name)
+		fmt.Printf("%d | Description: %s\n", i, app.Description)
 		fmt.Printf("%d | Bindable: %t\n", i, app.Bindable)
 		fmt.Printf("%d | Async: %s\n", i, app.Async)
 		fmt.Println("===")

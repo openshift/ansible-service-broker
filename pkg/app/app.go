@@ -3,15 +3,19 @@ package app
 import (
 	"fmt"
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
+	//"github.com/fusor/ansible-service-broker/pkg/handler"
+	//"net/http"
 	"os"
 )
 
 type App struct {
+	broker   *broker.AnsibleBroker
 	args     Args
 	config   Config
-	log      *Log
 	dao      *dao.Dao
+	log      *Log
 	registry ansibleapp.Registry
 }
 
@@ -65,28 +69,25 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
+	app.log.Debug("Creating AnsibleBroker")
+	if app.broker, err = broker.NewAnsibleBroker(
+		app.dao, app.log.Logger, app.registry,
+	); err != nil {
+		app.log.Error("Failed to create AnsibleBroker\n")
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+
 	return app
 }
 
-// TODO: Picturing this method responsible for kicking off the REST server
-// on top of the business logic after initialization has taken place.
-// Stubbed for now until we're ready to bring up the REST server.
 func (a *App) Start() {
 	a.log.Notice("Ansible Service Broker Started")
-}
 
-func (a *App) GetArgs() Args {
-	return a.args
-}
-
-func (a *App) GetConfig() Config {
-	return a.config
-}
-
-func (a *App) GetDao() *dao.Dao {
-	return a.dao
-}
-
-func (a *App) GetLog() *Log {
-	return a.log
+	////////////////////////////////////////////////////////////
+	// TODO: Expecting to start the http server here with the initialized broker.
+	////////////////////////////////////////////////////////////
+	//a.log.Notice("Listening on http://localhost:1338")
+	//http.ListenAndServe(":1338", handler.NewHandler(a.broker))
+	////////////////////////////////////////////////////////////
 }
