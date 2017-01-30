@@ -2,9 +2,17 @@ package ansibleapp
 
 import (
 	"encoding/json"
+	"github.com/pborman/uuid"
 )
 
+type Parameters map[string]interface{}
 type SpecManifest map[string]*Spec
+
+type AnswerDescriptor struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Default     interface{} `json:"default"`
+}
 
 type Spec struct {
 	Id          string `json:"id"`
@@ -13,21 +21,26 @@ type Spec struct {
 	Description string `json:"description"`
 
 	// required, optional, unsupported
-	Async string `json:"async"`
+	Async   string              `json:"async"`
+	Answers []*AnswerDescriptor `json:"answers"`
 }
 
-func (s *Spec) LoadJSON(payload string) *Spec {
-	json.Unmarshal([]byte(payload), s)
-	return s
-}
-
-func (s *Spec) DumpJSON() string {
-	payload, err := json.Marshal(s)
+func LoadJSON(payload string, obj interface{}) error {
+	err := json.Unmarshal([]byte(payload), obj)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	return string(payload)
+	return nil
+}
+
+func DumpJSON(obj interface{}) (string, error) {
+	payload, err := json.Marshal(obj)
+	if err != nil {
+		return "", err
+	}
+
+	return string(payload), nil
 }
 
 func NewSpecManifest(specs []*Spec) SpecManifest {
@@ -36,4 +49,10 @@ func NewSpecManifest(specs []*Spec) SpecManifest {
 		manifest[spec.Id] = spec
 	}
 	return manifest
+}
+
+type ServiceInstance struct {
+	Id         uuid.UUID   `json:"id"`
+	Spec       *Spec       `json:"spec"`
+	Parameters *Parameters `json:"parameters"`
 }

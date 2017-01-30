@@ -79,7 +79,94 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 }
 
 func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) (*ProvisionResponse, error) {
-	return nil, notImplemented
+	////////////////////////////////////////////////////////////
+	//type ProvisionRequest struct {
+
+	//-> OrganizationID    uuid.UUID
+	//-> SpaceID           uuid.UUID
+	// Used for determining where this service should be provisioned. Analagous to
+	// OCP's namespaces and projects. Re: OrganizationID, spec mentions
+	// "Most brokers will not use this field, it could be helpful in determining
+	// the data placement or applying custom business rules"
+
+	//-> PlanID            uuid.UUID
+	// Unclear how this is relevant
+
+	//-> ServiceID         uuid.UUID
+	// ServiceID maps directly to a Spec.Id found in etcd. Can pull Spec via
+	// Dao::GetSpec(id string)
+
+	//-> Parameters        map[string]string
+	// User provided configuration answers for the AnsibleApp
+
+	// -> AcceptsIncomplete bool
+	// true indicates both the SC and the requesting client (sc client). If param
+	// is not included in the req, and the broker can only provision an instance of
+	// the request plan asyncronously, broker should reject with a 422
+	// NOTE: Spec.Async should indicate what level of async support is available for
+	// a given ansible app
+
+	//}
+
+	// Summary:
+	// For our purposes right now, the ServiceID and the Params should be enough to
+	// Provision an ansible app.
+	////////////////////////////////////////////////////////////
+	// Provision Flow
+	// -> Retrieve Spec from etcd (if missing, 400, this returns err missing)
+	// -> TODO: Check to see if the spec supports or requires async, and reconcile
+	//    need a typed error condition so the REST server knows correct response
+	//    depending on the scenario
+	//    (async requested, unsupported, 422)
+	//    (async not requested, required, ?)
+	// -> Make entry in /instance, ID'd by instance. Value should be Instance type
+	//    Purpose is to make sure everything neeed to deprovision is available
+	//    in persistence.
+	// -> Provision!
+	////////////////////////////////////////////////////////////
+
+	var spec *ansibleapp.Spec
+	var err error
+
+	// Retrieve requested spec
+	specId := req.ServiceID.String()
+	if spec, err = a.dao.GetSpec(specId); err != nil {
+		// TODO: Handle unknown spec
+		return nil, err
+	}
+
+	// HACK: Figure out map[string]string -> Parameters typecast, because this is terrible
+	var JediMindTrick = func(in map[string]string) *ansibleapp.Parameters {
+		out := make(ansibleapp.Parameters)
+		for k, v := range in {
+			out[k] = v
+		}
+		return &out
+	}
+	// These aren't the droids you're looking for...
+	parameters := JediMindTrick(req.Parameters)
+
+	// Build and persist record of service instance
+	serviceInstance := &ansibleapp.ServiceInstance{
+		Id:         instanceUUID,
+		Spec:       spec,
+		Parameters: parameters,
+	}
+
+	err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Async? Bring in WorkEngine.
+	err = ansibleapp.Provision(spec, parameters, a.log)
+
+	// TODO: What data needs to be sent back on a respone?
+	// Not clear what dashboardURL means in an AnsibleApp context
+	// Operation needs to be present if this is an async provisioning
+	// 202 (Accepted), inprogress last_operation status
+	// Will need to come with a "state" update in etcd on the ServiceInstance
+	return &ProvisionResponse{}, nil
 }
 
 func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*UpdateResponse, error) {
@@ -88,6 +175,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*Upda
 
 func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {
 	return nil, notImplemented
+
 }
 
 func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {

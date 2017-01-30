@@ -5,6 +5,22 @@ ansibleapps:
     description: Note taking web application
     bindable: true
     async: "optional"
+    answers:
+      - name: hostport
+        description: The host TCP port as the external endpoint
+        default: 9001
+      - name: db_user
+        description: Database User
+      - name: db_pass
+        description: Database Password
+      - name: db_name
+        description: Database Name
+      - name: db_host
+        description: Database service hostname/ip
+        default: mariadb
+      - name: db_port
+        description: Database service port
+        default: 3306
   - id: 138afbe2-4e33-4faa-b6ae-2e8d61f2bf1f
     name: fusor/wordpress-ansibleapp
     description: Wordpress is taking over the world

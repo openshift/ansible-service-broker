@@ -111,11 +111,16 @@ func (d *Dao) GetSpec(id string) (*ansibleapp.Spec, error) {
 	}
 
 	spec := &ansibleapp.Spec{}
-	return spec.LoadJSON(raw), nil
+	ansibleapp.LoadJSON(raw, spec)
+	return spec, nil
 }
 
 func (d *Dao) SetSpec(id string, spec *ansibleapp.Spec) error {
-	payload := spec.DumpJSON()
+	payload, err := ansibleapp.DumpJSON(spec)
+	if err != nil {
+		return err
+	}
+
 	return d.SetRaw(specKey(id), payload)
 }
 
@@ -141,7 +146,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*ansibleapp.Spec, error) {
 	specs := make([]*ansibleapp.Spec, len(*payloads))
 	for i, payload := range *payloads {
 		spec := &ansibleapp.Spec{}
-		spec.LoadJSON(payload)
+		ansibleapp.LoadJSON(payload, spec)
 		specs[i] = spec
 		d.log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.Id)
 	}
@@ -149,9 +154,40 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*ansibleapp.Spec, error) {
 	return specs, nil
 }
 
+func (d *Dao) GetServiceInstance(id string) (*ansibleapp.ServiceInstance, error) {
+	var raw string
+	var err error
+	if raw, err = d.GetRaw(serviceInstanceKey(id)); err != nil {
+		return nil, err
+	}
+
+	spec := &ansibleapp.ServiceInstance{}
+	err = ansibleapp.LoadJSON(raw, spec)
+	if err != nil {
+		return nil, err
+	}
+
+	return spec, nil
+}
+
+func (d *Dao) SetServiceInstance(
+	id string, serviceInstance *ansibleapp.ServiceInstance,
+) error {
+	payload, err := ansibleapp.DumpJSON(serviceInstance)
+	if err != nil {
+		return err
+	}
+
+	return d.SetRaw(serviceInstanceKey(id), payload)
+}
+
 ////////////////////////////////////////////////////////////
 // Key generators
 ////////////////////////////////////////////////////////////
 func specKey(id string) string {
 	return fmt.Sprintf("/spec/%s", id)
+}
+
+func serviceInstanceKey(id string) string {
+	return fmt.Sprintf("/service_instance/%s", id)
 }
