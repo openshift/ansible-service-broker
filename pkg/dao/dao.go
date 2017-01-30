@@ -181,6 +181,12 @@ func (d *Dao) SetServiceInstance(
 	return d.SetRaw(serviceInstanceKey(id), payload)
 }
 
+func (d *Dao) DeleteServiceInstance(id string) error {
+	d.log.Debug(fmt.Sprintf("Dao::DeleteServiceInstance -> [ %s ]", id))
+	_, err := d.kapi.Delete(context.Background(), serviceInstanceKey(id), nil)
+	return err
+}
+
 ////////////////////////////////////////////////////////////
 // Key generators
 ////////////////////////////////////////////////////////////
