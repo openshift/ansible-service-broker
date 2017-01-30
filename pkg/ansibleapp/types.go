@@ -8,6 +8,12 @@ import (
 type Parameters map[string]interface{}
 type SpecManifest map[string]*Spec
 
+type AnswerDescriptor struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Default     interface{} `json:"default"`
+}
+
 type Spec struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
@@ -15,7 +21,8 @@ type Spec struct {
 	Description string `json:"description"`
 
 	// required, optional, unsupported
-	Async string `json:"async"`
+	Async   string              `json:"async"`
+	Answers []*AnswerDescriptor `json:"answers"`
 }
 
 func LoadJSON(payload string, obj interface{}) error {

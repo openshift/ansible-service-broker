@@ -33,11 +33,15 @@ func ProjectRoot() string {
 // TODO: This is going to have to be expanded much more to support things like
 // parameters (will need to get passed through as metadata
 func SpecToService(spec *ansibleapp.Spec) Service {
+	answersMeta := make(map[string]interface{})
+	answersMeta["answers"] = spec.Answers
+
 	return Service{
 		ID:          uuid.Parse(spec.Id),
 		Name:        spec.Name,
 		Description: spec.Description,
 		Bindable:    spec.Bindable,
 		Plans:       plans, // HACK; it's still unclear how plans are relevant to us
+		Metadata:    answersMeta,
 	}
 }
