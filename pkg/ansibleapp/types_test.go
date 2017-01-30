@@ -16,11 +16,11 @@ const SpecDescription = "A note taking webapp"
 
 var SpecJSON = fmt.Sprintf(`
 {
-  "id": "%s",
+	"id": "%s",
 	"description": "%s",
-  "name": "%s",
-  "bindable": %t,
-  "async": "%s"
+	"name": "%s",
+	"bindable": %t,
+	"async": "%s"
 }
 `, SpecId, SpecDescription, SpecName, SpecBindable, SpecAsync)
 
