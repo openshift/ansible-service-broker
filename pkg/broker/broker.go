@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"fmt"
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
 	"github.com/op/go-logging"
@@ -169,13 +170,44 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	return &ProvisionResponse{}, nil
 }
 
-func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*UpdateResponse, error) {
+func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {
+	////////////////////////////////////////////////////////////
+	// Deprovision flow
+	// -> Lookup bindings by instance ID; 400 if any are active, related issue:
+	//    https://github.com/openservicebrokerapi/servicebroker/issues/127
+	// -> Atomic deprovision and removal of service entry in etcd?
+	//    * broker::Deprovision
+	//    Arguments for this? What data do ansibleapps require to deprovision?
+	//    Maybe just hand off a serialized ServiceInstance and let the ansibleapp
+	//    decide what's important?
+	//    * if noerror: delete serviceInstance entry with Dao
+	////////////////////////////////////////////////////////////
+	var err error
+	var instance *ansibleapp.ServiceInstance
+	instanceId := instanceUUID.String()
+
+	if err = a.validateDeprovision(instanceId); err != nil {
+		return nil, err
+	}
+
+	if instance, err = a.dao.GetServiceInstance(instanceId); err != nil {
+		return nil, err
+	}
+
+	if err = ansibleapp.Deprovision(instance, a.log); err != nil {
+		return nil, err
+	}
+
+	a.dao.DeleteServiceInstance(instanceId)
+
 	return nil, notImplemented
 }
 
-func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {
-	return nil, notImplemented
-
+func (a AnsibleBroker) validateDeprovision(id string) error {
+	// TODO: Check if there are outstanding bindings; return typed errors indicating
+	// *why* things can't be deprovisioned
+	a.log.Debug(fmt.Sprintf("AnsibleBroker::validateDeprovision -> [ %s ]", id))
+	return nil
 }
 
 func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {
@@ -184,4 +216,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 
 func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) error {
 	return notImplemented
+}
+
+func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*UpdateResponse, error) {
+	return nil, notImplemented
 }
