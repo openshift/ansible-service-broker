@@ -15,6 +15,27 @@ func runCommand(cmd string, args ...string) ([]byte, error) {
 	return output, err
 }
 
+/*
+parameters will be 2 keys
+
+answers {}
+kubecfg {}
+
+deprovision - delete the namespace and it tears the whole thing down.
+
+oc delete?
+
+
+route will be hardcoded, need to determine how to get that from the ansibleapp.
+
+
+need to pass in cert through parameters
+
+
+First cut might have to pass kubecfg from broker. FIRST SPRINT broker passes username and password.
+
+admin/admin
+*/
 func pullImage(client *docker.Client, spec *Spec) error {
 	// TODO: need to figure out where to send the output
 	client.PullImage(docker.PullImageOptions{Repository: spec.Name, OutputStream: os.Stdout}, docker.AuthConfiguration{})
@@ -22,7 +43,19 @@ func pullImage(client *docker.Client, spec *Spec) error {
 }
 
 func runImage(client *docker.Client, spec *Spec, parameters *Parameters) ([]byte, error) {
-	output, err := runCommand("docker", "run", spec.Name)
+	// $ docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
+	// docker run
+	// -e "OPENSHIFT_TARGET=cap.example.com:8443"
+	// -e "OPENSHIFT_USER=admin"
+	// -e "OPENSHIFT_PASS=admin"
+	// ansibleapp/etherpad-ansibleapp deprovision
+
+	output, err := runCommand("docker", "run",
+		"-e", "OPENSHIFT_TARGET=cap.example.com:8443",
+		"-e", "OPENSHIFT_USER=admin",
+		"-e", "OPENSHIFT_PASS=admin",
+		"ansibleapp/etherpad-ansibleapp", "provision")
+
 	return output, err
 }
 
@@ -41,6 +74,7 @@ func Provision(spec *Spec, parameters *Parameters, log *logging.Logger) error {
 	log.Notice(fmt.Sprintf("Parameters: %v", parameters))
 	log.Notice("============================================================")
 
+	// TODO: get real endpoint from somewhere
 	endpoint := "unix:///var/run/docker.sock"
 	client, err := docker.NewClient(endpoint)
 	if err != nil {
@@ -50,6 +84,11 @@ func Provision(spec *Spec, parameters *Parameters, log *logging.Logger) error {
 
 	// pull image
 	pullImage(client, spec)
+
+	// HACK: danger will robinson
+	parameters["login"] = "admin"
+	parameters["passord"] = "admin"
+
 	output, err := runImage(client, spec, parameters)
 	if err != nil {
 		log.Error("Problem running image")
