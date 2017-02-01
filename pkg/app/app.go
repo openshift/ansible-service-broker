@@ -2,12 +2,13 @@ package app
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
-	//"github.com/fusor/ansible-service-broker/pkg/handler"
-	//"net/http"
-	"os"
+	"github.com/fusor/ansible-service-broker/pkg/handler"
 )
 
 type App struct {
@@ -87,7 +88,7 @@ func (a *App) Start() {
 	////////////////////////////////////////////////////////////
 	// TODO: Expecting to start the http server here with the initialized broker.
 	////////////////////////////////////////////////////////////
-	//a.log.Notice("Listening on http://localhost:1338")
-	//http.ListenAndServe(":1338", handler.NewHandler(a.broker))
+	a.log.Notice("Listening on http://localhost:1338")
+	http.ListenAndServe(":1338", handler.NewHandler(a.broker))
 	////////////////////////////////////////////////////////////
 }
