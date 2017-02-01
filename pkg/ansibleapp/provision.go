@@ -2,11 +2,10 @@ package ansibleapp
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-
 	"github.com/fsouza/go-dockerclient"
 	"github.com/op/go-logging"
+	"os"
+	"os/exec"
 )
 
 // HACK: really need a better way to do docker run
@@ -84,10 +83,6 @@ func Provision(spec *Spec, parameters *Parameters, log *logging.Logger) error {
 
 	// pull image
 	pullImage(client, spec)
-
-	// HACK: danger will robinson
-	parameters["login"] = "admin"
-	parameters["passord"] = "admin"
 
 	output, err := runImage(client, spec, parameters)
 	if err != nil {
