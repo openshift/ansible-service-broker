@@ -6,7 +6,7 @@ import (
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/mux"
 	"github.com/pborman/uuid"
-	"k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 // TODO: implement asynchronous operations
