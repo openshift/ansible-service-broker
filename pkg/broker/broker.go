@@ -168,7 +168,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	// Operation needs to be present if this is an async provisioning
 	// 202 (Accepted), inprogress last_operation status
 	// Will need to come with a "state" update in etcd on the ServiceInstance
-	return &ProvisionResponse{}, nil
+	return &ProvisionResponse{Operation: "successful"}, nil
 }
 
 func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {
@@ -201,7 +201,7 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse
 
 	a.dao.DeleteServiceInstance(instanceId)
 
-	return nil, notImplemented
+	return &DeprovisionResponse{Operation: "successful"}, nil
 }
 
 func (a AnsibleBroker) validateDeprovision(id string) error {
