@@ -21,4 +21,4 @@ curl \
   -H 'Content-Type: application/json' \
   -d "$req" \
   -v \
-  http://localhost:1338/v2/service_instances/$instanceUUID
+  http://cap.example.com:1338/v2/service_instances/$instanceUUID
