@@ -41,7 +41,7 @@ func writeDefaultResponse(w http.ResponseWriter, code int, resp interface{}, err
 	//return writeResponse(w, int(statusErr.ErrStatus.Code), broker.ErrorResponse{Description: err.Error()})
 	if err == nil {
 		return writeResponse(w, code, resp)
-	} else {
-		return writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 	}
+
+	return writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 }
