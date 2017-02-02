@@ -6,7 +6,7 @@ import (
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/mux"
 	"github.com/pborman/uuid"
-	"k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 // TODO: implement asynchronous operations
@@ -23,6 +23,7 @@ func NewHandler(b broker.Broker) http.Handler {
 	// TODO: handle X-Broker-API-Version header, currently poorly defined
 	root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()
 
+	root.HandleFunc("/v2/bootstrap", h.bootstrap).Methods("POST")
 	root.HandleFunc("/v2/catalog", h.catalog).Methods("GET")
 	root.HandleFunc("/v2/service_instances/{instance_uuid}", h.provision).Methods("PUT")
 	root.HandleFunc("/v2/service_instances/{instance_uuid}", h.update).Methods("PATCH")
@@ -31,6 +32,12 @@ func NewHandler(b broker.Broker) http.Handler {
 	root.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}", h.unbind).Methods("DELETE")
 
 	return h
+}
+
+func (h handler) bootstrap(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	resp, err := h.broker.Bootstrap()
+	writeDefaultResponse(w, http.StatusOK, resp, err)
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

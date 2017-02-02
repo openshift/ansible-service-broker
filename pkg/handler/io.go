@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker"
-	kerrors "k8s.io/kubernetes/pkg/api/errors"
+	//ke "k8s.io/kubernetes/pkg/api/errors" // HACK
 )
 
 func readRequest(r *http.Request, obj interface{}) error {
@@ -36,11 +36,12 @@ func writeResponse(w http.ResponseWriter, code int, obj interface{}) error {
 }
 
 func writeDefaultResponse(w http.ResponseWriter, code int, resp interface{}, err error) error {
+	// TODO: ke.StatusError import is not working, compiler thinks ke.StatusError is undefined...
+	//} else if statusErr, ok := err.(*ke.StatusError); ok {
+	//return writeResponse(w, int(statusErr.ErrStatus.Code), broker.ErrorResponse{Description: err.Error()})
 	if err == nil {
 		return writeResponse(w, code, resp)
-	} else if statusErr, ok := err.(*kerrors.StatusError); ok {
-		return writeResponse(w, int(statusErr.ErrStatus.Code), broker.ErrorResponse{Description: err.Error()})
-	} else {
-		return writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 	}
+
+	return writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 }

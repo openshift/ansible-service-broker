@@ -9,6 +9,7 @@ import (
 )
 
 type Broker interface {
+	Bootstrap() (*BootstrapResponse, error)
 	Catalog() (*CatalogResponse, error)
 	Provision(uuid.UUID, *ProvisionRequest) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest) (*UpdateResponse, error)

@@ -21,3 +21,15 @@ import:
   version: ^3.1.0
   subpackages:
   - client
+- package: github.com/docker/docker
+  version: ^1.13.1-rc1
+  subpackages:
+  - api/types/container
+  - api/types/mount
+- package: github.com/fsouza/go-dockerclient
+- package: github.com/gogo/protobuf
+  version: ^0.3.0
+  subpackages:
+  - proto
+  - sortkeys
+- package: github.com/golang/glog
