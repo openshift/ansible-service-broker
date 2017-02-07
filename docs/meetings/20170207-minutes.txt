@@ -1,0 +1,38 @@
+[Topic]
+
+Weekly meeting regarding Ansible Service Broker
+
+[Attendees]
+
+todd sanders
+john matthews
+erik nelson
+jesus rodriguez
+jason montleon
+
+
+[Minutes]
+* discussed the parameters work
+
+* Our ansibleapp tooling will create label with base64 encoded data
+
+* The tool should live in the ansibleapp github repo
+
+* John M. mentioned that the answers values could be more than just values that
+  do 'linking'. They could be things that change the behavior of the
+  application.
+
+* Include types for answers, and anything else we learned from the nulecule work
+
+* discussed bind
+
+  * the output of one bind could be the input into another ansibleapp as vars
+
+  * need to be careful any parameters passed could be visible to all things in
+    the cluster. Might be an opportunity to use kubernetes secrets
+
+[Actions]
+
+* add guid into design document for service broker
+
+* jesus to meet with paul et al regarding binds
