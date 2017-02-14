@@ -3,6 +3,7 @@
 * provision ansibleapp that requires access to gluster resource
 
 ## database that handles binds
+!database provision and bind](database-provision-and-bind.png)
 * provision database ansibleapp (stays up to let other bind)
 * bind request to app returns connection information,
 
@@ -23,6 +24,7 @@
     ServiceCatalog -> User: binding instance
     ```
 ## Etherpad wants to connect to database
+![etherpad connect to db](etherpad-connect-to-db.png)
 * provision database instance
 * provision etherpad
 * bind to database
