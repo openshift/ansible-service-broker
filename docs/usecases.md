@@ -3,7 +3,7 @@
 * provision ansibleapp that requires access to gluster resource
 
 ## database that handles binds
-!database provision and bind](database-provision-and-bind.png)
+![database provision and bind](database-provision-and-bind.png)
 * provision database ansibleapp (stays up to let other bind)
 * bind request to app returns connection information,
 
