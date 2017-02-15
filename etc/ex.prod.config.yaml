@@ -2,6 +2,8 @@
 registry:
   name: rhcc
   url: http://rhcc.redhat.com/api
+  user: xxx
+  pass: xxx
 dao:
   etcd_host: etcd.prod.redhat.com
   etcd_port: 2379

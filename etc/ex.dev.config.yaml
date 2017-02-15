@@ -2,6 +2,8 @@
 registry:
   name: dev
   url: http://localhost:1337
+  user: xxx
+  pass: xxx
 dao:
   etcd_host: localhost
   etcd_port: 2379
