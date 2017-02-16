@@ -8,6 +8,7 @@ import (
 
 type Args struct {
 	ConfigFile string `short:"c" long:"config" description:"Config File"`
+	ScriptsDir string `short:"s" long:"scripts" description:"Scripts Dir"`
 }
 
 func CreateArgs() (Args, error) {

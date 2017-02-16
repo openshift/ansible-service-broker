@@ -23,3 +23,7 @@ _testmain.go
 *.test
 *.prof
 vendor/*
+
+gosrc
+etc/dev.config.yaml
+etc/prod.config.yaml
