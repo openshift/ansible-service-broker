@@ -5,7 +5,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/op/go-logging"
 	"os"
-	"os/exec"
 )
 
 /*
@@ -78,10 +77,4 @@ func (c *Client) PullImage(imageName string) error {
 		OutputStream: os.Stdout,
 	}, docker.AuthConfiguration{})
 	return nil
-}
-
-// HACK: really need a better way to do docker run
-func runCommand(cmd string, args ...string) ([]byte, error) {
-	output, err := exec.Command(cmd, args...).CombinedOutput()
-	return output, err
 }
