@@ -17,14 +17,14 @@ type DevRegistry struct {
 }
 
 func (r *DevRegistry) Init(config RegistryConfig, log *logging.Logger) error {
-	log.Debug("RHCCRegistry::Init")
+	log.Debug("DevRegistry::Init")
 	r.config = config
 	r.log = log
 	return nil
 }
 
 func (r *DevRegistry) LoadSpecs() ([]*Spec, error) {
-	r.log.Debug("RHCCRegistry::LoadSpecs")
+	r.log.Debug("DevRegistry::LoadSpecs")
 
 	appsUrl := r.fullAppsPath()
 
