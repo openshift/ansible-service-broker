@@ -32,11 +32,6 @@ func CreateApp() App {
 	// Writing directly to stderr because log has not been bootstrapped
 	if app.args, err = CreateArgs(); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to validate input\n")
-	}
-
-	// Writing directly to stderr because log has not been bootstrapped
-	if app.args, err = CreateArgs(); err != nil {
-		os.Stderr.WriteString("ERROR: Failed to validate input\n")
 		os.Stderr.WriteString(err.Error())
 		ArgsUsage()
 		os.Exit(127)
@@ -70,6 +65,16 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
+	////////////////////////////////////////////////////////////
+	// HACK, TODO: Ugly way to configure concrete specifics for a DockerHubRegistry
+	// Need to come up with a better way to handle this.
+	////////////////////////////////////////////////////////////
+	if app.config.Registry.Name == "dockerhub" {
+		v, _ := app.registry.(*ansibleapp.DockerHubRegistry)
+		v.ScriptsDir = app.args.ScriptsDir
+	}
+	////////////////////////////////////////////////////////////
+
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
 		app.dao, app.log.Logger, app.registry,
@@ -84,11 +89,6 @@ func CreateApp() App {
 
 func (a *App) Start() {
 	a.log.Notice("Ansible Service Broker Started")
-
-	////////////////////////////////////////////////////////////
-	// TODO: Expecting to start the http server here with the initialized broker.
-	////////////////////////////////////////////////////////////
 	a.log.Notice("Listening on http://localhost:1338")
 	http.ListenAndServe(":1338", handler.NewHandler(a.broker))
-	////////////////////////////////////////////////////////////
 }

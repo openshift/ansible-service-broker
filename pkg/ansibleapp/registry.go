@@ -8,6 +8,9 @@ import (
 type RegistryConfig struct {
 	Name string
 	Url  string
+	User string
+	Pass string
+	Org  string // Target org to load ansibleapps from
 }
 
 type Registry interface {
@@ -27,6 +30,8 @@ func NewRegistry(config RegistryConfig, log *logging.Logger) (Registry, error) {
 		reg = &DevRegistry{}
 	case "rhcc":
 		reg = &RHCCRegistry{}
+	case "dockerhub":
+		reg = &DockerHubRegistry{}
 	default:
 		panic("Unknown registry")
 	}
