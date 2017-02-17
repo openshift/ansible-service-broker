@@ -1,0 +1,226 @@
+#!/usr/bin/env python
+
+import argparse
+import requests
+import fileinput
+import uuid
+
+BROKER_HEADERS = {
+    'X-Broker-API-Version': '2.9'
+}
+
+def req(url, **kwargs):
+    # merge in broker headers if provided
+    headers = BROKER_HEADERS
+    if 'headers' in kwargs:
+        _headers = kwargs['headers']
+        headers.update(BROKER_HEADERS)
+    kwargs['headers'] = headers
+
+    verb = kwargs.pop('verb', 'get')
+
+    return getattr(requests, verb)(url, **kwargs)
+
+
+class App:
+    def __init__(self, args):
+        self.args = args
+        self.catalog = None
+        self.opts = {
+                'b': ('bootstrap', self._cmd_bootstrap),
+                'l': ('list services', self._cmd_list_services),
+                'p': ('provision service', self._cmd_provision),
+                '?': ('show menu', self._cmd_show_menu)
+        }
+
+    def run(self):
+        opt = ''
+
+        self._cmd_show_menu()
+        while opt != 'q':
+            opt = raw_input("# ")
+
+            if opt == 'q':
+                break
+
+            if opt not in self.opts:
+                print 'ERROR: Unknown option!'
+                continue
+
+            should_quit = self.opts[opt][1]()
+            if should_quit:
+                break
+
+        print 'Quitting ansibleapp client!'
+
+        # getattr(self, self.args.method)()
+
+    def _cmd_show_menu(self):
+        print '============================================================'
+        print "Select an option ('q' to quit):"
+        print '============================================================'
+        for k in self.opts:
+            print "  %s | %s" % (k, self.opts[k][0])
+
+    def _cmd_bootstrap(self):
+        print 'Bootstrapping broker...'
+        self._req_bootstrap()
+        return False
+
+    def _cmd_list_services(self):
+        print 'Available services:'
+
+        if not self.catalog:
+            print ('NOTE: No services loaded in client,'
+                ' requesting catalog from broker...')
+            self._req_catalog()
+
+        self._print_service_options()
+        return False
+
+    def _cmd_provision(self):
+        if not self.catalog:
+            print ('No services loaded in client,'
+                    ' requesting catalog from broker...')
+            self._req_catalog()
+
+        opt = ''
+        valid_choices = [service['num'] for service in self.catalog]
+        while True:
+            print 'Select a service to provision:'
+            self._print_service_options()
+            opt = int(raw_input('# ')) # TODO: Do this better.
+            if int(opt) not in valid_choices:
+                print 'ERROR: Invalid choice!'
+            else:
+                break
+        catalog_entry = self.catalog[opt - 1]
+        service = catalog_entry['service']
+        print '[ %s ] selected for provisioning...' % catalog_entry['name']
+        answers = self._get_answers(service)
+        print 'Service configured! Requesting broker to provision...'
+        res = self._req_provision(service['id'], answers)
+        print "Provision returned status code: %s" % res.status_code
+
+        if res.status_code != 201 or res.status_code == 200:
+            print "ERROR: Got a non-2xx code back from the broker..."
+        else:
+            print "Broker reported provisioning success!"
+            return True # tell app loop to quit
+
+    def _get_answers(self, service):
+        print 'Configure your service:'
+
+        answers = {}
+        for param in service['metadata']['parameters']:
+            answer = None
+            while True:
+                supports_default = param['default'] is not None
+
+                # print "name: %s" % param['name']
+                # print "required: %s" % param['required']
+                # print "supports_default: %s" % supports_default
+
+                if param['required'] == False and not supports_default:
+                    query = '%s (generated if blank) # ' % param['name']
+                elif supports_default:
+                    query = '%s (default: %s) # ' % \
+                        (param['name'], param['default'])
+                else:
+                    query = '%s # ' % param['name']
+                answer = raw_input(query)
+
+                # TODO: This is fugly. Fix it.
+                should_pass = answer == '' and param['required'] == False \
+                    and not supports_default
+
+                if should_pass:
+                    pass
+                elif answer == '' and not supports_default:
+                    print 'ERROR: Must provide an answer for this parameter'
+                    continue
+                elif answer == '' and supports_default:
+                    answer = param['default']
+
+                answers[param['name']] = answer
+                break
+
+        _answers = answers.copy()
+        for k, v  in answers.iteritems():
+            if v == '':
+                del _answers[k]
+
+        return _answers
+
+    def _req_bootstrap(self):
+        res = req(self._url('/bootstrap'), verb='post')
+        spec_count = res.json()['SpecCount']
+        print "Bootstrapped %d specs into broker from dockerhub!" % spec_count
+
+    def _req_catalog(self):
+        res = req(self._url('/catalog'))
+        self.catalog = [{
+            'num': idx + 1,
+            'name': service['name'],
+            'id': service['id'],
+            'service': service,
+        } for idx, service in enumerate(res.json()['services'])]
+        print "Loaded %d services from broker catalog:" % len(self.catalog)
+
+############################################################
+# 6 instanceUUID="688eea24-9cf9-43e3-9942-d1863b2a16af"
+# 7 planUUID="4c10ff42-be89-420a-9bab-27a9bef9aed8"
+# 9 serviceUUID="4240b39c-116b-40b9-9b77-2d30e229f0dc"
+# 10
+# 11 req="{
+# 12   \"plan_id\": \"$planUUID\",
+# 13   \"service_id\": \"$serviceUUID\",
+# 14   \"parameters\": {
+# 15     \"MYSQL_USER\": \"username\"
+# 16   }
+# 17 }"
+# 18
+# 19 curl \
+# 20   -X PUT \
+# 21   -H 'X-Broker-API-Version: 2.9' \
+# 22   -H 'Content-Type: application/json' \
+# 23   -d "$req" \
+# 24   -v \
+# 25   http://cap.example.com:1338/v2/service_instances/$instanceUUID
+############################################################
+    def _req_provision(self, service_id, answers):
+        # Generate a uuid instance ID acting as a Service Catalog would do
+        instance_id = str(uuid.uuid4())
+        plan_id = str(uuid.uuid4()) # not clear how this is used yet, req tho
+        path = '/service_instances/%s' % instance_id
+        post_body = {
+            'plan_id': plan_id,
+            'service_id': service_id,
+            'parameters': answers
+        }
+        return req(self._url(path), verb='put', json=post_body)
+
+    def _print_service_options(self):
+        if self.catalog:
+            for service in self.catalog:
+                print '  %d | %s' % (service['num'], service['name'])
+        else:
+            print 'No available ansibleapps found!'
+
+    def _url(self, path):
+        return 'http://%s/v2%s' % (self.args.broker_address, path)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+            description=u'Utility acting as a ServiceCatalog+Client for'
+            u' driving an ansible-service-broker')
+    parser.add_argument(
+            'broker_address', action='store',
+            help=u'Service Broker address <host>:<port>, ex: localhost:1338')
+    args = parser.parse_args()
+
+    App(args).run()
+
+if __name__ == "__main__":
+    main()

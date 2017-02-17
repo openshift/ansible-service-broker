@@ -27,3 +27,5 @@ vendor/*
 gosrc
 etc/dev.config.yaml
 etc/prod.config.yaml
+
+.python-version
