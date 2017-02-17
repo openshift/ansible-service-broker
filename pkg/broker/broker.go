@@ -147,7 +147,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	}
 	// These aren't the droids you're looking for...
 	parameters := JediMindTrick(req.Parameters)
-	a.log.Error(fmt.Sprintf("Parameters: %s", parameters))
 
 	// Build and persist record of service instance
 	serviceInstance := &ansibleapp.ServiceInstance{
