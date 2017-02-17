@@ -4,5 +4,5 @@
 
 curl \
   -H 'X-Broker-API-Version: 2.9' \
-  -v \
+  -s \
   http://cap.example.com:1338/v2/catalog
