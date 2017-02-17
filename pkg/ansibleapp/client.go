@@ -1,6 +1,7 @@
 package ansibleapp
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/op/go-logging"
@@ -59,15 +60,21 @@ func (c *Client) RunImage(
 	action string,
 	clusterConfig ClusterConfig,
 	spec *Spec,
-	_ *Parameters,
+	p *Parameters,
 ) ([]byte, error) {
 	// HACK: We're expecting to run containers via go APIs rather than cli cmds
 	// TODO: Expecting parameters to be passed here in the future as well
+
+	params, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+
 	return runCommand("docker", "run",
 		"-e", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
 		"-e", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
 		"-e", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
-		spec.Name, action)
+		spec.Name, action, "--extra-vars", string(params))
 }
 
 func (c *Client) PullImage(imageName string) error {

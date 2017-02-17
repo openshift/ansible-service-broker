@@ -63,15 +63,16 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request) {
 
 	var req *broker.ProvisionRequest
 	err := readRequest(r, &req)
+
 	if err != nil {
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "could not read request: " + err.Error()})
 		return
 	}
 
 	resp, err := h.broker.Provision(instanceUUID, req)
 
 	if errors.IsNotFound(err) || errors.IsInvalid(err) {
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "instance not found: " + err.Error()})
 	} else if errors.IsAlreadyExists(err) {
 		writeResponse(w, http.StatusConflict, broker.ProvisionResponse{})
 	} else {
