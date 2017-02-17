@@ -74,8 +74,7 @@ func (c *Client) RunImage(
 		"-e", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
 		"-e", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
 		"-e", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
-		"-e", string(params),
-		spec.Name, action)
+		spec.Name, action, "--extra-vars", string(params))
 }
 
 func (c *Client) PullImage(imageName string) error {
