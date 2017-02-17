@@ -3,7 +3,6 @@ package handler
 import (
 	"net/http"
 
-	"fmt"
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/mux"
 	"github.com/pborman/uuid"
@@ -64,8 +63,6 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request) {
 
 	var req *broker.ProvisionRequest
 	err := readRequest(r, &req)
-
-	fmt.Println(req)
 
 	if err != nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "could not read request: " + err.Error()})
