@@ -115,9 +115,10 @@ func (r *DockerHubRegistry) loadAnsibleAppImageData(
 	counter := 1
 	for imageData := range channel {
 		if imageData.Error != nil {
-			r.log.Error("Something went wrong trying to load img data!")
+			r.log.Error("Something went wrong loading img data for [ %s ]", imageData.Name)
 			r.log.Error(fmt.Sprintf("Error: %s", imageData.Error))
 			counter++
+			continue
 		}
 
 		if imageData.IsAnsibleApp {
