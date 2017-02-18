@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
-import requests
 import uuid
+import requests
 
 BROKER_HEADERS = {
     'X-Broker-API-Version': '2.9'
@@ -84,7 +84,7 @@ class App(object):
                    ' requesting catalog from broker...')
             self._req_catalog()
 
-        opt = ''
+        opt = None
         valid_choices = [service['num'] for service in self.catalog]
         while True:
             print 'Select a service to provision:'
@@ -121,7 +121,7 @@ class App(object):
                 # print "required: %s" % param['required']
                 # print "supports_default: %s" % supports_default
 
-                if param['required'] == False and not supports_default:
+                if param['required'] is False and not supports_default:
                     query = '%s (generated if blank) # ' % param['name']
                 elif supports_default:
                     query = '%s (default: %s) # ' % \
@@ -131,7 +131,7 @@ class App(object):
                 answer = raw_input(query)
 
                 # TODO: This is fugly. Fix it.
-                should_pass = answer == '' and param['required'] == False \
+                should_pass = answer == '' and param['required'] is False \
                     and not supports_default
 
                 if should_pass:
