@@ -22,7 +22,7 @@ def req(url, **kwargs):
     return getattr(requests, verb)(url, **kwargs)
 
 
-class App:
+class App(object):
     def __init__(self, args):
         self.args = args
         self.catalog = None
