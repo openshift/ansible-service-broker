@@ -27,9 +27,13 @@ The Service Consumer then utilizes the ServiceClasses for their needs. After get
   * Go WebApp AnsibleApp configures itself to use the information
   * Go WebApp service is ready for consumption and utilizing the mLab service
 
+### Binding diagram
 ![binding example](binding-example.png)
 
+### Binding example sequence diagram
 ![binding example sequence diagram](binding-example-seq-diagram.png)
+
+### Sequence diagram source
 
 ```
 Catalog Operator -> ServiceCatalog: POST broker
