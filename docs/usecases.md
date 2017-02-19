@@ -67,27 +67,32 @@ ServiceCatalog -> Service Consumer: Go WebApp instance ready
 
 * does the service consumer have to initiate the binds?
 
-## database that handles binds
-![database provision and bind](database-provision-and-bind.png)
-* provision database ansibleapp (stays up to let other bind)
+## Bindable Database Service
+There are services that will be deployed that simply exist to be bound to other applications. Typical use case is a Mariadb database instance.
+
+* provision database AnsibleApp (stays up to let other bind)
 * bind request to app returns connection information,
 
-    ```
-    User -> ServiceCatalog: POST instance
-    ServiceCatalog -> Ansible Service Broker: PUT provision/instance_id
-    Ansible Service Broker -> etcd : get database image
-    etcd -> Ansible Service Broker: return image record
-    Ansible Service Broker -> Docker Hub: pull database image
-    Docker Hub -> Ansible Service Broker: return database image
-    Ansible Service Broker -> Ansible Service Broker: run database image
-    Ansible Service Broker -> ServiceCatalog: return 200 image
-    ServiceCatalog -> User: ServiceClass
-    User -> ServiceCatalog: POST binding
-    ServiceCatalog -> Ansible Service Broker: PUT bind
-    Ansible Service Broker -> ServiceCatalog: return database connection string
-    ServiceCatalog -> ServiceCatalog: Create Binding
-    ServiceCatalog -> User: binding instance
-    ```
+### Database example sequence diagram
+![database provision and bind](database-provision-and-bind.png)
+
+### Sequence diagram source
+```
+Service Consumer -> ServiceCatalog: POST instance
+ServiceCatalog -> Ansible Service Broker: PUT provision/instance_id
+Ansible Service Broker -> etcd : get database image
+etcd -> Ansible Service Broker: return image record
+Ansible Service Broker -> Docker Hub: pull database image
+Docker Hub -> Ansible Service Broker: return database image
+Ansible Service Broker -> Ansible Service Broker: run database image
+Ansible Service Broker -> ServiceCatalog: return 200 image
+ServiceCatalog -> Service Consumer: ServiceClass
+Service Consumer -> ServiceCatalog: PUT /binding
+ServiceCatalog -> ServiceCatalog: Create binding resource
+Controller -> AnsibleServiceBroker: PUT /binding
+Ansible Service Broker -> Controller: return database connection string
+Controller -> Magic: Store binding information for injection later
+```
 ## Etherpad wants to connect to database
 ![etherpad connect to db](etherpad-connect-to-db.png)
 * provision database instance
