@@ -91,11 +91,14 @@ Ansible Service Broker -> Controller: return database connection string
 Controller -> Magic: Store binding information for injection later
 ```
 ## Etherpad wants to connect to database
-![etherpad connect to db](etherpad-connect-to-db.png)
 * provision etherpad
 * bind to database
 * assume database service previously provisioned
 
+### Etherpad sequence diagram
+![etherpad connect to db](etherpad-connect-to-db.png)
+
+### Sequence diagram source
 ```
 Service Consumer -> ServiceCatalog: POST /instance (Etherpad)
 Controller -> AnsibleServiceBroker: PUT /provision (Etherpad)
