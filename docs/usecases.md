@@ -63,9 +63,6 @@ AnsibleServiceBroker -> Controller: Go WebApp service instance ready
 ServiceCatalog -> Service Consumer: Go WebApp instance ready
 
 ```
-## Issues
-
-* does the service consumer have to initiate the binds?
 
 ## Bindable Database Service
 There are services that will be deployed that simply exist to be bound to other applications. Typical use case is a Mariadb database instance.
@@ -95,26 +92,25 @@ Controller -> Magic: Store binding information for injection later
 ```
 ## Etherpad wants to connect to database
 ![etherpad connect to db](etherpad-connect-to-db.png)
-* provision database instance
 * provision etherpad
 * bind to database
+* assume database service previously provisioned
 
-    sounds like the database if it exists in the same namespace will be INJECTED
-    into the etherpad provision as env variables
-    ```
-    # assume database instance was previously provisioned
-    User -> ServiceCatalog: POST etherpad instance
-    ServiceCatalog -> Ansible Service Broker: PUT provision/instance_id
-    Ansible Service Broker -> etcd : get etherpad image
-    etcd -> Ansible Service Broker: return image record
-    Ansible Service Broker -> Docker Hub: pull etherpad image
-    Docker Hub -> Ansible Service Broker: return etherpad image
-    Ansible Service Broker -> Ansible Service Broker: run etherpad image
-    Ansible Service Broker -> ServiceCatalog: return 200 OK
-    ServiceCatalog -> User: ServiceClass
-    User -> ServiceCatalog: POST binding
-    ServiceCatalog -> Ansible Service Broker: PUT bind
-    Ansible Service Broker -> ServiceCatalog: return database connection string
-    ServiceCatalog -> ServiceCatalog: Create Binding
-    ServiceCatalog -> User: binding instance
-    ```
+```
+Service Consumer -> ServiceCatalog: POST /instance (Etherpad)
+Controller -> AnsibleServiceBroker: PUT /provision (Etherpad)
+AnsibleServiceBroker -> Go WebApp AnsibleApp: docker run provision
+Ansible Service Broker -> etcd : get etherpad image
+etcd -> Ansible Service Broker: return image record
+Ansible Service Broker -> Docker Hub: pull etherpad image
+Docker Hub -> Ansible Service Broker: return etherpad image
+Ansible Service Broker -> Ansible Service Broker: run etherpad image
+Ansible Service Broker -> ServiceCatalog: return 200 OK
+Magic -> Go WebApp AnsibleApp: INJECT binding information
+Go WebApp AnsibleApp -> mLab Service: Uses
+AnsibleServiceBroker -> Controller: Go WebApp service instance ready
+ServiceCatalog -> Service Consumer: Go WebApp instance ready
+```
+## Issues
+
+* does the service consumer have to initiate the binds?
