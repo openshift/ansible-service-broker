@@ -29,6 +29,36 @@ The Service Consumer then utilizes the ServiceClasses for their needs. After get
 
 ![binding example](binding-example.png)
 
+![binding example sequence diagram](binding-example-seq-diagram.png)
+
+```
+Catalog Operator -> ServiceCatalog: POST broker
+ServicCatalog -> ServiceCatalog: Create Broker resource
+Controller -> AnsibleServiceBroker: GET /catalog 
+AnsibleServiceBroker -> Controller: List of available service classes: mLab, Go WebApp
+Controller -> ServiceCatalog: Creates list of service classes available
+Service Consumer -> ServiceCatalog: GET /serviceclasses
+Service Consumer -> ServiceCatalog: POST /instance (mLab)
+Controller -> AnsibleServiceBroker: PUT /provision (mLab)
+AnsibleServiceBroker -> mLab AnsibleApp: docker run provision
+mLab AnsibleApp -> OpenShift: creates Kubernetes service endpoint
+ServiceCatalog -> Service Consumer: mLab instance ready
+Service Consumer -> ServiceCatalog: PUT /binding
+ServiceCatalog -> ServiceCatalog: Create binding resource
+Controller -> AnsibleServiceBroker: PUT /binding
+AnsibleServiceBroker -> mLab AnsibleApp: docker run binding
+mLab AnsibleApp -> AnsibleServiceBroker: Returns the binding information for external mLab Service
+AnsibleServiceBroker -> Controller: Returns binding information
+Controller -> Magic: Store binding information for injection later
+Service Consumer -> ServiceCatalog: POST /instance (Go WebApp)
+Controller -> AnsibleServiceBroker: PUT /provision (Go WebApp)
+AnsibleServiceBroker -> Go WebApp AnsibleApp: docker run provision
+Magic -> Go WebApp AnsibleApp: INJECT binding information
+Go WebApp AnsibleApp -> mLab Service: Uses
+AnsibleServiceBroker -> Controller: Go WebApp service instance ready
+ServiceCatalog -> Service Consumer: Go WebApp instance ready
+
+```
 ## Issues
 
 * does the service consumer have to initiate the binds?
