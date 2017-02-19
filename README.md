@@ -28,7 +28,7 @@ cd $GOPATH/src/github.com/fusor/ansible-service-broker && glide install
 
 ## Targets
 
-`make run`: Runs the broker with the defualt profile, configured via `/etc/dev.config.yaml`
+`make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
 `make run-mock-registry`: Mock registry. Entirely separate binary.
 `make test`: Runs the test suite.
 
