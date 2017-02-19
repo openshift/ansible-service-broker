@@ -1,6 +1,37 @@
-##  external storage
-* external gluster system
-* provision ansibleapp that requires access to gluster resource
+# Bind Use Cases
+
+## External Service with Bind (mLab and webapp)
+The external service use case is where an AnsibleApp is able to connect to a service outside of the cluster. One example, is a webapp that uses mLab as their backend store. There will be a specific AnsibleApp for the external service.
+
+Catalog Operator does the following:
+* Creates a broker resource which calls the AnsibleServiceBroker /catalog endpoint
+* The /catalog endpoint response populates the ServiceCatalog's list of ServiceClasses. In our example, this is mLab and Go WebApp
+
+The Service Consumer then utilizes the ServiceClasses for their needs. After getting a list of the available service classes, the Consumer will then:
+
+* Creates an instance of the mLab service.
+  * ServiceCatalog calls provision endpoint on AnsibleServiceBroker
+  * AnsibleServiceBroker provisions the mLab AnsibleApp
+  * mLab AnsibleApp configures the mLab instance being made avaiable
+  * mLab service ready for consumption
+* Create a binding resource for the mLab service
+  * ServiceCatalog calls the binding endpoint on the AnsibleServiceBroker
+  * AnsibleServiceBroker calls bind on the mLab AnsibleApp
+  * mLab AnsibleApp will return the credentials, coordinates, & configs for the service.
+  * Magic happens
+    * ServiceCatalog does something with the bind information such that it can be injected into the applications later
+* Creates an instance of the Go WebApp service.
+  * ServiceCatalog calls provision endpoint on AnsibleServiceBroker
+  * AnsibleServiceBroker provisions the Go WebApp AnsibleApp
+  * The mLab binding information is *injected* into the Go WebApp AnsibleApp
+  * Go WebApp AnsibleApp configures itself to use the information
+  * Go WebApp service is ready for consumption and utilizing the mLab service
+
+![binding example](binding-example.png)
+
+## Issues
+
+* does the service consumer have to initiate the binds?
 
 ## database that handles binds
 ![database provision and bind](database-provision-and-bind.png)
