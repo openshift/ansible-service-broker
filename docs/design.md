@@ -125,7 +125,7 @@ applicaton's initialization process. The specific registry adapter used is
 configured via the broker [configuration file](../etc/ex.dev.config.yaml) under
 the name field.
 
-#### DockerHubRegistry Adapter**
+#### DockerHubRegistry Adapter
 
 The `DockerHubRegistry` (name: dockerhub) is a useful adapter that enables
 a broker to be bootstrapped from the Docker Hub registry via the standard
