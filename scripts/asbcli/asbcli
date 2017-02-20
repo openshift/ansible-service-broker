@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 
 import argparse
-import requests
-import fileinput
 import uuid
+import requests
 
 BROKER_HEADERS = {
     'X-Broker-API-Version': '2.9'
 }
 
+
 def req(url, **kwargs):
     # merge in broker headers if provided
     headers = BROKER_HEADERS
     if 'headers' in kwargs:
-        _headers = kwargs['headers']
+        headers = kwargs['headers']
         headers.update(BROKER_HEADERS)
     kwargs['headers'] = headers
 
@@ -22,7 +22,7 @@ def req(url, **kwargs):
     return getattr(requests, verb)(url, **kwargs)
 
 
-class App:
+class App(object):
     def __init__(self, args):
         self.args = args
         self.catalog = None
@@ -72,7 +72,7 @@ class App:
 
         if not self.catalog:
             print ('NOTE: No services loaded in client,'
-                ' requesting catalog from broker...')
+                   ' requesting catalog from broker...')
             self._req_catalog()
 
         self._print_service_options()
@@ -81,15 +81,15 @@ class App:
     def _cmd_provision(self):
         if not self.catalog:
             print ('No services loaded in client,'
-                    ' requesting catalog from broker...')
+                   ' requesting catalog from broker...')
             self._req_catalog()
 
-        opt = ''
+        opt = None
         valid_choices = [service['num'] for service in self.catalog]
         while True:
             print 'Select a service to provision:'
             self._print_service_options()
-            opt = int(raw_input('# ')) # TODO: Do this better.
+            opt = int(raw_input('# '))  # TODO: Do this better.
             if int(opt) not in valid_choices:
                 print 'ERROR: Invalid choice!'
             else:
@@ -106,7 +106,7 @@ class App:
             print "ERROR: Got a non-2xx code back from the broker..."
         else:
             print "Broker reported provisioning success!"
-            return True # tell app loop to quit
+            return True  # tell app loop to quit
 
     def _get_answers(self, service):
         print 'Configure your service:'
@@ -121,7 +121,7 @@ class App:
                 # print "required: %s" % param['required']
                 # print "supports_default: %s" % supports_default
 
-                if param['required'] == False and not supports_default:
+                if param['required'] is False and not supports_default:
                     query = '%s (generated if blank) # ' % param['name']
                 elif supports_default:
                     query = '%s (default: %s) # ' % \
@@ -131,7 +131,7 @@ class App:
                 answer = raw_input(query)
 
                 # TODO: This is fugly. Fix it.
-                should_pass = answer == '' and param['required'] == False \
+                should_pass = answer == '' and param['required'] is False \
                     and not supports_default
 
                 if should_pass:
@@ -146,7 +146,7 @@ class App:
                 break
 
         _answers = answers.copy()
-        for k, v  in answers.iteritems():
+        for k, v in answers.iteritems():
             if v == '':
                 del _answers[k]
 
@@ -191,7 +191,7 @@ class App:
     def _req_provision(self, service_id, answers):
         # Generate a uuid instance ID acting as a Service Catalog would do
         instance_id = str(uuid.uuid4())
-        plan_id = str(uuid.uuid4()) # not clear how this is used yet, req tho
+        plan_id = str(uuid.uuid4())  # not clear how this is used yet, req tho
         path = '/service_instances/%s' % instance_id
         post_body = {
             'plan_id': plan_id,
