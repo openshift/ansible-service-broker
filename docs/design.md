@@ -112,3 +112,33 @@ itself down.
 **Unbind**
 
 > TODO
+
+### Registry Adapter
+
+To enable bootstrapping and ansibleapp discoverability, the ASB is designed to
+query a registry for available ansibleapps via a Registry Adapter. This is an
+interface that can be implemented. Its most important method, `LoadSpecs() []*Spec`,
+is responsible for returning a slice of `Spec` structs representing the available
+ansibleapps that were discovered. It is called when a broker is bootstrapped.
+A registry is instantiated as part of the
+applicaton's initialization process. The specific registry adapter used is
+configured via the broker [configuration file](../etc/ex.dev.config.yaml) under
+the name field.
+
+#### DockerHubRegistry Adapter
+
+The `DockerHubRegistry` (name: dockerhub) is a useful adapter that enables
+a broker to be bootstrapped from the Docker Hub registry via the standard
+Docker Registry API. First, it will retrieve the list of images that a specified
+registry contains. Next, it will inspect each of the images and [retrieve
+their associated metadata](https://github.com/containers/image). The API queries
+are critical to ansibleapp discoverability because it allows the broker to retrieve
+the `com.redhat.ansibleapp.spec` label containing an ansibleapp's base64
+encoded spec information. The adapter filters any non-ansibleapp images
+based on the presence of these labels, decodes each of their specs, and loads
+the specs into etcd via the `Registry::LoadSpecs` method.
+
+The `DockerHubRegistry` requires a `user`, `pass`, and `org` field
+to be set inside the `registry` section of the configuration file. The user
+credentials are used to authenticate API queries, and the organization is the
+target org that ansibleapps will be loaded from.
