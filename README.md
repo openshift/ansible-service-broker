@@ -26,6 +26,14 @@ git clone https://github.com/fusor/ansible-service-broker.git $GOPATH/src/github
 cd $GOPATH/src/github.com/fusor/ansible-service-broker && glide install
 ```
 
+**Config**
+
+A broker is configured via a `$ENV.config.yaml` file. Example files can be
+found under `etc/`. It's recommended to simply copy over `etc/ex.dev.config.yaml`
+to `etc/dev.config.yaml`, and edit as desired. `scripts/runbroker.sh` should
+handle providing the location to this file. Of course, this can be customized
+or the configuration file can be specified by cli args as well.
+
 ## Targets
 
 `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
