@@ -12,6 +12,7 @@ type Config struct {
 	Registry   ansibleapp.RegistryConfig
 	Dao        dao.Config
 	Log        LogConfig
+	Openshift  ansibleapp.ClusterConfig
 	ConfigFile string
 }
 

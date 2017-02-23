@@ -3,9 +3,21 @@
 import argparse
 import uuid
 import requests
+import getpass
+import sys
+
+from subprocess import Popen, PIPE
+from distutils import spawn
+
+BROKER_IMAGE = 'ansibleapp/ansible-service-broker-ansibleapp'
 
 BROKER_HEADERS = {
     'X-Broker-API-Version': '2.9'
+}
+
+AVAILABLE_COMMANDS = {
+    'connect': 'Connect to a broker to interact',
+    'up': 'Bring up a broker in a target cluster'
 }
 
 
@@ -23,8 +35,8 @@ def req(url, **kwargs):
 
 
 class App(object):
-    def __init__(self, args):
-        self.args = args
+    def __init__(self, broker_address):
+        self.broker_address = broker_address
         self.catalog = None
         self.opts = {
                 'b': ('bootstrap', self._cmd_bootstrap),
@@ -53,14 +65,12 @@ class App(object):
 
         print 'Quitting ansibleapp client!'
 
-        # getattr(self, self.args.method)()
-
     def _cmd_show_menu(self):
         print '============================================================'
         print "Select an option ('q' to quit):"
         print '============================================================'
         for k in self.opts:
-            print "  %s | %s" % (k, self.opts[k][0])
+            print '  %s | %s' % (k, self.opts[k][0])
 
     def _cmd_bootstrap(self):
         print 'Bootstrapping broker...'
@@ -100,12 +110,12 @@ class App(object):
         answers = self._get_answers(service)
         print 'Service configured! Requesting broker to provision...'
         res = self._req_provision(service['id'], answers)
-        print "Provision returned status code: %s" % res.status_code
+        print 'Provision returned status code: %s' % res.status_code
 
         if res.status_code != 201 or res.status_code == 200:
-            print "ERROR: Got a non-2xx code back from the broker..."
+            print 'ERROR: Got a non-2xx code back from the broker...'
         else:
-            print "Broker reported provisioning success!"
+            print 'Broker reported provisioning success!'
             return True  # tell app loop to quit
 
     def _get_answers(self, service):
@@ -155,7 +165,7 @@ class App(object):
     def _req_bootstrap(self):
         res = req(self._url('/bootstrap'), verb='post')
         spec_count = res.json()['SpecCount']
-        print "Bootstrapped %d specs into broker from dockerhub!" % spec_count
+        print 'Bootstrapped %d specs into broker from dockerhub!' % spec_count
 
     def _req_catalog(self):
         res = req(self._url('/catalog'))
@@ -165,7 +175,7 @@ class App(object):
             'id': service['id'],
             'service': service,
         } for idx, service in enumerate(res.json()['services'])]
-        print "Loaded %d services from broker catalog:" % len(self.catalog)
+        print 'Loaded %d services from broker catalog:' % len(self.catalog)
 
 ############################################################
 # 6 instanceUUID="688eea24-9cf9-43e3-9942-d1863b2a16af"
@@ -208,19 +218,108 @@ class App(object):
             print 'No available ansibleapps found!'
 
     def _url(self, path):
-        return 'http://%s/v2%s' % (self.args.broker_address, path)
+        return 'http://%s/v2%s' % (self.broker_address, path)
+
+
+def subcmd_connect_parser(parser, subcmd):
+    subcmd.add_argument(
+        'broker_address', action='store',
+        help=u'Service Broker address <host>:<port>, ex: localhost:1338'
+    )
+
+
+def subcmd_up_parser(parser, subcmd):
+    subcmd.add_argument(
+        'cluster_address', action='store',
+        help=u'Address of the cluster where the broker will be deployed'
+    )
+    subcmd.add_argument(
+        '--cluster-user', action='store', dest='openshift_user',
+        help=u'Cluster user that will be used to deploy the broker',
+        required=True
+    )
+    subcmd.add_argument(
+        '--cluster-pass', action='store', dest='openshift_pass',
+        help=u'Cluster password that will be used to deploy the broker'
+    )
+    subcmd.add_argument(
+        '--dockerhub-user', action='store', dest='dockerhub_user',
+        help=u'Dockerhub user. Used to communicate with dockerhub registry.',
+        required=True
+    )
+    subcmd.add_argument(
+        '--dockerhub-pass', action='store', dest='dockerhub_pass',
+        help=u'Dockerhub pass. Used to communicate with dockerhub registry.',
+    )
+
+
+def cmdrun_connect(**kwargs):
+    print "cmdrun_connect"
+    App(kwargs['broker_address']).run()
+
+
+def cmdrun_up(**kwargs):
+    cluster = kwargs['cluster_address']
+    openshift_user = kwargs['openshift_user']
+    openshift_pass = kwargs['openshift_pass']
+    dockerhub_user = kwargs['dockerhub_user']
+    dockerhub_pass = kwargs['dockerhub_pass']
+
+    if not openshift_pass:
+        openshift_pass = getpass.getpass('Enter cluster password: ')
+    if not dockerhub_pass:
+        dockerhub_pass = getpass.getpass('Enter dockerhub password: ')
+
+    docker_bin = spawn.find_executable('docker')
+    if not docker_bin:
+        raise Exception('ERROR: Could not find docker executable.')
+
+    # TODO: Right now, the broker will provision to the same cluster that it
+    # is deployed to. Could make this configurable.
+    brokerup_cmd = [
+        docker_bin, 'run',
+        '-e', 'OPENSHIFT_TARGET=%s' % cluster,
+        '-e', 'OPENSHIFT_USER=%s' % openshift_user,
+        '-e', 'OPENSHIFT_PASS=%s' % openshift_pass,
+        BROKER_IMAGE, 'provision',
+        '-e', 'dockerhub_user=%s' % dockerhub_user,
+        '-e', 'dockerhub_pass=%s' % dockerhub_pass,
+        '-e', 'openshift_target=%s' % cluster,
+        '-e', 'openshift_user=%s' % openshift_user,
+        '-e', 'openshift_pass=%s' % openshift_pass,
+    ]
+
+    brokerup_p = Popen(brokerup_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output, err = brokerup_p.communicate()
+
+    if err:
+        print "ERROR: Something went wrong trying to bring up a broker"
+        raise Exception(err)
+
+    print output
 
 
 def main():
     parser = argparse.ArgumentParser(
             description=u'Utility acting as a ServiceCatalog+Client for'
             u' driving an ansible-service-broker')
-    parser.add_argument(
-            'broker_address', action='store',
-            help=u'Service Broker address <host>:<port>, ex: localhost:1338')
+    subparsers = parser.add_subparsers(title='subcommand', dest='subcommand')
+    subparsers.required = True
+
+    for subcommand in AVAILABLE_COMMANDS:
+        subparser = subparsers.add_parser(
+            subcommand, help=AVAILABLE_COMMANDS[subcommand]
+        )
+        globals()['subcmd_%s_parser' % subcommand](parser, subparser)
+
     args = parser.parse_args()
 
-    App(args).run()
+    try:
+        globals()['cmdrun_%s' % args.subcommand](**vars(args))
+    except Exception as e:
+        print 'Exception occurred! %s' % e
+        sys.exit(1)
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()

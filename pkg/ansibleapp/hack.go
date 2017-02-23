@@ -5,7 +5,8 @@ import (
 )
 
 var HardcodedClusterConfig = ClusterConfig{
-	Target:   "cap.example.com:8443",
+	//Target:   "cap.example.com:8443",
+	Target:   "10.1.2.2:8443",
 	User:     "admin",
 	Password: "admin",
 }

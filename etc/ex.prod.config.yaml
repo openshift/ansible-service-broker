@@ -2,14 +2,18 @@
 registry:
   name: rhcc
   url: http://rhcc.redhat.com/api
-  user: xxx
-  pass: xxx
+  user: USER
+  pass: PASS
   org: ansibleapp
 dao:
-  etcd_host: etcd.prod.redhat.com
+  etcd_host: etcd.prod.example.com
   etcd_port: 2379
-logger:
-  log: /var/log/ansible-service-broker.log
-  stdout: false
-  level: info
-  color: false
+log:
+  logfile: /tmp/ansible-service-broker.log
+  stdout: true
+  level: debug
+  color: true
+openshift:
+  target: ocp.prod.example.com:8443
+  user: OPENSHIFT_USER
+  pass: OPENSHIFT_PASS
