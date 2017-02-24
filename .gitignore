@@ -29,3 +29,6 @@ etc/dev.config.yaml
 etc/prod.config.yaml
 
 .python-version
+ansible/roles/ansible-service-broker-openshift/tasks/main_*
+build.sh
+run.sh

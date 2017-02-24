@@ -1,0 +1,103 @@
+
+- oso_service:
+    service_name: asb
+    project_name: ansible-service-broker
+    labels:
+      app: ansible-service-broker
+      service: asb
+    ports:
+    - name: port-1338
+      port: 1338
+      targetPort: 1338
+    selector:
+      app: ansible-service-broker
+      service: asb
+  register: output
+
+- debug: var=output
+  when: playbook_debug
+
+- oso_service:
+    service_name: etcd
+    project_name: ansible-service-broker
+    labels:
+      app: ansible-service-broker
+      service: etcd
+    ports:
+    - name: port-2379
+      port: 2379
+      targetPort: 2379
+    selector:
+      app: ansible-service-broker
+      service: etcd
+  register: output
+
+- debug: var=output
+  when: playbook_debug
+
+- oso_route:
+    project_name: ansible-service-broker
+    service_port: port-1338
+    labels:
+      app: ansible-service-broker
+      service: asb
+    route_name: asb-1338
+    replace: true
+    service_name: asb
+    state: present
+  register: output
+
+- debug: var=output
+  when: playbook_debug
+
+- oso_deployment:
+    project_name: ansible-service-broker
+    labels:
+      app: ansible-service-broker
+      service: asb
+    deployment_name: asb
+    containers:
+    - securityContext: {}
+      name: asb
+      env:
+        DOCKERHUB_PASS: '{{dockerhub_pass}}'
+        DOCKERHUB_USER: '{{dockerhub_user}}'
+        OPENSHIFT_PASS: '{{openshift_pass}}'
+        OPENSHIFT_TARGET: '{{openshift_target}}'
+        OPENSHIFT_USER: '{{openshift_user}}'
+      args:
+      - entrypoint.sh
+      image: docker.io/ansibleapp/ansible-service-broker-asb:latest
+      ports:
+      - 1338
+    replace: true
+  register: output
+
+- debug: var=output
+  when: playbook_debug
+
+- oso_deployment:
+    project_name: ansible-service-broker
+    labels:
+      app: ansible-service-broker
+      service: etcd
+    deployment_name: etcd
+    containers:
+    - securityContext: {}
+      name: etcd
+      env:
+        ETCDCTL_API: '3'
+      workingDir: /etcd
+      args:
+      - ./etcd
+      - --data-dir=/data
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://0.0.0.0:2379
+      image: docker.io/ansibleapp/ansible-service-broker-etcd:latest
+      ports:
+      - 2379
+    replace: true
+  register: output
+
+- debug: var=output
+  when: playbook_debug

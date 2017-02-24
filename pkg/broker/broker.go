@@ -161,7 +161,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	}
 
 	// TODO: Async? Bring in WorkEngine.
-	err = ansibleapp.Provision(spec, parameters, a.log)
+	err = ansibleapp.Provision(spec, parameters, a.config.Openshift, a.log)
 
 	// TODO: What data needs to be sent back on a respone?
 	// Not clear what dashboardURL means in an AnsibleApp context

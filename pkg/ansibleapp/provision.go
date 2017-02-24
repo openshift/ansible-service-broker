@@ -10,7 +10,10 @@ import (
 // github.com/op/go-logging, which is used all over the broker
 // Maybe ansibleapp defines its own interface and accepts that optionally
 // Little looser, but still not great
-func Provision(spec *Spec, parameters *Parameters, log *logging.Logger) error {
+func Provision(
+	spec *Spec, parameters *Parameters,
+	clusterConfig ansibleapp.ClusterConfig, log *logging.Logger,
+) error {
 	log.Notice("============================================================")
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
@@ -32,7 +35,7 @@ func Provision(spec *Spec, parameters *Parameters, log *logging.Logger) error {
 	}
 
 	// HACK: Cluster config needs to come in from the broker. For now, hardcode it
-	output, err := client.RunImage("provision", HardcodedClusterConfig, spec, parameters)
+	output, err := client.RunImage("provision", clusterConfig, spec, parameters)
 
 	if err != nil {
 		log.Error("Problem running image")
