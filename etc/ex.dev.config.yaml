@@ -1,10 +1,10 @@
 ---
 registry:
-  name: dev
+  name: dockerhub
   url: http://localhost:1337
-  user: xxx
-  pass: xxx
-  org: eriknelson
+  user: DOCKERHUB_USER
+  pass: DOCKERHUB_PASS
+  org: ansibleapp
 dao:
   etcd_host: localhost
   etcd_port: 2379
@@ -13,3 +13,7 @@ log:
   stdout: true
   level: debug
   color: true
+openshift:
+  target: localhost:8443
+  user: OPENSHIFT_USER
+  pass: OPENSHIFT_PASS
