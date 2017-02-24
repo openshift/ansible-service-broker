@@ -77,7 +77,7 @@ func CreateApp() App {
 
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.registry,
+		app.dao, app.log.Logger, app.config.Openshift, app.registry,
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
 		app.log.Error(err.Error())

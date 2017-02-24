@@ -19,21 +19,24 @@ type Broker interface {
 }
 
 type AnsibleBroker struct {
-	dao      *dao.Dao
-	log      *logging.Logger
-	registry ansibleapp.Registry
+	dao           *dao.Dao
+	log           *logging.Logger
+	clusterConfig ansibleapp.ClusterConfig
+	registry      ansibleapp.Registry
 }
 
 func NewAnsibleBroker(
 	dao *dao.Dao,
 	log *logging.Logger,
+	clusterConfig ansibleapp.ClusterConfig,
 	registry ansibleapp.Registry,
 ) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
-		dao:      dao,
-		log:      log,
-		registry: registry,
+		dao:           dao,
+		log:           log,
+		clusterConfig: clusterConfig,
+		registry:      registry,
 	}
 
 	return broker, nil
@@ -161,7 +164,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	}
 
 	// TODO: Async? Bring in WorkEngine.
-	err = ansibleapp.Provision(spec, parameters, a.log)
+	err = ansibleapp.Provision(spec, parameters, a.clusterConfig, a.log)
 
 	// TODO: What data needs to be sent back on a respone?
 	// Not clear what dashboardURL means in an AnsibleApp context
