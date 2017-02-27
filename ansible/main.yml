@@ -56,7 +56,7 @@
       git:
         repo: https://github.com/fusor/ansible-service-broker.git
         dest: "{{asb_checkout}}"
-        version: broker-ansibleapp
+        version: dockerhub-latest
     - name: Install ansible-service-broker dependencies
       shell: glide install
       args:
