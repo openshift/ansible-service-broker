@@ -1,0 +1,102 @@
+---
+- hosts: etcd
+  gather_facts: false
+  roles:
+    - chouseknecht.etcd-container
+- hosts: asb
+  gather_facts: true
+  vars:
+    asb_checkout: /opt/go/src/github.com/fusor/ansible-service-broker
+    etc_dest: /etc/ansible-service-broker
+    bin_dest: /usr/local/ansible-service-broker/bin
+  environment:
+    GOPATH: /opt/go
+  tasks:
+    - name: Upgrade all packages
+      yum: name='*' state=latest
+    - name: Install system dependencies
+      yum: pkg={{item}} state=latest
+      with_items:
+        - git
+        - make
+        - gcc
+        - btrfs-progs-devel
+        - device-mapper-devel
+    - name: Create directory layout
+      file: path={{item}} state=directory
+      with_items:
+        - /opt/go/src/github.com/fusor
+        - "{{etc_dest}}"
+        - "{{bin_dest}}"
+    - name: Install golang v1.8
+      shell: curl -L "https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz" |
+        tar xz --directory=/usr/local
+      args:
+        creates: /usr/local/go
+        warn: false
+    - name: Install glide v0.12.3
+      shell: curl -L "https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz" |
+        tar xz --directory=/usr/local/bin --strip-components=1
+      args:
+        creates: /usr/local/bin/glide
+        warn: false
+    - name: Install jq v1.5
+      shell: curl -L "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64" >
+        /usr/local/bin/jq && chmod +x /usr/local/bin/jq
+      args:
+        creates: /usr/local/bin/jq
+        warn: false
+    - name: Install oc
+      shell: curl -L "https://github.com/openshift/origin/releases/download/v1.5.0-alpha.3/openshift-origin-client-tools-v1.5.0-alpha.3-cf7e336-linux-64bit.tar.gz" |
+        tar xz --directory=/usr/local/bin --strip-components=1
+      args:
+        creates: /usr/local/bin/oc
+        warn: false
+    - name: Checkout ansible-service-broker
+      git:
+        repo: https://github.com/fusor/ansible-service-broker.git
+        dest: "{{asb_checkout}}"
+        version: broker-ansibleapp
+    - name: Install ansible-service-broker dependencies
+      shell: glide install
+      args:
+        chdir: /opt/go/src/github.com/fusor/ansible-service-broker
+      environment:
+        PATH: "{{ansible_env.PATH}}:/usr/local/go/bin"
+    - name: Build ansible-service-broker
+      make:
+        chdir: /opt/go/src/github.com/fusor/ansible-service-broker
+        target: build
+      environment:
+        PATH: "{{ansible_env.PATH}}:/usr/local/go/bin"
+    - name: Install ansible-service-broker
+      copy: remote_src=True src={{item.src}} dest={{item.dest}}
+      with_items:
+        - {
+            src: "{{ansible_env.GOPATH}}/bin/broker",
+            dest: /usr/bin/asbd
+          }
+        - {
+            src: "{{asb_checkout}}/docker/oc-login.sh",
+            dest: /usr/bin
+          }
+        - {
+            src: "{{asb_checkout}}/etc/ex.dockerimg.config.yaml",
+            dest: "{{etc_dest}}/config.yaml"
+          }
+        - {
+            src: "{{asb_checkout}}/scripts/get_images_for_org.sh",
+            dest: "{{bin_dest}}"
+          }
+        - {
+            src: "{{asb_checkout}}/docker/ansible-service-broker",
+            dest: /usr/bin
+          }
+    - name: Install entrypoint.sh
+      copy: remote_src=True src={{asb_checkout}}/docker/entrypoint.sh dest=/usr/bin
+    - name: Cleanup build deps
+      file: path="{{item}}" state=absent
+      with_items:
+        - "{{ansible_env.GOPATH}}"
+        - "/usr/local/go"
+        - "/usr/local/glide"

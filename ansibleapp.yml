@@ -1,0 +1,21 @@
+id: 89dab56d-a712-4725-a065-dcb6c8e1de88
+name: ansibleapp/ansible-service-broker-ansibleapp
+description: AnsibleApp OpenServiceBroker implementation
+bindable: false
+async: "unsupported"
+parameters:
+  - name: dockerhub_user
+    description: DockerHub User
+    type: string
+  - name: dockerhub_pass
+    description: DockerHub Pass
+    type: string
+  - name: openshift_target
+    description: Openshift Target
+    type: string
+  - name: openshift_user
+    description: Openshift User
+    type: string
+  - name: openshift_pass
+    description: Openshift Pass
+    type: string

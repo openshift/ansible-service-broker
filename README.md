@@ -44,3 +44,14 @@ or the configuration file can be specified by cli args as well.
 
 Scripts found in `/test` can act as manual Service Catalog requests until a larger
 user scenario can be scripted.
+
+## AnsibleApp
+
+The Ansible Service Broker is available as an [ansibleapp itself](https://hub.docker.com/r/ansibleapp/ansible-service-broker-ansibleapp/); it
+is automatically built from this repo's tag: `ansible-service-broker:latest`.
+
+Packaging related files are found in `ansible/`, `ansibleapp/`, `ansibleapp.yml`,
+and the `Dockerfile`.
+
+AnsibleApp's and their packaging process are documented in the
+[ansibleapp repo](https://github.com/fusor/ansibleapp)

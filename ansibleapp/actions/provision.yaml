@@ -1,0 +1,7 @@
+- name: Deploy ansible-service-broker to  openshift
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  roles:
+  - role: ansible-service-broker-openshift
+    playbook_debug: false
