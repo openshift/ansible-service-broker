@@ -1,0 +1,32 @@
+version: "2"
+services:
+  etcd:
+    image: centos:7
+    expose:
+      - 2379
+    working_dir: /etcd
+    user: etcd
+    command: [
+      "./etcd", "--data-dir=/data",
+      "--listen-client-urls=http://0.0.0.0:2379",
+      "--advertise-client-urls=http://0.0.0.0:2379"
+    ]
+    environment:
+      - ETCDCTL_API=3
+  asb:
+    image: centos:7
+    ports:
+      - "1338:1338"
+    user: root
+    command: ["entrypoint.sh"]
+    depends_on:
+      - etcd
+    links:
+      - etcd
+    environment:
+      - "DOCKERHUB_USER={{ '{{dockerhub_user}}' }}"
+      - "DOCKERHUB_PASS={{ '{{dockerhub_pass}}' }}"
+      - "OPENSHIFT_TARGET={{ '{{openshift_target}}' }}"
+      - "OPENSHIFT_USER={{ '{{openshift_user}}' }}"
+      - "OPENSHIFT_PASS={{ '{{openshift_pass}}' }}"
+registries: {}

@@ -7,8 +7,9 @@ import (
 )
 
 type Args struct {
-	ConfigFile string `short:"c" long:"config" description:"Config File"`
-	ScriptsDir string `short:"s" long:"scripts" description:"Scripts Dir"`
+	ConfigFile string `short:"c" long:"config" description:"Config File" default:"/etc/ansible-service-broker/config.yaml"`
+	ScriptsDir string `short:"s" long:"scripts" description:"Scripts Dir" default:"/usr/local/ansible-service-broker/bin"`
+	Version    bool   `short:"v" long:"version" description:"Print version information"`
 }
 
 func CreateArgs() (Args, error) {

@@ -11,6 +11,8 @@ import (
 	"github.com/fusor/ansible-service-broker/pkg/handler"
 )
 
+var Version = "v0.1.0"
+
 type App struct {
 	broker   *broker.AnsibleBroker
 	args     Args
@@ -22,20 +24,24 @@ type App struct {
 
 func CreateApp() App {
 	var err error
-
-	fmt.Println("============================================================")
-	fmt.Println("==           Starting Ansible Service Broker...           ==")
-	fmt.Println("============================================================")
-
 	app := App{}
 
 	// Writing directly to stderr because log has not been bootstrapped
 	if app.args, err = CreateArgs(); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to validate input\n")
-		os.Stderr.WriteString(err.Error())
+		os.Stderr.WriteString(err.Error() + "\n")
 		ArgsUsage()
 		os.Exit(127)
 	}
+
+	if app.args.Version {
+		fmt.Println(Version)
+		os.Exit(0)
+	}
+
+	fmt.Println("============================================================")
+	fmt.Println("==           Starting Ansible Service Broker...           ==")
+	fmt.Println("============================================================")
 
 	if app.config, err = CreateConfig(app.args.ConfigFile); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to read config file\n")
