@@ -39,6 +39,8 @@ func Provision(
 
 	if err != nil {
 		log.Error("Problem running image")
+		log.Error(string(output))
+		log.Error(err.Error())
 		return err
 	}
 

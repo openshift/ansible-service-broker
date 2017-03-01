@@ -140,16 +140,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 		return nil, err
 	}
 
-	// HACK: Figure out map[string]string -> Parameters typecast, because this is terrible
-	var JediMindTrick = func(in map[string]string) *ansibleapp.Parameters {
-		out := make(ansibleapp.Parameters)
-		for k, v := range in {
-			out[k] = v
-		}
-		return &out
-	}
-	// These aren't the droids you're looking for...
-	parameters := JediMindTrick(req.Parameters)
+	parameters := &req.Parameters
 
 	// Build and persist record of service instance
 	serviceInstance := &ansibleapp.ServiceInstance{

@@ -36,11 +36,12 @@ var DockerSocket = "unix:///var/run/docker.sock"
 type ClusterConfig struct {
 	Target   string
 	User     string
-	Password string
+	Password string `yaml:"pass"`
 }
 
 type Client struct {
 	dockerClient *docker.Client
+	log          *logging.Logger
 }
 
 func NewClient(log *logging.Logger) (*Client, error) {
@@ -52,6 +53,7 @@ func NewClient(log *logging.Logger) (*Client, error) {
 
 	client := &Client{
 		dockerClient: dockerClient,
+		log:          log,
 	}
 
 	return client, nil
@@ -100,6 +102,15 @@ func (c *Client) RunImage(
 	//"-e", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
 	//"-e", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
 	//spec.Name, action, "--extra-vars", string(params))
+
+	c.log.Debug("Running OC run...")
+	c.log.Debug("clusterConfig:")
+	c.log.Debug("target: [ %s ]", clusterConfig.Target)
+	c.log.Debug("user: [ %s ]", clusterConfig.User)
+	c.log.Debug("password:[ %s ]", clusterConfig.Password)
+	c.log.Debug("image:[ %s ]", spec.Name)
+	c.log.Debug("action:[ %s ]", action)
+	c.log.Debug("params:[ %s ]", string(params))
 
 	return runCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
 		"--env", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),

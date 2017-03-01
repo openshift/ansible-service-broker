@@ -22,6 +22,8 @@
         - gcc
         - btrfs-progs-devel
         - device-mapper-devel
+    - name: Create broker user
+      user: name=broker shell=/bin/bash
     - name: Create directory layout
       file: path={{item}} state=directory
       with_items:
@@ -69,31 +71,44 @@
         target: build
       environment:
         PATH: "{{ansible_env.PATH}}:/usr/local/go/bin"
+    - name: Record broker sha
+      shell: git rev-parse HEAD > /usr/local/ansible-service-broker/sha
+      args:
+        chdir: /opt/go/src/github.com/fusor/ansible-service-broker
     - name: Install ansible-service-broker
-      copy: remote_src=True src={{item.src}} dest={{item.dest}}
+      copy: remote_src=True src={{item.src}} dest={{item.dest}} mode={{item.mode}}
       with_items:
         - {
             src: "{{ansible_env.GOPATH}}/bin/broker",
-            dest: /usr/bin/asbd
+            dest: /usr/bin/asbd,
+            mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
             src: "{{asb_checkout}}/docker/oc-login.sh",
-            dest: /usr/bin
+            dest: /usr/bin,
+            mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
             src: "{{asb_checkout}}/etc/ex.dockerimg.config.yaml",
-            dest: "{{etc_dest}}/config.yaml"
+            dest: "{{etc_dest}}/config.yaml",
+            mode: "u+rw,g+rw,o+rw"
           }
         - {
             src: "{{asb_checkout}}/scripts/get_images_for_org.sh",
-            dest: "{{bin_dest}}"
+            dest: "{{bin_dest}}",
+            mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
             src: "{{asb_checkout}}/docker/ansible-service-broker",
-            dest: /usr/bin
+            dest: /usr/bin,
+            mode: "u+rwx,g+rwx,o+rwx"
           }
     - name: Install entrypoint.sh
-      copy: remote_src=True src={{asb_checkout}}/docker/entrypoint.sh dest=/usr/bin
+      copy:
+        remote_src: True
+        src: "{{asb_checkout}}/docker/entrypoint.sh"
+        dest: /usr/bin
+        mode: "u+rwx,g+rwx,o+rwx"
     - name: Cleanup build deps
       file: path="{{item}}" state=absent
       with_items:
