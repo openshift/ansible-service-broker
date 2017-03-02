@@ -87,9 +87,11 @@ type UpdateResponse struct {
 }
 
 type BindRequest struct {
-	ServiceID    uuid.UUID `json:"service_id"`
-	PlanID       uuid.UUID `json:"plan_id"`
-	AppID        uuid.UUID `json:"app_guid,omitempty"`
+	ServiceID uuid.UUID `json:"service_id"`
+	PlanID    uuid.UUID `json:"plan_id"`
+	// Deprecated: AppID deprecated in favor of BindResource.AppID
+	AppID uuid.UUID `json:"app_guid,omitempty"`
+
 	BindResource struct {
 		AppID uuid.UUID `json:"app_guid,omitempty"`
 		Route string    `json:"route,omitempty"`

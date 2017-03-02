@@ -2,7 +2,7 @@ package ansibleapp
 
 import (
 	"encoding/json"
-	"github.com/op/go-logging"
+
 	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )
@@ -77,6 +77,14 @@ type ServiceInstance struct {
 	Id         uuid.UUID   `json:"id"`
 	Spec       *Spec       `json:"spec"`
 	Parameters *Parameters `json:"parameters"`
+}
+
+type BindInstance struct {
+	Id         uuid.UUID   `json:"id"`
+	ServiceId  uuid.UUID   `json:"service_id"`
+	Parameters *Parameters `json:"parameters"`
+	// v---  not sure if I need the following ---v
+	//Spec *Spec `json:"spec"`
 }
 
 func LoadJSON(payload string, obj interface{}) error {

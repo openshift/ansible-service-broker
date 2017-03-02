@@ -2,9 +2,9 @@ package broker
 
 import (
 	"fmt"
+
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
-	"github.com/op/go-logging"
 	"github.com/pborman/uuid"
 )
 
@@ -206,7 +206,84 @@ func (a AnsibleBroker) validateDeprovision(id string) error {
 }
 
 func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {
-	return nil, notImplemented
+
+	// HACK: Figure out map[string]string -> Parameters typecast, because this is terrible
+	var JediMindTrick = func(in map[string]string) *ansibleapp.Parameters {
+		out := make(ansibleapp.Parameters)
+		for k, v := range in {
+			out[k] = v
+		}
+		return &out
+	}
+
+	// These aren't the droids you're looking for...
+	parameters := JediMindTrick(req.Parameters)
+
+	// binding_id is the id of the binding.
+	// the instanceUUID is the previously provisioned service id.
+	//
+	// See if the service instance still exists, if not send back a badrequest.
+
+	if service, err := a.dao.GetServiceInstance(instanceUUID); err != nil {
+		// TODO: need to figure out how find out if an instance exists or not
+		return nil, err
+	}
+
+	//
+	// Create a BindingInstance with a reference to the serviceinstance.
+	//
+	// BindInstance:
+	// Id: uuid.UUID = bindingUUID
+	// serviceId: uuid.UUID = instanceUUID
+	// Parameters Parameters = req.Parameters (might need jedimindtrick)
+	//
+
+	bindingInstance := &ansibleapp.BindInstance{
+		Id:         bindingUUID,
+		ServiceId:  instanceUUID,
+		Parameters: parameters,
+	}
+
+	// if binding instance exists, and the parameters are the same return: 200.
+	// if binding instance exists, and the parameters are different return: 409.
+	//
+	// return 201 when we're done.
+	//
+	// once we create the binding instance, we call ansibleapp.Bind
+
+	err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance)
+	if err != nil {
+		return nil, err
+	}
+
+	/*
+		   type BindRequest struct {
+				ServiceID uuid.UUID `json:"service_id"`
+				PlanID    uuid.UUID `json:"plan_id"`
+				// Deprecated: AppID deprecated in favor of BindResource.AppID
+				AppID uuid.UUID `json:"app_guid,omitempty"`
+
+				BindResource struct {
+					AppID uuid.UUID `json:"app_guid,omitempty"`
+					Route string    `json:"route,omitempty"`
+				} `json:"bind_resource,omitempty"`
+				Parameters map[string]string `json:"parameters,omitempty"`
+			}
+	*/
+
+	/*
+		type BindResponse struct {
+		    Credentials     map[string]interface{} `json:"credentials,omitempty"`
+		    SyslogDrainURL  string                 `json:"syslog_drain_url,omitempty"`
+		    RouteServiceURL string                 `json:"route_service_url,omitempty"`
+		    VolumeMounts    []interface{}          `json:"volume_mounts,omitempty"`
+		}
+
+	*/
+
+	// TODO: what the hell does bind really need from me?
+	err = ansibleapp.Bind(spec, parameters, a.clusterConfig, a.log)
+	return &BindResponse(), nil
 }
 
 func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) error {
