@@ -66,7 +66,7 @@ func CreateApp() App {
 	if app.registry, err = ansibleapp.NewRegistry(
 		app.config.Registry, app.log.Logger,
 	); err != nil {
-		app.log.Error("Failed to initialize Dao\n")
+		app.log.Error("Failed to initialize Registry\n")
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
