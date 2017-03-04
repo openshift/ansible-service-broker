@@ -5,6 +5,7 @@ import (
 
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
+	"github.com/op/go-logging"
 	"github.com/pborman/uuid"
 )
 
@@ -224,7 +225,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 	// See if the service instance still exists, if not send back a badrequest.
 
-	if service, err := a.dao.GetServiceInstance(instanceUUID); err != nil {
+	if _, err := a.dao.GetServiceInstance(instanceUUID.String()); err != nil {
 		// TODO: need to figure out how find out if an instance exists or not
 		return nil, err
 	}
@@ -282,8 +283,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	*/
 
 	// TODO: what the hell does bind really need from me?
-	err = ansibleapp.Bind(spec, parameters, a.clusterConfig, a.log)
-	return &BindResponse(), nil
+	err = ansibleapp.Bind(nil, parameters, a.clusterConfig, a.log)
+	return &BindResponse{Credentials: nil}, nil
 }
 
 func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) error {

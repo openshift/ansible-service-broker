@@ -2,7 +2,7 @@ package ansibleapp
 
 import (
 	"encoding/json"
-
+	"github.com/op/go-logging"
 	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )

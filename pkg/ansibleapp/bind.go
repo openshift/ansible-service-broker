@@ -1,7 +1,6 @@
 package ansibleapp
 
 import (
-	"fmt"
 	"github.com/op/go-logging"
 )
 
@@ -17,31 +16,33 @@ func Bind(
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")
-	log.Notice(fmt.Sprintf("Spec.Id: %s", spec.Id))
-	log.Notice(fmt.Sprintf("Spec.Name: %s", spec.Name))
-	log.Notice(fmt.Sprintf("Spec.Description: %s", spec.Description))
-	log.Notice(fmt.Sprintf("Parameters: %v", parameters))
-	log.Notice("============================================================")
+	/*
+		log.Notice(fmt.Sprintf("Spec.Id: %s", spec.Id))
+		log.Notice(fmt.Sprintf("Spec.Name: %s", spec.Name))
+		log.Notice(fmt.Sprintf("Spec.Description: %s", spec.Description))
+		log.Notice(fmt.Sprintf("Parameters: %v", parameters))
+		log.Notice("============================================================")
 
-	var client *Client
-	var err error
+		var client *Client
+		var err error
 
-	if client, err = NewClient(log); err != nil {
-		return err
-	}
+		if client, err = NewClient(log); err != nil {
+			return err
+		}
 
-	if err = client.PullImage(spec.Name); err != nil {
-		return err
-	}
+		if err = client.PullImage(spec.Name); err != nil {
+			return err
+		}
 
-	// HACK: Cluster config needs to come in from the broker. For now, hardcode it
-	output, err := client.RunImage("bind", clusterConfig, spec, parameters)
+		// HACK: Cluster config needs to come in from the broker. For now, hardcode it
+		output, err := client.RunImage("bind", clusterConfig, spec, parameters)
 
-	if err != nil {
-		log.Error("Problem running image")
-		return err
-	}
+		if err != nil {
+			log.Error("Problem running image")
+			return err
+		}
 
-	log.Info(string(output))
+		log.Info(string(output))
+	*/
 	return nil
 }

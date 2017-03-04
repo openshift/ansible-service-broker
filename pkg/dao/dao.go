@@ -6,6 +6,7 @@ import (
 
 	"github.com/coreos/etcd/client"
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/op/go-logging"
 	"golang.org/x/net/context"
 )
 
