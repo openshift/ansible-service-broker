@@ -40,6 +40,11 @@ type Spec struct {
 	Parameters []*ParameterDescriptor `json:"parameters"`
 }
 
+type BindData struct {
+	Credentials map[string]interface{} `json:"credentials,omitempty"`
+	// might be more one day
+}
+
 func specLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("============================================================")
 	log.Debug("Spec: %s", spec.Id)

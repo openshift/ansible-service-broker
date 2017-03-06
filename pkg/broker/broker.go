@@ -208,7 +208,8 @@ func (a AnsibleBroker) validateDeprovision(id string) error {
 
 func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {
 
-	// HACK: Figure out map[string]string -> Parameters typecast, because this is terrible
+	// HACK: Figure out map[string]string -> Parameters typecast, because
+	// this is terrible
 	var JediMindTrick = func(in map[string]string) *ansibleapp.Parameters {
 		out := make(ansibleapp.Parameters)
 		for k, v := range in {
@@ -218,17 +219,36 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 
 	// These aren't the droids you're looking for...
-	parameters := JediMindTrick(req.Parameters)
+	bind_params := JediMindTrick(req.Parameters)
 
 	// binding_id is the id of the binding.
 	// the instanceUUID is the previously provisioned service id.
 	//
 	// See if the service instance still exists, if not send back a badrequest.
 
-	if _, err := a.dao.GetServiceInstance(instanceUUID.String()); err != nil {
+	service, err := a.dao.GetServiceInstance(instanceUUID.String())
+	if err != nil {
 		// TODO: need to figure out how find out if an instance exists or not
 		return nil, err
 	}
+
+	// GET SERVICE get provision parameters
+	// get account parameter. it will be the id of the accounts in the
+	// provision. get that to create the bind args.
+
+	// build Binding args:
+	// {
+	//     provision_params {} same as what was stored in etcd
+	//     aone_user
+	//     aone_pass
+	//     atwo_user
+	//     atwo_pass
+	//	   bind_params {}
+	//	 }
+	// asbcli passes in user: aone, which bind passes to ansibleapp
+	params := make(ansibleapp.Parameters)
+	params["provision_params"] = service.Parameters
+	params["bind_params"] = bind_params
 
 	//
 	// Create a BindingInstance with a reference to the serviceinstance.
@@ -242,7 +262,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	bindingInstance := &ansibleapp.BindInstance{
 		Id:         bindingUUID,
 		ServiceId:  instanceUUID,
-		Parameters: parameters,
+		Parameters: &params,
 	}
 
 	// if binding instance exists, and the parameters are the same return: 200.
@@ -252,8 +272,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 	// once we create the binding instance, we call ansibleapp.Bind
 
-	err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance)
-	if err != nil {
+	if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
 		return nil, err
 	}
 
@@ -283,8 +302,17 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	*/
 
 	// TODO: what the hell does bind really need from me?
-	err = ansibleapp.Bind(nil, parameters, a.clusterConfig, a.log)
-	return &BindResponse{Credentials: nil}, nil
+	// call bind on ansibleapp passing in bind args
+
+	// it returns connect user, pass, db
+	// I return user, pass, db to the asbcli
+	// asbcli should pass the variables in
+
+	bindData, err := ansibleapp.Bind(&params, a.clusterConfig, a.log)
+	if err != nil {
+		return nil, err
+	}
+	return &BindResponse{Credentials: bindData.Credentials}, nil
 }
 
 func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) error {

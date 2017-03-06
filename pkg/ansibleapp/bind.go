@@ -1,8 +1,6 @@
 package ansibleapp
 
-import (
-	"github.com/op/go-logging"
-)
+import "github.com/op/go-logging"
 
 // TODO: Figure out the right way to allow ansibleapp to log
 // It's passed in here, but that's a hard coupling point to
@@ -10,9 +8,9 @@ import (
 // Maybe ansibleapp defines its own interface and accepts that optionally
 // Little looser, but still not great
 func Bind(
-	spec *Spec, parameters *Parameters,
+	parameters *Parameters,
 	clusterConfig ClusterConfig, log *logging.Logger,
-) error {
+) (*BindData, error) {
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")
@@ -44,5 +42,14 @@ func Bind(
 
 		log.Info(string(output))
 	*/
-	return nil
+
+	/*
+		we're going to have to parse the output from the run command to create the
+		BindData.
+	*/
+	return buildBindData(nil)
+}
+
+func buildBindData(output []byte) (*BindData, error) {
+	return &BindData{}, nil
 }
