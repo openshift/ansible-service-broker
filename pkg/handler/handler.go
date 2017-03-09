@@ -18,18 +18,21 @@ type handler struct {
 }
 
 func NewHandler(b broker.Broker) http.Handler {
-	h := handler{broker: b}
+	h := handler{
+		router: *mux.NewRouter(),
+		broker: b,
+	}
 
-	// TODO: handle X-Broker-API-Version header, currently poorly defined
-	root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()
+	// TODO: Reintroduce router restriction based on API version when settled upstream
+	//root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()
 
-	root.HandleFunc("/v2/bootstrap", h.bootstrap).Methods("POST")
-	root.HandleFunc("/v2/catalog", h.catalog).Methods("GET")
-	root.HandleFunc("/v2/service_instances/{instance_uuid}", h.provision).Methods("PUT")
-	root.HandleFunc("/v2/service_instances/{instance_uuid}", h.update).Methods("PATCH")
-	root.HandleFunc("/v2/service_instances/{instance_uuid}", h.deprovision).Methods("DELETE")
-	root.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}", h.bind).Methods("PUT")
-	root.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}", h.unbind).Methods("DELETE")
+	h.router.HandleFunc("/v2/bootstrap", h.bootstrap).Methods("POST")
+	h.router.HandleFunc("/v2/catalog", h.catalog).Methods("GET")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", h.provision).Methods("PUT")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", h.update).Methods("PATCH")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", h.deprovision).Methods("DELETE")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}", h.bind).Methods("PUT")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}", h.unbind).Methods("DELETE")
 
 	return h
 }
