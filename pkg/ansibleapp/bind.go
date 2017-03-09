@@ -1,6 +1,11 @@
 package ansibleapp
 
-import "github.com/op/go-logging"
+import (
+	b64 "encoding/base64"
+	"encoding/json"
+	"github.com/op/go-logging"
+	"strings"
+)
 
 // TODO: Figure out the right way to allow ansibleapp to log
 // It's passed in here, but that's a hard coupling point to
@@ -47,9 +52,54 @@ func Bind(
 		we're going to have to parse the output from the run command to create the
 		BindData.
 	*/
-	return buildBindData(nil)
+	output := []byte(`
+Login failed (401 Unauthorized)
+
+PLAY [all] *********************************************************************
+
+TASK [setup] *******************************************************************
+ok: [localhost]
+
+TASK [Bind] ********************************************************************
+changed: [localhost]
+
+TASK [debug] *******************************************************************
+ok: [localhost] => {
+    "msg": "<BIND_CREDENTIALS>eyJkYiI6ICJmdXNvcl9ndWVzdGJvb2tfZGIiLCAidXNlciI6ICJkdWRlcl90d28iLCAicGFzcyI6ICJkb2c4dHdvIn0=</BIND_CREDENTIALS>"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=1    unreachable=0    failed=0   
+`)
+	return buildBindData(output)
 }
 
 func buildBindData(output []byte) (*BindData, error) {
-	return &BindData{}, nil
+	// parse the output
+	result, err := decodeOutput(output)
+	if err != nil {
+		return nil, err
+	}
+	fu := make(map[string]interface{})
+	for k, v := range result {
+		fu[k] = v
+	}
+
+	return &BindData{Credentials: fu}, nil
+}
+
+func decodeOutput(output []byte) (map[string]string, error) {
+	str := string(output)
+	startIdx := strings.Index(str, "<BIND_CREDENTIALS>")
+	startOffset := startIdx + len("<BIND_CREDENTIALS>")
+	endIdx := strings.Index(str, "</BIND_CREDENTIALS>")
+
+	decodedjson, err := b64.StdEncoding.DecodeString(str[startOffset:endIdx])
+	if err != nil {
+		return nil, err
+	}
+
+	decoded := make(map[string]string)
+	json.Unmarshal(decodedjson, &decoded)
+	return decoded, nil
 }
