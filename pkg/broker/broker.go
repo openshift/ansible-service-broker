@@ -228,7 +228,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 
 	service, err := a.dao.GetServiceInstance(instanceUUID.String())
 	if err != nil {
-		a.log.Error("Couldn't find a service instance: ", err.Message())
+		a.log.Error("Couldn't find a service instance: ", err)
 		// TODO: need to figure out how find out if an instance exists or not
 		return nil, err
 	}
