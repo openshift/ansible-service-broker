@@ -221,18 +221,12 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 
 	// GET SERVICE get provision parameters
-	// get account parameter. it will be the id of the accounts in the
-	// provision. get that to create the bind args.
 
-	// build Binding args:
+	// build bind parameters args:
 	// {
-	//     provision_params {} same as what was stored in etcd
-	//     aone_user
-	//     aone_pass
-	//     atwo_user
-	//     atwo_pass
-	//	   bind_params {}
-	//	 }
+	//     provision_params: {} same as what was stored in etcd
+	//	   bind_params: {}
+	// }
 	// asbcli passes in user: aone, which bind passes to ansibleapp
 	params := make(ansibleapp.Parameters)
 	params["provision_params"] = instance.Parameters
@@ -240,11 +234,6 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 
 	//
 	// Create a BindingInstance with a reference to the serviceinstance.
-	//
-	// BindInstance:
-	// Id: uuid.UUID = bindingUUID
-	// serviceId: uuid.UUID = instanceUUID
-	// Parameters Parameters = req.Parameters (might need jedimindtrick)
 	//
 
 	bindingInstance := &ansibleapp.BindInstance{
@@ -265,41 +254,21 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 
 	/*
-		   type BindRequest struct {
-				ServiceID uuid.UUID `json:"service_id"`
-				PlanID    uuid.UUID `json:"plan_id"`
-				// Deprecated: AppID deprecated in favor of BindResource.AppID
-				AppID uuid.UUID `json:"app_guid,omitempty"`
+		NOTE:
 
-				BindResource struct {
-					AppID uuid.UUID `json:"app_guid,omitempty"`
-					Route string    `json:"route,omitempty"`
-				} `json:"bind_resource,omitempty"`
-				Parameters map[string]string `json:"parameters,omitempty"`
-			}
-	*/
-
-	/*
 		type BindResponse struct {
 		    Credentials     map[string]interface{} `json:"credentials,omitempty"`
 		    SyslogDrainURL  string                 `json:"syslog_drain_url,omitempty"`
 		    RouteServiceURL string                 `json:"route_service_url,omitempty"`
 		    VolumeMounts    []interface{}          `json:"volume_mounts,omitempty"`
 		}
-
 	*/
-
-	// TODO: what the hell does bind really need from me?
-	// call bind on ansibleapp passing in bind args
-
-	// it returns connect user, pass, db
-	// I return user, pass, db to the asbcli
-	// asbcli should pass the variables in
 
 	bindData, err := ansibleapp.Bind(instance, &params, a.clusterConfig, a.log)
 	if err != nil {
 		return nil, err
 	}
+
 	return &BindResponse{Credentials: bindData.Credentials}, nil
 }
 
