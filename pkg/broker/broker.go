@@ -208,25 +208,12 @@ func (a AnsibleBroker) validateDeprovision(id string) error {
 
 func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {
 
-	// HACK: Figure out map[string]string -> Parameters typecast, because
-	// this is terrible
-	var JediMindTrick = func(in map[string]string) *ansibleapp.Parameters {
-		out := make(ansibleapp.Parameters)
-		for k, v := range in {
-			out[k] = v
-		}
-		return &out
-	}
-
-	// These aren't the droids you're looking for...
-	bind_params := JediMindTrick(req.Parameters)
-
 	// binding_id is the id of the binding.
 	// the instanceUUID is the previously provisioned service id.
 	//
 	// See if the service instance still exists, if not send back a badrequest.
 
-	service, err := a.dao.GetServiceInstance(instanceUUID.String())
+	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
 	if err != nil {
 		a.log.Error("Couldn't find a service instance: ", err)
 		// TODO: need to figure out how find out if an instance exists or not
@@ -248,8 +235,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//	 }
 	// asbcli passes in user: aone, which bind passes to ansibleapp
 	params := make(ansibleapp.Parameters)
-	params["provision_params"] = service.Parameters
-	params["bind_params"] = bind_params
+	params["provision_params"] = instance.Parameters
+	params["bind_params"] = req.Parameters
 
 	//
 	// Create a BindingInstance with a reference to the serviceinstance.
@@ -309,7 +296,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	// I return user, pass, db to the asbcli
 	// asbcli should pass the variables in
 
-	bindData, err := ansibleapp.Bind(&params, a.clusterConfig, a.log)
+	bindData, err := ansibleapp.Bind(instance, &params, a.clusterConfig, a.log)
 	if err != nil {
 		return nil, err
 	}
