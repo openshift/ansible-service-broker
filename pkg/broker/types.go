@@ -96,7 +96,7 @@ type BindRequest struct {
 		AppID uuid.UUID `json:"app_guid,omitempty"`
 		Route string    `json:"route,omitempty"`
 	} `json:"bind_resource,omitempty"`
-	Parameters map[string]string `json:"parameters,omitempty"`
+	Parameters ansibleapp.Parameters `json:"parameters,omitempty"`
 }
 
 type BindResponse struct {
