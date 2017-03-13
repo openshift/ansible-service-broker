@@ -269,6 +269,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		return nil, err
 	}
 
+	// need to change to return the appropriate section depending on what Bind
+	// returns.
 	return &BindResponse{Credentials: bindData.Credentials}, nil
 }
 
