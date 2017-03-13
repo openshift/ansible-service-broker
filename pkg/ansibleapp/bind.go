@@ -3,6 +3,7 @@ package ansibleapp
 import (
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/op/go-logging"
 	"strings"
@@ -67,6 +68,18 @@ func decodeOutput(output []byte) (map[string]string, error) {
 	startIdx := strings.Index(str, "<BIND_CREDENTIALS>")
 	startOffset := startIdx + len("<BIND_CREDENTIALS>")
 	endIdx := strings.Index(str, "</BIND_CREDENTIALS>")
+
+	if startIdx < 0 || endIdx < 0 {
+		// look for BIND_ERROR
+		startIdx = strings.Index(str, "<BIND_ERROR>")
+		startOffset := startIdx + len("<BIND_ERROR>")
+		endIdx := strings.Index(str, "</BIND_ERROR>")
+		if startIdx > -1 && endIdx > -1 {
+			return nil, errors.New(str[startOffset:endIdx])
+		} else {
+			return nil, errors.New("Unable to parse output")
+		}
+	}
 
 	decodedjson, err := b64.StdEncoding.DecodeString(str[startOffset:endIdx])
 	if err != nil {
