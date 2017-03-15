@@ -71,6 +71,22 @@ func AssertFalse(t *testing.T, a interface{}, message ...string) {
 	t.Fatal(msg)
 }
 
+func AssertNotNil(t *testing.T, a interface{}, message ...string) {
+	if a != nil {
+		return
+	}
+
+	var msg string
+	if len(message) != 0 {
+		msg = message[0]
+	}
+
+	if len(message) == 0 {
+		msg = fmt.Sprintf("%v is nil!", a)
+	}
+	t.Fatal(msg)
+}
+
 func StripNewline(input string) string {
 	re := regexp.MustCompile("\\n")
 	return re.ReplaceAllString(input, "")

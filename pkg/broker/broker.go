@@ -2,6 +2,7 @@ package broker
 
 import (
 	"fmt"
+
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
 	"github.com/op/go-logging"
@@ -206,7 +207,71 @@ func (a AnsibleBroker) validateDeprovision(id string) error {
 }
 
 func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {
-	return nil, notImplemented
+
+	// binding_id is the id of the binding.
+	// the instanceUUID is the previously provisioned service id.
+	//
+	// See if the service instance still exists, if not send back a badrequest.
+
+	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
+	if err != nil {
+		a.log.Error("Couldn't find a service instance: ", err)
+		// TODO: need to figure out how find out if an instance exists or not
+		return nil, err
+	}
+
+	// GET SERVICE get provision parameters
+
+	// build bind parameters args:
+	// {
+	//     provision_params: {} same as what was stored in etcd
+	//	   bind_params: {}
+	// }
+	// asbcli passes in user: aone, which bind passes to ansibleapp
+	params := make(ansibleapp.Parameters)
+	params["provision_params"] = *instance.Parameters
+	params["bind_params"] = req.Parameters
+
+	//
+	// Create a BindingInstance with a reference to the serviceinstance.
+	//
+
+	bindingInstance := &ansibleapp.BindInstance{
+		Id:         bindingUUID,
+		ServiceId:  instanceUUID,
+		Parameters: &params,
+	}
+
+	// if binding instance exists, and the parameters are the same return: 200.
+	// if binding instance exists, and the parameters are different return: 409.
+	//
+	// return 201 when we're done.
+	//
+	// once we create the binding instance, we call ansibleapp.Bind
+
+	if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
+		return nil, err
+	}
+
+	/*
+		NOTE:
+
+		type BindResponse struct {
+		    Credentials     map[string]interface{} `json:"credentials,omitempty"`
+		    SyslogDrainURL  string                 `json:"syslog_drain_url,omitempty"`
+		    RouteServiceURL string                 `json:"route_service_url,omitempty"`
+		    VolumeMounts    []interface{}          `json:"volume_mounts,omitempty"`
+		}
+	*/
+
+	bindData, err := ansibleapp.Bind(instance, &params, a.clusterConfig, a.log)
+	if err != nil {
+		return nil, err
+	}
+
+	// need to change to return the appropriate section depending on what Bind
+	// returns.
+	return &BindResponse{Credentials: bindData.Credentials}, nil
 }
 
 func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) error {

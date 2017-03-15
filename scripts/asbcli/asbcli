@@ -110,7 +110,7 @@ class App(object):
         answers = self._get_answers(service)
         print 'Service configured! Requesting broker to provision...'
         res = self._req_provision(service['id'], answers)
-        print 'Provision returned status code: %s' % res.status_code
+        print 'Provision returned status code: %s, id [%s]' % (res.status_code, service['id'])
 
         if res.status_code != 201 or res.status_code == 200:
             print 'ERROR: Got a non-2xx code back from the broker...'

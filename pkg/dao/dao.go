@@ -2,11 +2,12 @@ package dao
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/coreos/etcd/client"
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/op/go-logging"
 	"golang.org/x/net/context"
-	"time"
 )
 
 type Config struct {
@@ -187,6 +188,39 @@ func (d *Dao) DeleteServiceInstance(id string) error {
 	return err
 }
 
+func (d *Dao) GetBindInstance(id string) (*ansibleapp.BindInstance, error) {
+	var raw string
+	var err error
+	if raw, err = d.GetRaw(bindInstanceKey(id)); err != nil {
+		return nil, err
+	}
+
+	spec := &ansibleapp.BindInstance{}
+	err = ansibleapp.LoadJSON(raw, spec)
+	if err != nil {
+		return nil, err
+	}
+
+	return spec, nil
+}
+
+func (d *Dao) SetBindInstance(
+	id string, bindInstance *ansibleapp.BindInstance,
+) error {
+	payload, err := ansibleapp.DumpJSON(bindInstance)
+	if err != nil {
+		return err
+	}
+
+	return d.SetRaw(bindInstanceKey(id), payload)
+}
+
+func (d *Dao) DeleteBindInstance(id string) error {
+	d.log.Debug(fmt.Sprintf("Dao::DeleteBindInstance -> [ %s ]", id))
+	_, err := d.kapi.Delete(context.Background(), bindInstanceKey(id), nil)
+	return err
+}
+
 ////////////////////////////////////////////////////////////
 // Key generators
 ////////////////////////////////////////////////////////////
@@ -196,4 +230,8 @@ func specKey(id string) string {
 
 func serviceInstanceKey(id string) string {
 	return fmt.Sprintf("/service_instance/%s", id)
+}
+
+func bindInstanceKey(id string) string {
+	return fmt.Sprintf("/bind_instance/%s", id)
 }
