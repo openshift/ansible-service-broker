@@ -88,8 +88,6 @@ type BindInstance struct {
 	Id         uuid.UUID   `json:"id"`
 	ServiceId  uuid.UUID   `json:"service_id"`
 	Parameters *Parameters `json:"parameters"`
-	// v---  not sure if I need the following ---v
-	//Spec *Spec `json:"spec"`
 }
 
 func LoadJSON(payload string, obj interface{}) error {
