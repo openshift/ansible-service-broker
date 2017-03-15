@@ -59,8 +59,8 @@ def create_binding_record(creds, svc_record):
         'project_name': svc_record['answers']['project_name'],
         'binding_key': consumer_binding_key(svc_record),
         'mongo_db': creds['db'],
-        'mongo_user': creds['db'],
-        'mongo_pass': creds['db'],
+        'mongo_user': creds['user'],
+        'mongo_pass': creds['pass'],
     }
 
 class App(object):
@@ -140,8 +140,37 @@ class App(object):
                 break
         catalog_entry = self.catalog[opt - 1]
         service = catalog_entry['service']
+
+        binding_recs = self._records['binding']
+        use_binding = self._prompt_binding()
+        sel_binding = None
+
+        if use_binding:
+            # TODO: HACK, bad magic value. Need to get this key dynamically
+            binding_opts = [(idx+1, key, binding_recs[key]['mongo_user'])
+                    for idx, key in
+                    enumerate(binding_recs)]
+
+            opt = None
+            valid_choices = [binding[0] for binding in binding_opts]
+            while True:
+                print 'Select a binding to use:'
+                self._print_binding_menu(binding_opts)
+                opt = int(raw_input('# '))  # TODO: Do this better.
+
+                if int(opt) not in valid_choices:
+                    print 'ERROR: Invalid choice!'
+                else:
+                    break
+
+            binding_opt = binding_opts[opt - 1]
+            sel_binding = binding_recs[binding_opt[1]]
+
         print '[ %s ] selected for provisioning...' % catalog_entry['name']
-        answers = self._get_answers(service)
+        answers, using_some_bind = self._get_prov_answers(service, sel_binding)
+
+        if using_some_bind:
+            print 'Using binding credentials.'
         print 'Service configured! Requesting broker to provision...'
         res, instance_id = self._req_provision(service['id'], answers)
         print 'Provision returned status code: %s' % res.status_code
@@ -162,6 +191,18 @@ class App(object):
         else:
             print 'ERROR: Got a non-2xx code back from the broker...'
             return True
+
+    def _prompt_binding(self):
+        binding_recs = self._records['binding']
+        if len(binding_recs) != 0:
+            use_binding = None
+            while True:
+                use_binding = raw_input("Do you want to use an existing binding? [y/n] # ")
+                if use_binding == 'y' or use_binding == 'n':
+                    break
+                else:
+                    print 'ERROR: Select y or n.'
+            return use_binding == 'y'
 
     def _cmd_bind(self):
         svc_instances = self._records['service']
@@ -223,22 +264,33 @@ class App(object):
         }
         self._drop_records()
 
-    def _get_answers(self, service):
-        print 'Configure your service:'
+    def _get_prov_answers(self, service, sel_binding):
+        if not sel_binding:
+            print 'Configure your service:'
 
+        using_some_bind = False
         answers = {}
         for param in service['metadata']['parameters']:
+            # Accept binding value for param if its present, otherwise prompt
+            param_name = param['name']
+            binding_match = sel_binding.get(param_name) \
+                    if sel_binding else None
+            if binding_match:
+                answers[param_name] = binding_match
+                using_some_bind = True
+                continue # skip prompt if we're accepting val from binding
+
             answer = None
             while True:
                 supports_default = param.get('default') is not None
 
                 if param['required'] is False and not supports_default:
-                    query = '%s (generated if blank) # ' % param['name']
+                    query = '%s (generated if blank) # ' % param_name
                 elif supports_default:
                     query = '%s (default: %s) # ' % \
-                        (param['name'], param['default'])
+                        (param_name, param['default'])
                 else:
-                    query = '%s # ' % param['name']
+                    query = '%s # ' % param_name
                 answer = raw_input(query)
 
                 # TODO: This is fugly. Fix it.
@@ -253,7 +305,7 @@ class App(object):
                 elif answer == '' and supports_default:
                     answer = param['default']
 
-                answers[param['name']] = answer
+                answers[param_name] = answer
                 break
 
         _answers = answers.copy()
@@ -261,7 +313,7 @@ class App(object):
             if v == '':
                 del _answers[k]
 
-        return _answers
+        return (_answers, using_some_bind)
 
     def _get_bind_answers(self):
         ############################################################
@@ -462,6 +514,10 @@ class App(object):
     def _print_bindable_services(self, opts):
         for svc in opts:
             print '  %d | %s | %s' % (svc[0], svc[2], svc[1])
+
+    def _print_binding_menu(self, opts):
+        for bb in opts:
+            print '  %d | %s | %s' % (bb[0], bb[2], bb[1])
 
     def _url(self, path):
         return 'http://%s/v2%s' % (self.broker_address, path)
