@@ -229,7 +229,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	// }
 	// asbcli passes in user: aone, which bind passes to ansibleapp
 	params := make(ansibleapp.Parameters)
-	params["provision_params"] = instance.Parameters
+	params["provision_params"] = *instance.Parameters
 	params["bind_params"] = req.Parameters
 
 	//

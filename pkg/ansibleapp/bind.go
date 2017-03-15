@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/op/go-logging"
+	"regexp"
 	"strings"
+	"time"
 )
 
 // TODO: Figure out the right way to allow ansibleapp to log
@@ -43,9 +45,48 @@ func Bind(
 		return nil, err
 	}
 
-	log.Info(string(output))
+	log.Info("{" + string(output) + "}")
 
-	return buildBindData(output)
+	log.Notice("Calling getPodName")
+	podname, _ := getPodName(output, log)
+	log.Notice("Calling monitorOutput on " + podname)
+	bindout, _ := monitorOutput(podname)
+	log.Info(string(bindout))
+
+	// HACK ALERT!
+	bd, err := buildBindData(bindout)
+	if err != nil {
+		// HACK: this is HORRIBLE. but there is definitely a time between a bind
+		// and when the container is up.
+		time.Sleep(5 * time.Second)
+		log.Warning("Trying to monitor the output again on " + podname)
+		bindout, _ = monitorOutput(podname)
+		log.Info(string(bindout))
+		return buildBindData(bindout)
+	}
+
+	return bd, err
+}
+
+// HACK: this really is a crappy way of getting output
+func getPodName(output []byte, log *logging.Logger) (string, error) {
+	r, err := regexp.Compile(`^pod[ \"]*(.*?)[ \"]*created`)
+	if err != nil {
+		return "", err
+	}
+
+	podname := r.FindStringSubmatch(string(output))
+
+	if log != nil {
+		log.Notice(fmt.Sprintf("%v", podname))
+		log.Notice(fmt.Sprintf("%d", (len(podname) - 1)))
+	}
+
+	return podname[len(podname)-1], nil
+}
+
+func monitorOutput(podname string) ([]byte, error) {
+	return runCommand("oc", "logs", "-f", podname)
 }
 
 func buildBindData(output []byte) (*BindData, error) {
