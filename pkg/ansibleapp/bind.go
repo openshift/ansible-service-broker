@@ -46,9 +46,9 @@ func Bind(
 
 	log.Info("{" + string(output) + "}")
 
-	log.Notice("Calling getPodName")
+	log.Debug("Calling getPodName")
 	podname, _ := getPodName(output, log)
-	log.Notice("Calling monitorOutput on " + podname)
+	log.Debug("Calling monitorOutput on " + podname)
 	bindout, _ := monitorOutput(podname)
 	log.Info(string(bindout))
 
@@ -77,8 +77,8 @@ func getPodName(output []byte, log *logging.Logger) (string, error) {
 	podname := r.FindStringSubmatch(string(output))
 
 	if log != nil {
-		log.Notice(fmt.Sprintf("%v", podname))
-		log.Notice(fmt.Sprintf("%d", (len(podname) - 1)))
+		log.Debug(fmt.Sprintf("%v", podname))
+		log.Debug(fmt.Sprintf("%d", (len(podname) - 1)))
 	}
 
 	return podname[len(podname)-1], nil
