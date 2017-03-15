@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/op/go-logging"
 	"regexp"
 	"strings"
 	"time"
@@ -117,9 +116,8 @@ func decodeOutput(output []byte) (map[string]string, error) {
 		endIdx := strings.Index(str, "</BIND_ERROR>")
 		if startIdx > -1 && endIdx > -1 {
 			return nil, errors.New(str[startOffset:endIdx])
-		} else {
-			return nil, errors.New("Unable to parse output")
 		}
+		return nil, errors.New("Unable to parse output")
 	}
 
 	decodedjson, err := b64.StdEncoding.DecodeString(str[startOffset:endIdx])
