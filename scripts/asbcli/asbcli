@@ -4,11 +4,14 @@ import argparse
 import uuid
 import requests
 import getpass
+import os
 import sys
+import json
 
 from subprocess import Popen, PIPE
 from distutils import spawn
 
+RECORDS_FILE = '/tmp/asbcli.dat.json'
 BROKER_IMAGE = 'ansibleapp/ansible-service-broker-ansibleapp'
 
 BROKER_HEADERS = {
@@ -39,14 +42,19 @@ class App(object):
         self.broker_address = broker_address
         self.catalog = None
         self.opts = {
-                'b': ('bootstrap', self._cmd_bootstrap),
+                't': ('bootstrap', self._cmd_bootstrap),
                 'l': ('list services', self._cmd_list_services),
                 'p': ('provision service', self._cmd_provision),
+                'b': ('bind service', self._cmd_bind),
+                'd': ('drop records', self._cmd_drop_records),
                 '?': ('show menu', self._cmd_show_menu)
         }
+        self._records = None
 
     def run(self):
         opt = ''
+
+        self._load_records()
 
         self._cmd_show_menu()
         while opt != 'q':
@@ -109,14 +117,39 @@ class App(object):
         print '[ %s ] selected for provisioning...' % catalog_entry['name']
         answers = self._get_answers(service)
         print 'Service configured! Requesting broker to provision...'
-        res = self._req_provision(service['id'], answers)
-        print 'Provision returned status code: %s, id [%s]' % (res.status_code, service['id'])
+        res, instance_id = self._req_provision(service['id'], answers)
+        print 'Provision returned status code: %s' % res.status_code
+        print 'service_id: %s' % service['id']
+        print 'instance_id: %s' % instance_id
+
+        service_record = {
+            'service_id': service['id'],
+            'answers': answers,
+        }
+        self._set_service_record(instance_id, service_record)
+        self._save_records()
 
         if res.status_code != 201 or res.status_code == 200:
             print 'ERROR: Got a non-2xx code back from the broker...'
+            return True
         else:
             print 'Broker reported provisioning success!'
-            return True  # tell app loop to quit
+            return False
+
+    def _cmd_bind(self):
+        if not self.catalog:
+            print ('No services loaded in client,'
+                   ' requesting catalog from broker...')
+            self._req_catalog()
+        print 'derp'
+
+    def _cmd_drop_records(self):
+        self._records = {
+            'service': {},
+            'binding': {},
+        }
+
+        self._drop_records()
 
     def _get_answers(self, service):
         print 'Configure your service:'
@@ -126,10 +159,6 @@ class App(object):
             answer = None
             while True:
                 supports_default = param['default'] is not None
-
-                # print "name: %s" % param['name']
-                # print "required: %s" % param['required']
-                # print "supports_default: %s" % supports_default
 
                 if param['required'] is False and not supports_default:
                     query = '%s (generated if blank) # ' % param['name']
@@ -177,6 +206,44 @@ class App(object):
         } for idx, service in enumerate(res.json()['services'])]
         print 'Loaded %d services from broker catalog:' % len(self.catalog)
 
+    def _set_service_record(self, key, value):
+        self._records['service'][key] = value
+
+    def _get_service_record(self, key):
+        return self._records['service'][key];
+
+    def _set_binding_record(self, key, value):
+        self._records['binding'][key] = value
+
+    def _get_binding_record(self, key):
+        return self._records['binding'][key];
+
+    def _save_records(self):
+        print "Saving records to file: %s" % RECORDS_FILE
+        with open(RECORDS_FILE, 'w') as dat_file:
+            json.dump(self._records, dat_file)
+
+    def _load_records(self):
+        if not os.path.exists(RECORDS_FILE):
+            print "NOTE: Records file does not exist, cannot load"
+            if not self._records:
+                self._records = {
+                    'service': {},
+                    'binding': {},
+                }
+            return
+
+        print "Loading records file: %s" % RECORDS_FILE
+        with open(RECORDS_FILE, 'r') as dat_file:
+            self._records = json.load(dat_file)
+
+    def _drop_records(self):
+        print "Dropping records file: %s" %  RECORDS_FILE
+        try:
+            os.remove(RECORDS_FILE)
+        except OSError:
+            pass
+
 ############################################################
 # 6 instanceUUID="688eea24-9cf9-43e3-9942-d1863b2a16af"
 # 7 planUUID="4c10ff42-be89-420a-9bab-27a9bef9aed8"
@@ -208,7 +275,7 @@ class App(object):
             'service_id': service_id,
             'parameters': answers
         }
-        return req(self._url(path), verb='put', json=post_body)
+        return (req(self._url(path), verb='put', json=post_body), instance_id)
 
     def _print_service_options(self):
         if self.catalog:
@@ -254,7 +321,6 @@ def subcmd_up_parser(parser, subcmd):
 
 
 def cmdrun_connect(**kwargs):
-    print "cmdrun_connect"
     App(kwargs['broker_address']).run()
 
 
