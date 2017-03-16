@@ -23,6 +23,7 @@ AVAILABLE_COMMANDS = {
     'up': 'Bring up a broker in a target cluster'
 }
 
+
 def req(url, **kwargs):
     # merge in broker headers if provided
     headers = BROKER_HEADERS
@@ -35,12 +36,14 @@ def req(url, **kwargs):
 
     return getattr(requests, verb)(url, **kwargs)
 
+
 def consumer_binding_key(svc_record):
     # Need to perform a conversion from whatever binding key
     # was provided to the k8s delivered equiv env var
     # i.e external-mlab -> EXTERNAL_MLAB
     key_in = svc_record['answers']['binding_key']
     return key_in.upper().replace('-', '_')
+
 
 def create_binding_record(creds, svc_record):
     ############################################################
@@ -62,6 +65,7 @@ def create_binding_record(creds, svc_record):
         'mongo_user': creds['user'],
         'mongo_pass': creds['pass'],
     }
+
 
 class App(object):
     def __init__(self, broker_address):
@@ -148,8 +152,8 @@ class App(object):
         if use_binding:
             # TODO: HACK, bad magic value. Need to get this key dynamically
             binding_opts = [(idx+1, key, binding_recs[key]['mongo_user'])
-                    for idx, key in
-                    enumerate(binding_recs)]
+                            for idx, key in
+                            enumerate(binding_recs)]
 
             opt = None
             valid_choices = [binding[0] for binding in binding_opts]
@@ -207,8 +211,8 @@ class App(object):
     def _cmd_bind(self):
         svc_instances = self._records['service']
         bindable_opts = [(idx+1, key, svc_instances[key]['name'])
-                for idx, key in
-                enumerate(self._records['service'].keys())]
+                         for idx, key in
+                         enumerate(self._records['service'].keys())]
 
         if len(bindable_opts) == 0:
             print ('No services have been provisioned;'
@@ -274,11 +278,11 @@ class App(object):
             # Accept binding value for param if its present, otherwise prompt
             param_name = param['name']
             binding_match = sel_binding.get(param_name) \
-                    if sel_binding else None
+                if sel_binding else None
             if binding_match:
                 answers[param_name] = binding_match
                 using_some_bind = True
-                continue # skip prompt if we're accepting val from binding
+                continue  # skip prompt if we're accepting val from binding
 
             answer = None
             while True:
@@ -373,7 +377,6 @@ class App(object):
 
         return _answers
 
-
     def _req_bootstrap(self):
         res = req(self._url('/bootstrap'), verb='post')
         spec_count = res.json()['SpecCount']
@@ -393,13 +396,13 @@ class App(object):
         self._records['service'][key] = value
 
     def _get_service_record(self, key):
-        return self._records['service'][key];
+        return self._records['service'][key]
 
     def _set_binding_record(self, key, value):
         self._records['binding'][key] = value
 
     def _get_binding_record(self, key):
-        return self._records['binding'][key];
+        return self._records['binding'][key]
 
     def _save_records(self):
         print "Saving records to file: %s" % RECORDS_FILE
@@ -421,7 +424,7 @@ class App(object):
             self._records = json.load(dat_file)
 
     def _drop_records(self):
-        print "Dropping records file: %s" %  RECORDS_FILE
+        print "Dropping records file: %s" % RECORDS_FILE
         try:
             os.remove(RECORDS_FILE)
         except OSError:
@@ -460,7 +463,7 @@ class App(object):
         }
         return (req(self._url(path), verb='put', json=req_body), instance_id)
 
-################################################################################
+###############################################################################
 # !/bin/bash -e
 
 # . shared.sh
@@ -468,32 +471,32 @@ class App(object):
 # mlab with params
 # instanceUUID="8c9adf85-9221-4776-aa18-aae7b7acc436"
 # req="{
-  # \"plan_id\": \"$planUUID\",
-  # \"service_id\": \"$serviceUUID\",
-  # TODO: what are the next two keys?
-  # \"app_guid\":\"\",
-  # \"bind_resource\":{},
-  # \"parameters\": {
-    # \"user\": \"acct_one\"
-  # }
+#   \"plan_id\": \"$planUUID\",
+#   \"service_id\": \"$serviceUUID\",
+#   TODO: what are the next two keys?
+#   \"app_guid\":\"\",
+#   \"bind_resource\":{},
+#   \"parameters\": {
+#     \"user\": \"acct_one\"
+#   }
 # }"
 
 # curl \
-  # -X PUT \
-  # -H 'X-Broker-API-Version: 2.9' \
-  # -H 'Content-Type: application/json' \
-  # -d "$req" \
-  # -v \
-  # http://cap.example.com:1338/v2/service_instances/$instanceUUID/service_bindings/$bindingUUID
-################################################################################
+#   -X PUT \
+#   -H 'X-Broker-API-Version: 2.9' \
+#   -H 'Content-Type: application/json' \
+#   -d "$req" \
+#   -v \
+#   http://cap.example.com:1338/v2/service_instances/$instanceUUID/service_bindings/$bindingUUID
+###############################################################################
 
     def _req_bind(self, svc_id, svc_instance_id, bind_answers):
         binding_instance_id = str(uuid.uuid4())
         plan_id = str(uuid.uuid4())
         path = '/service_instances/%s/service_bindings/%s' % \
-                (svc_instance_id, binding_instance_id)
+               (svc_instance_id, binding_instance_id)
 
-        req_body= {
+        req_body = {
             'plan_id': plan_id,
             'service_id': svc_id,
             'app_guid': '',
