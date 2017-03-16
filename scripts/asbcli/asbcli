@@ -4,11 +4,14 @@ import argparse
 import uuid
 import requests
 import getpass
+import os
 import sys
+import json
 
 from subprocess import Popen, PIPE
 from distutils import spawn
 
+RECORDS_FILE = '/tmp/asbcli.dat.json'
 BROKER_IMAGE = 'ansibleapp/ansible-service-broker-ansibleapp'
 
 BROKER_HEADERS = {
@@ -34,19 +37,54 @@ def req(url, **kwargs):
     return getattr(requests, verb)(url, **kwargs)
 
 
+def consumer_binding_key(svc_record):
+    # Need to perform a conversion from whatever binding key
+    # was provided to the k8s delivered equiv env var
+    # i.e external-mlab -> EXTERNAL_MLAB
+    key_in = svc_record['answers']['binding_key']
+    return key_in.upper().replace('-', '_')
+
+
+def create_binding_record(creds, svc_record):
+    ############################################################
+    # TODO: HACK
+    # Need to make sure parameter names line up with keys passed
+    # back from credentials so we can automatically fill in params
+    # on a provision with bind call. Again, this is only temporary
+    # until a real service catalog can be leveraged to automatically
+    # inject keys into the environment.
+    #
+    # Still will need some kind of key or label to tell the
+    # binding consumer where to look for its binding data in the
+    # environment.
+    ############################################################
+    return {
+        'project_name': svc_record['answers']['project_name'],
+        'binding_key': consumer_binding_key(svc_record),
+        'mongo_db': creds['db'],
+        'mongo_user': creds['user'],
+        'mongo_pass': creds['pass'],
+    }
+
+
 class App(object):
     def __init__(self, broker_address):
         self.broker_address = broker_address
         self.catalog = None
         self.opts = {
-                'b': ('bootstrap', self._cmd_bootstrap),
+                't': ('bootstrap', self._cmd_bootstrap),
                 'l': ('list services', self._cmd_list_services),
                 'p': ('provision service', self._cmd_provision),
+                'b': ('bind service', self._cmd_bind),
+                'd': ('drop records', self._cmd_drop_records),
                 '?': ('show menu', self._cmd_show_menu)
         }
+        self._records = None
 
     def run(self):
         opt = ''
+
+        self._load_records()
 
         self._cmd_show_menu()
         while opt != 'q':
@@ -106,30 +144,207 @@ class App(object):
                 break
         catalog_entry = self.catalog[opt - 1]
         service = catalog_entry['service']
+
+        binding_recs = self._records['binding']
+        use_binding = self._prompt_binding()
+        sel_binding = None
+
+        if use_binding:
+            # TODO: HACK, bad magic value. Need to get this key dynamically
+            binding_opts = [(idx+1, key, binding_recs[key]['mongo_user'])
+                            for idx, key in
+                            enumerate(binding_recs)]
+
+            opt = None
+            valid_choices = [binding[0] for binding in binding_opts]
+            while True:
+                print 'Select a binding to use:'
+                self._print_binding_menu(binding_opts)
+                opt = int(raw_input('# '))  # TODO: Do this better.
+
+                if int(opt) not in valid_choices:
+                    print 'ERROR: Invalid choice!'
+                else:
+                    break
+
+            binding_opt = binding_opts[opt - 1]
+            sel_binding = binding_recs[binding_opt[1]]
+
         print '[ %s ] selected for provisioning...' % catalog_entry['name']
-        answers = self._get_answers(service)
+        answers, using_some_bind = self._get_prov_answers(service, sel_binding)
+
+        if using_some_bind:
+            print 'Using binding credentials.'
         print 'Service configured! Requesting broker to provision...'
-        res = self._req_provision(service['id'], answers)
-        print 'Provision returned status code: %s, id [%s]' % (res.status_code, service['id'])
+        res, instance_id = self._req_provision(service['id'], answers)
+        print 'Provision returned status code: %s' % res.status_code
+        print 'service_id: %s' % service['id']
+        print 'instance_id: %s' % instance_id
 
-        if res.status_code != 201 or res.status_code == 200:
-            print 'ERROR: Got a non-2xx code back from the broker...'
-        else:
+        service_record = {
+            'service_id': service['id'],
+            'answers': answers,
+            'name': catalog_entry['name'],
+        }
+        self._set_service_record(instance_id, service_record)
+        self._save_records()
+
+        if res.status_code == 201:
             print 'Broker reported provisioning success!'
-            return True  # tell app loop to quit
+            return False
+        else:
+            print 'ERROR: Got a non-2xx code back from the broker...'
+            return True
 
-    def _get_answers(self, service):
-        print 'Configure your service:'
+    def _prompt_binding(self):
+        binding_recs = self._records['binding']
+        if len(binding_recs) != 0:
+            use_binding = None
+            while True:
+                use_binding = raw_input("Do you want to use an existing binding? [y/n] # ")
+                if use_binding == 'y' or use_binding == 'n':
+                    break
+                else:
+                    print 'ERROR: Select y or n.'
+            return use_binding == 'y'
 
+    def _cmd_bind(self):
+        svc_instances = self._records['service']
+        bindable_opts = [(idx+1, key, svc_instances[key]['name'])
+                         for idx, key in
+                         enumerate(self._records['service'].keys())]
+
+        if len(bindable_opts) == 0:
+            print ('No services have been provisioned;'
+                   ' nothing available for bind!')
+            return False
+
+        ############################################################
+        # -> HACK: create hardcoded list of params, prompt for answers
+        #      Longterm, need to get params from services
+        # -> _req_bind(svc_instance_id, answers)
+        # -> res, binding_instance_id
+        # -> set_binding_record(
+        #    * binding_id -> {service_instance_id, db, user, pass}
+        ############################################################
+        opt = None
+        valid_choices = [svc[0] for svc in bindable_opts]
+        while True:
+            print 'Select a service instance to bind to:'
+            self._print_bindable_services(bindable_opts)
+            opt = int(raw_input('# '))  # TODO: Do this better.
+
+            if int(opt) not in valid_choices:
+                print 'ERROR: Invalid choice!'
+            else:
+                break
+
+        svc_to_bind = bindable_opts[opt - 1]
+        svc_instance_id = svc_to_bind[1]
+        svc_record = self._records['service'][svc_instance_id]
+
+        # answers = self._get_bind_answers(service)
+        bind_answers = self._get_bind_answers()
+
+        res, binding_instance_id = self._req_bind(
+                svc_record['service_id'], svc_instance_id, bind_answers)
+
+        if res.status_code == 201:
+            print 'Broker reported binding success!'
+        else:
+            print 'ERROR: Got a non-2xx code back from the broker for bind req...'
+            return True
+
+        creds = res.json()['credentials']
+
+        binding_record = create_binding_record(creds, svc_record)
+        self._set_binding_record(binding_instance_id, binding_record)
+        self._save_records()
+
+    def _cmd_drop_records(self):
+        self._records = {
+            'service': {},
+            'binding': {},
+        }
+        self._drop_records()
+
+    def _get_prov_answers(self, service, sel_binding):
+        if not sel_binding:
+            print 'Configure your service:'
+
+        using_some_bind = False
         answers = {}
         for param in service['metadata']['parameters']:
+            # Accept binding value for param if its present, otherwise prompt
+            param_name = param['name']
+            binding_match = sel_binding.get(param_name) \
+                if sel_binding else None
+            if binding_match:
+                answers[param_name] = binding_match
+                using_some_bind = True
+                continue  # skip prompt if we're accepting val from binding
+
             answer = None
             while True:
-                supports_default = param['default'] is not None
+                supports_default = param.get('default') is not None
 
-                # print "name: %s" % param['name']
-                # print "required: %s" % param['required']
-                # print "supports_default: %s" % supports_default
+                if param['required'] is False and not supports_default:
+                    query = '%s (generated if blank) # ' % param_name
+                elif supports_default:
+                    query = '%s (default: %s) # ' % \
+                        (param_name, param['default'])
+                else:
+                    query = '%s # ' % param_name
+                answer = raw_input(query)
+
+                # TODO: This is fugly. Fix it.
+                should_pass = answer == '' and param['required'] is False \
+                    and not supports_default
+
+                if should_pass:
+                    pass
+                elif answer == '' and not supports_default:
+                    print 'ERROR: Must provide an answer for this parameter'
+                    continue
+                elif answer == '' and supports_default:
+                    answer = param['default']
+
+                answers[param_name] = answer
+                break
+
+        _answers = answers.copy()
+        for k, v in answers.iteritems():
+            if v == '':
+                del _answers[k]
+
+        return (_answers, using_some_bind)
+
+    def _get_bind_answers(self):
+        ############################################################
+        # TODO: HACK:
+        # This entire method needs to be reworked. It's hardcoded
+        # currently for external-mlab since the OpenServiceBroker
+        # spec is still a bit in flux around how method attached
+        # parameters are going to work.
+        #
+        # To support this dynamically, it also requires a potentially breaking
+        # and destabalizing change to the ansibleapp spec.
+        # This will get reviewed, ripped out and done correctly asap.
+        #
+        # So...here be dragons.
+        ############################################################
+        print 'Configure your binding:'
+
+        HARDCODED_PARAMS = [{
+            'required': True,
+            'name': 'user',
+        }]
+
+        answers = {}
+        for param in HARDCODED_PARAMS:
+            answer = None
+            while True:
+                supports_default = param.get('default') is not None
 
                 if param['required'] is False and not supports_default:
                     query = '%s (generated if blank) # ' % param['name']
@@ -177,6 +392,44 @@ class App(object):
         } for idx, service in enumerate(res.json()['services'])]
         print 'Loaded %d services from broker catalog:' % len(self.catalog)
 
+    def _set_service_record(self, key, value):
+        self._records['service'][key] = value
+
+    def _get_service_record(self, key):
+        return self._records['service'][key]
+
+    def _set_binding_record(self, key, value):
+        self._records['binding'][key] = value
+
+    def _get_binding_record(self, key):
+        return self._records['binding'][key]
+
+    def _save_records(self):
+        print "Saving records to file: %s" % RECORDS_FILE
+        with open(RECORDS_FILE, 'w') as dat_file:
+            json.dump(self._records, dat_file)
+
+    def _load_records(self):
+        if not os.path.exists(RECORDS_FILE):
+            print "NOTE: Records file does not exist, cannot load"
+            if not self._records:
+                self._records = {
+                    'service': {},
+                    'binding': {},
+                }
+            return
+
+        print "Loading records file: %s" % RECORDS_FILE
+        with open(RECORDS_FILE, 'r') as dat_file:
+            self._records = json.load(dat_file)
+
+    def _drop_records(self):
+        print "Dropping records file: %s" % RECORDS_FILE
+        try:
+            os.remove(RECORDS_FILE)
+        except OSError:
+            pass
+
 ############################################################
 # 6 instanceUUID="688eea24-9cf9-43e3-9942-d1863b2a16af"
 # 7 planUUID="4c10ff42-be89-420a-9bab-27a9bef9aed8"
@@ -203,12 +456,56 @@ class App(object):
         instance_id = str(uuid.uuid4())
         plan_id = str(uuid.uuid4())  # not clear how this is used yet, req tho
         path = '/service_instances/%s' % instance_id
-        post_body = {
+        req_body = {
             'plan_id': plan_id,
             'service_id': service_id,
             'parameters': answers
         }
-        return req(self._url(path), verb='put', json=post_body)
+        return (req(self._url(path), verb='put', json=req_body), instance_id)
+
+###############################################################################
+# !/bin/bash -e
+
+# . shared.sh
+
+# mlab with params
+# instanceUUID="8c9adf85-9221-4776-aa18-aae7b7acc436"
+# req="{
+#   \"plan_id\": \"$planUUID\",
+#   \"service_id\": \"$serviceUUID\",
+#   TODO: what are the next two keys?
+#   \"app_guid\":\"\",
+#   \"bind_resource\":{},
+#   \"parameters\": {
+#     \"user\": \"acct_one\"
+#   }
+# }"
+
+# curl \
+#   -X PUT \
+#   -H 'X-Broker-API-Version: 2.9' \
+#   -H 'Content-Type: application/json' \
+#   -d "$req" \
+#   -v \
+#   http://cap.example.com:1338/v2/service_instances/$instanceUUID/service_bindings/$bindingUUID
+###############################################################################
+
+    def _req_bind(self, svc_id, svc_instance_id, bind_answers):
+        binding_instance_id = str(uuid.uuid4())
+        plan_id = str(uuid.uuid4())
+        path = '/service_instances/%s/service_bindings/%s' % \
+               (svc_instance_id, binding_instance_id)
+
+        req_body = {
+            'plan_id': plan_id,
+            'service_id': svc_id,
+            'app_guid': '',
+            'bind_resource': {},
+            'parameters': bind_answers,
+        }
+
+        return (req(self._url(path), verb='put', json=req_body),
+                binding_instance_id)
 
     def _print_service_options(self):
         if self.catalog:
@@ -216,6 +513,14 @@ class App(object):
                 print '  %d | %s' % (service['num'], service['name'])
         else:
             print 'No available ansibleapps found!'
+
+    def _print_bindable_services(self, opts):
+        for svc in opts:
+            print '  %d | %s | %s' % (svc[0], svc[2], svc[1])
+
+    def _print_binding_menu(self, opts):
+        for bb in opts:
+            print '  %d | %s | %s' % (bb[0], bb[2], bb[1])
 
     def _url(self, path):
         return 'http://%s/v2%s' % (self.broker_address, path)
@@ -254,7 +559,6 @@ def subcmd_up_parser(parser, subcmd):
 
 
 def cmdrun_connect(**kwargs):
-    print "cmdrun_connect"
     App(kwargs['broker_address']).run()
 
 
