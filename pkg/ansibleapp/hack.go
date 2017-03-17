@@ -1,8 +1,6 @@
 package ansibleapp
 
-import (
-	"os/exec"
-)
+import "os/exec"
 
 var HardcodedClusterConfig = ClusterConfig{
 	//Target:   "cap.example.com:8443",

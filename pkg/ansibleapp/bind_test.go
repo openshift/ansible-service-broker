@@ -2,8 +2,9 @@ package ansibleapp
 
 import (
 	"fmt"
-	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
 	"testing"
+
+	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
 )
 
 func TestDecodeOutput(t *testing.T) {

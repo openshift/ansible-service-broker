@@ -5,7 +5,7 @@ import (
 
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
-	"github.com/op/go-logging"
+	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
 )
 

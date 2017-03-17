@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
-	"github.com/jessevdk/go-flags"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	flags "github.com/jessevdk/go-flags"
+	yaml "gopkg.in/yaml.v1"
 )
 
 type Args struct {

@@ -1,14 +1,15 @@
 package ansibleapp
 
 import (
-	b64 "encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/op/go-logging"
 	"regexp"
 	"strings"
 	"time"
+
+	logging "github.com/op/go-logging"
 )
 
 // TODO: Figure out the right way to allow ansibleapp to log
@@ -121,7 +122,7 @@ func decodeOutput(output []byte) (map[string]string, error) {
 		return nil, errors.New("Unable to parse output")
 	}
 
-	decodedjson, err := b64.StdEncoding.DecodeString(str[startOffset:endIdx])
+	decodedjson, err := base64.StdEncoding.DecodeString(str[startOffset:endIdx])
 	if err != nil {
 		return nil, err
 	}

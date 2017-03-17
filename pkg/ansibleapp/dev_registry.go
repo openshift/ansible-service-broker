@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/op/go-logging"
 	"net/http"
 	"strings"
+
+	logging "github.com/op/go-logging"
 )
 
 const AppsPath = "/ansibleapps"

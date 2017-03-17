@@ -1,8 +1,6 @@
 package broker
 
-import (
-	"github.com/pborman/uuid"
-)
+import "github.com/pborman/uuid"
 
 var plans = []Plan{
 	{
