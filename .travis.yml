@@ -5,4 +5,5 @@ sudo: required
 install: ./scripts/travis.sh install
 script:
   - ./scripts/travis.sh lint
+  - ./scripts/travis.sh build
   - ./scripts/travis.sh test

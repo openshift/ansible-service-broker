@@ -1,4 +1,10 @@
 #!/bin/bash
+
+#
+# travis.sh
+#
+# This script is used by travis to test the broker
+#
 action=$1
 
 export GLIDE_TARBALL="https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz"
@@ -21,7 +27,17 @@ elif [[ "$action" == "lint" ]]; then
   echo "FULL_PASS=$FULL_PASS"
   echo "================================="
   exit $FULL_PASS
-else
-  echo "No arguments passed. Nothing done."
+elif [[ "$action" == "build" ]]; then
+  echo "================================="
+  echo "             Build               "
+  echo "================================="
+    make build
+  echo "================================="
+elif [[ "$action" == "test" ]]; then
+  echo "================================="
+  echo "             Test                "
+  echo "================================="
+    make test
+  echo "================================="
 fi
 
