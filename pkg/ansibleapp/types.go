@@ -2,9 +2,10 @@ package ansibleapp
 
 import (
 	"encoding/json"
-	"github.com/op/go-logging"
+
+	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v1"
 )
 
 type Parameters map[string]interface{}

@@ -1,8 +1,6 @@
 package ansibleapp
 
-import (
-	"github.com/op/go-logging"
-)
+import logging "github.com/op/go-logging"
 
 type RHCCRegistry struct {
 	config RegistryConfig

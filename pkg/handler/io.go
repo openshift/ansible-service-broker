@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker"
-	//ke "k8s.io/kubernetes/pkg/api/errors" // HACK
 )
 
 func readRequest(r *http.Request, obj interface{}) error {

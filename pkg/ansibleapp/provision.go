@@ -2,7 +2,8 @@ package ansibleapp
 
 import (
 	"fmt"
-	"github.com/op/go-logging"
+
+	logging "github.com/op/go-logging"
 )
 
 // TODO: Figure out the right way to allow ansibleapp to log

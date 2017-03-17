@@ -3,7 +3,8 @@ package app
 import (
 	"errors"
 	"fmt"
-	"github.com/jessevdk/go-flags"
+
+	flags "github.com/jessevdk/go-flags"
 )
 
 type Args struct {
