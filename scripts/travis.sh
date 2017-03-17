@@ -31,13 +31,12 @@ elif [[ "$action" == "build" ]]; then
   echo "================================="
   echo "             Build               "
   echo "================================="
-    make build
-  echo "================================="
+  make build
+  exit $?
 elif [[ "$action" == "test" ]]; then
   echo "================================="
   echo "             Test                "
   echo "================================="
-    make test
-  echo "================================="
+  make test
 fi
 
