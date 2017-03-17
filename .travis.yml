@@ -3,7 +3,8 @@ go:
   - 1.7.x
 sudo: required
 before_install:
-  - sudo apt-get install -y btrfs-progs
+  - sudo apt-get -qq update
+  - sudo apt-get install -y btrfs-tools
 install: ./scripts/travis.sh install
 script:
   - ./scripts/travis.sh lint
