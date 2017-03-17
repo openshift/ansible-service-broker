@@ -11,6 +11,13 @@ export GLIDE_TARBALL="https://github.com/Masterminds/glide/releases/download/v0.
 export PROJECT_ROOT=$GOPATH/src/github.com/fusor/ansible-service-broker
 
 if [[ "$action" == "install" ]]; then
+
+  # HACK stolen from this PR
+  # https://github.com/pnasrat/docker/commit/6a18493259c3f201dc28fe114e592b0f14c725d1
+  sudo git clone https://git.fedorahosted.org/git/lvm2.git /usr/local/lvm2 && cd /usr/local/lvm2 && git checkout v2_02_103
+  sudo cd /usr/local/lvm2 && ./configure --enable-static-link && make device-mapper && make install_device-mapper
+
+  # return to our normal install procedures
   wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
   tar xfv /tmp/glide.tar.gz -C /tmp
   sudo mv $(find /tmp -name "glide") /usr/bin
