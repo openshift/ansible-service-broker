@@ -17,7 +17,7 @@ if [[ "$action" == "install" ]]; then
   ./autogen.sh
   ./configure
   make
-  make install
+  sudo make install
 
   # now install deps
   wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
