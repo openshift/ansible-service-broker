@@ -11,6 +11,15 @@ export GLIDE_TARBALL="https://github.com/Masterminds/glide/releases/download/v0.
 export PROJECT_ROOT=$GOPATH/src/github.com/fusor/ansible-service-broker
 
 if [[ "$action" == "install" ]]; then
+  #  build btrfs from scratch
+  git clone https://github.com/kdave/btrfs-progs.git
+  cd btrfs-progs
+  ./autogen.sh
+  ./configure
+  make
+  make install
+
+  # now install deps
   wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
   tar xfv /tmp/glide.tar.gz -C /tmp
   sudo mv $(find /tmp -name "glide") /usr/bin

@@ -4,7 +4,7 @@ go:
 sudo: required
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y btrfs-tools libdevmapper-dev
+  - sudo apt-get install -y libdevmapper-dev autoconf pkg-config e2fslibs-dev libblkid-dev zlib1g-dev liblzo2-dev asciidoc
 install: ./scripts/travis.sh install
 script:
   - ./scripts/travis.sh lint
