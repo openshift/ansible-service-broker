@@ -1,6 +1,7 @@
 language: go
 go:
   - 1.7.x
+dist: trusty
 sudo: required
 before_install:
   - sudo apt-get -qq update
