@@ -5,7 +5,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
-	yaml "gopkg.in/yaml.v1"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type Parameters map[string]interface{}

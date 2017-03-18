@@ -4,9 +4,10 @@ import (
 	"io/ioutil"
 	"os"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
-	yaml "gopkg.in/yaml.v1"
 )
 
 type Config struct {
