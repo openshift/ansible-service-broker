@@ -20,7 +20,7 @@ if [[ "$action" == "install" ]]; then
   git clone http://sourceware.org/git/lvm2.git
   cd lvm2
   ./configure
-  make install_device-mapper
+  sudo make install_device-mapper
   cd ..
 
   #  build btrfs from scratch
