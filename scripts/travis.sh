@@ -11,11 +11,13 @@ export GLIDE_TARBALL="https://github.com/Masterminds/glide/releases/download/v0.
 export PROJECT_ROOT=$GOPATH/src/github.com/fusor/ansible-service-broker
 
 if [[ "$action" == "install" ]]; then
+  cd $HOME
   # install devmapper from scratch
   git clone http://sourceware.org/git/lvm2.git
   cd lvm2
   ./configure
   make install_device-mapper
+  cd ..
 
   #  build btrfs from scratch
   git clone https://github.com/kdave/btrfs-progs.git
@@ -24,6 +26,7 @@ if [[ "$action" == "install" ]]; then
   ./configure
   make
   sudo make install
+  cd $PROJECT_ROOT
 
   # now install deps
   wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
