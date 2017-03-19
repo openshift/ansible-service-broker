@@ -2,9 +2,10 @@ package app
 
 import (
 	"errors"
-	"github.com/op/go-logging"
 	"io"
 	"os"
+
+	logging "github.com/op/go-logging"
 )
 
 type LogConfig struct {

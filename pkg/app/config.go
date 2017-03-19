@@ -1,11 +1,13 @@
 package app
 
 import (
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
-	"github.com/fusor/ansible-service-broker/pkg/dao"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+
+	yaml "gopkg.in/yaml.v2"
+
+	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/dao"
 )
 
 type Config struct {

@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/fusor/ansible-service-broker/pkg/app"
-)
+import "github.com/fusor/ansible-service-broker/pkg/app"
 
 func main() {
 	app := app.CreateApp()

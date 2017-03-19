@@ -3,10 +3,11 @@ package ansibleapp
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/op/go-logging"
-	"github.com/pborman/uuid"
 	"os"
+
+	docker "github.com/fsouza/go-dockerclient"
+	logging "github.com/op/go-logging"
+	"github.com/pborman/uuid"
 )
 
 /*

@@ -2,11 +2,12 @@ package broker
 
 import (
 	"fmt"
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
-	"github.com/pborman/uuid"
 	"os"
 	"os/exec"
 	"path"
+
+	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/pborman/uuid"
 )
 
 func RunCommand(bin string, args ...string) {

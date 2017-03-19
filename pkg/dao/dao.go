@@ -1,13 +1,13 @@
 package dao
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/coreos/etcd/client"
 	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
-	"github.com/op/go-logging"
-	"golang.org/x/net/context"
+	logging "github.com/op/go-logging"
 )
 
 type Config struct {
