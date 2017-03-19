@@ -11,8 +11,12 @@ export GLIDE_TARBALL="https://github.com/Masterminds/glide/releases/download/v0.
 export PROJECT_ROOT=$GOPATH/src/github.com/fusor/ansible-service-broker
 
 if [[ "$action" == "install" ]]; then
-  cd $HOME
+  # dash? wtf is dash? UGH! use a real shell
+  sudo rm /bin/sh
+  sudo ln -s  /bin/bash /bin/sh
+
   # install devmapper from scratch
+  cd $HOME
   git clone http://sourceware.org/git/lvm2.git
   cd lvm2
   ./configure
