@@ -89,3 +89,16 @@ func TestCatalog(t *testing.T) {
 	handler.catalog(w, r)
 	ft.AssertEqual(t, w.Code, 200, "code not equal")
 }
+
+func TestBindInvalidInstance(t *testing.T) {
+	// create handler for testing
+	b := MockBroker{"testbroker"}
+	handler := handler{*mux.NewRouter(), b}
+	ft.AssertNotNil(t, handler, "")
+
+	trr := TestRequest{Msg: "hello world", done: true}
+	r := httptest.NewRequest("PUT", "/v2/service_instance/foo/service_bindings/bar", trr)
+	w := httptest.NewRecorder()
+	handler.bind(w, r)
+	ft.AssertEqual(t, w.Code, 400, "code not equal")
+}
