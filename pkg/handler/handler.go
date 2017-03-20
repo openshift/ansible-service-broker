@@ -37,6 +37,12 @@ func NewHandler(b broker.Broker) http.Handler {
 	return h
 }
 
+type GorillaRouteHandler func(http.ResponseWriter, *http.Request)
+type VarHandler func(http.ResponseWriter, *http.Request, map[string]string)
+
+func createVarHandler(r VarHandler, map[string]string) {
+}
+
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	resp, err := h.broker.Bootstrap()
