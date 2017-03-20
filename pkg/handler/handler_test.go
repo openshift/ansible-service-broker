@@ -90,11 +90,39 @@ func TestCatalog(t *testing.T) {
 	ft.AssertEqual(t, w.Code, 200, "code not equal")
 }
 
+func TestProvision(t *testing.T) {
+	// skipping for now until we hash out the handler functions
+	t.SkipNow()
+	// create handler for testing
+	b := MockBroker{"testbroker"}
+	handler := handler{*mux.NewRouter(), b}
+	handler.router.HandleFunc("/v2/service_instance/{instance_uuid}", handler.provision).Methods("PUT")
+
+	trr := TestRequest{Msg: "hello world", done: true}
+	r := httptest.NewRequest("PUT", "http://localhost:3000/v2/service_instance/688eea24-9cf9-43e3-9942-d1863b2a16af", trr)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	t.Log(w.Code)
+	t.Log(w.Result())
+	ft.AssertEqual(t, w.Code, 200, "code not equal")
+}
+
+func TestUpdate(t *testing.T) {
+}
+
+func TestDeprovision(t *testing.T) {
+}
+
+func TestBind(t *testing.T) {
+}
+
+func TestUnbind(t *testing.T) {
+}
+
 func TestBindInvalidInstance(t *testing.T) {
 	// create handler for testing
 	b := MockBroker{"testbroker"}
 	handler := handler{*mux.NewRouter(), b}
-	ft.AssertNotNil(t, handler, "")
 
 	trr := TestRequest{Msg: "hello world", done: true}
 	r := httptest.NewRequest("PUT", "/v2/service_instance/foo/service_bindings/bar", trr)
