@@ -17,6 +17,17 @@ type handler struct {
 	broker broker.Broker
 }
 
+// making the handler methods more testable by moving the reliance of mux.Vars()
+// outside of the handlers themselves
+type GorillaRouteHandler func(http.ResponseWriter, *http.Request)
+type VarHandler func(http.ResponseWriter, *http.Request, map[string]string)
+
+func createVarHandler(r VarHandler) GorillaRouteHandler {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		r(writer, request, mux.Vars(request))
+	}
+}
+
 func NewHandler(b broker.Broker) http.Handler {
 	h := handler{
 		router: *mux.NewRouter(),
@@ -26,18 +37,20 @@ func NewHandler(b broker.Broker) http.Handler {
 	// TODO: Reintroduce router restriction based on API version when settled upstream
 	//root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()
 
-	h.router.HandleFunc("/v2/bootstrap", h.bootstrap).Methods("POST")
-	h.router.HandleFunc("/v2/catalog", h.catalog).Methods("GET")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", h.provision).Methods("PUT")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", h.update).Methods("PATCH")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", h.deprovision).Methods("DELETE")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}", h.bind).Methods("PUT")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}", h.unbind).Methods("DELETE")
+	h.router.HandleFunc("/v2/bootstrap", createVarHandler(h.bootstrap)).Methods("POST")
+	h.router.HandleFunc("/v2/catalog", createVarHandler(h.catalog)).Methods("GET")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.provision)).Methods("PUT")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.update)).Methods("PATCH")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.deprovision)).Methods("DELETE")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
+		createVarHandler(h.bind)).Methods("PUT")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
+		createVarHandler(h.unbind)).Methods("DELETE")
 
 	return h
 }
 
-func (h handler) bootstrap(w http.ResponseWriter, r *http.Request) {
+func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 	resp, err := h.broker.Bootstrap()
 	writeDefaultResponse(w, http.StatusOK, resp, err)
@@ -47,7 +60,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
 }
 
-func (h handler) catalog(w http.ResponseWriter, r *http.Request) {
+func (h handler) catalog(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 
 	resp, err := h.broker.Catalog()
@@ -55,10 +68,10 @@ func (h handler) catalog(w http.ResponseWriter, r *http.Request) {
 	writeDefaultResponse(w, http.StatusOK, resp, err)
 }
 
-func (h handler) provision(w http.ResponseWriter, r *http.Request) {
+func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 
-	instanceUUID := uuid.Parse(mux.Vars(r)["instance_uuid"])
+	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
 		return
@@ -83,10 +96,10 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h handler) update(w http.ResponseWriter, r *http.Request) {
+func (h handler) update(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 
-	instanceUUID := uuid.Parse(mux.Vars(r)["instance_uuid"])
+	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
 		return
@@ -103,10 +116,10 @@ func (h handler) update(w http.ResponseWriter, r *http.Request) {
 	writeDefaultResponse(w, http.StatusOK, resp, err)
 }
 
-func (h handler) deprovision(w http.ResponseWriter, r *http.Request) {
+func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 
-	instanceUUID := uuid.Parse(mux.Vars(r)["instance_uuid"])
+	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
 		return
@@ -121,16 +134,16 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h handler) bind(w http.ResponseWriter, r *http.Request) {
+func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 
-	instanceUUID := uuid.Parse(mux.Vars(r)["instance_uuid"])
+	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
 		return
 	}
 
-	bindingUUID := uuid.Parse(mux.Vars(r)["binding_uuid"])
+	bindingUUID := uuid.Parse(params["binding_uuid"])
 	if bindingUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
 		return
@@ -147,16 +160,16 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request) {
 	writeDefaultResponse(w, http.StatusCreated, resp, err)
 }
 
-func (h handler) unbind(w http.ResponseWriter, r *http.Request) {
+func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 
-	instanceUUID := uuid.Parse(mux.Vars(r)["instance_uuid"])
+	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
 		return
 	}
 
-	bindingUUID := uuid.Parse(mux.Vars(r)["binding_uuid"])
+	bindingUUID := uuid.Parse(params["binding_uuid"])
 	if bindingUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
 		return

@@ -1,6 +1,7 @@
 package fusortest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -85,6 +86,20 @@ func AssertNotNil(t *testing.T, a interface{}, message ...string) {
 		msg = fmt.Sprintf("%v is nil!", a)
 	}
 	t.Fatal(msg)
+}
+
+func AssertError(t *testing.T, body *bytes.Buffer, msg string) {
+	var errResp = make(map[string]string)
+
+	if body == nil {
+		t.Fatal("invalid response body")
+	}
+
+	json.Unmarshal(body.Bytes(), &errResp)
+	if errResp["description"] != msg {
+		t.Log(errResp["description"])
+		t.Fatal("error message does not match")
+	}
 }
 
 func StripNewline(input string) string {
