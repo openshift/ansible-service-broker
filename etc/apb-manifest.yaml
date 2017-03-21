@@ -1,8 +1,8 @@
 ---
-ansibleapps:
-  - name: fusor/etherpad-ansibleapp
-    description: Etherpad AnsibleApp
+apbs:
+  - name: fusor/etherpad-apb
+    description: Etherpad Ansible Playbook Bundle
     uuid: 0e5b16a4-f99b-4be9-84b9-f3353f4bb54c
-  - name: fusor/hellogolang-ansibleapp
+  - name: fusor/hellogolang-apb
     description: A hello world golang app
     uuid: f4b72d2a-bf85-4847-a19f-edd8beef0ddd
