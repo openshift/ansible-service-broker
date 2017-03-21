@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	"fmt"
@@ -76,7 +76,7 @@ ok: [localhost]
 
 TASK [Bind] ********************************************************************
 fatal: [localhost]: FAILED! => {"changed": true, "cmd": "./bind", "delta": "0:00:00.115091", "end": "2017-03-13 14:55:28.434412", "failed": true, "rc": 1, "start": "2017-03-13 14:55:28.319321", "stderr": "", "stdout": "<BIND_ERROR>Malformed parameter input</BIND_ERROR>", "stdout_lines": ["<BIND_ERROR>Malformed parameter input</BIND_ERROR>"], "warnings": []}
-        to retry, use: --limit @/opt/ansibleapp/actions/bind.retry
+        to retry, use: --limit @/opt/apb/actions/bind.retry
 
 PLAY RECAP *********************************************************************
 localhost                  : ok=1    changed=0    unreachable=0    failed=1

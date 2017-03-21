@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 type Parameters map[string]interface{}
 type SpecManifest map[string]*Spec
 
-var AnsibleAppSpecLabel = "com.redhat.ansibleapp.spec"
+var AnsibleAppSpecLabel = "com.redhat.apb.spec"
 
 type ImageData struct {
 	Name         string
