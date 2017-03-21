@@ -25,7 +25,7 @@ ok: [localhost] => {
 }
 
 PLAY RECAP *********************************************************************
-localhost                  : ok=3    changed=1    unreachable=0    failed=0   
+localhost                  : ok=3    changed=1    unreachable=0    failed=0
 `)
 	result, err := decodeOutput(output)
 	if err != nil {
@@ -56,7 +56,7 @@ ok: [localhost] => {
 }
 
 PLAY RECAP *********************************************************************
-localhost                  : ok=3    changed=1    unreachable=0    failed=0   
+localhost                  : ok=3    changed=1    unreachable=0    failed=0
 `)
 	bd, _ := buildBindData(output)
 	ft.AssertNotNil(t, bd, "binddata is nil")
