@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/client"
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	logging "github.com/op/go-logging"
 )
 
@@ -105,19 +105,19 @@ func (d *Dao) BatchGetRaw(dir string) (*[]string, error) {
 	return &payloads, nil
 }
 
-func (d *Dao) GetSpec(id string) (*ansibleapp.Spec, error) {
+func (d *Dao) GetSpec(id string) (*apb.Spec, error) {
 	raw, err := d.GetRaw(specKey(id))
 	if err != nil {
 		return nil, err
 	}
 
-	spec := &ansibleapp.Spec{}
-	ansibleapp.LoadJSON(raw, spec)
+	spec := &apb.Spec{}
+	apb.LoadJSON(raw, spec)
 	return spec, nil
 }
 
-func (d *Dao) SetSpec(id string, spec *ansibleapp.Spec) error {
-	payload, err := ansibleapp.DumpJSON(spec)
+func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
+	payload, err := apb.DumpJSON(spec)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (d *Dao) SetSpec(id string, spec *ansibleapp.Spec) error {
 	return d.SetRaw(specKey(id), payload)
 }
 
-func (d *Dao) BatchSetSpecs(specs ansibleapp.SpecManifest) error {
+func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
 	// TODO: Is there no batch insert in the etcd api?
 	for id, spec := range specs {
 		err := d.SetSpec(id, spec)
@@ -137,17 +137,17 @@ func (d *Dao) BatchSetSpecs(specs ansibleapp.SpecManifest) error {
 	return nil
 }
 
-func (d *Dao) BatchGetSpecs(dir string) ([]*ansibleapp.Spec, error) {
+func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 	var payloads *[]string
 	var err error
 	if payloads, err = d.BatchGetRaw(dir); err != nil {
-		return []*ansibleapp.Spec{}, err
+		return []*apb.Spec{}, err
 	}
 
-	specs := make([]*ansibleapp.Spec, len(*payloads))
+	specs := make([]*apb.Spec, len(*payloads))
 	for i, payload := range *payloads {
-		spec := &ansibleapp.Spec{}
-		ansibleapp.LoadJSON(payload, spec)
+		spec := &apb.Spec{}
+		apb.LoadJSON(payload, spec)
 		specs[i] = spec
 		d.log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.Id)
 	}
@@ -155,15 +155,15 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*ansibleapp.Spec, error) {
 	return specs, nil
 }
 
-func (d *Dao) GetServiceInstance(id string) (*ansibleapp.ServiceInstance, error) {
+func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 	var raw string
 	var err error
 	if raw, err = d.GetRaw(serviceInstanceKey(id)); err != nil {
 		return nil, err
 	}
 
-	spec := &ansibleapp.ServiceInstance{}
-	err = ansibleapp.LoadJSON(raw, spec)
+	spec := &apb.ServiceInstance{}
+	err = apb.LoadJSON(raw, spec)
 	if err != nil {
 		return nil, err
 	}
@@ -172,9 +172,9 @@ func (d *Dao) GetServiceInstance(id string) (*ansibleapp.ServiceInstance, error)
 }
 
 func (d *Dao) SetServiceInstance(
-	id string, serviceInstance *ansibleapp.ServiceInstance,
+	id string, serviceInstance *apb.ServiceInstance,
 ) error {
-	payload, err := ansibleapp.DumpJSON(serviceInstance)
+	payload, err := apb.DumpJSON(serviceInstance)
 	if err != nil {
 		return err
 	}
@@ -188,15 +188,15 @@ func (d *Dao) DeleteServiceInstance(id string) error {
 	return err
 }
 
-func (d *Dao) GetBindInstance(id string) (*ansibleapp.BindInstance, error) {
+func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
 	var raw string
 	var err error
 	if raw, err = d.GetRaw(bindInstanceKey(id)); err != nil {
 		return nil, err
 	}
 
-	spec := &ansibleapp.BindInstance{}
-	err = ansibleapp.LoadJSON(raw, spec)
+	spec := &apb.BindInstance{}
+	err = apb.LoadJSON(raw, spec)
 	if err != nil {
 		return nil, err
 	}
@@ -205,9 +205,9 @@ func (d *Dao) GetBindInstance(id string) (*ansibleapp.BindInstance, error) {
 }
 
 func (d *Dao) SetBindInstance(
-	id string, bindInstance *ansibleapp.BindInstance,
+	id string, bindInstance *apb.BindInstance,
 ) error {
-	payload, err := ansibleapp.DumpJSON(bindInstance)
+	payload, err := apb.DumpJSON(bindInstance)
 	if err != nil {
 		return err
 	}

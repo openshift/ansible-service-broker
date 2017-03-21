@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	b64 "encoding/base64"
@@ -132,7 +132,7 @@ func (r *DockerHubRegistry) loadAnsibleAppImageData(
 		}
 	}
 
-	r.log.Info("Found ansibleapps:")
+	r.log.Info("Found apbs:")
 	for _, dat := range ansibleAppData {
 		r.log.Info(fmt.Sprintf("%s", dat.Name))
 	}

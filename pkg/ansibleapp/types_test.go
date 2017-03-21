@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 )
 
 const SpecId = "ab094014-b740-495e-b178-946d5aa97ebf"
-const SpecName = "fusor/etherpad-ansibleapp"
+const SpecName = "fusor/etherpad-apb"
 const SpecBindable = false
 const SpecAsync = "optional"
 const SpecDescription = "A note taking webapp"
