@@ -11,15 +11,15 @@ import (
 type Parameters map[string]interface{}
 type SpecManifest map[string]*Spec
 
-var AnsibleAppSpecLabel = "com.redhat.apb.spec"
+var APBSpecLabel = "com.redhat.apb.spec"
 
 type ImageData struct {
-	Name         string
-	Tag          string
-	Labels       map[string]string
-	Layers       []string
-	IsAnsibleApp bool
-	Error        error
+	Name             string
+	Tag              string
+	Labels           map[string]string
+	Layers           []string
+	IsPlaybookBundle bool
+	Error            error
 }
 
 type ParameterDescriptor struct {
