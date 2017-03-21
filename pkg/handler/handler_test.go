@@ -10,26 +10,6 @@ import (
 	"github.com/pborman/uuid"
 )
 
-/*
-// request object
-type TestRequest struct {
-	Msg  string
-	done bool
-}
-
-func (r TestRequest) Read(p []byte) (n int, err error) {
-
-	if r.done {
-		return 0, io.EOF
-	}
-	for i, b := range []byte(r.Msg) {
-		p[i] = b
-	}
-	r.done = true
-	return len(r.Msg), nil
-}
-*/
-
 type MockBroker struct {
 	Name   string
 	Verify map[string]bool
