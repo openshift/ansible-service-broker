@@ -1,8 +1,8 @@
-# AnsibleApp Integration
+# Ansible Playbook Bundles (APB) Integration
 
-## Running AnsibleApps with the ASB
+## Running APB with the ASB
 
-AnsibleApps should be executed by the broker via the docker client (APIs):
+Ansible Playbook Bundles (APB) should be executed by the broker via the docker client (APIs):
 
 `docker run $container_name $action $arguments`
 
@@ -11,7 +11,7 @@ AnsibleApps should be executed by the broker via the docker client (APIs):
 
 See [AnsibleApp design](#) for details for argument requirements and expectations
 
-## Targeting a cluster for AnsibleApp deployment
+## Targeting a cluster for APB deployment
 
 > NOTE: This is a WIP, initial thoughts are as follows
 
@@ -22,7 +22,7 @@ intended to provide details for connecting and authenticating with a targeted
 cluster.
 
 Seen in the left of the diagram are the clients into a cluster that
-a user will use to deploy and manage ansibleapps. These clients are also what
+a user will use to deploy and manage APBs. These clients are also what
 a user will interact with to target and authenticate with a given cluster.
 
 Since these clients are the source for cluster details, it makes sense to
@@ -30,5 +30,5 @@ have them forward cluster details through the ServiceCatalog to a Broker.
 The broker can then transform them into a `CluserObject` and provide
 this object when performing an action (Provison, Bind, etc...)
 
-The ansibleapp contains an `oc` client which can then act on the behalf of
+The apb contains an `oc` client which can then act on the behalf of
 the clients the user is driving and authenticated with.
