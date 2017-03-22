@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	"encoding/json"
@@ -11,15 +11,16 @@ import (
 type Parameters map[string]interface{}
 type SpecManifest map[string]*Spec
 
-var AnsibleAppSpecLabel = "com.redhat.ansibleapp.spec"
+// TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
+var BundleSpecLabel = "com.redhat.ansibleapp.spec"
 
 type ImageData struct {
-	Name         string
-	Tag          string
-	Labels       map[string]string
-	Layers       []string
-	IsAnsibleApp bool
-	Error        error
+	Name             string
+	Tag              string
+	Labels           map[string]string
+	Layers           []string
+	IsPlaybookBundle bool
+	Error            error
 }
 
 type ParameterDescriptor struct {

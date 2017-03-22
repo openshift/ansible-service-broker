@@ -3,13 +3,13 @@ package broker
 import (
 	"testing"
 
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
 )
 
 func TestUpdate(t *testing.T) {
-	broker, _ := NewAnsibleBroker(nil, nil, ansibleapp.ClusterConfig{}, nil)
+	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil)
 	resp, err := broker.Update(uuid.NewUUID(), nil)
 	if resp != nil {
 		t.Fail()
@@ -18,7 +18,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUnbind(t *testing.T) {
-	broker, _ := NewAnsibleBroker(nil, nil, ansibleapp.ClusterConfig{}, nil)
+	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil)
 	err := broker.Unbind(uuid.NewUUID(), uuid.NewUUID())
 
 	ft.AssertEqual(t, err, notImplemented, "Unbind must have been implemented")
@@ -27,7 +27,7 @@ func TestUnbind(t *testing.T) {
 /*
 need a way to mock out the logger.
 func TestValidateDeprovision(t *testing.T) {
-	broker, _ := NewAnsibleBroker(nil, nil, ansibleapp.ClusterConfig{}, nil)
+	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil)
 	err := broker.validateDeprovision(uuid.New())
 	if err != nil {
 		t.Fail()

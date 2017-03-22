@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	"encoding/json"
@@ -21,7 +21,7 @@ deprovision - delete the namespace and it tears the whole thing down.
 oc delete?
 
 
-route will be hardcoded, need to determine how to get that from the ansibleapp.
+route will be hardcoded, need to determine how to get that from the apb.
 
 
 need to pass in cert through parameters
@@ -79,7 +79,7 @@ func (c *Client) RunImage(
 	// inside a machine that also had a running dockerd available on /var/run/docker.sock
 	// If the broker is running inside of a container on ocp or k8s, this docker runtime
 	// is not available to the broker's environment in the same way. This requires
-	// the broker to run the ansibleapp metacontainer remotely...somehow.
+	// the broker to run the apb metacontainer remotely...somehow.
 	// * options for docker are ugly:
 	// -> Nested docker? (bad)
 	// -> Remote docker (not a ton of options?) TCP socket?
@@ -90,9 +90,9 @@ func (c *Client) RunImage(
 	// TODO: Need to figure out the right way to accomplish running metacontainers
 	// in remote runtimes longterm.
 	////////////////////////////////////////////////////////////////////////////////
-	//oc run ansible-service-broker-ansibleapp --env "OPENSHIFT_TARGET=10.1.2.2:8443"
+	//oc run ansible-service-broker-apb --env "OPENSHIFT_TARGET=10.1.2.2:8443"
 	//--env "OPENSHIFT_USER=admin" --env "OPENSHIFT_PASS=derp"
-	//--image=ansibleapp/ansible-service-broker-ansibleapp --restart=Never --
+	//--image=apb/ansible-service-broker-ansibleapp --restart=Never --
 	//provision -e "dockerhub_user=eriknelson" -e "dockerhub_pass=derp"
 	//-e "openshift_target=10.1.2.2:8443" -e "openshift_user=admin" -e "openshift_pass=derp"
 

@@ -1,7 +1,7 @@
 # Bind Use Cases
 
 ## External Service with Bind (mLab and webapp)
-The external service use case is where an AnsibleApp is able to connect to a service outside of the cluster. One example, is a webapp that uses mLab as their backend store. There will be a specific AnsibleApp for the external service.
+The external service use case is where an Ansible Playbook Bundle (APB) is able to connect to a service outside of the cluster. One example, is a webapp that uses mLab as their backend store. There will be a specific APB for the external service.
 
 Catalog Operator does the following:
 * Creates a broker resource which calls the AnsibleServiceBroker /catalog endpoint
@@ -11,20 +11,20 @@ The Service Consumer then utilizes the ServiceClasses for their needs. After get
 
 * Creates an instance of the mLab service.
   * ServiceCatalog calls provision endpoint on AnsibleServiceBroker
-  * AnsibleServiceBroker provisions the mLab AnsibleApp
-  * mLab AnsibleApp configures the mLab instance being made avaiable
+  * AnsibleServiceBroker provisions the mLab APB
+  * mLab APB configures the mLab instance being made avaiable
   * mLab service ready for consumption
 * Create a binding resource for the mLab service
   * ServiceCatalog calls the binding endpoint on the AnsibleServiceBroker
-  * AnsibleServiceBroker calls bind on the mLab AnsibleApp
-  * mLab AnsibleApp will return the credentials, coordinates, & configs for the service.
+  * AnsibleServiceBroker calls bind on the mLab APB
+  * mLab APB will return the credentials, coordinates, & configs for the service.
   * Magic happens
     * ServiceCatalog does something with the bind information such that it can be injected into the applications later
 * Creates an instance of the Go WebApp service.
   * ServiceCatalog calls provision endpoint on AnsibleServiceBroker
-  * AnsibleServiceBroker provisions the Go WebApp AnsibleApp
-  * The mLab binding information is *injected* into the Go WebApp AnsibleApp
-  * Go WebApp AnsibleApp configures itself to use the information
+  * AnsibleServiceBroker provisions the Go WebApp APB
+  * The mLab binding information is *injected* into the Go WebApp APB
+  * Go WebApp APB configures itself to use the information
   * Go WebApp service is ready for consumption and utilizing the mLab service
 
 ### Binding diagram
@@ -37,28 +37,28 @@ The Service Consumer then utilizes the ServiceClasses for their needs. After get
 
 ```
 Catalog Operator -> ServiceCatalog: POST broker
-ServicCatalog -> ServiceCatalog: Create Broker resource
+ServiceCatalog -> ServiceCatalog: Create Broker resource
 Controller -> AnsibleServiceBroker: GET /catalog 
 AnsibleServiceBroker -> Controller: List of available service classes: mLab, Go WebApp
 Controller -> ServiceCatalog: Creates list of service classes available
 Service Consumer -> ServiceCatalog: GET /serviceclasses
 Service Consumer -> ServiceCatalog: POST /instance (mLab)
 Controller -> AnsibleServiceBroker: PUT /provision (mLab)
-AnsibleServiceBroker -> mLab AnsibleApp: docker run provision
-mLab AnsibleApp -> OpenShift: creates Kubernetes service endpoint
+AnsibleServiceBroker -> mLab APB: docker run provision
+mLab APB -> OpenShift: creates Kubernetes service endpoint
 ServiceCatalog -> Service Consumer: mLab instance ready
 Service Consumer -> ServiceCatalog: PUT /binding
 ServiceCatalog -> ServiceCatalog: Create binding resource
 Controller -> AnsibleServiceBroker: PUT /binding
-AnsibleServiceBroker -> mLab AnsibleApp: docker run binding
-mLab AnsibleApp -> AnsibleServiceBroker: Returns the binding information for external mLab Service
+AnsibleServiceBroker -> mLab APB: docker run binding
+mLab APB -> AnsibleServiceBroker: Returns the binding information for external mLab Service
 AnsibleServiceBroker -> Controller: Returns binding information
 Controller -> Magic: Store binding information for injection later
 Service Consumer -> ServiceCatalog: POST /instance (Go WebApp)
 Controller -> AnsibleServiceBroker: PUT /provision (Go WebApp)
-AnsibleServiceBroker -> Go WebApp AnsibleApp: docker run provision
-Magic -> Go WebApp AnsibleApp: INJECT binding information
-Go WebApp AnsibleApp -> mLab Service: Uses
+AnsibleServiceBroker -> Go WebApp APB: docker run provision
+Magic -> Go WebApp APB: INJECT binding information
+Go WebApp APB -> mLab Service: Uses
 AnsibleServiceBroker -> Controller: Go WebApp service instance ready
 ServiceCatalog -> Service Consumer: Go WebApp instance ready
 
@@ -67,7 +67,7 @@ ServiceCatalog -> Service Consumer: Go WebApp instance ready
 ## Bindable Database Service
 There are services that will be deployed that simply exist to be bound to other applications. Typical use case is a Mariadb database instance.
 
-* provision database AnsibleApp (stays up to let other bind)
+* provision database APB (stays up to let other bind)
 * bind request to app returns connection information,
 
 ### Database example sequence diagram
@@ -102,15 +102,15 @@ Controller -> Magic: Store binding information for injection later
 ```
 Service Consumer -> ServiceCatalog: POST /instance (Etherpad)
 Controller -> AnsibleServiceBroker: PUT /provision (Etherpad)
-AnsibleServiceBroker -> Go WebApp AnsibleApp: docker run provision
+AnsibleServiceBroker -> Go WebApp APB: docker run provision
 Ansible Service Broker -> etcd : get etherpad image
 etcd -> Ansible Service Broker: return image record
 Ansible Service Broker -> Docker Hub: pull etherpad image
 Docker Hub -> Ansible Service Broker: return etherpad image
 Ansible Service Broker -> Ansible Service Broker: run etherpad image
 Ansible Service Broker -> ServiceCatalog: return 200 OK
-Magic -> Go WebApp AnsibleApp: INJECT binding information
-Go WebApp AnsibleApp -> mLab Service: Uses
+Magic -> Go WebApp APB: INJECT binding information
+Go WebApp APB -> mLab Service: Uses
 AnsibleServiceBroker -> Controller: Go WebApp service instance ready
 ServiceCatalog -> Service Consumer: Go WebApp instance ready
 ```

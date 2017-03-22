@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	flags "github.com/jessevdk/go-flags"
 	yaml "gopkg.in/yaml.v1"
 )
 
 type Args struct {
-	AppFile string `short:"a" long:"appfile" description:"Mock Ansible Apps yaml file"`
+	AppFile string `short:"a" long:"appfile" description:"Mock Ansible Playbook Bundles yaml file"`
 }
 
 func main() {
@@ -27,17 +27,17 @@ func main() {
 
 	fmt.Printf("Reading appfile: [ %s ]\n", args.AppFile)
 
-	apps := LoadAnsibleApps(args.AppFile)
+	apps := LoadPlaybookBundles(args.AppFile)
 
-	http.HandleFunc("/ansibleapps", handler(args, apps, GetAnsibleApps))
+	http.HandleFunc("/bundles", handler(args, apps, GetPlaybookBundles))
 
 	fmt.Println("Listening on localhost:1337")
 	http.ListenAndServe(":1337", nil)
 }
 
-func GetAnsibleApps(w http.ResponseWriter, r *http.Request, args *Args, pApps *[]ansibleapp.Spec) {
+func GetPlaybookBundles(w http.ResponseWriter, r *http.Request, args *Args, pApps *[]apb.Spec) {
 	apps := *pApps
-	fmt.Printf("Amount of ansibleapps %d\n", len(apps))
+	fmt.Printf("Amount of bundles %d\n", len(apps))
 
 	for i, app := range apps {
 		fmt.Printf("%d | ID: %s\n", i, app.Id)
@@ -51,24 +51,24 @@ func GetAnsibleApps(w http.ResponseWriter, r *http.Request, args *Args, pApps *[
 	json.NewEncoder(w).Encode(pApps)
 }
 
-func LoadAnsibleApps(appFile string) *[]ansibleapp.Spec {
+func LoadPlaybookBundles(appFile string) *[]apb.Spec {
 	// TODO: Is this required just to unwrap the root key and get the array?
 	// Load just an array without a root key to wrap it?
 	var parsedDat struct {
-		AnsibleApps []ansibleapp.Spec
+		PlaybookBundles []apb.Spec
 	}
 
 	fmt.Println(appFile)
 	dat, _ := ioutil.ReadFile(appFile)
 	yaml.Unmarshal(dat, &parsedDat)
 
-	return &parsedDat.AnsibleApps
+	return &parsedDat.PlaybookBundles
 }
 
 type VanillaHandler func(http.ResponseWriter, *http.Request)
-type InjectedHandler func(http.ResponseWriter, *http.Request, *Args, *[]ansibleapp.Spec)
+type InjectedHandler func(http.ResponseWriter, *http.Request, *Args, *[]apb.Spec)
 
-func handler(args *Args, apps *[]ansibleapp.Spec, r InjectedHandler) VanillaHandler {
+func handler(args *Args, apps *[]apb.Spec, r InjectedHandler) VanillaHandler {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		r(writer, request, args, apps)
 	}

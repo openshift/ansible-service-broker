@@ -3,7 +3,7 @@ package broker
 import (
 	"fmt"
 
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
 	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
@@ -22,15 +22,15 @@ type Broker interface {
 type AnsibleBroker struct {
 	dao           *dao.Dao
 	log           *logging.Logger
-	clusterConfig ansibleapp.ClusterConfig
-	registry      ansibleapp.Registry
+	clusterConfig apb.ClusterConfig
+	registry      apb.Registry
 }
 
 func NewAnsibleBroker(
 	dao *dao.Dao,
 	log *logging.Logger,
-	clusterConfig ansibleapp.ClusterConfig,
-	registry ansibleapp.Registry,
+	clusterConfig apb.ClusterConfig,
+	registry apb.Registry,
 ) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
@@ -50,13 +50,13 @@ func NewAnsibleBroker(
 func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	a.log.Info("AnsibleBroker::Bootstrap")
 	var err error
-	var specs []*ansibleapp.Spec
+	var specs []*apb.Spec
 
 	if specs, err = a.registry.LoadSpecs(); err != nil {
 		return nil, err
 	}
 
-	if err := a.dao.BatchSetSpecs(ansibleapp.NewSpecManifest(specs)); err != nil {
+	if err := a.dao.BatchSetSpecs(apb.NewSpecManifest(specs)); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	a.log.Info("AnsibleBroker::Catalog")
 
-	var specs []*ansibleapp.Spec
+	var specs []*apb.Spec
 	var err error
 	var services []Service
 	dir := "/spec"
@@ -131,7 +131,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	// -> Provision!
 	////////////////////////////////////////////////////////////
 
-	var spec *ansibleapp.Spec
+	var spec *apb.Spec
 	var err error
 
 	// Retrieve requested spec
@@ -144,7 +144,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	parameters := &req.Parameters
 
 	// Build and persist record of service instance
-	serviceInstance := &ansibleapp.ServiceInstance{
+	serviceInstance := &apb.ServiceInstance{
 		Id:         instanceUUID,
 		Spec:       spec,
 		Parameters: parameters,
@@ -156,7 +156,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	}
 
 	// TODO: Async? Bring in WorkEngine.
-	err = ansibleapp.Provision(spec, parameters, a.clusterConfig, a.log)
+	err = apb.Provision(spec, parameters, a.clusterConfig, a.log)
 
 	// TODO: What data needs to be sent back on a respone?
 	// Not clear what dashboardURL means in an AnsibleApp context
@@ -173,13 +173,13 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse
 	//    https://github.com/openservicebrokerapi/servicebroker/issues/127
 	// -> Atomic deprovision and removal of service entry in etcd?
 	//    * broker::Deprovision
-	//    Arguments for this? What data do ansibleapps require to deprovision?
-	//    Maybe just hand off a serialized ServiceInstance and let the ansibleapp
+	//    Arguments for this? What data do apbs require to deprovision?
+	//    Maybe just hand off a serialized ServiceInstance and let the apb
 	//    decide what's important?
 	//    * if noerror: delete serviceInstance entry with Dao
 	////////////////////////////////////////////////////////////
 	var err error
-	var instance *ansibleapp.ServiceInstance
+	var instance *apb.ServiceInstance
 	instanceId := instanceUUID.String()
 
 	if err = a.validateDeprovision(instanceId); err != nil {
@@ -190,7 +190,7 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse
 		return nil, err
 	}
 
-	if err = ansibleapp.Deprovision(instance, a.log); err != nil {
+	if err = apb.Deprovision(instance, a.log); err != nil {
 		return nil, err
 	}
 
@@ -227,8 +227,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//     provision_params: {} same as what was stored in etcd
 	//	   bind_params: {}
 	// }
-	// asbcli passes in user: aone, which bind passes to ansibleapp
-	params := make(ansibleapp.Parameters)
+	// asbcli passes in user: aone, which bind passes to apb
+	params := make(apb.Parameters)
 	params["provision_params"] = *instance.Parameters
 	params["bind_params"] = req.Parameters
 
@@ -236,7 +236,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	// Create a BindingInstance with a reference to the serviceinstance.
 	//
 
-	bindingInstance := &ansibleapp.BindInstance{
+	bindingInstance := &apb.BindInstance{
 		Id:         bindingUUID,
 		ServiceId:  instanceUUID,
 		Parameters: &params,
@@ -247,7 +247,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 	// return 201 when we're done.
 	//
-	// once we create the binding instance, we call ansibleapp.Bind
+	// once we create the binding instance, we call apb.Bind
 
 	if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
 		return nil, err
@@ -264,7 +264,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		}
 	*/
 
-	bindData, err := ansibleapp.Bind(instance, &params, a.clusterConfig, a.log)
+	bindData, err := apb.Bind(instance, &params, a.clusterConfig, a.log)
 	if err != nil {
 		return nil, err
 	}

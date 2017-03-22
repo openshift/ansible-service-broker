@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
 	"github.com/fusor/ansible-service-broker/pkg/handler"
@@ -19,7 +19,7 @@ type App struct {
 	config   Config
 	dao      *dao.Dao
 	log      *Log
-	registry ansibleapp.Registry
+	registry apb.Registry
 }
 
 func CreateApp() App {
@@ -63,7 +63,7 @@ func CreateApp() App {
 	}
 
 	app.log.Debug("Connecting Registry")
-	if app.registry, err = ansibleapp.NewRegistry(
+	if app.registry, err = apb.NewRegistry(
 		app.config.Registry, app.log.Logger,
 	); err != nil {
 		app.log.Error("Failed to initialize Registry\n")
@@ -76,7 +76,7 @@ func CreateApp() App {
 	// Need to come up with a better way to handle this.
 	////////////////////////////////////////////////////////////
 	if app.config.Registry.Name == "dockerhub" {
-		v, _ := app.registry.(*ansibleapp.DockerHubRegistry)
+		v, _ := app.registry.(*apb.DockerHubRegistry)
 		v.ScriptsDir = app.args.ScriptsDir
 	}
 	////////////////////////////////////////////////////////////

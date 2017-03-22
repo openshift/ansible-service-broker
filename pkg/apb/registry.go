@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ type RegistryConfig struct {
 	Url  string
 	User string
 	Pass string
-	Org  string // Target org to load ansibleapps from
+	Org  string // Target org to load playbookk bundles from
 }
 
 type Registry interface {

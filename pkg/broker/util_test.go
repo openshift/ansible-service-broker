@@ -5,22 +5,22 @@ import (
 	"path"
 	"testing"
 
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
 )
 
 func TestSpecToService(t *testing.T) {
 
-	param := []*ansibleapp.ParameterDescriptor{
-		&ansibleapp.ParameterDescriptor{
+	param := []*apb.ParameterDescriptor{
+		&apb.ParameterDescriptor{
 			Name:        "hostport",
 			Description: "The host TCP port as the external end point",
 			Default:     float64(9001),
 			Type:        "foo",
 			Required:    true}}
 
-	spec := ansibleapp.Spec{
+	spec := apb.Spec{
 		Id:          "50eb5637-6ffe-480d-a52e-a7e603a50fca",
 		Name:        "testspec",
 		Bindable:    false,
