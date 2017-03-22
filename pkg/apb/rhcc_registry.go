@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import logging "github.com/op/go-logging"
 

@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
 
@@ -33,7 +33,7 @@ func ProjectRoot() string {
 
 // TODO: This is going to have to be expanded much more to support things like
 // parameters (will need to get passed through as metadata
-func SpecToService(spec *ansibleapp.Spec) Service {
+func SpecToService(spec *apb.Spec) Service {
 	parameterDescriptors := make(map[string]interface{})
 	parameterDescriptors["parameters"] = spec.Parameters
 

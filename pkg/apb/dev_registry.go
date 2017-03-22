@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-const AppsPath = "/ansibleapps"
+const AppsPath = "/apbs"
 
 type DevRegistry struct {
 	config RegistryConfig

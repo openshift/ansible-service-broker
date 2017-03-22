@@ -1,4 +1,4 @@
-package ansibleapp
+package apb
 
 import (
 	"encoding/base64"
@@ -12,10 +12,10 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-// TODO: Figure out the right way to allow ansibleapp to log
+// TODO: Figure out the right way to allow apb to log
 // It's passed in here, but that's a hard coupling point to
 // github.com/op/go-logging, which is used all over the broker
-// Maybe ansibleapp defines its own interface and accepts that optionally
+// Maybe apb defines its own interface and accepts that optionally
 // Little looser, but still not great
 func Bind(
 	instance *ServiceInstance,

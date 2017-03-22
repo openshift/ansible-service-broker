@@ -1,7 +1,7 @@
 package broker
 
 import (
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
 
@@ -56,12 +56,12 @@ type LastOperationResponse struct {
 }
 
 type ProvisionRequest struct {
-	OrganizationID    uuid.UUID             `json:"organization_guid"`
-	PlanID            uuid.UUID             `json:"plan_id"`
-	ServiceID         uuid.UUID             `json:"service_id"`
-	SpaceID           uuid.UUID             `json:"space_guid"`
-	Parameters        ansibleapp.Parameters `json:"parameters,omitempty"`
-	AcceptsIncomplete bool                  `json:"accepts_incomplete,omitempty"`
+	OrganizationID    uuid.UUID      `json:"organization_guid"`
+	PlanID            uuid.UUID      `json:"plan_id"`
+	ServiceID         uuid.UUID      `json:"service_id"`
+	SpaceID           uuid.UUID      `json:"space_guid"`
+	Parameters        apb.Parameters `json:"parameters,omitempty"`
+	AcceptsIncomplete bool           `json:"accepts_incomplete,omitempty"`
 }
 
 type ProvisionResponse struct {
@@ -96,7 +96,7 @@ type BindRequest struct {
 		AppID uuid.UUID `json:"app_guid,omitempty"`
 		Route string    `json:"route,omitempty"`
 	} `json:"bind_resource,omitempty"`
-	Parameters ansibleapp.Parameters `json:"parameters,omitempty"`
+	Parameters apb.Parameters `json:"parameters,omitempty"`
 }
 
 type BindResponse struct {

@@ -1,14 +1,15 @@
-package ansibleapp
+package apb
 
 import (
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/containers/image/transports"
-	"github.com/containers/image/types"
-	"github.com/op/go-logging"
 	"path"
 	"strings"
+
+	"github.com/containers/image/transports"
+	"github.com/containers/image/types"
+	logging "github.com/op/go-logging"
 )
 
 var ListImagesScript = "get_images_for_org.sh"
@@ -29,14 +30,14 @@ func (r *DockerHubRegistry) Init(config RegistryConfig, log *logging.Logger) err
 func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, error) {
 	r.log.Debug("DockerHubRegistry::LoadSpecs")
 	var err error
-	var rawAnsibleAppData []*ImageData
+	var rawAPBData []*ImageData
 	var specs []*Spec
 
-	if rawAnsibleAppData, err = r.loadAnsibleAppImageData(r.config.Org); err != nil {
+	if rawAPBData, err = r.loadAPBImageData(r.config.Org); err != nil {
 		return nil, err
 	}
 
-	if specs, err = r.createSpecs(rawAnsibleAppData); err != nil {
+	if specs, err = r.createSpecs(rawAPBData); err != nil {
 		return nil, err
 	}
 
@@ -50,7 +51,7 @@ func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, error) {
 }
 
 func (r *DockerHubRegistry) createSpecs(
-	rawAnsibleAppData []*ImageData,
+	rawAPBData []*ImageData,
 ) ([]*Spec, error) {
 	var err error
 	var spec *Spec
@@ -59,7 +60,7 @@ func (r *DockerHubRegistry) createSpecs(
 		var _err error
 		_spec := &Spec{}
 
-		encodedSpec := dat.Labels[AnsibleAppSpecLabel]
+		encodedSpec := dat.Labels[APBSpecLabel]
 		if encodedSpec == "" {
 			msg := fmt.Sprintf("Spec label not found on image -> [ %s ]", dat.Name)
 			return nil, errors.New(msg)
@@ -78,7 +79,7 @@ func (r *DockerHubRegistry) createSpecs(
 	}
 
 	specs := []*Spec{}
-	for _, dat := range rawAnsibleAppData {
+	for _, dat := range rawAPBData {
 		if spec, err = datToSpec(dat); err != nil {
 			return nil, err
 		}
@@ -88,10 +89,10 @@ func (r *DockerHubRegistry) createSpecs(
 	return specs, nil
 }
 
-func (r *DockerHubRegistry) loadAnsibleAppImageData(
+func (r *DockerHubRegistry) loadAPBImageData(
 	org string,
 ) ([]*ImageData, error) {
-	r.log.Debug("DockerHubRegistry::loadAnsibleAppImageData")
+	r.log.Debug("DockerHubRegistry::loadAPBImageData")
 	r.log.Debug("Loading image list for org: [ %s ]", org)
 
 	orgScript := path.Join(r.ScriptsDir, ListImagesScript)
@@ -111,7 +112,7 @@ func (r *DockerHubRegistry) loadAnsibleAppImageData(
 		go r.loadImageData("docker://"+imageName, channel)
 	}
 
-	var ansibleAppData []*ImageData
+	var apbData []*ImageData
 	counter := 1
 	for imageData := range channel {
 		if imageData.Error != nil {
@@ -121,8 +122,8 @@ func (r *DockerHubRegistry) loadAnsibleAppImageData(
 			continue
 		}
 
-		if imageData.IsAnsibleApp {
-			ansibleAppData = append(ansibleAppData, imageData)
+		if imageData.IsPlaybookBundle {
+			apbData = append(apbData, imageData)
 		}
 
 		if counter != len(imageNames) {
@@ -132,12 +133,12 @@ func (r *DockerHubRegistry) loadAnsibleAppImageData(
 		}
 	}
 
-	r.log.Info("Found ansibleapps:")
-	for _, dat := range ansibleAppData {
+	r.log.Info("Found apbs:")
+	for _, dat := range apbData {
 		r.log.Info(fmt.Sprintf("%s", dat.Name))
 	}
 
-	return ansibleAppData, nil
+	return apbData, nil
 }
 
 func (r *DockerHubRegistry) loadImageData(imageName string, channel chan<- *ImageData) {
@@ -156,19 +157,19 @@ func (r *DockerHubRegistry) loadImageData(imageName string, channel chan<- *Imag
 	}
 
 	outputData := ImageData{
-		Name:         imageName,
-		Tag:          imgInspect.Tag,
-		Labels:       imgInspect.Labels,
-		Layers:       imgInspect.Layers,
-		IsAnsibleApp: true,
-		Error:        nil,
+		Name:             imageName,
+		Tag:              imgInspect.Tag,
+		Labels:           imgInspect.Labels,
+		Layers:           imgInspect.Layers,
+		IsPlaybookBundle: true,
+		Error:            nil,
 	}
 
-	if outputData.Labels[AnsibleAppSpecLabel] != "" {
-		outputData.IsAnsibleApp = true
+	if outputData.Labels[APBSpecLabel] != "" {
+		outputData.IsPlaybookBundle = true
 		channel <- &outputData
 	} else {
-		outputData.IsAnsibleApp = false
+		outputData.IsPlaybookBundle = false
 		channel <- &outputData
 	}
 }

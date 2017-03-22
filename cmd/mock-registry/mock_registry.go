@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	flags "github.com/jessevdk/go-flags"
 	yaml "gopkg.in/yaml.v1"
 )
@@ -29,15 +29,15 @@ func main() {
 
 	apps := LoadAnsibleApps(args.AppFile)
 
-	http.HandleFunc("/ansibleapps", handler(args, apps, GetAnsibleApps))
+	http.HandleFunc("/apbs", handler(args, apps, GetAnsibleApps))
 
 	fmt.Println("Listening on localhost:1337")
 	http.ListenAndServe(":1337", nil)
 }
 
-func GetAnsibleApps(w http.ResponseWriter, r *http.Request, args *Args, pApps *[]ansibleapp.Spec) {
+func GetAnsibleApps(w http.ResponseWriter, r *http.Request, args *Args, pApps *[]apb.Spec) {
 	apps := *pApps
-	fmt.Printf("Amount of ansibleapps %d\n", len(apps))
+	fmt.Printf("Amount of apbs %d\n", len(apps))
 
 	for i, app := range apps {
 		fmt.Printf("%d | ID: %s\n", i, app.Id)
@@ -51,11 +51,11 @@ func GetAnsibleApps(w http.ResponseWriter, r *http.Request, args *Args, pApps *[
 	json.NewEncoder(w).Encode(pApps)
 }
 
-func LoadAnsibleApps(appFile string) *[]ansibleapp.Spec {
+func LoadAnsibleApps(appFile string) *[]apb.Spec {
 	// TODO: Is this required just to unwrap the root key and get the array?
 	// Load just an array without a root key to wrap it?
 	var parsedDat struct {
-		AnsibleApps []ansibleapp.Spec
+		AnsibleApps []apb.Spec
 	}
 
 	fmt.Println(appFile)
@@ -66,9 +66,9 @@ func LoadAnsibleApps(appFile string) *[]ansibleapp.Spec {
 }
 
 type VanillaHandler func(http.ResponseWriter, *http.Request)
-type InjectedHandler func(http.ResponseWriter, *http.Request, *Args, *[]ansibleapp.Spec)
+type InjectedHandler func(http.ResponseWriter, *http.Request, *Args, *[]apb.Spec)
 
-func handler(args *Args, apps *[]ansibleapp.Spec, r InjectedHandler) VanillaHandler {
+func handler(args *Args, apps *[]apb.Spec, r InjectedHandler) VanillaHandler {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		r(writer, request, args, apps)
 	}

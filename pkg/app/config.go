@@ -6,15 +6,15 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/fusor/ansible-service-broker/pkg/ansibleapp"
+	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
 )
 
 type Config struct {
-	Registry   ansibleapp.RegistryConfig
+	Registry   apb.RegistryConfig
 	Dao        dao.Config
 	Log        LogConfig
-	Openshift  ansibleapp.ClusterConfig
+	Openshift  apb.ClusterConfig
 	ConfigFile string
 }
 
