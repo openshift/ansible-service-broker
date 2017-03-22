@@ -11,7 +11,8 @@ import (
 type Parameters map[string]interface{}
 type SpecManifest map[string]*Spec
 
-var APBSpecLabel = "com.redhat.apb.spec"
+// TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
+var BundleSpecLabel = "com.redhat.ansibleapp.spec"
 
 type ImageData struct {
 	Name             string

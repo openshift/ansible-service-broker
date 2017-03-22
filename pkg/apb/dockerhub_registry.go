@@ -30,14 +30,14 @@ func (r *DockerHubRegistry) Init(config RegistryConfig, log *logging.Logger) err
 func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, error) {
 	r.log.Debug("DockerHubRegistry::LoadSpecs")
 	var err error
-	var rawAPBData []*ImageData
+	var rawBundleData []*ImageData
 	var specs []*Spec
 
-	if rawAPBData, err = r.loadAPBImageData(r.config.Org); err != nil {
+	if rawBundleData, err = r.loadBundleImageData(r.config.Org); err != nil {
 		return nil, err
 	}
 
-	if specs, err = r.createSpecs(rawAPBData); err != nil {
+	if specs, err = r.createSpecs(rawBundleData); err != nil {
 		return nil, err
 	}
 
@@ -51,7 +51,7 @@ func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, error) {
 }
 
 func (r *DockerHubRegistry) createSpecs(
-	rawAPBData []*ImageData,
+	rawBundleData []*ImageData,
 ) ([]*Spec, error) {
 	var err error
 	var spec *Spec
@@ -60,7 +60,7 @@ func (r *DockerHubRegistry) createSpecs(
 		var _err error
 		_spec := &Spec{}
 
-		encodedSpec := dat.Labels[APBSpecLabel]
+		encodedSpec := dat.Labels[BundleSpecLabel]
 		if encodedSpec == "" {
 			msg := fmt.Sprintf("Spec label not found on image -> [ %s ]", dat.Name)
 			return nil, errors.New(msg)
@@ -79,7 +79,7 @@ func (r *DockerHubRegistry) createSpecs(
 	}
 
 	specs := []*Spec{}
-	for _, dat := range rawAPBData {
+	for _, dat := range rawBundleData {
 		if spec, err = datToSpec(dat); err != nil {
 			return nil, err
 		}
@@ -89,10 +89,10 @@ func (r *DockerHubRegistry) createSpecs(
 	return specs, nil
 }
 
-func (r *DockerHubRegistry) loadAPBImageData(
+func (r *DockerHubRegistry) loadBundleImageData(
 	org string,
 ) ([]*ImageData, error) {
-	r.log.Debug("DockerHubRegistry::loadAPBImageData")
+	r.log.Debug("DockerHubRegistry::loadBundleImageData")
 	r.log.Debug("Loading image list for org: [ %s ]", org)
 
 	orgScript := path.Join(r.ScriptsDir, ListImagesScript)
@@ -123,7 +123,10 @@ func (r *DockerHubRegistry) loadAPBImageData(
 		}
 
 		if imageData.IsPlaybookBundle {
+			r.log.Notice("We have a playbook bundle, adding its imagedata")
 			apbData = append(apbData, imageData)
+		} else {
+			r.log.Notice("We did NOT add the imageData for some reason")
 		}
 
 		if counter != len(imageNames) {
@@ -165,7 +168,7 @@ func (r *DockerHubRegistry) loadImageData(imageName string, channel chan<- *Imag
 		Error:            nil,
 	}
 
-	if outputData.Labels[APBSpecLabel] != "" {
+	if outputData.Labels[BundleSpecLabel] != "" {
 		outputData.IsPlaybookBundle = true
 		channel <- &outputData
 	} else {

@@ -3,9 +3,10 @@ package apb
 import (
 	"encoding/json"
 	"fmt"
-	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
 	"reflect"
 	"testing"
+
+	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
 )
 
 const SpecId = "ab094014-b740-495e-b178-946d5aa97ebf"
@@ -82,4 +83,8 @@ func TestSpecDumpJSON(t *testing.T) {
 	json.Unmarshal([]byte(raw), &subjectMap)
 
 	ft.AssertTrue(t, reflect.DeepEqual(knownMap, subjectMap))
+}
+
+func TestSpecLabel(t *testing.T) {
+	ft.AssertEqual(t, BundleSpecLabel, "com.redhat.ansibleapp.spec", "spec label does not match dockerhub")
 }
