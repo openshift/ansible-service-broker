@@ -37,7 +37,7 @@ The Service Consumer then utilizes the ServiceClasses for their needs. After get
 
 ```
 Catalog Operator -> ServiceCatalog: POST broker
-ServicCatalog -> ServiceCatalog: Create Broker resource
+ServiceCatalog -> ServiceCatalog: Create Broker resource
 Controller -> AnsibleServiceBroker: GET /catalog 
 AnsibleServiceBroker -> Controller: List of available service classes: mLab, Go WebApp
 Controller -> ServiceCatalog: Creates list of service classes available

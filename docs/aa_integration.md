@@ -1,6 +1,6 @@
 # Ansible Playbook Bundles (APB) Integration
 
-## Running APB with the ASB
+## Running Playbook Bundles with the Ansible Service Broker
 
 Ansible Playbook Bundles (APB) should be executed by the broker via the docker client (APIs):
 
