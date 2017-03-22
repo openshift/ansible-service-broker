@@ -56,12 +56,12 @@ type LastOperationResponse struct {
 }
 
 type ProvisionRequest struct {
-	OrganizationID    uuid.UUID             `json:"organization_guid"`
-	PlanID            uuid.UUID             `json:"plan_id"`
-	ServiceID         uuid.UUID             `json:"service_id"`
-	SpaceID           uuid.UUID             `json:"space_guid"`
+	OrganizationID    uuid.UUID      `json:"organization_guid"`
+	PlanID            uuid.UUID      `json:"plan_id"`
+	ServiceID         uuid.UUID      `json:"service_id"`
+	SpaceID           uuid.UUID      `json:"space_guid"`
 	Parameters        apb.Parameters `json:"parameters,omitempty"`
-	AcceptsIncomplete bool                  `json:"accepts_incomplete,omitempty"`
+	AcceptsIncomplete bool           `json:"accepts_incomplete,omitempty"`
 }
 
 type ProvisionResponse struct {
