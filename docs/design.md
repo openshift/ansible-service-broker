@@ -15,26 +15,26 @@ An [OpenServiceBroker](https://github.com/openservicebrokerapi/servicebroker) (O
 
 ### Definitions
 
-* **Ansible App (AA)**: Containerized application implementing Ansible App spec (forthcoming)
+* **Ansible Playbook Bundle (APB)**: Containerized application implementing APB spec (forthcoming)
 to be deployed and managed via the Service Broker.
 
 * **Ansible Service Broker (ASB)**: Responsible for AA lifecycle management as well as exposure
-of available AAs found in backing registries.
+of available APBs found in backing registries.
 
-* **Ansible App Registry (ASR)**: Container registry of AAs implementing the
+* **Ansible Playbook Bundle Registry (APBR)**: Container registry of APBs implementing the
 Registry API (forthcoming). Requirements:
 
-  1.) Registry must allow the ASB to query for available AAs, and filter containers that are not AAs.
+  1.) Registry must allow the ASB to query for available APBs, and filter containers that are not APBs.
 
-  2.) ASB must be able to retrieve full set of Spec Files representing the AAs available *without*
+  2.) ASB must be able to retrieve full set of Spec Files representing the APBs available *without*
       having to pull the full images.
 
-* **Ansible App Spec File**: Metadata file packaged within an AA containing required set of
+* **Ansible Playbook Bundle Spec File**: Metadata file packaged within an APB containing required set of
 attributes to make it available via the Service Catalog.
 
 ### Guiding principles
 
-* Delegate specifics to AAs when appropriate. AAs define what
+* Delegate specifics to APBs when appropriate. APBs define what
 `bind` or `provision` mean in the context of their domain.
 
 * Shared behavior between apps should be pushed into AA execution environment,
@@ -44,7 +44,7 @@ or the ServiceBroker.
 
 **Pre-broker install**
 
-It's possible to have registries containing ~15k AAs. On ASB's installation,
+It's possible to have registries containing ~15k APBs. On ASB's installation,
 `/catalog` will be called by the Service Catalog, and the ASB needs to respond with
 the inventory of known spec files in the form of Service objects (defined by OSB spec).
 
@@ -115,11 +115,11 @@ itself down.
 
 ### Registry Adapter
 
-To enable bootstrapping and ansibleapp discoverability, the ASB is designed to
-query a registry for available ansibleapps via a Registry Adapter. This is an
+To enable bootstrapping and apb discoverability, the ASB is designed to
+query a registry for available apbs via a Registry Adapter. This is an
 interface that can be implemented. Its most important method, `LoadSpecs() []*Spec`,
 is responsible for returning a slice of `Spec` structs representing the available
-ansibleapps that were discovered. It is called when a broker is bootstrapped.
+apbs that were discovered. It is called when a broker is bootstrapped.
 A registry is instantiated as part of the
 applicaton's initialization process. The specific registry adapter used is
 configured via the broker [configuration file](../etc/ex.dev.config.yaml) under
@@ -132,13 +132,13 @@ a broker to be bootstrapped from the Docker Hub registry via the standard
 Docker Registry API. First, it will retrieve the list of images that a specified
 registry contains. Next, it will inspect each of the images and [retrieve
 their associated metadata](https://github.com/containers/image). The API queries
-are critical to ansibleapp discoverability because it allows the broker to retrieve
-the `com.redhat.ansibleapp.spec` label containing an ansibleapp's base64
-encoded spec information. The adapter filters any non-ansibleapp images
+are critical to apb discoverability because it allows the broker to retrieve
+the `com.redhat.apb.spec` label containing an apb's base64
+encoded spec information. The adapter filters any non-apb images
 based on the presence of these labels, decodes each of their specs, and loads
 the specs into etcd via the `Registry::LoadSpecs` method.
 
 The `DockerHubRegistry` requires a `user`, `pass`, and `org` field
 to be set inside the `registry` section of the configuration file. The user
 credentials are used to authenticate API queries, and the organization is the
-target org that ansibleapps will be loaded from.
+target org that apbs will be loaded from.
