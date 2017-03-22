@@ -9,6 +9,7 @@ import (
 
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
+	logging "github.com/op/go-logging"
 )
 
 var ListImagesScript = "get_images_for_org.sh"
@@ -121,7 +122,7 @@ func (r *DockerHubRegistry) loadAPBImageData(
 			continue
 		}
 
-		if imageData.IsAPB {
+		if imageData.IsPlaybookBundle {
 			apbData = append(apbData, imageData)
 		}
 
@@ -156,19 +157,19 @@ func (r *DockerHubRegistry) loadImageData(imageName string, channel chan<- *Imag
 	}
 
 	outputData := ImageData{
-		Name:   imageName,
-		Tag:    imgInspect.Tag,
-		Labels: imgInspect.Labels,
-		Layers: imgInspect.Layers,
-		IsAPB:  true,
-		Error:  nil,
+		Name:             imageName,
+		Tag:              imgInspect.Tag,
+		Labels:           imgInspect.Labels,
+		Layers:           imgInspect.Layers,
+		IsPlaybookBundle: true,
+		Error:            nil,
 	}
 
 	if outputData.Labels[APBSpecLabel] != "" {
-		outputData.IsAPB = true
+		outputData.IsPlaybookBundle = true
 		channel <- &outputData
 	} else {
-		outputData.IsAPB = false
+		outputData.IsPlaybookBundle = false
 		channel <- &outputData
 	}
 }
