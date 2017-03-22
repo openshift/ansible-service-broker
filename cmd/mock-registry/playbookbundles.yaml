@@ -1,5 +1,5 @@
 ---
-ansibleapps:
+playbookbundles:
   - id: c9e3348c-b6fd-45d6-b2ba-a13b41f0b6e3
     name: ansibleapp/etherpad-ansibleapp
     description: Note taking web application

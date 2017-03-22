@@ -10,7 +10,7 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-const AppsPath = "/apbs"
+const AppsPath = "/bundles"
 
 type DevRegistry struct {
 	config RegistryConfig

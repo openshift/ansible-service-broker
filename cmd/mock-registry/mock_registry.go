@@ -13,7 +13,7 @@ import (
 )
 
 type Args struct {
-	AppFile string `short:"a" long:"appfile" description:"Mock Ansible Apps yaml file"`
+	AppFile string `short:"a" long:"appfile" description:"Mock Ansible Playbook Bundles yaml file"`
 }
 
 func main() {
@@ -27,17 +27,17 @@ func main() {
 
 	fmt.Printf("Reading appfile: [ %s ]\n", args.AppFile)
 
-	apps := LoadAnsibleApps(args.AppFile)
+	apps := LoadPlaybookBundles(args.AppFile)
 
-	http.HandleFunc("/apbs", handler(args, apps, GetAnsibleApps))
+	http.HandleFunc("/bundles", handler(args, apps, GetPlaybookBundles))
 
 	fmt.Println("Listening on localhost:1337")
 	http.ListenAndServe(":1337", nil)
 }
 
-func GetAnsibleApps(w http.ResponseWriter, r *http.Request, args *Args, pApps *[]apb.Spec) {
+func GetPlaybookBundles(w http.ResponseWriter, r *http.Request, args *Args, pApps *[]apb.Spec) {
 	apps := *pApps
-	fmt.Printf("Amount of apbs %d\n", len(apps))
+	fmt.Printf("Amount of bundles %d\n", len(apps))
 
 	for i, app := range apps {
 		fmt.Printf("%d | ID: %s\n", i, app.Id)
@@ -51,18 +51,18 @@ func GetAnsibleApps(w http.ResponseWriter, r *http.Request, args *Args, pApps *[
 	json.NewEncoder(w).Encode(pApps)
 }
 
-func LoadAnsibleApps(appFile string) *[]apb.Spec {
+func LoadPlaybookBundles(appFile string) *[]apb.Spec {
 	// TODO: Is this required just to unwrap the root key and get the array?
 	// Load just an array without a root key to wrap it?
 	var parsedDat struct {
-		AnsibleApps []apb.Spec
+		PlaybookBundles []apb.Spec
 	}
 
 	fmt.Println(appFile)
 	dat, _ := ioutil.ReadFile(appFile)
 	yaml.Unmarshal(dat, &parsedDat)
 
-	return &parsedDat.AnsibleApps
+	return &parsedDat.PlaybookBundles
 }
 
 type VanillaHandler func(http.ResponseWriter, *http.Request)
