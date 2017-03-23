@@ -11,7 +11,7 @@ type RegistryConfig struct {
 	Url  string
 	User string
 	Pass string
-	Org  string // Target org to load playbookk bundles from
+	Org  string // Target org to load playbook bundles from
 }
 
 type Registry interface {
