@@ -1,0 +1,10 @@
+[Unit]
+Description=Ansible Service Broker
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/ansible-service-broker
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
