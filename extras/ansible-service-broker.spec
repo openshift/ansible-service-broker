@@ -27,9 +27,11 @@
 %global provider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path %{provider_prefix}
 
+%define build_timestamp %(date +"%Y%m%d%H%M%%S")
+
 Name: %{repo}
 Version: 0
-Release: 3%{?dist}
+Release: 3.%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
 URL: https://%{provider_prefix}
