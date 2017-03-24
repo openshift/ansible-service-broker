@@ -174,7 +174,7 @@ unit-test for %{name}
 %endif
 
 %prep
-%setup -q -n %{repo}
+%setup -q -n %{repo}-%{version}
 mkdir -p src/github.com/fusor/ansible-service-broker
 cp -r pkg src/github.com/fusor/ansible-service-broker
 
