@@ -26,16 +26,14 @@
 
 %global provider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path %{provider_prefix}
-%global commit 3cd6a252de09508439aa0c9dc6eca4549878e6b1
-%global shortcommit %(c=%{commit}; echo ${c:0:7})
 
 Name: %{repo}
 Version: 0
-Release: 2.git%{shortcommit}%{?dist}
+Release: 3%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
 URL: https://%{provider_prefix}
-Source0: https://%{provider_prefix}/archive/%{commit}/%{repo}-%{shortcommit}.tar.gz
+Source0: https://%{provider_prefix}/archive/HEAD/%{repo}.tar.gz
 
 # e.g. el6 has ppc64 arch without gcc-go, so EA tag is required
 #ExclusiveArch: %%{?go_arches:%%{go_arches}}%%{!?go_arches:%%{ix86} x86_64 %{arm}}
@@ -176,7 +174,7 @@ unit-test for %{name}
 %endif
 
 %prep
-%setup -q -n %{repo}-%{commit}
+%setup -q -n %{repo}
 mkdir -p src/github.com/fusor/ansible-service-broker
 cp -r pkg src/github.com/fusor/ansible-service-broker
 
