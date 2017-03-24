@@ -22,7 +22,7 @@ CentOS/RHEL/Fedora (sub dnf for Fedora):
 
 ```
 mkdir -p $GOPATH/src/github.com/fusor
-git clone https://github.com/fusor/ansible-service-broker.git $GOPATH/src/github.com/fusor/ansible-service-broker`
+git clone https://github.com/fusor/ansible-service-broker.git $GOPATH/src/github.com/fusor/ansible-service-broker
 cd $GOPATH/src/github.com/fusor/ansible-service-broker && glide install
 ```
 
