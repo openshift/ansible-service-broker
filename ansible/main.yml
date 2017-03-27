@@ -22,14 +22,27 @@
         - gcc
         - btrfs-progs-devel
         - device-mapper-devel
+
     - name: Create broker user
-      user: name=broker shell=/bin/bash
+      user: 
+        name: broker 
+        shell: /bin/bash
+        group: root
+
+
     - name: Create directory layout
-      file: path={{item}} state=directory
+      file:
+        path: "{{ item.dest }}"
+        state: "{{ item.state }}"
+        group: root
+        mode: "{{ item.mode }}"
       with_items:
-        - /opt/go/src/github.com/fusor
-        - "{{etc_dest}}"
-        - "{{bin_dest}}"
+        - { dest: "/var/log/ansible-service-broker.log", mode: "g+rw", state: touch }
+        - { dest: "/.kube", mode: "g+rw", state: directory }
+        - { dest: "/opt/go/src/github.com/fusor", mode: "g+rw", state: directory }
+        - { dest: "{{ etc_dest }}", mode: "g+rw", state: directory }
+        - { dest: "{{ bin_dest }}", mode: "ug+x", state: directory }
+
     - name: Install golang v1.8
       shell: curl -L "https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz" |
         tar xz --directory=/usr/local
