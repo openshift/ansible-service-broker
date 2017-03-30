@@ -64,6 +64,13 @@ func CreateApp() App {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
+	serv, clust, err := app.dao.GetEtcdVersion(app.config.Dao)
+	if err != nil {
+		app.log.Error("Failed to connect to Etcd\n")
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+	app.log.Info("Etcd Version [Server: %s, Cluster: %s]", serv, clust)
 
 	app.log.Debug("Connecting Registry")
 	if app.registry, err = apb.NewRegistry(
