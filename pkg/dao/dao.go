@@ -2,10 +2,14 @@ package dao
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	"github.com/coreos/etcd/client"
+	"github.com/coreos/etcd/version"
 	"github.com/fusor/ansible-service-broker/pkg/apb"
 	logging "github.com/op/go-logging"
 )
@@ -61,6 +65,34 @@ func (d *Dao) SetRaw(key string, val string) error {
 	d.log.Debug(fmt.Sprintf("Dao::SetRaw [ %s ] -> [ %s ]", key, val))
 	_, err := d.kapi.Set(context.Background(), key, val /*opts*/, nil)
 	return err
+}
+
+func (d *Dao) GetEtcdVersion(config Config) (string, string, error) {
+
+	// The next etcd release (1.4) will have client.GetVersion()
+	// We'll use this to test our etcd connection for now
+	resp, err := http.Get("http://" + config.EtcdHost + ":" + config.EtcdPort + "/version")
+	if err != nil {
+		return "", "", err
+	}
+
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var vresp version.Versions
+		if err := json.Unmarshal(body, &vresp); err != nil {
+			return "", "", err
+		}
+		return vresp.Server, vresp.Cluster, nil
+	default:
+		var connectErr error
+		if err := json.Unmarshal(body, &connectErr); err != nil {
+			return "", "", err
+		}
+		return "", "", connectErr
+	}
 }
 
 func (d *Dao) GetRaw(key string) (string, error) {
