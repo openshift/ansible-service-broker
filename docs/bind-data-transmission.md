@@ -27,23 +27,22 @@ on that host. Since we're passing sensitive information, we don't want any
 process on the system to have access to the credentials.
 
 ## Output on Exit
-This is a similar solution to trailing pod logs because it relies on stdout
-from the container to get the bind credentials.  The main difference is the
-container is expected to output credentials on exit.  So instead of trailing
-the logs, the Broker will look for the container exit and gather bind
-credentials.
+This solution adds to the pod definition a location where the bind credentials
+can be picked up by Kubernetes with the `terminationMessagePath` parameter.
+
+The APB will run to gather bind credentials and store them in a file and exit.
+Upon termination, Kubernetes will gather the log message in the file and set
+that to be the pod termination message.  The Broker would look for these
+credentials in the terminating pod message [1].
 
 ### Implementation details
 | Requirements |
 | ------------ |
-| None         |
-
-This solutions is easy to implement and doesn't add any complexity or have any
-requirements.
+| Kubernetes >= 1.6 |
 
 ### Downside
-This solution has a the same shortcoming as trailing pod logs because
-credentials are exposed as a readable log by anyone on the host.
+The downside is that anyone in the same project can access these credentials by
+reading the log message.
 
 ## Shared Volume
 Sharing physical volumes in Kubernetes/OpenShift is a common pattern for data
@@ -54,7 +53,7 @@ bind-shared-pv when the Broker is started. Then, when a APB is started, it will
 also use the bind-shared-pv volume.
 
 When the bind occurs, the APB will gather credentials and store them in a file
-in the mounted pysical volume and exit. Then, the Broker will read the contents
+in the mounted physical volume and exit. Then, the Broker will read the contents
 of the file and store the bind credentials.
 
 ### Implementation details
@@ -89,7 +88,9 @@ the Broker on the endpoint and pass the data off to the Broker.
 | Docs explaining the required networking and firewall rules |
 
 ### Downside
-Operators with prodution clusters will have any number of network customizations
+Operators with production clusters will have any number of network customizations
 and firewall rules.  This solution would require the operator allow the APB to
 contact the Broker on an endpoint. But, we could document this to ensure
 operators have instructions to make this work.
+
+[1] - https://kubernetes.io/docs/tasks/debug-application-cluster/determine-reason-pod-failure/
