@@ -51,22 +51,19 @@ func Bind(
 	log.Debug("Calling getPodName")
 	podname, _ := getPodName(output, log)
 	log.Debug("Calling monitorOutput on " + podname)
-	bindout, _ := monitorOutput(podname)
-	log.Info(string(bindout))
 
-	// HACK ALERT!
-	bd, err := buildBindData(bindout)
-	if err != nil {
-		// HACK: this is HORRIBLE. but there is definitely a time between a bind
-		// and when the container is up.
-		time.Sleep(5 * time.Second)
-		log.Warning("Trying to monitor the output again on " + podname)
-		bindout, _ = monitorOutput(podname)
-		log.Info(string(bindout))
-		return buildBindData(bindout)
+	out := make(chan []byte)
+	go func() {
+		monitorOutput(podname, out, log)
+	}()
+
+	var bindout []byte
+	for msg := range out {
+		log.Info(string(msg))
+		bindout = msg
 	}
 
-	return bd, err
+	return buildBindData(bindout)
 }
 
 // HACK: this really is a crappy way of getting output
@@ -86,8 +83,27 @@ func getPodName(output []byte, log *logging.Logger) (string, error) {
 	return podname[len(podname)-1], nil
 }
 
-func monitorOutput(podname string) ([]byte, error) {
-	return runCommand("oc", "logs", "-f", podname)
+func monitorOutput(podname string, mon chan []byte, log *logging.Logger) {
+	// TODO: Error handling here
+	// It would also be nice to gather the script output that exec runs
+	// instead of only getting the credentials
+	retries := 5
+	for r := 1; r <= retries; r++ {
+		output, _ := runCommand("oc", "exec", podname, "broker-bind-creds")
+
+		if strings.Contains(string(output), "BIND_CREDENTIALS") {
+			mon <- output
+			close(mon)
+			return
+		}
+
+		time.Sleep(time.Duration(r) * time.Second)
+		log.Warning("Retry attempt %d: exec into %s failed", r, podname)
+	}
+	t := fmt.Sprintf("ExecTimeout: Failed to gather bind credentials after %d retries", retries)
+	mon <- []byte(t)
+	close(mon)
+	return
 }
 
 func buildBindData(output []byte) (*BindData, error) {
