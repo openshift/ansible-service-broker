@@ -9,7 +9,7 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
-	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil)
+	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil, WorkEngine{})
 	resp, err := broker.Update(uuid.NewUUID(), nil)
 	if resp != nil {
 		t.Fail()
@@ -18,19 +18,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUnbind(t *testing.T) {
-	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil)
+	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil, WorkEngine{})
 	err := broker.Unbind(uuid.NewUUID(), uuid.NewUUID())
 
 	ft.AssertEqual(t, err, notImplemented, "Unbind must have been implemented")
 }
-
-/*
-need a way to mock out the logger.
-func TestValidateDeprovision(t *testing.T) {
-	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil)
-	err := broker.validateDeprovision(uuid.New())
-	if err != nil {
-		t.Fail()
-	}
-}
-*/

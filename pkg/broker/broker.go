@@ -13,11 +13,12 @@ import (
 type Broker interface {
 	Bootstrap() (*BootstrapResponse, error)
 	Catalog() (*CatalogResponse, error)
-	Provision(uuid.UUID, *ProvisionRequest) (*ProvisionResponse, error)
+	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest) (*UpdateResponse, error)
 	Deprovision(uuid.UUID) (*DeprovisionResponse, error)
 	Bind(uuid.UUID, uuid.UUID, *BindRequest) (*BindResponse, error)
 	Unbind(uuid.UUID, uuid.UUID) error
+	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 }
 
 type AnsibleBroker struct {
@@ -25,6 +26,7 @@ type AnsibleBroker struct {
 	log           *logging.Logger
 	clusterConfig apb.ClusterConfig
 	registry      apb.Registry
+	engine        *WorkEngine
 }
 
 func NewAnsibleBroker(
@@ -32,6 +34,7 @@ func NewAnsibleBroker(
 	log *logging.Logger,
 	clusterConfig apb.ClusterConfig,
 	registry apb.Registry,
+	engine WorkEngine,
 ) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
@@ -39,6 +42,7 @@ func NewAnsibleBroker(
 		log:           log,
 		clusterConfig: clusterConfig,
 		registry:      registry,
+		engine:        &engine,
 	}
 
 	return broker, nil
@@ -85,7 +89,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	return &CatalogResponse{services}, nil
 }
 
-func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) (*ProvisionResponse, error) {
+func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, async bool) (*ProvisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	//type ProvisionRequest struct {
 
@@ -156,21 +160,38 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 		return nil, err
 	}
 
-	// TODO: Async? Bring in WorkEngine.
-	extCreds, err := apb.Provision(spec, parameters, a.clusterConfig, a.log)
-	if err != nil {
-		a.log.Error("broker::Provision error occurred.")
-		a.log.Error("%s", err.Error())
-		return nil, err
-	}
+	var token string
 
-	if extCreds != nil {
-		a.log.Debug("broker::Provision, got ExtractedCredentials!")
-		err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
+	if async {
+		a.log.Info("ASYNC provisioning in progress")
+		// asyncronously provision and return the token for the lastoperation
+		pjob := NewProvisionJob(spec, parameters, a.clusterConfig, a.log)
+
+		// HACK: wow this feels dirty
+		a.engine.AttachSubscriber(NewProvisionWorkSubscriber(a.dao))
+		token = a.engine.StartNewJob(pjob)
+
+		// HACK: there might be a delay between the first time the state in etcd
+		// is set and the job was already started. But I need the token.
+		a.dao.SetState(token, apb.StateInProgress)
+	} else {
+		// TODO: do we want to do synchronous provisioning?
+		a.log.Info("reverting to synchronous provisioning in progress")
+		extCreds, err := apb.Provision(spec, parameters, a.clusterConfig, a.log)
 		if err != nil {
-			a.log.Error("Could not persist extracted credentials")
+			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
 			return nil, err
+		}
+
+		if extCreds != nil {
+			a.log.Debug("broker::Provision, got ExtractedCredentials!")
+			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
+			if err != nil {
+				a.log.Error("Could not persist extracted credentials")
+				a.log.Error("%s", err.Error())
+				return nil, err
+			}
 		}
 	}
 
@@ -179,7 +200,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	// Operation needs to be present if this is an async provisioning
 	// 202 (Accepted), inprogress last_operation status
 	// Will need to come with a "state" update in etcd on the ServiceInstance
-	return &ProvisionResponse{Operation: "successful"}, nil
+	return &ProvisionResponse{Operation: token}, nil // operation should be the task id from the work_engine
 }
 
 func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {
@@ -324,4 +345,27 @@ func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) err
 
 func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*UpdateResponse, error) {
 	return nil, notImplemented
+}
+
+func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationRequest) (*LastOperationResponse, error) {
+	/*
+		look up the resource in etcd the operation should match what was returned by provision
+		take the status and return that.
+
+		process:
+
+		if async, provision: it should create a Job that calls apb.Provision. And write the output to etcd.
+	*/
+	a.log.Debug(req.ServiceID.String()) // optional
+	a.log.Debug(req.PlanID.String())    // optional
+	a.log.Debug(req.Operation)          // this is provided with the provision. task id from the work_engine
+
+	// TODO:validate the format to avoid some sort of injection hack
+	jobstate, err := a.dao.GetState(req.Operation)
+	if err != nil {
+		a.log.Error(err.Error())
+	}
+
+	state := StateToLastOperation(jobstate)
+	return &LastOperationResponse{State: state, Description: ""}, err
 }

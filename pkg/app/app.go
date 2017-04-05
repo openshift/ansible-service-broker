@@ -11,6 +11,8 @@ import (
 	"github.com/fusor/ansible-service-broker/pkg/handler"
 )
 
+const MsgBufferSize = 20
+
 var Version = "v0.1.0"
 
 type App struct {
@@ -20,6 +22,7 @@ type App struct {
 	dao      *dao.Dao
 	log      *Log
 	registry apb.Registry
+	engine   *broker.WorkEngine
 }
 
 func CreateApp() App {
@@ -81,9 +84,12 @@ func CreateApp() App {
 	}
 	////////////////////////////////////////////////////////////
 
+	app.log.Debug("Initializing WorkEngine")
+	app.engine = broker.NewWorkEngine(MsgBufferSize)
+
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.config.Openshift, app.registry,
+		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine,
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
 		app.log.Error(err.Error())
