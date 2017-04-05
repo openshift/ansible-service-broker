@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/mux"
@@ -46,6 +47,8 @@ func NewHandler(b broker.Broker) http.Handler {
 		createVarHandler(h.bind)).Methods("PUT")
 	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
 		createVarHandler(h.unbind)).Methods("DELETE")
+	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
+		createVarHandler(h.lastoperation)).Methods("GET")
 
 	return h
 }
@@ -77,6 +80,14 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
+	var async bool
+	queryparams := r.URL.Query()
+
+	if val, ok := queryparams["accepts_incomplete"]; ok {
+		// ignore the error, if async can't be parsed it will be false
+		async, _ = strconv.ParseBool(val[0])
+	}
+
 	var req *broker.ProvisionRequest
 	err := readRequest(r, &req)
 
@@ -85,12 +96,14 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
-	resp, err := h.broker.Provision(instanceUUID, req)
+	resp, err := h.broker.Provision(instanceUUID, req, async)
 
 	if errors.IsNotFound(err) || errors.IsInvalid(err) {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "instance not found: " + err.Error()})
 	} else if errors.IsAlreadyExists(err) {
 		writeResponse(w, http.StatusConflict, broker.ProvisionResponse{})
+	} else if async {
+		writeDefaultResponse(w, http.StatusAccepted, resp, err)
 	} else {
 		writeDefaultResponse(w, http.StatusCreated, resp, err)
 	}
@@ -183,4 +196,40 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		writeDefaultResponse(w, http.StatusOK, struct{}{}, err)
 	}
 	return
+}
+
+func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	defer r.Body.Close()
+
+	instanceUUID := uuid.Parse(params["instance_uuid"])
+	if instanceUUID == nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
+		return
+	}
+
+	req := broker.LastOperationRequest{}
+
+	queryparams := r.URL.Query()
+
+	// operation is rqeuired
+	if val, ok := queryparams["operation"]; ok {
+		req.Operation = val[0]
+	} else {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid operation"})
+		return
+	}
+
+	// service_id is optional
+	if val, ok := queryparams["service_id"]; ok {
+		req.ServiceID = uuid.Parse(val[0])
+	}
+
+	// plan_id is optional
+	if val, ok := queryparams["plan_id"]; ok {
+		req.PlanID = uuid.Parse(val[0])
+	}
+
+	resp, err := h.broker.LastOperation(instanceUUID, &req)
+
+	writeDefaultResponse(w, http.StatusOK, resp, err)
 }

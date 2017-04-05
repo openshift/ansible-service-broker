@@ -53,3 +53,16 @@ func SpecToService(spec *apb.Spec) Service {
 	copy(retSvc.Tags, spec.Tags)
 	return retSvc
 }
+
+func StateToLastOperation(state apb.State) LastOperationState {
+	switch state {
+	case apb.StateInProgress:
+		return LastOperationStateInProgress
+	case apb.StateSucceeded:
+		return LastOperationStateSucceeded
+	case apb.StateFailed:
+		return LastOperationStateFailed
+	default:
+		return LastOperationStateFailed
+	}
+}
