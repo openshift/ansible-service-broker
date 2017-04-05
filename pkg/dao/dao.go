@@ -237,6 +237,33 @@ func (d *Dao) SetExtractedCredentials(
 	return d.SetRaw(extractedCredentialsKey(id), payload)
 }
 
+func (d *Dao) SetState(id string, state apb.State) error {
+	payload := string(state)
+
+	return d.SetRaw(stateKey(id), payload)
+}
+
+func (d *Dao) GetState(id string) (apb.State, error) {
+	raw, err := d.GetRaw(stateKey(id))
+	if err != nil {
+		return apb.StateFailed, err
+	}
+
+	var state apb.State
+
+	switch raw {
+	case "in progress":
+		state = apb.StateInProgress
+	case "succeeded":
+		state = apb.StateSucceeded
+	case "failed":
+		state = apb.StateFailed
+	default:
+		state = apb.StateFailed
+	}
+	return state, nil
+}
+
 func (d *Dao) DeleteBindInstance(id string) error {
 	d.log.Debug(fmt.Sprintf("Dao::DeleteBindInstance -> [ %s ]", id))
 	_, err := d.kapi.Delete(context.Background(), bindInstanceKey(id), nil)
@@ -246,6 +273,11 @@ func (d *Dao) DeleteBindInstance(id string) error {
 ////////////////////////////////////////////////////////////
 // Key generators
 ////////////////////////////////////////////////////////////
+
+func stateKey(id string) string {
+	return fmt.Sprintf("/state/%s", id)
+}
+
 func extractedCredentialsKey(id string) string {
 	return fmt.Sprintf("/extracted_credentials/%s", id)
 }

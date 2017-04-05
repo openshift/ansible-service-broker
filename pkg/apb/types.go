@@ -50,6 +50,16 @@ type ExtractedCredentials struct {
 	// might be more one day
 }
 
+// HACK: created these State types because I couldn't import broker into the
+// dao. So I'm duplicating information to avoid the cyclic dependency.
+type State string
+
+const (
+	StateInProgress State = "in progress"
+	StateSucceeded  State = "succeeded"
+	StateFailed     State = "failed"
+)
+
 func specLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("============================================================")
 	log.Debug("Spec: %s", spec.Id)
