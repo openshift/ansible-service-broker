@@ -10,9 +10,10 @@ import (
 )
 
 func readRequest(r *http.Request, obj interface{}) error {
-	if r.Header.Get("Content-Type") != "application/json" {
-		return errors.New("error: invalid content-type")
-	}
+	// TODO: Needs to get added back in when Catalog is sending Content-Type
+	//if r.Header.Get("Content-Type") != "application/json" {
+	//return errors.New("error: invalid content-type")
+	//}
 
 	return json.NewDecoder(r.Body).Decode(&obj)
 }
