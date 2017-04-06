@@ -11,8 +11,6 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-var _log *logging.Logger
-
 var ContainerCreatingError = "status: ContainerCreating, still waiting to start"
 var TimeoutFreq = 6    // Seconds
 var TotalTimeout = 900 // 15min
@@ -106,8 +104,7 @@ func monitorOutput(podname string) ([]byte, error) {
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
 	if strings.Contains(string(output), "ContainerCreating") {
 		// Still waiting for container to come up
-		_log.Debug("buildExtractedCredentials::Still waiting for container to come up!!")
-		return nil, errors.New(ContainerCreatingError)
+		return nil, errors.New("container creating, still waiting to start")
 	}
 
 	result, err := decodeOutput(output)

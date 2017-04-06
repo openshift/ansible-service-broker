@@ -156,42 +156,23 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 		return nil, err
 	}
 
-	_run := func() error {
-		extCreds, err := apb.Provision(spec, parameters, a.clusterConfig, a.log)
-		if err != nil {
-			a.log.Error("broker::Provision error occurred.")
-			a.log.Error("%s", err.Error())
-			return err
-		}
-
-		if extCreds != nil {
-			a.log.Debug("broker::Provision, got ExtractedCredentials!")
-			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
-			if err != nil {
-				a.log.Error("Could not persist extracted credentials")
-				a.log.Error("%s", err.Error())
-				return err
-			}
-		}
-
-		return nil
+	// TODO: Async? Bring in WorkEngine.
+	extCreds, err := apb.Provision(spec, parameters, a.clusterConfig, a.log)
+	if err != nil {
+		a.log.Error("broker::Provision error occurred.")
+		a.log.Error("%s", err.Error())
+		return nil, err
 	}
 
-	////////////////////////////////////////////////////////////////////////////////
-	// TODO: Forcing async right now. In the future, we'll conditionally execute
-	// based on the request. Proper async WorkEngine powered. Ex:
-	/*
-		if isAsync() {
-			jobId := a.engine.Run(NewWork(_run))
-			return &ProvisionResponse{Operation: jobId}, nil // req 202 response
-		} else {
-			_run()
-			&ProvisionResponse{}, nil // req 200 response
+	if extCreds != nil {
+		a.log.Debug("broker::Provision, got ExtractedCredentials!")
+		err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
+		if err != nil {
+			a.log.Error("Could not persist extracted credentials")
+			a.log.Error("%s", err.Error())
+			return nil, err
 		}
-	*/
-	// err : = _run() // sync flavor, will block
-	go _run() // async flavor
-	////////////////////////////////////////////////////////////////////////////////
+	}
 
 	// TODO: What data needs to be sent back on a respone?
 	// Not clear what dashboardURL means in an AnsibleApp context
