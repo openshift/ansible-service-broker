@@ -12,7 +12,7 @@ type Parameters map[string]interface{}
 type SpecManifest map[string]*Spec
 
 // TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
-var BundleSpecLabel = "com.redhat.ansibleapp.spec"
+var BundleSpecLabel = "com.redhat.apb.spec"
 
 type ImageData struct {
 	Name             string
@@ -34,6 +34,7 @@ type ParameterDescriptor struct {
 type Spec struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
+	Image       string `json:"image"`
 	Bindable    bool   `json:"bindable"`
 	Description string `json:"description"`
 
@@ -42,7 +43,7 @@ type Spec struct {
 	Parameters []*ParameterDescriptor `json:"parameters"`
 }
 
-type BindData struct {
+type ExtractedCredentials struct {
 	Credentials map[string]interface{} `json:"credentials,omitempty"`
 	// might be more one day
 }
@@ -52,6 +53,7 @@ func specLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("Spec: %s", spec.Id)
 	log.Debug("============================================================")
 	log.Debug("Name: %s", spec.Name)
+	log.Debug("Image: %s", spec.Image)
 	log.Debug("Bindable: %t", spec.Bindable)
 	log.Debug("Description: %s", spec.Description)
 	log.Debug("Async: %s", spec.Async)

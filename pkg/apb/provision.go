@@ -1,6 +1,7 @@
 package apb
 
 import (
+	"errors"
 	"fmt"
 
 	logging "github.com/op/go-logging"
@@ -14,37 +15,47 @@ import (
 func Provision(
 	spec *Spec, parameters *Parameters,
 	clusterConfig ClusterConfig, log *logging.Logger,
-) error {
+) (*ExtractedCredentials, error) {
 	log.Notice("============================================================")
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
 	log.Notice(fmt.Sprintf("Spec.Id: %s", spec.Id))
 	log.Notice(fmt.Sprintf("Spec.Name: %s", spec.Name))
+	log.Notice(fmt.Sprintf("Spec.Image: %s", spec.Image))
 	log.Notice(fmt.Sprintf("Spec.Description: %s", spec.Description))
 	log.Notice(fmt.Sprintf("Parameters: %v", parameters))
 	log.Notice("============================================================")
+
+	// Explicitly error out if image field is missing from spec
+	// was introduced as a change to the apb spec to support integration
+	// with the broker and still allow for providing an img path
+	// Legacy ansibleapps will hit this.
+	if spec.Image == "" {
+		log.Error("No image field found on the apb spec (apb.yaml)")
+		log.Error("apb spec requires [name] and [image] fields to be separate")
+		log.Error("Are you trying to run a legacy ansibleapp without an image field?")
+		return nil, errors.New("No image field found on Spec")
+	}
 
 	var client *Client
 	var err error
 
 	if client, err = NewClient(log); err != nil {
-		return err
+		return nil, err
 	}
 
-	if err = client.PullImage(spec.Name); err != nil {
-		return err
+	if err = client.PullImage(spec.Image); err != nil {
+		return nil, err
 	}
 
-	// HACK: Cluster config needs to come in from the broker. For now, hardcode it
 	output, err := client.RunImage("provision", clusterConfig, spec, parameters)
 
 	if err != nil {
 		log.Error("Problem running image")
 		log.Error(string(output))
 		log.Error(err.Error())
-		return err
+		return nil, err
 	}
 
-	log.Info(string(output))
-	return nil
+	return extractCredentials(output, log)
 }

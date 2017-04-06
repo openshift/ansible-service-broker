@@ -109,7 +109,8 @@ func (c *Client) RunImage(
 	c.log.Debug("target: [ %s ]", clusterConfig.Target)
 	c.log.Debug("user: [ %s ]", clusterConfig.User)
 	c.log.Debug("password:[ %s ]", clusterConfig.Password)
-	c.log.Debug("image:[ %s ]", spec.Name)
+	c.log.Debug("name:[ %s ]", spec.Name)
+	c.log.Debug("image:[ %s ]", spec.Image)
 	c.log.Debug("action:[ %s ]", action)
 	c.log.Debug("params:[ %s ]", string(params))
 
@@ -117,7 +118,7 @@ func (c *Client) RunImage(
 		"--env", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
 		"--env", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
 		"--env", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
-		fmt.Sprintf("--image=%s", spec.Name), "--restart=Never",
+		fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
 		"--", action, "--extra-vars", string(params))
 }
 

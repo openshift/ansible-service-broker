@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/fusor/ansible-service-broker/pkg/apb"
@@ -156,7 +157,22 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	}
 
 	// TODO: Async? Bring in WorkEngine.
-	err = apb.Provision(spec, parameters, a.clusterConfig, a.log)
+	extCreds, err := apb.Provision(spec, parameters, a.clusterConfig, a.log)
+	if err != nil {
+		a.log.Error("broker::Provision error occurred.")
+		a.log.Error("%s", err.Error())
+		return nil, err
+	}
+
+	if extCreds != nil {
+		a.log.Debug("broker::Provision, got ExtractedCredentials!")
+		err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
+		if err != nil {
+			a.log.Error("Could not persist extracted credentials")
+			a.log.Error("%s", err.Error())
+			return nil, err
+		}
+	}
 
 	// TODO: What data needs to be sent back on a respone?
 	// Not clear what dashboardURL means in an AnsibleApp context
@@ -264,14 +280,42 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		}
 	*/
 
-	bindData, err := apb.Bind(instance, &params, a.clusterConfig, a.log)
+	// NOTE: Design here is very WIP
+	// Potentially have data from provision stashed away, and bind may also
+	// produce new binding data. Take both sets and merge?
+	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
+	if err != nil {
+		a.log.Debug("provExtCreds a miss!")
+		a.log.Debug("%s", err.Error())
+	} else {
+		a.log.Debug("Got provExtCreds hit!")
+		a.log.Debug("%+v", provExtCreds)
+	}
+
+	bindExtCreds, err := apb.Bind(instance, &params, a.clusterConfig, a.log)
 	if err != nil {
 		return nil, err
 	}
 
-	// need to change to return the appropriate section depending on what Bind
-	// returns.
-	return &BindResponse{Credentials: bindData.Credentials}, nil
+	// Can't bind to anything if we have nothing to return to the catalog
+	if provExtCreds == nil && bindExtCreds == nil {
+		a.log.Error("No extracted credentials found from provision or bind")
+		a.log.Error("Instance ID: %s", instanceUUID.String())
+		return nil, errors.New("No credentials available")
+	}
+
+	returnCreds := mergeCredentials(provExtCreds, bindExtCreds)
+	// TODO: Insert merged credentials into etcd? Separate into bind/provision
+	// so none are overwritten?
+
+	return &BindResponse{Credentials: returnCreds}, nil
+}
+
+func mergeCredentials(
+	provExtCreds *apb.ExtractedCredentials, bindExtCreds *apb.ExtractedCredentials,
+) map[string]interface{} {
+	// TODO: Implement, need to handle case where either are empty
+	return provExtCreds.Credentials
 }
 
 func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) error {
