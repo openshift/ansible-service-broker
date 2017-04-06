@@ -215,6 +215,28 @@ func (d *Dao) SetBindInstance(
 	return d.SetRaw(bindInstanceKey(id), payload)
 }
 
+func (d *Dao) GetExtractedCredentials(id string) (*apb.ExtractedCredentials, error) {
+	raw, err := d.GetRaw(extractedCredentialsKey(id))
+	if err != nil {
+		return nil, err
+	}
+
+	extractedCredentials := &apb.ExtractedCredentials{}
+	apb.LoadJSON(raw, extractedCredentials)
+	return extractedCredentials, nil
+}
+
+func (d *Dao) SetExtractedCredentials(
+	id string, extractedCredentials *apb.ExtractedCredentials,
+) error {
+	payload, err := apb.DumpJSON(extractedCredentials)
+	if err != nil {
+		return err
+	}
+
+	return d.SetRaw(extractedCredentialsKey(id), payload)
+}
+
 func (d *Dao) DeleteBindInstance(id string) error {
 	d.log.Debug(fmt.Sprintf("Dao::DeleteBindInstance -> [ %s ]", id))
 	_, err := d.kapi.Delete(context.Background(), bindInstanceKey(id), nil)
@@ -224,6 +246,10 @@ func (d *Dao) DeleteBindInstance(id string) error {
 ////////////////////////////////////////////////////////////
 // Key generators
 ////////////////////////////////////////////////////////////
+func extractedCredentialsKey(id string) string {
+	return fmt.Sprintf("/extracted_credentials/%s", id)
+}
+
 func specKey(id string) string {
 	return fmt.Sprintf("/spec/%s", id)
 }
