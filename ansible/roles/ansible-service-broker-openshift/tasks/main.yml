@@ -67,7 +67,7 @@
         OPENSHIFT_USER: '{{openshift_user}}'
       args:
       - entrypoint.sh
-      image: docker.io/ansibleapp/ansible-service-broker-asb:latest
+      image: docker.io/ansibleplaybookbundle/ansible-service-broker-asb:latest
       ports:
       - 1338
     replace: true
@@ -93,7 +93,7 @@
       - --data-dir=/data
       - --listen-client-urls=http://0.0.0.0:2379
       - --advertise-client-urls=http://0.0.0.0:2379
-      image: docker.io/ansibleapp/ansible-service-broker-etcd:latest
+      image: docker.io/ansibleplaybookbundle/ansible-service-broker-etcd:latest
       ports:
       - 2379
     replace: true

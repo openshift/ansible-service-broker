@@ -24,8 +24,8 @@
         - device-mapper-devel
 
     - name: Create broker user
-      user: 
-        name: broker 
+      user:
+        name: broker
         shell: /bin/bash
         group: root
 
@@ -71,7 +71,7 @@
       git:
         repo: https://github.com/fusor/ansible-service-broker.git
         dest: "{{asb_checkout}}"
-        version: dockerhub-latest
+        version: forced-async-prov
     - name: Install ansible-service-broker dependencies
       shell: glide install
       args:

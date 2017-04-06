@@ -1,6 +1,7 @@
 id: 89dab56d-a712-4725-a065-dcb6c8e1de88
-name: ansibleapp/ansible-service-broker-ansibleapp
-description: AnsibleApp OpenServiceBroker implementation
+name: ansible-service-broker-apb
+image: ansibleplaybookbundle/ansible-service-broker-apb
+description: APB OpenServiceBroker implementation
 bindable: false
 async: "unsupported"
 parameters:
