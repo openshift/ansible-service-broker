@@ -37,6 +37,7 @@ func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, error) {
 		return nil, err
 	}
 
+	r.log.Debug("Raw image bundle size: %d", len(rawBundleData))
 	if specs, err = r.createSpecs(rawBundleData); err != nil {
 		return nil, err
 	}
@@ -68,10 +69,12 @@ func (r *DockerHubRegistry) createSpecs(
 
 		decodedSpecYaml, _err := b64.StdEncoding.DecodeString(encodedSpec)
 		if _err != nil {
+			r.log.Error("Something went wrong deciding spec from label")
 			return nil, err
 		}
 
 		if _err = LoadYAML(string(decodedSpecYaml), _spec); _err != nil {
+			r.log.Error("Something went wrong loading decoded spec yaml")
 			return nil, _err
 		}
 
@@ -93,6 +96,7 @@ func (r *DockerHubRegistry) loadBundleImageData(
 	org string,
 ) ([]*ImageData, error) {
 	r.log.Debug("DockerHubRegistry::loadBundleImageData")
+	r.log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 	r.log.Debug("Loading image list for org: [ %s ]", org)
 
 	orgScript := path.Join(r.ScriptsDir, ListImagesScript)
