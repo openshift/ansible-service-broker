@@ -10,7 +10,8 @@ import (
 )
 
 const SpecId = "ab094014-b740-495e-b178-946d5aa97ebf"
-const SpecName = "fusor/etherpad-apb"
+const SpecName = "etherpad-apb"
+const SpecImage = "fusor/etherpad-apb"
 const SpecBindable = false
 const SpecAsync = "optional"
 const SpecDescription = "A note taking webapp"
@@ -39,11 +40,12 @@ var SpecJSON = fmt.Sprintf(`
 	"id": "%s",
 	"description": "%s",
 	"name": "%s",
+	"image": "%s",
 	"bindable": %t,
 	"async": "%s",
 	"parameters": %s
 }
-`, SpecId, SpecDescription, SpecName, SpecBindable, SpecAsync, SpecParameters)
+`, SpecId, SpecDescription, SpecName, SpecImage, SpecBindable, SpecAsync, SpecParameters)
 
 func TestSpecLoadJSON(t *testing.T) {
 
@@ -56,6 +58,7 @@ func TestSpecLoadJSON(t *testing.T) {
 	ft.AssertEqual(t, s.Id, SpecId)
 	ft.AssertEqual(t, s.Description, SpecDescription)
 	ft.AssertEqual(t, s.Name, SpecName)
+	ft.AssertEqual(t, s.Image, SpecImage)
 	ft.AssertEqual(t, s.Bindable, SpecBindable)
 	ft.AssertEqual(t, s.Async, SpecAsync)
 	ft.AssertTrue(t, reflect.DeepEqual(s.Parameters, expectedSpecParameters))
@@ -67,6 +70,7 @@ func TestSpecDumpJSON(t *testing.T) {
 		Id:          SpecId,
 		Description: SpecDescription,
 		Name:        SpecName,
+		Image:       SpecImage,
 		Bindable:    SpecBindable,
 		Async:       SpecAsync,
 		Parameters:  expectedSpecParameters,
@@ -86,5 +90,5 @@ func TestSpecDumpJSON(t *testing.T) {
 }
 
 func TestSpecLabel(t *testing.T) {
-	ft.AssertEqual(t, BundleSpecLabel, "com.redhat.ansibleapp.spec", "spec label does not match dockerhub")
+	ft.AssertEqual(t, BundleSpecLabel, "com.redhat.apb.spec", "spec label does not match dockerhub")
 }

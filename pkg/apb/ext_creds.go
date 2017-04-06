@@ -11,8 +11,6 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-var _log *logging.Logger
-
 // HACK ALERT!
 // A lot of the current approach to extracting credentials and monitoring
 // output is *very* experimental and error prone. Entire approach is going
@@ -21,7 +19,6 @@ var _log *logging.Logger
 func extractCredentials(
 	output []byte, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	_log = log
 	log.Info("{%s}", string(output))
 
 	log.Debug("Calling getPodName")
@@ -71,7 +68,6 @@ func monitorOutput(podname string) ([]byte, error) {
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
 	if strings.Contains(string(output), "ContainerCreating") {
 		// Still waiting for container to come up
-		_log.Debug("buildExtractedCredentials::Still waiting for container to come up!!")
 		return nil, errors.New("ContainerCreating, still waiting to start.")
 	}
 
@@ -104,25 +100,20 @@ func decodeOutput(output []byte) (map[string]string, error) {
 		endIdx := strings.Index(str, "</BIND_ERROR>")
 		if startIdx > -1 && endIdx > -1 {
 			// Case 3, error reported
-			_log.Debug("Case 3, found error")
 			return nil, errors.New(str[startOffset:endIdx])
 		}
 
 		// Case 1, no creds found, no errors occurred
-		_log.Debug("No creds found, no errors occurred")
 		return nil, nil
 	}
 
-	_log.Debug("Attempting decode")
 	decodedjson, err := base64.StdEncoding.DecodeString(str[startOffset:endIdx])
 	if err != nil {
 		return nil, err
 	}
 
-	_log.Debug("Raw string %s", decodedjson)
 	decoded := make(map[string]string)
 	json.Unmarshal(decodedjson, &decoded)
 	// Case 2, creds successfully found and decoded
-	_log.Debug("Unmarshaled decoded %+v", decoded)
 	return decoded, nil
 }
