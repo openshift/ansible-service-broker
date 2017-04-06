@@ -68,7 +68,7 @@ func monitorOutput(podname string) ([]byte, error) {
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
 	if strings.Contains(string(output), "ContainerCreating") {
 		// Still waiting for container to come up
-		return nil, errors.New("container creating, still waiting to start.")
+		return nil, errors.New("container creating, still waiting to start")
 	}
 
 	result, err := decodeOutput(output)
