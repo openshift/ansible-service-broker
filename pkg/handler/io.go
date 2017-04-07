@@ -3,16 +3,16 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	//"errors"
+	"errors"
 	"net/http"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 )
 
 func readRequest(r *http.Request, obj interface{}) error {
-	//if r.Header.Get("Content-Type") != "application/json" {
-	//return errors.New("error: invalid content-type")
-	//}
+	if r.Header.Get("Content-Type") != "application/json" {
+		return errors.New("error: invalid content-type")
+	}
 
 	return json.NewDecoder(r.Body).Decode(&obj)
 }
