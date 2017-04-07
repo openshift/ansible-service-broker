@@ -3,7 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	//"errors"
 	"net/http"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker"
