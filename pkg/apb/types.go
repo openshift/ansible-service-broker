@@ -3,9 +3,9 @@ package apb
 import (
 	"encoding/json"
 
+	"github.com/ghodss/yaml"
 	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
-	yaml "gopkg.in/yaml.v2"
 )
 
 type Parameters map[string]interface{}
@@ -127,12 +127,6 @@ func DumpJSON(obj interface{}) (string, error) {
 	return string(payload), nil
 }
 
-func LoadYAML(payload string, obj interface{}) error {
-	var err error
-
-	if err = yaml.Unmarshal([]byte(payload), obj); err != nil {
-		return err
-	}
-
-	return nil
+func ToJSON(data []byte) ([]byte, error) {
+	return yaml.YAMLToJSON(data)
 }

@@ -74,7 +74,13 @@ func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*Spec, er
 			return nil, _err
 		}
 
-		if _err = LoadYAML(string(decodedSpecYaml), _spec); _err != nil {
+		// Convert YAML to JSON.  We only want to traffic in JSON
+		SpecJson, _err := ToJSON(decodedSpecYaml)
+		if err != nil {
+			return nil, _err
+		}
+
+		if _err = LoadJSON(string(SpecJson), _spec); _err != nil {
 			r.log.Error("Something went wrong loading decoded spec yaml - %v - %v", string(decodedSpecYaml), _err)
 			return nil, _err
 		}
