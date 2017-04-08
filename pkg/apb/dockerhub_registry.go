@@ -70,7 +70,7 @@ func (r *DockerHubRegistry) createSpecs(
 		decodedSpecYaml, _err := b64.StdEncoding.DecodeString(encodedSpec)
 		if _err != nil {
 			r.log.Error("Something went wrong deciding spec from label")
-			return nil, err
+			return nil, _err
 		}
 
 		if _err = LoadYAML(string(decodedSpecYaml), _spec); _err != nil {
