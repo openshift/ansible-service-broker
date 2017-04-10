@@ -32,11 +32,12 @@ type ParameterDescriptor struct {
 }
 
 type Spec struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Image       string `json:"image"`
-	Bindable    bool   `json:"bindable"`
-	Description string `json:"description"`
+	Id          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Image       string                 `json:"image"`
+	Bindable    bool                   `json:"bindable"`
+	Description string                 `json:"description"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 
 	// required, optional, unsupported
 	Async      string                 `json:"async"`
