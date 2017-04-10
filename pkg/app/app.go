@@ -78,6 +78,9 @@ func CreateApp() App {
 	if app.config.Registry.Name == "dockerhub" {
 		v, _ := app.registry.(*apb.DockerHubRegistry)
 		v.ScriptsDir = app.args.ScriptsDir
+	} else if app.config.Registry.Name == "mock" {
+		v, _ := app.registry.(*apb.MockRegistry)
+		v.ScriptsDir = app.args.ScriptsDir
 	}
 	////////////////////////////////////////////////////////////
 
