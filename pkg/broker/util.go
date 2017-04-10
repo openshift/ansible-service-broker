@@ -36,6 +36,9 @@ func ProjectRoot() string {
 func SpecToService(spec *apb.Spec) Service {
 	parameterDescriptors := make(map[string]interface{})
 	parameterDescriptors["parameters"] = spec.Parameters
+	for k, v := range spec.Metadata {
+		parameterDescriptors[k] = v
+	}
 
 	return Service{
 		ID:          uuid.Parse(spec.Id),
