@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: etcd
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+    service: etcd
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ansible-service-broker
+        service: etcd
+    spec:
+      restartPolicy: Always
+      containers:
+        - image: ansibleapp/ansible-service-broker-etcd:latest
+          name: main
+          imagePullPolicy: IfNotPresent
+          workingDir: /etcd
+          args:
+            - ./etcd
+            - --data-dir=/data
+            - --listen-client-urls=http://0.0.0.0:2379
+            - --advertise-client-urls=http://0.0.0.0:2379
+          ports:
+          - containerPort: 2379
+            protocol: TCP
+          env:
+          - name: ETCDCTL_API
+            value: "3"
