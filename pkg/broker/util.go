@@ -40,12 +40,16 @@ func SpecToService(spec *apb.Spec) Service {
 		parameterDescriptors[k] = v
 	}
 
-	return Service{
+	retSvc := Service{
 		ID:          uuid.Parse(spec.Id),
 		Name:        spec.Name,
 		Description: spec.Description,
+		Tags:        make([]string, len(spec.Tags)),
 		Bindable:    spec.Bindable,
 		Plans:       plans, // HACK; it's still unclear how plans are relevant to us
 		Metadata:    parameterDescriptors,
 	}
+
+	copy(retSvc.Tags, spec.Tags)
+	return retSvc
 }
