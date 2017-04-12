@@ -35,6 +35,7 @@ type Spec struct {
 	Id          string                 `json:"id"`
 	Name        string                 `json:"name"`
 	Image       string                 `json:"image"`
+	Tags        []string               `json:"tags"`
 	Bindable    bool                   `json:"bindable"`
 	Description string                 `json:"description"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
