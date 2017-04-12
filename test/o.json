@@ -1,0 +1,89 @@
+{
+  "services": [
+    {
+      "name": "apb/manage-iq-apb",
+      "id": "d3075f30-37c3-49ce-bc67-e57cee3c6482",
+      "description": "ManageIQ",
+      "bindable": false,
+      "metadata": {
+        "parameters": null
+      },
+      "plans": [
+        {
+          "id": "4c10ff42-be89-420a-9bab-27a9bef9aed8",
+          "name": "default",
+          "description": "Default plan",
+          "free": true
+        }
+      ]
+    },
+    {
+      "name": "apb/ghost-apb",
+      "id": "f819ddd5-37d1-4698-b3fb-a3cc99a35d2e",
+      "description": "Blogging and stuff",
+      "bindable": false,
+      "metadata": {
+        "parameters": null
+      },
+      "plans": [
+        {
+          "id": "4c10ff42-be89-420a-9bab-27a9bef9aed8",
+          "name": "default",
+          "description": "Default plan",
+          "free": true
+        }
+      ]
+    },
+    {
+      "name": "apb/etherpad-apb",
+      "id": "c9e3348c-b6fd-45d6-b2ba-a13b41f0b6e3",
+      "description": "Note taking web application",
+      "bindable": true,
+      "metadata": {
+        "parameters": null
+      },
+      "plans": [
+        {
+          "id": "4c10ff42-be89-420a-9bab-27a9bef9aed8",
+          "name": "default",
+          "description": "Default plan",
+          "free": true
+        }
+      ]
+    },
+    {
+      "name": "apb/wordpress-apb",
+      "id": "138afbe2-4e33-4faa-b6ae-2e8d61f2bf1f",
+      "description": "Website building",
+      "bindable": true,
+      "metadata": {
+        "parameters": null
+      },
+      "plans": [
+        {
+          "id": "4c10ff42-be89-420a-9bab-27a9bef9aed8",
+          "name": "default",
+          "description": "Default plan",
+          "free": true
+        }
+      ]
+    },
+    {
+      "name": "apb/drupal-apb",
+      "id": "507856c7-8e08-460c-a0b2-7d8af8c4318d",
+      "description": "Another website thing",
+      "bindable": false,
+      "metadata": {
+        "parameters": null
+      },
+      "plans": [
+        {
+          "id": "4c10ff42-be89-420a-9bab-27a9bef9aed8",
+          "name": "default",
+          "description": "Default plan",
+          "free": true
+        }
+      ]
+    }
+  ]
+}

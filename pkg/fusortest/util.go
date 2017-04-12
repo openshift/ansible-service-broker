@@ -102,6 +102,20 @@ func AssertError(t *testing.T, body *bytes.Buffer, msg string) {
 	}
 }
 
+func AssertState(t *testing.T, body *bytes.Buffer, state string) {
+	var resp = make(map[string]string)
+
+	if body == nil {
+		t.Fatal("invalid response body")
+	}
+
+	json.Unmarshal(body.Bytes(), &resp)
+	if resp["state"] != state {
+		t.Log(resp["state"])
+		t.Fatal("state does not match")
+	}
+}
+
 func StripNewline(input string) string {
 	re := regexp.MustCompile("\\n")
 	return re.ReplaceAllString(input, "")

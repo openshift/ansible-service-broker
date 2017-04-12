@@ -50,3 +50,12 @@ func TestProjectRoot(t *testing.T) {
 	rootpath := path.Join(gopath, "src/github.com/fusor/ansible-service-broker")
 	ft.AssertEqual(t, ProjectRoot(), rootpath, "paths not equal")
 }
+
+func TestState(t *testing.T) {
+	state := StateToLastOperation(apb.StateInProgress)
+	ft.AssertEqual(t, state, LastOperationStateInProgress, "should be in progress")
+	state = StateToLastOperation(apb.StateSucceeded)
+	ft.AssertEqual(t, state, LastOperationStateSucceeded, "should be succeeded")
+	state = StateToLastOperation(apb.StateFailed)
+	ft.AssertEqual(t, state, LastOperationStateFailed, "should be failed")
+}
