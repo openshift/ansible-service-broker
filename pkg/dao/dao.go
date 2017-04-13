@@ -237,30 +237,23 @@ func (d *Dao) SetExtractedCredentials(
 	return d.SetRaw(extractedCredentialsKey(id), payload)
 }
 
-func (d *Dao) SetState(id string, state apb.State) error {
-	payload := string(state)
+func (d *Dao) SetState(id string, state apb.JobState) error {
+	payload, err := apb.DumpJSON(state)
+	if err != nil {
+		return err
+	}
 
 	return d.SetRaw(stateKey(id), payload)
 }
 
-func (d *Dao) GetState(id string) (apb.State, error) {
+func (d *Dao) GetState(id string) (apb.JobState, error) {
 	raw, err := d.GetRaw(stateKey(id))
 	if err != nil {
-		return apb.StateFailed, err
+		return apb.JobState{State: apb.StateFailed}, err
 	}
 
-	var state apb.State
-
-	switch raw {
-	case "in progress":
-		state = apb.StateInProgress
-	case "succeeded":
-		state = apb.StateSucceeded
-	case "failed":
-		state = apb.StateFailed
-	default:
-		state = apb.StateFailed
-	}
+	state := apb.JobState{}
+	apb.LoadJSON(raw, &state)
 	return state, nil
 }
 

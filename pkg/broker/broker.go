@@ -165,7 +165,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if async {
 		a.log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob(spec, parameters, a.clusterConfig, a.log)
+		pjob := NewProvisionJob(instanceUUID, spec, parameters, a.clusterConfig, a.log)
 
 		// HACK: wow this feels dirty
 		a.engine.AttachSubscriber(NewProvisionWorkSubscriber(a.dao))
@@ -173,7 +173,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
-		a.dao.SetState(token, apb.StateInProgress)
+		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
@@ -361,11 +361,12 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	a.log.Debug(req.Operation)          // this is provided with the provision. task id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
-	jobstate, err := a.dao.GetState(req.Operation)
+	jobstate, err := a.dao.GetState(instanceUUID.String())
 	if err != nil {
-		a.log.Error(err.Error())
+		// not sure what we do with the error if we can't find the state
+		a.log.Error(fmt.Sprintf("problem reading job state: [%s]. error: [%v]", instanceUUID, err.Error()))
 	}
 
-	state := StateToLastOperation(jobstate)
+	state := StateToLastOperation(jobstate.State)
 	return &LastOperationResponse{State: state, Description: ""}, err
 }

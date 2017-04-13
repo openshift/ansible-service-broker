@@ -106,7 +106,7 @@ func (a *App) Start() {
 	a.log.Notice("Ansible Service Broker Started")
 	listeningAddress := "0.0.0.0:1338"
 	a.log.Notice("Listening on http://%s", listeningAddress)
-	err := http.ListenAndServe(":1338", handler.NewHandler(a.broker))
+	err := http.ListenAndServe(":1338", handler.NewHandler(a.broker, a.log.Logger))
 	if err != nil {
 		a.log.Error("Failed to start HTTP server")
 		a.log.Error(err.Error())

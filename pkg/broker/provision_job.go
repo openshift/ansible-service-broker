@@ -5,9 +5,11 @@ import (
 
 	"github.com/fusor/ansible-service-broker/pkg/apb"
 	logging "github.com/op/go-logging"
+	"github.com/pborman/uuid"
 )
 
 type ProvisionJob struct {
+	instanceuuid  uuid.UUID
 	spec          *apb.Spec
 	parameters    *apb.Parameters
 	clusterConfig apb.ClusterConfig
@@ -15,10 +17,11 @@ type ProvisionJob struct {
 }
 
 type ProvisionMsg struct {
-	JobToken string `json:"job_token"`
-	SpecId   string `json:"spec_id"`
-	Msg      string `json:"msg"`
-	Error    string `json:"error"`
+	InstanceUUID string `json:"instance_uuid"`
+	JobToken     string `json:"job_token"`
+	SpecId       string `json:"spec_id"`
+	Msg          string `json:"msg"`
+	Error        string `json:"error"`
 }
 
 func (m ProvisionMsg) Render() string {
@@ -27,11 +30,11 @@ func (m ProvisionMsg) Render() string {
 }
 
 func NewProvisionJob(
-	spec *apb.Spec, parameters *apb.Parameters,
+	instanceuuid uuid.UUID, spec *apb.Spec, parameters *apb.Parameters,
 	clusterConfig apb.ClusterConfig, log *logging.Logger,
 ) *ProvisionJob {
-	return &ProvisionJob{spec: spec, parameters: parameters,
-		clusterConfig: clusterConfig, log: log}
+	return &ProvisionJob{instanceuuid: instanceuuid, spec: spec,
+		parameters: parameters, clusterConfig: clusterConfig, log: log}
 }
 
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
@@ -53,11 +56,13 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- ProvisionMsg{JobToken: token, SpecId: p.spec.Id, Msg: "", Error: err.Error()}
+		msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
+			JobToken: token, SpecId: p.spec.Id, Msg: "", Error: err.Error()}
 	}
 
 	// send creds
 	jsonmsg, _ := json.Marshal(extCreds)
 	p.log.Notice("sending message to channel")
-	msgBuffer <- ProvisionMsg{JobToken: token, SpecId: p.spec.Id, Msg: string(jsonmsg), Error: ""}
+	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
+		JobToken: token, SpecId: p.spec.Id, Msg: string(jsonmsg), Error: ""}
 }
