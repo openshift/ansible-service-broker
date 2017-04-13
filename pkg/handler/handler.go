@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
@@ -17,6 +20,7 @@ import (
 type handler struct {
 	router mux.Router
 	broker broker.Broker
+	log    *logging.Logger
 }
 
 // making the handler methods more testable by moving the reliance of mux.Vars()
@@ -30,10 +34,11 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 	}
 }
 
-func NewHandler(b broker.Broker) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger) http.Handler {
 	h := handler{
 		router: *mux.NewRouter(),
 		broker: b,
+		log:    log,
 	}
 
 	// TODO: Reintroduce router restriction based on API version when settled upstream
@@ -51,7 +56,7 @@ func NewHandler(b broker.Broker) http.Handler {
 	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
 
-	return handlers.LoggingHandler(nil, h)
+	return handlers.LoggingHandler(os.Stdout, h)
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -216,8 +221,7 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 	if val, ok := queryparams["operation"]; ok {
 		req.Operation = val[0]
 	} else {
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid operation"})
-		return
+		h.log.Warning(fmt.Sprintf("operation not supplied, relying solely on the instance_uuid [%s]", instanceUUID))
 	}
 
 	// service_id is optional

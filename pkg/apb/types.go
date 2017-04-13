@@ -54,6 +54,11 @@ type ExtractedCredentials struct {
 // dao. So I'm duplicating information to avoid the cyclic dependency.
 type State string
 
+type JobState struct {
+	Token string `json:"token"`
+	State State  `json:"state"`
+}
+
 const (
 	StateInProgress State = "in progress"
 	StateSucceeded  State = "succeeded"

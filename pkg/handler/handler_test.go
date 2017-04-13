@@ -2,11 +2,13 @@ package handler
 
 import (
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
 	"github.com/gorilla/mux"
+	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
 )
 
@@ -60,16 +62,26 @@ func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*bro
 
 var b MockBroker
 var dahandler handler
+var log = logging.MustGetLogger("handler")
 
 func init() {
+	// setup logging
+	colorFormatter := logging.MustStringFormatter(
+		"%{color}[%{time}] [%{level}] %{message}%{color:reset}",
+	)
+	backend := logging.NewLogBackend(os.Stdout, "", 1)
+	backendFormatter := logging.NewBackendFormatter(backend, colorFormatter)
+	logging.SetBackend(backend, backendFormatter)
+
+	// setup the broker and handler
 	b = MockBroker{Name: "testbroker"}
-	dahandler = handler{*mux.NewRouter(), b}
+	dahandler = handler{*mux.NewRouter(), b, log}
 }
 
 func TestNewHandler(t *testing.T) {
 
 	testb := MockBroker{Name: "testbroker"}
-	testhandler := NewHandler(testb)
+	testhandler := NewHandler(testb, log)
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
@@ -168,6 +180,7 @@ func TestBindInvalidInstance(t *testing.T) {
 }
 
 func TestInvalidLastOperation(t *testing.T) {
+	t.Skip("Skipping because ultimately last_operation should expect the operation query param")
 	r := httptest.NewRequest("GET", "/v2/service_instance/688eea24-9cf9-43e3-9942-d1863b2a16af/last_operation", nil)
 	w := httptest.NewRecorder()
 	params := map[string]string{
@@ -176,6 +189,17 @@ func TestInvalidLastOperation(t *testing.T) {
 	dahandler.lastoperation(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "invalid operation")
 	ft.AssertError(t, w.Body, "invalid operation")
+}
+
+func TestMissingOperation(t *testing.T) {
+	r := httptest.NewRequest("GET", "/v2/service_instance/688eea24-9cf9-43e3-9942-d1863b2a16af/last_operation", nil)
+	w := httptest.NewRecorder()
+	params := map[string]string{
+		"instance_uuid": "688eea24-9cf9-43e3-9942-d1863b2a16af",
+	}
+	dahandler.lastoperation(w, r, params)
+	ft.AssertEqual(t, w.Code, 200, "invalid error code")
+	ft.AssertState(t, w.Body, "in progress")
 }
 
 func TestLastOperation(t *testing.T) {
