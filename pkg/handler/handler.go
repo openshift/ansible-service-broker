@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/fusor/ansible-service-broker/pkg/broker"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/pborman/uuid"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -50,7 +51,7 @@ func NewHandler(b broker.Broker) http.Handler {
 	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
 
-	return h
+	return handlers.LoggingHandler(nil, h)
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
