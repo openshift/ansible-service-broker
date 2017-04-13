@@ -3,6 +3,10 @@ apps:
     name: cloudfront-apb
     image: ansibleplaybookbundle/cloudfront-apb
     description: Content Delivery Network (CDN)
+    tags:
+      - amazon
+      - networking
+      - content-delivery
     bindable: true
     async: optional
     parameters: {}
@@ -10,15 +14,14 @@ apps:
       displayName: "Amazon CloudFront"
       longDescription: "Amazon CloudFront is a global content delivery network (CDN) service that accelerates delivery of your websites, APIs, video content or other web assets. It integrates with other Amazon Web Services products to give developers and businesses an easy way to accelerate content to end users with no minimum usage commitments."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/NetworkingContentDelivery_AmazonCloudFront.png"
-      tags:
-        - Amazon
-        - Networking
-        - Content Delivery
       documentationUrl: "https://aws.amazon.com/cloudfront/"
   - id: 650fc7c3-12e3-4cce-b36c-2984e076768d
     name: elasticache-apb
     image: ansibleplaybookbundle/elasticache-apb
     description: Fully managed, in-memory data store and cache in the cloud. Compatible with Redis and Memcached.  Provides sub-millisecond latency to power real-time applications.
+    tags:
+      - amazon
+      - database
     bindable: true
     async: optional
     parameters: {}
@@ -26,14 +29,15 @@ apps:
       displayName: "Amazon ElastiCache"
       longDescription: "Amazon ElastiCache is a web service that makes it easy to deploy, operate, and scale an in-memory data store or cache in the cloud. The service improves the performance of web applications by allowing you to retrieve information from fast, managed, in-memory data stores, instead of relying entirely on slower disk-based databases."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/Database_AmazonElasticCache.png"
-      tags:
-        - Amazon
-        - Database
       documentationUrl: "https://aws.amazon.com/elasticache/"
   - id: 4daf53ae-460d-4319-8698-212743a1a330
     name: elb-apb
     image: ansibleplaybookbundle/elb-apb
     description: Elastic Load Balancing
+    tags:
+      - amazon
+      - networking
+      - content-delivery
     bindable: true
     async: optional
     parameters: {}
@@ -41,15 +45,14 @@ apps:
       displayName: "Amazon ELB"
       longDescription: "Elastic Load Balancing automatically distributes incoming application traffic across multiple Amazon EC2 instances. It enables you to achieve fault tolerance in your applications, seamlessly providing the required amount of load balancing capacity needed to route application traffic. Elastic Load Balancing offers two types of load balancers that both feature high availability, automatic scaling, and robust security. These include the Classic Load Balancer that routes traffic based on either application or network level information, and the Application Load Balancer that routes traffic based on advanced application level information that includes the content of the request. The Classic Load Balancer is ideal for simple load balancing of traffic across multiple EC2 instances, while the Application Load Balancer is ideal for applications needing advanced routing capabilities, microservices, and container-based architectures. Application Load Balancer offers ability to route traffic to multiple services or load balance across multiple ports on the same EC2 instance."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/NetworkingContentDelivery_ElasticLoadBalancing.png"
-      tags:
-        - Amazon
-        - Neteworking
-        - Content Delivery
       documentationUrl: "https://aws.amazon.com/elasticloadbalancing/"
   - id: c9f8f8e1-81ff-4825-ae26-94fb12696f20
     name: emr-apb
     image: ansibleplaybookbundle/emr-apb
     description: Easily Run and Scale Apache Hadoop, Spark, HBase, Presto, Hive, and other Big Data Frameworks
+    tags:
+      - amazon
+      - analytics
     bindable: true
     async: optional
     parameters: {}
@@ -57,14 +60,14 @@ apps:
       displayName: "Amazon EMR"
       longDescription: "Amazon EMR provides a managed Hadoop framework that makes it easy, fast, and cost-effective to process vast amounts of data across dynamically scalable Amazon EC2 instances. You can also run other popular distributed frameworks such as Apache Spark, HBase, Presto, and Flink in Amazon EMR, and interact with data in other AWS data stores such as Amazon S3 and Amazon DynamoDB."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/Analytics_AmazonEMR.png"
-      tags:
-        - Amazon
-        - Analytics
       documentationUrl: "https://aws.amazon.com/emr/"
   - id: 334c6ee4-ed6a-4520-9c1b-b068d8d4a7a7
     name: rds-aurora-apb
     image: ansibleplaybookbundle/rds-aurora-apb
     description: Managed relational database service with a choice of six popular database engines.  Set up, operate, and scale a relational database in the cloud with just a few clicks.
+    tags:
+      - amazon
+      - database
     bindable: true
     async: optional
     parameters: {}
@@ -72,14 +75,14 @@ apps:
       displayName: "Amazon RDS - Aurora"
       longDescription: "Amazon Relational Database Service (Amazon RDS) makes it easy to set up, operate, and scale a relational database in the cloud. It provides cost-efficient and resizable capacity while managing time-consuming database administration tasks, freeing you up to focus on your applications and business. Amazon RDS provides you six familiar database engines to choose from, including Amazon Aurora, PostgreSQL, MySQL, MariaDB, Oracle, and Microsoft SQL Server."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/Database_AmazonRDS.png"
-      tags:
-        - Amazon
-        - Database
       documentationUrl: "https://aws.amazon.com/rds/"
   - id: 202a2432-1d1a-4182-aa35-00402ffc5ee3
     name: rds-mysql-apb
     image: ansibleplaybookbundle/rds-mysql-apb
     description: Managed relational database service with a choice of six popular database engines.  Set up, operate, and scale a relational database in the cloud with just a few clicks.
+    tags:
+      - amazon
+      - database
     bindable: true
     async: optional
     parameters: {}
@@ -87,14 +90,14 @@ apps:
       displayName: "Amazon RDS - MySQL"
       longDescription: "Amazon Relational Database Service (Amazon RDS) makes it easy to set up, operate, and scale a relational database in the cloud. It provides cost-efficient and resizable capacity while managing time-consuming database administration tasks, freeing you up to focus on your applications and business. Amazon RDS provides you six familiar database engines to choose from, including Amazon Aurora, PostgreSQL, MySQL, MariaDB, Oracle, and Microsoft SQL Server."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/Database_AmazonRDS_MySQLDBinstance.png"
-      tags:
-        - Amazon
-        - Database
       documentationUrl: "https://aws.amazon.com/rds/"
-  - id: 84e8173e-5ced-4489-9b4d-aac7e779c47f
+  - id: 0aaafc10-132b-41a8-a58c-73268ff1006a
     name: rds-postgres-apb
     image: ansibleplaybookbundle/rds-postgres-apb
     description: Managed relational database service with a choice of six popular database engines.  Set up, operate, and scale a relational database in the cloud with just a few clicks. 
+    tags:
+      - amazon
+      - database
     bindable: true
     async: optional
     parameters:
@@ -166,14 +169,14 @@ apps:
       displayName: "Amazon RDS - PostgreSQL"
       longDescription: "Amazon Relational Database Service (Amazon RDS) makes it easy to set up, operate, and scale a relational database in the cloud. It provides cost-efficient and resizable capacity while managing time-consuming database administration tasks, freeing you up to focus on your applications and business. Amazon RDS provides you six familiar database engines to choose from, including Amazon Aurora, PostgreSQL, MySQL, MariaDB, Oracle, and Microsoft SQL Server."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/Database_AmazonRDS_PostgreSQLinstance.png"
-      tags:
-        - Amazon
-        - Database
       documentationUrl: "https://aws.amazon.com/rds/"
   - id: 9ce41143-1c76-4fc1-9828-4fbe2648ee24
     name: redshift-apb
     image: ansibleplaybookbundle/redshift-apb
     description: Fast, simple, cost-effective data warehousing.
+    tags:
+      - amazon
+      - database
     bindable: true
     async: optional
     parameters: {}
@@ -181,14 +184,15 @@ apps:
       displayName: "Amazon Redshift"
       longDescription: "Amazon Redshift is a fast, fully managed, petabyte-scale data warehouse that makes it simple and cost-effective to analyze all your data using your existing business intelligence tools. Start small for $0.25 per hour with no commitments and scale to petabytes for $1,000 per terabyte per year, less than a tenth the cost of traditional solutions. Customers typically see 3x compression, reducing their costs to $333 per uncompressed terabyte per year."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/Database_AmazonRedshift.png"
-      tags:
-        - Amazon
-        - Database
       documentationUrl: "https://aws.amazon.com/redshift/"
   - id: 9e8772a5-73ac-4cab-a089-a167a0d972a5
     name: route53-apb
     image: ansibleplaybookbundle/route53-apb
     description: Highly available and scalable cloud Domain Name System (DNS) web service.
+    tags:
+      - amazon
+      - networking
+      - content-delivery
     bindable: true
     async: optional
     parameters: {}
@@ -196,8 +200,4 @@ apps:
       displayName: "Amazon Route53"
       longDescription: "Amazon Route 53 is a highly available and scalable cloud Domain Name System (DNS) web service. It is designed to give developers and businesses an extremely reliable and cost effective way to route end users to Internet applications by translating names like www.example.com into the numeric IP addresses like 192.0.2.1 that computers use to connect to each other. Amazon Route 53 is fully compliant with IPv6 as well."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/NetworkingContentDelivery_AmazonRoute53.png"
-      tags:
-        - Amazon
-        - Networking
-        - Content Delivery
       documentationUrl: "https://aws.amazon.com/route53/"
