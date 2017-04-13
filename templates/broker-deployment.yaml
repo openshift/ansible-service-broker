@@ -1,0 +1,37 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: asb
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+    service: asb
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ansible-service-broker
+        service: asb
+    spec:
+      restartPolicy: Always
+      containers:
+        - image: "ansibleapp/ansible-service-broker-asb:latest"
+          name: main
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1338
+              protocol: TCP
+          env:
+            - name: DOCKERHUB_PASS
+              value: "{{dockerhub_pass}}"
+            - name: DOCKERHUB_USER
+              value: "{{dockerhub_user}}"
+            - name: OPENSHIFT_PASS
+              value: "{{openshift_pass}}"
+            - name: OPENSHIFT_TARGET
+              value: "{{openshift_target}}"
+            - name: OPENSHIFT_USER
+              value: "{{openshift_user}}"

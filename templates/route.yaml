@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: asb-1338
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+    service: asb
+spec:
+  to:
+    kind: Service
+    name: asb
+  port:
+    targetPort: port-1338
