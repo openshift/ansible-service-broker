@@ -118,7 +118,7 @@
           }
         - {
             src: "{{asb_checkout}}/extras/mock-registry-data.yaml",
-            dest: "{{etc_dest}}/mock-registry-data.yaml"
+            dest: "{{etc_dest}}/mock-registry-data.yaml",
             mode: "u+rw,g+rw,o+rw"
           }
     - name: Install entrypoint.sh
