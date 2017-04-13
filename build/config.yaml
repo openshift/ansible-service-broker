@@ -1,0 +1,19 @@
+---
+registry:
+  name: dockerhub
+  url: xxx
+  user: {{DOCKERHUB_USER}}
+  pass: {{DOCKERHUB_PASS}}
+  org: ansibleapp
+dao:
+  etcd_host: etcd
+  etcd_port: 2379
+log:
+  logfile: /var/log/ansible-service-broker/asb.log
+  stdout: true
+  level: debug
+  color: true
+openshift:
+  target: {{OPENSHIFT_TARGET}}
+  user: {{OPENSHIFT_USER}}
+  pass: {{OPENSHIFT_PASS}}
