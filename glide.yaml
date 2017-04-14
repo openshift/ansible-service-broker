@@ -44,3 +44,5 @@ import:
   - pkg/archive
 - package: github.com/docker/go-connections
   version: 7da10c8c50cad14494ec818dcdfb6506265c0086
+- package: github.com/gorilla/handlers
+  version: ~1.2.0
