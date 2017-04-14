@@ -9,6 +9,9 @@ import (
 	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
 )
 
+// array can't be const
+var SpecTags = []string{"latest", "old-release"}
+
 const SpecId = "ab094014-b740-495e-b178-946d5aa97ebf"
 const SpecName = "etherpad-apb"
 const SpecImage = "fusor/etherpad-apb"
@@ -35,17 +38,20 @@ var expectedSpecParameters = []*ParameterDescriptor{
 	&ParameterDescriptor{Name: "db_port", Description: "Database service port", Default: float64(3306), Type: "", Required: true},
 }
 
+var convertedSpecTags, _ = json.Marshal(SpecTags)
+
 var SpecJSON = fmt.Sprintf(`
 {
 	"id": "%s",
 	"description": "%s",
 	"name": "%s",
 	"image": "%s",
+	"tags": %s,
 	"bindable": %t,
 	"async": "%s",
 	"parameters": %s
 }
-`, SpecId, SpecDescription, SpecName, SpecImage, SpecBindable, SpecAsync, SpecParameters)
+`, SpecId, SpecDescription, SpecName, SpecImage, convertedSpecTags, SpecBindable, SpecAsync, SpecParameters)
 
 func TestSpecLoadJSON(t *testing.T) {
 
@@ -71,6 +77,7 @@ func TestSpecDumpJSON(t *testing.T) {
 		Description: SpecDescription,
 		Name:        SpecName,
 		Image:       SpecImage,
+		Tags:        SpecTags,
 		Bindable:    SpecBindable,
 		Async:       SpecAsync,
 		Parameters:  expectedSpecParameters,
