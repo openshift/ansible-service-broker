@@ -38,6 +38,49 @@ localhost                  : ok=3    changed=1    unreachable=0    failed=0
 	ft.AssertEqual(t, result["pass"], "dog8two", "password is not dog8two")
 }
 
+func TestImageCantbePulled(t *testing.T) {
+	output := []byte(`
+Error from server (BadRequest): container "aa-425ef090-5f6f-4a0a-87ed-b072881d944d" in pod "aa-425ef090-5f6f-4a0a-87ed
+-b072881d944d" is waiting to start: image can't be pulled
+`)
+	result, err := decodeOutput(output)
+	if err == nil {
+		t.Fatal("decode should've returned an error")
+	}
+
+	if result != nil {
+		t.Fatal("result should've been nil")
+	}
+
+	assertError(t, err, "image can't be pulled")
+}
+
+func TestFailedMessageDecodeOutput(t *testing.T) {
+	output := []byte(`
+PLAY [Deploy rds-apb to openshift] *********************************************
+TASK [setup] *******************************************************************
+ok: [localhost]
+TASK [rds-apb-openshift : set_fact] ********************************************
+ok: [localhost]
+TASK [rds-apb-openshift : rds] *************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "failed": true, "msg": "Region not specified. Unable to determine re
+gion from EC2_REGION."}
+        to retry, use: --limit @/opt/ansibleapp/actions/provision.retry
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=1
+`)
+	result, err := decodeOutput(output)
+	if err == nil {
+		t.Fatal("decode should've returned an error")
+	}
+
+	if result != nil {
+		t.Fatal("result should've been nil")
+	}
+	assertError(t, err, "provision failed, INSERT MESSAGE HERE")
+	// need to better parse the FAILED json returned.
+}
+
 func TestBuildExtractedCredentialsError(t *testing.T) {
 	output := []byte(`
 Login failed (401 Unauthorized)
