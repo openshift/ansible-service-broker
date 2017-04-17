@@ -126,6 +126,7 @@ func decodeOutput(output []byte) (map[string]string, error) {
 	// 2) creds, nil -> Credentials found, no errors occurred. Valid.
 	// 3) nil, err -> Credentials found, no errors occurred. Error state.
 	str := string(output)
+
 	startIdx := strings.Index(str, "<BIND_CREDENTIALS>")
 	startOffset := startIdx + len("<BIND_CREDENTIALS>")
 	endIdx := strings.Index(str, "</BIND_CREDENTIALS>")
@@ -139,8 +140,14 @@ func decodeOutput(output []byte) (map[string]string, error) {
 			return nil, errors.New(str[startOffset:endIdx])
 		}
 
-		// Case 1, no creds found, no errors occurred
-		return nil, nil
+		if strings.Contains(str, "image can't be pulled") {
+			return nil, errors.New("image can't be pulled")
+		} else if strings.Contains(str, "FAILED! =>") {
+			return nil, errors.New("provision failed, INSERT MESSAGE HERE")
+		} else {
+			// Case 1, no creds found, no errors occurred
+			return nil, nil
+		}
 	}
 
 	decodedjson, err := base64.StdEncoding.DecodeString(str[startOffset:endIdx])
