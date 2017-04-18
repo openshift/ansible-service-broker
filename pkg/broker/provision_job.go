@@ -58,6 +58,7 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// https://github.com/golang/go/issues/5161
 		msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
 			JobToken: token, SpecId: p.spec.Id, Msg: "", Error: err.Error()}
+		return
 	}
 
 	// send creds
