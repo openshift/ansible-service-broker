@@ -356,9 +356,9 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 		if async, provision: it should create a Job that calls apb.Provision. And write the output to etcd.
 	*/
-	a.log.Debug(req.ServiceID.String()) // optional
-	a.log.Debug(req.PlanID.String())    // optional
-	a.log.Debug(req.Operation)          // this is provided with the provision. task id from the work_engine
+	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID.String())) // optional
+	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID.String()))       // optional
+	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))          // this is provided with the provision. task id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
 	jobstate, err := a.dao.GetState(instanceUUID.String())
