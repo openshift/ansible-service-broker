@@ -243,11 +243,11 @@ func (d *Dao) SetState(id string, state apb.JobState) error {
 		return err
 	}
 
-	return d.SetRaw(stateKey(id), payload)
+	return d.SetRaw(stateKey(id, state.Token), payload)
 }
 
-func (d *Dao) GetState(id string) (apb.JobState, error) {
-	raw, err := d.GetRaw(stateKey(id))
+func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
+	raw, err := d.GetRaw(stateKey(id, token))
 	if err != nil {
 		return apb.JobState{State: apb.StateFailed}, err
 	}
@@ -267,8 +267,10 @@ func (d *Dao) DeleteBindInstance(id string) error {
 // Key generators
 ////////////////////////////////////////////////////////////
 
-func stateKey(id string) string {
-	return fmt.Sprintf("/state/%s", id)
+func stateKey(id string, jobid string) string {
+	//func stateKey(id string) string {
+	return fmt.Sprintf("/state/%s/job/%s", id, jobid)
+	//return fmt.Sprintf("/state/%s", id)
 }
 
 func extractedCredentialsKey(id string) string {
