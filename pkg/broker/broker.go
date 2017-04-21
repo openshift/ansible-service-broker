@@ -361,7 +361,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))          // this is provided with the provision. task id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
-	jobstate, err := a.dao.GetState(instanceUUID.String())
+	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)
 	if err != nil {
 		// not sure what we do with the error if we can't find the state
 		a.log.Error(fmt.Sprintf("problem reading job state: [%s]. error: [%v]", instanceUUID, err.Error()))
