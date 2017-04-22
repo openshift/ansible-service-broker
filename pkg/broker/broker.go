@@ -3,11 +3,19 @@ package broker
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
 	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
+)
+
+var (
+	ErrorAlreadyProvisioned = errors.New("already provisioned")
+	ErrorDuplicate          = errors.New("duplicate instance")
+	ErrorNotFound           = errors.New("not found")
 )
 
 type Broker interface {
@@ -136,13 +144,38 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// -> Provision!
 	////////////////////////////////////////////////////////////
 
+	/*
+		dao GET returns error strings like CODE: message (entity) [#]
+		dao SetServiceInstance returns what error?
+		dao.SetState returns what error?
+		Provision returns what error?
+		SetExtractedCredentials returns what error?
+
+		broker
+		* normal synchronous return ProvisionResponse
+		* normal async return ProvisionResponse
+		* if instance already exists with the same params, return ProvisionResponse, AND InstanceExists
+		* if instance already exists DIFFERENT param, return nil AND InstanceExists
+
+		handler returns the following
+		* synchronous provision return 201 created
+		* instance already exists with IDENTICAL parameters to existing instance, 200 OK
+		* async provision 202 Accepted
+		* instance already exists with DIFFERENT parameters, 409 Conflict {}
+		* if only support async and no accepts_incomplete=true passed in, 422 Unprocessable entity
+
+	*/
 	var spec *apb.Spec
 	var err error
 
 	// Retrieve requested spec
 	specId := req.ServiceID.String()
 	if spec, err = a.dao.GetSpec(specId); err != nil {
-		// TODO: Handle unknown spec
+		// etcd return not found i.e. code 100
+		if strings.HasPrefix(err.Error(), "100") {
+			return nil, ErrorNotFound
+		}
+		// otherwise unknown error bubble it up
 		return nil, err
 	}
 
@@ -155,8 +188,29 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		Parameters: parameters,
 	}
 
-	err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance)
-	if err != nil {
+	// Verify we're not reprovisioning the same instance
+	// if err is nil, there is an instance. Let's compare it to the instance
+	// we're being asked to provision.
+	//
+	// if err is not nil, we will just bubble that up
+	if si, err := a.dao.GetServiceInstance(instanceUUID.String()); err == nil {
+		if si.Id.String() == serviceInstance.Id.String() &&
+			reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
+
+			a.log.Debug("already have this instance returning 200")
+			return &ProvisionResponse{}, ErrorAlreadyProvisioned
+		} else if si.Id.String() == serviceInstance.Id.String() &&
+			!reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
+
+			a.log.Debug("duplicate instance returning 409")
+			return nil, ErrorDuplicate
+		}
+	}
+
+	//
+	// Looks like this is a new provision, let's get started.
+	//
+	if err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance); err != nil {
 		return nil, err
 	}
 
@@ -169,6 +223,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 		// HACK: wow this feels dirty
 		a.engine.AttachSubscriber(NewProvisionWorkSubscriber(a.dao))
+
 		token = a.engine.StartNewJob(pjob)
 
 		// HACK: there might be a delay between the first time the state in etcd
@@ -197,10 +252,8 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	// TODO: What data needs to be sent back on a respone?
 	// Not clear what dashboardURL means in an AnsibleApp context
-	// Operation needs to be present if this is an async provisioning
-	// 202 (Accepted), inprogress last_operation status
-	// Will need to come with a "state" update in etcd on the ServiceInstance
-	return &ProvisionResponse{Operation: token}, nil // operation should be the task id from the work_engine
+	// operation should be the task id from the work_engine
+	return &ProvisionResponse{Operation: token}, nil
 }
 
 func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {

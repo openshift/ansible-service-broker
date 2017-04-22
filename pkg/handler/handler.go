@@ -102,12 +102,21 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
+	// Ok let's provision this bad boy
+
 	resp, err := h.broker.Provision(instanceUUID, req, async)
 
-	if errors.IsNotFound(err) || errors.IsInvalid(err) {
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "instance not found: " + err.Error()})
-	} else if errors.IsAlreadyExists(err) {
-		writeResponse(w, http.StatusConflict, broker.ProvisionResponse{})
+	if err != nil {
+		switch err {
+		case broker.ErrorDuplicate:
+			writeResponse(w, http.StatusConflict, broker.ProvisionResponse{})
+		case broker.ErrorAlreadyProvisioned:
+			writeResponse(w, http.StatusOK, resp)
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		}
 	} else if async {
 		writeDefaultResponse(w, http.StatusAccepted, resp, err)
 	} else {
