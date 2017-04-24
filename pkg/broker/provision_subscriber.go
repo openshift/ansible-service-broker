@@ -34,7 +34,7 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 			} else {
 				json.Unmarshal([]byte(pmsg.Msg), &extCreds)
 				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken, State: apb.StateSucceeded})
-				p.dao.SetExtractedCredentials(pmsg.SpecId, extCreds)
+				p.dao.SetExtractedCredentials(pmsg.InstanceUUID, extCreds)
 			}
 		}
 	}()
