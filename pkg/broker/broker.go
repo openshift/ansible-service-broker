@@ -202,7 +202,17 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		} else if si.Id.String() == serviceInstance.Id.String() &&
 			!reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
 
-			a.log.Debug("duplicate instance returning 409")
+			// TODO: remove these debug statements at some point
+			a.log.Debug("Existing parameters")
+			for k, v := range map[string]interface{}(*si.Parameters) {
+				a.log.Debug("%s = %s", k, v)
+			}
+			a.log.Debug("Incoming parameters")
+			for k, v := range map[string]interface{}(*serviceInstance.Parameters) {
+				a.log.Debug(fmt.Sprintf("%s = %s", k, v))
+			}
+
+			a.log.Info("we have a duplicate instance with identical parameters, returning 409 conflict")
 			return nil, ErrorDuplicate
 		}
 	}
