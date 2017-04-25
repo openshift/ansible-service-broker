@@ -27,6 +27,7 @@ vendor/*
 gosrc
 etc/dev.config.yaml
 etc/prod.config.yaml
+etc/mock.config.yaml
 
 .python-version
 
