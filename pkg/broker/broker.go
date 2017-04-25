@@ -3,6 +3,8 @@ package broker
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
@@ -10,14 +12,21 @@ import (
 	"github.com/pborman/uuid"
 )
 
+var (
+	ErrorAlreadyProvisioned = errors.New("already provisioned")
+	ErrorDuplicate          = errors.New("duplicate instance")
+	ErrorNotFound           = errors.New("not found")
+)
+
 type Broker interface {
 	Bootstrap() (*BootstrapResponse, error)
 	Catalog() (*CatalogResponse, error)
-	Provision(uuid.UUID, *ProvisionRequest) (*ProvisionResponse, error)
+	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest) (*UpdateResponse, error)
 	Deprovision(uuid.UUID) (*DeprovisionResponse, error)
 	Bind(uuid.UUID, uuid.UUID, *BindRequest) (*BindResponse, error)
 	Unbind(uuid.UUID, uuid.UUID) error
+	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 }
 
 type AnsibleBroker struct {
@@ -25,6 +34,7 @@ type AnsibleBroker struct {
 	log           *logging.Logger
 	clusterConfig apb.ClusterConfig
 	registry      apb.Registry
+	engine        *WorkEngine
 }
 
 func NewAnsibleBroker(
@@ -32,6 +42,7 @@ func NewAnsibleBroker(
 	log *logging.Logger,
 	clusterConfig apb.ClusterConfig,
 	registry apb.Registry,
+	engine WorkEngine,
 ) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
@@ -39,6 +50,7 @@ func NewAnsibleBroker(
 		log:           log,
 		clusterConfig: clusterConfig,
 		registry:      registry,
+		engine:        &engine,
 	}
 
 	return broker, nil
@@ -85,7 +97,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	return &CatalogResponse{services}, nil
 }
 
-func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) (*ProvisionResponse, error) {
+func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, async bool) (*ProvisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	//type ProvisionRequest struct {
 
@@ -132,13 +144,38 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 	// -> Provision!
 	////////////////////////////////////////////////////////////
 
+	/*
+		dao GET returns error strings like CODE: message (entity) [#]
+		dao SetServiceInstance returns what error?
+		dao.SetState returns what error?
+		Provision returns what error?
+		SetExtractedCredentials returns what error?
+
+		broker
+		* normal synchronous return ProvisionResponse
+		* normal async return ProvisionResponse
+		* if instance already exists with the same params, return ProvisionResponse, AND InstanceExists
+		* if instance already exists DIFFERENT param, return nil AND InstanceExists
+
+		handler returns the following
+		* synchronous provision return 201 created
+		* instance already exists with IDENTICAL parameters to existing instance, 200 OK
+		* async provision 202 Accepted
+		* instance already exists with DIFFERENT parameters, 409 Conflict {}
+		* if only support async and no accepts_incomplete=true passed in, 422 Unprocessable entity
+
+	*/
 	var spec *apb.Spec
 	var err error
 
 	// Retrieve requested spec
 	specId := req.ServiceID.String()
 	if spec, err = a.dao.GetSpec(specId); err != nil {
-		// TODO: Handle unknown spec
+		// etcd return not found i.e. code 100
+		if strings.HasPrefix(err.Error(), "100") {
+			return nil, ErrorNotFound
+		}
+		// otherwise unknown error bubble it up
 		return nil, err
 	}
 
@@ -151,35 +188,82 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest) 
 		Parameters: parameters,
 	}
 
-	err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance)
-	if err != nil {
+	// Verify we're not reprovisioning the same instance
+	// if err is nil, there is an instance. Let's compare it to the instance
+	// we're being asked to provision.
+	//
+	// if err is not nil, we will just bubble that up
+	if si, err := a.dao.GetServiceInstance(instanceUUID.String()); err == nil {
+		if si.Id.String() == serviceInstance.Id.String() &&
+			reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
+
+			a.log.Debug("already have this instance returning 200")
+			return &ProvisionResponse{}, ErrorAlreadyProvisioned
+		} else if si.Id.String() == serviceInstance.Id.String() &&
+			!reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
+
+			// TODO: remove these debug statements at some point
+			a.log.Debug("Existing parameters")
+			for k, v := range map[string]interface{}(*si.Parameters) {
+				a.log.Debug("%s = %s", k, v)
+			}
+			a.log.Debug("Incoming parameters")
+			for k, v := range map[string]interface{}(*serviceInstance.Parameters) {
+				a.log.Debug(fmt.Sprintf("%s = %s", k, v))
+			}
+
+			a.log.Info("we have a duplicate instance with identical parameters, returning 409 conflict")
+			return nil, ErrorDuplicate
+		}
+	}
+
+	//
+	// Looks like this is a new provision, let's get started.
+	//
+	if err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance); err != nil {
 		return nil, err
 	}
 
-	// TODO: Async? Bring in WorkEngine.
-	extCreds, err := apb.Provision(spec, parameters, a.clusterConfig, a.log)
-	if err != nil {
-		a.log.Error("broker::Provision error occurred.")
-		a.log.Error("%s", err.Error())
-		return nil, err
-	}
+	var token string
 
-	if extCreds != nil {
-		a.log.Debug("broker::Provision, got ExtractedCredentials!")
-		err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
+	if async {
+		a.log.Info("ASYNC provisioning in progress")
+		// asyncronously provision and return the token for the lastoperation
+		pjob := NewProvisionJob(instanceUUID, spec, parameters, a.clusterConfig, a.log)
+
+		// HACK: wow this feels dirty
+		a.engine.AttachSubscriber(NewProvisionWorkSubscriber(a.dao))
+
+		token = a.engine.StartNewJob(pjob)
+
+		// HACK: there might be a delay between the first time the state in etcd
+		// is set and the job was already started. But I need the token.
+		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
+	} else {
+		// TODO: do we want to do synchronous provisioning?
+		a.log.Info("reverting to synchronous provisioning in progress")
+		extCreds, err := apb.Provision(spec, parameters, a.clusterConfig, a.log)
 		if err != nil {
-			a.log.Error("Could not persist extracted credentials")
+			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
 			return nil, err
+		}
+
+		if extCreds != nil {
+			a.log.Debug("broker::Provision, got ExtractedCredentials!")
+			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
+			if err != nil {
+				a.log.Error("Could not persist extracted credentials")
+				a.log.Error("%s", err.Error())
+				return nil, err
+			}
 		}
 	}
 
 	// TODO: What data needs to be sent back on a respone?
 	// Not clear what dashboardURL means in an AnsibleApp context
-	// Operation needs to be present if this is an async provisioning
-	// 202 (Accepted), inprogress last_operation status
-	// Will need to come with a "state" update in etcd on the ServiceInstance
-	return &ProvisionResponse{Operation: "successful"}, nil
+	// operation should be the task id from the work_engine
+	return &ProvisionResponse{Operation: token}, nil
 }
 
 func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {
@@ -324,4 +408,28 @@ func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) err
 
 func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*UpdateResponse, error) {
 	return nil, notImplemented
+}
+
+func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationRequest) (*LastOperationResponse, error) {
+	/*
+		look up the resource in etcd the operation should match what was returned by provision
+		take the status and return that.
+
+		process:
+
+		if async, provision: it should create a Job that calls apb.Provision. And write the output to etcd.
+	*/
+	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID.String())) // optional
+	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID.String()))       // optional
+	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))          // this is provided with the provision. task id from the work_engine
+
+	// TODO:validate the format to avoid some sort of injection hack
+	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)
+	if err != nil {
+		// not sure what we do with the error if we can't find the state
+		a.log.Error(fmt.Sprintf("problem reading job state: [%s]. error: [%v]", instanceUUID, err.Error()))
+	}
+
+	state := StateToLastOperation(jobstate.State)
+	return &LastOperationResponse{State: state, Description: ""}, err
 }

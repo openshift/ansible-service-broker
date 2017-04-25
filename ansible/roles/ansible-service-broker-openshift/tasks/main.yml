@@ -8,6 +8,7 @@
     ports:
     - name: port-1338
       port: 1338
+      protocol: TCP
       targetPort: 1338
     selector:
       app: ansible-service-broker
@@ -26,6 +27,7 @@
     ports:
     - name: port-2379
       port: 2379
+      protocol: TCP
       targetPort: 2379
     selector:
       app: ansible-service-broker
@@ -67,9 +69,10 @@
         OPENSHIFT_USER: '{{openshift_user}}'
       args:
       - entrypoint.sh
-      image: docker.io/ansibleapp/ansible-service-broker-asb:latest
+      image: docker.io/jmrodri/ansible-service-broker-asb:latest
       ports:
-      - 1338
+      - containerPort: 1338
+        protocol: TCP
     replace: true
   register: output
 
@@ -93,9 +96,10 @@
       - --data-dir=/data
       - --listen-client-urls=http://0.0.0.0:2379
       - --advertise-client-urls=http://0.0.0.0:2379
-      image: docker.io/ansibleapp/ansible-service-broker-etcd:latest
+      image: docker.io/jmrodri/ansible-service-broker-etcd:latest
       ports:
-      - 2379
+      - containerPort: 2379
+        protocol: TCP
     replace: true
   register: output
 

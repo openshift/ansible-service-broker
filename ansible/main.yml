@@ -24,8 +24,8 @@
         - device-mapper-devel
 
     - name: Create broker user
-      user: 
-        name: broker 
+      user:
+        name: broker
         shell: /bin/bash
         group: root
 
@@ -71,7 +71,7 @@
       git:
         repo: https://github.com/fusor/ansible-service-broker.git
         dest: "{{asb_checkout}}"
-        version: dockerhub-latest
+        version: work-engine
     - name: Install ansible-service-broker dependencies
       shell: glide install
       args:
@@ -102,7 +102,7 @@
             mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
-            src: "{{asb_checkout}}/etc/ex.dockerimg.config.yaml",
+            src: "{{asb_checkout}}/etc/ex.mock.config.yaml",
             dest: "{{etc_dest}}/config.yaml",
             mode: "u+rw,g+rw,o+rw"
           }
@@ -115,6 +115,11 @@
             src: "{{asb_checkout}}/docker/ansible-service-broker",
             dest: /usr/bin,
             mode: "u+rwx,g+rwx,o+rwx"
+          }
+        - {
+            src: "{{asb_checkout}}/extras/mock-registry-data.yaml",
+            dest: "{{etc_dest}}/mock-registry-data.yaml",
+            mode: "u+rw,g+rw,o+rw"
           }
     - name: Install entrypoint.sh
       copy:

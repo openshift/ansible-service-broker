@@ -32,11 +32,13 @@ type ParameterDescriptor struct {
 }
 
 type Spec struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Image       string `json:"image"`
-	Bindable    bool   `json:"bindable"`
-	Description string `json:"description"`
+	Id          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Image       string                 `json:"image"`
+	Tags        []string               `json:"tags"`
+	Bindable    bool                   `json:"bindable"`
+	Description string                 `json:"description"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 
 	// required, optional, unsupported
 	Async      string                 `json:"async"`
@@ -47,6 +49,21 @@ type ExtractedCredentials struct {
 	Credentials map[string]interface{} `json:"credentials,omitempty"`
 	// might be more one day
 }
+
+// HACK: created these State types because I couldn't import broker into the
+// dao. So I'm duplicating information to avoid the cyclic dependency.
+type State string
+
+type JobState struct {
+	Token string `json:"token"`
+	State State  `json:"state"`
+}
+
+const (
+	StateInProgress State = "in progress"
+	StateSucceeded  State = "succeeded"
+	StateFailed     State = "failed"
+)
 
 func specLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("============================================================")

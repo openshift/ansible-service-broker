@@ -104,6 +104,14 @@ func (c *Client) RunImage(
 	//"-e", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
 	//spec.Name, action, "--extra-vars", string(params))
 
+	err = c.refreshLoginToken(clusterConfig)
+	if err != nil {
+		c.log.Error("Error occurred while refreshing login token! Aborting apb run.")
+		c.log.Error(err.Error())
+		return nil, err
+	}
+	c.log.Notice("Login token successfully refreshed.")
+
 	c.log.Debug("Running OC run...")
 	c.log.Debug("clusterConfig:")
 	c.log.Debug("target: [ %s ]", clusterConfig.Target)
@@ -128,5 +136,26 @@ func (c *Client) PullImage(imageName string) error {
 		Repository:   imageName,
 		OutputStream: os.Stdout,
 	}, docker.AuthConfiguration{})
+	return nil
+}
+
+func (c *Client) refreshLoginToken(clusterConfig ClusterConfig) error {
+	c.log.Debug("Refreshing login token...")
+	c.log.Debug("target: [ %s ]", clusterConfig.Target)
+	c.log.Debug("user: [ %s ]", clusterConfig.User)
+	c.log.Debug("password:[ %s ]", clusterConfig.Password)
+
+	output, err := runCommand(
+		"oc", "login", "--insecure-skip-tls-verify", clusterConfig.Target,
+		"-u", clusterConfig.User,
+		"-p", clusterConfig.Password,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	c.log.Debug("No error reported after running oc login. Cmd output:")
+	c.log.Debug(string(output))
 	return nil
 }

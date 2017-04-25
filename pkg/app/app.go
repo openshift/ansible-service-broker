@@ -11,6 +11,8 @@ import (
 	"github.com/fusor/ansible-service-broker/pkg/handler"
 )
 
+const MsgBufferSize = 20
+
 var Version = "v0.1.0"
 
 type App struct {
@@ -20,6 +22,7 @@ type App struct {
 	dao      *dao.Dao
 	log      *Log
 	registry apb.Registry
+	engine   *broker.WorkEngine
 }
 
 func CreateApp() App {
@@ -78,12 +81,18 @@ func CreateApp() App {
 	if app.config.Registry.Name == "dockerhub" {
 		v, _ := app.registry.(*apb.DockerHubRegistry)
 		v.ScriptsDir = app.args.ScriptsDir
+	} else if app.config.Registry.Name == "mock" {
+		v, _ := app.registry.(*apb.MockRegistry)
+		v.ScriptsDir = app.args.ScriptsDir
 	}
 	////////////////////////////////////////////////////////////
 
+	app.log.Debug("Initializing WorkEngine")
+	app.engine = broker.NewWorkEngine(MsgBufferSize)
+
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.config.Openshift, app.registry,
+		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine,
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
 		app.log.Error(err.Error())
@@ -97,7 +106,7 @@ func (a *App) Start() {
 	a.log.Notice("Ansible Service Broker Started")
 	listeningAddress := "0.0.0.0:1338"
 	a.log.Notice("Listening on http://%s", listeningAddress)
-	err := http.ListenAndServe(":1338", handler.NewHandler(a.broker))
+	err := http.ListenAndServe(":1338", handler.NewHandler(a.broker, a.log.Logger))
 	if err != nil {
 		a.log.Error("Failed to start HTTP server")
 		a.log.Error(err.Error())

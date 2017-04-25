@@ -1,6 +1,6 @@
 ---
 registry:
-  name: dockerhub
+  name: mock
   url: xxx
   user: {{DOCKERHUB_USER}}
   pass: {{DOCKERHUB_PASS}}
