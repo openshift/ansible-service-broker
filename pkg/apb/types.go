@@ -50,8 +50,6 @@ type ExtractedCredentials struct {
 	// might be more one day
 }
 
-// HACK: created these State types because I couldn't import broker into the
-// dao. So I'm duplicating information to avoid the cyclic dependency.
 type State string
 
 type JobState struct {

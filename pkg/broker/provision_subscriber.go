@@ -2,6 +2,7 @@ package broker
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/fusor/ansible-service-broker/pkg/dao"
@@ -23,8 +24,10 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 	var extCreds *apb.ExtractedCredentials
 	go func() {
 		for {
+			fmt.Println("GOROUTINE: entered goroutine")
 			msg := <-msgBuffer
 
+			fmt.Println("GOROUTINE: read message from buffer")
 			// HACK: this seems like a hack, there's probably a better way to
 			// get the data sent through instead of a string
 			json.Unmarshal([]byte(msg.Render()), &pmsg)
@@ -36,6 +39,8 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken, State: apb.StateSucceeded})
 				p.dao.SetExtractedCredentials(pmsg.InstanceUUID, extCreds)
 			}
+
+			fmt.Println("GOROUTINE: end of for loop")
 		}
 	}()
 }
