@@ -201,3 +201,33 @@ apps:
       longDescription: "Amazon Route 53 is a highly available and scalable cloud Domain Name System (DNS) web service. It is designed to give developers and businesses an extremely reliable and cost effective way to route end users to Internet applications by translating names like www.example.com into the numeric IP addresses like 192.0.2.1 that computers use to connect to each other. Amazon Route 53 is fully compliant with IPv6 as well."
       imageUrl: "https://s3.amazonaws.com/fusor/2017demo/NetworkingContentDelivery_AmazonRoute53.png"
       documentationUrl: "https://aws.amazon.com/route53/"
+  - id: 64297e88-657c-46ab-bb50-2af7f84e5ec5
+    name: postgresql-demo-apb
+    image: ansibleplaybookbundle/postgresql-demo-apb
+    description: PostgreSQL apb implementation
+    bindable: true
+    async: optional
+    tags:
+      - database
+    metadata:
+      displayName: "Postgresql demo"
+      longDescription: "An apb demo that deploys postgresql and loads it with sample data"
+      imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/64px-Postgresql_elephant.svg.png"
+      documentationUrl: "https://www.postgresql.org/docs/"
+    parameters:
+      - name: namespace
+        description: Namespace to deploy the cluster to
+        type: string
+        default: postgresql-demo-apb
+      - name: postgresql_database
+        description: postgresql database name
+        type: string
+        default: admin
+      - name: postgresql_password
+        description: postgresql database password
+        type: string
+        default: admin
+      - name: postgresql_user
+        description: postgresql database username
+        type: string
+        default: admin
