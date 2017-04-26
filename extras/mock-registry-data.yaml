@@ -231,3 +231,61 @@ apps:
         description: postgresql database username
         type: string
         default: admin
+  - id: b4325aea-0479-4f8d-b502-1922bbaee13e
+    name: manageiq-apb
+    image: ansibleplaybookbundle/manageiq-apb
+    description: "ManageIQ is an open source management platform for Hybrid IT."
+    bindable: false
+    async: optional
+    parameters:
+      - name: application_init_delay
+        description: Time to delay web app startup
+        type: int
+        default: 60
+      - name: database_region
+        description: MIQ Instance Region
+        type: int
+        default: 1
+      - name: database_service_name
+        description: Service Name for the database
+        type: string
+        default: manageiq-postgresql
+      - name: memcached_max_connections
+        description: Maximum number of connections memcached will accept
+        type: int
+        default: 1024
+      - name: memcached_max_memory
+        description: Maximum memory memcached will use in MB
+        type: int
+        default: 64
+      - name: memcached_slab_page_size
+        description: Memcached Slab Size in bytes
+        type: string
+        default: 1M
+      - name: memcached_service_name
+        description: Service name of the memcached instance to use
+        type: string
+        default: manageiq-memcached
+      - name: namespace
+        description: Namespace to deploy the cluster to
+        type: string
+        default: manageiq-apb
+      - name: postgresql_database
+        description: postgresql database name
+        type: string
+        default: vmdb_production
+      - name: postgresql_password
+        description: postgresql database password
+        type: string
+        default: admin
+      - name: postgresql_user
+        description: postgresql database username
+        type: string
+        default: admin
+    tags:
+     - networking
+    metadata:
+     - displayName: "ManageIQ"
+     - imageUrl: "https://s3.amazonaws.com/fusor/2017demo/ManageIQ.png"
+     - documentationUrl: "https://manageiq.org/docs/"
+     - longDescription: "ManageIQ is an open source management platform for Hybrid IT. It can manage small and large environments, and supports multiple technologies such as virtual machines, public clouds and containers."
