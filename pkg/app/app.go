@@ -89,6 +89,8 @@ func CreateApp() App {
 
 	app.log.Debug("Initializing WorkEngine")
 	app.engine = broker.NewWorkEngine(MsgBufferSize)
+	app.log.Debug("Initializing Provision WorkSubscriber")
+	app.engine.AttachSubscriber(broker.NewProvisionWorkSubscriber(app.dao, app.log.Logger))
 
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
