@@ -212,7 +212,7 @@ apps:
     metadata:
       displayName: "Postgresql demo"
       longDescription: "An apb demo that deploys postgresql and loads it with sample data"
-      imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/64px-Postgresql_elephant.svg.png"
+      imageUrl: "https://s3.amazonaws.com/fusor/2017demo/64px-Postgresql_elephant.svg.png"
       documentationUrl: "https://www.postgresql.org/docs/"
     parameters:
       - name: namespace
