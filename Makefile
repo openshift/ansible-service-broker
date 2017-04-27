@@ -1,6 +1,7 @@
-REGISTRY         = docker.io/ansibleplaybookbundle
-TAG              = latest
-BROKER_APB_IMAGE = $(REGISTRY)/ansible-service-broker-apb
+REGISTRY         ?= docker.io
+PROJECT          ?= ansibleplaybookbundle
+TAG              ?= latest
+BROKER_APB_IMAGE = $(REGISTRY)/$(PROJECT)/ansible-service-broker-apb
 
 build: $(shell find cmd pkg)
 	# HACK: Unless docker's vendor directory is removed, we end up with a
@@ -27,8 +28,6 @@ vendor:
 test: vendor
 	go test ./pkg/...
 
-images: asb-image
-
 asb-image:
 	ansible-container build
 	ansible-container push --username $(DOCKERHUB_USER) --password $(DOCKERHUB_PASS) --push-to $(REGISTRY) --tag $(TAG)
@@ -39,4 +38,4 @@ asb-image:
 	docker push $(BROKER_APB_IMAGE)
 
 
-.PHONY: run run-mock-registry clean test build
+.PHONY: run run-mock-registry clean test build asb-image
