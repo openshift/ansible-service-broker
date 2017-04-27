@@ -1,3 +1,7 @@
+REGISTRY         = docker.io/ansibleplaybookbundle
+TAG              = latest
+BROKER_APB_IMAGE = $(REGISTRY)/ansible-service-broker-apb
+
 build: $(shell find cmd pkg)
 	# HACK: Unless docker's vendor directory is removed, we end up with a
 	# duplicate symbol error from the linker that prevents compilation.
@@ -22,5 +26,17 @@ vendor:
 
 test: vendor
 	go test ./pkg/...
+
+images: asb-image
+
+asb-image:
+	ansible-container build
+	ansible-container push --username $(DOCKERHUB_USER) --password $(DOCKERHUB_PASS) --push-to $(REGISTRY) --tag $(TAG)
+	ansible-container shipit openshift --pull-from $(REGISTRY) --tag $(TAG)
+	# fix bug in ansible-container
+	sed -i 's/-TCP//g' ./ansible/roles/ansible-service-broker-openshift/tasks/main.yml
+	docker build -t $(BROKER_APB_IMAGE) .
+	docker push $(BROKER_APB_IMAGE)
+
 
 .PHONY: run run-mock-registry clean test build
