@@ -281,7 +281,7 @@ apps:
         type: string
         default: admin
     metadata:
-     - displayName: "ManageIQ"
-     - imageUrl: "https://s3.amazonaws.com/fusor/2017demo/ManageIQ.png"
-     - documentationUrl: "https://manageiq.org/docs/"
-     - longDescription: "ManageIQ is an open source management platform for Hybrid IT. It can manage small and large environments, and supports multiple technologies such as virtual machines, public clouds and containers."
+      displayName: "ManageIQ"
+      imageUrl: "https://s3.amazonaws.com/fusor/2017demo/ManageIQ.png"
+      documentationUrl: "https://manageiq.org/docs/"
+      longDescription: "ManageIQ is an open source management platform for Hybrid IT. It can manage small and large environments, and supports multiple technologies such as virtual machines, public clouds and containers."
