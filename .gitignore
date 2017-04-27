@@ -19,16 +19,21 @@ _cgo_export.*
 
 _testmain.go
 
+# common windows extensions
 *.exe
 *.test
 *.prof
-vendor/*
 
+# asb files
+vendor/*
 gosrc
 etc/dev.config.yaml
 etc/prod.config.yaml
 etc/mock.config.yaml
 
+# python artifacts
 .python-version
 
+# ansible stuff
 main_*.yml
+ansible/main.retry
