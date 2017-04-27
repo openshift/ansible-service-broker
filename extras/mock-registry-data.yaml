@@ -207,8 +207,6 @@ apps:
     description: PostgreSQL apb implementation
     bindable: true
     async: optional
-    tags:
-      - database
     metadata:
       displayName: "Postgresql demo"
       longDescription: "An apb demo that deploys postgresql and loads it with sample data"
@@ -282,8 +280,6 @@ apps:
         description: postgresql database username
         type: string
         default: admin
-    tags:
-     - networking
     metadata:
      - displayName: "ManageIQ"
      - imageUrl: "https://s3.amazonaws.com/fusor/2017demo/ManageIQ.png"
