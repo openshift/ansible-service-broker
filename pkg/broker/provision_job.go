@@ -38,17 +38,6 @@ func NewProvisionJob(
 }
 
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
-	/*
-		// DEMO
-		p.log.Notice("Sleep for a bit then return fake credentials")
-		time.Sleep(20 * time.Second)
-		creds := make(map[string]interface{})
-		creds["username"] = "foobar"
-		creds["password"] = "b@rb@z"
-		//extCreds := apb.ExtractedCredentials{Credentials: creds}
-		p.log.Notice(fmt.Sprintf("Dumping creds: %v", creds))
-	*/
-
 	extCreds, err := apb.Provision(p.spec, p.parameters, p.clusterConfig, p.log)
 	if err != nil {
 		p.log.Error("broker::Provision error occurred.")
@@ -63,7 +52,7 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 
 	// send creds
 	jsonmsg, _ := json.Marshal(extCreds)
-	p.log.Notice("sending message to channel")
+	p.log.Debug("sending message to channel")
 	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
 		JobToken: token, SpecId: p.spec.Id, Msg: string(jsonmsg), Error: ""}
 }

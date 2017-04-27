@@ -231,9 +231,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// asyncronously provision and return the token for the lastoperation
 		pjob := NewProvisionJob(instanceUUID, spec, parameters, a.clusterConfig, a.log)
 
-		// HACK: wow this feels dirty
-		a.engine.AttachSubscriber(NewProvisionWorkSubscriber(a.dao))
-
 		token = a.engine.StartNewJob(pjob)
 
 		// HACK: there might be a delay between the first time the state in etcd

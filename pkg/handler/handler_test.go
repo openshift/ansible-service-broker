@@ -60,8 +60,7 @@ func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*bro
 	return &broker.LastOperationResponse{State: state, Description: ""}, nil
 }
 
-var b MockBroker
-var dahandler handler
+var testhandler handler
 var log = logging.MustGetLogger("handler")
 
 func init() {
@@ -74,8 +73,8 @@ func init() {
 	logging.SetBackend(backend, backendFormatter)
 
 	// setup the broker and handler
-	b = MockBroker{Name: "testbroker"}
-	dahandler = handler{*mux.NewRouter(), b, log}
+	b := MockBroker{Name: "testbroker"}
+	testhandler = handler{*mux.NewRouter(), b, log}
 }
 
 func TestNewHandler(t *testing.T) {
@@ -86,22 +85,22 @@ func TestNewHandler(t *testing.T) {
 }
 
 func TestBootstrap(t *testing.T) {
-	ft.AssertNotNil(t, dahandler, "")
+	ft.AssertNotNil(t, testhandler, "")
 
 	trr := TestRequest{Msg: "hello world", done: true}
 	r := httptest.NewRequest("POST", "/v2/bootstrap", trr)
 	w := httptest.NewRecorder()
-	dahandler.bootstrap(w, r, nil)
+	testhandler.bootstrap(w, r, nil)
 	ft.AssertEqual(t, w.Code, 200, "code not equal")
 }
 
 func TestCatalog(t *testing.T) {
-	ft.AssertNotNil(t, dahandler, "")
+	ft.AssertNotNil(t, testhandler, "")
 
 	trr := TestRequest{Msg: "hello world", done: true}
 	r := httptest.NewRequest("GET", "/v2/catalog", trr)
 	w := httptest.NewRecorder()
-	dahandler.catalog(w, r, nil)
+	testhandler.catalog(w, r, nil)
 	ft.AssertEqual(t, w.Code, 200, "code not equal")
 }
 
@@ -113,7 +112,7 @@ func TestProvisionCreate(t *testing.T) {
 	params := map[string]string{
 		"instance_uuid": "688eea24-9cf9-43e3-9942-d1863b2a16af",
 	}
-	dahandler.provision(w, r, params)
+	testhandler.provision(w, r, params)
 	t.Log(w.Body)
 	ft.AssertEqual(t, w.Code, 201, "provision not created")
 }
@@ -125,7 +124,7 @@ func TestProvisionInvalidUUID(t *testing.T) {
 	params := map[string]string{
 		"instance_uuid": "invaliduuid",
 	}
-	dahandler.provision(w, r, params)
+	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "provision not created")
 	ft.AssertError(t, w.Body, "invalid instance_uuid")
 }
@@ -137,7 +136,7 @@ func TestProvisionCouldnotReadRequest(t *testing.T) {
 	params := map[string]string{
 		"instance_uuid": "688eea24-9cf9-43e3-9942-d1863b2a16af",
 	}
-	dahandler.provision(w, r, params)
+	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "provision not created")
 	ft.AssertError(t, w.Body, "could not read request: EOF")
 }
@@ -151,7 +150,7 @@ func TestProvisionConflict(t *testing.T) {
 	params := map[string]string{
 		"instance_uuid": "688eea24-9cf9-43e3-9942-d1863b2a16af",
 	}
-	dahandler.provision(w, r, params)
+	testhandler.provision(w, r, params)
 	t.Log(w.Body)
 	ft.AssertEqual(t, w.Code, 409, "provision not conflicted")
 	// TODO: need to figure out how to provide the proper error that satisfies
@@ -175,7 +174,7 @@ func TestBindInvalidInstance(t *testing.T) {
 	trr := TestRequest{Msg: "hello world", done: true}
 	r := httptest.NewRequest("PUT", "/v2/service_instance/foo/service_bindings/bar", trr)
 	w := httptest.NewRecorder()
-	dahandler.bind(w, r, nil)
+	testhandler.bind(w, r, nil)
 	ft.AssertEqual(t, w.Code, 400, "code not equal")
 }
 
@@ -186,7 +185,7 @@ func TestInvalidLastOperation(t *testing.T) {
 	params := map[string]string{
 		"instance_uuid": "688eea24-9cf9-43e3-9942-d1863b2a16af",
 	}
-	dahandler.lastoperation(w, r, params)
+	testhandler.lastoperation(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "invalid operation")
 	ft.AssertError(t, w.Body, "invalid operation")
 }
@@ -197,7 +196,7 @@ func TestMissingOperation(t *testing.T) {
 	params := map[string]string{
 		"instance_uuid": "688eea24-9cf9-43e3-9942-d1863b2a16af",
 	}
-	dahandler.lastoperation(w, r, params)
+	testhandler.lastoperation(w, r, params)
 	ft.AssertEqual(t, w.Code, 200, "invalid error code")
 	ft.AssertState(t, w.Body, "in progress")
 }
@@ -209,7 +208,7 @@ func TestLastOperation(t *testing.T) {
 	params := map[string]string{
 		"instance_uuid": "688eea24-9cf9-43e3-9942-d1863b2a16af",
 	}
-	dahandler.lastoperation(w, r, params)
+	testhandler.lastoperation(w, r, params)
 	ft.AssertEqual(t, w.Code, 200, "lastoperation should've returned 200")
 	ft.AssertState(t, w.Body, "in progress")
 }
