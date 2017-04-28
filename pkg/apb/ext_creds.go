@@ -11,7 +11,7 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-var ContainerCreatingError = "status: ContainerCreating, still waiting to start"
+var StillWaitingError = "status: still waiting to start"
 var TimeoutFreq = 6    // Seconds
 var TotalTimeout = 900 // 15min
 
@@ -35,7 +35,7 @@ func extractCredentials(
 	var err error
 	creds, err = buildExtractedCredentials(credOut)
 
-	if err.Error() == ContainerCreatingError {
+	if err != nil {
 		// HACK: this is HORRIBLE. but there is definitely a time between a bind
 		// and when the container is up.
 		totalRetries := TotalTimeout / TimeoutFreq
@@ -47,7 +47,6 @@ func extractCredentials(
 				return nil, errors.New(errstr)
 			}
 
-			//time.Sleep(TimeoutFreq * time.Second)
 			time.Sleep(time.Duration(TimeoutFreq) * time.Second)
 			log.Info("Container not up yet, retrying %d of %d on pod %s", retries, totalRetries, podname)
 			credOut, _ = monitorOutput(podname)
@@ -61,20 +60,19 @@ func extractCredentials(
 					log.Debug("Pod reporting finished and DID NOT return Credentials")
 				}
 				break
+			} else if err.Error() == StillWaitingError {
+				// Known error code that's received when we're either waiting for
+				// ContainerCreating, or for the pod resource to be created.
+				// These are expected states, and we'll wait until the pod is up.
+				log.Debug(err.Error())
+			} else {
+				log.Notice("WARNING: Unexpected output from apb pod")
+				log.Notice("Will keep retrying, but it's possible something has gone wrong.")
+				log.Notice(err.Error())
 			}
 
-			if err.Error() == ContainerCreatingError {
-				// Container is still not up, retry
-				retries++
-				continue
-			}
-
-			// unexpected error
-			return nil, err
+			retries++
 		}
-	} else {
-		// unexpected error
-		return nil, err
 	}
 
 	return creds, err
@@ -102,9 +100,12 @@ func monitorOutput(podname string) ([]byte, error) {
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
-	if strings.Contains(string(output), "ContainerCreating") {
+	stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
+		strings.Contains(string(output), "NotFound")
+
+	if stillWaiting {
 		// Still waiting for container to come up
-		return nil, errors.New(ContainerCreatingError)
+		return nil, errors.New(StillWaitingError)
 	}
 
 	result, err := decodeOutput(output)
