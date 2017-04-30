@@ -373,10 +373,17 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		a.log.Debug("%+v", provExtCreds)
 	}
 
-	bindExtCreds, err := apb.Bind(instance, &params, a.clusterConfig, a.log)
-	if err != nil {
-		return nil, err
-	}
+	////////////////////////////////////////////////////////////
+	// HACK: NOOP the broker pod, we expect to find the credentials from
+	// the provision run.
+	//bindExtCreds, err := apb.Bind(instance, &params, a.clusterConfig, a.log)
+	//if err != nil {
+	//return nil, err
+	//}
+	a.log.Notice("NOOP: Bind run")
+	var bindExtCreds *apb.ExtractedCredentials = nil
+	err = nil
+	////////////////////////////////////////////////////////////
 
 	// Can't bind to anything if we have nothing to return to the catalog
 	if provExtCreds == nil && bindExtCreds == nil {
