@@ -12,7 +12,7 @@ from subprocess import Popen, PIPE
 from distutils import spawn
 
 RECORDS_FILE = '/tmp/asbcli.dat.json'
-BROKER_IMAGE = 'ansibleplaybookbundle/ansible-service-broker-apb'
+BROKER_IMAGE = 'eriknelson/ansible-service-broker-apb'
 
 BROKER_HEADERS = {
     'X-Broker-API-Version': '2.9'
