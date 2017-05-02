@@ -383,6 +383,9 @@ class App(object):
 
     def _req_bootstrap(self):
         res = req(self._url('/bootstrap'), verb='post')
+        if not res.ok:
+            print "Problem bootstrapping broker. Status [%s]" % res.status_code
+            return
         spec_count = res.json()['SpecCount']
         print 'Bootstrapped %d specs into broker from dockerhub!' % spec_count
 
