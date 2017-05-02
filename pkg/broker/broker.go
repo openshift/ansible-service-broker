@@ -349,26 +349,14 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 	// return 201 when we're done.
 	if bi, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
-		if bi.Id.String() == bindingInstance.Id.String() &&
-			reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
-
-			a.log.Debug("already have this binding instance returning 200")
-			return &BindResponse{}, ErrorAlreadyProvisioned
-		} else if bi.Id.String() == bindingInstance.Id.String() &&
-			!reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
-
-			// TODO: remove these debug statements at some point
-			a.log.Debug("Existing binding parameters")
-			for k, v := range map[string]interface{}(*bi.Parameters) {
-				a.log.Debug("%s = %s", k, v)
+		if bi.Id.String() == bindingInstance.Id.String() {
+			if reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
+				a.log.Debug("already have this binding instance, returning 200")
+				return &BindResponse{}, ErrorAlreadyProvisioned
+			} else {
+				a.log.Info("duplicate binding instance diff params, returning 409 conflict")
+				return nil, ErrorDuplicate
 			}
-			a.log.Debug("Incoming parameters")
-			for k, v := range map[string]interface{}(*bindingInstance.Parameters) {
-				a.log.Debug(fmt.Sprintf("%s = %s", k, v))
-			}
-
-			a.log.Info("we have a duplicate binding instance with identical parameters, returning 409 conflict")
-			return nil, ErrorDuplicate
 		}
 	}
 
