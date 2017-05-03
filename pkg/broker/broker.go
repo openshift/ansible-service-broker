@@ -353,10 +353,11 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 			if reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
 				a.log.Debug("already have this binding instance, returning 200")
 				return &BindResponse{}, ErrorAlreadyProvisioned
-			} else {
-				a.log.Info("duplicate binding instance diff params, returning 409 conflict")
-				return nil, ErrorDuplicate
 			}
+
+			// parameters are different
+			a.log.Info("duplicate binding instance diff params, returning 409 conflict")
+			return nil, ErrorDuplicate
 		}
 	}
 
