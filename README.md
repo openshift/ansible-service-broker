@@ -21,11 +21,12 @@ Our dependencies currently require development headers for btrfs and dev-mapper.
 
 CentOS/RHEL/Fedora (sub dnf for Fedora):
 
-`sudo yum install device-mapper-devel btrfs-progs-devel`
+`sudo yum install device-mapper-devel btrfs-progs-devel jq etcd`
 
 ## Setup
 
 ```
+sudo /sbin/service etcd restart # start etcd
 mkdir -p $GOPATH/src/github.com/fusor
 git clone https://github.com/fusor/ansible-service-broker.git $GOPATH/src/github.com/fusor/ansible-service-broker
 cd $GOPATH/src/github.com/fusor/ansible-service-broker && glide install
