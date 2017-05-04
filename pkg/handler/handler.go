@@ -165,6 +165,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 
+	// validate input uuids
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
@@ -183,9 +184,23 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		return
 	}
 
+	// process binding request
 	resp, err := h.broker.Bind(instanceUUID, bindingUUID, req)
 
-	writeDefaultResponse(w, http.StatusCreated, resp, err)
+	if err != nil {
+		switch err {
+		case broker.ErrorDuplicate:
+			writeResponse(w, http.StatusConflict, broker.BindResponse{})
+		case broker.ErrorAlreadyProvisioned:
+			writeResponse(w, http.StatusOK, resp)
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		}
+	} else {
+		writeDefaultResponse(w, http.StatusCreated, resp, err)
+	}
 }
 
 func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[string]string) {

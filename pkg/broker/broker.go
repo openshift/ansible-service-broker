@@ -339,12 +339,27 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		Parameters: &params,
 	}
 
+	// Verify we're not rebinding the same instance. if err is nil, there is an
+	// instance. Let's compare it to the instance we're being asked to bind.
+	//
+	// if err is not nil, we will just bubble that up
+	//
 	// if binding instance exists, and the parameters are the same return: 200.
 	// if binding instance exists, and the parameters are different return: 409.
 	//
 	// return 201 when we're done.
-	//
-	// once we create the binding instance, we call apb.Bind
+	if bi, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
+		if bi.Id.String() == bindingInstance.Id.String() {
+			if reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
+				a.log.Debug("already have this binding instance, returning 200")
+				return &BindResponse{}, ErrorAlreadyProvisioned
+			}
+
+			// parameters are different
+			a.log.Info("duplicate binding instance diff params, returning 409 conflict")
+			return nil, ErrorDuplicate
+		}
+	}
 
 	if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
 		return nil, err
