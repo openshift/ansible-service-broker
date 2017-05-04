@@ -2,6 +2,7 @@ package apb
 
 import (
 	"encoding/json"
+	"reflect"
 
 	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
@@ -101,6 +102,14 @@ type ServiceInstance struct {
 	Id         uuid.UUID   `json:"id"`
 	Spec       *Spec       `json:"spec"`
 	Parameters *Parameters `json:"parameters"`
+}
+
+//IsEqual - Compares the Id and Parameters of the instance to determine if SericeInstance is equal to the instance passed in.
+func (s ServiceInstance) IsEqual(si *ServiceInstance) bool {
+	if s.Id.String() != si.Id.String() {
+		return false
+	}
+	return reflect.DeepEqual(s.Parameters, si.Parameters)
 }
 
 type BindInstance struct {
