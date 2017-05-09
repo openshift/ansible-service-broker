@@ -10,6 +10,25 @@ An Ansible Playbook Bundle (APB) is a new method for defining and distributing c
 
 Read more about the Ansible Service Broker and Ansible Playbook Bundles in this [introduction](docs/introduction.md).
 
+## Project Related Links
+* Email:  ansible-service-broker@redhat.com
+* IRC (Freenode): #asbroker
+* [Trello](https://trello.com/b/50JhiC5v/ansible-service-broker)
+* Github:
+    * [ansible service broker](https://github.com/fusor/ansible-service-broker)
+    * [ansible playbook bundle](https://github.com/fusor/ansible-playbook-bundle)
+* [Demo environment with oc cluster up](https://github.com/fusor/catasb)
+* [Library of example APBs](https://github.com/fusor/apb-examples)
+    * ManageIQ
+    * Etherpad
+    * Wordpress
+    * ELK Stack
+* [Red Hat Summit 2017: AWS and Red Hat Demo](https://www.youtube.com/watch?v=EKo3khfmhi8)
+* [YouTube Channel](https://www.youtube.com/channel/UC04eOMIMiV06_RSZPb4OOBw):
+    * [Using the Service Catalog to Bind a PostgreSQL APB to a Python Web App](https://www.youtube.com/watch?v=xmd52NhEjCk)
+    * [Service Catalog deploying ManageIQ APB onto OpenShift](https://www.youtube.com/watch?v=J6rDssVEZuQ)
+* [Docker hub published APBs](https://hub.docker.com/u/ansibleplaybookbundle/)
+
 ## Prerequisites
 
 [glide](https://glide.sh/) is used for dependency management. Binaries are available on the
