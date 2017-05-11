@@ -10,11 +10,13 @@ import (
 	logging "github.com/op/go-logging"
 )
 
+//Config - confg holds etcd host and port.
 type Config struct {
 	EtcdHost string `yaml:"etcd_host"`
 	EtcdPort string `yaml:"etcd_port"`
 }
 
+//Dao - retreive, create, and update  objects from etcd
 type Dao struct {
 	config    Config
 	log       *logging.Logger
@@ -23,6 +25,7 @@ type Dao struct {
 	kapi      client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
+//NewDao - Create a new Dao object
 func NewDao(config Config, log *logging.Logger) (*Dao, error) {
 	var err error
 	dao := Dao{
@@ -57,12 +60,14 @@ func etcdEndpoint(host string, port string) string {
 	return fmt.Sprintf("http://%s:%s", host, port)
 }
 
+//SetRaw - Allows the setting of the value json string to the key in the kvp API.
 func (d *Dao) SetRaw(key string, val string) error {
 	d.log.Debug(fmt.Sprintf("Dao::SetRaw [ %s ] -> [ %s ]", key, val))
 	_, err := d.kapi.Set(context.Background(), key, val /*opts*/, nil)
 	return err
 }
 
+//GetRaw - gets a specific json string for a key from the kvp API.
 func (d *Dao) GetRaw(key string) (string, error) {
 	res, err := d.kapi.Get(context.Background(), key /*opts*/, nil)
 	if err != nil {
@@ -74,6 +79,7 @@ func (d *Dao) GetRaw(key string) (string, error) {
 	return val, nil
 }
 
+//BatchGetRaw - Get multiple  types as individual json strings
 // TODO: Streaming interface? Going to need to optimize all this for
 // a full-load catalog response of 10k
 // This is more likely to be paged given current proposal
@@ -105,26 +111,22 @@ func (d *Dao) BatchGetRaw(dir string) (*[]string, error) {
 	return &payloads, nil
 }
 
+//GetSpec - Retrieve the spec for the kvp API.
 func (d *Dao) GetSpec(id string) (*apb.Spec, error) {
-	raw, err := d.GetRaw(specKey(id))
+	spec := &apb.Spec{}
+	err := d.getObject(specKey(id), spec)
 	if err != nil {
 		return nil, err
 	}
-
-	spec := &apb.Spec{}
-	apb.LoadJSON(raw, spec)
 	return spec, nil
 }
 
+//SetSpec - set spec for an id in the kvp API.
 func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
-	payload, err := apb.DumpJSON(spec)
-	if err != nil {
-		return err
-	}
-
-	return d.SetRaw(specKey(id), payload)
+	return d.setObject(specKey(id), spec)
 }
 
+//BatchSetSpecs - set specs based on SpecManifest in the kvp API.
 func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
 	// TODO: Is there no batch insert in the etcd api?
 	for id, spec := range specs {
@@ -137,10 +139,10 @@ func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
 	return nil
 }
 
+//BatchGetSpecs - Retrieve all the specs for dir.
 func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
-	var payloads *[]string
-	var err error
-	if payloads, err = d.BatchGetRaw(dir); err != nil {
+	payloads, err := d.BatchGetRaw(dir)
+	if err != nil {
 		return []*apb.Spec{}, err
 	}
 
@@ -155,112 +157,95 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 	return specs, nil
 }
 
+//GetServiceInstance - Retrieve specific service instance from the kvp API.
 func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
-	var raw string
-	var err error
-	if raw, err = d.GetRaw(serviceInstanceKey(id)); err != nil {
-		return nil, err
-	}
-
 	spec := &apb.ServiceInstance{}
-	err = apb.LoadJSON(raw, spec)
+	err := d.getObject(serviceInstanceKey(id), spec)
 	if err != nil {
 		return nil, err
 	}
-
 	return spec, nil
 }
 
-func (d *Dao) SetServiceInstance(
-	id string, serviceInstance *apb.ServiceInstance,
-) error {
-	payload, err := apb.DumpJSON(serviceInstance)
-	if err != nil {
-		return err
-	}
-
-	return d.SetRaw(serviceInstanceKey(id), payload)
+//SetServiceInstance - Set service instance for an id in the kvp API.
+func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
+	return d.setObject(serviceInstanceKey(id), serviceInstance)
 }
 
+//DeleteServiceInstance - Delete the service instance for an service instance id.
 func (d *Dao) DeleteServiceInstance(id string) error {
 	d.log.Debug(fmt.Sprintf("Dao::DeleteServiceInstance -> [ %s ]", id))
 	_, err := d.kapi.Delete(context.Background(), serviceInstanceKey(id), nil)
 	return err
 }
 
+//GetBindInstance - Retrieve a specific bind instance from the kvp API
 func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
-	var raw string
-	var err error
-	if raw, err = d.GetRaw(bindInstanceKey(id)); err != nil {
-		return nil, err
-	}
-
 	spec := &apb.BindInstance{}
-	err = apb.LoadJSON(raw, spec)
+	err := d.getObject(bindInstanceKey(id), spec)
 	if err != nil {
 		return nil, err
 	}
-
 	return spec, nil
 }
 
-func (d *Dao) SetBindInstance(
-	id string, bindInstance *apb.BindInstance,
-) error {
-	payload, err := apb.DumpJSON(bindInstance)
-	if err != nil {
-		return err
-	}
-
-	return d.SetRaw(bindInstanceKey(id), payload)
+//SetBindInstance - Set the bind instance for id in the kvp API.
+func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
+	return d.setObject(bindInstanceKey(id), bindInstance)
 }
 
+//GetExtractedCredentials - Get the extracted credentials for an id in the kvp API.
 func (d *Dao) GetExtractedCredentials(id string) (*apb.ExtractedCredentials, error) {
-	raw, err := d.GetRaw(extractedCredentialsKey(id))
+	extractedCredentials := &apb.ExtractedCredentials{}
+	err := d.getObject(extractedCredentialsKey(id), extractedCredentials)
 	if err != nil {
 		return nil, err
 	}
-
-	extractedCredentials := &apb.ExtractedCredentials{}
-	apb.LoadJSON(raw, extractedCredentials)
 	return extractedCredentials, nil
 }
 
-func (d *Dao) SetExtractedCredentials(
-	id string, extractedCredentials *apb.ExtractedCredentials,
-) error {
-	payload, err := apb.DumpJSON(extractedCredentials)
-	if err != nil {
-		return err
-	}
-
-	return d.SetRaw(extractedCredentialsKey(id), payload)
+//SetExtractedCredentials - Set the extracted credentials for an id in the kvp API.
+func (d *Dao) SetExtractedCredentials(id string, extractedCredentials *apb.ExtractedCredentials) error {
+	return d.setObject(extractedCredentialsKey(id), extractedCredentials)
 }
 
+//SetState - Set the Job State in the kvp API for id.
 func (d *Dao) SetState(id string, state apb.JobState) error {
-	payload, err := apb.DumpJSON(state)
-	if err != nil {
-		return err
-	}
-
-	return d.SetRaw(stateKey(id, state.Token), payload)
+	return d.setObject(stateKey(id, state.Token), state)
 }
 
+//GetState - Retrieve a job state from the kvp API for an ID and Token.
 func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
-	raw, err := d.GetRaw(stateKey(id, token))
+	state := apb.JobState{}
+	err := d.getObject(stateKey(id, token), &state)
 	if err != nil {
 		return apb.JobState{State: apb.StateFailed}, err
 	}
-
-	state := apb.JobState{}
-	apb.LoadJSON(raw, &state)
 	return state, nil
 }
 
+//DeleteBindInstance - Delete the binding instance for an id in the kvp API.
 func (d *Dao) DeleteBindInstance(id string) error {
 	d.log.Debug(fmt.Sprintf("Dao::DeleteBindInstance -> [ %s ]", id))
 	_, err := d.kapi.Delete(context.Background(), bindInstanceKey(id), nil)
 	return err
+}
+
+func (d *Dao) getObject(key string, data interface{}) error {
+	raw, err := d.GetRaw(key)
+	if err != nil {
+		return err
+	}
+	apb.LoadJSON(raw, data)
+	return nil
+}
+
+func (d *Dao) setObject(key string, data interface{}) error {
+	payload, err := apb.DumpJSON(data)
+	if err != nil {
+		return err
+	}
+	return d.SetRaw(key, payload)
 }
 
 ////////////////////////////////////////////////////////////
