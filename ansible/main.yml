@@ -102,7 +102,7 @@
             mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
-            src: "{{asb_checkout}}/etc/ex.mock.config.yaml",
+            src: "{{asb_checkout}}/etc/ex.dockerimg.config.yaml",
             dest: "{{etc_dest}}/config.yaml",
             mode: "u+rw,g+rw,o+rw"
           }

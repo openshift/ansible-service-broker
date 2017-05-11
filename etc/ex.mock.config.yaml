@@ -4,7 +4,7 @@ registry:
   url: xxx
   user: {{DOCKERHUB_USER}}
   pass: {{DOCKERHUB_PASS}}
-  org: ansibleplaybookbundle
+  org: {{DOCKERHUB_ORG}}
 dao:
   etcd_host: etcd
   etcd_port: 2379
