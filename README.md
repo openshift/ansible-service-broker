@@ -10,6 +10,8 @@ An Ansible Playbook Bundle (APB) is a new method for defining and distributing c
 
 Read more about the Ansible Service Broker and Ansible Playbook Bundles in this [introduction](docs/introduction.md).
 
+**NOTE**: this broker will be based on the [open-service-broker-sdk](https://github.com/openshift/open-service-broker-sdk) project in the future.
+
 ## Project Related Links
 * Email:  ansible-service-broker@redhat.com
 * IRC (Freenode): #asbroker
