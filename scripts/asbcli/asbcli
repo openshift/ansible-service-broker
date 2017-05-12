@@ -563,6 +563,11 @@ def subcmd_up_parser(parser, subcmd):
         '--dockerhub-pass', action='store', dest='dockerhub_pass',
         help=u'Dockerhub pass. Used to communicate with dockerhub registry.',
     )
+    subcmd.add_argument(
+        '--dockerhub-org', action='store', dest='dockerhub_org',
+        help=u'Dockerhub org. Used to communicate with dockerhub registry.',
+        default='ansibleplaybookbundle'
+    )
 
 
 def cmdrun_connect(**kwargs):
@@ -575,6 +580,7 @@ def cmdrun_up(**kwargs):
     openshift_pass = kwargs['openshift_pass']
     dockerhub_user = kwargs['dockerhub_user']
     dockerhub_pass = kwargs['dockerhub_pass']
+    dockerhub_org = kwargs['dockerhub_org']
 
     if not openshift_pass:
         openshift_pass = getpass.getpass('Enter cluster password: ')
@@ -595,6 +601,7 @@ def cmdrun_up(**kwargs):
         BROKER_IMAGE, 'provision',
         '-e', 'dockerhub_user=%s' % dockerhub_user,
         '-e', 'dockerhub_pass=%s' % dockerhub_pass,
+        '-e', 'dockerhub_org=%s' % dockerhub_org,
         '-e', 'openshift_target=%s' % cluster,
         '-e', 'openshift_user=%s' % openshift_user,
         '-e', 'openshift_pass=%s' % openshift_pass,

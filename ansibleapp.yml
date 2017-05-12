@@ -11,6 +11,9 @@ parameters:
   - name: dockerhub_pass
     description: DockerHub Pass
     type: string
+  - name: dockerhub_org
+    descriptionL: DockerHub Org
+    type: string
   - name: openshift_target
     description: Openshift Target
     type: string
