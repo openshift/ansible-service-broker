@@ -82,7 +82,7 @@ func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*Spec, er
 	specs := []*Spec{}
 	for _, dat := range rawBundleData {
 		if spec, err = datToSpec(dat); err != nil {
-			r.log.Errorf("Unable to create spec", err)
+			r.log.Errorf("Unable to create spec - %v", err)
 		} else {
 			specs = append(specs, spec)
 		}
