@@ -46,3 +46,18 @@ import:
   version: 7da10c8c50cad14494ec818dcdfb6506265c0086
 - package: github.com/gorilla/handlers
   version: ~1.2.0
+- package: github.com/coreos/go-oidc
+- package: github.com/opencontainers/image-spec
+  version: v1.0.0-rc4
+- package: github.com/Sirupsen/logrus
+  version: v0.11.4
+- package: github.com/howeyc/gopass
+- package: github.com/opencontainers/go-digest
+  version: ^1.0.0-rc0
+- package: github.com/pkg/errors
+  version: ^0.8.0
+- package: github.com/blang/semver
+  version: ^3.5.0
+- package: k8s.io/client-go
+  version: ^3.0.0-beta.0
+- package: k8s.io/apimachinery
