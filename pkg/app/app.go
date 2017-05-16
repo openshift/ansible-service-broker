@@ -1,9 +1,13 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+
+	kapierrors "k8s.io/apimachinery/pkg/api/errors"
+	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 
 	"github.com/fusor/ansible-service-broker/pkg/apb"
 	"github.com/fusor/ansible-service-broker/pkg/broker"
@@ -71,6 +75,33 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 	app.log.Info("Etcd Version [Server: %s, Cluster: %s]", serv, clust)
+
+	client, err := apb.NewClient(app.log.Logger)
+	if err != nil {
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+
+	app.log.Debug("Connecting to Cluster")
+	body, err := client.RESTClient.Get().AbsPath("/version").Do().Raw()
+	if err != nil {
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+	switch {
+	case err == nil:
+		var kubeServerInfo kubeversiontypes.Info
+		err = json.Unmarshal(body, &kubeServerInfo)
+		if err != nil && len(body) > 0 {
+			app.log.Error(err.Error())
+			os.Exit(1)
+		}
+		app.log.Info("Kubernetes version: %v", kubeServerInfo)
+	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
+	default:
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
 
 	app.log.Debug("Connecting Registry")
 	if app.registry, err = apb.NewRegistry(
