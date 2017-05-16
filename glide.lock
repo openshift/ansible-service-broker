@@ -58,6 +58,8 @@ imports:
   - pkg/system
   - storage
   - storageversion
+- name: github.com/coreos/go-semver
+  version: 8ab6407b697782a06568d4b7f1db25550ec2e4c6
 - name: github.com/coreos/etcd
   version: 20490caaf0dcd96bb4a95e40625559def8ef5b04
   subpackages:
