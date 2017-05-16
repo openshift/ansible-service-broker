@@ -195,7 +195,7 @@ rm -rf src
 %install
 install -d -p %{buildroot}%{_bindir}
 install -p -m 755 broker %{buildroot}%{_bindir}/asbd
-install -p -m 755 docker/%{name} %{buildroot}%{_bindir}/%{name}
+install -p -m 755 build/%{name} %{buildroot}%{_bindir}/%{name}
 sed -i 's,/usr/local/%{name}/bin,/usr/libexec/%{name},g' %{buildroot}%{_bindir}/%{name}
 install -d -p %{buildroot}%{_docdir}/%{name}
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
