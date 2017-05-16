@@ -114,7 +114,9 @@ type ErrorResponse struct {
 	Description string `json:"description"`
 }
 
+// BootstrapResponse - The response for a bootstrap request
 // TODO: What belongs on this thing?
 type BootstrapResponse struct {
-	SpecCount int
+	SpecCount  int `json:"spec_count"`
+	ImageCount int `json:"image_count"`
 }

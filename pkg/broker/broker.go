@@ -64,8 +64,9 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	a.log.Info("AnsibleBroker::Bootstrap")
 	var err error
 	var specs []*apb.Spec
+	var imageCount int
 
-	if specs, err = a.registry.LoadSpecs(); err != nil {
+	if specs, imageCount, err = a.registry.LoadSpecs(); err != nil {
 		return nil, err
 	}
 
@@ -73,7 +74,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, err
 	}
 
-	return &BootstrapResponse{len(specs)}, nil
+	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
 
 func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {

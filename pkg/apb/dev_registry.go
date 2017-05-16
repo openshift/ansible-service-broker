@@ -10,13 +10,16 @@ import (
 	logging "github.com/op/go-logging"
 )
 
+// AppsPath - path to bundles for dev registry.
 const AppsPath = "/bundles"
 
+// DevRegistry - dev registry
 type DevRegistry struct {
 	config RegistryConfig
 	log    *logging.Logger
 }
 
+// Init - initialize the DevRegistry
 func (r *DevRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 	log.Debug("DevRegistry::Init")
 	r.config = config
@@ -24,16 +27,17 @@ func (r *DevRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 	return nil
 }
 
-func (r *DevRegistry) LoadSpecs() ([]*Spec, error) {
+// LoadSpecs - Load Specs from the DevRegistry
+func (r *DevRegistry) LoadSpecs() ([]*Spec, int, error) {
 	r.log.Debug("DevRegistry::LoadSpecs")
 
-	appsUrl := r.fullAppsPath()
+	appsURL := r.fullAppsPath()
 
-	r.log.Debug(fmt.Sprintf("Getting hardcoded specs from: %s", appsUrl))
+	r.log.Debug(fmt.Sprintf("Getting hardcoded specs from: %s", appsURL))
 
-	res, err := http.Get(appsUrl)
+	res, err := http.Get(appsURL)
 	if err != nil {
-		return []*Spec{}, err
+		return []*Spec{}, 0, err
 	}
 
 	defer res.Body.Close()
@@ -50,7 +54,7 @@ func (r *DevRegistry) LoadSpecs() ([]*Spec, error) {
 		r.log.Debug(fmt.Sprintf("ID: %s", spec.Id))
 	}
 
-	return specs, nil
+	return specs, len(specs), nil
 }
 
 func (r *DevRegistry) fullAppsPath() string {

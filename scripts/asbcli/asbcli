@@ -386,8 +386,9 @@ class App(object):
         if not res.ok:
             print "Problem bootstrapping broker. Status [%s]" % res.status_code
             return
-        spec_count = res.json()['SpecCount']
-        print 'Bootstrapped %d specs into broker from dockerhub!' % spec_count
+        spec_count = res.json()['spec_count']
+        image_count = res.json()['image_count']
+        print 'Bootstrapped %d specs into broker of %d images from dockerhub!' % (spec_count, image_count)
 
     def _req_catalog(self):
         res = req(self._url('/catalog'))
