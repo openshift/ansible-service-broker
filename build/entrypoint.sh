@@ -21,10 +21,6 @@ else
   echo "Got OPENSHIFT credentials."
 fi
 
-id
-
-oc-login.sh
-
 sed -i "s|{{DOCKERHUB_USER}}|${DOCKERHUB_USER}|" $ASB_CONF
 sed -i "s|{{DOCKERHUB_PASS}}|${DOCKERHUB_PASS}|" $ASB_CONF
 sed -i "s|{{DOCKERHUB_ORG}}|${DOCKERHUB_ORG}|" $ASB_CONF
