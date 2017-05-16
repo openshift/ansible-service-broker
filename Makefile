@@ -7,7 +7,7 @@ build: $(shell find cmd pkg)
 	# HACK: Unless docker's vendor directory is removed, we end up with a
 	# duplicate symbol error from the linker that prevents compilation.
 	rm -rf ${GOPATH}/src/github.com/fusor/ansible-service-broker/vendor/github.com/docker/docker/vendor && \
-		go install ./cmd/broker
+		go install -ldflags="-s -w" ./cmd/broker
 
 ${GOPATH}/bin/mock-registry: $(shell find cmd/mock-registry)
 	go install ./cmd/mock-registry
