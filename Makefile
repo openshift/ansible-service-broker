@@ -5,10 +5,7 @@ BROKER_APB_IMAGE = $(REGISTRY)/$(PROJECT)/ansible-service-broker-apb
 BUILD_DIR        = "${GOPATH}/src/github.com/fusor/ansible-service-broker/build"
 
 install: $(shell find cmd pkg)
-	# HACK: Unless docker's vendor directory is removed, we end up with a
-	# duplicate symbol error from the linker that prevents compilation.
-	rm -rf ${GOPATH}/src/github.com/fusor/ansible-service-broker/vendor/github.com/docker/docker/vendor && \
-		go install -ldflags="-s -w" ./cmd/broker
+	go install -ldflags="-s -w" ./cmd/broker
 
 ${GOPATH}/bin/mock-registry: $(shell find cmd/mock-registry)
 	go install ./cmd/mock-registry
@@ -33,7 +30,7 @@ clean:
 	@rm -f ${GOPATH}/bin/broker
 
 vendor:
-	@glide install
+	@glide install -v
 
 test: vendor
 	go test ./pkg/...

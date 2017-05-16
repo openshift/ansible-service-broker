@@ -1,10 +1,12 @@
-hash: 12a87443db1e36f509de1667356fb93c5154f50cfecf6990f466e77ffb96595f
-updated: 2017-04-13T22:27:35.051354625-04:00
+hash: d1fc250792f2e58714fe98ad7e60ce30f11fa43e087aae18c4fe47472e62f6ac
+updated: 2017-05-16T11:02:19.14044772-04:00
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
   subpackages:
   - winterm
+- name: github.com/blang/semver
+  version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/containers/image
   version: 4f14180c47e7c5611069c060d056fab8739619e1
   subpackages:
@@ -58,14 +60,19 @@ imports:
   - pkg/system
   - storage
   - storageversion
-- name: github.com/coreos/go-semver
-  version: 8ab6407b697782a06568d4b7f1db25550ec2e4c6
 - name: github.com/coreos/etcd
-  version: 20490caaf0dcd96bb4a95e40625559def8ef5b04
+  version: 43b75072bfaca5a7c35c718179defbcabd9a0886
   subpackages:
   - client
   - pkg/pathutil
   - pkg/types
+  - version
+- name: github.com/coreos/go-oidc
+  version: c797a55f1c1001ec3169f1d0fbb4c5523563bec6
+- name: github.com/coreos/go-semver
+  version: 568e959cd89871e61434c1143528d9162da89ef2
+  subpackages:
+  - semver
 - name: github.com/docker/distribution
   version: a25b9ef0c9fe242ac04bb20d3a028442b7d266b6
   subpackages:
@@ -157,6 +164,8 @@ imports:
   version: 392c28fe23e1c45ddba891b0320b3b5df220beea
 - name: github.com/hashicorp/go-cleanhttp
   version: ad28ea4487f05916463e2423a55166280e8254b5
+- name: github.com/howeyc/gopass
+  version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
 - name: github.com/imdario/mergo
   version: 50d4dbd4eb0e84778abe37cefef140271d96fade
 - name: github.com/jessevdk/go-flags
@@ -183,7 +192,7 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: aa2ec055abd10d26d539eb630a92241b781ce4bc
 - name: github.com/opencontainers/image-spec
-  version: 5ef499e5bab7c794b358e190a34476a230d6c3f8
+  version: 86308139a22b005bfda7b2e49c02fade937b4180
   subpackages:
   - specs-go
   - specs-go/v1
@@ -197,13 +206,13 @@ imports:
 - name: github.com/pborman/uuid
   version: a97ce2ca70fa5a848076093f05e639a89ca34d06
 - name: github.com/pkg/errors
-  version: 248dadf4e9068a0b3e79f02ed0a610d935de5302
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/Sirupsen/logrus
-  version: 51fe59aca108dc5680109e7b2051cbdcfa5a253c
+  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: github.com/spf13/pflag
   version: a232f6d9f87afaaa08bafaff5da685f974b83313
 - name: github.com/ugorji/go
@@ -272,11 +281,11 @@ imports:
   - pkg/watch
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
-  version: 86a2be1b447d7abddae88de0a5f642935992b803
+  version: 3627aeb7d4f6ade38f995d2c923e459146493c7e
   subpackages:
   - util/homedir
 - name: k8s.io/kubernetes
-  version: 176eb0e509a255dd520de135cda31096f8796be5
+  version: ee39d359dd0896c4c0eccf23f033f158ad3d3bd7
   subpackages:
   - pkg/api/errors
   - pkg/api/unversioned
