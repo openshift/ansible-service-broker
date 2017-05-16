@@ -31,7 +31,7 @@ func (m *MockBroker) called(method string, called bool) {
 
 func (m MockBroker) Bootstrap() (*broker.BootstrapResponse, error) {
 	m.called("bootstrap", true)
-	return &broker.BootstrapResponse{10}, m.Err
+	return &broker.BootstrapResponse{SpecCount: 10, ImageCount: 10}, m.Err
 }
 
 func (m MockBroker) Catalog() (*broker.CatalogResponse, error) {
