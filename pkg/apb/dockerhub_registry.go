@@ -81,7 +81,7 @@ func (r *DockerHubRegistry) createSpecs(
 		return _spec, nil
 	}
 
-	specs := []*Spec{}
+	var specs []*Spec
 	for _, dat := range rawBundleData {
 		if spec, err = datToSpec(dat); err != nil {
 			return nil, err
