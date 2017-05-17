@@ -177,7 +177,11 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 			writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
 			return
 		}
+	} else if errors.IsNotFound(err) {
+		writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
+		return
 	}
+
 	writeDefaultResponse(w, http.StatusOK, resp, err)
 }
 
