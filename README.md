@@ -23,7 +23,10 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
     * Etherpad
     * Wordpress
     * ELK Stack
-* [Red Hat Summit 2017: AWS and Red Hat Demo](https://www.youtube.com/watch?v=EKo3khfmhi8)
+* [Red Hat Summit 2017](https://www.youtube.com/playlist?list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
+  * [Keynote Demo](https://youtu.be/8MCbJmZQM9c?list=PLEGSLwUsxfEh4TE2GDU4oygCB-tmShkSn&t=4732)
+  * [Amazon Web Services deployed into OpenShift via Ansible Service Broker](https://www.youtube.com/watch?v=EKo3khfmhi8&index=2&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
+  * [Presentation OpenService Broker API + Ansible Service Broker/Ansible Playbook Bundles](https://www.youtube.com/watch?v=BaPMFZZ5lsc&index=1&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
 * [YouTube Channel](https://www.youtube.com/channel/UC04eOMIMiV06_RSZPb4OOBw):
     * [Using the Service Catalog to Bind a PostgreSQL APB to a Python Web App](https://www.youtube.com/watch?v=xmd52NhEjCk)
     * [Service Catalog deploying ManageIQ APB onto OpenShift](https://www.youtube.com/watch?v=J6rDssVEZuQ)
