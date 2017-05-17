@@ -33,14 +33,15 @@ function oc_create {
 parse_yaml $PROJECT_ROOT/etc/dev.config.yaml > /tmp/dev-config
 sed -i "s/=(\"--\")//" /tmp/dev-config
 
-for tpl in services.yaml route.yaml etcd-deployment.yaml broker-deployment_template.yaml; do
-    if [ "${tpl}" == "broker-deployment_template.yaml" ]; then
-        cp $TEMPLATE_DIR/$tpl $TEMPLATE_DIR/broker-deployment.yaml
-        sed -i "s/{{dockerhub_pass}}/${registry_pass}/" $TEMPLATE_DIR/broker-deployment.yaml
-        sed -i "s/{{dockerhub_user}}/${registry_user}/" $TEMPLATE_DIR/broker-deployment.yaml
-        sed -i "s/{{openshift_pass}}/${openshift_pass}/" $TEMPLATE_DIR/broker-deployment.yaml
-        sed -i "s/{{openshift_target}}/${openshift_target}/" $TEMPLATE_DIR/broker-deployment.yaml
-        sed -i "s/{{openshift_user}}/${openshift_user}/" $TEMPLATE_DIR/broker-deployment.yaml
+for tpl in services.yaml route.yaml etcd-deployment.yaml broker-deployment.yaml; do
+    if [ "${tpl}" == "broker-deployment.yaml" ]; then
+        cp $TEMPLATE_DIR/broker-deployment_template.yaml $TEMPLATE_DIR/$tpl
+        sed -i "s/{{dockerhub_pass}}/${registry_pass}/" $TEMPLATE_DIR/$tpl
+        sed -i "s/{{dockerhub_user}}/${registry_user}/" $TEMPLATE_DIR/$tpl
+        sed -i "s/{{dockerhub_org}}/${registry_org}/" $TEMPLATE_DIR/$tpl
+        sed -i "s/{{openshift_pass}}/${openshift_pass}/" $TEMPLATE_DIR/$tpl
+        sed -i "s/{{openshift_target}}/${openshift_target}/" $TEMPLATE_DIR/$tpl
+        sed -i "s/{{openshift_user}}/${openshift_user}/" $TEMPLATE_DIR/$tpl
     fi
     source /tmp/dev-config
     oc_create $tpl
