@@ -76,11 +76,13 @@ func CreateApp() App {
 	}
 	app.log.Info("Etcd Version [Server: %s, Cluster: %s]", serv, clust)
 
+	app.log.Debug("Creating Cluster Client")
 	client, err := apb.NewClient(app.log.Logger)
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
+	app.log.Info("Cluster Client Created")
 
 	app.log.Debug("Connecting to Cluster")
 	body, err := client.RESTClient.Get().AbsPath("/version").Do().Raw()
