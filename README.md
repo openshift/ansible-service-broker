@@ -66,9 +66,9 @@ or the configuration file can be specified by cli args as well.
 
 ## Targets
 
-`make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
-`make run-mock-registry`: Mock registry. Entirely separate binary.
-`make test`: Runs the test suite.
+* `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
+* `make run-mock-registry`: Mock registry. Entirely separate binary.
+* `make test`: Runs the test suite.
 
 **Note**
 
