@@ -15,7 +15,7 @@ See [APB design](#) for details for argument requirements and expectations
 
 > NOTE: This is a WIP, initial thoughts are as follows
 
-![Integration0.1](aa_integration.png)
+![Integration0.1](images/aa_integration.png)
 
 Seen in the [APB design](#), an `ArgumentsObject` requires a `ClusterObject`
 intended to provide details for connecting and authenticating with a targeted

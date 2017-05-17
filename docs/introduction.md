@@ -28,7 +28,7 @@ for provisioning, deprovisioning, binding, and unbinding to an application. The 
 a collection of brokers to handle details associated with its applications. The diagram below illustrates a
 high level concept of the workflow.
 
-![Overview](ansible-service-broker-overview.png)
+![Overview](images/ansible-service-broker-overview.png)
 
 ### Service Catalog to Service Broker Workflow
 
@@ -61,7 +61,7 @@ Two methods of preparing the needed files are supported, a guided approach that 
 majority of cases and makes the experience easier as well as an advanced approach that allows an experienced
 user full control to generate the few required files by hand.
 
-![Prepare](apb-prepare.png)
+![Prepare](images/apb-prepare.png)
 
 ### Guided Approach
 
@@ -97,7 +97,7 @@ Requirements:
 
 The required named playbooks correspond to methods defined by the Open Service Broker API. For example, when the
 Ansible Service Broker needs to provision an APB it will execute the provision.yaml.
- 
+
 After the required named playbooks have been generated the files can be used directly to test management of the
 application. A developer may want to work with this directory of files, make tweaks, run, repeat until they are
 happy with the behavior. They can test the playbooks by invoking Ansible directly with the playbook and any
@@ -110,7 +110,7 @@ Packaging combines a base image containing an Ansible runtime with ansible artif
 to run the playbooks. The result is a container image with an ENTRYPOINT set to take in several arguments, one of
 which is the method to execute, such as provision, deprovision, etc.
 
-![Package](apb-package.png)
+![Package](images/apb-package.png)
 
 ## Ansible Playbook Bundle: Deploy
 
@@ -118,13 +118,13 @@ Deploying an APB means invoking the container and passing in the name of the pla
 required variables. It’s possible to invoke the APB directly without going through the Ansible Service Broker.
 Each APB is packaged so it’s ENTRYPOINT will invoke ansible when run. The container is intended to be short-lived,
 coming up to execute the ansible playbook for managing the application then exiting.
- 
+
 In a typical APB deploy, the APB container will provision an application by running the provision.yaml playbook which
 executes a deployment role. The deployment role is responsible for creating the OpenShift resources, perhaps through
 calling oc create commands or leveraging ansible modules. The end result is that the APB runs Ansible to talk to
 OpenShift to orchestrate the provisioning of the intended application.
 
-![Deploy](apb-deploy.png)
+![Deploy](images/apb-deploy.png)
 
 ## Summary
 

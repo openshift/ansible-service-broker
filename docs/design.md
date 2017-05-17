@@ -9,7 +9,7 @@ An [OpenServiceBroker](https://github.com/openservicebrokerapi/servicebroker) (O
 
 ---
 
-![Design](design.png)
+![Design](images/design.png)
 
 ---
 
@@ -26,8 +26,7 @@ Registry API (forthcoming). Requirements:
 
   1.) Registry must allow the ASB to query for available APBs, and filter containers that are not APBs.
 
-  2.) ASB must be able to retrieve full set of Spec Files representing the APBs available *without*
-      having to pull the full images.
+  2.) ASB must be able to retrieve full set of Spec Files representing the APBs available *without* having to pull the full images.
 
 * **Ansible Playbook Bundle Spec File**: Metadata file packaged within an APB containing required set of
 attributes to make it available via the Service Catalog.
