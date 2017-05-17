@@ -72,20 +72,25 @@ func NewClient(log *logging.Logger) (*Client, error) {
 		return nil, err
 	}
 
-	clientConfig, err := createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
+	// NOTE: Both the external and internal client object are using the same
+	// clientset library. Internal clientset normally uses a different
+	// library
+	clientConfig, err := restclient.InClusterConfig()
 	if err != nil {
+		log.Warning("Failed to create a InternalClientSet: %v.", err)
 
-		log.Error("Failed to create LocalClientSet")
-		return nil, err
+		log.Debug("Checking for a local Cluster Config")
+		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
+		if err != nil {
+			log.Error("Failed to create LocalClientSet")
+			return nil, err
+		}
 	}
 
-	// TODO: Add code for an internalclientset. Kubernetes generates config
-	// files and loads them into every pod allowing connection to the
-	// APIserver from inside the cluster. Since the broker will primarily
-	// be run in the cluster, we need to use that configfile.
 	clientset, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
-		log.Warning("Failed to create a ClientSet: %v.", err)
+		log.Error("Failed to create LocalClientSet")
+		return nil, err
 	}
 
 	rest := clientset.Core().RESTClient()
