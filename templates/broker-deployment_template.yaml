@@ -18,9 +18,9 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-        - image: "ansibleapp/ansible-service-broker-asb:latest"
-          name: main
-          imagePullPolicy: IfNotPresent
+        - image: "ansibleplaybookbundle/ansible-service-broker-asb:latest"
+          name: asb
+          imagePullPolicy: Always
           ports:
             - containerPort: 1338
               protocol: TCP
