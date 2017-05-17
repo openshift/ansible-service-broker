@@ -1,5 +1,15 @@
-# Introducing Ansible Playbook Bundles and Ansible Service Broker for OpenShift
+# Introducing Ansible Service Broker for OpenShift and Ansible Playbook Bundles (APB)
 
+## Overview
+
+### Ansible Service Broker
+In December 2016 CloudFoundry [announced](https://www.cloudfoundry.org/open-service-broker-api-launches-as-industry-standard/)
+the open sourcing of its service broker APIs, [Open Service Broker API](https://www.openservicebrokerapi.org/).
+The Open Service Broker API defines methods for creating a broker, an entity responsible for delivering
+applications or services to a cloud platform. The Ansible Service Broker is a specialized broker created
+for OpenShift to manage Ansible Playbook Bundles.
+
+### Ansible Playbook Bundle
 Ansible Playbook Bundle (APB) is a new method for defining and distributing container applications in OpenShift.
 It will leverage Ansible to create a standard path for transitioning from easy to complex deployments. Imagine
 you install a prepackaged application on your cluster and then learn you need to customize the deployment to
@@ -7,26 +17,13 @@ make it production ready. What if you could peel back the cover in a sense and t
 satisfy your needs?  Ansible Playbook Bundle is designed to make this transition from simple to complex workflows
 possible.
 
-To introduce the Ansible Playbook Bundle concept we will cover:
+### Service Catalog
+Users will interact with the [Service Catalog](https://github.com/kubernetes-incubator/service-catalog)
+to obtain a list of available applications and invoke operations for provisioning, deprovisioning, binding, and unbinding
+to an application. The Service Catalog will rely on a collection of brokers to handle details associated with
+its applications.
 
-  1. Service Catalog and Ansible Service Broker workflow
-  2. Ansible Playbook Bundle overview
-  3. Ansible Playbook Bundle workflow
-      - Preparing an Ansible Playbook Bundle
-      - Packaging an Ansible Playbook Bundle
-      - Deploying an Ansible Playbook Bundle
-
-## Ansible Service Broker
-
-In December 2016 CloudFoundry [announced](https://www.cloudfoundry.org/open-service-broker-api-launches-as-industry-standard/) the open sourcing of its service broker APIs, [Open Service Broker API](https://www.openservicebrokerapi.org/).
-The Open Service Broker API defines methods for creating a broker, an entity responsible for delivering
-applications or services to a cloud platform. The Ansible Service Broker is a specialized broker created
-for OpenShift to manage Ansible Playbook Bundles.
-
-Users will interact with the [Service Catalog](https://github.com/kubernetes-incubator/service-catalog) to obtain a list of available applications and invoke operations
-for provisioning, deprovisioning, binding, and unbinding to an application. The Service Catalog will rely on
-a collection of brokers to handle details associated with its applications. The diagram below illustrates a
-high level concept of the workflow.
+The diagram below illustrates a high level concept of the workflow.
 
 ![Overview](images/ansible-service-broker-overview.png)
 
@@ -54,23 +51,23 @@ The workflow for an APB is broken up into three steps:
   2. Package
   3. Deploy
 
+Read more about getting started with APBs [here](https://github.com/fusor/ansible-playbook-bundle/blob/master/docs/getting_started.md).
+
 ## Ansible Playbook Bundle: Prepare
 
 The first step to creating an APB is preparing the files required to manage the application’s lifecycle.
-Two methods of preparing the needed files are supported, a guided approach that uses tooling to handle the
-majority of cases and makes the experience easier as well as an advanced approach that allows an experienced
-user full control to generate the few required files by hand.
+Two methods of preparing the needed files are supported, a [guided approach](#guided-approach) that uses tooling to handle the majority of cases and makes the experience easier as well as an [advanced approach](#advanced-approach) that allows an experienced user full control to generate the few required files by hand.
 
 ![Prepare](images/apb-prepare.png)
 
 ### Guided Approach
 
-The guided approach leverages and extends [ansible-container](https://github.com/ansible/ansible-container) to provide a solution for building all referenced
-images, generating a deployment role, and populating the named playbooks an APB requires.
+The guided approach leverages and extends [ansible-container](https://github.com/ansible/ansible-container) to provide a
+solution for building all referenced images, generating a deployment role, and populating the named playbooks an APB requires.
 
-The use of ansible-container allows a user to create yaml files to express image building and container
+The use of `ansible-container` allows a user to create `yaml` files to express image building and container
 deployment instructions for multiple environments. A translation step looks at this “single source of truth”
-(main.yml) and translates it to a deployment role targeted for a specific platform, in our case of OpenShift
+(`main.yml`) and translates it to a deployment role targeted for a specific platform, in our case of OpenShift
 this is powered by the [Kompose](https://github.com/kubernetes-incubator/kompose) project.
 
 As the deployment role is generated from a translation step we recognize that the approach is unlikely to handle
@@ -79,7 +76,7 @@ many use cases yet an alternative method is needed to address the trickier probl
 
 ### Advanced Approach
 
-As an alternative to the guided approach a user can package an APB reusing their existing ansible playbooks and
+As an alternative to the guided approach a user can package an APB reusing their existing Ansible playbooks and
 roles. Translating a working Ansible deployment role to an APB requires adding a few named playbooks and a
 metadata file.
 
@@ -106,7 +103,7 @@ required variables.
 ## Ansible Playbook Bundle: Package
 
 The packaging step is responsible for building a container image from the named playbooks for distribution.
-Packaging combines a base image containing an Ansible runtime with ansible artifacts and any dependencies required
+Packaging combines a base image containing an Ansible runtime with Ansible artifacts and any dependencies required
 to run the playbooks. The result is a container image with an ENTRYPOINT set to take in several arguments, one of
 which is the method to execute, such as provision, deprovision, etc.
 
@@ -116,12 +113,12 @@ which is the method to execute, such as provision, deprovision, etc.
 
 Deploying an APB means invoking the container and passing in the name of the playbook to execute along with any
 required variables. It’s possible to invoke the APB directly without going through the Ansible Service Broker.
-Each APB is packaged so it’s ENTRYPOINT will invoke ansible when run. The container is intended to be short-lived,
-coming up to execute the ansible playbook for managing the application then exiting.
+Each APB is packaged so it’s ENTRYPOINT will invoke Ansible when run. The container is intended to be short-lived,
+coming up to execute the Ansible playbook for managing the application then exiting.
 
 In a typical APB deploy, the APB container will provision an application by running the provision.yaml playbook which
 executes a deployment role. The deployment role is responsible for creating the OpenShift resources, perhaps through
-calling oc create commands or leveraging ansible modules. The end result is that the APB runs Ansible to talk to
+calling oc create commands or leveraging Ansible modules. The end result is that the APB runs Ansible to talk to
 OpenShift to orchestrate the provisioning of the intended application.
 
 ![Deploy](images/apb-deploy.png)
