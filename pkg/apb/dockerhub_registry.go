@@ -12,14 +12,17 @@ import (
 	logging "github.com/op/go-logging"
 )
 
+// ListImagesScript - Shell script to get the images for an organization.
 var ListImagesScript = "get_images_for_org.sh"
 
+// DockerHubRegistry - Docker Hub registry
 type DockerHubRegistry struct {
 	config     RegistryConfig
 	log        *logging.Logger
 	ScriptsDir string
 }
 
+// Init - Initialize the docker hub registry
 func (r *DockerHubRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 	log.Debug("DockerHubRegistry::Init")
 	r.config = config
@@ -27,19 +30,20 @@ func (r *DockerHubRegistry) Init(config RegistryConfig, log *logging.Logger) err
 	return nil
 }
 
-func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, error) {
+// LoadSpecs - Will load the specs from the docker hub registry.
+func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, int, error) {
 	r.log.Debug("DockerHubRegistry::LoadSpecs")
 	var err error
 	var rawBundleData []*ImageData
 	var specs []*Spec
 
 	if rawBundleData, err = r.loadBundleImageData(r.config.Org); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	r.log.Debug("Raw image bundle size: %d", len(rawBundleData))
 	if specs, err = r.createSpecs(rawBundleData); err != nil {
-		return nil, err
+		return nil, len(rawBundleData), err
 	}
 
 	////////////////////////////////////////////////////////////
@@ -48,12 +52,10 @@ func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, error) {
 	specsLogDump(specs, r.log)
 	////////////////////////////////////////////////////////////
 
-	return specs, nil
+	return specs, len(rawBundleData), nil
 }
 
-func (r *DockerHubRegistry) createSpecs(
-	rawBundleData []*ImageData,
-) ([]*Spec, error) {
+func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*Spec, error) {
 	var err error
 	var spec *Spec
 
@@ -74,7 +76,7 @@ func (r *DockerHubRegistry) createSpecs(
 		}
 
 		if _err = LoadYAML(string(decodedSpecYaml), _spec); _err != nil {
-			r.log.Error("Something went wrong loading decoded spec yaml")
+			r.log.Error("Something went wrong loading decoded spec yaml - %v - %v", string(decodedSpecYaml), _err)
 			return nil, _err
 		}
 
@@ -84,17 +86,16 @@ func (r *DockerHubRegistry) createSpecs(
 	var specs []*Spec
 	for _, dat := range rawBundleData {
 		if spec, err = datToSpec(dat); err != nil {
-			return nil, err
+			r.log.Errorf("Unable to create spec - %v image: %v", err, dat.Name)
+		} else {
+			specs = append(specs, spec)
 		}
-		specs = append(specs, spec)
 	}
 
 	return specs, nil
 }
 
-func (r *DockerHubRegistry) loadBundleImageData(
-	org string,
-) ([]*ImageData, error) {
+func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error) {
 	r.log.Debug("DockerHubRegistry::loadBundleImageData")
 	r.log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 	r.log.Debug("Loading image list for org: [ %s ]", org)

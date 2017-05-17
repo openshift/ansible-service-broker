@@ -16,7 +16,7 @@ type RegistryConfig struct {
 
 type Registry interface {
 	Init(RegistryConfig, *logging.Logger) error
-	LoadSpecs() ([]*Spec, error)
+	LoadSpecs() ([]*Spec, int, error)
 }
 
 func NewRegistry(config RegistryConfig, log *logging.Logger) (Registry, error) {

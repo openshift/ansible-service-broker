@@ -7,14 +7,17 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// MockFile - Mock file contains fake regitry data
 var MockFile = "/etc/ansible-service-broker/mock-registry-data.yaml"
 
+// MockRegistry
 type MockRegistry struct {
 	config     RegistryConfig
 	log        *logging.Logger
 	ScriptsDir string
 }
 
+// Init - Initialize the mock registry
 func (r *MockRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 	log.Debug("MockRegistry::Init")
 	r.config = config
@@ -22,7 +25,8 @@ func (r *MockRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 	return nil
 }
 
-func (r *MockRegistry) LoadSpecs() ([]*Spec, error) {
+// LoadSpecs - Load mock specs
+func (r *MockRegistry) LoadSpecs() ([]*Spec, int, error) {
 	r.log.Debug("MockRegistry::LoadSpecs")
 
 	specYaml, err := ioutil.ReadFile(MockFile)
@@ -47,5 +51,5 @@ func (r *MockRegistry) LoadSpecs() ([]*Spec, error) {
 		r.log.Debug("ID: %s", spec.Id)
 	}
 
-	return parsedData.Apps, nil
+	return parsedData.Apps, len(parsedData.Apps), nil
 }
