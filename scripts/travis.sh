@@ -36,7 +36,6 @@ if [[ "$action" == "install" ]]; then
   wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
   tar xfv /tmp/glide.tar.gz -C /tmp
   sudo mv $(find /tmp -name "glide") /usr/bin
-  cd $PROJECT_ROOT && glide install
 elif [[ "$action" == "lint" ]]; then
   echo "================================="
   echo "             Lint                "
@@ -53,6 +52,7 @@ elif [[ "$action" == "build" ]]; then
   echo "================================="
   echo "             Build               "
   echo "================================="
+  make vendor
   make install
   exit $?
 elif [[ "$action" == "test" ]]; then
