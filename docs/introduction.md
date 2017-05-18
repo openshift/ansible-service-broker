@@ -1,4 +1,4 @@
-# Introducing Ansible Service Broker for OpenShift and Ansible Playbook Bundles (APB)
+# Introducing Ansible Service Broker and Ansible Playbook Bundles (APB)
 
 ## Ansible Service Broker
 In December 2016 CloudFoundry [announced](https://www.cloudfoundry.org/open-service-broker-api-launches-as-industry-standard/)
