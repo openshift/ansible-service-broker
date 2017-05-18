@@ -10,7 +10,6 @@ import (
 	yaml "gopkg.in/yaml.v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/coreos/etcd/client"
 	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -172,12 +171,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 	if err != nil {
 		h.log.Debug("err for deprovision - %#v", err)
 	}
-	if etcdErr, ok := err.(client.Error); ok {
-		if etcdErr.Code == client.ErrorCodeKeyNotFound {
-			writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
-			return
-		}
-	} else if errors.IsNotFound(err) {
+	if err == broker.ErrorNotFound {
 		writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
 		return
 	}
