@@ -1,4 +1,4 @@
-# Ansible Playbook Bundle
+# Ansible Playbook Bundle (APB)
 
 ## Overview
 An [Ansible Playbook Bundle (APB)](https://github.com/fusor/ansible-playbook-bundle)

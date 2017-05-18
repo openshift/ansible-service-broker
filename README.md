@@ -3,7 +3,7 @@
 [![Code Climate](https://codeclimate.com/github/fusor/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
 [![Issue Count](https://codeclimate.com/github/fusor/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
 
-Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/fusor/apb-examples).  
+Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle).  
 
 
 An Ansible Playbook Bundle (APB) is a new method for defining and distributing container applications in OpenShift consisting of a bundle of Ansible Playbooks built into a container with an Ansible runtime.
@@ -74,14 +74,3 @@ or the configuration file can be specified by cli args as well.
 
 Scripts found in `/test` can act as manual Service Catalog requests until a larger
 user scenario can be scripted.
-
-## Ansible Playbook Bundle (APB)
-
-The Ansible Service Broker is available as an [APB itself](https://hub.docker.com/r/ansibleplaybookbundle/ansible-service-broker-asb/); it
-is automatically built from this repo's tag: `dockerhub-latest`.
-
-Packaging related files are found in `ansible/`, `ansibleapp/`, `ansibleapp.yml`,
-and the `Dockerfile`.
-
-APB's and their packaging process are documented in the
-[ansible-playbook-bundle repo](https://github.com/fusor/ansible-playbook-bundle)
