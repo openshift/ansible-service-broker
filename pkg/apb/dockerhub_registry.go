@@ -15,14 +15,10 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-// ListImagesScript - Shell script to get the images for an organization.
-var ListImagesScript = "get_images_for_org.sh"
-
 // DockerHubRegistry - Docker Hub registry
 type DockerHubRegistry struct {
-	config     RegistryConfig
-	log        *logging.Logger
-	ScriptsDir string
+	config RegistryConfig
+	log    *logging.Logger
 }
 
 // Init - Initialize the docker hub registry
