@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"time"
 
 	"github.com/coreos/etcd/client"
 	docker "github.com/fsouza/go-dockerclient"
@@ -33,6 +34,8 @@ type Broker interface {
 	Bind(uuid.UUID, uuid.UUID, *BindRequest) (*BindResponse, error)
 	Unbind(uuid.UUID, uuid.UUID) error
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
+	// TODO: consider returning a struct + error
+	Recover() (string, error)
 }
 
 type BrokerConfig struct {
@@ -114,6 +117,50 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	}
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
+}
+
+func (a AnsibleBroker) Recover() (string, error) {
+	a.log.Notice("Entered Recover")
+	time.Sleep(10 * time.Second)
+
+	// At startup we should write a key to etcd.
+	// Then in recovery see if that key exists, which means we are restarting
+	// and need to try to recover.
+
+	// do we have any jobs that wre still running?
+	// get all /state/*/jobs/* == in progress
+	// For each job, check the status of each of their containers to update
+	// their status in case any of them finished.
+
+	jobstates, err := a.dao.FindJobStateByState(apb.StateInProgress)
+	if err != nil {
+		return "", err
+	}
+
+	// let's see if we need to recover any of these
+	for _, js := range jobstates {
+		a.log.Notice(js.Token)
+		// probably call apb.Recover since it knows how to
+	}
+	/*
+		if job was in progress we know instanceuuid & token. do we have a podname?
+		if no, job never started
+			restart
+		if yes,
+			did it finish?
+				yes
+					* update status
+					* extractCreds if available
+				no
+					* create a monitoring job to update status
+	*/
+
+	// if no pods, do we restart? or just return failed?
+
+	//binding
+
+	a.log.Notice("Leaving Recover")
+	return "recover called", nil
 }
 
 // Catalog - returns the catalog of services defined

@@ -131,7 +131,27 @@ func CreateApp() App {
 	return app
 }
 
+// TODO: should this be a go routine?
+// if so, what happens if the http listener is started and getting requests
+// before we have recovered our state?
+func (a *App) Recover() {
+	msg, err := a.broker.Recover()
+
+	if err != nil {
+		a.log.Error(err.Error())
+	}
+
+	a.log.Notice(msg)
+}
+
 func (a *App) Start() {
+	a.log.Notice("Recover State")
+	// TODO: probably return an error or some sort of message such that we can
+	// see if we need to go any further. Do I even need a method on the App?
+	// Should this just be called from main before we call Start? I feel like
+	// main shouldn't give a crap if we need to recover or not.
+	a.Recover()
+
 	a.log.Notice("Ansible Service Broker Started")
 	listeningAddress := "0.0.0.0:1338"
 	a.log.Notice("Listening on http://%s", listeningAddress)
