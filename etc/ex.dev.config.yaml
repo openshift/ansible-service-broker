@@ -4,7 +4,7 @@ registry:
   url: http://localhost:1337
   user: DOCKERHUB_USER
   pass: DOCKERHUB_PASS
-  org: ansibleapp
+  org: DOCKERHUB_ORG
 dao:
   etcd_host: localhost
   etcd_port: 2379

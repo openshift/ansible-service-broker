@@ -18,9 +18,9 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-        - image: "ansibleapp/ansible-service-broker-asb:latest"
-          name: main
-          imagePullPolicy: IfNotPresent
+        - image: "ansibleplaybookbundle/ansible-service-broker-asb:latest"
+          name: asb
+          imagePullPolicy: Always
           ports:
             - containerPort: 1338
               protocol: TCP
@@ -29,6 +29,8 @@ spec:
               value: "{{dockerhub_pass}}"
             - name: DOCKERHUB_USER
               value: "{{dockerhub_user}}"
+            - name: DOCKERHUB_ORG
+              value: "{{dockerhub_org}}"
             - name: OPENSHIFT_PASS
               value: "{{openshift_pass}}"
             - name: OPENSHIFT_TARGET

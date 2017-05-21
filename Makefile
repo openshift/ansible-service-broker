@@ -21,7 +21,7 @@ run-mock-registry: ${GOPATH}/bin/mock-registry vendor
 	@${GOPATH}/src/github.com/fusor/ansible-service-broker/cmd/mock-registry/run.sh
 
 prepare-build: install
-	cp "${GOPATH}"/bin/broker build/
+	cp "${GOPATH}"/bin/broker build/broker
 
 build: prepare-build
 	docker build ${BUILD_DIR} -t ${BROKER_APB_IMAGE}:${TAG}
