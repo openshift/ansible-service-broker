@@ -65,8 +65,9 @@ type ExtractedCredentials struct {
 type State string
 
 type JobState struct {
-	Token string `json:"token"`
-	State State  `json:"state"`
+	Token   string `json:"token"`
+	State   State  `json:"state"`
+	Podname string `json:"podname"`
 }
 
 const (

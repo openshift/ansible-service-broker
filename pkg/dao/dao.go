@@ -186,6 +186,45 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 	return specs, nil
 }
 
+// FindByState - Retriieve all the jobs that match state
+func (d *Dao) FindJobStateByState(state apb.State) ([]apb.JobState, error) {
+	d.log.Debug("Dao::FindByState")
+
+	var res *client.Response
+	var err error
+
+	opts := &client.GetOptions{Recursive: true}
+	if res, err = d.kapi.Get(context.Background(), "/state/", opts); err != nil {
+		return nil, err
+	}
+
+	stateNodes := res.Node.Nodes
+	stateCount := len(stateNodes)
+
+	d.log.Debug("Successfully loaded [ %d ] jobstate objects from etcd dir [ /state/ ]", stateCount)
+
+	//jobstates := make([]apb.JobState, stateCount)
+	var jobstates []apb.JobState
+	for _, node := range stateNodes {
+		k := fmt.Sprintf("%s/job", node.Key)
+		jobstate := apb.JobState{}
+		nodes, _ := d.kapi.Get(context.Background(), k, opts)
+		for _, n := range nodes.Node.Nodes {
+			apb.LoadJSON(n.Value, &jobstate)
+			if jobstate.State == state {
+				jobstates = append(jobstates, jobstate)
+			} else {
+				// we could probably remove this once we're happy with how this
+				// works.
+				d.log.Debug(fmt.Sprintf(
+					"Skipping, jobstate [%v] did not match given state: [%v].", jobstate, state))
+			}
+		}
+	}
+
+	return jobstates, nil
+}
+
 // GetServiceInstance - Retrieve specific service instance from the kvp API.
 func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 	spec := &apb.ServiceInstance{}
