@@ -3,7 +3,7 @@
 [![Code Climate](https://codeclimate.com/github/fusor/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
 [![Issue Count](https://codeclimate.com/github/fusor/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
 
-Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/fusor/apb-examples).  
+Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle).  
 
 
 An Ansible Playbook Bundle (APB) is a new method for defining and distributing container applications in OpenShift consisting of a bundle of Ansible Playbooks built into a container with an Ansible runtime.
@@ -22,9 +22,9 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
 * [Demo environment with oc cluster up](https://github.com/fusor/catasb)
 * [Library of example APBs](https://github.com/fusor/apb-examples)
     * ManageIQ
-    * Etherpad
+    * PostgreSQL
     * Wordpress
-    * ELK Stack
+    * Hello-World
 * [Red Hat Summit 2017](https://www.youtube.com/playlist?list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
   * [Keynote Demo](https://youtu.be/8MCbJmZQM9c?list=PLEGSLwUsxfEh4TE2GDU4oygCB-tmShkSn&t=4732)
   * [Amazon Web Services deployed into OpenShift via Ansible Service Broker](https://www.youtube.com/watch?v=EKo3khfmhi8&index=2&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
@@ -33,6 +33,11 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
     * [Using the Service Catalog to Bind a PostgreSQL APB to a Python Web App](https://www.youtube.com/watch?v=xmd52NhEjCk)
     * [Service Catalog deploying ManageIQ APB onto OpenShift](https://www.youtube.com/watch?v=J6rDssVEZuQ)
 * [Docker hub published APBs](https://hub.docker.com/u/ansibleplaybookbundle/)
+
+## Documentation
+* [Ansible Service Broker - Introduction](docs/introduction.md)
+* [Ansible Service Broker - Design](docs/design.md)
+* [Other Documentation](docs/README.md)
 
 ## Prerequisites
 
@@ -66,22 +71,11 @@ or the configuration file can be specified by cli args as well.
 
 ## Targets
 
-`make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
-`make run-mock-registry`: Mock registry. Entirely separate binary.
-`make test`: Runs the test suite.
+* `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
+* `make run-mock-registry`: Mock registry. Entirely separate binary.
+* `make test`: Runs the test suite.
 
 **Note**
 
 Scripts found in `/test` can act as manual Service Catalog requests until a larger
 user scenario can be scripted.
-
-## Ansible Playbook Bundle (APB)
-
-The Ansible Service Broker is available as an [ansibleapp itself](https://hub.docker.com/r/ansibleapp/ansible-service-broker-ansibleapp/); it
-is automatically built from this repo's tag: `dockerhub-latest`.
-
-Packaging related files are found in `ansible/`, `ansibleapp/`, `ansibleapp.yml`,
-and the `Dockerfile`.
-
-APB's and their packaging process are documented in the
-[ansibleapp repo](https://github.com/fusor/ansibleapp)

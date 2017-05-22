@@ -28,17 +28,17 @@ The Service Consumer then utilizes the ServiceClasses for their needs. After get
   * Go WebApp service is ready for consumption and utilizing the mLab service
 
 ### Binding diagram
-![binding example](binding-example.png)
+![binding example](images/binding-example.png)
 
 ### Binding example sequence diagram
-![binding example sequence diagram](binding-example-seq-diagram.png)
+![binding example sequence diagram](images/binding-example-seq-diagram.png)
 
 ### Sequence diagram source
 
 ```
 Catalog Operator -> ServiceCatalog: POST broker
 ServiceCatalog -> ServiceCatalog: Create Broker resource
-Controller -> AnsibleServiceBroker: GET /catalog 
+Controller -> AnsibleServiceBroker: GET /catalog
 AnsibleServiceBroker -> Controller: List of available service classes: mLab, Go WebApp
 Controller -> ServiceCatalog: Creates list of service classes available
 Service Consumer -> ServiceCatalog: GET /serviceclasses
@@ -71,7 +71,7 @@ There are services that will be deployed that simply exist to be bound to other 
 * bind request to app returns connection information,
 
 ### Database example sequence diagram
-![database provision and bind](database-provision-and-bind.png)
+![database provision and bind](images/database-provision-and-bind.png)
 
 ### Sequence diagram source
 ```
@@ -96,7 +96,7 @@ Controller -> Magic: Store binding information for injection later
 * assume database service previously provisioned
 
 ### Etherpad sequence diagram
-![etherpad connect to db](etherpad-connect-to-db.png)
+![etherpad connect to db](images/etherpad-connect-to-db.png)
 
 ### Sequence diagram source
 ```
