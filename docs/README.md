@@ -8,4 +8,4 @@
 * Bind Operation
   * [Data Transmission](bind-data-transmission.md)
   * [Use Cases](usecases.md)
-* [Pagenation](pagination.md)
+* [Pagination](pagination.md)
