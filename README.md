@@ -34,6 +34,11 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
     * [Service Catalog deploying ManageIQ APB onto OpenShift](https://www.youtube.com/watch?v=J6rDssVEZuQ)
 * [Docker hub published APBs](https://hub.docker.com/u/ansibleplaybookbundle/)
 
+## Documentation
+* [Ansible Service Broker - Introduction](docs/introduction.md)
+* [Ansible Service Broker - Design](docs/design.md)
+* [Other Documentation](docs/README.md)
+
 ## Prerequisites
 
 [glide](https://glide.sh/) is used for dependency management. Binaries are available on the
