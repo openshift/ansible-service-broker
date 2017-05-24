@@ -68,6 +68,10 @@ func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*bro
 	return &broker.LastOperationResponse{State: state, Description: ""}, m.Err
 }
 
+func (m MockBroker) Recover() (string, error) {
+	return "recover", nil
+}
+
 var log = logging.MustGetLogger("handler")
 
 func init() {
