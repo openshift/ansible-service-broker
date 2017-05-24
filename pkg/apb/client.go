@@ -126,6 +126,7 @@ func (c *Client) RunImage(
 		"--env", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
 		"--env", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
 		"--env", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
+		fmt.Sprintf("--image-pull-policy=Always"),
 		fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
 		"--", action, "--extra-vars", string(params))
 }
