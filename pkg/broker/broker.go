@@ -132,7 +132,13 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 	recoverStatuses, err := a.dao.FindJobStateByState(apb.StateInProgress)
 	if err != nil {
-		return "", err
+		// no jobs or states to recover, this is OK.
+		if strings.HasPrefix(err.Error(), "100") {
+			a.log.Info("No jobs to recover")
+			return "", nil
+		} else {
+			return "", err
+		}
 	}
 
 	/*
@@ -150,23 +156,27 @@ func (a AnsibleBroker) Recover() (string, error) {
 	// let's see if we need to recover any of these
 	for _, rs := range recoverStatuses {
 		// since we're here we have an in progress job
-		a.log.Notice(rs.State.Token)
 
 		// do we have a podname?
 		if rs.State.Podname == "" {
-			// NO
-			a.log.Notice("Restart job?")
+			// NO, we do not have a podname
+			a.log.Notice("No podname. Restart job?")
 		} else {
-			// YES
-			a.log.Notice("We have a pod")
+			// YES, we have a podname
+			a.log.Notice(fmt.Sprintf("We have a pod: %s", rs.State.Podname))
 
+			// did the pod finish?
 			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, a.log)
+
+			// NO, pod failed.
+			// TODO: do we restart the job or mark it as failed?
 			if extErr != nil {
 				a.log.Error("broker::Recover error occurred.")
 				a.log.Error("%s", extErr.Error())
 				return "", extErr
 			}
 
+			// YES, pod finished we have creds
 			if extCreds != nil {
 				a.log.Debug("broker::Recover, got ExtractedCredentials!")
 				a.dao.SetState(rs.InstanceId.String(), apb.JobState{Token: rs.State.Token,
