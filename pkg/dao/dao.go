@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/coreos/etcd/client"
@@ -207,9 +208,17 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	var recoverstatus []apb.RecoverStatus
 	for _, node := range stateNodes {
 		k := fmt.Sprintf("%s/job", node.Key)
-		status := apb.RecoverStatus{InstanceId: uuid.Parse(node.Key)}
+
+		status := apb.RecoverStatus{InstanceId: uuid.Parse(stateKeyId(node.Key))}
 		jobstate := apb.JobState{}
-		nodes, _ := d.kapi.Get(context.Background(), k, opts)
+		nodes, e := d.kapi.Get(context.Background(), k, opts)
+		if e != nil {
+			// if key is invalid do we keep it?
+			d.log.Warning(
+				fmt.Sprintf("Error processing jobstate record, moving on to next. %v", e.Error()))
+			continue
+		}
+
 		for _, n := range nodes.Node.Nodes {
 			apb.LoadJSON(n.Value, &jobstate)
 			if jobstate.State == state {
@@ -327,9 +336,13 @@ func (d *Dao) setObject(key string, data interface{}) error {
 ////////////////////////////////////////////////////////////
 
 func stateKey(id string, jobid string) string {
-	//func stateKey(id string) string {
 	return fmt.Sprintf("/state/%s/job/%s", id, jobid)
-	//return fmt.Sprintf("/state/%s", id)
+}
+
+func stateKeyId(key string) string {
+	s := strings.TrimPrefix(key, "/state/")
+	s = strings.TrimSuffix(s, "/job")
+	return s
 }
 
 func extractedCredentialsKey(id string) string {
