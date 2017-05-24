@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -14,78 +15,56 @@ var stillWaitingError = "status: still waiting to start"
 var timeoutFreq = 6    // Seconds
 var totalTimeout = 900 // 15min
 
-// ExtractCredentials - Extract credentials from pod in a certain namespace.
-// HACK ALERT!
-// A lot of the current approach to extracting credentials and monitoring
-// output is *very* experimental and error prone. Entire approach is going
-// to be thrown out and redone asap.
 func ExtractCredentials(
 	podname string, namespace string, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
+	credOut := make(chan []byte)
+
 	log.Debug("Calling monitorOutput on " + podname)
-	credOut, _ := monitorOutput(podname, namespace)
-	log.Debug("oc log output: %s", string(credOut))
+	go monitorOutput(podname, credOut, log)
 
-	var creds *ExtractedCredentials
-	var err error
-	creds, err = buildExtractedCredentials(credOut)
-
-	if err != nil {
-		// HACK: this is HORRIBLE. but there is definitely a time between a bind
-		// and when the container is up.
-		totalRetries := totalTimeout / timeoutFreq
-		retries := 1
-		for {
-			if retries == totalRetries {
-				errstr := "TIMED OUT WAITING FOR CONTAINER TO COME UP"
-				log.Error(errstr)
-				return nil, errors.New(errstr)
-			}
-
-			time.Sleep(time.Duration(timeoutFreq) * time.Second)
-			log.Info("Container not up yet, retrying %d of %d on pod %s", retries, totalRetries, podname)
-			credOut, _ = monitorOutput(podname, namespace)
-			log.Debug("oc log output: \n%s", string(credOut))
-			creds, err = buildExtractedCredentials(credOut)
-
-			if err == nil {
-				if creds != nil {
-					log.Debug("Pod reporting finished and returned Credentials")
-				} else {
-					log.Debug("Pod reporting finished and DID NOT return Credentials")
-				}
-				break
-			} else if err.Error() == stillWaitingError {
-				// Known error code that's received when we're either waiting for
-				// ContainerCreating, or for the pod resource to be created.
-				// These are expected states, and we'll wait until the pod is up.
-				log.Debug(err.Error())
-			} else {
-				log.Notice("WARNING: Unexpected output from apb pod")
-				log.Notice("Will keep retrying, but it's possible something has gone wrong.")
-				log.Notice(err.Error())
-			}
-
-			retries++
-		}
+	var bindOutput []byte
+	for msg := range credOut {
+		bindOutput = msg
 	}
 
-	return creds, err
+	return buildExtractedCredentials(bindOutput)
 }
 
-func monitorOutput(podname string, namespace string) ([]byte, error) {
-	return RunCommand("oc", "logs", "-f", "--namespace="+namespace, podname)
+func monitorOutput(podname string, mon chan []byte, log *logging.Logger) {
+	// TODO: Error handling here
+	// It would also be nice to gather the script output that exec runs
+	// instead of only getting the credentials
+	retries := 20
+
+	for r := 1; r <= retries; r++ {
+		output, _ := runCommand("oc", "exec", podname, "broker-bind-creds")
+
+		stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
+			strings.Contains(string(output), "NotFound") ||
+			strings.Contains(string(output), "container not found")
+		if stillWaiting {
+			log.Warning("Retry attempt %d: Waiting for container to start", r)
+		} else if strings.Contains(string(output), "BIND_CREDENTIALS") {
+			mon <- output
+			close(mon)
+			log.Notice("Bind credentials found")
+			return
+		} else {
+			log.Warning("Retry attempt %d: exec into %s failed", r, podname)
+		}
+
+		log.Debug(string(output))
+		time.Sleep(time.Duration(r) * time.Second)
+
+	}
+	t := fmt.Sprintf("ExecTimeout: Failed to gather bind credentials after %d retries", retries)
+	mon <- []byte(t)
+	close(mon)
+	return
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
-	stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
-		strings.Contains(string(output), "NotFound")
-
-	if stillWaiting {
-		// Still waiting for container to come up
-		return nil, errors.New(stillWaitingError)
-	}
-
 	result, err := decodeOutput(output)
 	if err != nil {
 		return nil, err
