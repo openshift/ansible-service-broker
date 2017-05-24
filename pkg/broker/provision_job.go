@@ -17,6 +17,7 @@ type ProvisionMsg struct {
 	InstanceUUID string `json:"instance_uuid"`
 	JobToken     string `json:"job_token"`
 	SpecId       string `json:"spec_id"`
+	PodName      string `json:"podname"`
 	Msg          string `json:"msg"`
 	Error        string `json:"error"`
 }
@@ -40,6 +41,7 @@ func NewProvisionJob(
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
 	sm := apb.NewServiceAccountManager(p.log)
+
 	if err != nil {
 		p.log.Error("broker::Provision error occurred.")
 		p.log.Error("%s", err.Error())
@@ -49,8 +51,26 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-			JobToken: token, SpecId: p.serviceInstance.Spec.Id, Msg: "", Error: err.Error()}
+		msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
+			JobToken: token, SpecId: p.spec.Id, PodName: "", Msg: "", Error: err.Error()}
+		return
+	}
+
+	// save off podname
+	podname, _ := apb.GetPodName(output, p.log)
+	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
+		JobToken: token, SpecId: p.spec.Id, PodName: podname, Msg: "", Error: err.Error()}
+
+	// need to get the pod name for the job state
+	extCreds, extErr := apb.ExtractCredentials(podname, p.log)
+	if extErr != nil {
+		p.log.Error("broker::Provision extError occurred.")
+		p.log.Error("%s", extErr.Error())
+		// send extError message
+		// can't have an extError type in a struct you want marshalled
+		// https://github.com/golang/go/issues/5161
+		msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
+			JobToken: token, SpecId: p.spec.Id, PodName: podname, Msg: "", Error: extErr.Error()}
 		return
 	}
 
@@ -60,6 +80,6 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	// send creds
 	jsonmsg, _ := json.Marshal(extCreds)
 	p.log.Debug("sending message to channel")
-	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-		JobToken: token, SpecId: p.serviceInstance.Spec.Id, Msg: string(jsonmsg), Error: ""}
+	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
+		JobToken: token, SpecId: p.spec.Id, PodName: podname, Msg: string(jsonmsg), Error: ""}
 }

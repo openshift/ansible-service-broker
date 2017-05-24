@@ -145,7 +145,7 @@ func (a *App) Recover() {
 }
 
 func (a *App) Start() {
-	a.log.Notice("Recover State")
+	a.log.Notice("Initiating Recovery Process")
 	// TODO: probably return an error or some sort of message such that we can
 	// see if we need to go any further. Do I even need a method on the App?
 	// Should this just be called from main before we call Start? I feel like
