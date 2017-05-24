@@ -75,7 +75,7 @@ func extractCredentials(
 }
 
 // HACK: this really is a crappy way of getting output
-func getPodName(output []byte, log *logging.Logger) (string, error) {
+func GetPodName(output []byte, log *logging.Logger) (string, error) {
 	r, err := regexp.Compile(`^pod[ \"]*(.*?)[ \"]*created`)
 	if err != nil {
 		return "", err

@@ -12,6 +12,7 @@ import (
 	"github.com/coreos/etcd/version"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/pborman/uuid"
 )
 
 // Config - confg holds etcd host and port.
@@ -187,7 +188,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 }
 
 // FindByState - Retriieve all the jobs that match state
-func (d *Dao) FindJobStateByState(state apb.State) ([]apb.JobState, error) {
+func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
 	d.log.Debug("Dao::FindByState")
 
 	var res *client.Response
@@ -203,16 +204,19 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.JobState, error) {
 
 	d.log.Debug("Successfully loaded [ %d ] jobstate objects from etcd dir [ /state/ ]", stateCount)
 
-	//jobstates := make([]apb.JobState, stateCount)
-	var jobstates []apb.JobState
+	var recoverstatus []apb.RecoverStatus
 	for _, node := range stateNodes {
 		k := fmt.Sprintf("%s/job", node.Key)
+		status := apb.RecoverStatus{InstanceId: uuid.Parse(node.Key)}
 		jobstate := apb.JobState{}
 		nodes, _ := d.kapi.Get(context.Background(), k, opts)
 		for _, n := range nodes.Node.Nodes {
 			apb.LoadJSON(n.Value, &jobstate)
 			if jobstate.State == state {
-				jobstates = append(jobstates, jobstate)
+				d.log.Debug(fmt.Sprintf(
+					"Found! jobstate [%v] matched given state: [%v].", jobstate, state))
+				status.State = jobstate
+				recoverstatus = append(recoverstatus, status)
 			} else {
 				// we could probably remove this once we're happy with how this
 				// works.
@@ -222,7 +226,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.JobState, error) {
 		}
 	}
 
-	return jobstates, nil
+	return recoverstatus, nil
 }
 
 // GetServiceInstance - Retrieve specific service instance from the kvp API.

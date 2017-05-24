@@ -159,3 +159,8 @@ func LoadYAML(payload string, obj interface{}) error {
 
 	return nil
 }
+
+type RecoverStatus struct {
+	InstanceId uuid.UUID `json:"id"`
+	State      JobState  `json:"state"`
+}

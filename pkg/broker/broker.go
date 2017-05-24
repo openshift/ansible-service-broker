@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
-	"time"
 
 	"github.com/coreos/etcd/client"
 	docker "github.com/fsouza/go-dockerclient"
@@ -121,7 +120,6 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 
 func (a AnsibleBroker) Recover() (string, error) {
 	a.log.Notice("Entered Recover")
-	time.Sleep(10 * time.Second)
 
 	// At startup we should write a key to etcd.
 	// Then in recovery see if that key exists, which means we are restarting
@@ -132,16 +130,11 @@ func (a AnsibleBroker) Recover() (string, error) {
 	// For each job, check the status of each of their containers to update
 	// their status in case any of them finished.
 
-	jobstates, err := a.dao.FindJobStateByState(apb.StateInProgress)
+	recoverStatuses, err := a.dao.FindJobStateByState(apb.StateInProgress)
 	if err != nil {
 		return "", err
 	}
 
-	// let's see if we need to recover any of these
-	for _, js := range jobstates {
-		a.log.Notice(js.Token)
-		// probably call apb.Recover since it knows how to
-	}
 	/*
 		if job was in progress we know instanceuuid & token. do we have a podname?
 		if no, job never started
@@ -154,6 +147,39 @@ func (a AnsibleBroker) Recover() (string, error) {
 				no
 					* create a monitoring job to update status
 	*/
+	// let's see if we need to recover any of these
+	for _, rs := range recoverStatuses {
+		// since we're here we have an in progress job
+		a.log.Notice(rs.State.Token)
+
+		// do we have a podname?
+		if rs.State.Podname == "" {
+			// NO
+			a.log.Notice("Restart job?")
+		} else {
+			// YES
+			a.log.Notice("We have a pod")
+
+			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, a.log)
+			if extErr != nil {
+				a.log.Error("broker::Recover error occurred.")
+				a.log.Error("%s", extErr.Error())
+				return "", extErr
+			}
+
+			if extCreds != nil {
+				a.log.Debug("broker::Recover, got ExtractedCredentials!")
+				a.dao.SetState(rs.InstanceId.String(), apb.JobState{Token: rs.State.Token,
+					State: apb.StateSucceeded, Podname: rs.State.Podname})
+				err = a.dao.SetExtractedCredentials(rs.InstanceId.String(), extCreds)
+				if err != nil {
+					a.log.Error("Could not persist extracted credentials")
+					a.log.Error("%s", err.Error())
+					return "", err
+				}
+			}
+		}
+	}
 
 	// if no pods, do we restart? or just return failed?
 
@@ -329,6 +355,16 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
 			return nil, err
+		}
+
+		// TODO: do we need podname for synchronous provisions?
+		podname, _ := apb.GetPodName(output, a.log)
+
+		extCreds, extErr := apb.ExtractCredentials(podname, a.log)
+		if extErr != nil {
+			a.log.Error("broker::Provision error occurred.")
+			a.log.Error("%s", extErr.Error())
+			return nil, extErr
 		}
 
 		if extCreds != nil {
