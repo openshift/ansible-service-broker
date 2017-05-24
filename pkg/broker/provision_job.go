@@ -59,7 +59,7 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	// save off podname
 	podname, _ := apb.GetPodName(output, p.log)
 	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
-		JobToken: token, SpecId: p.spec.Id, PodName: podname, Msg: "", Error: err.Error()}
+		JobToken: token, SpecId: p.spec.Id, PodName: podname, Msg: "", Error: ""}
 
 	// need to get the pod name for the job state
 	extCreds, extErr := apb.ExtractCredentials(podname, p.log)
