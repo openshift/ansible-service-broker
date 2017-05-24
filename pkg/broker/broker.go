@@ -161,6 +161,33 @@ func (a AnsibleBroker) Recover() (string, error) {
 		if rs.State.Podname == "" {
 			// NO, we do not have a podname
 			a.log.Notice("No podname. Restart job?")
+			a.log.Notice(rs.InstanceId.String())
+
+			si, err := a.dao.GetServiceInstance(rs.InstanceId.String())
+			if err != nil {
+				return "", err
+			}
+
+			a.log.Notice(fmt.Sprintf("%v", si))
+
+			// Handle bad write of service instance
+			if si.Spec == nil || si.Parameters == nil {
+				a.dao.SetState(rs.InstanceId.String(), apb.JobState{Token: rs.State.Token, State: apb.StateFailed})
+				a.dao.DeleteServiceInstance(si.Id.String())
+				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", si.Id))
+				// skip to the next item
+				continue
+			}
+
+			pjob := NewProvisionJob(rs.InstanceId, si.Spec, si.Parameters, a.clusterConfig, a.log)
+
+			// Need to use the same token as before, since that's what the
+			// catalog will try to ping.
+			a.engine.StartNewJob(rs.State.Token, pjob)
+
+			// HACK: there might be a delay between the first time the state in etcd
+			// is set and the job was already started. But I need the token.
+			a.dao.SetState(rs.InstanceId.String(), apb.JobState{Token: rs.State.Token, State: apb.StateInProgress})
 		} else {
 			// YES, we have a podname
 			a.log.Notice(fmt.Sprintf("We have a pod: %s", rs.State.Podname))
@@ -347,7 +374,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// asyncronously provision and return the token for the lastoperation
 		pjob := NewProvisionJob(instanceUUID, spec, context, parameters, a.clusterConfig, a.log)
 
-		token = a.engine.StartNewJob(pjob)
+		token = a.engine.StartNewJob("", pjob)
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.

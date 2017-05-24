@@ -16,8 +16,14 @@ func NewWorkEngine(bufferSize int) *WorkEngine {
 	}
 }
 
-func (engine *WorkEngine) StartNewJob(work Work) string {
-	jobToken := uuid.New()
+func (engine *WorkEngine) StartNewJob(token string, work Work) string {
+	var jobToken string
+
+	if token == "" {
+		jobToken = uuid.New()
+	} else {
+		jobToken = token
+	}
 	go work.Run(jobToken, engine.msgBuffer)
 	return jobToken
 }
