@@ -7,11 +7,12 @@ import:
 - package: github.com/spf13/pflag
 - package: gopkg.in/yaml.v2
 - package: k8s.io/kubernetes
-  version: ^1.6.0-alpha.0
+  version: v1.6.0
   subpackages:
   - pkg/api/errors
   - pkg/api/unversioned
   - pkg/util/logs
+  - pkg/client
 - package: github.com/jessevdk/go-flags
   version: ^1.1.0
 - package: github.com/op/go-logging
@@ -60,4 +61,10 @@ import:
   version: ^3.5.0
 - package: k8s.io/client-go
   version: ^3.0.0-beta.0
+  subpackages:
+  - rest
+- package: github.com/davecgh/go-spew
+  version: ^1.1.0
+  subpackages:
+  - spew
 - package: k8s.io/apimachinery
