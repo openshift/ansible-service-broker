@@ -119,8 +119,6 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 }
 
 func (a AnsibleBroker) Recover() (string, error) {
-	a.log.Notice("Entered Recover")
-
 	// At startup we should write a key to etcd.
 	// Then in recovery see if that key exists, which means we are restarting
 	// and need to try to recover.
@@ -153,22 +151,24 @@ func (a AnsibleBroker) Recover() (string, error) {
 				no
 					* create a monitoring job to update status
 	*/
+
 	// let's see if we need to recover any of these
 	for _, rs := range recoverStatuses {
+
 		// since we're here we have an in progress job
 
 		// do we have a podname?
 		if rs.State.Podname == "" {
 			// NO, we do not have a podname
-			a.log.Notice("No podname. Restart job?")
-			a.log.Notice(rs.InstanceId.String())
+
+			a.log.Info(fmt.Sprintf("No podname. Attempting to restart job: %s", rs.InstanceId.String()))
 
 			si, err := a.dao.GetServiceInstance(rs.InstanceId.String())
 			if err != nil {
 				return "", err
 			}
 
-			a.log.Notice(fmt.Sprintf("%v", si))
+			a.log.Debug(fmt.Sprintf("%v", si))
 
 			// Handle bad write of service instance
 			if si.Spec == nil || si.Parameters == nil {
@@ -190,7 +190,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 			a.dao.SetState(rs.InstanceId.String(), apb.JobState{Token: rs.State.Token, State: apb.StateInProgress})
 		} else {
 			// YES, we have a podname
-			a.log.Notice(fmt.Sprintf("We have a pod: %s", rs.State.Podname))
+			a.log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
 
 			// did the pod finish?
 			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, a.log)
@@ -222,7 +222,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 	//binding
 
-	a.log.Notice("Leaving Recover")
+	a.log.Info("Recovery complete")
 	return "recover called", nil
 }
 
