@@ -114,19 +114,6 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
-	////////////////////////////////////////////////////////////
-	// HACK, TODO: Ugly way to configure concrete specifics for a DockerHubRegistry
-	// Need to come up with a better way to handle this.
-	////////////////////////////////////////////////////////////
-	if app.config.Registry.Name == "dockerhub" {
-		v, _ := app.registry.(*apb.DockerHubRegistry)
-		v.ScriptsDir = app.args.ScriptsDir
-	} else if app.config.Registry.Name == "mock" {
-		v, _ := app.registry.(*apb.MockRegistry)
-		v.ScriptsDir = app.args.ScriptsDir
-	}
-	////////////////////////////////////////////////////////////
-
 	app.log.Debug("Initializing WorkEngine")
 	app.engine = broker.NewWorkEngine(MsgBufferSize)
 	app.log.Debug("Initializing Provision WorkSubscriber")

@@ -1,25 +1,24 @@
 package apb
 
 import (
+	"bytes"
 	b64 "encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
-	"strings"
+	"io/ioutil"
+	"net/http"
+	"os"
 
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
 	logging "github.com/op/go-logging"
 )
 
-// ListImagesScript - Shell script to get the images for an organization.
-var ListImagesScript = "get_images_for_org.sh"
-
 // DockerHubRegistry - Docker Hub registry
 type DockerHubRegistry struct {
-	config     RegistryConfig
-	log        *logging.Logger
-	ScriptsDir string
+	config RegistryConfig
+	log    *logging.Logger
 }
 
 // Init - Initialize the docker hub registry
@@ -100,21 +99,84 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 	r.log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 	r.log.Debug("Loading image list for org: [ %s ]", org)
 
-	orgScript := path.Join(r.ScriptsDir, ListImagesScript)
-	output, err := runCommand(
-		"bash", orgScript, org, r.config.User, r.config.Pass)
+	type Payload struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	type TokenResponse struct {
+		Token string `json:"token"`
+	}
+
+	type Images struct {
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+	}
+
+	type ImageResponse struct {
+		Count   int       `json:"count"`
+		Results []*Images `json:"results"`
+	}
+
+	data := Payload{
+		Username: r.config.User,
+		Password: r.config.Pass,
+	}
+	payloadBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	body := bytes.NewReader(payloadBytes)
+
+	req, err := http.NewRequest("POST", "https://hub.docker.com/v2/users/login/", body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	jsonToken, err := ioutil.ReadAll(resp.Body)
+
+	tokenResp := TokenResponse{}
+	err = json.Unmarshal(jsonToken, &tokenResp)
 	if err != nil {
 		return nil, err
 	}
 
-	imageNames := strings.Split(string(output), "\n")
-	imageNames = imageNames[:len(imageNames)-1]
+	// TODO: Introduce an asyc search for APBs so that bootstrap will search
+	// through the entire repo instead of being maxed at 100.
+	// (Example) rhallisey has > 100 images in his repo and the limiting
+	// page size prevents new APBs from appearing in the broker.
+	req, err = http.NewRequest("GET", os.ExpandEnv(fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=100", org)), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", os.ExpandEnv(fmt.Sprintf("JWT %v", string(tokenResp.Token))))
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	imageList, err := ioutil.ReadAll(resp.Body)
+
+	imageResp := ImageResponse{}
+	err = json.Unmarshal(imageList, &imageResp)
+	if err != nil {
+		return nil, err
+	}
 
 	channel := make(chan *ImageData)
 
-	for _, imageName := range imageNames {
-		r.log.Debug("Trying to load " + imageName)
-		go r.loadImageData("docker://"+imageName, channel)
+	for _, imageName := range imageResp.Results {
+		r.log.Debug("Trying to load " + imageName.Namespace + "/" + imageName.Name)
+		go r.loadImageData("docker://"+imageName.Namespace+"/"+imageName.Name, channel)
 	}
 
 	var apbData []*ImageData
@@ -134,7 +196,7 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 			r.log.Notice("We did NOT add the imageData for some reason")
 		}
 
-		if counter != len(imageNames) {
+		if counter != len(imageResp.Results) {
 			counter++
 		} else {
 			close(channel)

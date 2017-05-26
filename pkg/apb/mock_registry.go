@@ -12,9 +12,8 @@ var MockFile = "/etc/ansible-service-broker/mock-registry-data.yaml"
 
 // MockRegistry
 type MockRegistry struct {
-	config     RegistryConfig
-	log        *logging.Logger
-	ScriptsDir string
+	config RegistryConfig
+	log    *logging.Logger
 }
 
 // Init - Initialize the mock registry
