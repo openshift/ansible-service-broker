@@ -18,7 +18,7 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-        - image: "ansibleplaybookbundle/ansible-service-broker-asb:latest"
+        - image: "{{dockerhub_org}}/ansible-service-broker-asb:latest"
           name: asb
           imagePullPolicy: Always
           ports:

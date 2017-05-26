@@ -3,6 +3,12 @@ MAINTAINER Ansible Service Broker Community
 
 RUN useradd -M -s /usr/sbin/nologin -u 1001 -g 0 ansibleapp
 
+RUN yum -y update \
+ && yum -y install epel-release centos-release-openshift-origin \
+ && yum -y install origin origin-clients net-tools bind-utils ansible jq \
+ && yum clean all
+
+
 RUN mkdir /var/log/ansible-service-broker \
     && touch /var/log/ansible-service-broker/asb.log \
     && mkdir /etc/ansible-service-broker \

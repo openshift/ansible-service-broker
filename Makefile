@@ -25,9 +25,13 @@ prepare-build: install
 
 build: prepare-build
 	docker build ${BUILD_DIR} -t ${BROKER_APB_IMAGE}:${TAG}
+	@echo
+	@echo "Remember you need to push your image before calling make deploy"
+	@echo "    docker push ${BROKER_APB_IMAGE}:${TAG}"
 
 clean:
 	@rm -f ${GOPATH}/bin/broker
+	@rm -f build/broker
 
 vendor:
 	@glide install -v
@@ -35,13 +39,13 @@ vendor:
 test: vendor
 	go test ./pkg/...
 
-asb-image:
-	ansible-container build
-	ansible-container push --username $(DOCKERHUB_USER) --password $(DOCKERHUB_PASS) --push-to $(REGISTRY)/$(PROJECT) --tag $(TAG)
-	ansible-container shipit openshift --pull-from $(REGISTRY)/$(PROJECT) --tag $(TAG)
-	# fix bug in ansible-container
-	sed -i 's/-TCP//g' ./ansible/roles/ansible-service-broker-openshift/tasks/main.yml
-	docker build -t $(BROKER_APB_IMAGE) .
-	docker push $(BROKER_APB_IMAGE)
+#asb-image:
+#	ansible-container build
+#	ansible-container push --username $(DOCKERHUB_USER) --password $(DOCKERHUB_PASS) --push-to $(REGISTRY)/$(PROJECT) --tag $(TAG)
+#	ansible-container shipit openshift --pull-from $(REGISTRY)/$(PROJECT) --tag $(TAG)
+#	# fix bug in ansible-container
+#	sed -i 's/-TCP//g' ./ansible/roles/ansible-service-broker-openshift/tasks/main.yml
+#	docker build -t $(BROKER_APB_IMAGE) .
+#	docker push $(BROKER_APB_IMAGE)
 
 .PHONY: run run-mock-registry clean test build asb-image install prepare-build
