@@ -21,12 +21,8 @@ var TotalTimeout = 900 // 15min
 // to be thrown out and redone asap.
 
 func extractCredentials(
-	output []byte, log *logging.Logger,
+	podname string, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	log.Info("{%s}", string(output))
-
-	log.Debug("Calling getPodName")
-	podname, _ := getPodName(output, log)
 	log.Debug("Calling monitorOutput on " + podname)
 	credOut, _ := monitorOutput(podname)
 	log.Debug("oc log output: %s", string(credOut))
@@ -76,23 +72,6 @@ func extractCredentials(
 	}
 
 	return creds, err
-}
-
-// HACK: this really is a crappy way of getting output
-func getPodName(output []byte, log *logging.Logger) (string, error) {
-	r, err := regexp.Compile(`^pod[ \"]*(.*?)[ \"]*created`)
-	if err != nil {
-		return "", err
-	}
-
-	podname := r.FindStringSubmatch(string(output))
-
-	if log != nil {
-		log.Debug("%v", podname)
-		log.Debug("%d", len(podname)-1)
-	}
-
-	return podname[len(podname)-1], nil
 }
 
 func monitorOutput(podname string) ([]byte, error) {
