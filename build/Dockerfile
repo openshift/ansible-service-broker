@@ -1,7 +1,9 @@
 FROM centos:7
 MAINTAINER Ansible Service Broker Community
 
-RUN useradd -M -s /usr/sbin/nologin -u 1001 -g 0 ansibleapp
+RUN mkdir /opt/ansibleapp
+RUN useradd -M -b /opt/ansibleapp -s /usr/sbin/nologin -u 1001 -g 0 ansibleapp
+RUN chown -R 1001:0 /opt/ansibleapp
 
 RUN yum -y update \
  && yum -y install epel-release centos-release-openshift-origin \
