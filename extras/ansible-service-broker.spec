@@ -46,54 +46,53 @@ BuildRequires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 BuildRequires: device-mapper-devel
 BuildRequires: btrfs-progs-devel
 %if ! 0%{?with_bundled}
-BuildRequires: docker-devel
-BuildRequires: kubernetes-devel
-BuildRequires: runc-devel
-BuildRequires: etcd-devel
+#BuildRequires: docker-devel
+#BuildRequires: kubernetes-devel
+#BuildRequires: runc-devel
+#BuildRequires: etcd-devel
 
-BuildRequires: golang-github-gogo-protobuf-devel
-BuildRequires: golang-github-ugorji-go-devel
-BuildRequires: golang-github-vbatts-tar-split-devel
+#BuildRequires: golang-github-gogo-protobuf-devel
+#BuildRequires: golang-github-ugorji-go-devel
+#BuildRequires: golang-github-vbatts-tar-split-devel
 
-BuildRequires: golang(github.com/PuerkitoBio/purell)
-BuildRequires: golang(github.com/PuerkitoBio/urlesc)
-BuildRequires: golang(github.com/Azure/go-ansiterm)
-BuildRequires: golang(github.com/containers/image)
-BuildRequires: golang(github.com/containers/storage)
-BuildRequires: golang(github.com/docker/distribution)
-BuildRequires: golang(github.com/docker/go-connections)
-BuildRequires: golang(github.com/docker/go-units)
-BuildRequires: golang(github.com/docker/libtrust)
-BuildRequires: golang(github.com/emicklei/go-restful)
-BuildRequires: golang(github.com/fsouza/go-dockerclient)
-BuildRequires: golang(github.com/ghodss/yaml)
-BuildRequires: golang(github.com/go-openapi/jsonpointer)
-BuildRequires: golang(github.com/go-openapi/jsonreference)
-BuildRequires: golang(github.com/go-openapi/spec)
-BuildRequires: golang(github.com/go-openapi/swag)
-BuildRequires: golang(github.com/golang/glog)
-BuildRequires: golang(github.com/google/gofuzz)
-BuildRequires: golang(github.com/gorilla/context)
-BuildRequires: golang(github.com/gorilla/mux)
-BuildRequires: golang(github.com/hashicorp/go-cleanhttp)
-BuildRequires: golang(github.com/imdario/mergo)
-BuildRequires: golang(github.com/jessevdk/go-flags)
-BuildRequires: golang(github.com/mailru/easyjson)
-BuildRequires: golang(github.com/mattn/go-shellwords)
-BuildRequires: golang(github.com/Microsoft/go-winio)
-BuildRequires: golang(github.com/Microsoft/hcsshim)
-BuildRequires: golang(github.com/mistifyio/go-zfs)
-BuildRequires: golang(github.com/op/go-logging)
-BuildRequires: golang(github.com/opencontainers/go-digest)
-BuildRequires: golang(github.com/opencontainers/image-spec)
-BuildRequires: golang(github.com/pborman/uuid)
-BuildRequires: golang(github.com/pkg/errors)
-BuildRequires: golang(github.com/Sirupsen/logrus)
-BuildRequires: golang(github.com/spf13/pflag)
-BuildRequires: golang(gopkg.in/inf.v0)
-BuildRequires: golang(gopkg.in/yaml.v2)
-BuildRequires: golang(k8s.io/apimachinery)
-BuildRequires: golang(k8s.io/client-go)
+#BuildRequires: golang(github.com/PuerkitoBio/purell)
+#BuildRequires: golang(github.com/PuerkitoBio/urlesc)
+#BuildRequires: golang(github.com/Azure/go-ansiterm)
+#BuildRequires: golang(github.com/containers/image)
+#BuildRequires: golang(github.com/containers/storage)
+#BuildRequires: golang(github.com/docker/distribution)
+#BuildRequires: golang(github.com/docker/go-connections)
+#BuildRequires: golang(github.com/docker/go-units)
+#BuildRequires: golang(github.com/docker/libtrust)
+#BuildRequires: golang(github.com/emicklei/go-restful)
+#BuildRequires: golang(github.com/fsouza/go-dockerclient)
+#BuildRequires: golang(github.com/ghodss/yaml)
+#BuildRequires: golang(github.com/go-openapi/jsonpointer)
+#BuildRequires: golang(github.com/go-openapi/jsonreference)
+#BuildRequires: golang(github.com/go-openapi/spec)
+#BuildRequires: golang(github.com/go-openapi/swag)
+#BuildRequires: golang(github.com/golang/glog)
+#BuildRequires: golang(github.com/google/gofuzz)
+#BuildRequires: golang(github.com/gorilla/context)
+#BuildRequires: golang(github.com/gorilla/mux)
+#BuildRequires: golang(github.com/hashicorp/go-cleanhttp)
+#BuildRequires: golang(github.com/imdario/mergo)
+#BuildRequires: golang(github.com/jessevdk/go-flags)
+#BuildRequires: golang(github.com/mailru/easyjson)
+#BuildRequires: golang(github.com/mattn/go-shellwords)
+#BuildRequires: golang(github.com/Microsoft/go-winio)
+#BuildRequires: golang(github.com/Microsoft/hcsshim)
+#BuildRequires: golang(github.com/mistifyio/go-zfs)
+#BuildRequires: golang(github.com/op/go-logging)
+#BuildRequires: golang(github.com/opencontainers/go-digest)
+#BuildRequires: golang(github.com/opencontainers/image-spec)
+#BuildRequires: golang(github.com/pborman/uuid)
+#BuildRequires: golang(github.com/pkg/errors)
+#BuildRequires: golang(github.com/Sirupsen/logrus)
+#BuildRequires: golang(github.com/spf13/pflag)
+#BuildRequires: golang(gopkg.in/inf.v0)
+#BuildRequires: golang(gopkg.in/yaml.v2)
+#BuildRequires: golang(k8s.io/client-go)
 %endif
 
 %description
@@ -107,51 +106,51 @@ BuildArch: noarch
 Requires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 Requires: device-mapper-devel
 Requires: btrfs-progs-devel
-Requires: docker-devel
-Requires: kubernetes-devel
-Requires: runc-devel
-Requires: etcd-devel
-Requires: golang-github-gogo-protobuf-devel
-Requires: golang-github-ugorji-go-devel
-Requires: golang-github-vbatts-tar-split-devel
-Requires: golang(github.com/PuerkitoBio/purell)
-Requires: golang(github.com/PuerkitoBio/urlesc)
-Requires: golang(github.com/Azure/go-ansiterm)
-Requires: golang(github.com/containers/image)
-Requires: golang(github.com/containers/storage)
-Requires: golang(github.com/docker/distribution)
-Requires: golang(github.com/docker/go-connections)
-Requires: golang(github.com/docker/go-units)
-Requires: golang(github.com/docker/libtrust)
-Requires: golang(github.com/emicklei/go-restful)
-Requires: golang(github.com/fsouza/go-dockerclient)
-Requires: golang(github.com/ghodss/yaml)
-Requires: golang(github.com/go-openapi/jsonpointer)
-Requires: golang(github.com/go-openapi/jsonreference)
-Requires: golang(github.com/go-openapi/spec)
-Requires: golang(github.com/go-openapi/swag)
-Requires: golang(github.com/golang/glog)
-Requires: golang(github.com/google/gofuzz)
-Requires: golang(github.com/gorilla/context)
-Requires: golang(github.com/gorilla/mux)
-Requires: golang(github.com/hashicorp/go-cleanhttp)
-Requires: golang(github.com/imdario/mergo)
-Requires: golang(github.com/jessevdk/go-flags)
-Requires: golang(github.com/mailru/easyjson)
-Requires: golang(github.com/mattn/go-shellwords)
-Requires: golang(github.com/Microsoft/go-winio)
-Requires: golang(github.com/Microsoft/hcsshim)
-Requires: golang(github.com/mistifyio/go-zfs)
-Requires: golang(github.com/op/go-logging)
-Requires: golang(github.com/opencontainers/go-digest)
-Requires: golang(github.com/opencontainers/image-spec)
-Requires: golang(github.com/pborman/uuid)
-Requires: golang(github.com/pkg/errors)
-Requires: golang(github.com/Sirupsen/logrus)
-Requires: golang(github.com/spf13/pflag)
-Requires: golang(gopkg.in/yaml.v2)
-Requires: golang(k8s.io/apimachinery)
-Requires: golang(k8s.io/client-go)
+#Requires: docker-devel
+#Requires: kubernetes-devel
+#Requires: runc-devel
+#Requires: etcd-devel
+#Requires: golang-github-gogo-protobuf-devel
+#Requires: golang-github-ugorji-go-devel
+#Requires: golang-github-vbatts-tar-split-devel
+#Requires: golang(github.com/PuerkitoBio/purell)
+#Requires: golang(github.com/PuerkitoBio/urlesc)
+#Requires: golang(github.com/Azure/go-ansiterm)
+#Requires: golang(github.com/containers/image)
+#Requires: golang(github.com/containers/storage)
+#Requires: golang(github.com/docker/distribution)
+#Requires: golang(github.com/docker/go-connections)
+#Requires: golang(github.com/docker/go-units)
+#Requires: golang(github.com/docker/libtrust)
+#Requires: golang(github.com/emicklei/go-restful)
+#Requires: golang(github.com/fsouza/go-dockerclient)
+#Requires: golang(github.com/ghodss/yaml)
+#Requires: golang(github.com/go-openapi/jsonpointer)
+#Requires: golang(github.com/go-openapi/jsonreference)
+#Requires: golang(github.com/go-openapi/spec)
+#Requires: golang(github.com/go-openapi/swag)
+#Requires: golang(github.com/golang/glog)
+#Requires: golang(github.com/google/gofuzz)
+#Requires: golang(github.com/gorilla/context)
+#Requires: golang(github.com/gorilla/mux)
+#Requires: golang(github.com/hashicorp/go-cleanhttp)
+#Requires: golang(github.com/imdario/mergo)
+#Requires: golang(github.com/jessevdk/go-flags)
+#Requires: golang(github.com/mailru/easyjson)
+#Requires: golang(github.com/mattn/go-shellwords)
+#Requires: golang(github.com/Microsoft/go-winio)
+#Requires: golang(github.com/Microsoft/hcsshim)
+#Requires: golang(github.com/mistifyio/go-zfs)
+#Requires: golang(github.com/op/go-logging)
+#Requires: golang(github.com/opencontainers/go-digest)
+#Requires: golang(github.com/opencontainers/image-spec)
+#Requires: golang(github.com/pborman/uuid)
+#Requires: golang(github.com/pkg/errors)
+#Requires: golang(github.com/Sirupsen/logrus)
+#Requires: golang(github.com/spf13/pflag)
+#Requires: golang(gopkg.in/yaml.v2)
+#Requires: golang(k8s.io/apimachinery)
+#Requires: golang(k8s.io/client-go)
 
 %description devel
 devel for %{name}
@@ -178,12 +177,13 @@ unit-test for %{name}
 
 %prep
 %setup -q -n %{repo}-%{version}
+ln -sf vendor src
 mkdir -p src/github.com/fusor/ansible-service-broker
 cp -r pkg src/github.com/fusor/ansible-service-broker
 
 %build
-export GOPATH=$(pwd):%{gopath}
-
+#export GOPATH=$(pwd):%{gopath}
+export GOPATH=$(pwd)
 BUILDTAGS="seccomp selinux"
 %if ! 0%{?gobuild:1}
 %define gobuild() go build -ldflags "${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n')" -a -v -x %{**};
