@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
@@ -149,17 +148,11 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: Introduce an asyc search for APBs so that bootstrap will search
-	// through the entire repo instead of being maxed at 100.
-	// (Example) rhallisey has > 100 images in his repo and the limiting
-	// page size prevents new APBs from appearing in the broker.
-
-	req, err = http.NewRequest("GET", os.ExpandEnv(fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=100", org)), nil)
+	req, err = http.NewRequest("GET", fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=100", org), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", os.ExpandEnv(fmt.Sprintf("JWT %v", string(tokenResp.Token))))
+	req.Header.Set("Authorization", fmt.Sprintf("JWT %v", string(tokenResp.Token)))
 
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
@@ -177,23 +170,28 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 
 	channel := make(chan *ImageData)
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	count2 := 0
+	defer cancelFunc()
+
+	// Will kick of go routines for each result in the images.
 	loadImagesFromResult := func(ctx context.Context, images []*Images) {
 		for _, imageName := range images {
-			r.log.Debugf("Trying to load %v/%v - %v", imageName.Namespace, imageName.Name, count2)
-			count2++
+			r.log.Debugf("Trying to load %v/%v", imageName.Namespace, imageName.Name)
 			go r.loadImageData(ctx, "docker://"+imageName.Namespace+"/"+imageName.Name, channel)
 		}
 	}
 
+	// getNextImages - will follow the next URL using go routines.
+	// The workflow is query the url, if Next is defined then kickoff another go routine to get those images.
+	// then kick of the loading of image data.
 	var getNextImages func(ctx context.Context, org, token, url string, ch chan<- *ImageData, cancelFunc context.CancelFunc)
 
 	getNextImages = func(ctx context.Context, org, token, url string, ch chan<- *ImageData, cancelFunc context.CancelFunc) {
-		r.log.Notice("get next images")
 		req, err = http.NewRequest("GET", url, nil)
 		if err != nil {
 			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
 			cancelFunc()
+			close(ch)
+			return
 		}
 		req.Header.Set("Authorization", fmt.Sprintf("JWT %v", token))
 
@@ -201,6 +199,8 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 		if err != nil {
 			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
 			cancelFunc()
+			close(ch)
+			return
 		}
 		defer resp.Body.Close()
 
@@ -208,9 +208,11 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 
 		iResp := ImageResponse{}
 		err = json.Unmarshal(imageList, &iResp)
-		if err != nil {
+		if err == nil {
 			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
 			cancelFunc()
+			close(ch)
+			return
 		}
 		r.log.Notice("get next images %#v", iResp)
 		//Keep getting the images
@@ -221,26 +223,21 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 		loadImagesFromResult(ctx, iResp.Results)
 	}
 
+	// This is looking at the original call to dockerhub for the org.
 	if imageResp.Next != "" {
 		go getNextImages(ctx, org, string(tokenResp.Token), imageResp.Next, channel, cancelFunc)
 	}
+
 	loadImagesFromResult(ctx, imageResp.Results)
 	//If no results in the fist call then close the channel as nothing will get loaded.
 	if len(imageResp.Results) == 0 {
-		r.log.Info("canceled retrieval as not items in org")
+		r.log.Info("canceled retrieval as no items in org")
 		cancelFunc()
+		close(channel)
 	}
 	var apbData []*ImageData
 	counter := 1
 	for imageData := range channel {
-		select {
-		case <-ctx.Done():
-			r.log.Infof("unable to get images from data as channel was canceled - %v", ctx.Err())
-			close(channel)
-			continue
-		default:
-		}
-		r.log.Notice("%v", counter)
 		if imageData.Error != nil {
 			r.log.Error("Something went wrong loading img data for [ %s ]", imageData.Name)
 			r.log.Error(fmt.Sprintf("Error: %s", imageData.Error))
@@ -264,6 +261,11 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 	for _, dat := range apbData {
 		r.log.Info(fmt.Sprintf("%s", dat.Name))
 	}
+	// check to see if the context had an error
+	if ctx.Err() != nil {
+		r.log.Error("encountered an error while loading images, we may not have all the apb in the catalog - %v", ctx.Err())
+		return apbData, ctx.Err()
+	}
 
 	return apbData, nil
 }
@@ -272,14 +274,26 @@ func (r *DockerHubRegistry) loadImageData(ctx context.Context, imageName string,
 	// TODO: Error handling!
 	img, err := parseImage(imageName)
 	if err != nil {
-		channel <- &ImageData{Name: imageName, Error: err}
+		select {
+		case <-ctx.Done():
+			r.log.Debugf("loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
+			return
+		default:
+			channel <- &ImageData{Name: imageName, Error: err}
+		}
 		return
 	}
 	defer img.Close()
 
 	imgInspect, err := img.Inspect()
 	if err != nil {
-		channel <- &ImageData{Error: err}
+		select {
+		case <-ctx.Done():
+			r.log.Debugf("loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
+			return
+		default:
+			channel <- &ImageData{Name: imageName, Error: err}
+		}
 		return
 	}
 
@@ -294,14 +308,15 @@ func (r *DockerHubRegistry) loadImageData(ctx context.Context, imageName string,
 
 	if outputData.Labels[BundleSpecLabel] != "" {
 		outputData.IsPlaybookBundle = true
-		channel <- &outputData
 	} else {
 		outputData.IsPlaybookBundle = false
 	}
 	select {
-	case channel <- &outputData:
 	case <-ctx.Done():
-		r.log.Errorf("loading images failed due to context err - %v", ctx.Err())
+		r.log.Debugf("loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
+		return
+	default:
+		channel <- &outputData
 	}
 }
 
