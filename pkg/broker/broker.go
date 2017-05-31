@@ -134,9 +134,8 @@ func (a AnsibleBroker) Recover() (string, error) {
 		if strings.HasPrefix(err.Error(), "100") {
 			a.log.Info("No jobs to recover")
 			return "", nil
-		} else {
-			return "", err
 		}
+		return "", err
 	}
 
 	a.log.Debug("Recovery refresh login")
