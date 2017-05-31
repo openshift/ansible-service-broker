@@ -139,8 +139,9 @@ func (a AnsibleBroker) Recover() (string, error) {
 		}
 	}
 
-	// need a client to refresh the login
+	a.log.Debug("Recovery refresh login")
 
+	// need a client to refresh the login
 	client, cerr := apb.NewClient(a.log)
 	if cerr != nil {
 		a.log.Error("recovery failed: could not create client during recovery")
