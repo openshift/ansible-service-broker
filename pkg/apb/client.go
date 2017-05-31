@@ -126,7 +126,7 @@ func (c *Client) RunImage(
 	}
 
 	if !clusterConfig.InCluster {
-		err = c.refreshLoginToken(clusterConfig)
+		err = c.RefreshLoginToken(clusterConfig)
 
 		if err != nil {
 			c.log.Error("Error occurred while refreshing login token! Aborting apb run.")
@@ -243,7 +243,7 @@ func (c *Client) PullImage(imageName string) error {
 	return nil
 }
 
-func (c *Client) refreshLoginToken(clusterConfig ClusterConfig) error {
+func (c *Client) RefreshLoginToken(clusterConfig ClusterConfig) error {
 	return OcLogin(c.log,
 		"--insecure-skip-tls-verify", clusterConfig.Target,
 		"-u", clusterConfig.User,
