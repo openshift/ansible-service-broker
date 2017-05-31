@@ -139,6 +139,20 @@ func (a AnsibleBroker) Recover() (string, error) {
 		}
 	}
 
+	// need a client to refresh the login
+
+	client, cerr := apb.NewClient(a.log)
+	if cerr != nil {
+		a.log.Error("recovery failed: could not create client during recovery")
+		return "", cerr
+	}
+
+	cerr = client.RefreshLoginToken(a.clusterConfig)
+	if cerr != nil {
+		a.log.Error("recovery failed: could not refresh the login token")
+		return "", cerr
+	}
+
 	/*
 		if job was in progress we know instanceuuid & token. do we have a podname?
 		if no, job never started
