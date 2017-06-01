@@ -1,7 +1,7 @@
 # Ansible Service Broker
-[![Build Status](https://travis-ci.org/fusor/ansible-service-broker.svg?branch=master)](https://travis-ci.org/fusor/ansible-service-broker)
-[![Code Climate](https://codeclimate.com/github/fusor/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
-[![Issue Count](https://codeclimate.com/github/fusor/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
+[![Build Status](https://travis-ci.org/openshift/ansible-service-broker.svg?branch=master)](https://travis-ci.org/openshift/ansible-service-broker)
+[![Code Climate](https://codeclimate.com/github/openshift/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/openshift/ansible-service-broker)
+[![Issue Count](https://codeclimate.com/github/openshift/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/openshift/ansible-service-broker)
 
 Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/openshift/ansible-playbook-bundle).  
 
