@@ -8,10 +8,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/openshift/ansible-service-broker/pkg/broker"
-	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/gorilla/mux"
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/broker"
+	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
 )
 

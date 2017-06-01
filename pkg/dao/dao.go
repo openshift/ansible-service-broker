@@ -10,8 +10,8 @@ import (
 
 	"github.com/coreos/etcd/client"
 	"github.com/coreos/etcd/version"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
 // Config - confg holds etcd host and port.
