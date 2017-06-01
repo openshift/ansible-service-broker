@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/fusor/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	logging "github.com/op/go-logging"

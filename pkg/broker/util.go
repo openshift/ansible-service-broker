@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/fusor/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
 

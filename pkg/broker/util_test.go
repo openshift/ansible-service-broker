@@ -5,8 +5,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/fusor/ansible-service-broker/pkg/apb"
-	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
+	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
 )
 
@@ -47,7 +47,7 @@ func TestSpecToService(t *testing.T) {
 
 func TestProjectRoot(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
-	rootpath := path.Join(gopath, "src/github.com/fusor/ansible-service-broker")
+	rootpath := path.Join(gopath, "src/github.com/openshift/ansible-service-broker")
 	ft.AssertEqual(t, ProjectRoot(), rootpath, "paths not equal")
 }
 

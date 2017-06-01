@@ -3,7 +3,7 @@ package apb
 import (
 	"testing"
 
-	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
+	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
 func TestBind(t *testing.T) {

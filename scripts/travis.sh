@@ -8,7 +8,7 @@
 action=$1
 
 export GLIDE_TARBALL="https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz"
-export PROJECT_ROOT=$GOPATH/src/github.com/fusor/ansible-service-broker
+export PROJECT_ROOT=$GOPATH/src/github.com/openshift/ansible-service-broker
 
 if [[ "$action" == "install" ]]; then
   # dash? wtf is dash? UGH! use a real shell
