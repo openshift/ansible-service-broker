@@ -21,7 +21,7 @@
 
 %global	provider github
 %global	provider_tld com
-%global project fusor
+%global project openshift
 %global repo ansible-service-broker
 
 %global provider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
