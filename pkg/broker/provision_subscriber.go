@@ -3,9 +3,9 @@ package broker
 import (
 	"encoding/json"
 
-	"github.com/fusor/ansible-service-broker/pkg/apb"
-	"github.com/fusor/ansible-service-broker/pkg/dao"
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 
 type ProvisionWorkSubscriber struct {

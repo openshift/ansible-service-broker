@@ -2,7 +2,7 @@ REGISTRY         ?= docker.io
 PROJECT          ?= ansibleplaybookbundle
 TAG              ?= latest
 BROKER_APB_IMAGE = $(REGISTRY)/$(PROJECT)/ansible-service-broker-apb
-BUILD_DIR        = "${GOPATH}/src/github.com/fusor/ansible-service-broker/build"
+BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 
 install: $(shell find cmd pkg)
 	go install -ldflags="-s -w" ./cmd/broker
@@ -12,13 +12,13 @@ ${GOPATH}/bin/mock-registry: $(shell find cmd/mock-registry)
 
 # Will default run to dev profile
 run: install vendor
-	@${GOPATH}/src/github.com/fusor/ansible-service-broker/scripts/runbroker.sh dev
+	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/runbroker.sh dev
 
 deploy:
-	@${GOPATH}/src/github.com/fusor/ansible-service-broker/scripts/deploy.sh
+	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh
 
 run-mock-registry: ${GOPATH}/bin/mock-registry vendor
-	@${GOPATH}/src/github.com/fusor/ansible-service-broker/cmd/mock-registry/run.sh
+	@${GOPATH}/src/github.com/openshift/ansible-service-broker/cmd/mock-registry/run.sh
 
 prepare-build: install
 	cp "${GOPATH}"/bin/broker build/broker

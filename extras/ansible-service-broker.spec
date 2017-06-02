@@ -21,7 +21,7 @@
 
 %global	provider github
 %global	provider_tld com
-%global project fusor
+%global project openshift
 %global repo ansible-service-broker
 
 %global provider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
@@ -178,8 +178,8 @@ unit-test for %{name}
 
 %prep
 %setup -q -n %{repo}-%{version}
-mkdir -p src/github.com/fusor/ansible-service-broker
-cp -r pkg src/github.com/fusor/ansible-service-broker
+mkdir -p src/github.com/openshift/ansible-service-broker
+cp -r pkg src/github.com/openshift/ansible-service-broker
 
 %build
 export GOPATH=$(pwd):%{gopath}

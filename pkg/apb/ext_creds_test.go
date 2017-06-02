@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
+	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
 func TestDecodeOutput(t *testing.T) {

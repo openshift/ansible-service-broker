@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/fusor/ansible-service-broker/pkg/apb"
 	flags "github.com/jessevdk/go-flags"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	yaml "gopkg.in/yaml.v1"
 )
 

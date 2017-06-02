@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/fusor/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/broker"
 )
 
 func readRequest(r *http.Request, obj interface{}) error {

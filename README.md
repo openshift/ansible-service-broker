@@ -1,9 +1,9 @@
 # Ansible Service Broker
-[![Build Status](https://travis-ci.org/fusor/ansible-service-broker.svg?branch=master)](https://travis-ci.org/fusor/ansible-service-broker)
-[![Code Climate](https://codeclimate.com/github/fusor/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
-[![Issue Count](https://codeclimate.com/github/fusor/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
+[![Build Status](https://travis-ci.org/openshift/ansible-service-broker.svg?branch=master)](https://travis-ci.org/openshift/ansible-service-broker)
+[![Code Climate](https://codeclimate.com/github/openshift/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/openshift/ansible-service-broker)
+[![Issue Count](https://codeclimate.com/github/openshift/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/openshift/ansible-service-broker)
 
-Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle).  
+Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/openshift/ansible-playbook-bundle).  
 
 
 An Ansible Playbook Bundle (APB) is a new method for defining and distributing container applications in OpenShift consisting of a bundle of Ansible Playbooks built into a container with an Ansible runtime.
@@ -17,10 +17,10 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
 * IRC (Freenode): #asbroker
 * [Trello](https://trello.com/b/50JhiC5v/ansible-service-broker)
 * Github:
-    * [ansible service broker](https://github.com/fusor/ansible-service-broker)
-    * [ansible playbook bundle](https://github.com/fusor/ansible-playbook-bundle)
-* [Demo environment with oc cluster up](https://github.com/fusor/catasb)
-* [Library of example APBs](https://github.com/fusor/apb-examples)
+    * [ansible service broker](https://github.com/openshift/ansible-service-broker)
+    * [ansible playbook bundle](https://github.com/openshift/ansible-playbook-bundle)
+* [Demo environment with oc cluster up](https://github.com/openshift/catasb)
+* [Library of example APBs](https://github.com/openshift/apb-examples)
     * ManageIQ
     * PostgreSQL
     * Wordpress
@@ -56,9 +56,9 @@ CentOS/RHEL/Fedora (sub dnf for Fedora):
 
 ```
 sudo /sbin/service etcd restart # start etcd
-mkdir -p $GOPATH/src/github.com/fusor
-git clone https://github.com/fusor/ansible-service-broker.git $GOPATH/src/github.com/fusor/ansible-service-broker
-cd $GOPATH/src/github.com/fusor/ansible-service-broker && glide install
+mkdir -p $GOPATH/src/github.com/openshift
+git clone https://github.com/openshift/ansible-service-broker.git $GOPATH/src/github.com/openshift/ansible-service-broker
+cd $GOPATH/src/github.com/openshift/ansible-service-broker && glide install
 ```
 
 **Config**

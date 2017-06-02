@@ -6,8 +6,8 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/fusor/ansible-service-broker/pkg/apb"
-	"github.com/fusor/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 
 type Config struct {

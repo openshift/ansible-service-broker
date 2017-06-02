@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
+	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
 // array can't be const
