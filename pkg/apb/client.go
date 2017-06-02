@@ -93,7 +93,7 @@ func NewClient(log *logging.Logger) (*Client, error) {
 		return nil, err
 	}
 
-	rest := clientset.Core().RESTClient()
+	rest := clientset.CoreV1().RESTClient()
 
 	client := &Client{
 		dockerClient:  dockerClient,
