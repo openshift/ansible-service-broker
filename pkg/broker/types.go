@@ -30,6 +30,26 @@ type Plan struct {
 	Description string                 `json:"description"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	Free        bool                   `json:"free,omitempty"`
+	Bindable    bool                   `json:"bindable,omitempty"`
+	Schemas     Schema                 `json:"schemas,omitempty"`
+}
+
+type Schema struct {
+	ServiceInstance ServiceInstance `json:"service_instance"`
+	ServiceBinding  ServiceBinding  `json:"service_binding"`
+}
+
+type ServiceInstance struct {
+	Create InputParameter `json:"create"`
+	Update InputParameter `json:"update"`
+}
+
+type ServiceBinding struct {
+	Create InputParameter `json:"create"`
+}
+
+type InputParameters struct {
+	Parameters interface{} `json:"parameters"`
 }
 
 type CatalogResponse struct {
