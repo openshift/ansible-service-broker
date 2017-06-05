@@ -99,6 +99,13 @@ BuildRequires: golang(k8s.io/client-go)
 %description
 %{summary}
 
+%package container-scripts
+Summary: scripts required for running ansible-service-broker in a container
+BuildArch: noarch
+
+%description container-scripts
+containers scripts for ansible-service-broker
+
 %if 0%{?with_devel}
 %package devel
 Summary: %{summary}
@@ -149,6 +156,7 @@ Requires: golang(github.com/pborman/uuid)
 Requires: golang(github.com/pkg/errors)
 Requires: golang(github.com/Sirupsen/logrus)
 Requires: golang(github.com/spf13/pflag)
+Requires: golang(gopkg.in/inf.v0)
 Requires: golang(gopkg.in/yaml.v2)
 Requires: golang(k8s.io/apimachinery)
 Requires: golang(k8s.io/client-go)
@@ -196,14 +204,15 @@ rm -rf src
 %install
 install -d -p %{buildroot}%{_bindir}
 install -p -m 755 broker %{buildroot}%{_bindir}/asbd
+install -p -m 755 build/entrypoint.sh %{buildroot}%{_bindir}/entrypoint.sh
 install -p -m 755 build/%{name} %{buildroot}%{_bindir}/%{name}
 sed -i 's,/usr/local/%{name}/bin,/usr/libexec/%{name},g' %{buildroot}%{_bindir}/%{name}
 install -d -p %{buildroot}%{_docdir}/%{name}
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 755 etc/ex.dev.config.yaml %{buildroot}%{_docdir}/%{name}/ex.dev.config.yaml
-install -p -m 755 etc/ex.dockerimg.config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
 install -p -m 755 etc/ex.dockerimg.config.yaml %{buildroot}%{_docdir}/%{name}/ex.dockerimg.config.yaml
 install -p -m 755 etc/ex.prod.config.yaml %{buildroot}%{_docdir}/%{name}/ex.prod.config.yaml
+install -p -m 755 build/config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
 install -d -p %{buildroot}%{_libexecdir}/%{name}
 cp -r scripts/* %{buildroot}%{_libexecdir}/%{name}
 install -d -p %{buildroot}%{_unitdir}
@@ -297,6 +306,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %config %{_sysconfdir}/%{name}/config.yaml
 %{_unitdir}/%{name}.service
 %{_libexecdir}/%{name}
+
+%files container-scripts
+%{_bindir}/entrypoint.sh
 
 %if 0%{?with_devel}
 %files devel -f devel.file-list
