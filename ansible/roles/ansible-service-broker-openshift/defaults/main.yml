@@ -1,4 +1,0 @@
----
-# defaults for ansible-service-broker-openshift
-
-playbook_debug: no
