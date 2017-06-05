@@ -7,7 +7,7 @@ RUN chown -R 1001:0 /opt/ansibleapp
 
 RUN yum -y update \
  && yum -y install epel-release centos-release-openshift-origin \
- && yum -y install origin origin-clients net-tools bind-utils ansible jq \
+ && yum -y install origin origin-clients net-tools bind-utils ansible \
  && yum clean all
 
 
