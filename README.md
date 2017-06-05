@@ -18,9 +18,9 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
 * [Trello](https://trello.com/b/50JhiC5v/ansible-service-broker)
 * Github:
     * [ansible service broker](https://github.com/openshift/ansible-service-broker)
-    * [ansible playbook bundle](https://github.com/openshift/ansible-playbook-bundle)
-* [Demo environment with oc cluster up](https://github.com/openshift/catasb)
-* [Library of example APBs](https://github.com/openshift/apb-examples)
+    * [ansible playbook bundle](https://github.com/fusor/ansible-playbook-bundle)
+* [Demo environment with oc cluster up](https://github.com/fusor/catasb)
+* [Library of example APBs](https://github.com/fusor/apb-examples)
     * ManageIQ
     * PostgreSQL
     * Wordpress
@@ -58,7 +58,8 @@ CentOS/RHEL/Fedora (sub dnf for Fedora):
 sudo /sbin/service etcd restart # start etcd
 mkdir -p $GOPATH/src/github.com/openshift
 git clone https://github.com/openshift/ansible-service-broker.git $GOPATH/src/github.com/openshift/ansible-service-broker
-cd $GOPATH/src/github.com/openshift/ansible-service-broker && glide install
+cd $GOPATH/src/github.com/openshift/ansible-service-broker
+make vendor
 ```
 
 **Config**
@@ -72,8 +73,12 @@ or the configuration file can be specified by cli args as well.
 ## Targets
 
 * `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
+* `make install`: Builds the source and installs in `$GOPATH/bin`
 * `make run-mock-registry`: Mock registry. Entirely separate binary.
 * `make test`: Runs the test suite.
+* `make vendor`: Updates the dependencies
+* `make build`: Builds a docker container of the current source
+* `make deploy`: Deploys the currently build container into your cluster
 
 **Note**
 
