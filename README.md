@@ -18,9 +18,9 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
 * [Trello](https://trello.com/b/50JhiC5v/ansible-service-broker)
 * Github:
     * [ansible service broker](https://github.com/openshift/ansible-service-broker)
-    * [ansible playbook bundle](https://github.com/openshift/ansible-playbook-bundle)
-* [Demo environment with oc cluster up](https://github.com/openshift/catasb)
-* [Library of example APBs](https://github.com/openshift/apb-examples)
+    * [ansible playbook bundle](https://github.com/fusor/ansible-playbook-bundle)
+* [Demo environment with oc cluster up](https://github.com/fusor/catasb)
+* [Library of example APBs](https://github.com/fusor/apb-examples)
     * ManageIQ
     * PostgreSQL
     * Wordpress
