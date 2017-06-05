@@ -11,7 +11,6 @@ RUN mkdir /var/log/ansible-service-broker \
 RUN chown -R ansibleapp: /var/log/ansible-service-broker \
     && chown -R ansibleapp: /etc/ansible-service-broker
 
-COPY get_images_for_org.sh /usr/local/ansible-service-broker/bin
 COPY config.yaml /etc/ansible-service-broker/config.yaml
 COPY entrypoint.sh ansible-service-broker /usr/bin/
 COPY broker /usr/bin/asbd
