@@ -18,9 +18,9 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
 * [Trello](https://trello.com/b/50JhiC5v/ansible-service-broker)
 * Github:
     * [ansible service broker](https://github.com/openshift/ansible-service-broker)
-    * [ansible playbook bundle](https://github.com/openshift/ansible-playbook-bundle)
-* [Demo environment with oc cluster up](https://github.com/openshift/catasb)
-* [Library of example APBs](https://github.com/openshift/apb-examples)
+    * [ansible playbook bundle](https://github.com/fusor/ansible-playbook-bundle)
+* [Demo environment with oc cluster up - Catalog & Ansible Service Broker 'catasb'](https://github.com/fusor/catasb)
+* [Library of example APBs](https://github.com/fusor/apb-examples)
     * ManageIQ
     * PostgreSQL
     * Wordpress
@@ -32,6 +32,7 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
 * [YouTube Channel](https://www.youtube.com/channel/UC04eOMIMiV06_RSZPb4OOBw):
     * [Using the Service Catalog to Bind a PostgreSQL APB to a Python Web App](https://www.youtube.com/watch?v=xmd52NhEjCk)
     * [Service Catalog deploying ManageIQ APB onto OpenShift](https://www.youtube.com/watch?v=J6rDssVEZuQ)
+    * [OpenShift Commons Briefing #74: Deploying Multi-Container Applications with Ansible Service Broker](https://www.youtube.com/watch?v=kDJveLN5UOs&list=PLZ7osZ-J70IYBvqTdHt6Lt91I46k-FJI2&index=1)
 * [Docker hub published APBs](https://hub.docker.com/u/ansibleplaybookbundle/)
 
 ## Documentation
