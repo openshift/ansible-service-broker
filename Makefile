@@ -1,7 +1,7 @@
 REGISTRY         ?= docker.io
 PROJECT          ?= ansibleplaybookbundle
 TAG              ?= latest
-BROKER_APB_IMAGE = $(REGISTRY)/$(PROJECT)/ansible-service-broker-apb
+BROKER_IMAGE     = $(REGISTRY)/$(PROJECT)/ansible-service-broker
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 
 install: $(shell find cmd pkg)
@@ -24,10 +24,10 @@ prepare-build: install
 	cp "${GOPATH}"/bin/broker build/broker
 
 build: prepare-build
-	docker build ${BUILD_DIR} -t ${BROKER_APB_IMAGE}:${TAG}
+	docker build ${BUILD_DIR} -t ${BROKER_IMAGE}:${TAG}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
-	@echo "    docker push ${BROKER_APB_IMAGE}:${TAG}"
+	@echo "    docker push ${BROKER_IMAGE}:${TAG}"
 
 clean:
 	@rm -f ${GOPATH}/bin/broker
