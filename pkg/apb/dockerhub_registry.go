@@ -94,11 +94,8 @@ func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*Spec, er
 	return specs, nil
 }
 
-func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error) {
-	r.log.Debug("DockerHubRegistry::loadBundleImageData")
-	r.log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
-	r.log.Debug("Loading image list for org: [ %s ]", org)
-
+// getDockerHubToken - will retrieve the docker hub token.
+func (r DockerHubRegistry) getDockerHubToken() (string, error) {
 	type Payload struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -107,6 +104,42 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 	type TokenResponse struct {
 		Token string `json:"token"`
 	}
+	data := Payload{
+		Username: r.config.User,
+		Password: r.config.Pass,
+	}
+	payloadBytes, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	body := bytes.NewReader(payloadBytes)
+
+	req, err := http.NewRequest("POST", "https://hub.docker.com/v2/users/login/", body)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	jsonToken, err := ioutil.ReadAll(resp.Body)
+
+	tokenResp := TokenResponse{}
+	err = json.Unmarshal(jsonToken, &tokenResp)
+	if err != nil {
+		return "", err
+	}
+	return tokenResp.Token, nil
+}
+
+func (r DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error) {
+	r.log.Debug("DockerHubRegistry::loadBundleImageData")
+	r.log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
+	r.log.Debug("Loading image list for org: [ %s ]", org)
 
 	type Images struct {
 		Name      string `json:"name"`
@@ -119,54 +152,7 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 		Next    string    `json:"next"`
 	}
 
-	data := Payload{
-		Username: r.config.User,
-		Password: r.config.Pass,
-	}
-	payloadBytes, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-	body := bytes.NewReader(payloadBytes)
-
-	req, err := http.NewRequest("POST", "https://hub.docker.com/v2/users/login/", body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	jsonToken, err := ioutil.ReadAll(resp.Body)
-
-	tokenResp := TokenResponse{}
-	err = json.Unmarshal(jsonToken, &tokenResp)
-	if err != nil {
-		return nil, err
-	}
-	req, err = http.NewRequest("GET", fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=100", org), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("JWT %v", string(tokenResp.Token)))
-
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	imageList, err := ioutil.ReadAll(resp.Body)
-
-	imageResp := ImageResponse{}
-	err = json.Unmarshal(imageList, &imageResp)
-	if err != nil {
-		return nil, err
-	}
+	token, err := r.getDockerHubToken()
 
 	channel := make(chan *ImageData)
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -183,24 +169,24 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 	// getNextImages - will follow the next URL using go routines.
 	// The workflow is query the url, if Next is defined then kickoff another go routine to get those images.
 	// then kick of the loading of image data.
-	var getNextImages func(ctx context.Context, org, token, url string, ch chan<- *ImageData, cancelFunc context.CancelFunc)
+	var getNextImages func(ctx context.Context, org, token, url string, ch chan<- *ImageData, cancelFunc context.CancelFunc) (*ImageResponse, error)
 
-	getNextImages = func(ctx context.Context, org, token, url string, ch chan<- *ImageData, cancelFunc context.CancelFunc) {
-		req, err = http.NewRequest("GET", url, nil)
+	getNextImages = func(ctx context.Context, org, token, url string, ch chan<- *ImageData, cancelFunc context.CancelFunc) (*ImageResponse, error) {
+		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
 			cancelFunc()
 			close(ch)
-			return
+			return nil, err
 		}
 		req.Header.Set("Authorization", fmt.Sprintf("JWT %v", token))
 
-		resp, err = http.DefaultClient.Do(req)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
 			cancelFunc()
 			close(ch)
-			return
+			return nil, err
 		}
 		defer resp.Body.Close()
 
@@ -208,31 +194,31 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 
 		iResp := ImageResponse{}
 		err = json.Unmarshal(imageList, &iResp)
-		if err == nil {
+		if err != nil {
 			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
 			cancelFunc()
 			close(ch)
-			return
+			return &iResp, err
 		}
-		r.log.Notice("get next images %#v", iResp)
 		//Keep getting the images
 		if iResp.Next != "" {
-			r.log.Notice("getting next page of results")
-			go getNextImages(ctx, org, token, imageResp.Next, ch, cancelFunc)
+			r.log.Debugf("getting next page of results - %v", iResp.Next)
+			//Fan out calls to get the next images.
+			go getNextImages(ctx, org, token, iResp.Next, channel, cancelFunc)
 		}
 		loadImagesFromResult(ctx, iResp.Results)
+		return &iResp, nil
 	}
 
-	// This is looking at the original call to dockerhub for the org.
-	if imageResp.Next != "" {
-		go getNextImages(ctx, org, string(tokenResp.Token), imageResp.Next, channel, cancelFunc)
+	//Intial call to getNextImages this will fan out to retrieve all the values.
+	imageResp, err := getNextImages(ctx, org, token, fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=100", org), channel, cancelFunc)
+	//if there was an issue with the first call, return the error
+	if err != nil {
+		return nil, err
 	}
-
-	loadImagesFromResult(ctx, imageResp.Results)
 	//If no results in the fist call then close the channel as nothing will get loaded.
 	if len(imageResp.Results) == 0 {
 		r.log.Info("canceled retrieval as no items in org")
-		cancelFunc()
 		close(channel)
 	}
 	var apbData []*ImageData
@@ -270,7 +256,7 @@ func (r *DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error
 	return apbData, nil
 }
 
-func (r *DockerHubRegistry) loadImageData(ctx context.Context, imageName string, channel chan<- *ImageData) {
+func (r DockerHubRegistry) loadImageData(ctx context.Context, imageName string, channel chan<- *ImageData) {
 	// TODO: Error handling!
 	img, err := parseImage(imageName)
 	if err != nil {
