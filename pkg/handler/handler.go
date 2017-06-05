@@ -10,7 +10,6 @@ import (
 	yaml "gopkg.in/yaml.v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/fusor/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	logging "github.com/op/go-logging"

@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
-	"strings"
 
 	"github.com/coreos/etcd/client"
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/fusor/ansible-service-broker/pkg/apb"
-	"github.com/fusor/ansible-service-broker/pkg/dao"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -209,7 +206,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	specID := req.ServiceID.String()
 	if spec, err = a.dao.GetSpec(specID); err != nil {
 		// etcd return not found i.e. code 100
-		if strings.HasPrefix(err.Error(), "100") {
+		if client.IsKeyNotFound(err) {
 			return nil, ErrorNotFound
 		}
 		// otherwise unknown error bubble it up
@@ -351,6 +348,10 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 
 	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
 	if err != nil {
+		if client.IsKeyNotFound(err) {
+			a.log.Errorf("Could not find a service instance in dao - %v", err)
+			return nil, ErrorNotFound
+		}
 		a.log.Error("Couldn't find a service instance: ", err)
 		// TODO: need to figure out how find out if an instance exists or not
 		return nil, err
