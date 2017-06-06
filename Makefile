@@ -43,13 +43,13 @@ prepare-build-image: build
 	cp broker build/broker
 
 build-image: prepare-build-image
-	docker build -f ${BUILD_DIR}/Dockerfile-src ${BUILD_DIR} -t ${BROKER_IMAGE}:${TAG}
+	docker build -f ${BUILD_DIR}/Dockerfile-src -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
 	@echo "    docker push ${BROKER_IMAGE}:${TAG}"
 
 release-image:
-	docker build ${BUILD_DIR} -t ${BROKER_IMAGE}:${TAG}
+	docker build -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
 	@echo "    make push"
