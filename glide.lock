@@ -1,5 +1,5 @@
-hash: 89d00acd05cddf68463ac64bdfb0511be82b906e2aa3e3855c7edd97dfce8884
-updated: 2017-05-18T07:10:44.527708169-04:00
+hash: ce72b9261e4b568b8c24f0d8e76db7d304889d29e0d060ae409582f0b86458de
+updated: 2017-06-06T15:06:36.046718552-04:00
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
@@ -61,10 +61,11 @@ imports:
   - storage
   - storageversion
 - name: github.com/coreos/etcd
-  version: 43b75072bfaca5a7c35c718179defbcabd9a0886
+  version: 9d7ed0e63a4e9907c04396d0a9a7a01ba08d2852
   subpackages:
   - client
   - pkg/pathutil
+  - pkg/srv
   - pkg/types
   - version
 - name: github.com/coreos/go-oidc
@@ -164,9 +165,9 @@ imports:
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/handlers
-  version: 3a5767ca75ece5f7f1440b1d16975247f8d8b221
+  version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
 - name: github.com/gorilla/mux
-  version: 392c28fe23e1c45ddba891b0320b3b5df220beea
+  version: bcd8bc72b08df0f70df986b97f95590779502d31
 - name: github.com/hashicorp/go-cleanhttp
   version: ad28ea4487f05916463e2423a55166280e8254b5
 - name: github.com/howeyc/gopass
@@ -177,6 +178,8 @@ imports:
   version: 48cf8722c3375517aba351d1f7577c40663a4407
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
+- name: github.com/lestrrat/go-jsschema
+  version: a6a42341b50d8d7e2a733db922eefaa756321021
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -206,22 +209,10 @@ imports:
 - name: github.com/opencontainers/runc
   version: 45c30e75abfd52107b53048004a83165403ad0d1
   subpackages:
-  - libcontainer
-  - libcontainer/apparmor
-  - libcontainer/cgroups
-  - libcontainer/cgroups/fs
-  - libcontainer/cgroups/systemd
-  - libcontainer/configs
-  - libcontainer/configs/validate
-  - libcontainer/criurpc
-  - libcontainer/keys
   - libcontainer/label
-  - libcontainer/seccomp
   - libcontainer/selinux
-  - libcontainer/stacktrace
   - libcontainer/system
   - libcontainer/user
-  - libcontainer/utils
 - name: github.com/pborman/uuid
   version: a97ce2ca70fa5a848076093f05e639a89ca34d06
 - name: github.com/pkg/errors
