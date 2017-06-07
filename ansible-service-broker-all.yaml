@@ -62,6 +62,19 @@ spec:
   port:
     targetPort: port-1338
 
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etcd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -98,7 +111,13 @@ spec:
           env:
           - name: ETCDCTL_API
             value: "3"
-
+          volumeMounts:
+            - mountPath: /data
+              name: etcd
+      volumes:
+        - name: etcd
+          persistentVolumeClaim:
+            claimName: etcd
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment

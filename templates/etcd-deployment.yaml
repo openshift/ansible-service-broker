@@ -1,3 +1,16 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etcd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -33,3 +46,11 @@ spec:
           env:
           - name: ETCDCTL_API
             value: "3"
+          volumeMounts:
+            - mountPath: /data
+              name: etcd
+      volumes:
+        - name: etcd
+          persistentVolumeClaim:
+            claimName: etcd
+
