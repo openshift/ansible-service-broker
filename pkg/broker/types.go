@@ -52,6 +52,18 @@ type InputParameters struct {
 	Parameters interface{} `json:"parameters"`
 }
 
+/*
+type
+title
+properties:
+	propertyname: {
+		title
+		type
+		length
+		default
+	}
+*/
+
 type CatalogResponse struct {
 	Services []Service `json:"services"`
 }

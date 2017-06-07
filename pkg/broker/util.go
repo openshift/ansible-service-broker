@@ -30,8 +30,10 @@ func SpecToService(spec *apb.Spec) Service {
 		Description: spec.Description,
 		Tags:        make([]string, len(spec.Tags)),
 		Bindable:    spec.Bindable,
-		Plans:       plans, // HACK; it's still unclear how plans are relevant to us
-		Metadata:    parameterDescriptors,
+		// TODO: CREATE REAL PLAN here since this is where we want to add the
+		// schema stuff
+		Plans:    plans,
+		Metadata: parameterDescriptors,
 	}
 
 	copy(retSvc.Tags, spec.Tags)
