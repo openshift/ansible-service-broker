@@ -24,12 +24,22 @@ type ImageData struct {
 }
 
 type ParameterDescriptor struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
+	Title       string      `json:"title"`
 	Type        string      `json:"type"`
-	Required    bool        `json:"required"`
+	Description string      `json:"description"`
 	Default     interface{} `json:"default"`
+	Maxlength   int         `json:"maxlength"`
+	Pattern     string      `json:"pattern"`
+
+	//Name     string `json:"name"`
+	Required bool `json:"required"`
 }
+
+type ParameterEntry map[string][]*ParameterDescriptor
+
+/*
+array of maps with an array of ParameterDescriptors
+*/
 
 type Spec struct {
 	Id          string                 `json:"id"`
@@ -41,8 +51,10 @@ type Spec struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 
 	// required, optional, unsupported
-	Async      string                 `json:"async"`
-	Parameters []*ParameterDescriptor `json:"parameters"`
+	Async      string                              `json:"async"`
+	Parameters []map[string][]*ParameterDescriptor `json:"parameters"`
+	//Parameters []*ParameterEntry `json:"parameters"`
+	Required []string `json:"required"`
 }
 
 type ExtractedCredentials struct {
@@ -75,11 +87,12 @@ func specLogDump(spec *Spec, log *logging.Logger) {
 
 	for _, param := range spec.Parameters {
 		log.Debug("ParameterDescriptor")
-		log.Debug("  Name: %s", param.Name)
-		log.Debug("  Description: %s", param.Description)
-		log.Debug("  Type: %s", param.Type)
-		log.Debug("  Required: %t", param.Required)
-		log.Debug("  Default: %s", param.Name)
+		//TODO: log.Debug("  Name: %s", param.Name)
+		log.Debug("  Name: %v", param)
+		//log.Debug("  Description: %s", param.Description)
+		//log.Debug("  Type: %s", param.Type)
+		//log.Debug("  Required: %t", param.Required)
+		//log.Debug("  Default: %s", param.Name)
 	}
 }
 

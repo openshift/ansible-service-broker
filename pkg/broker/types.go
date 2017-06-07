@@ -48,7 +48,7 @@ type ServiceBinding struct {
 	Create InputParameter `json:"create"`
 }
 
-type InputParameters struct {
+type InputParameter struct {
 	Parameters interface{} `json:"parameters"`
 }
 
