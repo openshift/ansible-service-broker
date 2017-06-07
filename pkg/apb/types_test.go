@@ -85,12 +85,10 @@ func TestSpecDumpJSON(t *testing.T) {
 	var knownMap interface{}
 	var subjectMap interface{}
 
-	t.Log(SpecJSON)
 	raw, err := DumpJSON(&s)
 	if err != nil {
 		panic(err)
 	}
-	t.Log(raw)
 	json.Unmarshal([]byte(SpecJSON), &knownMap)
 	json.Unmarshal([]byte(raw), &subjectMap)
 
