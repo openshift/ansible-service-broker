@@ -49,7 +49,7 @@ type ServiceBinding struct {
 }
 
 type InputParameter struct {
-	Parameters interface{} `json:"parameters"`
+	Parameters *jsschema.Schema `json:"parameters"`
 }
 
 /*

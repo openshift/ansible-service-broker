@@ -26,13 +26,11 @@ type ImageData struct {
 type ParameterDescriptor struct {
 	Title       string      `json:"title"`
 	Type        string      `json:"type"`
-	Description string      `json:"description"`
-	Default     interface{} `json:"default"`
-	Maxlength   int         `json:"maxlength"`
-	Pattern     string      `json:"pattern"`
-
-	//Name     string `json:"name"`
-	Required bool `json:"required"`
+	Description string      `json:"description,omitempty"`
+	Default     interface{} `json:"default,omitempty"`
+	Maxlength   int         `json:"maxlength,omitempty"`
+	Pattern     string      `json:"pattern,omitempty"`
+	Enum        []string    `json:"enum,omitempty"`
 }
 
 type ParameterEntry map[string][]*ParameterDescriptor
@@ -51,10 +49,9 @@ type Spec struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 
 	// required, optional, unsupported
-	Async      string                              `json:"async"`
-	Parameters []map[string][]*ParameterDescriptor `json:"parameters"`
-	//Parameters []*ParameterEntry `json:"parameters"`
-	Required []string `json:"required"`
+	Async      string                            `json:"async"`
+	Parameters []map[string]*ParameterDescriptor `json:"parameters"`
+	Required   []string                          `json:"required,omitempty"`
 }
 
 type ExtractedCredentials struct {
