@@ -47,6 +47,8 @@ ExclusiveArch: %{ix86} x86_64 %{arm} aarch64 ppc64le %{mips} s390x
 # If go_compiler is not set to 1, there is no virtual provide. Use golang instead.
 BuildRequires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 
+Requires(pre): shadow-utils
+
 BuildRequires: device-mapper-devel
 BuildRequires: btrfs-progs-devel
 %if ! 0%{?with_bundled}
@@ -90,6 +92,7 @@ BuildRequires: golang(github.com/mistifyio/go-zfs)
 BuildRequires: golang(github.com/op/go-logging)
 BuildRequires: golang(github.com/opencontainers/go-digest)
 BuildRequires: golang(github.com/opencontainers/image-spec)
+BuildRequires: golang(github.com/opencontainers/selinux)
 BuildRequires: golang(github.com/pborman/uuid)
 BuildRequires: golang(github.com/pkg/errors)
 BuildRequires: golang(github.com/Sirupsen/logrus)
@@ -109,6 +112,19 @@ BuildArch: noarch
 
 %description container-scripts
 containers scripts for ansible-service-broker
+
+%pre
+getent group ansibleservicebroker || groupadd -r ansibleservicebroker
+getent passwd ansibleservicebroker || \
+  useradd -r -g ansibleservicebroker -d /var/lib/ansibleservicebroker -s /sbin/nologin \
+  ansibleservicebroker
+exit 0
+
+%post
+%systemd_post %{name}.service
+
+%postun
+%systemd_postun
 
 %if 0%{?with_devel}
 %package devel
@@ -156,6 +172,7 @@ Requires: golang(github.com/mistifyio/go-zfs)
 Requires: golang(github.com/op/go-logging)
 Requires: golang(github.com/opencontainers/go-digest)
 Requires: golang(github.com/opencontainers/image-spec)
+Requires: golang(github.com/opencontainers/selinux)
 Requires: golang(github.com/pborman/uuid)
 Requires: golang(github.com/pkg/errors)
 Requires: golang(github.com/Sirupsen/logrus)
@@ -216,11 +233,13 @@ install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 755 etc/ex.dev.config.yaml %{buildroot}%{_docdir}/%{name}/ex.dev.config.yaml
 install -p -m 755 etc/ex.dockerimg.config.yaml %{buildroot}%{_docdir}/%{name}/ex.dockerimg.config.yaml
 install -p -m 755 etc/ex.prod.config.yaml %{buildroot}%{_docdir}/%{name}/ex.prod.config.yaml
-install -p -m 755 build/config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
+install -p -m 644 build/config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
 install -d -p %{buildroot}%{_libexecdir}/%{name}
 cp -r scripts/* %{buildroot}%{_libexecdir}/%{name}
 install -d -p %{buildroot}%{_unitdir}
 install -p extras/%{name}.service  %{buildroot}%{_unitdir}/%{name}.service
+install -d -p %{buildroot}%{_var}/log/%{name}
+touch %{buildroot}%{_var}/log/%{name}/asb.log
 
 # source codes for building projects
 %if 0%{?with_devel}
@@ -295,21 +314,17 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 #define license tag if not already defined
 %{!?_licensedir:%global license %doc}
 
-%post
-%systemd_post %{name}.service
-
-%postun
-%systemd_postun
-
 %files
 %license LICENSE
 %{_bindir}/asbd
 %{_bindir}/%{name}
 %{_docdir}/%{name}
-%dir %{_sysconfdir}/%{name}
-%config %{_sysconfdir}/%{name}/config.yaml
+%attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_sysconfdir}/%{name}
+%attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/config.yaml
 %{_unitdir}/%{name}.service
 %{_libexecdir}/%{name}
+%attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_var}/log/%{name}
+%attr(640, ansibleservicebroker, ansibleservicebroker) %{_var}/log/%{name}/asb.log
 
 %files container-scripts
 %{_bindir}/entrypoint.sh

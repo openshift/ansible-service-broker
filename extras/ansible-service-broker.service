@@ -3,6 +3,8 @@ Description=Ansible Service Broker
 After=network.target
 
 [Service]
+User=ansibleservicebroker
+Group=ansibleservicebroker
 ExecStart=/usr/bin/ansible-service-broker
 Restart=on-failure
 
