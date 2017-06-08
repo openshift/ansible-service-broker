@@ -2,7 +2,6 @@ package broker
 
 import (
 	"encoding/base64"
-	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -81,27 +80,37 @@ cwo=`
 	if err = apb.LoadYAML(string(decodedyaml), spec); err != nil {
 		t.Fatal(err)
 	}
-	t.Log(fmt.Sprintf("%#v", spec.Parameters))
+	schemaObj := ParametersToSchema(spec.Parameters)
 
-	schema := ParametersToSchema(spec.Parameters)
-	t.Log(fmt.Sprintf("%#v", schema))
-	t.Log(fmt.Sprintf("%#v", schema.ServiceInstance.Create["parameters"].Properties))
-	t.Fatal("need to validate schema")
+	found := false
+	for k, p := range schemaObj.ServiceInstance.Create["parameters"].Properties {
+		// let's verify the site language
+		if k == "mediawiki_site_lang" {
+			found = true
+			ft.AssertEqual(t, p.Title, "Mediawiki Site Language", "title mismatch")
+			ft.AssertTrue(t, p.Type.Contains(schema.StringType), "type mismatch")
+			ft.AssertEqual(t, p.Description, "", "description mismatch")
+			ft.AssertEqual(t, p.Default, "en", "default mismatch")
+			ft.AssertEqual(t, p.MaxLength.Val, 0, "maxlength mismatch")
+			ft.AssertEqual(t, len(p.Enum), 0, "enum mismatch")
+		}
+	}
+	ft.AssertTrue(t, found, "no mediawiki_site_lang property found")
 }
 
 func TestGetType(t *testing.T) {
 	// TODO: FIX TEST
-	ft.AssertEqual(t, getType("string"), []schema.PrimitiveType{schema.StringType})
-	ft.AssertEqual(t, getType("int"), []schema.PrimitiveType{schema.IntegerType})
-	ft.AssertEqual(t, getType("object"), []schema.PrimitiveType{schema.ObjectType})
-	ft.AssertEqual(t, getType("array"), []schema.PrimitiveType{schema.ArrayType})
-	ft.AssertEqual(t, getType("enum"), []schema.PrimitiveType{schema.ArrayType})
-	ft.AssertEqual(t, getType("bool"), []schema.PrimitiveType{schema.BooleanType})
-	ft.AssertEqual(t, getType("boolean"), []schema.PrimitiveType{schema.BooleanType})
-	ft.AssertEqual(t, getType("number"), []schema.PrimitiveType{schema.NumberType})
-	ft.AssertEqual(t, getType("nil"), []schema.PrimitiveType{schema.NullType})
-	ft.AssertEqual(t, getType("null"), []schema.PrimitiveType{schema.NullType})
-	ft.AssertEqual(t, getType("biteme"), []schema.PrimitiveType{schema.UnspecifiedType})
+	ft.AssertTrue(t, getType("string").Contains(schema.StringType), "no string type")
+	ft.AssertTrue(t, getType("int").Contains(schema.IntegerType), "no int type")
+	ft.AssertTrue(t, getType("object").Contains(schema.ObjectType), "no object type")
+	ft.AssertTrue(t, getType("enum").Contains(schema.ArrayType), "no enum type")
+	ft.AssertTrue(t, getType("array").Contains(schema.ArrayType), "no array type")
+	ft.AssertTrue(t, getType("bool").Contains(schema.BooleanType), "no bool type")
+	ft.AssertTrue(t, getType("boolean").Contains(schema.BooleanType), "no boolean type")
+	ft.AssertTrue(t, getType("number").Contains(schema.NumberType), "no number type")
+	ft.AssertTrue(t, getType("nil").Contains(schema.NullType), "no nil type")
+	ft.AssertTrue(t, getType("null").Contains(schema.NullType), "no null type")
+	ft.AssertTrue(t, getType("biteme").Contains(schema.UnspecifiedType), "biteme type returned a known type")
 }
 
 func TestProjectRoot(t *testing.T) {

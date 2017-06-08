@@ -60,16 +60,13 @@ func getType(paramType string) schema.PrimitiveTypes {
 		return []schema.PrimitiveType{schema.IntegerType}
 	case "object":
 		return []schema.PrimitiveType{schema.ObjectType}
-	case "array":
-	case "enum":
+	case "array", "enum":
 		return []schema.PrimitiveType{schema.ArrayType}
-	case "bool":
-	case "boolean":
+	case "bool", "boolean":
 		return []schema.PrimitiveType{schema.BooleanType}
 	case "number":
 		return []schema.PrimitiveType{schema.NumberType}
-	case "nil":
-	case "null":
+	case "nil", "null":
 		return []schema.PrimitiveType{schema.NullType}
 	}
 	return []schema.PrimitiveType{schema.UnspecifiedType}
