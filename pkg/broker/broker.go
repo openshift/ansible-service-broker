@@ -435,3 +435,12 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	state := StateToLastOperation(jobstate.State)
 	return &LastOperationResponse{State: state, Description: ""}, err
 }
+
+//AddSpec - adding the spec to the catalog for local developement
+func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
+	if err := a.dao.SetSpec(spec.Id, &spec); err != nil {
+		return nil, err
+	}
+	service := SpecToService(&spec)
+	return &CatalogResponse{Services: []Service{service}}, nil
+}

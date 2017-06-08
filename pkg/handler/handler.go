@@ -1,14 +1,18 @@
 package handler
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 
+	yaml "gopkg.in/yaml.v1"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/pborman/uuid"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -34,7 +38,7 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 	}
 }
 
-func NewHandler(b broker.Broker, log *logging.Logger) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, dev bool) http.Handler {
 	h := handler{
 		router: *mux.NewRouter(),
 		broker: b,
@@ -55,6 +59,10 @@ func NewHandler(b broker.Broker, log *logging.Logger) http.Handler {
 		createVarHandler(h.unbind)).Methods("DELETE")
 	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
+
+	if dev {
+		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
+	}
 
 	return handlers.LoggingHandler(os.Stdout, h)
 }
@@ -260,5 +268,39 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 
 	resp, err := h.broker.LastOperation(instanceUUID, &req)
 
+	writeDefaultResponse(w, http.StatusOK, resp, err)
+}
+
+// apbAddSpec - Development only route. Will be used by for local developers to add images to the catalog.
+func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	//Read Request for an image name
+
+	// create helper method from MockRegistry
+	ansibleBroker, ok := h.broker.(*broker.AnsibleBroker)
+	if !ok {
+		h.log.Errorf("unable to use broker - %T as ansbile service broker", h.broker)
+		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
+		return
+	}
+	//Decode
+	spec64Yaml := r.FormValue("apbSpec")
+	if spec64Yaml == "" {
+		h.log.Errorf("Could not find form parameter apbSpec")
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Could not parameter apbSpec"})
+		return
+	}
+	decodedSpecYaml, err := base64.StdEncoding.DecodeString(spec64Yaml)
+	if err != nil {
+		h.log.Errorf("Something went wrong decoding spec from encoded string - %v err -%v", spec64Yaml, err)
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter encoding"})
+		return
+	}
+	var spec apb.Spec
+	if err = yaml.Unmarshal([]byte(decodedSpecYaml), &spec); err != nil {
+		h.log.Errorf("Unable to decode yaml - %v to spec err - %v", decodedSpecYaml, err)
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter yaml"})
+		return
+	}
+	resp, err := ansibleBroker.AddSpec(spec)
 	writeDefaultResponse(w, http.StatusOK, resp, err)
 }

@@ -16,6 +16,7 @@ type Config struct {
 	Log        LogConfig
 	Openshift  apb.ClusterConfig
 	ConfigFile string
+	DevBroker  bool
 }
 
 func CreateConfig(configFile string) (Config, error) {
