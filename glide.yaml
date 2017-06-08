@@ -69,3 +69,4 @@ import:
   - spew
 - package: k8s.io/apimachinery
 - package: github.com/lestrrat/go-jsschema
+- package: github.com/lestrrat/go-jsref
