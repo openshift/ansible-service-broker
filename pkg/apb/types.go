@@ -85,7 +85,7 @@ func specLogDump(spec *Spec, log *logging.Logger) {
 	for _, param := range spec.Parameters {
 		log.Debug("ParameterDescriptor")
 		//TODO: log.Debug("  Name: %s", param.Name)
-		log.Debug("  Name: %v", param)
+		log.Debug("  Name: %#v", param)
 		//log.Debug("  Description: %s", param.Description)
 		//log.Debug("  Type: %s", param.Type)
 		//log.Debug("  Required: %t", param.Required)
