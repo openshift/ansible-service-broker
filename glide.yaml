@@ -41,6 +41,7 @@ import:
 - package: github.com/docker/distribution
   version: ^2.6.0
 - package: github.com/containers/storage
+  version: dbcaa736c4ac87eac3b7e7ea82207f3b62458c25
   subpackages:
   - pkg/archive
 - package: github.com/docker/go-connections

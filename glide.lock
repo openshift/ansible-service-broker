@@ -1,5 +1,5 @@
-hash: d7f48cd6bdc1bdf25f4bce6c1010ee0144c22b93fd400da8810b920a27cc8522
-updated: 2017-06-08T02:01:48.998404392-04:00
+hash: e02373bd2031c037f8dc8d9248e9fe6334eb3a6e5ee915b86566dd8d0a9d5dc0
+updated: 2017-06-08T13:12:18.404161826-04:00
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
@@ -25,13 +25,12 @@ imports:
   - types
   - version
 - name: github.com/containers/storage
-  version: 5cbbc6bafb45bd7ef10486b673deb3b81bb3b787
+  version: dbcaa736c4ac87eac3b7e7ea82207f3b62458c25
   subpackages:
   - drivers
   - drivers/aufs
   - drivers/btrfs
   - drivers/devmapper
-  - drivers/overlay
   - drivers/overlay2
   - drivers/register
   - drivers/vfs
@@ -58,6 +57,7 @@ imports:
   - pkg/reexec
   - pkg/stringid
   - pkg/system
+  - pkg/truncindex
   - storage
   - storageversion
 - name: github.com/coreos/etcd
@@ -223,6 +223,12 @@ imports:
   - libcontainer/selinux
   - libcontainer/system
   - libcontainer/user
+  - libcontainer/utils
+- name: github.com/opencontainers/selinux
+  version: 63bd19516561f1973f86c9f777b263ee1e0db140
+  subpackages:
+  - go-selinux
+  - go-selinux/label
 - name: github.com/pborman/uuid
   version: a97ce2ca70fa5a848076093f05e639a89ca34d06
 - name: github.com/pkg/errors
@@ -235,6 +241,10 @@ imports:
   version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
+- name: github.com/tchap/go-patricia
+  version: 666120de432aea38ab06bd5c818f04f4129882c9
+  subpackages:
+  - patricia
 - name: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
