@@ -99,8 +99,7 @@ func TestSpecLabel(t *testing.T) {
 	ft.AssertEqual(t, BundleSpecLabel, "com.redhat.apb.spec", "spec label does not match dockerhub")
 }
 
-func TestFoobar(t *testing.T) {
-	t.Skip()
+func TestEncodedParameters(t *testing.T) {
 	encodedstring :=
 		`aWQ6IDU1YzUzYTVkLTY1YTYtNGMyNy04OGZjLWUwMjc0MTBiMTMzNwpuYW1lOiBtZWRpYXdpa2kx
 MjMtYXBiCmltYWdlOiBhbnNpYmxlcGxheWJvb2tidW5kbGUvbWVkaWF3aWtpMTIzLWFwYgpkZXNj
@@ -123,29 +122,42 @@ ZGlhd2lraV9kYl9zY2hlbWEKICAtIG1lZGlhd2lraV9zaXRlX25hbWUKICAtIG1lZGlhd2lraV9z
 aXRlX2xhbmcKICAtIG1lZGlhd2lraV9hZG1pbl91c2VyCiAgLSBtZWRpYXdpa2lfYWRtaW5fcGFz
 cwo=`
 
-	//fmt.Println("[" + encodedstring + "]")
 	decodedyaml, err := base64.StdEncoding.DecodeString(encodedstring)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(string(decodedyaml))
+
 	spec := &Spec{}
 	if err = LoadYAML(string(decodedyaml), spec); err != nil {
 		t.Fatal(err)
 	}
-	t.Log(spec.Name)
-	t.Log(len(spec.Parameters))
-	t.Log(spec.Required)
-	for _, pm := range spec.Parameters {
-		for k, pd := range pm {
-			t.Log(k)
-			t.Log(fmt.Sprintf("\tTitle: %s", pd.Title))
-			t.Log(fmt.Sprintf("\tType: %s", pd.Type))
-			t.Log(fmt.Sprintf("\tDescription: %s", pd.Description))
-			t.Log(fmt.Sprintf("\tDefault: %v", pd.Default))
-			t.Log(fmt.Sprintf("\tMaxlength: %d", pd.Maxlength))
-			t.Log(fmt.Sprintf("\tPattern: %s", pd.Pattern))
-			t.Log(fmt.Sprintf("\tEnum: %v", pd.Enum))
+
+	ft.AssertEqual(t, spec.Name, "mediawiki123-apb")
+	ft.AssertEqual(t, len(spec.Parameters), 5)
+	ft.AssertNotNil(t, spec.Required)
+
+	// picking something other than the first one
+	sitelang := spec.Parameters[2]["mediawiki_site_lang"]
+
+	ft.AssertEqual(t, sitelang.Title, "Mediawiki Site Language")
+	ft.AssertEqual(t, sitelang.Type, "string")
+	ft.AssertEqual(t, sitelang.Description, "")
+	ft.AssertEqual(t, sitelang.Default, "en")
+	ft.AssertEqual(t, sitelang.Maxlength, 0)
+	ft.AssertEqual(t, sitelang.Pattern, "")
+	ft.AssertEqual(t, len(sitelang.Enum), 0)
+	/*
+		for _, pm := range spec.Parameters {
+			for k, pd := range pm {
+				t.Log(k)
+				t.Log(fmt.Sprintf("\tTitle: %s", pd.Title))
+				t.Log(fmt.Sprintf("\tType: %s", pd.Type))
+				t.Log(fmt.Sprintf("\tDescription: %s", pd.Description))
+				t.Log(fmt.Sprintf("\tDefault: %v", pd.Default))
+				t.Log(fmt.Sprintf("\tMaxlength: %d", pd.Maxlength))
+				t.Log(fmt.Sprintf("\tPattern: %s", pd.Pattern))
+				t.Log(fmt.Sprintf("\tEnum: %v", pd.Enum))
+			}
 		}
-	}
+	*/
 }
