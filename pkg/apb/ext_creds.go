@@ -96,7 +96,7 @@ func getPodName(output []byte, log *logging.Logger) (string, error) {
 }
 
 func monitorOutput(podname string) ([]byte, error) {
-	return runCommand("oc", "logs", "-f", podname)
+	return RunCommand("oc", "logs", "-f", podname)
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {

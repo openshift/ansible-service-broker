@@ -119,6 +119,8 @@ func (c *Client) RunImage(
 		return nil, err
 	}
 
+	inCluster := clusterConfig.Target == ""
+
 	////////////////////////////////////////////////////////////////////////////////
 	// This needs a lot of cleanup. Broker was originally written to run
 	// inside a machine that also had a running dockerd available on /var/run/docker.sock
@@ -143,37 +145,49 @@ func (c *Client) RunImage(
 
 	// NOTE: Older approach when docker is easily available to the broker to run
 	// metacontainers, i.e., just running on
-	//return runCommand("docker", "run",
+	//return RunCommand("docker", "run",
 	//"-e", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
 	//"-e", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
 	//"-e", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
 	//spec.Name, action, "--extra-vars", string(params))
 
-	err = c.refreshLoginToken(clusterConfig)
-	if err != nil {
-		c.log.Error("Error occurred while refreshing login token! Aborting apb run.")
-		c.log.Error(err.Error())
-		return nil, err
+	if !inCluster {
+		err = c.refreshLoginToken(clusterConfig)
+
+		if err != nil {
+			c.log.Error("Error occurred while refreshing login token! Aborting apb run.")
+			c.log.Error(err.Error())
+			return nil, err
+		}
+		c.log.Notice("Login token successfully refreshed.")
 	}
-	c.log.Notice("Login token successfully refreshed.")
 
 	c.log.Debug("Running OC run...")
 	c.log.Debug("clusterConfig:")
-	c.log.Debug("target: [ %s ]", clusterConfig.Target)
-	c.log.Debug("user: [ %s ]", clusterConfig.User)
-	c.log.Debug("password:[ %s ]", clusterConfig.Password)
+	if !inCluster {
+		c.log.Debug("target: [ %s ]", clusterConfig.Target)
+		c.log.Debug("user: [ %s ]", clusterConfig.User)
+		c.log.Debug("password:[ %s ]", clusterConfig.Password)
+	}
 	c.log.Debug("name:[ %s ]", spec.Name)
 	c.log.Debug("image:[ %s ]", spec.Image)
 	c.log.Debug("action:[ %s ]", action)
 	c.log.Debug("params:[ %s ]", string(params))
 
-	return runCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
-		"--env", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
-		"--env", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
-		"--env", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
-		fmt.Sprintf("--image-pull-policy=Always"),
-		fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
-		"--", action, "--extra-vars", string(params))
+	if inCluster {
+		return RunCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
+			fmt.Sprintf("--image-pull-policy=Always"),
+			fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
+			"--", action, "--extra-vars", string(params))
+	} else {
+		return RunCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
+			"--env", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
+			"--env", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
+			"--env", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
+			fmt.Sprintf("--image-pull-policy=Always"),
+			fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
+			"--", action, "--extra-vars", string(params))
+	}
 }
 
 func (c *Client) PullImage(imageName string) error {
@@ -191,7 +205,7 @@ func (c *Client) refreshLoginToken(clusterConfig ClusterConfig) error {
 	c.log.Debug("user: [ %s ]", clusterConfig.User)
 	c.log.Debug("password:[ %s ]", clusterConfig.Password)
 
-	output, err := runCommand(
+	output, err := RunCommand(
 		"oc", "login", "--insecure-skip-tls-verify", clusterConfig.Target,
 		"-u", clusterConfig.User,
 		"-p", clusterConfig.Password,
