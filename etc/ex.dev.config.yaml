@@ -17,3 +17,4 @@ openshift:
   target: localhost:8443
   user: OPENSHIFT_USER
   pass: OPENSHIFT_PASS
+devbroker: true

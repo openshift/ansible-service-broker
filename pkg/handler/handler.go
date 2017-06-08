@@ -278,7 +278,7 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 	// create helper method from MockRegistry
 	ansibleBroker, ok := h.broker.(*broker.AnsibleBroker)
 	if !ok {
-		h.log.Errorf("unable to use broker - %T as ansbile service broker", h.broker)
+		h.log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
 		return
 	}
