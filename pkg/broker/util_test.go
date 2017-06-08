@@ -7,6 +7,7 @@ import (
 	"path"
 	"testing"
 
+	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
@@ -86,6 +87,21 @@ cwo=`
 	t.Log(fmt.Sprintf("%#v", schema))
 	t.Log(fmt.Sprintf("%#v", schema.ServiceInstance.Create["parameters"].Properties))
 	t.Fatal("need to validate schema")
+}
+
+func TestGetType(t *testing.T) {
+	// TODO: FIX TEST
+	ft.AssertEqual(t, getType("string"), []schema.PrimitiveType{schema.StringType})
+	ft.AssertEqual(t, getType("int"), []schema.PrimitiveType{schema.IntegerType})
+	ft.AssertEqual(t, getType("object"), []schema.PrimitiveType{schema.ObjectType})
+	ft.AssertEqual(t, getType("array"), []schema.PrimitiveType{schema.ArrayType})
+	ft.AssertEqual(t, getType("enum"), []schema.PrimitiveType{schema.ArrayType})
+	ft.AssertEqual(t, getType("bool"), []schema.PrimitiveType{schema.BooleanType})
+	ft.AssertEqual(t, getType("boolean"), []schema.PrimitiveType{schema.BooleanType})
+	ft.AssertEqual(t, getType("number"), []schema.PrimitiveType{schema.NumberType})
+	ft.AssertEqual(t, getType("nil"), []schema.PrimitiveType{schema.NullType})
+	ft.AssertEqual(t, getType("null"), []schema.PrimitiveType{schema.NullType})
+	ft.AssertEqual(t, getType("biteme"), []schema.PrimitiveType{schema.UnspecifiedType})
 }
 
 func TestProjectRoot(t *testing.T) {
