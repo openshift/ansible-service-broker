@@ -146,6 +146,8 @@ cwo=`
 	ft.AssertEqual(t, sitelang.Maxlength, 0)
 	ft.AssertEqual(t, sitelang.Pattern, "")
 	ft.AssertEqual(t, len(sitelang.Enum), 0)
+
+	// example of traversing the parameters
 	/*
 		for _, pm := range spec.Parameters {
 			for k, pd := range pm {

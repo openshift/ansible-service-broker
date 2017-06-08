@@ -1,17 +1,18 @@
 package broker
 
 import (
+	"encoding/base64"
+	"fmt"
 	"os"
 	"path"
 	"testing"
 
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
-	"github.com/pborman/uuid"
 )
 
+/*
 func TestSpecToService(t *testing.T) {
-
 	param := []*apb.ParameterDescriptor{
 		&apb.ParameterDescriptor{
 			Name:        "hostport",
@@ -43,6 +44,48 @@ func TestSpecToService(t *testing.T) {
 	ft.AssertEqual(t, svc.Name, expectedsvc.Name, "name is not equal")
 	ft.AssertEqual(t, svc.Description, expectedsvc.Description, "description is not equal")
 	ft.AssertEqual(t, svc.Bindable, expectedsvc.Bindable, "bindable wrong")
+}
+*/
+
+func TestParametersToSchema(t *testing.T) {
+	// being lazy, easy way to create a spec with parameters
+	encodedstring :=
+		`aWQ6IDU1YzUzYTVkLTY1YTYtNGMyNy04OGZjLWUwMjc0MTBiMTMzNwpuYW1lOiBtZWRpYXdpa2kx
+MjMtYXBiCmltYWdlOiBhbnNpYmxlcGxheWJvb2tidW5kbGUvbWVkaWF3aWtpMTIzLWFwYgpkZXNj
+cmlwdGlvbjogIk1lZGlhd2lraTEyMyBhcGIgaW1wbGVtZW50YXRpb24iCmJpbmRhYmxlOiBmYWxz
+ZQphc3luYzogb3B0aW9uYWwKbWV0YWRhdGE6CiAgZGlzcGxheW5hbWU6ICJSZWQgSGF0IE1lZGlh
+d2lraSIKICBsb25nRGVzY3JpcHRpb246ICJBbiBhcGIgdGhhdCBkZXBsb3lzIE1lZGlhd2lraSAx
+LjIzIgogIGltYWdlVVJMOiAiaHR0cHM6Ly91cGxvYWQud2lraW1lZGlhLm9yZy93aWtpcGVkaWEv
+Y29tbW9ucy8wLzAxL01lZGlhV2lraS1zbWFsbGVyLWxvZ28ucG5nIgogIGRvY3VtZW50YXRpb25V
+Ukw6ICJodHRwczovL3d3dy5tZWRpYXdpa2kub3JnL3dpa2kvRG9jdW1lbnRhdGlvbiIKcGFyYW1l
+dGVyczoKICAtIG1lZGlhd2lraV9kYl9zY2hlbWE6CiAgICAgIHRpdGxlOiBNZWRpYXdpa2kgREIg
+U2NoZW1hCiAgICAgIHR5cGU6IHN0cmluZwogICAgICBkZWZhdWx0OiBtZWRpYXdpa2kKICAtIG1l
+ZGlhd2lraV9zaXRlX25hbWU6CiAgICAgIHRpdGxlOiBNZWRpYXdpa2kgU2l0ZSBOYW1lCiAgICAg
+IHR5cGU6IHN0cmluZwogICAgICBkZWZhdWx0OiBNZWRpYVdpa2kKICAtIG1lZGlhd2lraV9zaXRl
+X2xhbmc6CiAgICAgIHRpdGxlOiBNZWRpYXdpa2kgU2l0ZSBMYW5ndWFnZQogICAgICB0eXBlOiBz
+dHJpbmcKICAgICAgZGVmYXVsdDogZW4KICAtIG1lZGlhd2lraV9hZG1pbl91c2VyOgogICAgICB0
+aXRsZTogTWVkaWF3aWtpIEFkbWluIFVzZXIKICAgICAgdHlwZTogc3RyaW5nCiAgICAgIGRlZmF1
+bHQ6IGFkbWluCiAgLSBtZWRpYXdpa2lfYWRtaW5fcGFzczoKICAgICAgdGl0bGU6IE1lZGlhd2lr
+aSBBZG1pbiBVc2VyIFBhc3N3b3JkCiAgICAgIHR5cGU6IHN0cmluZwpyZXF1aXJlZDoKICAtIG1l
+ZGlhd2lraV9kYl9zY2hlbWEKICAtIG1lZGlhd2lraV9zaXRlX25hbWUKICAtIG1lZGlhd2lraV9z
+aXRlX2xhbmcKICAtIG1lZGlhd2lraV9hZG1pbl91c2VyCiAgLSBtZWRpYXdpa2lfYWRtaW5fcGFz
+cwo=`
+
+	decodedyaml, err := base64.StdEncoding.DecodeString(encodedstring)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spec := &apb.Spec{}
+	if err = apb.LoadYAML(string(decodedyaml), spec); err != nil {
+		t.Fatal(err)
+	}
+	t.Log(fmt.Sprintf("%#v", spec.Parameters))
+
+	schema := ParametersToSchema(spec.Parameters)
+	t.Log(fmt.Sprintf("%#v", schema))
+	t.Log(fmt.Sprintf("%#v", schema.ServiceInstance.Create["parameters"].Properties))
+	t.Fatal("need to validate schema")
 }
 
 func TestProjectRoot(t *testing.T) {

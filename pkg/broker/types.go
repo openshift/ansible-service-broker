@@ -1,6 +1,7 @@
 package broker
 
 import (
+	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
@@ -40,19 +41,25 @@ type Schema struct {
 }
 
 type ServiceInstance struct {
-	Create InputParameter `json:"create"`
-	Update InputParameter `json:"update"`
+	Create map[string]*schema.Schema `json:"create"`
+	Update map[string]*schema.Schema `json:"update"`
 }
 
 type ServiceBinding struct {
-	Create InputParameter `json:"create"`
-}
-
-type InputParameter struct {
-	Parameters *jsschema.Schema `json:"parameters"`
+	Create map[string]*schema.Schema `json:"create"`
 }
 
 /*
+type InputParameter struct {
+	Parameters *schema.Schema `json:"parameters"`
+}
+*/
+
+/*
+create: has
+  parameters: has
+    properties:
+
 type
 title
 properties:
