@@ -61,11 +61,10 @@ imports:
   - storage
   - storageversion
 - name: github.com/coreos/etcd
-  version: 9d7ed0e63a4e9907c04396d0a9a7a01ba08d2852
+  version: 43b75072bfaca5a7c35c718179defbcabd9a0886
   subpackages:
   - client
   - pkg/pathutil
-  - pkg/srv
   - pkg/types
   - version
 - name: github.com/coreos/go-oidc
@@ -165,9 +164,9 @@ imports:
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/handlers
-  version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
+  version: 3a5767ca75ece5f7f1440b1d16975247f8d8b221
 - name: github.com/gorilla/mux
-  version: bcd8bc72b08df0f70df986b97f95590779502d31
+  version: 392c28fe23e1c45ddba891b0320b3b5df220beea
 - name: github.com/hashicorp/go-cleanhttp
   version: ad28ea4487f05916463e2423a55166280e8254b5
 - name: github.com/howeyc/gopass
