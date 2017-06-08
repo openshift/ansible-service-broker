@@ -23,7 +23,6 @@ func Provision(
 	log.Notice(fmt.Sprintf("Spec.Name: %s", spec.Name))
 	log.Notice(fmt.Sprintf("Spec.Image: %s", spec.Image))
 	log.Notice(fmt.Sprintf("Spec.Description: %s", spec.Description))
-	log.Notice(fmt.Sprintf("Parameters: %v", parameters))
 	log.Notice("============================================================")
 
 	// Explicitly error out if image field is missing from spec

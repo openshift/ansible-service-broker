@@ -141,12 +141,10 @@ func (c *Client) RunImage(
 	if !clusterConfig.InCluster {
 		c.log.Debug("target: [ %s ]", clusterConfig.Target)
 		c.log.Debug("user: [ %s ]", clusterConfig.User)
-		c.log.Debug("password:[ %s ]", clusterConfig.Password)
 	}
 	c.log.Debug("name:[ %s ]", spec.Name)
 	c.log.Debug("image:[ %s ]", spec.Image)
 	c.log.Debug("action:[ %s ]", action)
-	c.log.Debug("extra-vars:[ %s ]", extraVars)
 
 	// It's a critical error if a Namespace is not provided to the
 	// broker because its required to know where to execute the pods and
@@ -269,9 +267,6 @@ func OcLogin(log *logging.Logger, args ...string) error {
 		log.Debug(string(output))
 		return err
 	}
-
-	log.Debug("No error reported after running oc login. Cmd output:")
-	log.Debug(string(output))
 	return nil
 }
 

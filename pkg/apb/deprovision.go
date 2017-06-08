@@ -7,14 +7,13 @@ import (
 )
 
 func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error) {
-	specJSON, _ := DumpJSON(instance)
-
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
-	log.Notice(fmt.Sprintf("ServiceInstance.Id: %s", instance.Id))
-	log.Notice(fmt.Sprintf("ServiceInstance.Spec: %v", specJSON))
-	log.Notice(fmt.Sprintf("ServiceInstance.Parameters: %v", instance.Parameters))
+	log.Notice(fmt.Sprintf("ServiceInstance.Id: %s", instance.Spec.Id))
+	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.Name))
+	log.Notice(fmt.Sprintf("ServiceInstance.Image: %s", instance.Spec.Image))
+	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
 	var client *Client

@@ -1,6 +1,8 @@
 package apb
 
 import (
+	"fmt"
+
 	logging "github.com/op/go-logging"
 )
 
@@ -17,7 +19,10 @@ func Bind(
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")
-	log.Notice("Parameters: %v", parameters)
+	log.Notice(fmt.Sprintf("ServiceInstance.Id: %s", instance.Spec.Id))
+	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.Name))
+	log.Notice(fmt.Sprintf("ServiceInstance.Image: %s", instance.Spec.Image))
+	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
 	var client *Client
