@@ -65,23 +65,41 @@ make vendor
 
 **Config**
 
-A broker is configured via a `$ENV.config.yaml` file. Example files can be
+A broker is configured via a `config.yaml` file. Example files can be
 found under `etc/`. It's recommended to simply copy over `etc/ex.dev.config.yaml`
-to `etc/dev.config.yaml`, and edit as desired. `scripts/runbroker.sh` should
-handle providing the location to this file. Of course, this can be customized
-or the configuration file can be specified by cli args as well.
+to `etc/config.yaml`, and edit as desired. 
+
+
 
 ## Targets
-
+### Broker Targets
+* `make vendor`: Installs or updates the dependencies
+* `make build`: Builds the binary from source
+* `make install`: Installs the built binary. 
 * `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
-* `make install`: Builds the source and installs in `$GOPATH/bin`
-* `make run-mock-registry`: Mock registry. Entirely separate binary.
-* `make test`: Runs the test suite.
-* `make vendor`: Updates the dependencies
+* `make uninstall` Deletes the installed binary and config.yaml
+  * Notes for install, run, and uninstall:
+    * The default install prefix is /usr/local. Use `sudo -E make install` to obtain proper permissions and preserve env vars like GOPATH
+    * Alternatively you can alter the installation directory by using INSTALL_DIR, e.g. `INSTALL_DIR=~ make run`
+
+### Docker Development Build Targets
 * `make build-image`: Builds a docker container of the current source
+
+### Docker Release Build Targets
 * `make release` Builds a docker container using the latest rpm from [Copr](https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker/)
 * `make push` Push the built image
+
+### Mock Registry Targets
+* `make build-mock-registry`: Builds the mock-registry binary from source
+* `make install-mock-registry`: Installs the mock-registry binary from source.
+* `make run-mock-registry`: Runs the mock registry
+* `make uninstall-mock-registry` Deletes the installed mock-registry binary and playbookbundles.yaml
+  * Note: The same options apply for the install prefix here as they do with the broker
+
+### Misc Targets
+* `make clean`: Delete binaries built from source
 * `make deploy`: Deploys the currently build container into your cluster
+* `make test`: Runs the test suite.
 
 **Note**
 
