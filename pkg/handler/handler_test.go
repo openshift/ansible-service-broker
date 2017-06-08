@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 
@@ -21,6 +22,8 @@ type MockBroker struct {
 	Err       error
 	Operation string
 }
+
+const base64TestSpec = "aWQ6IDU1YzUzYTVkLTY1YTYtNGMyNy04OGZjLWUwMjc0MTBiMTMzNw0KbmFtZTogbWVkaWF3aWtpMTIzLWFwYg0KaW1hZ2U6IGFuc2libGVwbGF5Ym9va2J1bmRsZS9tZWRpYXdpa2kxMjMtYXBiDQpkZXNjcmlwdGlvbjogIk1lZGlhd2lraTEyMyBhcGIgaW1wbGVtZW50YXRpb24iDQpiaW5kYWJsZTogZmFsc2UNCmFzeW5jOiBvcHRpb25hbA0KbWV0YWRhdGE6DQogIGRpc3BsYXluYW1lOiAiUmVkIEhhdCBNZWRpYXdpa2kiDQogIGxvbmdEZXNjcmlwdGlvbjogIkFuIGFwYiB0aGF0IGRlcGxveXMgTWVkaWF3aWtpIDEuMjMiDQogIGltYWdlVVJMOiAiaHR0cHM6Ly91cGxvYWQud2lraW1lZGlhLm9yZy93aWtpcGVkaWEvY29tbW9ucy8wLzAxL01lZGlhV2lraS1zbWFsbGVyLWxvZ28ucG5nIg0KICBkb2N1bWVudGF0aW9uVVJMOiAiaHR0cHM6Ly93d3cubWVkaWF3aWtpLm9yZy93aWtpL0RvY3VtZW50YXRpb24iDQpwYXJhbWV0ZXJzOg0KICAtIG1lZGlhd2lraV9kYl9zY2hlbWE6DQogICAgLSB0aXRsZTogTWVkaWF3aWtpIERCIFNjaGVtYQ0KICAgICAgdHlwZTogc3RyaW5nDQogICAgICBkZWZhdWx0OiBtZWRpYXdpa2kNCiAgLSBtZWRpYXdpa2lfc2l0ZV9uYW1lOg0KICAgIC0gdGl0bGU6IE1lZGlhd2lraSBTaXRlIE5hbWUNCiAgICAgIHR5cGU6IHN0cmluZw0KICAgICAgZGVmYXVsdDogTWVkaWFXaWtpDQogIC0gbWVkaWF3aWtpX3NpdGVfbGFuZzoNCiAgICAtIHRpdGxlOiBNZWRpYXdpa2kgU2l0ZSBMYW5ndWFnZQ0KICAgICAgdHlwZTogc3RyaW5nDQogICAgICBkZWZhdWx0OiBlbg0KICAtIG1lZGlhd2lraV9hZG1pbl91c2VyOg0KICAgIC0gdGl0bGU6IE1lZGlhd2lraSBBZG1pbiBVc2VyDQogICAgICB0eXBlOiBzdHJpbmcNCiAgICAgIGRlZmF1bHQ6IGFkbWluDQogIC0gbWVkaWF3aWtpX2FkbWluX3Bhc3M6DQogICAgLSB0aXRsZTogTWVkaWF3aWtpIEFkbWluIFVzZXIgUGFzc3dvcmQNCiAgICAgIHR5cGU6IHN0cmluZw0KcmVxdWlyZWQ6DQogIC0gbWVkaWF3aWtpX2RiX3NjaGVtYQ0KICAtIG1lZGlhd2lraV9zaXRlX25hbWUNCiAgLSBtZWRpYXdpa2lfc2l0ZV9sYW5nDQogIC0gbWVkaWF3aWtpX2FkbWluX3VzZXINCiAgLSBtZWRpYXdpa2lfYWRtaW5fcGFzcw0K"
 
 func (m *MockBroker) called(method string, called bool) {
 	if m.Verify == nil {
@@ -79,7 +82,24 @@ func init() {
 
 func TestNewHandler(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	testhandler := NewHandler(testb, log)
+	testhandler := NewHandler(testb, log, false)
+	ft.AssertNotNil(t, testhandler, "handler wasn't created")
+}
+
+func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
+	testb := MockBroker{Name: "testbroker"}
+	testhandler := NewHandler(testb, log, false)
+	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
+	if err != nil {
+		ft.AssertTrue(t, false, err.Error())
+	}
+	form := url.Values{}
+	form.Add("apbSpec", base64TestSpec)
+	req.PostForm = form
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	testhandler.ServeHTTP(w, req)
+	ft.AssertEqual(t, w.Result().StatusCode, http.StatusNotFound, fmt.Sprintf("resulting status was not 404 - %v", w.Result().Status))
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
