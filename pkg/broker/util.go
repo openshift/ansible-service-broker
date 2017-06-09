@@ -102,6 +102,7 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required [
 		}
 	}
 
+	// builds a Schema object for the various methods.
 	s := Schema{
 		ServiceInstance: ServiceInstance{
 			Create: map[string]*schema.Schema{
@@ -110,6 +111,15 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required [
 					Type:       []schema.PrimitiveType{schema.ObjectType},
 					Properties: properties,
 					Required:   required,
+				},
+			},
+		},
+		ServiceBinding: ServiceBinding{
+			Create: map[string]*schema.Schema{
+				"parameters": {
+					SchemaRef:  schema.SchemaURL,
+					Type:       []schema.PrimitiveType{schema.ObjectType},
+					Properties: properties,
 				},
 			},
 		},
