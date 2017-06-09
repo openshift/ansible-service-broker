@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
 	logging "github.com/op/go-logging"
@@ -199,22 +200,27 @@ func (c *Client) PullImage(imageName string) error {
 }
 
 func (c *Client) refreshLoginToken(clusterConfig ClusterConfig) error {
-	c.log.Debug("Refreshing login token...")
-	c.log.Debug("target: [ %s ]", clusterConfig.Target)
-	c.log.Debug("user: [ %s ]", clusterConfig.User)
-	c.log.Debug("password:[ %s ]", clusterConfig.Password)
-
-	output, err := RunCommand(
-		"oc", "login", "--insecure-skip-tls-verify", clusterConfig.Target,
+	return OcLogin(c.log,
+		"--insecure-skip-tls-verify", clusterConfig.Target,
 		"-u", clusterConfig.User,
 		"-p", clusterConfig.Password,
 	)
+}
+
+func OcLogin(log *logging.Logger, args ...string) error {
+	log.Debug("Logging into openshift...")
+	log.Debug(fmt.Sprintf("Using args: ['%s']", strings.Join(args, "', '")))
+
+	fullArgs := append([]string{"login"}, args...)
+
+	output, err := RunCommand("oc", fullArgs...)
 
 	if err != nil {
+		log.Debug(string(output))
 		return err
 	}
 
-	c.log.Debug("No error reported after running oc login. Cmd output:")
-	c.log.Debug(string(output))
+	log.Debug("No error reported after running oc login. Cmd output:")
+	log.Debug(string(output))
 	return nil
 }

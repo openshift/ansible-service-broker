@@ -67,30 +67,17 @@ func NewAnsibleBroker(
 }
 
 func (a AnsibleBroker) Login() error {
-	a.log.Debug("Logging into openshift...")
-
-	a.log.Debug("Retrieving token")
+	a.log.Debug("Retrieving serviceaccount token")
 	token, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		a.log.Debug("Error reading serviceaccount token")
 		return err
 	}
 
-	output, err := apb.RunCommand(
-		"oc", "login", "https://kubernetes.default",
+	return apb.OcLogin(a.log, "https://kubernetes.default",
 		"--certificate-authority", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 		"--token", string(token),
 	)
-
-	if err != nil {
-		a.log.Debug("Error logging in to openshift")
-		a.log.Debug(string(output))
-		return err
-	}
-
-	a.log.Debug("No error reported after running oc login. Cmd output:")
-	a.log.Debug(string(output))
-	return nil
 }
 
 // Loads all known specs from a registry into local storage for reference
