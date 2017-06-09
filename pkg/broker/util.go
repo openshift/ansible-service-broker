@@ -77,19 +77,29 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required [
 
 	for _, paramMap := range params {
 		for k, pd := range paramMap {
-			if pd.Pattern != "" {
-				patternRegex, err = regexp.Compile(pd.Pattern)
-				if err != nil {
-					fmt.Println("Invalid pattern: %s", err.Error())
-				}
-			}
+
 			properties[k] = &schema.Schema{
 				Title:       pd.Title,
 				Description: pd.Description,
 				Default:     pd.Default,
-				MaxLength:   schema.Integer{Val: pd.Maxlength, Initialized: true},
 				Type:        getType(pd.Type),
-				Pattern:     patternRegex,
+			}
+
+			// we can NOT set values on the Schema object if we want to be
+			// omitempty. Setting maxlength to 0 is NOT the same as omitting it.
+			// 0 is a worthless value for Maxlength so we will not set it
+			if pd.Maxlength > 0 {
+				properties[k].MaxLength = schema.Integer{Val: pd.Maxlength, Initialized: true}
+			}
+
+			// do not set the regexp if it does not compile
+			if pd.Pattern != "" {
+				patternRegex, err = regexp.Compile(pd.Pattern)
+				properties[k].Pattern = patternRegex
+
+				if err != nil {
+					fmt.Println("Invalid pattern: %s", err.Error())
+				}
 			}
 
 			// setup enums

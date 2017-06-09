@@ -111,6 +111,7 @@ cwo=`
 			ft.AssertEqual(t, p.Description, "", "description mismatch")
 			ft.AssertEqual(t, p.Default, "en", "default mismatch")
 			ft.AssertEqual(t, p.MaxLength.Val, 0, "maxlength mismatch")
+			ft.AssertFalse(t, p.MaxLength.Initialized, "maxlength initialized")
 			ft.AssertEqual(t, len(p.Enum), 0, "enum mismatch")
 		}
 	}
