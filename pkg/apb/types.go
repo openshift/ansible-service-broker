@@ -45,6 +45,11 @@ type Spec struct {
 	Parameters []*ParameterDescriptor `json:"parameters"`
 }
 
+type Context struct {
+	Platform  string `json:"platform"`
+	Namespace string `json:"namespace"`
+}
+
 type ExtractedCredentials struct {
 	Credentials map[string]interface{} `json:"credentials,omitempty"`
 	// might be more one day
@@ -100,6 +105,7 @@ func NewSpecManifest(specs []*Spec) SpecManifest {
 type ServiceInstance struct {
 	Id         uuid.UUID   `json:"id"`
 	Spec       *Spec       `json:"spec"`
+	Context    *Context    `json:"context"`
 	Parameters *Parameters `json:"parameters"`
 }
 

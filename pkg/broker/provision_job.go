@@ -11,6 +11,7 @@ import (
 type ProvisionJob struct {
 	instanceuuid  uuid.UUID
 	spec          *apb.Spec
+	context       *apb.Context
 	parameters    *apb.Parameters
 	clusterConfig apb.ClusterConfig
 	log           *logging.Logger
@@ -30,15 +31,21 @@ func (m ProvisionMsg) Render() string {
 }
 
 func NewProvisionJob(
-	instanceuuid uuid.UUID, spec *apb.Spec, parameters *apb.Parameters,
-	clusterConfig apb.ClusterConfig, log *logging.Logger,
+	instanceuuid uuid.UUID, spec *apb.Spec, context *apb.Context,
+	parameters *apb.Parameters, clusterConfig apb.ClusterConfig,
+	log *logging.Logger,
 ) *ProvisionJob {
-	return &ProvisionJob{instanceuuid: instanceuuid, spec: spec,
-		parameters: parameters, clusterConfig: clusterConfig, log: log}
+	return &ProvisionJob{
+		instanceuuid:  instanceuuid,
+		spec:          spec,
+		context:       context,
+		parameters:    parameters,
+		clusterConfig: clusterConfig,
+		log:           log}
 }
 
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
-	extCreds, err := apb.Provision(p.spec, p.parameters, p.clusterConfig, p.log)
+	extCreds, err := apb.Provision(p.spec, p.context, p.parameters, p.clusterConfig, p.log)
 	if err != nil {
 		p.log.Error("broker::Provision error occurred.")
 		p.log.Error("%s", err.Error())

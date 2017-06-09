@@ -111,12 +111,13 @@ func (c *Client) RunImage(
 	action string,
 	clusterConfig ClusterConfig,
 	spec *Spec,
+	context *Context,
 	p *Parameters,
 ) ([]byte, error) {
 	// HACK: We're expecting to run containers via go APIs rather than cli cmds
 	// TODO: Expecting parameters to be passed here in the future as well
 
-	params, err := json.Marshal(p)
+	extraVars, err := createExtraVars(context, p)
 	if err != nil {
 		return nil, err
 	}
@@ -172,13 +173,13 @@ func (c *Client) RunImage(
 	c.log.Debug("name:[ %s ]", spec.Name)
 	c.log.Debug("image:[ %s ]", spec.Image)
 	c.log.Debug("action:[ %s ]", action)
-	c.log.Debug("params:[ %s ]", string(params))
+	c.log.Debug("extra-vars:[ %s ]", extraVars)
 
 	if clusterConfig.InCluster {
 		return RunCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
 			fmt.Sprintf("--image-pull-policy=Always"),
 			fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
-			"--", action, "--extra-vars", string(params))
+			"--", action, "--extra-vars", extraVars)
 	} else {
 		return RunCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
 			"--env", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
@@ -186,7 +187,7 @@ func (c *Client) RunImage(
 			"--env", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
 			fmt.Sprintf("--image-pull-policy=Always"),
 			fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
-			"--", action, "--extra-vars", string(params))
+			"--", action, "--extra-vars", extraVars)
 	}
 }
 
@@ -226,4 +227,19 @@ func OcLogin(log *logging.Logger, args ...string) error {
 	log.Debug("No error reported after running oc login. Cmd output:")
 	log.Debug(string(output))
 	return nil
+}
+
+// TODO: Instead of putting namespace directly as a parameter, we should create a dictionary
+// of apb_metadata and put context and other variables in it so we don't pollute the user
+// parameter space.
+func createExtraVars(context *Context, parameters *Parameters) (string, error) {
+	paramsCopy := *parameters
+	if paramsCopy == nil {
+		paramsCopy = make(Parameters)
+	}
+	if context != nil {
+		paramsCopy["namespace"] = context.Namespace
+	}
+	extraVars, err := json.Marshal(paramsCopy)
+	return string(extraVars), err
 }
