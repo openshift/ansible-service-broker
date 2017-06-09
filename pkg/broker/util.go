@@ -55,6 +55,7 @@ func SpecToService(spec *apb.Spec) Service {
 }
 
 func getType(paramType string) schema.PrimitiveTypes {
+	fmt.Println("entered getType")
 	switch paramType {
 	case "string":
 		return []schema.PrimitiveType{schema.StringType}
@@ -79,14 +80,15 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor) Schema {
 
 	for _, paramMap := range params {
 		for k, pd := range paramMap {
+			fmt.Println("key is %s", k)
 			//regex, _ := regexp.Compile(pd.Pattern)
 			properties[k] = &schema.Schema{
 				Title:       pd.Title,
 				Description: pd.Description,
 				Default:     pd.Default,
 				MaxLength:   schema.Integer{Val: pd.Maxlength, Initialized: true},
+				Type:        getType(pd.Type),
 				//	Pattern:     regex,
-				Type: getType(pd.Type),
 				//Enum:        pd.Enum, deal with this later
 			}
 		}
