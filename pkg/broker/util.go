@@ -36,7 +36,7 @@ func SpecToService(spec *apb.Spec) Service {
 			Name:        "default",
 			Description: "Default plan",
 			Free:        true,
-			Schemas:     ParametersToSchema(spec.Parameters),
+			Schemas:     ParametersToSchema(spec.Parameters, spec.Required),
 			// leaving Bindable undefined, defaults to Service value
 		},
 	}
@@ -75,7 +75,7 @@ func getType(paramType string) schema.PrimitiveTypes {
 	return []schema.PrimitiveType{schema.UnspecifiedType}
 }
 
-func ParametersToSchema(params []map[string]*apb.ParameterDescriptor) Schema {
+func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required []string) Schema {
 	properties := make(map[string]*schema.Schema)
 
 	var patternRegex *regexp.Regexp
@@ -108,7 +108,7 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor) Schema {
 					SchemaRef:  schema.SchemaURL,
 					Type:       []schema.PrimitiveType{schema.ObjectType},
 					Properties: properties,
-					//Required:   required,
+					Required:   required,
 				},
 			},
 		},

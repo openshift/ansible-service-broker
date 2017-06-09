@@ -278,9 +278,10 @@ class App(object):
 
         using_some_bind = False
         answers = {}
-        for param in service['metadata']['parameters']:
+        required = service['plans'][0]['schemas']['service_instance']['create']['parameters']['required']
+        for param_key, param in service['plans'][0]['schemas']['service_instance']['create']['parameters']['properties'].items():
             # Accept binding value for param if its present, otherwise prompt
-            param_name = param['name']
+            param_name = param_key # key is the new name
             binding_match = sel_binding.get(param_name) \
                 if sel_binding else None
             if binding_match:
@@ -292,7 +293,7 @@ class App(object):
             while True:
                 supports_default = param.get('default') is not None
 
-                if param['required'] is False and not supports_default:
+                if param_name not in required and not supports_default:
                     query = '%s (generated if blank) # ' % param_name
                 elif supports_default:
                     query = '%s (default: %s) # ' % \
@@ -302,7 +303,7 @@ class App(object):
                 answer = raw_input(query)
 
                 # TODO: This is fugly. Fix it.
-                should_pass = answer == '' and param['required'] is False \
+                should_pass = answer == '' and param_name not in required \
                     and not supports_default
 
                 if should_pass:
@@ -350,7 +351,7 @@ class App(object):
             while True:
                 supports_default = param.get('default') is not None
 
-                if param['required'] is False and not supports_default:
+                if param_name not in required and not supports_default:
                     query = '%s (generated if blank) # ' % param['name']
                 elif supports_default:
                     query = '%s (default: %s) # ' % \
@@ -360,7 +361,7 @@ class App(object):
                 answer = raw_input(query)
 
                 # TODO: This is fugly. Fix it.
-                should_pass = answer == '' and param['required'] is False \
+                should_pass = answer == '' and param_name not in required \
                     and not supports_default
 
                 if should_pass:
