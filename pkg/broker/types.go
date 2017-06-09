@@ -40,6 +40,9 @@ type Schema struct {
 	ServiceBinding  ServiceBinding  `json:"service_binding"`
 }
 
+// Toyed with the idea of making an InputParameters
+// that was a *schema.Schema
+
 type ServiceInstance struct {
 	Create map[string]*schema.Schema `json:"create"`
 	Update map[string]*schema.Schema `json:"update"`
