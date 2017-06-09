@@ -56,8 +56,7 @@ func NewAnsibleBroker(
 
 	// If no openshift target is provided, assume we are running in an openshift
 	// cluster and try to log in using mounted cert and token
-	inCluster := clusterConfig.Target == ""
-	if inCluster {
+	if clusterConfig.InCluster {
 		err := broker.Login()
 		if err != nil {
 			return broker, err

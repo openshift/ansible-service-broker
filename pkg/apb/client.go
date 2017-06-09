@@ -40,9 +40,10 @@ admin/admin
 var DockerSocket = "unix:///var/run/docker.sock"
 
 type ClusterConfig struct {
-	Target   string
-	User     string
-	Password string `yaml:"pass"`
+	InCluster bool
+	Target    string
+	User      string
+	Password  string `yaml:"pass"`
 }
 
 type Client struct {
@@ -119,8 +120,6 @@ func (c *Client) RunImage(
 		return nil, err
 	}
 
-	inCluster := clusterConfig.Target == ""
-
 	////////////////////////////////////////////////////////////////////////////////
 	// This needs a lot of cleanup. Broker was originally written to run
 	// inside a machine that also had a running dockerd available on /var/run/docker.sock
@@ -151,7 +150,7 @@ func (c *Client) RunImage(
 	//"-e", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
 	//spec.Name, action, "--extra-vars", string(params))
 
-	if !inCluster {
+	if !clusterConfig.InCluster {
 		err = c.refreshLoginToken(clusterConfig)
 
 		if err != nil {
@@ -164,7 +163,7 @@ func (c *Client) RunImage(
 
 	c.log.Debug("Running OC run...")
 	c.log.Debug("clusterConfig:")
-	if !inCluster {
+	if !clusterConfig.InCluster {
 		c.log.Debug("target: [ %s ]", clusterConfig.Target)
 		c.log.Debug("user: [ %s ]", clusterConfig.User)
 		c.log.Debug("password:[ %s ]", clusterConfig.Password)
@@ -174,7 +173,7 @@ func (c *Client) RunImage(
 	c.log.Debug("action:[ %s ]", action)
 	c.log.Debug("params:[ %s ]", string(params))
 
-	if inCluster {
+	if clusterConfig.InCluster {
 		return RunCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
 			fmt.Sprintf("--image-pull-policy=Always"),
 			fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
