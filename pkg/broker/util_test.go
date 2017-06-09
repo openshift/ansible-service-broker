@@ -79,7 +79,8 @@ cwo=`
 	if err = apb.LoadYAML(string(decodedyaml), spec); err != nil {
 		t.Fatal(err)
 	}
-	schemaObj := ParametersToSchema(spec.Parameters)
+	required := []string{"mediawiki_site_lang"}
+	schemaObj := ParametersToSchema(spec.Parameters, required)
 
 	found := false
 	for k, p := range schemaObj.ServiceInstance.Create["parameters"].Properties {
@@ -95,6 +96,10 @@ cwo=`
 		}
 	}
 	ft.AssertTrue(t, found, "no mediawiki_site_lang property found")
+	ft.AssertEqual(t, len(schemaObj.ServiceInstance.Create["parameters"].Required),
+		len(required), "required len mismatch")
+	ft.AssertEqual(t, schemaObj.ServiceInstance.Create["parameters"].Required[0],
+		required[0], "required mismatch")
 }
 
 func TestGetType(t *testing.T) {
