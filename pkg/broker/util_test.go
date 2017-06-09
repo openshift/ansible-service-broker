@@ -103,11 +103,10 @@ cwo=`
 }
 
 func TestGetType(t *testing.T) {
-	// TODO: FIX TEST
 	ft.AssertTrue(t, getType("string").Contains(schema.StringType), "no string type")
+	ft.AssertTrue(t, getType("enum").Contains(schema.StringType), "no enum type")
 	ft.AssertTrue(t, getType("int").Contains(schema.IntegerType), "no int type")
 	ft.AssertTrue(t, getType("object").Contains(schema.ObjectType), "no object type")
-	ft.AssertTrue(t, getType("enum").Contains(schema.ArrayType), "no enum type")
 	ft.AssertTrue(t, getType("array").Contains(schema.ArrayType), "no array type")
 	ft.AssertTrue(t, getType("bool").Contains(schema.BooleanType), "no bool type")
 	ft.AssertTrue(t, getType("boolean").Contains(schema.BooleanType), "no boolean type")

@@ -57,13 +57,13 @@ func SpecToService(spec *apb.Spec) Service {
 
 func getType(paramType string) schema.PrimitiveTypes {
 	switch paramType {
-	case "string":
+	case "string", "enum":
 		return []schema.PrimitiveType{schema.StringType}
 	case "int":
 		return []schema.PrimitiveType{schema.IntegerType}
 	case "object":
 		return []schema.PrimitiveType{schema.ObjectType}
-	case "array", "enum":
+	case "array":
 		return []schema.PrimitiveType{schema.ArrayType}
 	case "bool", "boolean":
 		return []schema.PrimitiveType{schema.BooleanType}
