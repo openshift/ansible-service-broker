@@ -44,7 +44,7 @@ type AnsibleBroker struct {
 	engine        *WorkEngine
 }
 
-// NewAnsibleBroker - creates a new ansbile broker
+// NewAnsibleBroker - creates a new ansible broker
 func NewAnsibleBroker(
 	dao *dao.Dao,
 	log *logging.Logger,
@@ -312,18 +312,17 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse
 	}
 	// bubble up  error
 	if err != nil {
-		a.log.Error("unknown etcd error - %#v", err)
+		a.log.Error("Error from etcd - %#v", err)
 		return nil, err
 	}
 	err = apb.Deprovision(instance, a.log)
-	// TODO: Right now the client we are using does not expose bb
 	if err == docker.ErrNoSuchImage {
 		a.log.Debug("unable to find service instance - %#v", err)
 		return nil, ErrorNotFound
 	}
 	// bubble up error.
 	if err != nil {
-		a.log.Error("unknown etcd error - %#v", err)
+		a.log.Error("error from deprovision - %#v", err)
 		return nil, err
 	}
 
@@ -353,7 +352,6 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 			return nil, ErrorNotFound
 		}
 		a.log.Error("Couldn't find a service instance: ", err)
-		// TODO: need to figure out how find out if an instance exists or not
 		return nil, err
 	}
 
