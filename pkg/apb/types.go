@@ -82,14 +82,18 @@ func specLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("Description: %s", spec.Description)
 	log.Debug("Async: %s", spec.Async)
 
-	for _, param := range spec.Parameters {
+	for _, params := range spec.Parameters {
 		log.Debug("ParameterDescriptor")
-		//TODO: log.Debug("  Name: %s", param.Name)
-		log.Debug("  Name: %#v", param)
-		//log.Debug("  Description: %s", param.Description)
-		//log.Debug("  Type: %s", param.Type)
-		//log.Debug("  Required: %t", param.Required)
-		//log.Debug("  Default: %s", param.Name)
+		for k, param := range params {
+			log.Debug("  Name: %#v", k)
+			log.Debug("  Title: %s", param.Title)
+			log.Debug("  Type: %s", param.Type)
+			log.Debug("  Description: %s", param.Description)
+			log.Debug("  Default: %#v", param.Default)
+			log.Debug("  Maxlength: %d", param.Maxlength)
+			log.Debug("  Pattern: %s", param.Pattern)
+			log.Debug("  Enum: %v", param.Enum)
+		}
 	}
 }
 
