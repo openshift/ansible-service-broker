@@ -45,6 +45,9 @@ func CreateConfig(configFile string) (Config, error) {
 		return Config{}, err
 	}
 
+	// If no target is provided assume we are inside a cluster
+	config.Openshift.InCluster = config.Openshift.Target == ""
+
 	return config, nil
 }
 

@@ -3,6 +3,7 @@ package broker
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"strings"
 
@@ -53,7 +54,30 @@ func NewAnsibleBroker(
 		engine:        &engine,
 	}
 
+	// If no openshift target is provided, assume we are running in an openshift
+	// cluster and try to log in using mounted cert and token
+	if clusterConfig.InCluster {
+		err := broker.Login()
+		if err != nil {
+			return broker, err
+		}
+	}
+
 	return broker, nil
+}
+
+func (a AnsibleBroker) Login() error {
+	a.log.Debug("Retrieving serviceaccount token")
+	token, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		a.log.Debug("Error reading serviceaccount token")
+		return err
+	}
+
+	return apb.OcLogin(a.log, "https://kubernetes.default",
+		"--certificate-authority", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+		"--token", string(token),
+	)
 }
 
 // Loads all known specs from a registry into local storage for reference

@@ -10,7 +10,7 @@ var HardcodedClusterConfig = ClusterConfig{
 }
 
 // HACK: really need a better way to do docker run
-func runCommand(cmd string, args ...string) ([]byte, error) {
+func RunCommand(cmd string, args ...string) ([]byte, error) {
 	output, err := exec.Command(cmd, args...).CombinedOutput()
 	return output, err
 }

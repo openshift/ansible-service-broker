@@ -1,28 +1,12 @@
 package broker
 
 import (
-	"fmt"
 	"os"
-	"os/exec"
 	"path"
 
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
-
-func RunCommand(bin string, args ...string) {
-	cmd := exec.Command(bin, args...) //.CombinedOutput()
-	cmd.Stdin = os.Stdin
-	cmd.Stdin = os.Stdout
-	cmd.Stdin = os.Stderr
-	err := cmd.Run()
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return
-}
 
 func ProjectRoot() string {
 	gopath := os.Getenv("GOPATH")

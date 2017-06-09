@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
 	logging "github.com/op/go-logging"
@@ -40,9 +41,10 @@ admin/admin
 var DockerSocket = "unix:///var/run/docker.sock"
 
 type ClusterConfig struct {
-	Target   string
-	User     string
-	Password string `yaml:"pass"`
+	InCluster bool
+	Target    string
+	User      string
+	Password  string `yaml:"pass"`
 }
 
 type Client struct {
@@ -143,37 +145,49 @@ func (c *Client) RunImage(
 
 	// NOTE: Older approach when docker is easily available to the broker to run
 	// metacontainers, i.e., just running on
-	//return runCommand("docker", "run",
+	//return RunCommand("docker", "run",
 	//"-e", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
 	//"-e", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
 	//"-e", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
 	//spec.Name, action, "--extra-vars", string(params))
 
-	err = c.refreshLoginToken(clusterConfig)
-	if err != nil {
-		c.log.Error("Error occurred while refreshing login token! Aborting apb run.")
-		c.log.Error(err.Error())
-		return nil, err
+	if !clusterConfig.InCluster {
+		err = c.refreshLoginToken(clusterConfig)
+
+		if err != nil {
+			c.log.Error("Error occurred while refreshing login token! Aborting apb run.")
+			c.log.Error(err.Error())
+			return nil, err
+		}
+		c.log.Notice("Login token successfully refreshed.")
 	}
-	c.log.Notice("Login token successfully refreshed.")
 
 	c.log.Debug("Running OC run...")
 	c.log.Debug("clusterConfig:")
-	c.log.Debug("target: [ %s ]", clusterConfig.Target)
-	c.log.Debug("user: [ %s ]", clusterConfig.User)
-	c.log.Debug("password:[ %s ]", clusterConfig.Password)
+	if !clusterConfig.InCluster {
+		c.log.Debug("target: [ %s ]", clusterConfig.Target)
+		c.log.Debug("user: [ %s ]", clusterConfig.User)
+		c.log.Debug("password:[ %s ]", clusterConfig.Password)
+	}
 	c.log.Debug("name:[ %s ]", spec.Name)
 	c.log.Debug("image:[ %s ]", spec.Image)
 	c.log.Debug("action:[ %s ]", action)
 	c.log.Debug("params:[ %s ]", string(params))
 
-	return runCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
-		"--env", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
-		"--env", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
-		"--env", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
-		fmt.Sprintf("--image-pull-policy=Always"),
-		fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
-		"--", action, "--extra-vars", string(params))
+	if clusterConfig.InCluster {
+		return RunCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
+			fmt.Sprintf("--image-pull-policy=Always"),
+			fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
+			"--", action, "--extra-vars", string(params))
+	} else {
+		return RunCommand("oc", "run", fmt.Sprintf("aa-%s", uuid.New()),
+			"--env", fmt.Sprintf("OPENSHIFT_TARGET=%s", clusterConfig.Target),
+			"--env", fmt.Sprintf("OPENSHIFT_USER=%s", clusterConfig.User),
+			"--env", fmt.Sprintf("OPENSHIFT_PASS=%s", clusterConfig.Password),
+			fmt.Sprintf("--image-pull-policy=Always"),
+			fmt.Sprintf("--image=%s", spec.Image), "--restart=Never",
+			"--", action, "--extra-vars", string(params))
+	}
 }
 
 func (c *Client) PullImage(imageName string) error {
@@ -186,22 +200,30 @@ func (c *Client) PullImage(imageName string) error {
 }
 
 func (c *Client) refreshLoginToken(clusterConfig ClusterConfig) error {
-	c.log.Debug("Refreshing login token...")
-	c.log.Debug("target: [ %s ]", clusterConfig.Target)
-	c.log.Debug("user: [ %s ]", clusterConfig.User)
-	c.log.Debug("password:[ %s ]", clusterConfig.Password)
-
-	output, err := runCommand(
-		"oc", "login", "--insecure-skip-tls-verify", clusterConfig.Target,
+	return OcLogin(c.log,
+		"--insecure-skip-tls-verify", clusterConfig.Target,
 		"-u", clusterConfig.User,
 		"-p", clusterConfig.Password,
 	)
+}
+
+// TODO(fabianvf): This function is also called from broker/broker.go
+// We should probably move this logic out of the client to a more
+// generic location.
+func OcLogin(log *logging.Logger, args ...string) error {
+	log.Debug("Logging into openshift...")
+	log.Debug(fmt.Sprintf("Using args: ['%s']", strings.Join(args, "', '")))
+
+	fullArgs := append([]string{"login"}, args...)
+
+	output, err := RunCommand("oc", fullArgs...)
 
 	if err != nil {
+		log.Debug(string(output))
 		return err
 	}
 
-	c.log.Debug("No error reported after running oc login. Cmd output:")
-	c.log.Debug(string(output))
+	log.Debug("No error reported after running oc login. Cmd output:")
+	log.Debug(string(output))
 	return nil
 }

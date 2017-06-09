@@ -31,9 +31,3 @@ spec:
               value: "{{dockerhub_user}}"
             - name: DOCKERHUB_ORG
               value: "{{dockerhub_org}}"
-            - name: OPENSHIFT_PASS
-              value: "{{openshift_pass}}"
-            - name: OPENSHIFT_TARGET
-              value: "{{openshift_target}}"
-            - name: OPENSHIFT_USER
-              value: "{{openshift_user}}"
