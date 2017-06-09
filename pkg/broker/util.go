@@ -113,6 +113,7 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required [
 					Required:   required,
 				},
 			},
+			Update: map[string]*schema.Schema{},
 		},
 		ServiceBinding: ServiceBinding{
 			Create: map[string]*schema.Schema{
