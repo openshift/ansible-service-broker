@@ -49,28 +49,6 @@ type ServiceBinding struct {
 	Create map[string]*schema.Schema `json:"create"`
 }
 
-/*
-type InputParameter struct {
-	Parameters *schema.Schema `json:"parameters"`
-}
-*/
-
-/*
-create: has
-  parameters: has
-    properties:
-
-type
-title
-properties:
-	propertyname: {
-		title
-		type
-		length
-		default
-	}
-*/
-
 type CatalogResponse struct {
 	Services []Service `json:"services"`
 }

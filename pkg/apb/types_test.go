@@ -172,6 +172,7 @@ cwo=`
 	ft.AssertEqual(t, len(sitelang.Enum), 0)
 
 	// example of traversing the parameters
+	// comment left on purpose
 	/*
 		for _, pm := range spec.Parameters {
 			for k, pd := range pm {

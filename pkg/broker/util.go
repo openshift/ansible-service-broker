@@ -17,18 +17,7 @@ func ProjectRoot() string {
 	return rootPath
 }
 
-// TODO: This is going to have to be expanded much more to support things like
-// parameters (will need to get passed through as metadata
 func SpecToService(spec *apb.Spec) Service {
-	/*
-
-		parameterDescriptors := make(map[string]interface{})
-		parameterDescriptors["parameters"] = spec.Parameters
-		for k, v := range spec.Metadata {
-			parameterDescriptors[k] = v
-		}
-	*/
-
 	// default plan, used to be in hack.go
 	plans := []Plan{
 		{
@@ -123,12 +112,6 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required [
 
 	return s
 }
-
-/*
-func createSchema(key string, pd *apb.ParameterDescriptor) *schema.Schema {
-	return nil
-}
-*/
 
 func StateToLastOperation(state apb.State) LastOperationState {
 	switch state {
