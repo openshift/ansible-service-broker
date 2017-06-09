@@ -207,6 +207,9 @@ func (c *Client) refreshLoginToken(clusterConfig ClusterConfig) error {
 	)
 }
 
+// TODO(fabianvf): This function is also called from broker/broker.go
+// We should probably move this logic out of the client to a more
+// generic location.
 func OcLogin(log *logging.Logger, args ...string) error {
 	log.Debug("Logging into openshift...")
 	log.Debug(fmt.Sprintf("Using args: ['%s']", strings.Join(args, "', '")))
