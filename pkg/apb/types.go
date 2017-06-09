@@ -33,8 +33,6 @@ type ParameterDescriptor struct {
 	Enum        []string    `json:"enum,omitempty"`
 }
 
-type ParameterEntry map[string][]*ParameterDescriptor
-
 /*
 array of maps with an array of ParameterDescriptors
 */
