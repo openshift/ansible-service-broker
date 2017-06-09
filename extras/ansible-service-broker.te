@@ -1,0 +1,19 @@
+
+module ansible-service-broker 1.0;
+
+require {
+	type unreserved_port_t;
+	type http_port_t;
+	type init_t;
+	class tcp_socket name_connect;
+    #These should go away when need for .kube.config goes away
+	type user_home_t;
+	class file { execute execute_no_trans };
+}
+
+#============= init_t ==============
+allow init_t http_port_t:tcp_socket name_connect;
+allow init_t unreserved_port_t:tcp_socket name_connect;
+
+#This should go away when need for .kube.config goes away
+allow init_t user_home_t:file { execute execute_no_trans };
