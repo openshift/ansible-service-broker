@@ -30,11 +30,35 @@ const SpecParameters = `
 `
 
 var expectedSpecParameters = []map[string]*ParameterDescriptor{
-	map[string]*ParameterDescriptor{"postgresql_database": &ParameterDescriptor{Default: "admin", Type: "string", Title: "PostgreSQL Database Name"}},
-	map[string]*ParameterDescriptor{"postgresql_password": &ParameterDescriptor{Default: "admin", Type: "string", Description: "A random alphanumeric string if left blank", Title: "PostgreSQL Password"}},
-	map[string]*ParameterDescriptor{"postgresql_user": &ParameterDescriptor{Default: "admin", Title: "PostgreSQL User", Type: "string", Maxlength: 63}},
-	map[string]*ParameterDescriptor{"postgresql_version": &ParameterDescriptor{Default: 9.5, Enum: []string{"9.5", "9.4"}, Type: "enum", Title: "PostgreSQL Version"}},
-	map[string]*ParameterDescriptor{"postgresql_email": &ParameterDescriptor{Pattern: "\u201c^\\\\S+@\\\\S+$\u201d", Type: "string", Description: "email address", Title: "email"}},
+	map[string]*ParameterDescriptor{
+		"postgresql_database": &ParameterDescriptor{
+			Default: "admin",
+			Type:    "string",
+			Title:   "PostgreSQL Database Name"}},
+	map[string]*ParameterDescriptor{
+		"postgresql_password": &ParameterDescriptor{
+			Default:     "admin",
+			Type:        "string",
+			Description: "A random alphanumeric string if left blank",
+			Title:       "PostgreSQL Password"}},
+	map[string]*ParameterDescriptor{
+		"postgresql_user": &ParameterDescriptor{
+			Default:   "admin",
+			Title:     "PostgreSQL User",
+			Type:      "string",
+			Maxlength: 63}},
+	map[string]*ParameterDescriptor{
+		"postgresql_version": &ParameterDescriptor{
+			Default: 9.5,
+			Enum:    []string{"9.5", "9.4"},
+			Type:    "enum",
+			Title:   "PostgreSQL Version"}},
+	map[string]*ParameterDescriptor{
+		"postgresql_email": &ParameterDescriptor{
+			Pattern:     "\u201c^\\\\S+@\\\\S+$\u201d",
+			Type:        "string",
+			Description: "email address",
+			Title:       "email"}},
 }
 
 var convertedSpecTags, _ = json.Marshal(SpecTags)

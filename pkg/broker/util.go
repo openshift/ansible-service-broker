@@ -3,6 +3,7 @@ package broker
 import (
 	"os"
 	"path"
+	"regexp"
 
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -55,7 +56,6 @@ func SpecToService(spec *apb.Spec) Service {
 }
 
 func getType(paramType string) schema.PrimitiveTypes {
-	fmt.Println("entered getType")
 	switch paramType {
 	case "string":
 		return []schema.PrimitiveType{schema.StringType}
@@ -78,17 +78,24 @@ func getType(paramType string) schema.PrimitiveTypes {
 func ParametersToSchema(params []map[string]*apb.ParameterDescriptor) Schema {
 	properties := make(map[string]*schema.Schema)
 
+	var patternRegex *regexp.Regexp
+	var err error
+
 	for _, paramMap := range params {
 		for k, pd := range paramMap {
-			fmt.Println("key is %s", k)
-			//regex, _ := regexp.Compile(pd.Pattern)
+			if pd.Pattern != "" {
+				patternRegex, err = regexp.Compile(pd.Pattern)
+				if err != nil {
+					fmt.Println("Invalid pattern: %s", err.Error())
+				}
+			}
 			properties[k] = &schema.Schema{
 				Title:       pd.Title,
 				Description: pd.Description,
 				Default:     pd.Default,
 				MaxLength:   schema.Integer{Val: pd.Maxlength, Initialized: true},
 				Type:        getType(pd.Type),
-				//	Pattern:     regex,
+				Pattern:     patternRegex,
 				//Enum:        pd.Enum, deal with this later
 			}
 		}

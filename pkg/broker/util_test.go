@@ -9,17 +9,17 @@ import (
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
+	"github.com/pborman/uuid"
 )
 
-/*
 func TestSpecToService(t *testing.T) {
-	param := []*apb.ParameterDescriptor{
-		&apb.ParameterDescriptor{
-			Name:        "hostport",
-			Description: "The host TCP port as the external end point",
-			Default:     float64(9001),
-			Type:        "foo",
-			Required:    true}}
+	param := []map[string]*apb.ParameterDescriptor{
+		map[string]*apb.ParameterDescriptor{
+			"hostport": &apb.ParameterDescriptor{
+				Title:       "Host Port",
+				Type:        "int",
+				Description: "The host TCP port as the external end point",
+				Default:     float64(9001)}}}
 
 	spec := apb.Spec{
 		Id:          "50eb5637-6ffe-480d-a52e-a7e603a50fca",
@@ -45,7 +45,6 @@ func TestSpecToService(t *testing.T) {
 	ft.AssertEqual(t, svc.Description, expectedsvc.Description, "description is not equal")
 	ft.AssertEqual(t, svc.Bindable, expectedsvc.Bindable, "bindable wrong")
 }
-*/
 
 func TestParametersToSchema(t *testing.T) {
 	// being lazy, easy way to create a spec with parameters
