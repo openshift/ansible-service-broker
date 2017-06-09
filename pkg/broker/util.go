@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"regexp"
@@ -17,6 +18,8 @@ func ProjectRoot() string {
 	return rootPath
 }
 
+// SpecToService converts an apb Spec into a Service usable by the service
+// catalog.
 func SpecToService(spec *apb.Spec) Service {
 	// default plan, used to be in hack.go
 	plans := []Plan{
@@ -44,6 +47,7 @@ func SpecToService(spec *apb.Spec) Service {
 	return retSvc
 }
 
+// getType transforms an apb parameter type to a JSON Schema type
 func getType(paramType string) schema.PrimitiveTypes {
 	switch paramType {
 	case "string", "enum":
@@ -64,6 +68,7 @@ func getType(paramType string) schema.PrimitiveTypes {
 	return []schema.PrimitiveType{schema.UnspecifiedType}
 }
 
+// ParametersToSchema converts the apb parameters into a JSON Schema format.
 func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required []string) Schema {
 	properties := make(map[string]*schema.Schema)
 
@@ -113,6 +118,7 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required [
 	return s
 }
 
+// StateToLastOperation converts apb State objects into LastOperationStates.
 func StateToLastOperation(state apb.State) LastOperationState {
 	switch state {
 	case apb.StateInProgress:
