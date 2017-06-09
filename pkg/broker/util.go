@@ -96,7 +96,14 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required [
 				MaxLength:   schema.Integer{Val: pd.Maxlength, Initialized: true},
 				Type:        getType(pd.Type),
 				Pattern:     patternRegex,
-				//Enum:        pd.Enum, deal with this later
+			}
+
+			// setup enums
+			if len(pd.Enum) > 0 {
+				properties[k].Enum = make([]interface{}, len(pd.Enum))
+				for i, v := range pd.Enum {
+					properties[k].Enum[i] = v
+				}
 			}
 		}
 	}

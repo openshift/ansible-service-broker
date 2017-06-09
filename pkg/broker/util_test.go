@@ -12,6 +12,25 @@ import (
 	"github.com/pborman/uuid"
 )
 
+func TestEnumIsCopied(t *testing.T) {
+	params := []map[string]*apb.ParameterDescriptor{
+		map[string]*apb.ParameterDescriptor{
+			"email_address": &apb.ParameterDescriptor{
+				Title:       "Email Address",
+				Type:        "enum",
+				Description: "example enum parameter",
+				Enum:        []string{"google@gmail.com", "redhat@redhat.com"},
+				Default:     float64(9001)}}}
+
+	schemaObj := ParametersToSchema(params, []string{})
+
+	emailParam := schemaObj.ServiceInstance.Create["parameters"].Properties["email_address"]
+	ft.AssertEqual(t, len(emailParam.Enum), 2, "enum mismatch")
+	ft.AssertEqual(t, emailParam.Enum[0], "google@gmail.com")
+	ft.AssertEqual(t, emailParam.Enum[1], "redhat@redhat.com")
+
+}
+
 func TestSpecToService(t *testing.T) {
 	param := []map[string]*apb.ParameterDescriptor{
 		map[string]*apb.ParameterDescriptor{
