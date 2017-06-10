@@ -13,4 +13,3 @@ curl \
   -H 'Content-Type: application/json' \
   -v \
   "http://localhost:1338/v2/service_instances/$instanceUUID/last_operation?operation=$operation&service_id=$serviceUUID&plan_id=$planUUID"
-  #"http://cap.example.com:1338/v2/service_instances/$instanceUUID/last_operation?operation=$operation&service_id=$serviceUUID&plan_id=$planUUID"

@@ -19,4 +19,3 @@ curl \
   -d "$req" \
   -v \
   "http://localhost:1338/v2/service_instances/$instanceUUID?accepts_incomplete=true"
-  #http://cap.example.com:1338/v2/service_instances/$instanceUUID
