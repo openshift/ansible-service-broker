@@ -68,3 +68,5 @@ import:
   subpackages:
   - spew
 - package: k8s.io/apimachinery
+- package: github.com/ghodss/yaml
+  version: ^1.0.0

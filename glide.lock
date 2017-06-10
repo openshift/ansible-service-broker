@@ -1,5 +1,5 @@
-hash: 89d00acd05cddf68463ac64bdfb0511be82b906e2aa3e3855c7edd97dfce8884
-updated: 2017-05-18T07:10:44.527708169-04:00
+hash: 9fb582bdb1e6fa2a3d56603f7d184dc1bac46188924b40fb5bcea300ee270a9a
+updated: 2017-06-05T15:07:10.74174955-04:00
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
@@ -61,7 +61,7 @@ imports:
   - storage
   - storageversion
 - name: github.com/coreos/etcd
-  version: 43b75072bfaca5a7c35c718179defbcabd9a0886
+  version: d267ca9c184e953554257d0acdd1dc9c47d38229
   subpackages:
   - client
   - pkg/pathutil
@@ -143,7 +143,7 @@ imports:
 - name: github.com/fsouza/go-dockerclient
   version: 94aeff6a741494ddf6e5e66b2b0881828468b1df
 - name: github.com/ghodss/yaml
-  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+  version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -164,9 +164,9 @@ imports:
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/handlers
-  version: 3a5767ca75ece5f7f1440b1d16975247f8d8b221
+  version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
 - name: github.com/gorilla/mux
-  version: 392c28fe23e1c45ddba891b0320b3b5df220beea
+  version: bcd8bc72b08df0f70df986b97f95590779502d31
 - name: github.com/hashicorp/go-cleanhttp
   version: ad28ea4487f05916463e2423a55166280e8254b5
 - name: github.com/howeyc/gopass
