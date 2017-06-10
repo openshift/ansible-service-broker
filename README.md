@@ -3,7 +3,7 @@
 [![Code Climate](https://codeclimate.com/github/openshift/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/openshift/ansible-service-broker)
 [![Issue Count](https://codeclimate.com/github/openshift/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/openshift/ansible-service-broker)
 
-Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/openshift/ansible-playbook-bundle).  
+Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) that will manage applications defined by [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle).
 
 
 An Ansible Playbook Bundle (APB) is a new method for defining and distributing container applications in OpenShift consisting of a bundle of Ansible Playbooks built into a container with an Ansible runtime.
