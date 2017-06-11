@@ -131,7 +131,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 	recoverStatuses, err := a.dao.FindJobStateByState(apb.StateInProgress)
 	if err != nil {
 		// no jobs or states to recover, this is OK.
-		if strings.HasPrefix(err.Error(), "100") {
+		if client.IsKeyNotFound(err) {
 			a.log.Info("No jobs to recover")
 			return "", nil
 		}
