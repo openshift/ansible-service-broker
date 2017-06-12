@@ -60,7 +60,7 @@ type ProvisionRequest struct {
 	PlanID            uuid.UUID      `json:"plan_id"`
 	ServiceID         uuid.UUID      `json:"service_id"`
 	SpaceID           uuid.UUID      `json:"space_guid"`
-	Context           apb.Context    `json:"context,omitempty"`
+	Context           apb.Context    `json:"context"`
 	Parameters        apb.Parameters `json:"parameters,omitempty"`
 	AcceptsIncomplete bool           `json:"accepts_incomplete,omitempty"`
 }

@@ -233,10 +233,13 @@ func OcLogin(log *logging.Logger, args ...string) error {
 // of apb_metadata and put context and other variables in it so we don't pollute the user
 // parameter space.
 func createExtraVars(context *Context, parameters *Parameters) (string, error) {
-	paramsCopy := *parameters
-	if paramsCopy == nil {
+	var paramsCopy Parameters
+	if parameters != nil && *parameters != nil {
+		paramsCopy = *parameters
+	} else {
 		paramsCopy = make(Parameters)
 	}
+
 	if context != nil {
 		paramsCopy["namespace"] = context.Namespace
 	}
