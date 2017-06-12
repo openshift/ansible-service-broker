@@ -46,6 +46,12 @@ type BrokerConfig struct {
 	OutputRequest   bool `yaml:"output_request"`
 }
 
+type DevBroker interface {
+	AddSpec(spec apb.Spec) (*CatalogResponse, error)
+	RemoveSpec(specID string) error
+	RemoveSpecs() error
+}
+
 // AnsibleBroker - Broker using ansible and images to interact with oc/kubernetes/etcd
 type AnsibleBroker struct {
 	dao           *dao.Dao
@@ -730,4 +736,36 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	}
 	service := SpecToService(&spec)
 	return &CatalogResponse{Services: []Service{service}}, nil
+}
+
+func (a AnsibleBroker) RemoveSpec(specID string) error {
+	spec, err := a.dao.GetSpec(specID)
+	if client.IsKeyNotFound(err) {
+		return ErrorNotFound
+	}
+	if err != nil {
+		a.log.Error("Something went real bad trying to retrieve spec for deletion... - %v", err)
+		return err
+	}
+	err = a.dao.DeleteSpec(spec.Id)
+	if err != nil {
+		a.log.Error("Something went real bad trying to delete spec... - %v", err)
+		return err
+	}
+	return nil
+}
+
+func (a AnsibleBroker) RemoveSpecs() error {
+	dir := "/spec"
+	specs, err := a.dao.BatchGetSpecs(dir)
+	if err != nil {
+		a.log.Error("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
+		return err
+	}
+	err = a.dao.BatchDeleteSpecs(specs)
+	if err != nil {
+		a.log.Error("Something went real bad trying to delete batch specs... - %v", err)
+		return err
+	}
+	return nil
 }

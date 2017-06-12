@@ -69,6 +69,8 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Broker
 
 	if h.brokerConfig.DevBroker {
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
+		h.router.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
+		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
 	return handlers.LoggingHandler(os.Stdout, h)
@@ -306,7 +308,7 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 	//Read Request for an image name
 
 	// create helper method from MockRegistry
-	ansibleBroker, ok := h.broker.(*broker.AnsibleBroker)
+	ansibleBroker, ok := h.broker.(broker.DevBroker)
 	if !ok {
 		h.log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
@@ -333,6 +335,37 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 	}
 	resp, err := ansibleBroker.AddSpec(spec)
 	writeDefaultResponse(w, http.StatusOK, resp, err)
+}
+
+func (h handler) apbRemoveSpec(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	ansibleBroker, ok := h.broker.(broker.DevBroker)
+	if !ok {
+		h.log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
+		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
+		return
+	}
+	specID := params["spec_id"]
+
+	var err error
+	if specID != "" {
+		err = ansibleBroker.RemoveSpec(specID)
+	} else {
+		h.log.Errorf("Unable to find spec id in request")
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "No Spec/service id found."})
+		return
+	}
+	writeDefaultResponse(w, http.StatusNoContent, struct{}{}, err)
+}
+
+func (h handler) apbRemoveSpecs(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	ansibleBroker, ok := h.broker.(broker.DevBroker)
+	if !ok {
+		h.log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
+		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
+		return
+	}
+	err := ansibleBroker.RemoveSpecs()
+	writeDefaultResponse(w, http.StatusNoContent, struct{}{}, err)
 }
 
 //printRequest - will print the request with the body.
