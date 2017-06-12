@@ -133,3 +133,5 @@ spec:
               value: "{{dockerhub_user}}"
             - name: DOCKERHUB_ORG
               value: "{{dockerhub_org}}"
+            - name: DEBUG
+              value: "false"
