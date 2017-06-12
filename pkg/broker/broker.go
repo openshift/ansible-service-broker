@@ -272,7 +272,12 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
-		extCreds, err := apb.Provision(spec, context, parameters, a.clusterConfig, a.log)
+		podName, extCreds, err := apb.Provision(spec, context, parameters, a.clusterConfig, a.log)
+
+		sm := apb.NewServiceAccountManager(a.log)
+		a.log.Info("Destroying APB sandbox...")
+		sm.DestroyApbSandbox(podName, context.Namespace)
+
 		if err != nil {
 			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
@@ -325,7 +330,13 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse
 		a.log.Error("Error from etcd - %#v", err)
 		return nil, err
 	}
-	err = apb.Deprovision(instance, a.log)
+
+	podName, err := apb.Deprovision(instance, a.log)
+
+	sm := apb.NewServiceAccountManager(a.log)
+	a.log.Info("Destroying APB sandbox...")
+	sm.DestroyApbSandbox(podName, instance.Context.Namespace)
+
 	if err == docker.ErrNoSuchImage {
 		a.log.Debug("unable to find service instance - %#v", err)
 		return nil, ErrorNotFound
@@ -439,11 +450,21 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 
 	bindExtCreds := &apb.ExtractedCredentials{Credentials: make(map[string]interface{})}
+	var podName string
 	if a.brokerConfig.LaunchApbOnBind {
-		bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
+		a.log.Info("Broker configured to run APB bind")
+		a.log.Info("Starting APB bind...")
+		podName, bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
+
+		sm := apb.NewServiceAccountManager(a.log)
+		a.log.Info("Destroying APB sandbox...")
+		sm.DestroyApbSandbox(podName, instance.Context.Namespace)
+
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		a.log.Warning("Broker configured to *NOT* launch and run APB bind")
 	}
 
 	// Can't bind to anything if we have nothing to return to the catalog

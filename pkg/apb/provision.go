@@ -15,7 +15,7 @@ import (
 func Provision(
 	spec *Spec, context *Context, parameters *Parameters,
 	clusterConfig ClusterConfig, log *logging.Logger,
-) (*ExtractedCredentials, error) {
+) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
@@ -34,28 +34,56 @@ func Provision(
 		log.Error("No image field found on the apb spec (apb.yaml)")
 		log.Error("apb spec requires [name] and [image] fields to be separate")
 		log.Error("Are you trying to run a legacy ansibleapp without an image field?")
-		return nil, errors.New("No image field found on Spec")
+		return "", nil, errors.New("No image field found on Spec")
+	}
+
+	ns := context.Namespace
+	log.Info("Checking if project %s exists...", ns)
+	if !projectExists(ns) {
+		log.Info("Project %s does NOT exist, creating project...", ns)
+		output, err := createProject(ns)
+		if err != nil {
+			log.Error("Something went wrong creating project %s!", ns)
+			log.Error(err.Error())
+			return "", nil, err
+		} else {
+			log.Info("Successfully created project %s", ns)
+			log.Debug("oc new-project output:")
+			log.Debug(string(output))
+		}
+	} else {
+		log.Info("Project %s already exists!", ns)
 	}
 
 	var client *Client
 	var err error
 
 	if client, err = NewClient(log); err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	if err = client.PullImage(spec.Image); err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
-	output, err := client.RunImage("provision", clusterConfig, spec, context, parameters)
+	podName, err := client.RunImage("provision", clusterConfig, spec, context, parameters)
 
 	if err != nil {
 		log.Error("Problem running image")
-		log.Error(string(output))
+		log.Error(string(podName))
 		log.Error(err.Error())
-		return nil, err
+		return podName, nil, err
 	}
 
-	return extractCredentials(output, log)
+	creds, err := extractCredentials(podName, context.Namespace, log)
+	return podName, creds, err
+}
+
+func projectExists(project string) bool {
+	_, _, code := RunCommandWithExitCode("oc", "get", "project", project)
+	return code == 0
+}
+
+func createProject(project string) ([]byte, error) {
+	return RunCommand("oc", "new-project", project)
 }

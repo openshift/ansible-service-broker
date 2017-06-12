@@ -6,7 +6,7 @@ import (
 	"github.com/op/go-logging"
 )
 
-func Deprovision(instance *ServiceInstance, log *logging.Logger) error {
+func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error) {
 	specJSON, _ := DumpJSON(instance)
 
 	log.Notice("============================================================")
@@ -21,22 +21,22 @@ func Deprovision(instance *ServiceInstance, log *logging.Logger) error {
 	var err error
 
 	if client, err = NewClient(log); err != nil {
-		return err
+		return "", err
 	}
 
 	if err = client.PullImage(instance.Spec.Name); err != nil {
-		return err
+		return "", err
 	}
 
 	// Might need to change up this interface to feed in instance ids
-	output, err := client.RunImage(
+	podName, err := client.RunImage(
 		"deprovision", HardcodedClusterConfig, instance.Spec, instance.Context, instance.Parameters)
 
 	if err != nil {
 		log.Error("Problem running image")
-		return err
+		return podName, err
 	}
 
-	log.Info(string(output))
-	return nil
+	log.Info(string(podName))
+	return podName, nil
 }
