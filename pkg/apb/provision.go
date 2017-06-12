@@ -13,7 +13,7 @@ import (
 // Maybe apb defines its own interface and accepts that optionally
 // Little looser, but still not great
 func Provision(
-	spec *Spec, parameters *Parameters,
+	spec *Spec, context *Context, parameters *Parameters,
 	clusterConfig ClusterConfig, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
 	log.Notice("============================================================")
@@ -48,7 +48,7 @@ func Provision(
 		return nil, err
 	}
 
-	output, err := client.RunImage("provision", clusterConfig, spec, parameters)
+	output, err := client.RunImage("provision", clusterConfig, spec, context, parameters)
 
 	if err != nil {
 		log.Error("Problem running image")

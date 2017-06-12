@@ -30,7 +30,7 @@ func Deprovision(instance *ServiceInstance, log *logging.Logger) error {
 
 	// Might need to change up this interface to feed in instance ids
 	output, err := client.RunImage(
-		"deprovision", HardcodedClusterConfig, instance.Spec, instance.Parameters)
+		"deprovision", HardcodedClusterConfig, instance.Spec, instance.Context, instance.Parameters)
 
 	if err != nil {
 		log.Error("Problem running image")

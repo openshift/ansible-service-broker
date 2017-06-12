@@ -7,6 +7,10 @@ serviceUUID="0aaafc10-132b-41a8-a58c-73268ff1006a"
 req="{
   \"plan_id\": \"$planUUID\",
   \"service_id\": \"$serviceUUID\",
+  \"context\": {
+    \"platform\": \"kubernetes\",
+    \"namespace\": \"mysql-project\"
+  }
   \"parameters\": {
     \"MYSQL_USER\": \"username\"
   }

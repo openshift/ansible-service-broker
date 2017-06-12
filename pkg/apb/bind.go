@@ -31,7 +31,7 @@ func Bind(
 		return nil, err
 	}
 
-	output, err := client.RunImage("bind", clusterConfig, instance.Spec, parameters)
+	output, err := client.RunImage("bind", clusterConfig, instance.Spec, instance.Context, parameters)
 
 	if err != nil {
 		log.Error("Problem running image", err)

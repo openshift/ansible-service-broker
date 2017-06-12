@@ -213,12 +213,14 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		return nil, err
 	}
 
+	context := &req.Context
 	parameters := &req.Parameters
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
 		Id:         instanceUUID,
 		Spec:       spec,
+		Context:    context,
 		Parameters: parameters,
 	}
 
@@ -252,7 +254,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if async {
 		a.log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob(instanceUUID, spec, parameters, a.clusterConfig, a.log)
+		pjob := NewProvisionJob(instanceUUID, spec, context, parameters, a.clusterConfig, a.log)
 
 		token = a.engine.StartNewJob(pjob)
 
@@ -262,7 +264,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
-		extCreds, err := apb.Provision(spec, parameters, a.clusterConfig, a.log)
+		extCreds, err := apb.Provision(spec, context, parameters, a.clusterConfig, a.log)
 		if err != nil {
 			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
