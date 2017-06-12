@@ -24,12 +24,18 @@ type ImageData struct {
 }
 
 type ParameterDescriptor struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
+	Title       string      `json:"title"`
 	Type        string      `json:"type"`
-	Required    bool        `json:"required"`
-	Default     interface{} `json:"default"`
+	Description string      `json:"description,omitempty"`
+	Default     interface{} `json:"default,omitempty"`
+	Maxlength   int         `json:"maxlength,omitempty"`
+	Pattern     string      `json:"pattern,omitempty"`
+	Enum        []string    `json:"enum,omitempty"`
 }
+
+/*
+array of maps with an array of ParameterDescriptors
+*/
 
 type Spec struct {
 	Id          string                 `json:"id"`
@@ -41,8 +47,9 @@ type Spec struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 
 	// required, optional, unsupported
-	Async      string                 `json:"async"`
-	Parameters []*ParameterDescriptor `json:"parameters"`
+	Async      string                            `json:"async"`
+	Parameters []map[string]*ParameterDescriptor `json:"parameters"`
+	Required   []string                          `json:"required,omitempty"`
 }
 
 type ExtractedCredentials struct {
@@ -73,13 +80,18 @@ func specLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("Description: %s", spec.Description)
 	log.Debug("Async: %s", spec.Async)
 
-	for _, param := range spec.Parameters {
+	for _, params := range spec.Parameters {
 		log.Debug("ParameterDescriptor")
-		log.Debug("  Name: %s", param.Name)
-		log.Debug("  Description: %s", param.Description)
-		log.Debug("  Type: %s", param.Type)
-		log.Debug("  Required: %t", param.Required)
-		log.Debug("  Default: %s", param.Name)
+		for k, param := range params {
+			log.Debug("  Name: %#v", k)
+			log.Debug("  Title: %s", param.Title)
+			log.Debug("  Type: %s", param.Type)
+			log.Debug("  Description: %s", param.Description)
+			log.Debug("  Default: %#v", param.Default)
+			log.Debug("  Maxlength: %d", param.Maxlength)
+			log.Debug("  Pattern: %s", param.Pattern)
+			log.Debug("  Enum: %v", param.Enum)
+		}
 	}
 }
 

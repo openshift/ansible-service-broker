@@ -1,6 +1,7 @@
 package broker
 
 import (
+	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
@@ -30,6 +31,25 @@ type Plan struct {
 	Description string                 `json:"description"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	Free        bool                   `json:"free,omitempty"`
+	Bindable    bool                   `json:"bindable,omitempty"`
+	Schemas     Schema                 `json:"schemas,omitempty"`
+}
+
+type Schema struct {
+	ServiceInstance ServiceInstance `json:"service_instance"`
+	ServiceBinding  ServiceBinding  `json:"service_binding"`
+}
+
+// Toyed with the idea of making an InputParameters
+// that was a *schema.Schema
+
+type ServiceInstance struct {
+	Create map[string]*schema.Schema `json:"create"`
+	Update map[string]*schema.Schema `json:"update"`
+}
+
+type ServiceBinding struct {
+	Create map[string]*schema.Schema `json:"create"`
 }
 
 type CatalogResponse struct {
