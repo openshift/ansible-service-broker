@@ -11,12 +11,13 @@ import (
 )
 
 type Config struct {
-	Registry   apb.RegistryConfig
-	Dao        dao.Config
-	Log        LogConfig
-	Openshift  apb.ClusterConfig
-	ConfigFile string
-	DevBroker  bool
+	Registry        apb.RegistryConfig
+	Dao             dao.Config
+	Log             LogConfig
+	Openshift       apb.ClusterConfig
+	ConfigFile      string
+	DevBroker       bool
+	LaunchApbOnBind bool
 }
 
 func CreateConfig(configFile string) (Config, error) {

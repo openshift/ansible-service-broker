@@ -37,11 +37,12 @@ type Broker interface {
 
 // AnsibleBroker - Broker using ansible and images to interact with oc/kubernetes/etcd
 type AnsibleBroker struct {
-	dao           *dao.Dao
-	log           *logging.Logger
-	clusterConfig apb.ClusterConfig
-	registry      apb.Registry
-	engine        *WorkEngine
+	dao            *dao.Dao
+	log            *logging.Logger
+	clusterConfig  apb.ClusterConfig
+	registry       apb.Registry
+	engine         *WorkEngine
+	lauchApbOnBind bool
 }
 
 // NewAnsibleBroker - creates a new ansible broker
@@ -51,14 +52,16 @@ func NewAnsibleBroker(
 	clusterConfig apb.ClusterConfig,
 	registry apb.Registry,
 	engine WorkEngine,
+	lauchApbOnBind bool,
 ) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
-		dao:           dao,
-		log:           log,
-		clusterConfig: clusterConfig,
-		registry:      registry,
-		engine:        &engine,
+		dao:            dao,
+		log:            log,
+		clusterConfig:  clusterConfig,
+		registry:       registry,
+		engine:         &engine,
+		lauchApbOnBind: lauchApbOnBind,
 	}
 
 	// If no openshift target is provided, assume we are running in an openshift
@@ -430,9 +433,12 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		a.log.Debug("%+v", provExtCreds)
 	}
 
-	bindExtCreds, err := apb.Bind(instance, &params, a.clusterConfig, a.log)
-	if err != nil {
-		return nil, err
+	bindExtCreds := &apb.ExtractedCredentials{Credentials: make(map[string]interface{})}
+	if a.lauchApbOnBind {
+		bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Can't bind to anything if we have nothing to return to the catalog
