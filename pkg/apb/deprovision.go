@@ -29,7 +29,7 @@ func Deprovision(instance *ServiceInstance, log *logging.Logger) error {
 	}
 
 	// Might need to change up this interface to feed in instance ids
-	output, err := client.RunImage(
+	podname, err := client.RunImage(
 		"deprovision", HardcodedClusterConfig, instance.Spec, instance.Context, instance.Parameters)
 
 	if err != nil {
@@ -37,6 +37,6 @@ func Deprovision(instance *ServiceInstance, log *logging.Logger) error {
 		return err
 	}
 
-	log.Info(string(output))
+	log.Info(podname)
 	return nil
 }
