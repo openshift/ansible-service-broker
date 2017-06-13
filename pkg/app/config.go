@@ -7,17 +7,17 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 
 type Config struct {
-	Registry        apb.RegistryConfig
-	Dao             dao.Config
-	Log             LogConfig
-	Openshift       apb.ClusterConfig
-	ConfigFile      string
-	DevBroker       bool
-	LaunchApbOnBind bool
+	Registry   apb.RegistryConfig
+	Dao        dao.Config
+	Log        LogConfig
+	Openshift  apb.ClusterConfig
+	ConfigFile string
+	Broker     broker.BrokerConfig
 }
 
 func CreateConfig(configFile string) (Config, error) {

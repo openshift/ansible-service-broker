@@ -121,7 +121,7 @@ func CreateApp() App {
 
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.LaunchApbOnBind,
+		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker,
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
 		app.log.Error(err.Error())
@@ -135,7 +135,7 @@ func (a *App) Start() {
 	a.log.Notice("Ansible Service Broker Started")
 	listeningAddress := "0.0.0.0:1338"
 	a.log.Notice("Listening on http://%s", listeningAddress)
-	err := http.ListenAndServe(":1338", handler.NewHandler(a.broker, a.log.Logger, a.config.DevBroker))
+	err := http.ListenAndServe(":1338", handler.NewHandler(a.broker, a.log.Logger, a.config.Broker.DevBroker))
 	if err != nil {
 		a.log.Error("Failed to start HTTP server")
 		a.log.Error(err.Error())
