@@ -19,6 +19,7 @@ objects:
     selector:
       app: ansible-service-broker
       service: asb
+
 - apiVersion: v1
   kind: Service
   metadata:
@@ -33,6 +34,7 @@ objects:
     selector:
       app: ansible-service-broker
       service: etcd
+
 - apiVersion: v1
   kind: Route
   metadata:
@@ -46,6 +48,18 @@ objects:
       name: asb
     port:
       targetPort: port-1338
+
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: etcd
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+
 - apiVersion: extensions/v1beta1
   kind: Deployment
   metadata:
@@ -73,6 +87,9 @@ objects:
         - image: ${BROKER_IMAGE}
           name: asb
           imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/ansible-service-broker
           ports:
             - containerPort: 1338
               protocol: TCP
@@ -94,6 +111,14 @@ objects:
             value: ${OPENSHIFT_USER}
           resources: {}
           terminationMessagePath: /dev/termination-log
+        volumes:
+          - name: config-volume
+            configMap:
+              name: broker-config
+              items:
+              - key: broker-config
+                path: config.yaml
+
 - apiVersion: extensions/v1beta1
   kind: Deployment
   metadata:
@@ -134,6 +159,42 @@ objects:
           env:
           - name: ETCDCTL_API
             value: "3"
+          volumeMounts:
+            - mountPath: /data
+              name: etcd
+        volumes:
+          - name: etcd
+            persistentVolumeClaim:
+              claimName: etcd
+
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: broker-config
+    namespace: ansible-service-broker
+    labels:
+      app: ansible-service-broker
+  data:
+    broker-config: |
+      registry:
+        name: ${REGISTRY_TYPE}
+        url: ${REGISTRY_URL}
+        user: ${DOCKERHUB_USER}
+        pass: ${DOCKERHUB_PASS}
+        org: ${DOCKERHUB_ORG}
+      dao:
+        etcd_host: etcd
+        etcd_port: 2379
+      log:
+        logfile: /var/log/ansible-service-broker/asb.log
+        stdout: true
+        level: debug
+        color: true
+      openshift:
+        target: ${OPENSHIFT_TARGET}
+        user: ${OPENSHIFT_USER}
+        pass: ${OPENSHIFT_PASS}
+      devbroker: ${DEV_BROKER}
 
 parameters:
 - description: Container Image to use for Ansible Service Broker in format of imagename:tag
@@ -175,3 +236,18 @@ parameters:
   displayname: OpenShift Target URL
   name: OPENSHIFT_TARGET
   value: kubernetes.default
+
+- description: Registry Type
+  displayname: Registry Type
+  name: REGISTRY_TYPE
+  value: dockerhub
+
+- description: Registry URL
+  displayname: Registry URL
+  name: REGISTRY_URL
+  value: docker.io
+
+- description: Include Broker Development Endpoint
+  displayname: Include Broker Development Endpoint
+  name: DEV_BROKER
+  value: "true"
