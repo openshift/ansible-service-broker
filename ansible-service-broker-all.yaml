@@ -21,10 +21,9 @@ metadata:
 
 ---
 apiVersion: v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: asb
-  namespace: ansible-service-broker
 roleRef:
   name: admin
 subjects:
