@@ -193,7 +193,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 				continue
 			}
 
-			pjob := NewProvisionJob(rs.InstanceId, si.Spec, si.Parameters, a.clusterConfig, a.log)
+			pjob := NewProvisionJob(rs.InstanceId, si.Spec, si.Context, si.Parameters, a.clusterConfig, a.log)
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
