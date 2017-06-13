@@ -35,6 +35,11 @@ type Broker interface {
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 }
 
+type BrokerConfig struct {
+	DevBroker       bool
+	LaunchApbOnBind bool
+}
+
 // AnsibleBroker - Broker using ansible and images to interact with oc/kubernetes/etcd
 type AnsibleBroker struct {
 	dao           *dao.Dao
@@ -42,6 +47,7 @@ type AnsibleBroker struct {
 	clusterConfig apb.ClusterConfig
 	registry      apb.Registry
 	engine        *WorkEngine
+	brokerConfig  BrokerConfig
 }
 
 // NewAnsibleBroker - creates a new ansible broker
@@ -51,6 +57,7 @@ func NewAnsibleBroker(
 	clusterConfig apb.ClusterConfig,
 	registry apb.Registry,
 	engine WorkEngine,
+	brokerConfig BrokerConfig,
 ) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
@@ -59,6 +66,7 @@ func NewAnsibleBroker(
 		clusterConfig: clusterConfig,
 		registry:      registry,
 		engine:        &engine,
+		brokerConfig:  brokerConfig,
 	}
 
 	// If no openshift target is provided, assume we are running in an openshift
@@ -430,9 +438,12 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		a.log.Debug("%+v", provExtCreds)
 	}
 
-	bindExtCreds, err := apb.Bind(instance, &params, a.clusterConfig, a.log)
-	if err != nil {
-		return nil, err
+	bindExtCreds := &apb.ExtractedCredentials{Credentials: make(map[string]interface{})}
+	if a.brokerConfig.LaunchApbOnBind {
+		bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Can't bind to anything if we have nothing to return to the catalog
