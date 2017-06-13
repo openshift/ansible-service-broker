@@ -119,10 +119,24 @@ func NewSpecManifest(specs []*Spec) SpecManifest {
 }
 
 type ServiceInstance struct {
-	Id         uuid.UUID   `json:"id"`
-	Spec       *Spec       `json:"spec"`
-	Context    *Context    `json:"context"`
-	Parameters *Parameters `json:"parameters"`
+	Id         uuid.UUID       `json:"id"`
+	Spec       *Spec           `json:"spec"`
+	Context    *Context        `json:"context"`
+	Parameters *Parameters     `json:"parameters"`
+	BindingIds map[string]bool `json:"binding_ids"`
+}
+
+func (si *ServiceInstance) AddBinding(bindingUUID uuid.UUID) {
+	if si.BindingIds == nil {
+		si.BindingIds = make(map[string]bool)
+	}
+	si.BindingIds[bindingUUID.String()] = true
+}
+
+func (si *ServiceInstance) RemoveBinding(bindingUUID uuid.UUID) {
+	if si.BindingIds != nil {
+		delete(si.BindingIds, bindingUUID.String())
+	}
 }
 
 type BindInstance struct {

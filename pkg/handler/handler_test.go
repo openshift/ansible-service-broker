@@ -51,7 +51,7 @@ func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest) (*broker.UpdateResp
 	m.called("update", true)
 	return nil, m.Err
 }
-func (m MockBroker) Deprovision(uuid.UUID) (*broker.DeprovisionResponse, error) {
+func (m MockBroker) Deprovision(uuid.UUID, bool) (*broker.DeprovisionResponse, error) {
 	m.called("deprovision", true)
 	return nil, m.Err
 }
@@ -59,9 +59,9 @@ func (m MockBroker) Bind(uuid.UUID, uuid.UUID, *broker.BindRequest) (*broker.Bin
 	m.called("bind", true)
 	return nil, m.Err
 }
-func (m MockBroker) Unbind(uuid.UUID, uuid.UUID) error {
+func (m MockBroker) Unbind(uuid.UUID, uuid.UUID) (*broker.UnbindResponse, error) {
 	m.called("unbind", true)
-	return m.Err
+	return nil, m.Err
 }
 func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*broker.LastOperationResponse, error) {
 	state := broker.LastOperationStateInProgress

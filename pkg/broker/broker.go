@@ -21,6 +21,8 @@ var (
 	ErrorDuplicate = errors.New("duplicate instance")
 	// ErrorNotFound  - Error for when a service instance is not found. (either etcd or kubernetes)
 	ErrorNotFound = errors.New("not found")
+	// ErrorBindingExists - Error for when deprovision is called on a service instance with active bindings
+	ErrorBindingExists = errors.New("binding exists")
 )
 
 // Broker - A broker is used to to compelete all the tasks that a broker must be able to do.
@@ -29,9 +31,9 @@ type Broker interface {
 	Catalog() (*CatalogResponse, error)
 	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest) (*UpdateResponse, error)
-	Deprovision(uuid.UUID) (*DeprovisionResponse, error)
+	Deprovision(uuid.UUID, bool) (*DeprovisionResponse, error)
 	Bind(uuid.UUID, uuid.UUID, *BindRequest) (*BindResponse, error)
-	Unbind(uuid.UUID, uuid.UUID) error
+	Unbind(uuid.UUID, uuid.UUID) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 }
 
@@ -81,6 +83,19 @@ func NewAnsibleBroker(
 	return broker, nil
 }
 
+func (a AnsibleBroker) getServiceInstance(instanceUUID uuid.UUID) (*apb.ServiceInstance, error) {
+	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
+	if err != nil {
+		if client.IsKeyNotFound(err) {
+			a.log.Errorf("Could not find a service instance in dao - %v", err)
+			return nil, ErrorNotFound
+		}
+		a.log.Error("Couldn't find a service instance: ", err)
+		return nil, err
+	}
+	return instance, nil
+
+}
 func (a AnsibleBroker) Login() error {
 	a.log.Debug("Retrieving serviceaccount token")
 	token, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
@@ -262,7 +277,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if async {
 		a.log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob(instanceUUID, spec, context, parameters, a.clusterConfig, a.log)
+		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
 
 		token = a.engine.StartNewJob(pjob)
 
@@ -272,12 +287,11 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
-		podName, extCreds, err := apb.Provision(spec, context, parameters, a.clusterConfig, a.log)
+		podName, extCreds, err := apb.Provision(serviceInstance, a.clusterConfig, a.log)
 
 		sm := apb.NewServiceAccountManager(a.log)
 		a.log.Info("Destroying APB sandbox...")
 		sm.DestroyApbSandbox(podName, context.Namespace)
-
 		if err != nil {
 			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
@@ -295,14 +309,14 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		}
 	}
 
-	// TODO: What data needs to be sent back on a respone?
+	// TODO: What data needs to be sent back on a response?
 	// Not clear what dashboardURL means in an AnsibleApp context
 	// operation should be the task id from the work_engine
 	return &ProvisionResponse{Operation: token}, nil
 }
 
 // Deprovision - will deprovision a service.
-func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse, error) {
+func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*DeprovisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	// Deprovision flow
 	// -> Lookup bindings by instance ID; 400 if any are active, related issue:
@@ -310,52 +324,81 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID) (*DeprovisionResponse
 	// -> Atomic deprovision and removal of service entry in etcd?
 	//    * broker::Deprovision
 	//    Arguments for this? What data do apbs require to deprovision?
+	//    * namespace
 	//    Maybe just hand off a serialized ServiceInstance and let the apb
 	//    decide what's important?
+	//    * delete credentials from etcd
 	//    * if noerror: delete serviceInstance entry with Dao
-	////////////////////////////////////////////////////////////
-	instanceID := instanceUUID.String()
-
-	if err := a.validateDeprovision(instanceID); err != nil {
-		return nil, err
-	}
-	instance, err := a.dao.GetServiceInstance(instanceID)
-	/// Handle case where service is not found in etcd
-	if client.IsKeyNotFound(err) {
-		a.log.Debug("unable to find service instance - %#v", err)
-		return nil, ErrorNotFound
-	}
-	// bubble up  error
+	instance, err := a.getServiceInstance(instanceUUID)
 	if err != nil {
-		a.log.Error("Error from etcd - %#v", err)
 		return nil, err
 	}
 
-	podName, err := apb.Deprovision(instance, a.log)
+	if err := a.validateDeprovision(instance); err != nil {
+		return nil, err
+	}
 
-	sm := apb.NewServiceAccountManager(a.log)
-	a.log.Info("Destroying APB sandbox...")
+	var token string
+
+	if async {
+		a.log.Info("ASYNC deprovision in progress")
+		// asynchronously provision and return the token for the lastoperation
+		dpjob := NewDeprovisionJob(instance, a.clusterConfig, a.dao, a.log)
+
+		token = a.engine.StartNewJob(dpjob)
+
+		// HACK: there might be a delay between the first time the state in etcd
+		// is set and the job was already started. But I need the token.
+		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
+		return &DeprovisionResponse{Operation: token}, nil
+	} else {
+		// TODO: do we want to do synchronous deprovisioning?
+		a.log.Info("Synchronous deprovision in progress")
+		podName, err := apb.Deprovision(instance, a.clusterConfig, a.log)
+		err = cleanupDeprovision(err, podName, instance, a.dao, a.log)
+		if err != nil {
+			return nil, err
+		}
+		return &DeprovisionResponse{}, nil
+	}
+}
+
+func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance, dao *dao.Dao, log *logging.Logger) error {
+	instanceID := instance.Id.String()
+	sm := apb.NewServiceAccountManager(log)
+	log.Info("Destroying APB sandbox...")
 	sm.DestroyApbSandbox(podName, instance.Context.Namespace)
 
 	if err == docker.ErrNoSuchImage {
-		a.log.Debug("unable to find service instance - %#v", err)
-		return nil, ErrorNotFound
+		log.Debug("unable to find service instance - %#v", err)
+		return ErrorNotFound
 	}
 	// bubble up error.
 	if err != nil {
-		a.log.Error("error from deprovision - %#v", err)
-		return nil, err
+		log.Error("error from deprovision - %#v", err)
+		return err
 	}
 
-	a.dao.DeleteServiceInstance(instanceID)
+	if err := dao.DeleteExtractedCredentials(instanceID); err != nil {
+		log.Error("ERROR - failed to delete extracted credentials - %#v", err)
+	}
 
-	return &DeprovisionResponse{Operation: "successful"}, nil
+	if err := dao.DeleteServiceInstance(instanceID); err != nil {
+		log.Error("ERROR - failed to delete service instance - %#v", err)
+		return err
+	}
+	return nil
+
 }
 
-func (a AnsibleBroker) validateDeprovision(id string) error {
-	// TODO: Check if there are outstanding bindings; return typed errors indicating
-	// *why* things can't be deprovisioned
-	a.log.Debug(fmt.Sprintf("AnsibleBroker::validateDeprovision -> [ %s ]", id))
+func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error {
+	// -> Lookup bindings by instance ID; 400 if any are active, related issue:
+	//    https://github.com/openservicebrokerapi/servicebroker/issues/127
+	if len(instance.BindingIds) > 0 {
+		a.log.Debugf("Found bindings with ids: %v", instance.BindingIds)
+		return ErrorBindingExists
+	}
+	// TODO WHAT TO DO IF ASYNC BIND/PROVISION IN PROGRESS
 	return nil
 }
 
@@ -366,13 +409,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 	// See if the service instance still exists, if not send back a badrequest.
 
-	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
+	instance, err := a.getServiceInstance(instanceUUID)
 	if err != nil {
-		if client.IsKeyNotFound(err) {
-			a.log.Errorf("Could not find a service instance in dao - %v", err)
-			return nil, ErrorNotFound
-		}
-		a.log.Error("Couldn't find a service instance: ", err)
 		return nil, err
 	}
 
@@ -469,7 +507,10 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	} else {
 		a.log.Warning("Broker configured to *NOT* launch and run APB bind")
 	}
-
+	instance.AddBinding(bindingUUID)
+	if err := a.dao.SetServiceInstance(instanceUUID.String(), instance); err != nil {
+		return nil, err
+	}
 	// Can't bind to anything if we have nothing to return to the catalog
 	if provExtCreds == nil && bindExtCreds == nil {
 		a.log.Error("No extracted credentials found from provision or bind")
@@ -491,9 +532,34 @@ func mergeCredentials(
 	return provExtCreds.Credentials
 }
 
-// Unbind - unbind a services previous binding NOTE: not implemented.
-func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) error {
-	return notImplemented
+// Unbind - unbind a services previous binding
+func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) (*UnbindResponse, error) {
+	if _, err := a.dao.GetBindInstance(bindingUUID.String()); err != nil {
+		return nil, ErrorNotFound
+	}
+
+	serviceInstance, err := a.getServiceInstance(instanceUUID)
+	if err != nil {
+		a.log.Debugf("Service instance with id %s does not exist", instanceUUID.String())
+	}
+
+	err = apb.Unbind(serviceInstance, a.clusterConfig, a.log)
+	if err != nil {
+		return nil, err
+	}
+
+	err = a.dao.DeleteBindInstance(bindingUUID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	serviceInstance.RemoveBinding(bindingUUID)
+	err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UnbindResponse{}, nil
 }
 
 // Update - update a service NOTE: not implemented

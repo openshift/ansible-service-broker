@@ -164,14 +164,25 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
 		return
 	}
+	var async bool
+	queryparams := r.URL.Query()
+	if val, ok := queryparams["accepts_incomplete"]; ok {
+		// ignore the error, if async can't be parsed it will be false
+		async, _ = strconv.ParseBool(val[0])
+	}
 
-	resp, err := h.broker.Deprovision(instanceUUID)
+	resp, err := h.broker.Deprovision(instanceUUID, async)
 
 	if err != nil {
 		h.log.Debug("err for deprovision - %#v", err)
 	}
-	if err == broker.ErrorNotFound {
+
+	switch err {
+	case broker.ErrorNotFound:
 		writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
+		return
+	case broker.ErrorBindingExists:
+		writeResponse(w, http.StatusBadRequest, broker.DeprovisionResponse{})
 		return
 	}
 
@@ -234,12 +245,12 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
-	err := h.broker.Unbind(instanceUUID, bindingUUID)
+	resp, err := h.broker.Unbind(instanceUUID, bindingUUID)
 
 	if errors.IsNotFound(err) {
-		writeResponse(w, http.StatusGone, struct{}{})
+		writeResponse(w, http.StatusGone, resp)
 	} else {
-		writeDefaultResponse(w, http.StatusOK, struct{}{}, err)
+		writeDefaultResponse(w, http.StatusOK, resp, err)
 	}
 	return
 }
