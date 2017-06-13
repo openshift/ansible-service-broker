@@ -191,10 +191,8 @@ install -p -m 755 build/%{name} %{buildroot}%{_bindir}/%{name}
 sed -i 's,/usr/local/%{name}/bin,/usr/libexec/%{name},g' %{buildroot}%{_bindir}/%{name}
 install -d -p %{buildroot}%{_docdir}/%{name}
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
-install -p -m 755 etc/ex.dev.config.yaml %{buildroot}%{_docdir}/%{name}/ex.dev.config.yaml
-install -p -m 755 etc/ex.dockerimg.config.yaml %{buildroot}%{_docdir}/%{name}/ex.dockerimg.config.yaml
-install -p -m 755 etc/ex.prod.config.yaml %{buildroot}%{_docdir}/%{name}/ex.prod.config.yaml
-install -p -m 644 build/config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
+install -p -m 755 etc/example-broker-config.yaml %{buildroot}%{_docdir}/%{name}/example-broker-config.yaml
+install -p -m 644 build/broker-config.yaml %{buildroot}%{_sysconfdir}/%{name}/broker-config.yaml
 install -d -p %{buildroot}%{_libexecdir}/%{name}
 cp -r scripts/* %{buildroot}%{_libexecdir}/%{name}
 install -d -p %{buildroot}%{_unitdir}

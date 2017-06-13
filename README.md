@@ -64,12 +64,12 @@ make vendor
 ```
 
 **Config**
+A broker is configured via the `broker-config.yaml` file. It's recommended to
+copy over `etc/example-broker-config.yaml` to `etc/broker-config.yaml`, and edit
+as desired.
 
-A broker is configured via a `config.yaml` file. Example files can be
-found under `etc/`. It's recommended to simply copy over `etc/ex.dev.config.yaml`
-to `etc/config.yaml`, and edit as desired. 
-
-
+See the [Broker Configuration](docs/broker-config.md) doc for other example
+configurations.
 
 ## Targets
 ### Broker Targets
@@ -98,6 +98,14 @@ to `etc/config.yaml`, and edit as desired.
 
 ### Misc Targets
 * `make clean`: Delete binaries built from source
+=======
+* `make run`: Runs the broker with the default profile, configured via `/etc/broker-config.yaml`
+* `make install`: Builds the source and installs in `$GOPATH/bin`
+* `make run-mock-registry`: Mock registry. Entirely separate binary.
+* `make test`: Runs the test suite.
+* `make vendor`: Updates the dependencies
+* `make build`: Builds a docker container of the current source
+>>>>>>> Move to using only a single config file
 * `make deploy`: Deploys the currently build container into your cluster
 * `make test`: Runs the test suite.
 
