@@ -36,6 +36,23 @@ objects:
       service: etcd
 
 - apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: asb
+    namespace: ansible-service-broker
+
+- apiVersion: v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: asb
+  roleRef:
+    name: admin
+  subjects:
+  - kind: ServiceAccount
+    name: asb
+    namespace: ansible-service-broker
+
+- apiVersion: v1
   kind: Route
   metadata:
     name: asb-1338
@@ -83,6 +100,7 @@ objects:
           app: ansible-service-broker
           service: asb
       spec:
+        serviceAccount: asb
         containers:
         - image: ${BROKER_IMAGE}
           name: asb
