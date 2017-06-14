@@ -20,14 +20,26 @@ deploy:
 run-mock-registry: ${GOPATH}/bin/mock-registry vendor
 	@${GOPATH}/src/github.com/openshift/ansible-service-broker/cmd/mock-registry/run.sh
 
-prepare-build: install
+prepare-build-image: install
 	cp "${GOPATH}"/bin/broker build/broker
 
-build: prepare-build
-	docker build ${BUILD_DIR} -t ${BROKER_IMAGE}:${TAG}
+build-image: prepare-build-image
+	docker build -f ${BUILD_DIR}/Dockerfile-src ${BUILD_DIR} -t ${BROKER_IMAGE}:${TAG}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
 	@echo "    docker push ${BROKER_IMAGE}:${TAG}"
+
+release-image:
+	docker build ${BUILD_DIR} -t ${BROKER_IMAGE}:${TAG}
+	@echo
+	@echo "Remember you need to push your image before calling make deploy"
+	@echo "    make push"
+
+push:
+	docker push ${BROKER_IMAGE}:${TAG}
+
+#Use release instead of release-image. We may add push to this later.
+release: release-image
 
 clean:
 	@rm -f ${GOPATH}/bin/broker
@@ -39,4 +51,4 @@ vendor:
 test: vendor
 	go test ./pkg/...
 
-.PHONY: run run-mock-registry clean test build asb-image install prepare-build
+.PHONY: build run run-mock-registry clean test build asb-image install prepare-build-image build-image release-image push release

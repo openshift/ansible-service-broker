@@ -78,7 +78,9 @@ or the configuration file can be specified by cli args as well.
 * `make run-mock-registry`: Mock registry. Entirely separate binary.
 * `make test`: Runs the test suite.
 * `make vendor`: Updates the dependencies
-* `make build`: Builds a docker container of the current source
+* `make build-image`: Builds a docker container of the current source
+* `make release` Builds a docker container using the latest rpm from [Copr](https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker/)
+* `make push` Push the built image
 * `make deploy`: Deploys the currently build container into your cluster
 
 **Note**
