@@ -9,3 +9,4 @@
   * [Data Transmission](bind-data-transmission.md)
   * [Use Cases](usecases.md)
 * [Pagination](pagination.md)
+* [Deployment](deployment.md)

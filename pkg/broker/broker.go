@@ -449,6 +449,9 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		a.log.Debug("%+v", provExtCreds)
 	}
 
+	// NOTE: We are currently disabling running an APB on bind via 'LaunchApbOnBind'
+	// of the broker config, due to lack of async support of bind in Open Service Broker API
+	// Currently, the 'launchapbonbind' is set to false in the 'broker-config' ConfigMap
 	bindExtCreds := &apb.ExtractedCredentials{Credentials: make(map[string]interface{})}
 	var podName string
 	if a.brokerConfig.LaunchApbOnBind {
