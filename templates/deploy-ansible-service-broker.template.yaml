@@ -206,8 +206,9 @@ objects:
         color: true
       openshift: {}
       broker:
-        devbroker: ${DEV_BROKER}
-        launchapbonbind: false
+        dev_broker: ${DEV_BROKER}
+        launch_apb_on_bind: false
+        output_request: ${OUTPUT_REQUEST}
 
 parameters:
 - description: Container Image to use for Ansible Service Broker in format of imagename:tag
@@ -268,4 +269,9 @@ parameters:
 - description: Include Broker Development Endpoint
   displayname: Include Broker Development Endpoint
   name: DEV_BROKER
+  value: "true"
+
+- description: Output broker requests to log 
+  displayname: Output broker requests to log 
+  name: OUTPUT_REQUEST
   value: "true"
