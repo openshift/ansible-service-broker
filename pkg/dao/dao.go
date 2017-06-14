@@ -66,7 +66,6 @@ func etcdEndpoint(host string, port string) string {
 
 // SetRaw - Allows the setting of the value json string to the key in the kvp API.
 func (d *Dao) SetRaw(key string, val string) error {
-	d.log.Debug(fmt.Sprintf("Dao::SetRaw [ %s ] -> [ %s ]", key, val))
 	_, err := d.kapi.Set(context.Background(), key, val /*opts*/, nil)
 	return err
 }
@@ -107,7 +106,6 @@ func (d *Dao) GetRaw(key string) (string, error) {
 	}
 
 	val := res.Node.Value
-	d.log.Debug(fmt.Sprintf("Dao::GetRaw [ %s ] -> [ %s ]", key, val))
 	return val, nil
 }
 
