@@ -25,7 +25,6 @@ _testmain.go
 *.prof
 
 # asb files
-vendor/*
 gosrc
 etc/dev.config.yaml
 etc/prod.config.yaml
