@@ -48,14 +48,14 @@ func Provision(
 		return nil, err
 	}
 
-	output, err := client.RunImage("provision", clusterConfig, spec, context, parameters)
+	podname, err := client.RunImage("provision", clusterConfig, spec, context, parameters)
 
 	if err != nil {
 		log.Error("Problem running image")
-		log.Error(string(output))
+		log.Error(string(podname))
 		log.Error(err.Error())
 		return nil, err
 	}
 
-	return extractCredentials(output, log)
+	return extractCredentials(podname, log)
 }

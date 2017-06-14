@@ -31,12 +31,12 @@ func Bind(
 		return nil, err
 	}
 
-	output, err := client.RunImage("bind", clusterConfig, instance.Spec, instance.Context, parameters)
+	podname, err := client.RunImage("bind", clusterConfig, instance.Spec, instance.Context, parameters)
 
 	if err != nil {
 		log.Error("Problem running image", err)
 		return nil, err
 	}
 
-	return extractCredentials(output, log)
+	return extractCredentials(podname, log)
 }
