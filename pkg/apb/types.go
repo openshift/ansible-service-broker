@@ -73,6 +73,10 @@ const (
 	StateInProgress State = "in progress"
 	StateSucceeded  State = "succeeded"
 	StateFailed     State = "failed"
+
+	// NOTE: Applied to APB ServiceAccount via RoleBinding, not ClusterRoleBinding
+	// cluster-admin scoped to the project the apb is operating in
+	ApbRole = "cluster-admin"
 )
 
 func specLogDump(spec *Spec, log *logging.Logger) {

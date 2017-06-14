@@ -26,7 +26,6 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 ) (string, error) {
 	svcAccountName := apbId
 	roleBindingName := apbId
-	apbRole := "cluster-admin"
 
 	svcAcctM := map[string]interface{}{
 		"apiVersion": "v1",
@@ -52,7 +51,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 			},
 		},
 		"roleRef": map[string]string{
-			"name": apbRole,
+			"name": ApbRole,
 		},
 	}
 
@@ -88,12 +87,15 @@ func (s *ServiceAccountManager) createResources(rFilePath string, namespace stri
 }
 
 func (s *ServiceAccountManager) writeResourceFile(
-	apbId string,
+	handle string,
 	svcAcctM *map[string]interface{},
 	roleBindingM *map[string]interface{},
 ) (string, error) {
 	// Create file if doesn't already exist
-	filePath := s.createFile(apbId)
+	filePath, err := s.createFile(handle)
+	if err != nil {
+		return "", err // Bubble, error logged in createFile
+	}
 
 	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
 	defer file.Close()
@@ -134,20 +136,26 @@ func (s *ServiceAccountManager) createResourceDir() {
 	}
 }
 
-func (s *ServiceAccountManager) createFile(apbId string) string {
-	rFilePath := filepath.Join(resourceDir(), apbId+".yaml")
+func (s *ServiceAccountManager) createFile(handle string) (string, error) {
+	rFilePath := filePathFromHandle(handle)
 	s.log.Debug("Creating resource file %s", rFilePath)
-	var _, err = os.Stat(rFilePath)
 
-	if os.IsNotExist(err) {
-		var file, err = os.Create(rFilePath)
+	if _, err := os.Stat(rFilePath); os.IsNotExist(err) {
+		// Valid behavior if the file does not exist, create
+		file, err := os.Create(rFilePath)
+		// Handle file creation error
 		if err != nil {
-			s.log.Error("Something went wrong touching resource file!")
+			s.log.Error("Something went wrong touching new resource file!")
 			s.log.Error(err.Error())
+			return "", err
 		}
 		defer file.Close()
+	} else if err != nil {
+		// Bubble any non-expected errors
+		return "", err
 	}
-	return rFilePath
+
+	return rFilePath, nil
 }
 
 func (s *ServiceAccountManager) DestroyApbSandbox(
@@ -189,9 +197,18 @@ func (s *ServiceAccountManager) DestroyApbSandbox(
 	s.log.Debug("oc delete output:")
 	s.log.Debug(string(output))
 
+	// If file doesn't exist, ignore
+	// "If there is an error, it will be of type *PathError"
+	// We don't care, because it's gone
+	os.Remove(filePathFromHandle(handle))
+
 	return nil
 }
 
 func resourceDir() string {
 	return filepath.FromSlash("/tmp/asb-resource-files")
+}
+
+func filePathFromHandle(handle string) string {
+	return filepath.Join(resourceDir(), handle+".yaml")
 }

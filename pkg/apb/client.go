@@ -2,6 +2,7 @@ package apb
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -147,11 +148,16 @@ func (c *Client) RunImage(
 	c.log.Debug("action:[ %s ]", action)
 	c.log.Debug("extra-vars:[ %s ]", extraVars)
 
-	// TODO(rhallisey): Cleanup the local vs incluster code paths so there
-	// is almost no variation between the two.
-	//
-	// If we're using a locally running broker we want to use the default
-	// namespace.
+	// It's a critical error if a Namespace is not provided to the
+	// broker because its required to know where to execute the pods and
+	// sandbox them based on that Namespace. Should fail fast and loud,
+	// with controlled error handling.
+	if context.Namespace == "" {
+		errStr := "Namespace not found within request context. Cannot perform requested " + action
+		c.log.Error(errStr)
+		return "", errors.New(errStr)
+	}
+
 	ns := context.Namespace
 	apbId := fmt.Sprintf("apb-%s", uuid.New())
 
@@ -163,7 +169,9 @@ func (c *Client) RunImage(
 		return apbId, err
 	}
 
-	//TODO(rhallisey): The Kubernetes API objects should be in JSON structs
+	// TODO(rhallisey): Cleanup the local vs incluster code paths so there
+	// is almost no variation between the two.
+	// TODO(rhallisey): The Kubernetes API objects should be in JSON structs
 	// so it's easier to manipulate them. This is for a rebase so we don't
 	// block the service account work.  I'll come back after and clean this
 	// up.
@@ -191,9 +199,6 @@ func (c *Client) RunImage(
 			},
 		}
 	} else {
-		// Set the namespace to default for the local broker.
-		ns = "default"
-
 		pod = &v1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("apb-%s", uuid.New()),
