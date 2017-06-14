@@ -7,13 +7,21 @@ An [OpenServiceBroker](https://github.com/openservicebrokerapi/servicebroker) (O
 > Service brokers are expected to have successfully provisioned all the instances
 > and bindings ServiceCatalog knows about, and none that it doesn't.
 
+## Index
+  * [Overview](#overview)
+  * [Definitions](#definitions)
+  * [Guiding principles](#guiding-principles)
+  * [Flow](#flow)
+  * [Registry Adapter](#registry-adapter)
+
+## Overview
 ---
 
 ![Design](images/design.png)
 
 ---
 
-### Definitions
+## Definitions
 
 * **Ansible Playbook Bundle (APB)**: Containerized application implementing APB spec (forthcoming)
 to be deployed and managed via the Service Broker.
@@ -31,7 +39,7 @@ Registry API (forthcoming). Requirements:
 * **Ansible Playbook Bundle Spec File**: Metadata file packaged within an APB containing required set of
 attributes to make it available via the Service Catalog.
 
-### Guiding principles
+## Guiding principles
 
 * Delegate specifics to APBs when appropriate. APBs define what
 `bind` or `provision` mean in the context of their domain.
@@ -39,9 +47,9 @@ attributes to make it available via the Service Catalog.
 * Shared behavior between apps should be pushed into AA execution environment,
 or the ServiceBroker.
 
-### Flow
+## Flow
 
-**Pre-broker install**
+### Pre-broker install
 
 It's possible to have registries containing ~15k APBs. On ASB's installation,
 `/catalog` will be called by the Service Catalog, and the ASB needs to respond with
@@ -52,7 +60,7 @@ Therefore, ASB needs to be bootstrapped so APB spec files can be downloaded and 
 `POST /bootstrap` loads apps from registry into local store.
 
 
-**Install/Catalog**
+### Install/Catalog
 
 ASB pulls inventory of spec files from local store, converts to Service, sends to Service Catalog
 
@@ -62,7 +70,7 @@ schema is passed to the Service Catalog via the `/catalog` response as metadata.
 Purpose of this is to inform Catalog Clients of the configuration parameters that
 can be set by a user at provision time.
 
-**Provision**
+### Provision
 
 User provides parameter configuration, which is passed back to the ASB by
 the Service Catalog in the form of `parameters` during a provision call.
@@ -79,7 +87,7 @@ data is required, then tells the relevant AA to `provision` itself with the
 user provided parameters given to the ASB via the provision request. AA is responsible
 for actually instantiating itself and defining what it means to be `provisioned`.
 
-**Deprovision**
+### Deprovision
 
 delete == `DELETE /v2/service_instances/:instance_id`
 
@@ -89,7 +97,7 @@ parameters as to how that was originally provisioned, and run the AA `deprovisio
 action with some amount of parameters as arguments. AA is responsible for taking
 itself down.
 
-### Registry Adapter
+## Registry Adapter
 
 To enable bootstrapping and APB discoverability, the ASB is designed to
 query a registry for available APBs via a Registry Adapter. This is an
@@ -100,7 +108,7 @@ A registry is instantiated as part of the applicaton's initialization process.
 The specific registry adapter used is configured via the broker
 [configuration file](../etc/ex.dev.config.yaml) under the name field.
 
-#### DockerHubRegistry Adapter
+### DockerHubRegistry Adapter
 
 The `DockerHubRegistry` (name: dockerhub) is a useful adapter that enables
 a broker to be bootstrapped from the Docker Hub registry via the standard
