@@ -29,8 +29,12 @@ gosrc
 etc/dev.config.yaml
 etc/prod.config.yaml
 etc/mock.config.yaml
-build/broker
 templates/broker-deployment.yaml
+
+#Compiled binaries
+broker
+mock-registry
+build/broker
 
 # python artifacts
 .python-version
