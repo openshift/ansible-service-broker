@@ -46,7 +46,7 @@ objects:
   metadata:
     name: asb
   roleRef:
-    name: admin
+    name: cluster-admin
   subjects:
   - kind: ServiceAccount
     name: asb
@@ -122,14 +122,8 @@ objects:
             value: ${DOCKERHUB_USER}
           - name: DOCKERHUB_ORG
             value: ${DOCKERHUB_ORG}
-          - name: OPENSHIFT_PASS
-            value: ${OPENSHIFT_PASS}
-          - name: OPENSHIFT_TARGET
-            value: ${OPENSHIFT_TARGET}
-          - name: OPENSHIFT_USER
-            value: ${OPENSHIFT_USER}
           resources: {}
-          terminationMessagePath: /dev/termination-log
+          terminationMessagePath: /tmp/termination-log
         volumes:
           - name: config-volume
             configMap:
@@ -163,12 +157,13 @@ objects:
           service: etcd
       spec:
         containers:
-        - image: ansibleapp/ansible-service-broker-etcd:latest
+        - image: ${ETCD_IMAGE}
           name: etcd
           imagePullPolicy: IfNotPresent
+          terminationMessagePath: /tmp/termination-log
           workingDir: /etcd
           args:
-            - ./etcd
+            - /usr/local/bin/etcd
             - --data-dir=/data
             - --listen-client-urls=http://0.0.0.0:2379
             - --advertise-client-urls=http://0.0.0.0:2379
@@ -209,10 +204,7 @@ objects:
         stdout: true
         level: debug
         color: true
-      openshift:
-        target: ${OPENSHIFT_TARGET}
-        user: ${OPENSHIFT_USER}
-        pass: ${OPENSHIFT_PASS}
+      openshift: {}
       broker:
         devbroker: ${DEV_BROKER}
         launchapbonbind: false
@@ -222,6 +214,11 @@ parameters:
   displayname: Ansible Service Broker Image
   name: BROKER_IMAGE
   value: ansible-service-broker:latest
+
+- description: Container Image to use for etcd in format of imagename:tag
+  displayname: etcd Image
+  name: ETCD_IMAGE
+  value: quay.io/coreos/etcd:latest
 
 - description: Configuration filepath for Ansible Service Broker
   displayname: Ansible Service Broker Configuration File
