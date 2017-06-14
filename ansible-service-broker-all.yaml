@@ -25,7 +25,7 @@ kind: ClusterRoleBinding
 metadata:
   name: asb
 roleRef:
-  name: admin
+  name: cluster-admin
 subjects:
 - kind: ServiceAccount
   name: asb
