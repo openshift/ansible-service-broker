@@ -1,5 +1,5 @@
-hash: e02373bd2031c037f8dc8d9248e9fe6334eb3a6e5ee915b86566dd8d0a9d5dc0
-updated: 2017-06-08T13:12:18.404161826-04:00
+hash: ece088f35e2f3c094980b63d7f760d8b417e51c715b2a0071ad0e5ca87135319
+updated: 2017-06-14T09:43:46.075857132-04:00
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
@@ -61,10 +61,11 @@ imports:
   - storage
   - storageversion
 - name: github.com/coreos/etcd
-  version: 43b75072bfaca5a7c35c718179defbcabd9a0886
+  version: 9d7ed0e63a4e9907c04396d0a9a7a01ba08d2852
   subpackages:
   - client
   - pkg/pathutil
+  - pkg/srv
   - pkg/types
   - version
 - name: github.com/coreos/go-oidc
@@ -164,9 +165,9 @@ imports:
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/handlers
-  version: 3a5767ca75ece5f7f1440b1d16975247f8d8b221
+  version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
 - name: github.com/gorilla/mux
-  version: 392c28fe23e1c45ddba891b0320b3b5df220beea
+  version: bcd8bc72b08df0f70df986b97f95590779502d31
 - name: github.com/hashicorp/go-cleanhttp
   version: ad28ea4487f05916463e2423a55166280e8254b5
 - name: github.com/howeyc/gopass
@@ -218,8 +219,19 @@ imports:
 - name: github.com/opencontainers/runc
   version: 45c30e75abfd52107b53048004a83165403ad0d1
   subpackages:
+  - libcontainer
+  - libcontainer/apparmor
+  - libcontainer/cgroups
+  - libcontainer/cgroups/fs
+  - libcontainer/cgroups/systemd
+  - libcontainer/configs
+  - libcontainer/configs/validate
+  - libcontainer/criurpc
+  - libcontainer/keys
   - libcontainer/label
+  - libcontainer/seccomp
   - libcontainer/selinux
+  - libcontainer/stacktrace
   - libcontainer/system
   - libcontainer/user
   - libcontainer/utils
@@ -291,7 +303,7 @@ imports:
 - name: gopkg.in/yaml.v1
   version: 9f9df34309c04878acc86042b16630b0f696e1de
 - name: gopkg.in/yaml.v2
-  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
+  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/apimachinery
   version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
   subpackages:
