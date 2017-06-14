@@ -13,7 +13,7 @@ func Bind(
 	instance *ServiceInstance,
 	parameters *Parameters,
 	clusterConfig ClusterConfig, log *logging.Logger,
-) (*ExtractedCredentials, error) {
+) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")
@@ -24,19 +24,21 @@ func Bind(
 	var err error
 
 	if client, err = NewClient(log); err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	if err = client.PullImage(instance.Spec.Name); err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
-	output, err := client.RunImage("bind", clusterConfig, instance.Spec, instance.Context, parameters)
+	podName, err := client.RunImage("bind", clusterConfig, instance.Spec, instance.Context, parameters)
 
 	if err != nil {
 		log.Error("Problem running image", err)
-		return nil, err
+		return podName, nil, err
 	}
 
-	return extractCredentials(output, log)
+	ns := instance.Context.Namespace
+	creds, err := extractCredentials(podName, ns, log)
+	return podName, creds, err
 }

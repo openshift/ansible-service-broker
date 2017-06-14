@@ -21,14 +21,10 @@ var TotalTimeout = 900 // 15min
 // to be thrown out and redone asap.
 
 func extractCredentials(
-	output []byte, log *logging.Logger,
+	podname string, namespace string, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	log.Info("{%s}", string(output))
-
-	log.Debug("Calling getPodName")
-	podname, _ := getPodName(output, log)
 	log.Debug("Calling monitorOutput on " + podname)
-	credOut, _ := monitorOutput(podname)
+	credOut, _ := monitorOutput(podname, namespace)
 	log.Debug("oc log output: %s", string(credOut))
 
 	var creds *ExtractedCredentials
@@ -49,7 +45,7 @@ func extractCredentials(
 
 			time.Sleep(time.Duration(TimeoutFreq) * time.Second)
 			log.Info("Container not up yet, retrying %d of %d on pod %s", retries, totalRetries, podname)
-			credOut, _ = monitorOutput(podname)
+			credOut, _ = monitorOutput(podname, namespace)
 			log.Debug("oc log output: \n%s", string(credOut))
 			creds, err = buildExtractedCredentials(credOut)
 
@@ -95,8 +91,8 @@ func getPodName(output []byte, log *logging.Logger) (string, error) {
 	return podname[len(podname)-1], nil
 }
 
-func monitorOutput(podname string) ([]byte, error) {
-	return RunCommand("oc", "logs", "-f", podname)
+func monitorOutput(podname string, namespace string) ([]byte, error) {
+	return RunCommand("oc", "logs", "-f", "--namespace="+namespace, podname)
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
