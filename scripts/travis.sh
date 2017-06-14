@@ -53,7 +53,7 @@ elif [[ "$action" == "build" ]]; then
   echo "             Build               "
   echo "================================="
   make vendor
-  make install
+  make build
   exit $?
 elif [[ "$action" == "test" ]]; then
   echo "================================="
