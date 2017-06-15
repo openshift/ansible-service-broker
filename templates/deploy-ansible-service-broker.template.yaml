@@ -207,7 +207,7 @@ objects:
       openshift: {}
       broker:
         dev_broker: ${DEV_BROKER}
-        launch_apb_on_bind: false
+        launch_apb_on_bind: ${LAUNCH_APB_ON_BIND}
         output_request: ${OUTPUT_REQUEST}
 
 parameters:
@@ -271,7 +271,13 @@ parameters:
   name: DEV_BROKER
   value: "true"
 
-- description: Output broker requests to log 
-  displayname: Output broker requests to log 
+- description: Launch APB on bind
+  displayname: Launch APB on bind
+  name: LAUNCH_APB_ON_BIND
+  value: "true"
+
+- description: Output broker requests to log
+  displayname: Output broker requests to log
   name: OUTPUT_REQUEST
   value: "true"
+
