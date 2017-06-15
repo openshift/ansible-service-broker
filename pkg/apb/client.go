@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
 	logging "github.com/op/go-logging"
@@ -257,7 +256,6 @@ func (c *Client) refreshLoginToken(clusterConfig ClusterConfig) error {
 // generic location.
 func OcLogin(log *logging.Logger, args ...string) error {
 	log.Debug("Logging into openshift...")
-	log.Debug(fmt.Sprintf("Using args: ['%s']", strings.Join(args, "', '")))
 
 	fullArgs := append([]string{"login"}, args...)
 
