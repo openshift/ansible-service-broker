@@ -51,24 +51,24 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
-			JobToken: token, SpecId: p.spec.Id, PodName: "", Msg: "", Error: err.Error()}
+		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
+			JobToken: token, SpecId: p.serviceInstance.Spec.Id, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
-	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
-		JobToken: token, SpecId: p.spec.Id, PodName: podName, Msg: "", Error: ""}
+	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
+		JobToken: token, SpecId: p.serviceInstance.Spec.Id, PodName: podName, Msg: "", Error: ""}
 
 	// need to get the pod name for the job state
-	extCreds, extErr := apb.ExtractCredentials(podName, p.context.Namespace, p.log)
+	extCreds, extErr := apb.ExtractCredentials(podName, p.serviceInstance.Context.Namespace, p.log)
 	if extErr != nil {
 		p.log.Error("broker::Provision extError occurred.")
 		p.log.Error("%s", extErr.Error())
 		// send extError message
 		// can't have an extError type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
-			JobToken: token, SpecId: p.spec.Id, PodName: podName, Msg: "", Error: extErr.Error()}
+		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
+			JobToken: token, SpecId: p.serviceInstance.Spec.Id, PodName: podName, Msg: "", Error: extErr.Error()}
 		return
 	}
 
@@ -78,6 +78,6 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	// send creds
 	jsonmsg, _ := json.Marshal(extCreds)
 	p.log.Debug("sending message to channel")
-	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
-		JobToken: token, SpecId: p.spec.Id, PodName: podName, Msg: string(jsonmsg), Error: ""}
+	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
+		JobToken: token, SpecId: p.serviceInstance.Spec.Id, PodName: podName, Msg: string(jsonmsg), Error: ""}
 }

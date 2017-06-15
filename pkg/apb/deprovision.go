@@ -45,8 +45,8 @@ func Deprovision(instance *ServiceInstance, clusterConfig ClusterConfig, log *lo
 
 	log.Info(string(podName))
 
-	// Using extractCredentials to display output from the apb run
+	// Using ExtractCredentials to display output from the apb run
 	// TODO: breakout the output logic from the credentials logic
-	_, err = extractCredentials(podName, instance.Context.Namespace, log)
+	_, err = ExtractCredentials(podName, instance.Context.Namespace, log)
 	return podName, err
 }

@@ -71,7 +71,7 @@ func Provision(
 		return podName, nil, err
 	}
 
-	creds, err := ExtractCredentials(podName, context.Namespace, log)
+	creds, err := ExtractCredentials(podName, instance.Context.Namespace, log)
 	return podName, creds, err
 }
 
