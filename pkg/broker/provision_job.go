@@ -56,13 +56,11 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		return
 	}
 
-	// save off podname
-	podname, _ := apb.GetPodName(output, p.log)
 	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
-		JobToken: token, SpecId: p.spec.Id, PodName: podname, Msg: "", Error: ""}
+		JobToken: token, SpecId: p.spec.Id, PodName: podName, Msg: "", Error: ""}
 
 	// need to get the pod name for the job state
-	extCreds, extErr := apb.ExtractCredentials(podname, p.log)
+	extCreds, extErr := apb.ExtractCredentials(podName, p.context.Namespace, p.log)
 	if extErr != nil {
 		p.log.Error("broker::Provision extError occurred.")
 		p.log.Error("%s", extErr.Error())
@@ -70,7 +68,7 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// can't have an extError type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
 		msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
-			JobToken: token, SpecId: p.spec.Id, PodName: podname, Msg: "", Error: extErr.Error()}
+			JobToken: token, SpecId: p.spec.Id, PodName: podName, Msg: "", Error: extErr.Error()}
 		return
 	}
 
@@ -81,5 +79,5 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	jsonmsg, _ := json.Marshal(extCreds)
 	p.log.Debug("sending message to channel")
 	msgBuffer <- ProvisionMsg{InstanceUUID: p.instanceuuid.String(),
-		JobToken: token, SpecId: p.spec.Id, PodName: podname, Msg: string(jsonmsg), Error: ""}
+		JobToken: token, SpecId: p.spec.Id, PodName: podName, Msg: string(jsonmsg), Error: ""}
 }
