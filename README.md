@@ -79,8 +79,8 @@ to `etc/config.yaml`, and edit as desired.
 * `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
 * `make uninstall` Deletes the installed binary and config.yaml
   * Notes for install, run, and uninstall:
-    * The default install prefix is /usr/local. Use `sudo -E make install` to obtain proper permissions and preserve env vars like GOPATH
-    * Alternatively you can alter the installation directory by using INSTALL_DIR, e.g. `INSTALL_DIR=~ make run`
+    * The default install prefix is /usr/local. Use `make build && sudo make install` to build and install. 
+    * Alternatively you can alter the installation directory by using PREFIX, e.g if you don't want to install somewhere that requires escalated privileges. `make build && PREFIX=~ make install`
 
 ### Docker Development Build Targets
 * `make build-image`: Builds a docker container of the current source

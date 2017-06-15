@@ -3,40 +3,40 @@ PROJECT          ?= ansibleplaybookbundle
 TAG              ?= latest
 BROKER_IMAGE     = $(REGISTRY)/$(PROJECT)/ansible-service-broker
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
-INSTALL_DIR      ?= /usr/local
+PREFIX           ?= /usr/local
 
 vendor:
 	@glide install -v
 
-build: vendor
+build:
 	go build -ldflags="-s -w" ./cmd/broker
 
-install: build
-	cp broker ${INSTALL_DIR}/bin/ansible-service-broker
-	mkdir -p ${INSTALL_DIR}/etc/ansible-service-broker
-	cp etc/ex.dev.config.yaml ${INSTALL_DIR}/etc/ansible-service-broker/config.yaml
+install:
+	cp broker ${PREFIX}/bin/ansible-service-broker
+	mkdir -p ${PREFIX}/etc/ansible-service-broker
+	cp etc/ex.dev.config.yaml ${PREFIX}/etc/ansible-service-broker/config.yaml
 
-run: install 
-	${INSTALL_DIR}/bin/ansible-service-broker --config ${INSTALL_DIR}/etc/ansible-service-broker/config.yaml
+run:
+	${PREFIX}/bin/ansible-service-broker --config ${PREFIX}/etc/ansible-service-broker/config.yaml
 
 uninstall:
-	rm  -f ${INSTALL_DIR}/bin/ansible-service-broker
-	rm -rf ${INSTALL_DIR}/etc/ansible-service-broker
+	rm  -f ${PREFIX}/bin/ansible-service-broker
+	rm -rf ${PREFIX}/etc/ansible-service-broker
 
 build-mock-registry:
 	go build -ldflags="-s -w" ./cmd/mock-registry
 
 install-mock-registry:
-	cp mock-registry ${INSTALL_DIR}/bin/mock-registry
-	mkdir -p ${INSTALL_DIR}/etc/mock-registry
-	cp cmd/mock-registry/playbookbundles.yaml ${INSTALL_DIR}/etc/mock-registry/playbookbundles.yaml
+	cp mock-registry ${PREFIX}/bin/mock-registry
+	mkdir -p ${PREFIX}/etc/mock-registry
+	cp cmd/mock-registry/playbookbundles.yaml ${PREFIX}/etc/mock-registry/playbookbundles.yaml
 
 run-mock-registry:
-	${INSTALL_DIR}/bin/mock-registry --appfile ${INSTALL_DIR}/etc/mock-registry/playbookbundles.yaml
+	${PREFIX}/bin/mock-registry --appfile ${PREFIX}/etc/mock-registry/playbookbundles.yaml
 
 uninstall-mock-registry:
-	rm  -f ${INSTALL_DIR}/bin/mock-registry
-	rm -rf ${INSTALL_DIR}/etc/mock-registry
+	rm  -f ${PREFIX}/bin/mock-registry
+	rm -rf ${PREFIX}/etc/mock-registry
 
 
 prepare-build-image: build
@@ -66,7 +66,7 @@ clean:
 deploy:
 	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh
 
-test: vendor
+test:
 	go test ./pkg/...
 
 .PHONY: vendor build install run uninstall build-mock-registry install-mock-registry run-mock-registry uninstall-mock-registry prepare-build-image build-image release-image release push clean deploy test
