@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+USER_ID=$(id -u)
+if [ ${USER_UID} != ${USER_ID} ]; then
+  sed "s@${USER_NAME}:x:\${USER_ID}:@${USER_NAME}:x:${USER_ID}:@g" ${BASE_DIR}/etc/passwd.template > /etc/passwd
+fi
+
 ASB_CONF=/etc/ansible-service-broker/config.yaml
 
 if [[ -z "${DOCKERHUB_USER}" ]] || [[ -z "${DOCKERHUB_PASS}" ]] || [[ -z "${DOCKERHUB_ORG}" ]]; then

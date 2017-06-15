@@ -1,28 +1,35 @@
 FROM centos:7
 MAINTAINER Ansible Service Broker Community
 
-RUN mkdir /opt/ansibleservicebroker
-RUN useradd -M -b /opt/ansibleservicebroker -s /usr/sbin/nologin -u 1001 -g 0 ansibleservicebroker
-RUN chown -R 1001:0 /opt/ansibleservicebroker
+ENV USER_NAME=ansibleservicebroker \
+    USER_UID=1001 \
+    BASE_DIR=/opt/ansibleservicebroker
+ENV HOME=${BASE_DIR}
+
+RUN mkdir -p ${BASE_DIR} ${BASE_DIR}/etc \
+ && useradd -u ${USER_UID} -r -g 0 -M -d ${BASE_DIR} -b ${BASE_DIR} -s /sbin/nologin -c "ansibleservicebroker user" ${USER_NAME} \
+ && chown -R ${USER_NAME}:0 ${BASE_DIR} \
+ && chmod -R g+rw ${BASE_DIR} /etc/passwd
+
 
 RUN yum -y update \
  && yum -y install epel-release centos-release-openshift-origin \
  && yum -y install origin-clients net-tools bind-utils \
  && yum clean all
 
-
 RUN mkdir /var/log/ansible-service-broker \
     && touch /var/log/ansible-service-broker/asb.log \
-    && mkdir /etc/ansible-service-broker \
-    && mkdir -p /usr/local/ansible-service-broker/bin
-
-RUN chown -R ansibleservicebroker: /var/log/ansible-service-broker \
-    && chown -R ansibleservicebroker: /etc/ansible-service-broker
+    && mkdir /etc/ansible-service-broker
 
 COPY config.yaml /etc/ansible-service-broker/config.yaml
 COPY entrypoint.sh ansible-service-broker /usr/bin/
 COPY broker /usr/bin/asbd
 
-USER ansibleservicebroker
+RUN chown -R ${USER_NAME}:0 /var/log/ansible-service-broker \
+ && chown -R ${USER_NAME}:0 /etc/ansible-service-broker \
+ && chmod -R g+rw /var/log/ansible-service-broker /etc/ansible-service-broker
+
+USER ${USER_UID}
+RUN sed "s@${USER_NAME}:x:${USER_UID}:@${USER_NAME}:x:\${USER_ID}:@g" /etc/passwd > ${BASE_DIR}/etc/passwd.template
 
 ENTRYPOINT ["entrypoint.sh"]
