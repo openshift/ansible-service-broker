@@ -19,13 +19,3 @@ func TestUpdate(t *testing.T) {
 	}
 	ft.AssertEqual(t, err, notImplemented, "Update must have been implemented")
 }
-
-func TestUnbind(t *testing.T) {
-	brokerConfig := new(BrokerConfig)
-	brokerConfig.DevBroker = true
-	brokerConfig.LaunchApbOnBind = false
-	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil, WorkEngine{}, *brokerConfig)
-	err := broker.Unbind(uuid.NewUUID(), uuid.NewUUID())
-
-	ft.AssertEqual(t, err, notImplemented, "Unbind must have been implemented")
-}

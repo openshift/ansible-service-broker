@@ -1,20 +1,31 @@
 package apb
 
 import (
-	"fmt"
-
-	"github.com/op/go-logging"
+	logging "github.com/op/go-logging"
+	"github.com/pkg/errors"
 )
 
-func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error) {
+func Deprovision(instance *ServiceInstance, clusterConfig ClusterConfig, log *logging.Logger) (string, error) {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
-	log.Notice(fmt.Sprintf("ServiceInstance.Id: %s", instance.Spec.Id))
-	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.Name))
-	log.Notice(fmt.Sprintf("ServiceInstance.Image: %s", instance.Spec.Image))
-	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
+	log.Noticef("ServiceInstance.Id: %s", instance.Spec.Id)
+	log.Noticef("ServiceInstance.Name: %v", instance.Spec.Name)
+	log.Noticef("ServiceInstance.Image: %s", instance.Spec.Image)
+	log.Noticef("ServiceInstance.Description: %s", instance.Spec.Description)
 	log.Notice("============================================================")
+
+	// Explicitly error out if image field is missing from instance.Spec
+	// was introduced as a change to the apb instance.Spec to support integration
+	// with the broker and still allow for providing an img path
+	// Legacy ansibleapps will hit this.
+	// TODO: Move this validation to a Spec creation function (yet to be created)
+	if instance.Spec.Image == "" {
+		log.Error("No image field found on the apb instance.Spec (apb.yaml)")
+		log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
+		log.Error("Are you trying to run a legacy ansibleapp without an image field?")
+		return "", errors.New("No image field found on instance.Spec")
+	}
 
 	var client *Client
 	var err error
@@ -23,13 +34,9 @@ func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error)
 		return "", err
 	}
 
-	if err = client.PullImage(instance.Spec.Name); err != nil {
-		return "", err
-	}
-
 	// Might need to change up this interface to feed in instance ids
 	podName, err := client.RunImage(
-		"deprovision", HardcodedClusterConfig, instance.Spec, instance.Context, instance.Parameters)
+		"deprovision", clusterConfig, instance.Spec, instance.Context, instance.Parameters)
 
 	if err != nil {
 		log.Error("Problem running image")
@@ -37,5 +44,9 @@ func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error)
 	}
 
 	log.Info(string(podName))
-	return podName, nil
+
+	// Using extractCredentials to display output from the apb run
+	// TODO: breakout the output logic from the credentials logic
+	_, err = extractCredentials(podName, instance.Context.Namespace, log)
+	return podName, err
 }

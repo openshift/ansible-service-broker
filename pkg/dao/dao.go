@@ -221,6 +221,13 @@ func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 	return d.setObject(bindInstanceKey(id), bindInstance)
 }
 
+// DeleteBindInstance - Delete the binding instance for an id in the kvp API.
+func (d *Dao) DeleteBindInstance(id string) error {
+	d.log.Debug(fmt.Sprintf("Dao::DeleteBindInstance -> [ %s ]", id))
+	_, err := d.kapi.Delete(context.Background(), bindInstanceKey(id), nil)
+	return err
+}
+
 // GetExtractedCredentials - Get the extracted credentials for an id in the kvp API.
 func (d *Dao) GetExtractedCredentials(id string) (*apb.ExtractedCredentials, error) {
 	extractedCredentials := &apb.ExtractedCredentials{}
@@ -235,6 +242,12 @@ func (d *Dao) SetExtractedCredentials(id string, extractedCredentials *apb.Extra
 	return d.setObject(extractedCredentialsKey(id), extractedCredentials)
 }
 
+// DeleteExtractedCredentials - delete the extracted credentials for an id in the kvp API.
+func (d *Dao) DeleteExtractedCredentials(id string) error {
+	_, err := d.kapi.Delete(context.Background(), extractedCredentialsKey(id), nil)
+	return err
+}
+
 // SetState - Set the Job State in the kvp API for id.
 func (d *Dao) SetState(id string, state apb.JobState) error {
 	return d.setObject(stateKey(id, state.Token), state)
@@ -247,13 +260,6 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 		return apb.JobState{State: apb.StateFailed}, err
 	}
 	return state, nil
-}
-
-// DeleteBindInstance - Delete the binding instance for an id in the kvp API.
-func (d *Dao) DeleteBindInstance(id string) error {
-	d.log.Debug(fmt.Sprintf("Dao::DeleteBindInstance -> [ %s ]", id))
-	_, err := d.kapi.Delete(context.Background(), bindInstanceKey(id), nil)
-	return err
 }
 
 func (d *Dao) getObject(key string, data interface{}) error {

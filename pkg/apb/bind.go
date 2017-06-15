@@ -32,10 +32,6 @@ func Bind(
 		return "", nil, err
 	}
 
-	if err = client.PullImage(instance.Spec.Name); err != nil {
-		return "", nil, err
-	}
-
 	podName, err := client.RunImage("bind", clusterConfig, instance.Spec, instance.Context, parameters)
 
 	if err != nil {

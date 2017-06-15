@@ -13,30 +13,31 @@ import (
 // Maybe apb defines its own interface and accepts that optionally
 // Little looser, but still not great
 func Provision(
-	spec *Spec, context *Context, parameters *Parameters,
+	instance *ServiceInstance,
 	clusterConfig ClusterConfig, log *logging.Logger,
 ) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
-	log.Notice(fmt.Sprintf("Spec.Id: %s", spec.Id))
-	log.Notice(fmt.Sprintf("Spec.Name: %s", spec.Name))
-	log.Notice(fmt.Sprintf("Spec.Image: %s", spec.Image))
-	log.Notice(fmt.Sprintf("Spec.Description: %s", spec.Description))
+	log.Notice(fmt.Sprintf("Spec.Id: %s", instance.Spec.Id))
+	log.Notice(fmt.Sprintf("Spec.Name: %s", instance.Spec.Name))
+	log.Notice(fmt.Sprintf("Spec.Image: %s", instance.Spec.Image))
+	log.Notice(fmt.Sprintf("Spec.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
-	// Explicitly error out if image field is missing from spec
-	// was introduced as a change to the apb spec to support integration
+	// Explicitly error out if image field is missing from instance.Spec
+	// was introduced as a change to the apb instance.Spec to support integration
 	// with the broker and still allow for providing an img path
 	// Legacy ansibleapps will hit this.
-	if spec.Image == "" {
-		log.Error("No image field found on the apb spec (apb.yaml)")
-		log.Error("apb spec requires [name] and [image] fields to be separate")
+	// TODO: Move this validation to a Spec creation function (yet to be created)
+	if instance.Spec.Image == "" {
+		log.Error("No image field found on the apb instance.Spec (apb.yaml)")
+		log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
 		log.Error("Are you trying to run a legacy ansibleapp without an image field?")
-		return "", nil, errors.New("No image field found on Spec")
+		return "", nil, errors.New("No image field found on instance.Spec")
 	}
 
-	ns := context.Namespace
+	ns := instance.Context.Namespace
 	log.Info("Checking if project %s exists...", ns)
 	if !projectExists(ns) {
 		log.Info("Project %s does NOT exist, creating project...", ns)
@@ -61,11 +62,7 @@ func Provision(
 		return "", nil, err
 	}
 
-	if err = client.PullImage(spec.Image); err != nil {
-		return "", nil, err
-	}
-
-	podName, err := client.RunImage("provision", clusterConfig, spec, context, parameters)
+	podName, err := client.RunImage("provision", clusterConfig, instance.Spec, instance.Context, instance.Parameters)
 
 	if err != nil {
 		log.Error("Problem running image")
@@ -74,7 +71,7 @@ func Provision(
 		return podName, nil, err
 	}
 
-	creds, err := extractCredentials(podName, context.Namespace, log)
+	creds, err := extractCredentials(podName, instance.Context.Namespace, log)
 	return podName, creds, err
 }
 

@@ -131,6 +131,8 @@ type DeprovisionResponse struct {
 	Operation string `json:"operation,omitempty"`
 }
 
+type UnbindResponse struct{}
+
 type ErrorResponse struct {
 	Description string `json:"description"`
 }

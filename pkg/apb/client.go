@@ -198,7 +198,7 @@ func (c *Client) RunImage(
 	} else {
 		pod = &v1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("apb-%s", uuid.New()),
+				Name: apbId,
 			},
 			Spec: v1.PodSpec{
 				Containers: []v1.Container{
