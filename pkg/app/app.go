@@ -146,6 +146,7 @@ func (a *App) Recover() {
 func (a *App) Start() {
 	// TODO: probably return an error or some sort of message such that we can
 	// see if we need to go any further.
+
 	if a.config.Broker.Recovery {
 		a.log.Info("Initiating Recovery Process")
 		a.Recover()

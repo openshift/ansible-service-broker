@@ -186,32 +186,31 @@ func (a AnsibleBroker) Recover() (string, error) {
 	// let's see if we need to recover any of these
 	for _, rs := range recoverStatuses {
 
-		// since we're here we have an in progress job
-		instance, err := a.dao.GetServiceInstance(rs.InstanceId.String())
+		// We have an in progress job
+		instanceID := rs.InstanceId.String()
+		instance, err := a.dao.GetServiceInstance(instanceID)
+		if err != nil {
+			return "", err
+		}
 
-		// do we have a podname?
+		// Do we have a podname?
 		if rs.State.Podname == "" {
 			// NO, we do not have a podname
 
-			a.log.Info(fmt.Sprintf("No podname. Attempting to restart job: %s", rs.InstanceId.String()))
+			a.log.Info(fmt.Sprintf("No podname. Attempting to restart job: %s", instanceID))
 
-			si, err := a.dao.GetServiceInstance(rs.InstanceId.String())
-			if err != nil {
-				return "", err
-			}
-
-			a.log.Debug(fmt.Sprintf("%v", si))
+			a.log.Debug(fmt.Sprintf("%v", instance))
 
 			// Handle bad write of service instance
-			if si.Spec == nil || si.Parameters == nil {
-				a.dao.SetState(rs.InstanceId.String(), apb.JobState{Token: rs.State.Token, State: apb.StateFailed})
-				a.dao.DeleteServiceInstance(si.Id.String())
-				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", si.Id))
+			if instance.Spec == nil || instance.Parameters == nil {
+				a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token, State: apb.StateFailed})
+				a.dao.DeleteServiceInstance(instance.Id.String())
+				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.Id))
 				// skip to the next item
 				continue
 			}
 
-			pjob := NewProvisionJob(rs.InstanceId, si.Spec, si.Context, si.Parameters, a.clusterConfig, a.log)
+			pjob := NewProvisionJob(rs.InstanceId, instance.Spec, instance.Context, instance.Parameters, a.clusterConfig, a.log)
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
@@ -219,7 +218,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// HACK: there might be a delay between the first time the state in etcd
 			// is set and the job was already started. But I need the token.
-			a.dao.SetState(rs.InstanceId.String(), apb.JobState{Token: rs.State.Token, State: apb.StateInProgress})
+			a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token, State: apb.StateInProgress})
 		} else {
 			// YES, we have a podname
 			a.log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
@@ -238,9 +237,9 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// YES, pod finished we have creds
 			if extCreds != nil {
 				a.log.Debug("broker::Recover, got ExtractedCredentials!")
-				a.dao.SetState(rs.InstanceId.String(), apb.JobState{Token: rs.State.Token,
+				a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token,
 					State: apb.StateSucceeded, Podname: rs.State.Podname})
-				err = a.dao.SetExtractedCredentials(rs.InstanceId.String(), extCreds)
+				err = a.dao.SetExtractedCredentials(instanceID, extCreds)
 				if err != nil {
 					a.log.Error("Could not persist extracted credentials")
 					a.log.Error("%s", err.Error())
