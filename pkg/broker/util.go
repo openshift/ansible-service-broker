@@ -22,6 +22,12 @@ func ProjectRoot() string {
 // catalog.
 func SpecToService(spec *apb.Spec) Service {
 	// default plan, used to be in hack.go
+	parameterDescriptors := make(map[string]interface{})
+	parameterDescriptors["parameters"] = spec.Parameters
+	for k, v := range spec.Metadata {
+		parameterDescriptors[k] = v
+	}
+
 	plans := []Plan{
 		{
 			ID:          uuid.Parse("4c10ff42-be89-420a-9bab-27a9bef9aed8"),
@@ -40,7 +46,7 @@ func SpecToService(spec *apb.Spec) Service {
 		Tags:        make([]string, len(spec.Tags)),
 		Bindable:    spec.Bindable,
 		Plans:       plans,
-		// leaving Metadata empty
+		Metadata:    parameterDescriptors,
 	}
 
 	copy(retSvc.Tags, spec.Tags)
