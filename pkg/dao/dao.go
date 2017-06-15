@@ -188,7 +188,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 	return specs, nil
 }
 
-// FindByState - Retriieve all the jobs that match state
+// FindByState - Retrieve all the jobs that match state
 func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
 	d.log.Debug("Dao::FindByState")
 

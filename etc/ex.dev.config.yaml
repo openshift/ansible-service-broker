@@ -20,5 +20,5 @@ openshift:
 broker:
   dev_broker: true
   launch_apb_on_bind: false
+  recovery: true
   output_request: true
-

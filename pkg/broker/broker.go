@@ -42,6 +42,7 @@ type Broker interface {
 type BrokerConfig struct {
 	DevBroker       bool `yaml:"dev_broker"`
 	LaunchApbOnBind bool `yaml:"launch_apb_on_bind"`
+	Recovery        bool `yaml:"recovery"`
 	OutputRequest   bool `yaml:"output_request"`
 }
 

@@ -206,11 +206,3 @@ func assertError(t *testing.T, err error, verifystr string) {
 		t.Fatal(fmt.Sprintf("method should return '%s' error", verifystr))
 	}
 }
-
-func TestGetPodName(t *testing.T) {
-	output := []byte(`pod "aa-03be586b-25fc-4d68-8591-51deed8765a1" created`)
-
-	podname, _ := GetPodName(output, nil)
-
-	ft.AssertEqual(t, podname, "aa-03be586b-25fc-4d68-8591-51deed8765a1", "podname does not match")
-}

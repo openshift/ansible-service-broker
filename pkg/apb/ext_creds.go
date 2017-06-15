@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"regexp"
 	"strings"
 	"time"
 
@@ -72,23 +71,6 @@ func ExtractCredentials(
 	}
 
 	return creds, err
-}
-
-// HACK: this really is a crappy way of getting output
-func GetPodName(output []byte, log *logging.Logger) (string, error) {
-	r, err := regexp.Compile(`^pod[ \"]*(.*?)[ \"]*created`)
-	if err != nil {
-		return "", err
-	}
-
-	podname := r.FindStringSubmatch(string(output))
-
-	if log != nil {
-		log.Debug("%v", podname)
-		log.Debug("%d", len(podname)-1)
-	}
-
-	return podname[len(podname)-1], nil
 }
 
 func monitorOutput(podname string, namespace string) ([]byte, error) {
