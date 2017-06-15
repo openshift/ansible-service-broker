@@ -20,7 +20,7 @@ var TotalTimeout = 900 // 15min
 // output is *very* experimental and error prone. Entire approach is going
 // to be thrown out and redone asap.
 
-func extractCredentials(
+func ExtractCredentials(
 	podname string, namespace string, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
 	log.Debug("Calling monitorOutput on " + podname)

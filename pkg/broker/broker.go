@@ -170,6 +170,10 @@ func (a AnsibleBroker) Recover() (string, error) {
 	for _, rs := range recoverStatuses {
 
 		// since we're here we have an in progress job
+		instance, err := a.dao.GetServiceInstance(rs.InstanceId.String())
+		if err != nil {
+			return rs.InstanceId.String(), err
+		}
 
 		// do we have a podname?
 		if rs.State.Podname == "" {
@@ -207,7 +211,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 			a.log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
 
 			// did the pod finish?
-			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, a.log)
+			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, instance.Context.Namespace, a.log)
 
 			// NO, pod failed.
 			// TODO: do we restart the job or mark it as failed?
@@ -408,10 +412,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			return nil, err
 		}
 
-		// TODO: do we need podname for synchronous provisions?
-		podname, _ := apb.GetPodName(output, a.log)
-
-		extCreds, extErr := apb.ExtractCredentials(podname, a.log)
+		extCreds, extErr := apb.ExtractCredentials(podName, context.Namespace, a.log)
 		if extErr != nil {
 			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", extErr.Error())
