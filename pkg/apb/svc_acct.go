@@ -182,7 +182,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(
 	s.log.Debug("oc delete output:")
 	s.log.Debug(string(output))
 
-	s.log.Debug("Deleting rolebinding %s, namespace ", handle, namespace)
+	s.log.Debug("Deleting rolebinding %s, namespace %s", handle, namespace)
 	output, err = RunCommand(
 		"oc", "delete", "rolebinding", handle, "--namespace="+namespace,
 	)
@@ -193,7 +193,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(
 		s.log.Error(string(output))
 		return err
 	}
-	s.log.Debug("Successfully deleted rolebinding %s, namespace ", handle, namespace)
+	s.log.Debug("Successfully deleted rolebinding %s, namespace %s", handle, namespace)
 	s.log.Debug("oc delete output:")
 	s.log.Debug(string(output))
 
