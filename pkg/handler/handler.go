@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"strconv"
 
@@ -22,9 +23,10 @@ import (
 // TODO: authentication / authorization
 
 type handler struct {
-	router mux.Router
-	broker broker.Broker
-	log    *logging.Logger
+	router       mux.Router
+	broker       broker.Broker
+	log          *logging.Logger
+	brokerConfig broker.BrokerConfig
 }
 
 // GorillaRouteHandler - gorilla route handler
@@ -42,11 +44,12 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, dev bool) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.BrokerConfig) http.Handler {
 	h := handler{
-		router: *mux.NewRouter(),
-		broker: b,
-		log:    log,
+		router:       *mux.NewRouter(),
+		broker:       b,
+		log:          log,
+		brokerConfig: brokerConfig,
 	}
 
 	// TODO: Reintroduce router restriction based on API version when settled upstream
@@ -64,7 +67,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, dev bool) http.Handler {
 	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
 
-	if dev {
+	if h.brokerConfig.DevBroker {
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
 	}
 
@@ -73,6 +76,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, dev bool) http.Handler {
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
+	h.printRequest(r)
 	resp, err := h.broker.Bootstrap()
 	writeDefaultResponse(w, http.StatusOK, resp, err)
 }
@@ -83,6 +87,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h handler) catalog(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
+	h.printRequest(r)
 
 	resp, err := h.broker.Catalog()
 
@@ -91,6 +96,7 @@ func (h handler) catalog(w http.ResponseWriter, r *http.Request, params map[stri
 
 func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
+	h.printRequest(r)
 
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
@@ -138,6 +144,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 
 func (h handler) update(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
+	h.printRequest(r)
 
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
@@ -158,6 +165,7 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 
 func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
+	h.printRequest(r)
 
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
@@ -180,6 +188,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 
 func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
+	h.printRequest(r)
 
 	// validate input uuids
 	instanceUUID := uuid.Parse(params["instance_uuid"])
@@ -221,6 +230,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 
 func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
+	h.printRequest(r)
 
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
@@ -246,6 +256,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 
 func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
+	h.printRequest(r)
 
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
@@ -311,4 +322,15 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 	}
 	resp, err := ansibleBroker.AddSpec(spec)
 	writeDefaultResponse(w, http.StatusOK, resp, err)
+}
+
+//printRequest - will print the request with the body.
+func (h handler) printRequest(req *http.Request) {
+	if h.brokerConfig.OutputRequest {
+		b, err := httputil.DumpRequest(req, true)
+		if err != nil {
+			h.log.Errorf("unable to dump request to log: %v", err)
+		}
+		h.log.Infof("Request: %q", b)
+	}
 }

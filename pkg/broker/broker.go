@@ -36,8 +36,9 @@ type Broker interface {
 }
 
 type BrokerConfig struct {
-	DevBroker       bool
-	LaunchApbOnBind bool
+	DevBroker       bool `yaml:"dev_broker"`
+	LaunchApbOnBind bool `yaml:"launch_apb_on_bind"`
+	OutputRequest   bool `yaml:"output_request"`
 }
 
 // AnsibleBroker - Broker using ansible and images to interact with oc/kubernetes/etcd

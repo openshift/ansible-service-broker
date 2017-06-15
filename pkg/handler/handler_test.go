@@ -69,6 +69,7 @@ func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*bro
 }
 
 var log = logging.MustGetLogger("handler")
+var brokerConfig broker.BrokerConfig
 
 func init() {
 	// setup logging
@@ -78,17 +79,19 @@ func init() {
 	backend := logging.NewLogBackend(os.Stdout, "", 1)
 	backendFormatter := logging.NewBackendFormatter(backend, colorFormatter)
 	logging.SetBackend(backend, backendFormatter)
+	//will default to all config values to false
+	brokerConfig = broker.BrokerConfig{}
 }
 
 func TestNewHandler(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	testhandler := NewHandler(testb, log, false)
+	testhandler := NewHandler(testb, log, brokerConfig)
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
 func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	testhandler := NewHandler(testb, log, false)
+	testhandler := NewHandler(testb, log, brokerConfig)
 	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -273,7 +276,7 @@ func BuildBootstrapHandler(err error) (
 	handler, *httptest.ResponseRecorder, *http.Request) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
 
 	r := httptest.NewRequest("POST", "/v2/bootstrap", nil)
 	w := httptest.NewRecorder()
@@ -284,7 +287,7 @@ func BuildCatalogHandler(err error) (
 	handler, *httptest.ResponseRecorder, *http.Request) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
 
 	r := httptest.NewRequest("GET", "/v2/catalog", nil)
 	w := httptest.NewRecorder()
@@ -295,7 +298,7 @@ func BuildProvisionHandler(testuuid string, err error, operation string) (
 	handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err, Operation: operation}
-	testhandler := handler{*mux.NewRouter(), testb, log}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
 
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT", fmt.Sprintf("/v2/service_instance/%s", testuuid), trr)
@@ -312,7 +315,7 @@ func BuildLastOperationHandler(testuuid string, err error) (
 	handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
 
 	r := httptest.NewRequest("GET",
 		fmt.Sprintf("/v2/service_instance/%s/last_operation?operation=%s", testuuid, testuuid), nil)
@@ -329,7 +332,7 @@ func BuildBindHandler(testuuid string, err error) (
 	handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
 
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT",
