@@ -33,6 +33,10 @@
 %define build_timestamp %{nil}
 %endif
 
+%define selinux_variants targeted
+%define moduletype apps
+%define modulename ansible-service-broker
+
 Name: %{repo}
 Version: 0
 Release: 3%{build_timestamp}%{?dist}
@@ -48,6 +52,7 @@ ExclusiveArch: %{ix86} x86_64 %{arm} aarch64 ppc64le %{mips} s390x
 BuildRequires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 
 Requires(pre): shadow-utils
+Requires: %{name}-selinux
 
 BuildRequires: device-mapper-devel
 BuildRequires: btrfs-progs-devel
@@ -63,6 +68,35 @@ BuildArch: noarch
 
 %description container-scripts
 containers scripts for ansible-service-broker
+
+%package selinux
+Summary: selinux policy module for %{name}
+BuildRequires: checkpolicy, selinux-policy-devel, hardlink, policycoreutils
+BuildRequires: /usr/bin/pod2man
+Requires: selinux-policy >= %{selinux_policy_ver}
+Requires(post): /usr/sbin/semodule, /sbin/restorecon, /usr/sbin/setsebool, /usr/sbin/selinuxenabled, /usr/sbin/semanage
+Requires(post): policycoreutils-python
+Requires(post): selinux-policy-targeted
+Requires(postun): /usr/sbin/semodule, /sbin/restorecon
+BuildArch: noarch
+
+%description selinux
+selinux policy module for %{name}
+
+%post selinux
+for selinuxvariant in %{selinux_variants}
+do
+  /usr/sbin/semodule -s ${selinuxvariant} -i \
+    %{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp.bz2 > /dev/null
+done
+
+%postun selinux
+if [ $1 -eq 0 ] ; then
+  for selinuxvariant in %{selinux_variants}
+  do
+    /usr/sbin/semodule -s ${selinuxvariant} -r %{modulename} > /dev/null
+  done
+fi
 
 %pre
 getent group ansibleservicebroker || groupadd -r ansibleservicebroker
@@ -117,14 +151,36 @@ cp -r pkg src/github.com/openshift/ansible-service-broker
 
 %build
 export GOPATH=$(pwd):%{gopath}
-
+export LDFLAGS='-s -w'
 BUILDTAGS="seccomp selinux"
 %if ! 0%{?gobuild:1}
 %define gobuild() go build -ldflags "${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n')" -a -v -x %{**};
-
 %endif
 
 %gobuild -tags "$BUILDTAGS" ./cmd/broker
+
+#Build selinux modules
+# create selinux-friendly version from VR and replace it inplace
+perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!\@\@VERSION\@\@!$VER!g;' extras/%{modulename}.te
+
+%if 0%{?rhel} >= 6
+    distver=rhel%{rhel}
+%endif
+%if 0%{?fedora} >= 18
+    distver=fedora%{fedora}
+%endif
+
+for selinuxvariant in %{selinux_variants}
+do
+    pushd extras
+    make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile DISTRO=${distver}
+    bzip2 -9 %{modulename}.pp
+    mv %{modulename}.pp.bz2 %{modulename}.ppbz2.${selinuxvariant}
+    make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean DISTRO=${distver}
+    popd
+done
+
+
 rm -rf src
 
 %install
@@ -145,6 +201,21 @@ install -d -p %{buildroot}%{_unitdir}
 install -p extras/%{name}.service  %{buildroot}%{_unitdir}/%{name}.service
 install -d -p %{buildroot}%{_var}/log/%{name}
 touch %{buildroot}%{_var}/log/%{name}/asb.log
+
+# install selinux policy modules
+for selinuxvariant in %{selinux_variants}
+  do
+    install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
+    install -p -m 644 extras/%{modulename}.ppbz2.${selinuxvariant} \
+        %{buildroot}%{_datadir}/selinux/${selinuxvariant}/%{modulename}.pp.bz2
+  done
+
+# install interfaces
+install -d %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}
+install -p -m 644 extras/%{modulename}.if %{buildroot}%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
+
+# hardlink identical policy module packages together
+/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
 
 # source codes for building projects
 %if 0%{?with_devel}
@@ -233,6 +304,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 
 %files container-scripts
 %{_bindir}/entrypoint.sh
+
+%files selinux
+%attr(0600,root,root) %{_datadir}/selinux/*/%{modulename}.pp.bz2
+%{_datadir}/selinux/devel/include/%{moduletype}/%{modulename}.if
 
 %if 0%{?with_devel}
 %files devel -f devel.file-list
