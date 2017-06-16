@@ -163,7 +163,7 @@ objects:
           terminationMessagePath: /tmp/termination-log
           workingDir: /etcd
           args:
-            - /usr/local/bin/etcd
+            - ${ETCD_PATH}
             - --data-dir=/data
             - --listen-client-urls=http://0.0.0.0:2379
             - --advertise-client-urls=http://0.0.0.0:2379
@@ -221,6 +221,11 @@ parameters:
   displayname: etcd Image
   name: ETCD_IMAGE
   value: quay.io/coreos/etcd:latest
+
+- description: Path of the etcd binary
+  displayname: etcd path
+  name: ETCD_PATH
+  value: /usr/local/bin/etcd
 
 - description: Configuration filepath for Ansible Service Broker
   displayname: Ansible Service Broker Configuration File
