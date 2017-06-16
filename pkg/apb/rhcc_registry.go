@@ -45,7 +45,7 @@ func (r RHCCRegistry) cleanHttpUrl(url string) string {
 	}
 
 	if strings.HasPrefix(url, "https://") == true {
-		url = strings.TrimPrefix(url, "https://")
+		return url
 	}
 
 	url = "http://" + url
