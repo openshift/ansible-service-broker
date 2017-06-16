@@ -131,7 +131,27 @@ func CreateApp() App {
 	return app
 }
 
+// TODO: Make this a go routine once we have a strong and well tested
+// recovery sequence.
+func (a *App) Recover() {
+	msg, err := a.broker.Recover()
+
+	if err != nil {
+		a.log.Error(err.Error())
+	}
+
+	a.log.Notice(msg)
+}
+
 func (a *App) Start() {
+	// TODO: probably return an error or some sort of message such that we can
+	// see if we need to go any further.
+
+	if a.config.Broker.Recovery {
+		a.log.Info("Initiating Recovery Process")
+		a.Recover()
+	}
+
 	a.log.Notice("Ansible Service Broker Started")
 	listeningAddress := "0.0.0.0:1338"
 	a.log.Notice("Listening on http://%s", listeningAddress)

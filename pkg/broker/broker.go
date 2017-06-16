@@ -35,11 +35,14 @@ type Broker interface {
 	Bind(uuid.UUID, uuid.UUID, *BindRequest) (*BindResponse, error)
 	Unbind(uuid.UUID, uuid.UUID) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
+	// TODO: consider returning a struct + error
+	Recover() (string, error)
 }
 
 type BrokerConfig struct {
 	DevBroker       bool `yaml:"dev_broker"`
 	LaunchApbOnBind bool `yaml:"launch_apb_on_bind"`
+	Recovery        bool `yaml:"recovery"`
 	OutputRequest   bool `yaml:"output_request"`
 }
 
@@ -130,6 +133,113 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	}
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
+}
+
+func (a AnsibleBroker) Recover() (string, error) {
+	// At startup we should write a key to etcd.
+	// Then in recovery see if that key exists, which means we are restarting
+	// and need to try to recover.
+
+	// do we have any jobs that wre still running?
+	// get all /state/*/jobs/* == in progress
+	// For each job, check the status of each of their containers to update
+	// their status in case any of them finished.
+
+	recoverStatuses, err := a.dao.FindJobStateByState(apb.StateInProgress)
+	if err != nil {
+		// no jobs or states to recover, this is OK.
+		if client.IsKeyNotFound(err) {
+			a.log.Info("No jobs to recover")
+			return "", nil
+		}
+		return "", err
+	}
+
+	/*
+		if job was in progress we know instanceuuid & token. do we have a podname?
+		if no, job never started
+			restart
+		if yes,
+			did it finish?
+				yes
+					* update status
+					* extractCreds if available
+				no
+					* create a monitoring job to update status
+	*/
+
+	// let's see if we need to recover any of these
+	for _, rs := range recoverStatuses {
+
+		// We have an in progress job
+		instanceID := rs.InstanceId.String()
+		instance, err := a.dao.GetServiceInstance(instanceID)
+		if err != nil {
+			return "", err
+		}
+
+		// Do we have a podname?
+		if rs.State.Podname == "" {
+			// NO, we do not have a podname
+
+			a.log.Info(fmt.Sprintf("No podname. Attempting to restart job: %s", instanceID))
+
+			a.log.Debug(fmt.Sprintf("%v", instance))
+
+			// Handle bad write of service instance
+			if instance.Spec == nil || instance.Parameters == nil {
+				a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token, State: apb.StateFailed})
+				a.dao.DeleteServiceInstance(instance.Id.String())
+				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.Id))
+				// skip to the next item
+				continue
+			}
+
+			pjob := NewProvisionJob(instance, a.clusterConfig, a.log)
+
+			// Need to use the same token as before, since that's what the
+			// catalog will try to ping.
+			a.engine.StartNewJob(rs.State.Token, pjob)
+
+			// HACK: there might be a delay between the first time the state in etcd
+			// is set and the job was already started. But I need the token.
+			a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token, State: apb.StateInProgress})
+		} else {
+			// YES, we have a podname
+			a.log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
+
+			// did the pod finish?
+			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, instance.Context.Namespace, a.log)
+
+			// NO, pod failed.
+			// TODO: do we restart the job or mark it as failed?
+			if extErr != nil {
+				a.log.Error("broker::Recover error occurred.")
+				a.log.Error("%s", extErr.Error())
+				return "", extErr
+			}
+
+			// YES, pod finished we have creds
+			if extCreds != nil {
+				a.log.Debug("broker::Recover, got ExtractedCredentials!")
+				a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token,
+					State: apb.StateSucceeded, Podname: rs.State.Podname})
+				err = a.dao.SetExtractedCredentials(instanceID, extCreds)
+				if err != nil {
+					a.log.Error("Could not persist extracted credentials")
+					a.log.Error("%s", err.Error())
+					return "", err
+				}
+			}
+		}
+	}
+
+	// if no pods, do we restart? or just return failed?
+
+	//binding
+
+	a.log.Info("Recovery complete")
+	return "recover called", nil
 }
 
 // Catalog - returns the catalog of services defined
@@ -280,7 +390,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// asyncronously provision and return the token for the lastoperation
 		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
 
-		token = a.engine.StartNewJob(pjob)
+		token = a.engine.StartNewJob("", pjob)
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
@@ -297,6 +407,14 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
 			return nil, err
+		}
+
+		// TODO: do we need podname for synchronous provisions?
+		extCreds, extErr := apb.ExtractCredentials(podName, context.Namespace, a.log)
+		if extErr != nil {
+			a.log.Error("broker::Provision error occurred.")
+			a.log.Error("%s", extErr.Error())
+			return nil, extErr
 		}
 
 		if extCreds != nil {
@@ -346,7 +464,7 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*Deprovi
 		// asynchronously provision and return the token for the lastoperation
 		dpjob := NewDeprovisionJob(instance, a.clusterConfig, a.dao, a.log)
 
-		token = a.engine.StartNewJob(dpjob)
+		token = a.engine.StartNewJob("", dpjob)
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.

@@ -20,3 +20,4 @@ openshift:
 broker:
   devbroker: false
   launchapbonbind: false
+  recovery: true

@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/coreos/etcd/client"
 	"github.com/coreos/etcd/version"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/pborman/uuid"
 )
 
 // Config - confg holds etcd host and port.
@@ -186,6 +188,56 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 	return specs, nil
 }
 
+// FindByState - Retrieve all the jobs that match state
+func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
+	d.log.Debug("Dao::FindByState")
+
+	var res *client.Response
+	var err error
+
+	opts := &client.GetOptions{Recursive: true}
+	if res, err = d.kapi.Get(context.Background(), "/state/", opts); err != nil {
+		return nil, err
+	}
+
+	stateNodes := res.Node.Nodes
+	stateCount := len(stateNodes)
+
+	d.log.Debug("Successfully loaded [ %d ] jobstate objects from etcd dir [ /state/ ]", stateCount)
+
+	var recoverstatus []apb.RecoverStatus
+	for _, node := range stateNodes {
+		k := fmt.Sprintf("%s/job", node.Key)
+
+		status := apb.RecoverStatus{InstanceId: uuid.Parse(stateKeyId(node.Key))}
+		jobstate := apb.JobState{}
+		nodes, e := d.kapi.Get(context.Background(), k, opts)
+		if e != nil {
+			// if key is invalid do we keep it?
+			d.log.Warning(
+				fmt.Sprintf("Error processing jobstate record, moving on to next. %v", e.Error()))
+			continue
+		}
+
+		for _, n := range nodes.Node.Nodes {
+			apb.LoadJSON(n.Value, &jobstate)
+			if jobstate.State == state {
+				d.log.Debug(fmt.Sprintf(
+					"Found! jobstate [%v] matched given state: [%v].", jobstate, state))
+				status.State = jobstate
+				recoverstatus = append(recoverstatus, status)
+			} else {
+				// we could probably remove this once we're happy with how this
+				// works.
+				d.log.Debug(fmt.Sprintf(
+					"Skipping, jobstate [%v] did not match given state: [%v].", jobstate, state))
+			}
+		}
+	}
+
+	return recoverstatus, nil
+}
+
 // GetServiceInstance - Retrieve specific service instance from the kvp API.
 func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 	spec := &apb.ServiceInstance{}
@@ -284,9 +336,13 @@ func (d *Dao) setObject(key string, data interface{}) error {
 ////////////////////////////////////////////////////////////
 
 func stateKey(id string, jobid string) string {
-	//func stateKey(id string) string {
 	return fmt.Sprintf("/state/%s/job/%s", id, jobid)
-	//return fmt.Sprintf("/state/%s", id)
+}
+
+func stateKeyId(key string) string {
+	s := strings.TrimPrefix(key, "/state/")
+	s = strings.TrimSuffix(s, "/job")
+	return s
 }
 
 func extractedCredentialsKey(id string) string {

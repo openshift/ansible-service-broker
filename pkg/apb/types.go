@@ -65,8 +65,9 @@ type ExtractedCredentials struct {
 type State string
 
 type JobState struct {
-	Token string `json:"token"`
-	State State  `json:"state"`
+	Token   string `json:"token"`
+	State   State  `json:"state"`
+	Podname string `json:"podname"`
 }
 
 const (
@@ -171,4 +172,9 @@ func LoadYAML(payload string, obj interface{}) error {
 	}
 
 	return nil
+}
+
+type RecoverStatus struct {
+	InstanceId uuid.UUID `json:"id"`
+	State      JobState  `json:"state"`
 }
