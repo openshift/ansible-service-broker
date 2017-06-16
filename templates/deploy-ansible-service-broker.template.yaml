@@ -280,7 +280,7 @@ parameters:
 - description: Launch APB on bind
   displayname: Launch APB on bind
   name: LAUNCH_APB_ON_BIND
-  value: "true"
+  value: "false"
 
 - description: Output broker requests to log
   displayname: Output broker requests to log
