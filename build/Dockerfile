@@ -5,8 +5,7 @@ RUN curl https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansibl
 
 ENV USER_NAME=ansibleservicebroker \
     USER_UID=1001 \
-    BASE_DIR=/opt/ansibleservicebroker
-ENV HOME=${BASE_DIR}
+    BASE_DIR=/var/lib/ansibleservicebroker
 
 RUN yum -y update \
  && yum -y install epel-release centos-release-openshift-origin \
@@ -14,6 +13,7 @@ RUN yum -y update \
  && yum clean all
 
 RUN mkdir -p ${BASE_DIR} ${BASE_DIR}/etc \
+ && userdel ansibleservicebroker \
  && useradd -u ${USER_UID} -r -g 0 -M -d ${BASE_DIR} -b ${BASE_DIR} -s /sbin/nologin -c "ansibleservicebroker user" ${USER_NAME} \
  && chown -R ${USER_NAME}:0 ${BASE_DIR} /var/log/ansible-service-broker /etc/ansible-service-broker \
  && chmod -R g+rw ${BASE_DIR} /etc/passwd /etc/ansible-service-broker /var/log/ansible-service-broker
