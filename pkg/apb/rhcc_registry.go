@@ -6,6 +6,7 @@ import (
 	logging "github.com/op/go-logging"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // RHCCRegistry - Red Hat Container Catalog Registry
@@ -37,6 +38,20 @@ func (r *RHCCRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 	return nil
 }
 
+// This function is used because our code expects an HTTP Url for talking to RHCC
+func (r RHCCRegistry) cleanHttpUrl(url string) string {
+	if strings.HasPrefix(url, "http://") == true {
+		return url
+	}
+
+	if strings.HasPrefix(url, "https://") == true {
+		url = strings.TrimPrefix(url, "https://")
+	}
+
+	url = "http://" + url
+	return url
+}
+
 // LoadSpecs - Load Red Hat Container Catalog specs
 func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	r.log.Debug("RHCCRegistry::LoadSpecs")
@@ -63,8 +78,9 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 	r.log.Debug("RHCCRegistry::imageToSpec")
 	_spec := &Spec{}
+	url := r.cleanHttpUrl(r.config.Url)
 
-	req, err := http.NewRequest("GET", r.config.Url+"/v2/"+image.Name+"manifests/latest", nil)
+	req, err := http.NewRequest("GET", url+"/v2/"+image.Name+"manifests/latest", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +125,6 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 		return nil, err
 	}
 
-	r.log.Debug(r.config.Url)
 	encodedSpec := conf.Config.Label.Spec
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
@@ -128,8 +143,9 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 
 func (r RHCCRegistry) LoadImages(Query string) (ImageResponse, error) {
 	r.log.Debug("RHCCRegistry::LoadImages")
-	r.log.Debug("Using " + r.config.Url + " to source APB images using query:" + Query)
-	req, err := http.NewRequest("GET", r.config.Url+"/v1/search?q="+Query, nil)
+	url := r.cleanHttpUrl(r.config.Url)
+	r.log.Debug("Using " + url + " to source APB images using query:" + Query)
+	req, err := http.NewRequest("GET", url+"/v1/search?q="+Query, nil)
 	if err != nil {
 		return ImageResponse{}, err
 	}
