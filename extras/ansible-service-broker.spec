@@ -294,7 +294,7 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %{_bindir}/%{name}
 %{_docdir}/%{name}
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_sysconfdir}/%{name}
-%attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/config.yaml
+%attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/broker-config.yaml
 %{_unitdir}/%{name}.service
 %{_libexecdir}/%{name}
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_var}/log/%{name}
