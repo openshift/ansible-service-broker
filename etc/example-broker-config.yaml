@@ -9,7 +9,7 @@ dao:
   etcd_host: localhost
   etcd_port: 2379
 log:
-  logfile: /tmp/ansible-service-broker.log
+  logfile: /var/log/ansible-service-broker/asb.log
   stdout: true
   level: debug
   color: true

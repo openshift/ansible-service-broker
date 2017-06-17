@@ -18,5 +18,7 @@ openshift:
   user: {{OPENSHIFT_USER}}
   pass: {{OPENSHIFT_PASS}}
 broker:
-  devbroker: false
-  launchapbonbind: false
+  dev_broker: true
+  launch_apb_on_bind: false
+  recovery: true
+  output_request: true

@@ -11,13 +11,14 @@ vendor:
 build:
 	go build -ldflags="-s -w" ./cmd/broker
 
+
 install:
 	cp broker ${PREFIX}/bin/ansible-service-broker
 	mkdir -p ${PREFIX}/etc/ansible-service-broker
-	cp etc/ex.dev.config.yaml ${PREFIX}/etc/ansible-service-broker/config.yaml
+	cp etc/example-broker-config.yaml ${PREFIX}/etc/ansible-service-broker/broker-config.yaml
 
 run:
-	${PREFIX}/bin/ansible-service-broker --config ${PREFIX}/etc/ansible-service-broker/config.yaml
+	${PREFIX}/bin/ansible-service-broker --config ${PREFIX}/etc/ansible-service-broker/broker-config.yaml
 
 uninstall:
 	rm  -f ${PREFIX}/bin/ansible-service-broker
