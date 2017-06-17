@@ -359,7 +359,7 @@ class App(object):
             while True:
                 supports_default = param.get('default') is not None
 
-                if param_name not in required and not supports_default:
+                if param_name['required'] and not supports_default:
                     query = '%s (generated if blank) # ' % param['name']
                 elif supports_default:
                     query = '%s (default: %s) # ' % \
