@@ -1,0 +1,20 @@
+#####
+## CHANGE THESE TO REFLECT YOUR ENVIRONMENT
+#####
+
+# Typically the below values are:
+#  For Linux, use OPENSHIFT_SERVER_HOST=172.17.0.1
+#  For macOS, use OPENSHIFT_SERVER_HOST=192.168.37.1
+OPENSHIFT_SERVER_HOST=172.17.0.1
+OPENSHIFT_SERVER_PORT=8443
+
+# BROKER_IP_ADDR must be the IP address of where to reach broker
+#   it should not be 127.0.0.1, needs to be an address the pods will be able to reach
+BROKER_IP_ADDR=${OPENSHIFT_SERVER_HOST}
+DOCKERHUB_USERNAME=""
+DOCKERHUB_PASSWORD=""
+DOCKERHUB_ORG="ansibleplaybookbundle
+
+
+BROKER_CMD="../broker"
+GENERATED_BROKER_CONFIG="../etc/generated_local_development.yaml"
