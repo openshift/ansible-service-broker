@@ -173,7 +173,10 @@ func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
 // BatchGetSpecs - Retrieve all the specs for dir.
 func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 	payloads, err := d.BatchGetRaw(dir)
-	if err != nil {
+
+	if client.IsKeyNotFound(err) {
+		return []*apb.Spec{}, nil
+	} else if err != nil {
 		return []*apb.Spec{}, err
 	}
 
