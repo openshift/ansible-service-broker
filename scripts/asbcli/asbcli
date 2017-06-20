@@ -171,12 +171,20 @@ class App(object):
             sel_binding = binding_recs[binding_opt[1]]
 
         print '[ %s ] selected for provisioning...' % catalog_entry['name']
+
+        # get namespace to fill out context
+        namespace = None
+        while True:
+            namespace = raw_input("Namespace # ")
+            if namespace is not None and namespace != "":
+                break
+
         answers, using_some_bind = self._get_prov_answers(service, sel_binding)
 
         if using_some_bind:
             print 'Using binding credentials.'
         print 'Service configured! Requesting broker to provision...'
-        res, instance_id = self._req_provision(service['id'], answers)
+        res, instance_id = self._req_provision(service['id'], answers, namespace)
         print 'Provision returned status code: %s' % res.status_code
         print 'service_id: %s' % service['id']
         print 'instance_id: %s' % instance_id
@@ -281,7 +289,7 @@ class App(object):
         required = service['plans'][0]['schemas']['service_instance']['create']['parameters']['required']
         for param_key, param in service['plans'][0]['schemas']['service_instance']['create']['parameters']['properties'].items():
             # Accept binding value for param if its present, otherwise prompt
-            param_name = param_key # key is the new name
+            param_name = param_key  # key is the new name
             binding_match = sel_binding.get(param_name) \
                 if sel_binding else None
             if binding_match:
@@ -351,7 +359,7 @@ class App(object):
             while True:
                 supports_default = param.get('default') is not None
 
-                if param_name not in required and not supports_default:
+                if param_name['required'] and not supports_default:
                     query = '%s (generated if blank) # ' % param['name']
                 elif supports_default:
                     query = '%s (default: %s) # ' % \
@@ -460,14 +468,16 @@ class App(object):
 # 24   -v \
 # 25   http://cap.example.com:1338/v2/service_instances/$instanceUUID
 ############################################################
-    def _req_provision(self, service_id, answers):
+    def _req_provision(self, service_id, answers, namespace):
         # Generate a uuid instance ID acting as a Service Catalog would do
         instance_id = str(uuid.uuid4())
         plan_id = str(uuid.uuid4())  # not clear how this is used yet, req tho
         path = '/service_instances/%s?accepts_incomplete=true' % instance_id
+        context = {"platform": "kubernetes", "namespace": namespace}
         req_body = {
             'plan_id': plan_id,
             'service_id': service_id,
+            'context': context,
             'parameters': answers
         }
         return (req(self._url(path), verb='put', json=req_body), instance_id)
