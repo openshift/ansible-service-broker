@@ -62,7 +62,7 @@ push:
 clean:
 	@rm -f broker
 	@rm -f build/broker
-	@rm -f mock-registry 
+	@rm -f mock-registry
 
 deploy:
 	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh
