@@ -104,7 +104,7 @@ func ParametersToSchema(params []map[string]*apb.ParameterDescriptor, required [
 				properties[k].Pattern = patternRegex
 
 				if err != nil {
-					fmt.Println("Invalid pattern: %s", err.Error())
+					fmt.Printf("Invalid pattern: %s", err.Error())
 				}
 			}
 
