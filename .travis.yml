@@ -3,11 +3,14 @@ go:
   - 1.7.x
 dist: trusty
 sudo: required
+group: edge
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y autoconf pkg-config e2fslibs-dev libblkid-dev zlib1g-dev liblzo2-dev asciidoc
 install: ./scripts/travis.sh install
 script:
+  - ./scripts/travis.sh format
+  - ./scripts/travis.sh vet
   - ./scripts/travis.sh lint
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test

@@ -36,18 +36,32 @@ if [[ "$action" == "install" ]]; then
   wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
   tar xfv /tmp/glide.tar.gz -C /tmp
   sudo mv $(find /tmp -name "glide") /usr/bin
+
+  # install golint
+  go get -u github.com/golang/lint/golint
 elif [[ "$action" == "lint" ]]; then
   echo "================================="
-  echo "             Lint                "
+  echo "              Lint               "
   echo "================================="
-  CMD_PASS=$(gofmt -d $PROJECT_ROOT/cmd 2>&1 | read; echo $?)
-  PKG_PASS=$(gofmt -d $PROJECT_ROOT/pkg 2>&1 | read; echo $?)
-  echo "CMD_PASS=$CMD_PASS"
-  echo "PKG_PASS=$PKG_PASS"
-  FULL_PASS=$([[ $CMD_PASS == 1 ]] && [[ $PKG_PASS == 1 ]]; echo $?)
-  echo "FULL_PASS=$FULL_PASS"
+  # to have lint fail build add -set_exit_status option
+  # to each golint command
+  golint $PROJECT_ROOT/cmd/...
+  golint $PROJECT_ROOT/pkg/...
+  exit $?
+elif [[ "$action" == "format" ]]; then
   echo "================================="
-  exit $FULL_PASS
+  echo "             Format              "
+  echo "================================="
+  if [ -n "$(gofmt -l $PROJECT_ROOT/cmd $PROJECT_ROOT/pkg)" ]; then
+      gofmt -d $PROJECT_ROOT/cmd $PROJECT_ROOT/pkg
+      exit 1
+  fi
+elif [[ "$action" == "vet" ]]; then
+  echo "================================="
+  echo "              Vet                "
+  echo "================================="
+  go tool vet $PROJECT_ROOT/cmd $PROJECT_ROOT/pkg
+  exit $?
 elif [[ "$action" == "build" ]]; then
   echo "================================="
   echo "             Build               "
@@ -57,7 +71,7 @@ elif [[ "$action" == "build" ]]; then
   exit $?
 elif [[ "$action" == "test" ]]; then
   echo "================================="
-  echo "             Test                "
+  echo "              Test               "
   echo "================================="
   make test
 fi
