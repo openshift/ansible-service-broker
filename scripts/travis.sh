@@ -49,7 +49,7 @@ elif [[ "$action" == "format" ]]; then
   echo "================================="
   echo "             Format              "
   echo "================================="
-  if [ -n "$(gofmt -l cmd pkg)" ]; then
+  if [ -n "$(gofmt -l $PROJECT_ROOT/cmd $PROJECT_ROOT/pkg)" ]; then
       gofmt -d $PROJECT_ROOT/cmd $PROJECT_ROOT/pkg
       exit 1
   fi
