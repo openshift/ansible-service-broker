@@ -36,6 +36,9 @@ if [[ "$action" == "install" ]]; then
   wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
   tar xfv /tmp/glide.tar.gz -C /tmp
   sudo mv $(find /tmp -name "glide") /usr/bin
+
+  # install golint
+  go get -u github.com/golang/lint/golint
 elif [[ "$action" == "lint" ]]; then
   echo "================================="
   echo "              Lint               "
