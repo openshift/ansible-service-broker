@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // array can't be const

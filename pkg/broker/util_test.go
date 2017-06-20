@@ -10,6 +10,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func TestEnumIsCopied(t *testing.T) {
