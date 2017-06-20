@@ -1,0 +1,73 @@
+# Goal of this template is to create or update the required resources so we can
+# run the broker locally yet have it behave as if it's running in the cluster.
+# The required changes are:
+# - Create a route for our etcd so we can communicate to it
+# - Update the asb service/endpoint so it points to our locally running broker
+#   Note the asb route will now use our updated service/endpoint to contact our local broker
+#   so there is no change from Service Catalog perspective
+apiVersion: v1
+kind: Template
+metadata:
+  name: ansible-service-broker-local-development
+objects:
+
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: asb-etcd
+    labels:
+      app: ansible-service-broker
+      service: etcd
+  spec:
+    to:
+      kind: Service
+      name: etcd
+    port:
+      targetPort: ${ETCD_TARGET_PORT}
+
+- apiVersion: v1
+  kind: Endpoints
+  metadata:
+    labels:
+      app: ansible-service-broker
+      service: asb
+    name: asb
+  subsets:
+  - addresses:
+    - ip: ${BROKER_IP_ADDR}
+    ports:
+    - name: port-${BROKER_PORT}
+      port: ${BROKER_PORT}
+      protocol: TCP
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ansible-service-broker
+      service: asb
+    name: asb
+  spec:
+    ports:
+    - 
+      name: port-${BROKER_PORT}
+      port: ${BROKER_PORT}
+      protocol: TCP
+      #targetPort: ${BROKER_PORT}
+      nodePort: 0
+  selector: {}
+
+parameters:
+- description: Name of the etcd target port to connect to
+  displayname: ETCD_TARGET_PORT
+  name: ETCD_TARGET_PORT
+  value: etcd-advertise
+
+- description: Brokers port
+  displayname: BROKER_PORT
+  name: BROKER_PORT
+  value: "1338"
+
+- description: Brokers IP Address
+  displayname: BROKER_IP_ADDR
+  name: BROKER_IP_ADDR

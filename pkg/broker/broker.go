@@ -3,7 +3,6 @@ package broker
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"reflect"
 
 	"github.com/coreos/etcd/client"
@@ -12,6 +11,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/pborman/uuid"
+	k8srestclient "k8s.io/client-go/rest"
 )
 
 var (
@@ -101,16 +101,15 @@ func (a AnsibleBroker) getServiceInstance(instanceUUID uuid.UUID) (*apb.ServiceI
 
 }
 func (a AnsibleBroker) Login() error {
-	a.log.Debug("Retrieving serviceaccount token")
-	token, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	clientConfig, err := k8srestclient.InClusterConfig()
 	if err != nil {
-		a.log.Debug("Error reading serviceaccount token")
+		a.log.Error("Failed to create a restclient.InClusterConfig: %v.", err)
 		return err
 	}
 
-	return apb.OcLogin(a.log, "https://kubernetes.default",
-		"--certificate-authority", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-		"--token", string(token),
+	return apb.OcLogin(a.log, clientConfig.Host,
+		"--certificate-authority", clientConfig.CAFile,
+		"--token", clientConfig.BearerToken,
 	)
 }
 

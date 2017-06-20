@@ -1,9 +1,10 @@
 REGISTRY         ?= docker.io
 PROJECT          ?= ansibleplaybookbundle
 TAG              ?= latest
-BROKER_IMAGE     = $(REGISTRY)/$(PROJECT)/ansible-service-broker
+BROKER_IMAGE     ?= $(REGISTRY)/$(PROJECT)/ansible-service-broker
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
+BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
 
 vendor:
 	@glide install -v
@@ -17,8 +18,8 @@ install:
 	mkdir -p ${PREFIX}/etc/ansible-service-broker
 	cp etc/example-broker-config.yaml ${PREFIX}/etc/ansible-service-broker/broker-config.yaml
 
-run:
-	${PREFIX}/bin/ansible-service-broker --config ${PREFIX}/etc/ansible-service-broker/broker-config.yaml
+run: 
+	cd scripts && ./run_local.sh ${BROKER_CONFIG}
 
 uninstall:
 	rm  -f ${PREFIX}/bin/ansible-service-broker
@@ -39,6 +40,8 @@ uninstall-mock-registry:
 	rm  -f ${PREFIX}/bin/mock-registry
 	rm -rf ${PREFIX}/etc/mock-registry
 
+prepare-local-env:
+	cd scripts && ./prep_local_devel_env.sh
 
 prepare-build-image: build
 	cp broker build/broker
