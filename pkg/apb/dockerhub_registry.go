@@ -13,6 +13,7 @@ import (
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
 	logging "github.com/op/go-logging"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // DockerHubRegistry - Docker Hub registry
@@ -74,7 +75,7 @@ func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*Spec, er
 			return nil, _err
 		}
 
-		if _err = LoadYAML(string(decodedSpecYaml), _spec); _err != nil {
+		if _err = yaml.Unmarshal(decodedSpecYaml, _spec); _err != nil {
 			r.log.Error("Something went wrong loading decoded spec yaml - %v - %v", string(decodedSpecYaml), _err)
 			return nil, _err
 		}

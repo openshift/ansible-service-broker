@@ -152,7 +152,7 @@ cwo=`
 	}
 
 	spec := &Spec{}
-	if err = LoadYAML(string(decodedyaml), spec); err != nil {
+	if err = yaml.Unmarshal(decodedyaml, spec); err != nil {
 		t.Fatal(err)
 	}
 

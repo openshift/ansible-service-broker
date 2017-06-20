@@ -3,10 +3,13 @@ package apb
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	logging "github.com/op/go-logging"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	yaml "gopkg.in/yaml.v2"
+
+	logging "github.com/op/go-logging"
 )
 
 // RHCCRegistry - Red Hat Container Catalog Registry
@@ -132,7 +135,7 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 		return nil, err
 	}
 
-	if err = LoadYAML(string(decodedSpecYaml), _spec); err != nil {
+	if err = yaml.Unmarshal(decodedSpecYaml, _spec); err != nil {
 		r.log.Error("Something went wrong loading decoded spec yaml, %s", err)
 		return nil, err
 	}

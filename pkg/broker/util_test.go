@@ -95,7 +95,7 @@ cwo=`
 	}
 
 	spec := &apb.Spec{}
-	if err = apb.LoadYAML(string(decodedyaml), spec); err != nil {
+	if err = yaml.Unmarshal(decodedyaml, spec); err != nil {
 		t.Fatal(err)
 	}
 	required := []string{"mediawiki_site_lang"}
