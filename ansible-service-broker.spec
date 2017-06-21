@@ -43,7 +43,11 @@ Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
 URL: https://%{provider_prefix}
+%if 0%{?copr}
 Source0: https://%{provider_prefix}/archive/HEAD/%{repo}.tar.gz
+%else
+Source0: %{name}-%{version}.tar.gz
+%endif
 
 # e.g. el6 has ppc64 arch without gcc-go, so EA tag is required
 #ExclusiveArch: %%{?go_arches:%%{go_arches}}%%{!?go_arches:%%{ix86} x86_64 %{arm}}
