@@ -38,8 +38,8 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.0
-Release: 3%{build_timestamp}%{?dist}
+Version: 0.9.1
+Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
 URL: https://%{provider_prefix}
@@ -320,3 +320,30 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Jun 21 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.1-1
+- new package built with tito (jesusr@redhat.com)
+- bump version (jesusr@redhat.com)
+- add version template to keep in sync with tito (#212) (jmrodri@gmail.com)
+- Prepare repo for use with tito (#204) (jmrodri@gmail.com)
+- Starting point for running broker local to simulate InCluster (#192) (jwmatthews@gmail.com)
+- Check for empty spec dir when querying for catalog. (#195) (cfc@chasenc.com)
+- Packaging fix for #171 (#191) (jmontleo@redhat.com)
+- Recover jobs when broker restarted (#131) (jmrodri@gmail.com)
+- implement deprovision (#172) (fabianvf@users.noreply.github.com)
+- Run as arbitrary user (#146) (fabianvf@users.noreply.github.com)
+- add selinux policy and update rpm spec to build the sub package (#160) (jmontleo@redhat.com)
+- Updated to create/use service account for broker (#165) (jwmatthews@gmail.com)
+- Add namespace parameter from service context. (#161) (cfc@chasenc.com)
+- Add parameter schema support (#156) (jmrodri@gmail.com)
+- Fix the APB repo url. (#163) (warmchang@outlook.com)
+- Deprovison spec compliance (#117) (Shawn.Hurley21@gmail.com)
+- log in with serviceaccount certs and token (#154) (fabianvf@users.noreply.github.com)
+- Add Endpoint for ABP Tool to push Specs (#152) (Shawn.Hurley21@gmail.com)
+- fixing bug where we attempt to deference nil parameters. (#149) (Shawn.Hurley21@gmail.com)
+- Get all images (#132) (Shawn.Hurley21@gmail.com)
+- better facilitate automate copr and manual brew builds (#145) (jmontleo@redhat.com)
+- Added new registry adapter for RHCC (#135) (dymurray@redhat.com)
+- Remove jq since PR#121 merged (#141) (rhallise@redhat.com)
+- Rename fusor to openshift (#133) (jmrodri@gmail.com)
+- Replace get_images_from_org (#121) (rhallise@redhat.com)
+- Kubernetes client object (#115) (rhallise@redhat.com)
