@@ -112,16 +112,9 @@ objects:
           ports:
             - containerPort: 1338
               protocol: TCP
-          args:
-            - -c
-            - ${BROKER_CONFIG}
           env:
-          - name: DOCKERHUB_PASS
-            value: ${DOCKERHUB_PASS}
-          - name: DOCKERHUB_USER
-            value: ${DOCKERHUB_USER}
-          - name: DOCKERHUB_ORG
-            value: ${DOCKERHUB_ORG}
+          - name: BROKER_CONFIG
+            value: ${BROKER_CONFIG}
           resources: {}
           terminationMessagePath: /tmp/termination-log
         volumes:
