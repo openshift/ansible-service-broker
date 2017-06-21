@@ -1,31 +1,31 @@
 #!/bin/bash
 ###
-# This script is intended to allow us to run the broker locally but 
+# This script is intended to allow us to run the broker locally but
 # fake out the environment so it seems like it is running inside the cluster
 #
 # To run the broker locally we address the below isses:
-# - Service Catalog needs to talk to route and have it reach the local broker 
-#   - Update the asb service & endpoint to point to our local broker 
+# - Service Catalog needs to talk to route and have it reach the local broker
+#   - Update the asb service & endpoint to point to our local broker
 # - Create a route for etcd so local broker can talk to etcd
 # - Generate a configuration file for broker to use
-# - Set KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to reach cluster 
+# - Set KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to reach cluster
 # - Get existing secret for the asb service account and store ca cert/token
 #
 ###
 
 MY_VARS="./my_local_dev_vars"
-if [ ! -f $MY_VARS ]; then 
+if [ ! -f $MY_VARS ]; then
   echo "Please create $MY_VARS"
   echo "cp $MY_VARS.example $MY_VARS"
   echo "then edit as needed"
   exit 1
-fi 
+fi
 
 source ./my_local_dev_vars
 if [ "$?" -ne "0" ]; then
   echo "Error reading in my_local_dev_var"
   exit 1
-fi 
+fi
 
 
 TEMPLATE_LOCAL_DEV="../templates/deploy-local-dev-changes.yaml"
@@ -42,27 +42,27 @@ SVC_ACCT_TOKEN_FILE=$SVC_ACCT_TOKEN_DIR/token
 
 # We rely on jq for parsing json data from oc/kubectl
 which jq &> /dev/null
-if [ "$?" -ne 0 ]; then 
+if [ "$?" -ne 0 ]; then
   echo "Please ensure 'jq' is installed and in your path"
   exit 1
-fi 
+fi
 
 # We will fake out the service account directory locally on the machine
 # The directory is under /var/run and likely to be deleted between reboots
-if [ ! -d "$SVC_ACCT_TOKEN_DIR" ]; then 
+if [ ! -d "$SVC_ACCT_TOKEN_DIR" ]; then
   echo "Attempting to create serviceaccount directory: ${SVC_ACCT_TOKEN_DIR}"
   sudo mkdir -p ${SVC_ACCT_TOKEN_DIR}
-  if [ "$?" -ne "0" ]; then 
+  if [ "$?" -ne "0" ]; then
     echo "Please create serviceaccount directory with read/write permissions for your user:  ${SVC_ACCT_TOKEN_DIR}"
     exit 1
-  fi 
-fi 
+  fi
+fi
 sudo chown ${USER} ${SVC_ACCT_TOKEN_DIR}
-if [ "$?" -ne "0" ]; then 
+if [ "$?" -ne "0" ]; then
   echo "Please chown the serviceaccount directory so your user may read/write:  ${SVC_ACCT_TOKEN_DIR}"
   exit 1
-fi 
- 
+fi
+
 
 # Determine the name of the secret which has the 'asb' service account info
 BROKER_SVC_ACCT_SECRET_NAME=`oc get serviceaccount asb -n ansible-service-broker -o json | jq -c '.secrets[] | select(.name | contains("asb-token"))' | jq -c '.name'`
@@ -78,15 +78,15 @@ SVC_ACCT_CA_CRT_DATA=`oc get secret ${BROKER_SVC_ACCT_SECRET_NAME} -n ${ASB_PROJ
 SVC_ACCT_CA_CRT_DATA=( $(eval echo ${SVC_ACCT_CA_CRT_DATA[@]}) )
 # Base64 Decode
 SVC_ACCT_CA_CRT_DATA=`echo ${SVC_ACCT_CA_CRT_DATA} | base64 --decode `
-if [ "$?" -ne 0 ]; then 
+if [ "$?" -ne 0 ]; then
   echo "Unable to determine service-ca.crt for secret '${BROKER_SVC_ACCT_SECRET_NAME}'"
   exit 1
-fi 
+fi
 echo "${SVC_ACCT_CA_CRT_DATA}" &> ${SVC_ACCT_CA_CRT}
-if [ "$?" -ne "0" ]; then 
+if [ "$?" -ne "0" ]; then
   echo "Unable to write the service-ca.crt data for ${BROKER_SVC_ACCT_SECRET_NAME} to: ${SVC_ACCT_CA_CRT}"
-  exit 1 
-fi 
+  exit 1
+fi
 echo "Service Account: ca.crt"
 echo -e "Wrote \n${SVC_ACCT_CA_CRT_DATA}\n to: ${SVC_ACCT_CA_CRT}\n"
 
@@ -107,7 +107,7 @@ BROKER_SVC_ACCT_TOKEN=`echo ${BROKER_SVC_ACCT_TOKEN} | base64 --decode`
 # Go's ioutil module will read in the newline as part of the token which breaks it...and causes confusion tracking down
 ###
 echo -n "${BROKER_SVC_ACCT_TOKEN}" &> $SVC_ACCT_TOKEN_FILE
-if [ "$?" -ne 0 ]; then 
+if [ "$?" -ne 0 ]; then
   echo "Unable to write token to $SVC_ACCT_TOKEN_FILE"
   exit 1
 fi
@@ -117,38 +117,38 @@ echo -e "Wrote \n${BROKER_SVC_ACCT_TOKEN}\n to: ${SVC_ACCT_TOKEN_FILE}\n"
 # Kill any running broker pods
 oc scale deployments asb --replicas 0 -n ${ASB_PROJECT}
 # Wait for asb pod to be destroyed
-oc get pods -n ${ASB_PROJECT} | grep asb 
-while [ "$?" -ne 1 ]; do 
+oc get pods -n ${ASB_PROJECT} | grep asb
+while [ "$?" -ne 1 ]; do
   echo "Waiting for asb deployment to scale down"
   sleep 5
-  oc get pods -n ${ASB_PROJECT} | grep asb 
-done 
+  oc get pods -n ${ASB_PROJECT} | grep asb
+done
 
 oc delete endpoints asb -n ${ASB_PROJECT}
 oc delete service asb  -n ${ASB_PROJECT}
 oc delete route asb-etcd -n ${ASB_PROJECT}
 # Process required changes for local development
-oc process -f ${TEMPLATE_LOCAL_DEV} -n ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} | oc create -n ${ASB_PROJECT} -f - 
+oc process -f ${TEMPLATE_LOCAL_DEV} -n ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} | oc create -n ${ASB_PROJECT} -f -
 
 echo "Sleeping for a few seconds to avoid issues with broker not being able to talk to etcd."
 echo "Appears like there is a delay of when we create the asb-etcd route and when it is available for use"
-sleep 5 
+sleep 5
 
 etcd_route=`oc get route asb-etcd -n ${ASB_PROJECT} -o=jsonpath=\'\{.spec.host\}\'`
 echo "etcd route is at: ${etcd_route}"
 
 if [ -z "$DOCKERHUB_USERNAME" ]; then
   echo "Please set the environment variable DOCKERHUB_USERNAME and re-run"
-  exit 1 
-fi 
+  exit 1
+fi
 if [ -z "$DOCKERHUB_PASSWORD" ]; then
   echo "Please set the environment variable DOCKERHUB_PASSWORD and re-run"
-  exit 1 
-fi 
+  exit 1
+fi
 if [ -z "$DOCKERHUB_ORG" ]; then
   echo "Please set the environment variable DOCKERHUB_ORG and re-run"
-  exit 1 
-fi 
+  exit 1
+fi
 
 cat << EOF  > ${GENERATED_BROKER_CONFIG}
 ---
