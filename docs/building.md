@@ -36,3 +36,9 @@ To build an rpm of the last pushed tag, simply run:
 ```
 tito build --rpm
 ```
+
+## Prerequisites
+
+* tito
+* rhpkg
+* brewkoji
