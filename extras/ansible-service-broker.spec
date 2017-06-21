@@ -53,6 +53,8 @@ BuildRequires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 
 Requires(pre): shadow-utils
 Requires: %{name}-selinux
+#Listing the file because the upstream and downstream package names differ
+Requires: /usr/bin/oc
 
 BuildRequires: device-mapper-devel
 BuildRequires: btrfs-progs-devel
@@ -65,6 +67,7 @@ BuildRequires: btrfs-progs-devel
 %package container-scripts
 Summary: scripts required for running ansible-service-broker in a container
 BuildArch: noarch
+Requires: %{name}
 
 %description container-scripts
 containers scripts for ansible-service-broker

@@ -9,7 +9,7 @@ ENV USER_NAME=ansibleservicebroker \
 
 RUN yum -y update \
  && yum -y install epel-release centos-release-openshift-origin \
- && yum -y install origin-clients ansible-service-broker ansible-service-broker-container-scripts \
+ && yum -y install ansible-service-broker-container-scripts \
  && yum clean all
 
 RUN mkdir -p ${BASE_DIR} ${BASE_DIR}/etc \

@@ -1,5 +1,36 @@
 #!/usr/bin/env bash
 
-BROKER_CONFIG=/etc/ansible-service-broker/broker-config.yaml
+export BROKER_CONFIG=/etc/ansible-service-broker/broker-config.yaml
+
+python - <<END
+import os
+import yaml
+from subprocess import call
+
+try:
+  config=yaml.load(open(os.environ['BROKER_CONFIG'], 'r'))
+except Exception as e:
+  print("Could not read broker config. Error was: "+format(e)+"\n")
+  exit(1)
+
+if 'openshift' in config and 'target' in config['openshift']:
+  try:
+    target=config['openshift']['target']
+    user=config['openshift']['user']
+    passwd=config['openshift']['pass']
+  except Exception as e:
+    print("Could not read openshift configuration options. Error was: "+format(e)+"\n")
+    exit(1)
+
+  try:
+    call(["oc", "login", "--server=https://"+target, "-u="+user, "-p="+passwd, "--insecure-skip-tls-verify=true" ])
+  except Exception as e:
+    print("Did not successfully run oc login. Error was: "+format(e)+"\n")
+    exit(1)
+END
+
+if [ "$?" != "0" ]; then
+ exit
+fi
 
 asbd --config=${BROKER_CONFIG}
