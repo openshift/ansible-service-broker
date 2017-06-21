@@ -39,8 +39,6 @@ First cut might have to pass kubecfg from broker. FIRST SPRINT broker passes use
 admin/admin
 */
 
-var DockerSocket = "unix:///var/run/docker.sock"
-
 type ClusterConfig struct {
 	InCluster bool
 	Target    string
@@ -56,7 +54,7 @@ type Client struct {
 }
 
 func NewClient(log *logging.Logger) (*Client, error) {
-	dockerClient, err := docker.NewClient(DockerSocket)
+	dockerClient, err := clients.Docker(log)
 	if err != nil {
 		log.Error("Could not load docker client")
 		return nil, err
