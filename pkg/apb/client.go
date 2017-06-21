@@ -166,66 +166,26 @@ func (c *Client) RunImage(
 		return apbId, err
 	}
 
-	// TODO(rhallisey): Cleanup the local vs incluster code paths so there
-	// is almost no variation between the two.
-	// TODO(rhallisey): The Kubernetes API objects should be in JSON structs
-	// so it's easier to manipulate them. This is for a rebase so we don't
-	// block the service account work.  I'll come back after and clean this
-	// up.
-	var pod *v1.Pod
-	if clusterConfig.InCluster {
-		pod = &v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: apbId,
-			},
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
-					{
-						Name:  "apb",
-						Image: spec.Image,
-						Args: []string{
-							action,
-							"--extra-vars",
-							extraVars,
-						},
-						ImagePullPolicy: v1.PullAlways,
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: apbId,
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name:  "apb",
+					Image: spec.Image,
+					Args: []string{
+						action,
+						"--extra-vars",
+						extraVars,
 					},
+					ImagePullPolicy: v1.PullAlways,
 				},
-				RestartPolicy:      v1.RestartPolicyNever,
-				ServiceAccountName: serviceAccountName,
 			},
-		}
-	} else {
-		pod = &v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: apbId,
-			},
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
-					{
-						Name:  "apb",
-						Image: spec.Image,
-						Args: []string{
-							action,
-							"--extra-vars",
-							extraVars,
-						},
-						Env: []v1.EnvVar{{
-							Name:  "OPENSHIFT_TARGET",
-							Value: clusterConfig.Target,
-						}, {
-							Name:  "OPENSHIFT_USER",
-							Value: clusterConfig.User,
-						}, {
-							Name:  "OPENSHIFT_PASS",
-							Value: clusterConfig.Password,
-						}},
-						ImagePullPolicy: v1.PullAlways,
-					},
-				},
-				RestartPolicy: v1.RestartPolicyNever,
-			},
-		}
+			RestartPolicy:      v1.RestartPolicyNever,
+			ServiceAccountName: serviceAccountName,
+		},
 	}
 
 	c.log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, ns))
