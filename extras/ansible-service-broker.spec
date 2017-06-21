@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0
+Version: 0.1.1
 Release: 3%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
