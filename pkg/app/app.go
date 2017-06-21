@@ -17,8 +17,6 @@ import (
 
 const MsgBufferSize = 20
 
-var Version = "v0.1.0"
-
 type App struct {
 	broker   *broker.AnsibleBroker
 	args     Args
