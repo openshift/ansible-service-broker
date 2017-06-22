@@ -196,7 +196,7 @@ sed -i 's,/usr/local/%{name}/bin,/usr/libexec/%{name},g' %{buildroot}%{_bindir}/
 install -d -p %{buildroot}%{_docdir}/%{name}
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 755 etc/example-broker-config.yaml %{buildroot}%{_docdir}/%{name}/example-broker-config.yaml
-install -p -m 644 build/broker-config.yaml %{buildroot}%{_sysconfdir}/%{name}/broker-config.yaml
+install -p -m 644 build/broker-config.yaml.example %{buildroot}%{_sysconfdir}/%{name}/broker-config.yaml.example
 install -d -p %{buildroot}%{_libexecdir}/%{name}
 cp -r scripts/* %{buildroot}%{_libexecdir}/%{name}
 install -d -p %{buildroot}%{_unitdir}
@@ -298,7 +298,7 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %{_bindir}/%{name}
 %{_docdir}/%{name}
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_sysconfdir}/%{name}
-%attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/broker-config.yaml
+%attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/broker-config.yaml.example
 %{_unitdir}/%{name}.service
 %{_libexecdir}/%{name}
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_var}/log/%{name}
