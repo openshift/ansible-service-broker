@@ -2,9 +2,9 @@
 registry:
   name: dockerhub
   url: xxx
-  user: {{DOCKERHUB_USER}}
-  pass: {{DOCKERHUB_PASS}}
-  org: {{DOCKERHUB_ORG}}
+  user: example
+  pass: examplepass
+  org: ansibleplaybookbundle
 dao:
   etcd_host: etcd
   etcd_port: 2379
@@ -13,10 +13,7 @@ log:
   stdout: true
   level: debug
   color: true
-openshift:
-  target: {{OPENSHIFT_TARGET}}
-  user: {{OPENSHIFT_USER}}
-  pass: {{OPENSHIFT_PASS}}
+openshift: {}
 broker:
   dev_broker: true
   launch_apb_on_bind: false

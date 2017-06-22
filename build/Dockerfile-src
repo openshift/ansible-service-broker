@@ -21,7 +21,6 @@ RUN mkdir /var/log/ansible-service-broker \
     && touch /var/log/ansible-service-broker/asb.log \
     && mkdir /etc/ansible-service-broker
 
-COPY broker-config.yaml /etc/ansible-service-broker/broker-config.yaml
 COPY entrypoint.sh ansible-service-broker /usr/bin/
 COPY broker /usr/bin/asbd
 
