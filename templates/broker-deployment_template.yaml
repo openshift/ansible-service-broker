@@ -18,16 +18,52 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-        - image: "{{dockerhub_org}}/ansible-service-broker:latest"
+        - image: {{registry_org}}/ansible-service-broker:latest
           name: asb
           imagePullPolicy: Always
           ports:
             - containerPort: 1338
               protocol: TCP
           env:
-            - name: DOCKERHUB_PASS
-              value: "{{dockerhub_pass}}"
-            - name: DOCKERHUB_USER
-              value: "{{dockerhub_user}}"
-            - name: DOCKERHUB_ORG
-              value: "{{dockerhub_org}}"
+          - name: BROKER_CONFIG
+            value: /etc/ansible-service-broker/config.yaml
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/ansible-service-broker
+        volumes:
+          - name: config-volume
+            configMap:
+              name: broker-config
+              items:
+              - key: broker-config
+                path: config.yaml
+
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: broker-config
+    namespace: ansible-service-broker
+    labels:
+      app: ansible-service-broker
+  data:
+    broker-config: |
+      registry:
+        name: {{registry_name}}
+        url: {{registry_url}}
+        user: {{registry_user}}
+        pass: {{registry_pass}}
+        org: {{registry_org}}
+      dao:
+        etcd_host: {{dao_etcd_host}}
+        etcd_port: {{dao_etcd_port}}
+      log:
+        logfile: {{log_logfile}}
+        stdout: {{log_stdout}}
+        level: {{log_level}}
+        color: {{log_color}}
+      openshift: {}
+      broker:
+        dev_broker: {{broker_dev_broker}}
+        launch_apb_on_bind: {{broker_launch_apb_on_bind}}
+        output_request: {{broker_output_request}}
+        recovery: {{broker_recovery}}

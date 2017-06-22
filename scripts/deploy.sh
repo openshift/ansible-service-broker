@@ -23,7 +23,7 @@ function parse_yaml() {
             vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
             printf("%s%s%s=(\"%s\")\n", "'"$prefix"'",vn, $2, $3);
         }
-    }' | sed 's/_=/+=/g'
+      }' | sed 's/_=/+=/g' | sed 's/=("--")//g'
 }
 
 function oc_create {
@@ -31,18 +31,16 @@ function oc_create {
 }
 
 parse_yaml $PROJECT_ROOT/etc/dev.config.yaml > /tmp/dev-config
-sed -i "s/=(\"--\")//" /tmp/dev-config
+sed -i "s/=(\"\(.*\)\")/=\1/" /tmp/dev-config
 
+source /tmp/dev-config
 for tpl in services.yaml route.yaml etcd-deployment.yaml broker-deployment.yaml; do
     if [ "${tpl}" == "broker-deployment.yaml" ]; then
         cp $TEMPLATE_DIR/broker-deployment_template.yaml $TEMPLATE_DIR/$tpl
-        sed -i "s/{{dockerhub_pass}}/${registry_pass}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{dockerhub_user}}/${registry_user}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{dockerhub_org}}/${registry_org}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{openshift_pass}}/${openshift_pass}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{openshift_target}}/${openshift_target}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{openshift_user}}/${openshift_user}/" $TEMPLATE_DIR/$tpl
+        while read line; do
+          key=`echo $line | sed s/=.*//`
+          sed -i "s|{{$key}}|${!key}|" $TEMPLATE_DIR/$tpl
+        done </tmp/dev-config
     fi
-    source /tmp/dev-config
-    oc_create $tpl
+  oc_create $tpl
 done
