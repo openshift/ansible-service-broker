@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-BROKER_CONFIG=/etc/ansible-service-broker/broker-config.yaml
-
-asbd --config=${BROKER_CONFIG}
