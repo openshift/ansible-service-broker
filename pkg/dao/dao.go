@@ -73,7 +73,6 @@ func (d *Dao) SetRaw(key string, val string) error {
 }
 
 func (d *Dao) GetEtcdVersion(config Config) (string, string, error) {
-
 	// The next etcd release (1.4) will have client.GetVersion()
 	// We'll use this to test our etcd connection for now
 	resp, err := http.Get("http://" + config.EtcdHost + ":" + config.EtcdPort + "/version")
@@ -157,6 +156,13 @@ func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
 	return d.setObject(specKey(id), spec)
 }
 
+// DeleteSpec - Delete the spec for a given spec id.
+func (d *Dao) DeleteSpec(specID string) error {
+	d.log.Debug(fmt.Sprintf("Dao::DeleteSpec-> [ %s ]", specID))
+	_, err := d.kapi.Delete(context.Background(), specKey(specID), nil)
+	return err
+}
+
 // BatchSetSpecs - set specs based on SpecManifest in the kvp API.
 func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
 	// TODO: Is there no batch insert in the etcd api?
@@ -189,6 +195,18 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 	}
 
 	return specs, nil
+}
+
+// BatchDeleteSpecs - set specs based on SpecManifest in the kvp API.
+func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
+	// TODO: Is there no batch insert in the etcd api?
+	for _, spec := range specs {
+		err := d.DeleteSpec(spec.Id)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // FindByState - Retrieve all the jobs that match state

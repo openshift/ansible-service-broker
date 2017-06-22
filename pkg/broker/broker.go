@@ -123,6 +123,19 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	var specs []*apb.Spec
 	var imageCount int
 
+	//Remove all specs that have been saved.
+	dir := "/spec"
+	specs, err = a.dao.BatchGetSpecs(dir)
+	if err != nil {
+		a.log.Error("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
+		return nil, err
+	}
+	err = a.dao.BatchDeleteSpecs(specs)
+	if err != nil {
+		a.log.Error("Something went real bad trying to delete batch specs... - %v", err)
+		return nil, err
+	}
+
 	if specs, imageCount, err = a.registry.LoadSpecs(); err != nil {
 		return nil, err
 	}
