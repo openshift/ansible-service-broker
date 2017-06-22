@@ -18,7 +18,7 @@ install:
 	mkdir -p ${PREFIX}/etc/ansible-service-broker
 	cp etc/example-broker-config.yaml ${PREFIX}/etc/ansible-service-broker/broker-config.yaml
 
-run: 
+run:
 	cd scripts && ./run_local.sh ${BROKER_CONFIG}
 
 uninstall:
