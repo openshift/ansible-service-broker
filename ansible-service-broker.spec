@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.2
+Version: 0.9.3
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -318,6 +318,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Jun 22 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.3-1
+- Fixing builds and standardize on a config file name (#218) (Shawn.Hurley21@gmail.com)
+- strip makefile whitespace (#210) (ernelson@redhat.com)
+
 * Wed Jun 21 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.2-1
 - use a different source url for copr (#216) (jmrodri@gmail.com)
 - Expect a config file to be mounted  (#211) (fabianvf@users.noreply.github.com)
