@@ -106,10 +106,10 @@ is responsible for returning a slice of `Spec` structs representing the availabl
 APBs that were discovered. It is called when a broker is bootstrapped.
 A registry is instantiated as part of the applicaton's initialization process.
 The specific registry adapter used is configured via the broker
-[configuration file](../etc/example-broker-config.yaml) under the name field.
+[configuration file](../etc/example-config.yaml) under the name field.
 
 For different broker config examples and use cases see the
-[Broker Configuration](broker-config.md) doc.
+[Broker Configuration](config.md) doc.
 
 ### DockerHubRegistry Adapter
 

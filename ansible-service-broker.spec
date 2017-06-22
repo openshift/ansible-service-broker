@@ -191,12 +191,8 @@ rm -rf src
 install -d -p %{buildroot}%{_bindir}
 install -p -m 755 broker %{buildroot}%{_bindir}/asbd
 install -p -m 755 build/entrypoint.sh %{buildroot}%{_bindir}/entrypoint.sh
-install -p -m 755 build/%{name} %{buildroot}%{_bindir}/%{name}
-sed -i 's,/usr/local/%{name}/bin,/usr/libexec/%{name},g' %{buildroot}%{_bindir}/%{name}
-install -d -p %{buildroot}%{_docdir}/%{name}
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
-install -p -m 755 etc/example-broker-config.yaml %{buildroot}%{_docdir}/%{name}/example-broker-config.yaml
-install -p -m 644 build/broker-config.yaml %{buildroot}%{_sysconfdir}/%{name}/broker-config.yaml
+install -p -m 644 etc/example-config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
 install -d -p %{buildroot}%{_libexecdir}/%{name}
 cp -r scripts/* %{buildroot}%{_libexecdir}/%{name}
 install -d -p %{buildroot}%{_unitdir}
@@ -295,10 +291,8 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %files
 %license LICENSE
 %{_bindir}/asbd
-%{_bindir}/%{name}
-%{_docdir}/%{name}
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_sysconfdir}/%{name}
-%attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/broker-config.yaml
+%attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/config.yaml
 %{_unitdir}/%{name}.service
 %{_libexecdir}/%{name}
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_var}/log/%{name}

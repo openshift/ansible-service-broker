@@ -21,7 +21,7 @@ RUN mkdir /var/log/ansible-service-broker \
     && touch /var/log/ansible-service-broker/asb.log \
     && mkdir /etc/ansible-service-broker
 
-COPY entrypoint.sh ansible-service-broker /usr/bin/
+COPY entrypoint.sh /usr/bin/
 COPY broker /usr/bin/asbd
 
 RUN chown -R ${USER_NAME}:0 /var/log/ansible-service-broker \
