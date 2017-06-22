@@ -191,7 +191,6 @@ rm -rf src
 install -d -p %{buildroot}%{_bindir}
 install -p -m 755 broker %{buildroot}%{_bindir}/asbd
 install -p -m 755 build/entrypoint.sh %{buildroot}%{_bindir}/entrypoint.sh
-sed -i 's,/usr/local/%{name}/bin,/usr/libexec/%{name},g' %{buildroot}%{_bindir}/%{name}
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 644 etc/example-config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
 install -d -p %{buildroot}%{_libexecdir}/%{name}
