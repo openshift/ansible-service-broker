@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -68,14 +69,14 @@ func CreateApp() App {
 	}
 
 	// Initializing clients as soon as we have deps ready.
-	initClients(app.log.Logger, app.config.Dao.GetEtcdConfig())
-
-	app.log.Debug("Connecting Dao")
-	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
+	err = initClients(app.log.Logger, app.config.Dao.GetEtcdConfig())
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
+
+	app.log.Debug("Connecting Dao")
+	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
 
 	k8scli, err := clients.Kubernetes(app.log.Logger)
 	if err != nil {
@@ -164,7 +165,7 @@ func (a *App) Start() {
 	}
 }
 
-func initClients(log *logging.Logger, ec clients.EtcdConfig) {
+func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	// Designed to panic early if we cannot construct required clients.
 	// this likely means we're in an unrecoverable configuration or enviornment.
 	// Best we can do is alert the operator as early as possible.
@@ -174,15 +175,27 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) {
 	// dependencies / make sure things are ready.
 	log.Notice("Initializing clients...")
 	log.Debug("Trying to connect to etcd")
-	serv, clust, err := clients.GetEtcdVersion(ec)
-	if err != nil {
-		log.Error("Failed to connect to Etcd:")
-		log.Error(err.Error())
-		os.Exit(1)
-	}
-	log.Info("Etcd Version [Server: %s, Cluster: %s]", serv, clust)
 
-	clients.Etcd(ec, log)
+	etcdClient, err := clients.Etcd(ec, log)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+
+	version, err := etcdClient.GetVersion(ctx)
+	if err != nil {
+		return err
+	}
+
+	log.Info("Etcd Version [Server: %s, Cluster: %s]", version.Server, version.Cluster)
+
 	log.Debug("Connecting to Cluster")
-	clients.Kubernetes(log)
+	_, err = clients.Kubernetes(log)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

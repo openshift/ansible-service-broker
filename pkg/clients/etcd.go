@@ -51,7 +51,7 @@ func GetEtcdVersion(ec EtcdConfig) (string, string, error) {
 }
 
 // Etcd - Create a new etcd client if needed, returns reference
-func Etcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {
+func Etcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 	errMsg := "Something went wrong intializing etcd client!"
 	once.Etcd.Do(func() {
 		client, err := newEtcd(config, log)
@@ -73,7 +73,7 @@ func Etcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {
 	return instances.Etcd, nil
 }
 
-func newEtcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {
+func newEtcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 	// TODO: Config validation
 	endpoints := []string{etcdEndpoint(config.EtcdHost, config.EtcdPort)}
 
@@ -91,7 +91,7 @@ func newEtcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {
 		return nil, err
 	}
 
-	return &etcdClient, err
+	return etcdClient, err
 }
 
 func etcdEndpoint(host string, port string) string {

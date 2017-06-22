@@ -7,7 +7,7 @@ import (
 )
 
 var instances struct {
-	Etcd       *etcd.Client
+	Etcd       etcd.Client
 	Kubernetes *k8s.Clientset
 }
 
