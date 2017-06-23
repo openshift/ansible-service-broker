@@ -125,17 +125,6 @@ func (c *Client) RunImage(
 		return "", err
 	}
 
-	if !clusterConfig.InCluster {
-		err = c.RefreshLoginToken(clusterConfig)
-
-		if err != nil {
-			c.log.Error("Error occurred while refreshing login token! Aborting apb run.")
-			c.log.Error(err.Error())
-			return "", err
-		}
-		c.log.Notice("Login token successfully refreshed.")
-	}
-
 	c.log.Debug("clusterConfig:")
 	if !clusterConfig.InCluster {
 		c.log.Debug("target: [ %s ]", clusterConfig.Target)
@@ -241,14 +230,6 @@ func (c *Client) PullImage(imageName string) error {
 		OutputStream: os.Stdout,
 	}, docker.AuthConfiguration{})
 	return nil
-}
-
-func (c *Client) RefreshLoginToken(clusterConfig ClusterConfig) error {
-	return OcLogin(c.log,
-		"--insecure-skip-tls-verify", clusterConfig.Target,
-		"-u", clusterConfig.User,
-		"-p", clusterConfig.Password,
-	)
 }
 
 // TODO(fabianvf): This function is also called from broker/broker.go
