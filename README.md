@@ -73,11 +73,11 @@ configurations.
 ### Broker Targets
 * `make vendor`: Installs or updates the dependencies
 * `make build`: Builds the binary from source
-* `make install`: Installs the built binary. 
+* `make install`: Installs the built binary.
 * `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
 * `make uninstall` Deletes the installed binary and config.yaml
   * Notes for install, run, and uninstall:
-    * The default install prefix is /usr/local. Use `make build && sudo make install` to build and install. 
+    * The default install prefix is /usr/local. Use `make build && sudo make install` to build and install.
     * Alternatively you can alter the installation directory by using PREFIX, e.g if you don't want to install somewhere that requires escalated privileges. `make build && PREFIX=~ make install`
 
 ### Docker Development Build Targets
@@ -87,18 +87,10 @@ configurations.
 * `make release` Builds a docker container using the latest rpm from [Copr](https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker/)
 * `make push` Push the built image
 
-### Mock Registry Targets
-* `make build-mock-registry`: Builds the mock-registry binary from source
-* `make install-mock-registry`: Installs the mock-registry binary from source.
-* `make run-mock-registry`: Runs the mock registry
-* `make uninstall-mock-registry` Deletes the installed mock-registry binary and playbookbundles.yaml
-  * Note: The same options apply for the install prefix here as they do with the broker
-
 ### Misc Targets
 * `make clean`: Delete binaries built from source
 * `make run`: Runs the broker with the default profile, configured via `/etc/config.yaml`
 * `make install`: Builds the source and installs in `$GOPATH/bin`
-* `make run-mock-registry`: Mock registry. Entirely separate binary.
 * `make test`: Runs the test suite.
 * `make vendor`: Updates the dependencies
 * `make build`: Builds a docker container of the current source

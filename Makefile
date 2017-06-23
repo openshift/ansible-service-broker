@@ -25,21 +25,6 @@ uninstall:
 	rm  -f ${PREFIX}/bin/ansible-service-broker
 	rm -rf ${PREFIX}/etc/ansible-service-broker
 
-build-mock-registry:
-	go build -ldflags="-s -w" ./cmd/mock-registry
-
-install-mock-registry:
-	cp mock-registry ${PREFIX}/bin/mock-registry
-	mkdir -p ${PREFIX}/etc/mock-registry
-	cp cmd/mock-registry/playbookbundles.yaml ${PREFIX}/etc/mock-registry/playbookbundles.yaml
-
-run-mock-registry:
-	${PREFIX}/bin/mock-registry --appfile ${PREFIX}/etc/mock-registry/playbookbundles.yaml
-
-uninstall-mock-registry:
-	rm  -f ${PREFIX}/bin/mock-registry
-	rm -rf ${PREFIX}/etc/mock-registry
-
 prepare-local-env:
 	cd scripts && ./prep_local_devel_env.sh
 
@@ -65,7 +50,6 @@ push:
 clean:
 	@rm -f broker
 	@rm -f build/broker
-	@rm -f mock-registry
 
 deploy:
 	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh
@@ -73,4 +57,4 @@ deploy:
 test:
 	go test ./pkg/...
 
-.PHONY: vendor build install run uninstall build-mock-registry install-mock-registry run-mock-registry uninstall-mock-registry prepare-build-image build-image release-image release push clean deploy test
+.PHONY: vendor build install run uninstall -registry prepare-build-image build-image release-image release push clean deploy test
