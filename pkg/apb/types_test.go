@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // array can't be const
@@ -152,7 +153,7 @@ cwo=`
 	}
 
 	spec := &Spec{}
-	if err = LoadYAML(string(decodedyaml), spec); err != nil {
+	if err = yaml.Unmarshal(decodedyaml, spec); err != nil {
 		t.Fatal(err)
 	}
 

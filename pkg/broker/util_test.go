@@ -10,6 +10,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func TestEnumIsCopied(t *testing.T) {
@@ -95,7 +96,7 @@ cwo=`
 	}
 
 	spec := &apb.Spec{}
-	if err = apb.LoadYAML(string(decodedyaml), spec); err != nil {
+	if err = yaml.Unmarshal(decodedyaml, spec); err != nil {
 		t.Fatal(err)
 	}
 	required := []string{"mediawiki_site_lang"}
