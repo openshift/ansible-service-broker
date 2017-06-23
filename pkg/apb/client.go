@@ -11,9 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	restclient "k8s.io/client-go/rest"
 
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/pborman/uuid"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
@@ -40,8 +39,6 @@ First cut might have to pass kubecfg from broker. FIRST SPRINT broker passes use
 admin/admin
 */
 
-var DockerSocket = "unix:///var/run/docker.sock"
-
 type ClusterConfig struct {
 	InCluster bool
 	Target    string
@@ -56,52 +53,23 @@ type Client struct {
 	log           *logging.Logger
 }
 
-func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
-	clientConfig, err := clientcmd.LoadFromFile(configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	config, err := clientcmd.NewDefaultClientConfig(*clientConfig, &clientcmd.ConfigOverrides{}).ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
 func NewClient(log *logging.Logger) (*Client, error) {
-	dockerClient, err := docker.NewClient(DockerSocket)
+	dockerClient, err := clients.Docker(log)
 	if err != nil {
 		log.Error("Could not load docker client")
 		return nil, err
 	}
 
-	// NOTE: Both the external and internal client object are using the same
-	// clientset library. Internal clientset normally uses a different
-	// library
-	clientConfig, err := restclient.InClusterConfig()
+	k8s, err := clients.Kubernetes(log)
 	if err != nil {
-		log.Warning("Failed to create a InternalClientSet: %v.", err)
-
-		log.Debug("Checking for a local Cluster Config")
-		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
-		if err != nil {
-			log.Error("Failed to create LocalClientSet")
-			return nil, err
-		}
-	}
-
-	clientset, err := clientset.NewForConfig(clientConfig)
-	if err != nil {
-		log.Error("Failed to create LocalClientSet")
 		return nil, err
 	}
 
-	rest := clientset.CoreV1().RESTClient()
+	rest := k8s.CoreV1().RESTClient()
 
 	client := &Client{
 		dockerClient:  dockerClient,
-		ClusterClient: clientset,
+		ClusterClient: k8s,
 		RESTClient:    rest,
 		log:           log,
 	}
