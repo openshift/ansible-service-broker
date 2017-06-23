@@ -46,6 +46,7 @@ type Config struct {
 	OutputRequest   bool `yaml:"output_request"`
 }
 
+// DevBroker - Interface for the development broker.
 type DevBroker interface {
 	AddSpec(spec apb.Spec) (*CatalogResponse, error)
 	RemoveSpec(specID string) error
@@ -727,6 +728,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	return &CatalogResponse{Services: []Service{service}}, nil
 }
 
+// RemoveSpec - remove the spec specified from the catalog/etcd
 func (a AnsibleBroker) RemoveSpec(specID string) error {
 	spec, err := a.dao.GetSpec(specID)
 	if client.IsKeyNotFound(err) {
@@ -736,7 +738,7 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 		a.log.Error("Something went real bad trying to retrieve spec for deletion... - %v", err)
 		return err
 	}
-	err = a.dao.DeleteSpec(spec.Id)
+	err = a.dao.DeleteSpec(spec.ID)
 	if err != nil {
 		a.log.Error("Something went real bad trying to delete spec... - %v", err)
 		return err
@@ -744,6 +746,7 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 	return nil
 }
 
+// RemoveSpecs - remove all the specs from the catalog/etcd
 func (a AnsibleBroker) RemoveSpecs() error {
 	dir := "/spec"
 	specs, err := a.dao.BatchGetSpecs(dir)

@@ -85,7 +85,7 @@ func TestSpecLoadJSON(t *testing.T) {
 		panic(err)
 	}
 
-	ft.AssertEqual(t, s.Id, SpecID)
+	ft.AssertEqual(t, s.ID, SpecID)
 	ft.AssertEqual(t, s.Description, SpecDescription)
 	ft.AssertEqual(t, s.Name, SpecName)
 	ft.AssertEqual(t, s.Image, SpecImage)
@@ -97,7 +97,7 @@ func TestSpecLoadJSON(t *testing.T) {
 
 func TestSpecDumpJSON(t *testing.T) {
 	s := Spec{
-		Id:          SpecID,
+		ID:          SpecID,
 		Description: SpecDescription,
 		Name:        SpecName,
 		Image:       SpecImage,
