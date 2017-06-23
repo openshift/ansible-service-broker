@@ -26,7 +26,7 @@ type handler struct {
 	router       mux.Router
 	broker       broker.Broker
 	log          *logging.Logger
-	brokerConfig broker.BrokerConfig
+	brokerConfig broker.Config
 }
 
 // GorillaRouteHandler - gorilla route handler
@@ -44,7 +44,7 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.BrokerConfig) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config) http.Handler {
 	h := handler{
 		router:       *mux.NewRouter(),
 		broker:       b,

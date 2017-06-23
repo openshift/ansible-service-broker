@@ -9,7 +9,7 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
-	brokerConfig := new(BrokerConfig)
+	brokerConfig := new(Config)
 	brokerConfig.DevBroker = true
 	brokerConfig.LaunchApbOnBind = false
 	broker, _ := NewAnsibleBroker(nil, nil, apb.ClusterConfig{}, nil, WorkEngine{}, *brokerConfig)

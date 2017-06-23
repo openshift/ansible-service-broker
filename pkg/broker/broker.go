@@ -38,7 +38,8 @@ type Broker interface {
 	Recover() (string, error)
 }
 
-type BrokerConfig struct {
+// Config - Configuration for the broker.
+type Config struct {
 	DevBroker       bool `yaml:"dev_broker"`
 	LaunchApbOnBind bool `yaml:"launch_apb_on_bind"`
 	Recovery        bool `yaml:"recovery"`
@@ -58,18 +59,11 @@ type AnsibleBroker struct {
 	clusterConfig apb.ClusterConfig
 	registry      apb.Registry
 	engine        *WorkEngine
-	brokerConfig  BrokerConfig
+	brokerConfig  Config
 }
 
-// NewAnsibleBroker - creates a new ansible broker
-func NewAnsibleBroker(
-	dao *dao.Dao,
-	log *logging.Logger,
-	clusterConfig apb.ClusterConfig,
-	registry apb.Registry,
-	engine WorkEngine,
-	brokerConfig BrokerConfig,
-) (*AnsibleBroker, error) {
+// NewAnsibleBroker - Creates a new ansible broker
+func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig, registry apb.Registry, engine WorkEngine, brokerConfig Config) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
 		dao:           dao,
@@ -105,6 +99,8 @@ func (a AnsibleBroker) getServiceInstance(instanceUUID uuid.UUID) (*apb.ServiceI
 	return instance, nil
 
 }
+
+//Login - Will login the openshift user.
 func (a AnsibleBroker) Login() error {
 	clientConfig, err := k8srestclient.InClusterConfig()
 	if err != nil {
@@ -152,6 +148,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
 
+// Recover - Will recover the broker.
 func (a AnsibleBroker) Recover() (string, error) {
 	// At startup we should write a key to etcd.
 	// Then in recovery see if that key exists, which means we are restarting
@@ -487,16 +484,15 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*Deprovi
 		// is set and the job was already started. But I need the token.
 		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
 		return &DeprovisionResponse{Operation: token}, nil
-	} else {
-		// TODO: do we want to do synchronous deprovisioning?
-		a.log.Info("Synchronous deprovision in progress")
-		podName, err := apb.Deprovision(instance, a.clusterConfig, a.log)
-		err = cleanupDeprovision(err, podName, instance, a.dao, a.log)
-		if err != nil {
-			return nil, err
-		}
-		return &DeprovisionResponse{}, nil
 	}
+	// TODO: do we want to do synchronous deprovisioning?
+	a.log.Info("Synchronous deprovision in progress")
+	podName, err := apb.Deprovision(instance, a.clusterConfig, a.log)
+	err = cleanupDeprovision(err, podName, instance, a.dao, a.log)
+	if err != nil {
+		return nil, err
+	}
+	return &DeprovisionResponse{}, nil
 }
 
 func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance, dao *dao.Dao, log *logging.Logger) error {
@@ -657,9 +653,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	return &BindResponse{Credentials: returnCreds}, nil
 }
 
-func mergeCredentials(
-	provExtCreds *apb.ExtractedCredentials, bindExtCreds *apb.ExtractedCredentials,
-) map[string]interface{} {
+func mergeCredentials(provExtCreds *apb.ExtractedCredentials, bindExtCreds *apb.ExtractedCredentials) map[string]interface{} {
 	// TODO: Implement, need to handle case where either are empty
 	return provExtCreds.Credentials
 }

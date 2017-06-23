@@ -18,7 +18,7 @@ type Config struct {
 	Log        LogConfig
 	Openshift  apb.ClusterConfig
 	ConfigFile string
-	Broker     broker.BrokerConfig
+	Broker     broker.Config
 }
 
 // CreateConfig - Read config file and create the Config struct

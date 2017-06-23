@@ -8,6 +8,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 
+// DeprovisionJob - Job to deprovision.
 type DeprovisionJob struct {
 	serviceInstance *apb.ServiceInstance
 	clusterConfig   apb.ClusterConfig
@@ -15,24 +16,22 @@ type DeprovisionJob struct {
 	log             *logging.Logger
 }
 
+// DeprovisionMsg - Message returned for a deprovison job.
 type DeprovisionMsg struct {
 	InstanceUUID string `json:"instance_uuid"`
 	JobToken     string `json:"job_token"`
-	SpecId       string `json:"spec_id"`
+	SpecID       string `json:"spec_id"`
 	Error        string `json:"error"`
 }
 
+// Render - render the message
 func (m DeprovisionMsg) Render() string {
 	render, _ := json.Marshal(m)
 	return string(render)
 }
 
-func NewDeprovisionJob(
-	serviceInstance *apb.ServiceInstance,
-	clusterConfig apb.ClusterConfig,
-	dao *dao.Dao,
-	log *logging.Logger,
-) *DeprovisionJob {
+// NewDeprovisionJob - Create a deprovision job.
+func NewDeprovisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig, dao *dao.Dao, log *logging.Logger) *DeprovisionJob {
 	return &DeprovisionJob{
 		serviceInstance: serviceInstance,
 		clusterConfig:   clusterConfig,
@@ -40,6 +39,7 @@ func NewDeprovisionJob(
 		log:             log}
 }
 
+// Run - will run the deprovision job.
 func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	podName, err := apb.Deprovision(p.serviceInstance, p.clusterConfig, p.log)
 	err = cleanupDeprovision(err, podName, p.serviceInstance, p.dao, p.log)
@@ -50,12 +50,12 @@ func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
 		msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-			JobToken: token, SpecId: p.serviceInstance.Spec.Id, Error: err.Error()}
+			JobToken: token, SpecID: p.serviceInstance.Spec.Id, Error: err.Error()}
 		return
 	}
 
 	// send creds
 	p.log.Debug("sending message to channel")
 	msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-		JobToken: token, SpecId: p.serviceInstance.Spec.Id, Error: ""}
+		JobToken: token, SpecID: p.serviceInstance.Spec.Id, Error: ""}
 }

@@ -7,37 +7,38 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
+// ProvisionJob - Job to provision
 type ProvisionJob struct {
 	serviceInstance *apb.ServiceInstance
 	clusterConfig   apb.ClusterConfig
 	log             *logging.Logger
 }
 
+// ProvisionMsg - Message to be returned from the provision job
 type ProvisionMsg struct {
 	InstanceUUID string `json:"instance_uuid"`
 	JobToken     string `json:"job_token"`
-	SpecId       string `json:"spec_id"`
+	SpecID       string `json:"spec_id"`
 	PodName      string `json:"podname"`
 	Msg          string `json:"msg"`
 	Error        string `json:"error"`
 }
 
+// Render - Display the provision message.
 func (m ProvisionMsg) Render() string {
 	render, _ := json.Marshal(m)
 	return string(render)
 }
 
-func NewProvisionJob(
-	serviceInstance *apb.ServiceInstance,
-	clusterConfig apb.ClusterConfig,
-	log *logging.Logger,
-) *ProvisionJob {
+// NewProvisionJob - Create a new provision job.
+func NewProvisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig, log *logging.Logger) *ProvisionJob {
 	return &ProvisionJob{
 		serviceInstance: serviceInstance,
 		clusterConfig:   clusterConfig,
 		log:             log}
 }
 
+// Run - run the provision job.
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
 	sm := apb.NewServiceAccountManager(p.log)
@@ -52,12 +53,12 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
 		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-			JobToken: token, SpecId: p.serviceInstance.Spec.Id, PodName: "", Msg: "", Error: err.Error()}
+			JobToken: token, SpecID: p.serviceInstance.Spec.Id, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
 	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-		JobToken: token, SpecId: p.serviceInstance.Spec.Id, PodName: podName, Msg: "", Error: ""}
+		JobToken: token, SpecID: p.serviceInstance.Spec.Id, PodName: podName, Msg: "", Error: ""}
 
 	// need to get the pod name for the job state
 	extCreds, extErr := apb.ExtractCredentials(podName, p.serviceInstance.Context.Namespace, p.log)
@@ -68,7 +69,7 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// can't have an extError type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
 		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-			JobToken: token, SpecId: p.serviceInstance.Spec.Id, PodName: podName, Msg: "", Error: extErr.Error()}
+			JobToken: token, SpecID: p.serviceInstance.Spec.Id, PodName: podName, Msg: "", Error: extErr.Error()}
 		return
 	}
 
@@ -79,5 +80,5 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	jsonmsg, _ := json.Marshal(extCreds)
 	p.log.Debug("sending message to channel")
 	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-		JobToken: token, SpecId: p.serviceInstance.Spec.Id, PodName: podName, Msg: string(jsonmsg), Error: ""}
+		JobToken: token, SpecID: p.serviceInstance.Spec.Id, PodName: podName, Msg: string(jsonmsg), Error: ""}
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/pborman/uuid"
 )
 
+// ProjectRoot - return the root path for the application
 func ProjectRoot() string {
 	gopath := os.Getenv("GOPATH")
 	rootPath := path.Join(gopath, "src", "github.com", "openshift",

@@ -19,9 +19,6 @@ import (
 // MsgBufferSize - The buffer for the message channel.
 const MsgBufferSize = 20
 
-// Version - the current version of the ansbile service broker. Should be updated by tito.
-var Version = "v0.1.0"
-
 // App - All the application pieces that are installed.
 type App struct {
 	broker   *broker.AnsibleBroker
