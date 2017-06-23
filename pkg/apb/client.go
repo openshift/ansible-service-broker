@@ -54,23 +54,15 @@ type Client struct {
 }
 
 func NewClient(log *logging.Logger) (*Client, error) {
-	dockerClient, err := clients.Docker(log)
-	if err != nil {
-		log.Error("Could not load docker client")
-		return nil, err
-	}
-
-	k8s, err := clients.Kubernetes(log)
-	if err != nil {
-		return nil, err
-	}
-
-	rest := k8s.CoreV1().RESTClient()
+	//TODO: This object gets created each provision, bind, deprovision,
+	// and unbind.  Instead, those functions should be using the global
+	// clients were needed and this class needs to be reworked.
+	k8s := clients.Clients.KubernetesClient
 
 	client := &Client{
-		dockerClient:  dockerClient,
+		dockerClient:  clients.Clients.DockerClient,
 		ClusterClient: k8s,
-		RESTClient:    rest,
+		RESTClient:    k8s.CoreV1().RESTClient(),
 		log:           log,
 	}
 
@@ -197,14 +189,14 @@ func (c *Client) RunImage(
 	}
 
 	c.log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, ns))
-	_, err = c.ClusterClient.CoreV1().Pods(ns).Create(pod)
+	_, err = clients.Clients.KubernetesClient.CoreV1().Pods(ns).Create(pod)
 
 	return apbId, err
 }
 
 func (c *Client) PullImage(imageName string) error {
 	// Under what circumstances does this error out?
-	c.dockerClient.PullImage(docker.PullImageOptions{
+	clients.Clients.DockerClient.PullImage(docker.PullImageOptions{
 		Repository:   imageName,
 		OutputStream: os.Stdout,
 	}, docker.AuthConfiguration{})

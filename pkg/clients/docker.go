@@ -5,11 +5,13 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-func Docker(log *logging.Logger) (*docker.Client, error) {
+func NewDocker(log *logging.Logger) error {
 	dockerClient, err := docker.NewClient(DockerSocket)
 	if err != nil {
 		log.Error("Could not load docker client")
-		return nil, err
+		return err
 	}
-	return dockerClient, nil
+
+	Clients.DockerClient = dockerClient
+	return nil
 }
