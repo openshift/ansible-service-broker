@@ -22,7 +22,7 @@ func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
 	return config, nil
 }
 
-func Kubernetes(log *logging.Logger) (*clientset.Clientset, error) {
+func NewKubernetes(log *logging.Logger) error {
 	// NOTE: Both the external and internal client object are using the same
 	// clientset library. Internal clientset normally uses a different
 	// library
@@ -34,15 +34,19 @@ func Kubernetes(log *logging.Logger) (*clientset.Clientset, error) {
 		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
 		if err != nil {
 			log.Error("Failed to create LocalClientSet")
-			return nil, err
+			return err
 		}
 	}
 
 	clientset, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
 		log.Error("Failed to create LocalClientSet")
-		return nil, err
+		return err
 	}
 
-	return clientset, nil
+	rest := clientset.CoreV1().RESTClient()
+
+	Clients.RESTClient = rest
+	Clients.KubernetesClient = clientset
+	return nil
 }
