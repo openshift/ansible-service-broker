@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
@@ -72,6 +73,21 @@ func (m MockBroker) Recover() (string, error) {
 	return "recover", nil
 }
 
+func (m MockBroker) AddSpec(spec apb.Spec) (*broker.CatalogResponse, error) {
+	m.called("addSpec", true)
+	return &broker.CatalogResponse{Services: []broker.Service{}}, nil
+}
+
+func (m MockBroker) RemoveSpec(specID string) error {
+	m.called("removeSpec", true)
+	return nil
+}
+
+func (m MockBroker) RemoveSpecs() error {
+	m.called("removeSpecs", true)
+	return nil
+}
+
 var log = logging.MustGetLogger("handler")
 var brokerConfig broker.BrokerConfig
 
@@ -95,6 +111,7 @@ func TestNewHandler(t *testing.T) {
 
 func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
+	brokerConfig.DevBroker = false
 	testhandler := NewHandler(testb, log, brokerConfig)
 	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
 	if err != nil {
@@ -110,27 +127,101 @@ func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
+func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
+	testb := MockBroker{Name: "testbroker"}
+	brokerConfig.DevBroker = true
+	testhandler := NewHandler(testb, log, brokerConfig)
+	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
+	if err != nil {
+		ft.AssertTrue(t, false, err.Error())
+	}
+	form := url.Values{}
+	form.Add("apbSpec", base64TestSpec)
+	req.PostForm = form
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	testhandler.ServeHTTP(w, req)
+	ft.AssertEqual(t, w.Result().StatusCode, http.StatusOK, fmt.Sprintf("resulting status was not 404 - %v", w.Result().Status))
+	ft.AssertNotNil(t, testhandler, "handler wasn't created")
+}
+
+func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
+	testb := MockBroker{Name: "testbroker"}
+	brokerConfig.DevBroker = false
+	testhandler := NewHandler(testb, log, brokerConfig)
+	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
+	if err != nil {
+		ft.AssertTrue(t, false, err.Error())
+	}
+	w := httptest.NewRecorder()
+	testhandler.ServeHTTP(w, req)
+	ft.AssertEqual(t, w.Result().StatusCode, http.StatusNotFound, fmt.Sprintf("resulting status was not 404 - %v", w.Result().Status))
+	ft.AssertNotNil(t, testhandler, "handler wasn't created")
+}
+
+func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
+	testb := MockBroker{Name: "testbroker"}
+	brokerConfig.DevBroker = true
+	testhandler := NewHandler(testb, log, brokerConfig)
+	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
+	if err != nil {
+		ft.AssertTrue(t, false, err.Error())
+	}
+	w := httptest.NewRecorder()
+	testhandler.ServeHTTP(w, req)
+	ft.AssertEqual(t, w.Result().StatusCode, http.StatusNoContent, fmt.Sprintf("resulting status was not 204 - %v", w.Result().Status))
+	ft.AssertNotNil(t, testhandler, "handler wasn't created")
+}
+
+func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
+	testb := MockBroker{Name: "testbroker"}
+	brokerConfig.DevBroker = false
+	testhandler := NewHandler(testb, log, brokerConfig)
+	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
+	if err != nil {
+		ft.AssertTrue(t, false, err.Error())
+	}
+	w := httptest.NewRecorder()
+	testhandler.ServeHTTP(w, req)
+	ft.AssertEqual(t, w.Result().StatusCode, http.StatusNotFound, fmt.Sprintf("resulting status was not 404 - %v", w.Result().Status))
+	ft.AssertNotNil(t, testhandler, "handler wasn't created")
+}
+
+func TestDevHandlerDoesHaveAPBSpecsDeleteRoute(t *testing.T) {
+	testb := MockBroker{Name: "testbroker"}
+	brokerConfig.DevBroker = true
+	testhandler := NewHandler(testb, log, brokerConfig)
+	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
+	if err != nil {
+		ft.AssertTrue(t, false, err.Error())
+	}
+	w := httptest.NewRecorder()
+	testhandler.ServeHTTP(w, req)
+	ft.AssertEqual(t, w.Result().StatusCode, http.StatusNoContent, fmt.Sprintf("resulting status was not 204 - %v", w.Result().Status))
+	ft.AssertNotNil(t, testhandler, "handler wasn't created")
+}
+
 func TestBootstrap(t *testing.T) {
-	testhandler, w, r := BuildBootstrapHandler(nil)
+	testhandler, w, r := buildBootstrapHandler(nil)
 	testhandler.bootstrap(w, r, nil)
 	ft.AssertEqual(t, w.Code, 200, "code not equal")
 }
 
 func TestCatalog(t *testing.T) {
-	testhandler, w, r := BuildCatalogHandler(nil)
+	testhandler, w, r := buildCatalogHandler(nil)
 	testhandler.catalog(w, r, nil)
 	ft.AssertEqual(t, w.Code, 200, "code not equal")
 }
 
 func TestProvisionCreate(t *testing.T) {
-	testhandler, w, r, params := BuildProvisionHandler(uuid.New(), nil, "")
+	testhandler, w, r, params := buildProvisionHandler(uuid.New(), nil, "")
 	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 201, "provision not created")
 	ft.AssertOperation(t, w.Body, "")
 }
 
 func TestProvisionInvalidUUID(t *testing.T) {
-	testhandler, w, r, params := BuildProvisionHandler("invaliduuid", nil, "")
+	testhandler, w, r, params := buildProvisionHandler("invaliduuid", nil, "")
 	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "provision not created")
 	ft.AssertError(t, w.Body, "invalid instance_uuid")
@@ -140,34 +231,34 @@ func TestProvisionCouldnotReadRequest(t *testing.T) {
 	r := httptest.NewRequest("PUT", "/v2/service_instance/invaliduuid", nil)
 	r.Header.Add("Content-Type", "application/json")
 
-	testhandler, w, _, params := BuildProvisionHandler(uuid.New(), nil, "")
+	testhandler, w, _, params := buildProvisionHandler(uuid.New(), nil, "")
 	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "provision not created")
 	ft.AssertError(t, w.Body, "could not read request: EOF")
 }
 
 func TestProvisionDuplicate(t *testing.T) {
-	testhandler, w, r, params := BuildProvisionHandler(uuid.New(), broker.ErrorDuplicate, "")
+	testhandler, w, r, params := buildProvisionHandler(uuid.New(), broker.ErrorDuplicate, "")
 	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 409, "should've been a conflict")
 	ft.AssertOperation(t, w.Body, "")
 }
 
 func TestProvisionAlreadyProvisioned(t *testing.T) {
-	testhandler, w, r, params := BuildProvisionHandler(uuid.New(), broker.ErrorAlreadyProvisioned, "")
+	testhandler, w, r, params := buildProvisionHandler(uuid.New(), broker.ErrorAlreadyProvisioned, "")
 	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 200, "should've been an OK ")
 }
 
 func TestProvisionNotFound(t *testing.T) {
-	testhandler, w, r, params := BuildProvisionHandler(uuid.New(), broker.ErrorNotFound, "")
+	testhandler, w, r, params := buildProvisionHandler(uuid.New(), broker.ErrorNotFound, "")
 	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "should've been a bad request for error not found")
 	ft.AssertError(t, w.Body, "not found")
 }
 
 func TestProvisionOtherError(t *testing.T) {
-	testhandler, w, r, params := BuildProvisionHandler(uuid.New(), errors.New("random error"), "")
+	testhandler, w, r, params := buildProvisionHandler(uuid.New(), errors.New("random error"), "")
 	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "should've been a bad request for error not found")
 	ft.AssertError(t, w.Body, "random error")
@@ -175,7 +266,7 @@ func TestProvisionOtherError(t *testing.T) {
 
 func TestProvisionAccepted(t *testing.T) {
 	testuuid := uuid.New()
-	testhandler, w, r, params := BuildProvisionHandler(uuid.New(), nil, testuuid)
+	testhandler, w, r, params := buildProvisionHandler(uuid.New(), nil, testuuid)
 	testhandler.provision(w, r, params)
 	ft.AssertEqual(t, w.Code, 201, "should've been 201 accepted")
 	ft.AssertOperation(t, w.Body, testuuid)
@@ -200,47 +291,47 @@ func TestBindBadBindRequest(t *testing.T) {
 		fmt.Sprintf("/v2/service_instance/%s/service_bindings/%s", testuuid, testuuid), nil)
 	r.Header.Add("Content-Type", "application/json")
 
-	testhandler, w, _, params := BuildBindHandler(testuuid, broker.ErrorDuplicate)
+	testhandler, w, _, params := buildBindHandler(testuuid, broker.ErrorDuplicate)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 500, "should've been an internal server error")
 }
 
 func TestBindDuplicate(t *testing.T) {
-	testhandler, w, r, params := BuildBindHandler(uuid.New(), broker.ErrorDuplicate)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), broker.ErrorDuplicate)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 409, "should've been a conflict")
 	ft.AssertError(t, w.Body, "")
 }
 
 func TestBindAlreadyProvisioned(t *testing.T) {
-	testhandler, w, r, params := BuildBindHandler(uuid.New(), broker.ErrorAlreadyProvisioned)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), broker.ErrorAlreadyProvisioned)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 200, "should've been an OK ")
 }
 
 func TestBindNotFound(t *testing.T) {
-	testhandler, w, r, params := BuildBindHandler(uuid.New(), broker.ErrorNotFound)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), broker.ErrorNotFound)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "should've been a bad request for error not found")
 	ft.AssertError(t, w.Body, "not found")
 }
 
 func TestBindOtherError(t *testing.T) {
-	testhandler, w, r, params := BuildBindHandler(uuid.New(), errors.New("random error"))
+	testhandler, w, r, params := buildBindHandler(uuid.New(), errors.New("random error"))
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "should've been a bad request for error not found")
 	ft.AssertError(t, w.Body, "random error")
 }
 
 func TestBindCreated(t *testing.T) {
-	testhandler, w, r, params := BuildBindHandler(uuid.New(), nil)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), nil)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 201, "should've been a created")
 	ft.AssertError(t, w.Body, "")
 }
 
 func TestBindInvalidInstance(t *testing.T) {
-	testhandler, w, r, _ := BuildBindHandler(uuid.New(), nil)
+	testhandler, w, r, _ := buildBindHandler(uuid.New(), nil)
 	testhandler.bind(w, r, nil)
 	ft.AssertEqual(t, w.Code, 400, "code not equal")
 }
@@ -251,7 +342,7 @@ func TestInvalidLastOperation(t *testing.T) {
 	testuuid := uuid.New()
 	r := httptest.NewRequest("GET", fmt.Sprintf("/v2/service_instance/%s/last_operation", testuuid), nil)
 
-	testhandler, w, _, params := BuildLastOperationHandler(testuuid, nil)
+	testhandler, w, _, params := buildLastOperationHandler(testuuid, nil)
 	testhandler.lastoperation(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "invalid operation")
 	ft.AssertError(t, w.Body, "invalid operation")
@@ -261,14 +352,14 @@ func TestMissingOperation(t *testing.T) {
 	testuuid := uuid.New()
 	r := httptest.NewRequest("GET", fmt.Sprintf("/v2/service_instance/%s/last_operation", testuuid), nil)
 
-	testhandler, w, _, params := BuildLastOperationHandler(testuuid, nil)
+	testhandler, w, _, params := buildLastOperationHandler(testuuid, nil)
 	testhandler.lastoperation(w, r, params)
 	ft.AssertEqual(t, w.Code, 200, "invalid error code")
 	ft.AssertState(t, w.Body, "in progress")
 }
 
 func TestLastOperation(t *testing.T) {
-	testhandler, w, r, params := BuildLastOperationHandler(uuid.New(), nil)
+	testhandler, w, r, params := buildLastOperationHandler(uuid.New(), nil)
 	testhandler.lastoperation(w, r, params)
 	ft.AssertEqual(t, w.Code, 200, "lastoperation should've returned 200")
 	ft.AssertState(t, w.Body, "in progress")
@@ -276,8 +367,7 @@ func TestLastOperation(t *testing.T) {
 
 // utility functions
 
-func BuildBootstrapHandler(err error) (
-	handler, *httptest.ResponseRecorder, *http.Request) {
+func buildBootstrapHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
 	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
@@ -287,8 +377,7 @@ func BuildBootstrapHandler(err error) (
 	return testhandler, w, r
 }
 
-func BuildCatalogHandler(err error) (
-	handler, *httptest.ResponseRecorder, *http.Request) {
+func buildCatalogHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
 	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
@@ -298,8 +387,7 @@ func BuildCatalogHandler(err error) (
 	return testhandler, w, r
 }
 
-func BuildProvisionHandler(testuuid string, err error, operation string) (
-	handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
+func buildProvisionHandler(testuuid string, err error, operation string) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err, Operation: operation}
 	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
@@ -315,8 +403,7 @@ func BuildProvisionHandler(testuuid string, err error, operation string) (
 	return testhandler, w, r, params
 }
 
-func BuildLastOperationHandler(testuuid string, err error) (
-	handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
+func buildLastOperationHandler(testuuid string, err error) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
 	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
@@ -332,8 +419,7 @@ func BuildLastOperationHandler(testuuid string, err error) (
 	return testhandler, w, r, params
 }
 
-func BuildBindHandler(testuuid string, err error) (
-	handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
+func buildBindHandler(testuuid string, err error) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
 	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
