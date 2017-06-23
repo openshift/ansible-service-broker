@@ -10,7 +10,7 @@ import (
 // MockFile - Mock file contains fake regitry data
 var MockFile = "/etc/ansible-service-broker/mock-registry-data.yaml"
 
-// MockRegistry
+// MockRegistry - a registry that is for mocking data
 type MockRegistry struct {
 	config RegistryConfig
 	log    *logging.Logger
@@ -47,7 +47,7 @@ func (r *MockRegistry) LoadSpecs() ([]*Spec, int, error) {
 	r.log.Info("Loaded [ %d ] specs from %s registry", len(parsedData.Apps), r.config.Name)
 
 	for _, spec := range parsedData.Apps {
-		r.log.Debug("ID: %s", spec.Id)
+		r.log.Debug("ID: %s", spec.ID)
 	}
 
 	return parsedData.Apps, len(parsedData.Apps), nil

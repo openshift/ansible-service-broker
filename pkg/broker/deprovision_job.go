@@ -49,13 +49,13 @@ func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-			JobToken: token, SpecID: p.serviceInstance.Spec.Id, Error: err.Error()}
+		msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
+			JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: err.Error()}
 		return
 	}
 
 	// send creds
 	p.log.Debug("sending message to channel")
-	msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-		JobToken: token, SpecID: p.serviceInstance.Spec.Id, Error: ""}
+	msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
+		JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: ""}
 }

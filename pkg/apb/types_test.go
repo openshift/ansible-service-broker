@@ -14,7 +14,7 @@ import (
 // array can't be const
 var SpecTags = []string{"latest", "old-release"}
 
-const SpecId = "ab094014-b740-495e-b178-946d5aa97ebf"
+const SpecID = "ab094014-b740-495e-b178-946d5aa97ebf"
 const SpecName = "etherpad-apb"
 const SpecImage = "fusor/etherpad-apb"
 const SpecBindable = false
@@ -75,7 +75,7 @@ var SpecJSON = fmt.Sprintf(`
 	"async": "%s",
 	"parameters": %s
 }
-`, SpecId, SpecDescription, SpecName, SpecImage, convertedSpecTags, SpecBindable, SpecAsync, SpecParameters)
+`, SpecID, SpecDescription, SpecName, SpecImage, convertedSpecTags, SpecBindable, SpecAsync, SpecParameters)
 
 func TestSpecLoadJSON(t *testing.T) {
 
@@ -85,7 +85,7 @@ func TestSpecLoadJSON(t *testing.T) {
 		panic(err)
 	}
 
-	ft.AssertEqual(t, s.Id, SpecId)
+	ft.AssertEqual(t, s.Id, SpecID)
 	ft.AssertEqual(t, s.Description, SpecDescription)
 	ft.AssertEqual(t, s.Name, SpecName)
 	ft.AssertEqual(t, s.Image, SpecImage)
@@ -97,7 +97,7 @@ func TestSpecLoadJSON(t *testing.T) {
 
 func TestSpecDumpJSON(t *testing.T) {
 	s := Spec{
-		Id:          SpecId,
+		Id:          SpecID,
 		Description: SpecDescription,
 		Name:        SpecName,
 		Image:       SpecImage,

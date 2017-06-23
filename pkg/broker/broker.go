@@ -186,7 +186,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 	for _, rs := range recoverStatuses {
 
 		// We have an in progress job
-		instanceID := rs.InstanceId.String()
+		instanceID := rs.InstanceID.String()
 		instance, err := a.dao.GetServiceInstance(instanceID)
 		if err != nil {
 			return "", err
@@ -203,8 +203,8 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// Handle bad write of service instance
 			if instance.Spec == nil || instance.Parameters == nil {
 				a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token, State: apb.StateFailed})
-				a.dao.DeleteServiceInstance(instance.Id.String())
-				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.Id))
+				a.dao.DeleteServiceInstance(instance.ID.String())
+				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.ID))
 				// skip to the next item
 				continue
 			}
@@ -366,7 +366,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
-		Id:         instanceUUID,
+		ID:         instanceUUID,
 		Spec:       spec,
 		Context:    context,
 		Parameters: parameters,
@@ -380,7 +380,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	if si, err := a.dao.GetServiceInstance(instanceUUID.String()); err == nil {
 		//This will use the package to make sure that if the type is changed away from []byte it can still be evaluated.
-		if uuid.Equal(si.Id, serviceInstance.Id) {
+		if uuid.Equal(si.ID, serviceInstance.ID) {
 			if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
 				a.log.Debug("already have this instance returning 200")
 				return &ProvisionResponse{}, ErrorAlreadyProvisioned
@@ -496,7 +496,7 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*Deprovi
 }
 
 func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance, dao *dao.Dao, log *logging.Logger) error {
-	instanceID := instance.Id.String()
+	instanceID := instance.ID.String()
 	sm := apb.NewServiceAccountManager(log)
 	log.Info("Destroying APB sandbox...")
 	sm.DestroyApbSandbox(podName, instance.Context.Namespace)
@@ -522,8 +522,8 @@ func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance
 func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error {
 	// -> Lookup bindings by instance ID; 400 if any are active, related issue:
 	//    https://github.com/openservicebrokerapi/servicebroker/issues/127
-	if len(instance.BindingIds) > 0 {
-		a.log.Debugf("Found bindings with ids: %v", instance.BindingIds)
+	if len(instance.BindingIDs) > 0 {
+		a.log.Debugf("Found bindings with ids: %v", instance.BindingIDs)
 		return ErrorBindingExists
 	}
 	// TODO WHAT TO DO IF ASYNC BIND/PROVISION IN PROGRESS
@@ -561,8 +561,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 
 	bindingInstance := &apb.BindInstance{
-		Id:         bindingUUID,
-		ServiceId:  instanceUUID,
+		ID:         bindingUUID,
+		ServiceID:  instanceUUID,
 		Parameters: &params,
 	}
 
@@ -576,7 +576,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 	// return 201 when we're done.
 	if bi, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
-		if uuid.Equal(bi.Id, bindingInstance.Id) {
+		if uuid.Equal(bi.ID, bindingInstance.ID) {
 			if reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
 				a.log.Debug("already have this binding instance, returning 200")
 				return &BindResponse{}, ErrorAlreadyProvisioned
@@ -720,7 +720,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 //AddSpec - adding the spec to the catalog for local developement
 func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
-	if err := a.dao.SetSpec(spec.Id, &spec); err != nil {
+	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err
 	}
 	service := SpecToService(&spec)

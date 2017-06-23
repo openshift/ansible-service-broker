@@ -1,37 +1,37 @@
 package apb
 
 import (
-	logging "github.com/op/go-logging"
-	yaml "gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
+
+	logging "github.com/op/go-logging"
+	yaml "gopkg.in/yaml.v2"
 )
 
+// ServiceAccountManager - managers the service account methods
 type ServiceAccountManager struct {
 	log *logging.Logger
 }
 
+// NewServiceAccountManager - Creates a new service account manager
 func NewServiceAccountManager(log *logging.Logger) ServiceAccountManager {
 	return ServiceAccountManager{
 		log: log,
 	}
 }
 
-// Sets up ServiceAccount based apb sandbox
+// CreateApbSandbox - Sets up ServiceAccount based apb sandbox
 // Returns service account name to be used as a handle for destroying
 // the sandbox at the conclusion of running the apb
-func (s *ServiceAccountManager) CreateApbSandbox(
-	namespace string,
-	apbId string,
-) (string, error) {
-	svcAccountName := apbId
-	roleBindingName := apbId
+func (s *ServiceAccountManager) CreateApbSandbox(namespace string, apbID string) (string, error) {
+	svcAccountName := apbID
+	roleBindingName := apbID
 
 	svcAcctM := map[string]interface{}{
 		"apiVersion": "v1",
 		"kind":       "ServiceAccount",
 		"metadata": map[string]string{
-			"name":      apbId,
+			"name":      apbID,
 			"namespace": namespace,
 		},
 	}
@@ -56,7 +56,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 	}
 
 	s.createResourceDir()
-	rFilePath, err := s.writeResourceFile(apbId, &svcAcctM, &roleBindingM)
+	rFilePath, err := s.writeResourceFile(apbID, &svcAcctM, &roleBindingM)
 	if err != nil {
 		return "", err
 	}
@@ -64,9 +64,9 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 	// Create resources in cluster
 	s.createResources(rFilePath, namespace)
 
-	s.log.Info("Successfully created apb sandbox: [ %s ]", apbId)
+	s.log.Info("Successfully created apb sandbox: [ %s ]", apbID)
 
-	return apbId, nil
+	return apbID, nil
 }
 
 func (s *ServiceAccountManager) createResources(rFilePath string, namespace string) error {
@@ -86,11 +86,7 @@ func (s *ServiceAccountManager) createResources(rFilePath string, namespace stri
 	return nil
 }
 
-func (s *ServiceAccountManager) writeResourceFile(
-	handle string,
-	svcAcctM *map[string]interface{},
-	roleBindingM *map[string]interface{},
-) (string, error) {
+func (s *ServiceAccountManager) writeResourceFile(handle string, svcAcctM *map[string]interface{}, roleBindingM *map[string]interface{}) (string, error) {
 	// Create file if doesn't already exist
 	filePath, err := s.createFile(handle)
 	if err != nil {
@@ -158,10 +154,8 @@ func (s *ServiceAccountManager) createFile(handle string) (string, error) {
 	return rFilePath, nil
 }
 
-func (s *ServiceAccountManager) DestroyApbSandbox(
-	handle string,
-	namespace string,
-) error {
+// DestroyApbSandbox - Destroys the apb sandbox
+func (s *ServiceAccountManager) DestroyApbSandbox(handle string, namespace string) error {
 	if handle == "" {
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return nil

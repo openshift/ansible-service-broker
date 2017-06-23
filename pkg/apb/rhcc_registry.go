@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
-
 	logging "github.com/op/go-logging"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // RHCCRegistry - Red Hat Container Catalog Registry
@@ -18,6 +17,7 @@ type RHCCRegistry struct {
 	log    *logging.Logger
 }
 
+// Image - RHCC Registry Image that is returned from the RHCC Catalog api.
 type Image struct {
 	Description  string `json:"description"`
 	IsOfficial   bool   `json:"is_official"`
@@ -27,6 +27,7 @@ type Image struct {
 	StarCount    int    `json:"star_count"`
 }
 
+// ImageResponse - RHCC Registry Image Response returned for the RHCC Catalog api
 type ImageResponse struct {
 	NumResults int      `json:"num_results"`
 	Query      string   `json:"query"`
@@ -42,7 +43,7 @@ func (r *RHCCRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 }
 
 // This function is used because our code expects an HTTP Url for talking to RHCC
-func (r RHCCRegistry) cleanHttpUrl(url string) string {
+func (r RHCCRegistry) cleanHTTPURL(url string) string {
 	if strings.HasPrefix(url, "http://") == true {
 		return url
 	}
@@ -81,7 +82,7 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 	r.log.Debug("RHCCRegistry::imageToSpec")
 	_spec := &Spec{}
-	url := r.cleanHttpUrl(r.config.Url)
+	url := r.cleanHTTPURL(r.config.URL)
 
 	req, err := http.NewRequest("GET", url+"/v2/"+image.Name+"manifests/latest", nil)
 	if err != nil {
@@ -144,9 +145,10 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 	return _spec, nil
 }
 
+// LoadImages - Get all the images for a particular query
 func (r RHCCRegistry) LoadImages(Query string) (ImageResponse, error) {
 	r.log.Debug("RHCCRegistry::LoadImages")
-	url := r.cleanHttpUrl(r.config.Url)
+	url := r.cleanHTTPURL(r.config.URL)
 	r.log.Debug("Using " + url + " to source APB images using query:" + Query)
 	req, err := http.NewRequest("GET", url+"/v1/search?q="+Query, nil)
 	if err != nil {

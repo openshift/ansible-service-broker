@@ -6,6 +6,7 @@ import (
 	"syscall"
 )
 
+// HardcodedClusterConfig - Default cluster config.
 var HardcodedClusterConfig = ClusterConfig{
 	//Target:   "cap.example.com:8443",
 	Target:   "10.1.2.2:8443",
@@ -13,12 +14,14 @@ var HardcodedClusterConfig = ClusterConfig{
 	Password: "admin",
 }
 
+// RunCommand - runs a command with the args.
 // HACK: really need a better way to do docker run
 func RunCommand(cmd string, args ...string) ([]byte, error) {
 	output, err := exec.Command(cmd, args...).CombinedOutput()
 	return output, err
 }
 
+// RunCommandWithExitCode - Runs a command and captures the exit code to return.
 func RunCommandWithExitCode(name string, args ...string) (stdout string, stderr string, exitCode int) {
 	var outbuf, errbuf bytes.Buffer
 	defaultFailedCode := 1

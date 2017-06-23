@@ -162,7 +162,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 		spec := &apb.Spec{}
 		apb.LoadJSON(payload, spec)
 		specs[i] = spec
-		d.log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.Id)
+		d.log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.ID)
 	}
 
 	return specs, nil
@@ -172,7 +172,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
 	// TODO: Is there no batch insert in the etcd api?
 	for _, spec := range specs {
-		err := d.DeleteSpec(spec.Id)
+		err := d.DeleteSpec(spec.ID)
 		if err != nil {
 			return err
 		}
@@ -201,7 +201,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	for _, node := range stateNodes {
 		k := fmt.Sprintf("%s/job", node.Key)
 
-		status := apb.RecoverStatus{InstanceId: uuid.Parse(stateKeyID(node.Key))}
+		status := apb.RecoverStatus{InstanceID: uuid.Parse(stateKeyID(node.Key))}
 		jobstate := apb.JobState{}
 		nodes, e := d.kapi.Get(context.Background(), k, opts)
 		if e != nil {
