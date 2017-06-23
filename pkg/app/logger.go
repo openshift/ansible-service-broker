@@ -8,6 +8,7 @@ import (
 	logging "github.com/op/go-logging"
 )
 
+// LogConfig - The configuration for the logging.
 type LogConfig struct {
 	LogFile string
 	Stdout  bool
@@ -15,13 +16,16 @@ type LogConfig struct {
 	Color   bool
 }
 
+// Log - Logging struct that will contain https://godoc.org/os#File and the logging object.
 type Log struct {
 	*logging.Logger
 	file *os.File
 }
 
+// MODULE - Module for the logger.
 const MODULE = "asb"
 
+// NewLog - Creates a new logging object
 // TODO: Consider no output?
 func NewLog(config LogConfig) (*Log, error) {
 	var err error
