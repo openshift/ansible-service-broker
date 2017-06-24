@@ -117,7 +117,7 @@ func (c *Client) RunImage(
 
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: apbId,
+			Name: apbID,
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
