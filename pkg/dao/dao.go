@@ -16,24 +16,33 @@ import (
 	"github.com/pborman/uuid"
 )
 
+// DaoConfig - contains dao configuration
+type DaoConfig struct {
+	clients.EtcdConfig
+}
+
 // Dao - object to interface with the data store.
 type Dao struct {
-	config clients.EtcdConfig
+	config DaoConfig
 	log    *logging.Logger
-	client client.Client
+	client *client.Client
 	kapi   client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
 // NewDao - Create a new Dao object
-func NewDao(config clients.EtcdConfig, log *logging.Logger) *Dao {
+func NewDao(config DaoConfig, log *logging.Logger) (*Dao, error) {
 	dao := Dao{
 		config: config,
 		log:    log,
 	}
 
-	dao.client = clients.Clients.EtcdClient
-	dao.kapi = client.NewKeysAPI(dao.client)
-	return &dao
+	etcdClient, err := clients.Etcd(config.EtcdConfig, log)
+	if err != nil {
+		return nil, err
+	}
+	dao.client = etcdClient
+	dao.kapi = client.NewKeysAPI(*dao.client)
+	return &dao, err
 }
 
 // SetRaw - Allows the setting of the value json string to the key in the kvp API.
@@ -43,10 +52,11 @@ func (d *Dao) SetRaw(key string, val string) error {
 }
 
 //GetEtcdVersion - Retrieve the etcd version.
-func (d *Dao) GetEtcdVersion(config clients.EtcdConfig) (string, string, error) {
+func GetEtcdVersion(ec clients.EtcdConfig) (string, string, error) {
 	// The next etcd release (1.4) will have client.GetVersion()
 	// We'll use this to test our etcd connection for now
-	resp, err := http.Get("http://" + config.EtcdHost + ":" + config.EtcdPort + "/version")
+	etcdUrl := fmt.Sprintf("http://%s:%s/version", ec.EtcdHost, ec.EtcdPort)
+	resp, err := http.Get(etcdUrl)
 	if err != nil {
 		return "", "", err
 	}

@@ -1,12 +1,13 @@
 package clients
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	logging "github.com/op/go-logging"
 
-	"github.com/coreos/etcd/client"
+	etcd "github.com/coreos/etcd/client"
 )
 
 // EtcdConfig - Etcd configuration
@@ -15,8 +16,34 @@ type EtcdConfig struct {
 	EtcdPort string `yaml:"etcd_port"`
 }
 
-// NewEtcd - Create a new etcd client and add to client
-func NewEtcd(config EtcdConfig, log *logging.Logger) error {
+// Etcd - Create a new etcd client if needed, returns reference
+func Etcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {
+	errMsg := "Something went wrong intializing etcd client!"
+	once.Etcd.Do(func() {
+		client, err := newEtcd(config, log)
+		if err != nil {
+			log.Error(errMsg)
+			log.Error(err.Error())
+			instances.Etcd = clientResult{nil, err}
+		}
+		instances.Etcd = clientResult{client, nil}
+	})
+
+	err := instances.Etcd.err
+	if err != nil {
+		log.Error(errMsg)
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	if client, ok := instances.Etcd.client.(*etcd.Client); ok {
+		return client, nil
+	} else {
+		return nil, errors.New(errMsg)
+	}
+}
+
+func newEtcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {
 	// TODO: Config validation
 	endpoints := []string{etcdEndpoint(config.EtcdHost, config.EtcdPort)}
 
@@ -25,17 +52,16 @@ func NewEtcd(config EtcdConfig, log *logging.Logger) error {
 	log.Infof("EtcdPort: %s", config.EtcdPort)
 	log.Infof("Endpoints: %v", endpoints)
 
-	etcdClient, err := client.New(client.Config{
+	etcdClient, err := etcd.New(etcd.Config{
 		Endpoints:               endpoints,
-		Transport:               client.DefaultTransport,
+		Transport:               etcd.DefaultTransport,
 		HeaderTimeoutPerRequest: time.Second,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	Clients.EtcdClient = etcdClient
-	return nil
+	return &etcdClient, err
 }
 
 func etcdEndpoint(host string, port string) string {

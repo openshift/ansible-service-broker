@@ -110,7 +110,7 @@ func (a AnsibleBroker) Login() error {
 		return err
 	}
 
-	return apb.OcLogin(a.log, clientConfig.Host,
+	return ocLogin(a.log, clientConfig.Host,
 		"--certificate-authority", clientConfig.CAFile,
 		"--token", clientConfig.BearerToken,
 	)
@@ -768,6 +768,20 @@ func (a AnsibleBroker) RemoveSpecs() error {
 	err = a.dao.BatchDeleteSpecs(specs)
 	if err != nil {
 		a.log.Error("Something went real bad trying to delete batch specs... - %v", err)
+		return err
+	}
+	return nil
+}
+
+func ocLogin(log *logging.Logger, args ...string) error {
+	log.Debug("Logging into openshift...")
+
+	fullArgs := append([]string{"login"}, args...)
+
+	output, err := apb.RunCommand("oc", fullArgs...)
+
+	if err != nil {
+		log.Debug(string(output))
 		return err
 	}
 	return nil

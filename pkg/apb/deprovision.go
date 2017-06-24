@@ -28,19 +28,14 @@ func Deprovision(instance *ServiceInstance, clusterConfig ClusterConfig, log *lo
 		return "", errors.New("No image field found on instance.Spec")
 	}
 
-	var client *Client
-	var err error
-
-	if client, err = NewClient(log); err != nil {
-		return "", err
-	}
-
 	// Might need to change up this interface to feed in instance ids
-	podName, err := client.RunImage(
-		"deprovision", clusterConfig, instance.Spec, instance.Context, instance.Parameters)
+	podName, err := ExecuteApb(
+		"deprovision", clusterConfig, instance.Spec,
+		instance.Context, instance.Parameters, log,
+	)
 
 	if err != nil {
-		log.Error("Problem running image")
+		log.Error("Problem executing apb %s", err)
 		return podName, err
 	}
 

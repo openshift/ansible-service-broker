@@ -66,34 +66,35 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
-	app.log.Debug("Creating Etcd Client")
-	if err = clients.NewEtcd(app.config.Dao, app.log.Logger); err != nil {
-		app.log.Error("Failed to initialize Etcd Client\n")
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
-
+	////////////////////////////////////////////////////////////
+	// TODO: This should all get moved into clients, PR incoming
+	// with official support etcd version request support
+	// Something like, clients.ValidateEtcd()
 	app.log.Debug("Connecting to Etcd")
-	serv, clust, err := app.dao.GetEtcdVersion(app.config.Dao)
+	serv, clust, err := dao.GetEtcdVersion(app.config.Dao.EtcdConfig)
 	if err != nil {
 		app.log.Error("Failed to connect to Etcd\n")
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
 	app.log.Info("Etcd Version [Server: %s, Cluster: %s]", serv, clust)
+	////////////////////////////////////////////////////////////
 
 	app.log.Debug("Connecting Dao")
-	app.dao = dao.NewDao(app.config.Dao, app.log.Logger)
-
-	app.log.Debug("Creating Kubernetes Client")
-	if err = clients.NewKubernetes(app.log.Logger); err != nil {
+	if app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger); err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
 
 	app.log.Debug("Connecting to Cluster")
+	k8scli, err := clients.Kubernetes(app.log.Logger)
+	if err != nil {
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
 
-	body, err := clients.Clients.RESTClient.Get().AbsPath("/version").Do().Raw()
+	restcli := k8scli.CoreV1().RESTClient()
+	body, err := restcli.Get().AbsPath("/version").Do().Raw()
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
