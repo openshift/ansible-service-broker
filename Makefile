@@ -57,4 +57,4 @@ deploy:
 test:
 	go test ./pkg/...
 
-.PHONY: vendor build install run uninstall -registry prepare-build-image build-image release-image release push clean deploy test
+.PHONY: vendor build install run uninstall prepare-build-image build-image release-image release push clean deploy test
