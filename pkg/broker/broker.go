@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/coreos/etcd/client"
-	docker "github.com/fsouza/go-dockerclient"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -506,10 +505,6 @@ func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance
 	log.Info("Destroying APB sandbox...")
 	sm.DestroyApbSandbox(podName, instance.Context.Namespace)
 
-	if err == docker.ErrNoSuchImage {
-		log.Debug("unable to find service instance - %#v", err)
-		return ErrorNotFound
-	}
 	// bubble up error.
 	if err != nil {
 		log.Error("error from deprovision - %#v", err)

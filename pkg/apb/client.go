@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 
-	docker "github.com/fsouza/go-dockerclient"
 	logging "github.com/op/go-logging"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	restclient "k8s.io/client-go/rest"
@@ -47,7 +45,6 @@ type ClusterConfig struct {
 }
 
 type Client struct {
-	dockerClient  *docker.Client
 	ClusterClient *clientset.Clientset
 	RESTClient    restclient.Interface
 	log           *logging.Logger
@@ -60,7 +57,6 @@ func NewClient(log *logging.Logger) (*Client, error) {
 	k8s := clients.Clients.KubernetesClient
 
 	client := &Client{
-		dockerClient:  clients.Clients.DockerClient,
 		ClusterClient: k8s,
 		RESTClient:    k8s.CoreV1().RESTClient(),
 		log:           log,
@@ -141,15 +137,6 @@ func (c *Client) RunImage(
 	_, err = clients.Clients.KubernetesClient.CoreV1().Pods(ns).Create(pod)
 
 	return apbId, err
-}
-
-func (c *Client) PullImage(imageName string) error {
-	// Under what circumstances does this error out?
-	clients.Clients.DockerClient.PullImage(docker.PullImageOptions{
-		Repository:   imageName,
-		OutputStream: os.Stdout,
-	}, docker.AuthConfiguration{})
-	return nil
 }
 
 // TODO(fabianvf): This function is also called from broker/broker.go

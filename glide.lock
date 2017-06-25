@@ -1,12 +1,6 @@
-hash: ece088f35e2f3c094980b63d7f760d8b417e51c715b2a0071ad0e5ca87135319
-updated: 2017-06-14T09:43:46.075857132-04:00
+hash: 8b2c76dadf50116d35c30fa062880b1e2d8422d9b6934447f12255fd8405a689
+updated: 2017-06-24T23:56:39.81962211-04:00
 imports:
-- name: github.com/Azure/go-ansiterm
-  version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
-  subpackages:
-  - winterm
-- name: github.com/blang/semver
-  version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/containers/image
   version: 4f14180c47e7c5611069c060d056fab8739619e1
   subpackages:
@@ -68,18 +62,16 @@ imports:
   - pkg/srv
   - pkg/types
   - version
-- name: github.com/coreos/go-oidc
-  version: c797a55f1c1001ec3169f1d0fbb4c5523563bec6
 - name: github.com/coreos/go-semver
   version: 568e959cd89871e61434c1143528d9162da89ef2
   subpackages:
   - semver
 - name: github.com/davecgh/go-spew
-  version: 346938d642f2ec3594ed81d874461961cd0faa76
+  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
   - spew
 - name: github.com/docker/distribution
-  version: a25b9ef0c9fe242ac04bb20d3a028442b7d266b6
+  version: cd27f179f2c10c5d300e6d09025b538c475b0d51
   subpackages:
   - context
   - digest
@@ -87,7 +79,6 @@ imports:
   - registry/api/errcode
   - registry/api/v2
   - registry/client
-  - registry/client/auth/challenge
   - registry/client/transport
   - registry/storage/cache
   - registry/storage/cache/memory
@@ -110,21 +101,6 @@ imports:
   - api/types/versions
   - api/types/volume
   - client
-  - opts
-  - pkg/archive
-  - pkg/fileutils
-  - pkg/homedir
-  - pkg/idtools
-  - pkg/ioutils
-  - pkg/jsonlog
-  - pkg/jsonmessage
-  - pkg/longpath
-  - pkg/pools
-  - pkg/promise
-  - pkg/stdcopy
-  - pkg/system
-  - pkg/term
-  - pkg/term/windows
   - pkg/tlsconfig
 - name: github.com/docker/go-connections
   version: 7da10c8c50cad14494ec818dcdfb6506265c0086
@@ -141,8 +117,6 @@ imports:
   subpackages:
   - log
   - swagger
-- name: github.com/fsouza/go-dockerclient
-  version: 94aeff6a741494ddf6e5e66b2b0881828468b1df
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/jsonpointer
@@ -154,7 +128,7 @@ imports:
 - name: github.com/go-openapi/swag
   version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
 - name: github.com/gogo/protobuf
-  version: 100ba4e885062801d56799d78530b73b178a78f3
+  version: e18d7aa8f8c624c915db340349aad4c49b10d173
   subpackages:
   - proto
   - sortkeys
@@ -168,8 +142,6 @@ imports:
   version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
 - name: github.com/gorilla/mux
   version: bcd8bc72b08df0f70df986b97f95590779502d31
-- name: github.com/hashicorp/go-cleanhttp
-  version: ad28ea4487f05916463e2423a55166280e8254b5
 - name: github.com/howeyc/gopass
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/imdario/mergo
@@ -373,9 +345,7 @@ imports:
   version: fff5156092b56e6bd60fff75aad4dc9de6b6ef37
   subpackages:
   - pkg/api
-  - pkg/api/errors
   - pkg/api/install
-  - pkg/api/unversioned
   - pkg/api/v1
   - pkg/apis/apps
   - pkg/apis/apps/install
@@ -416,7 +386,6 @@ imports:
   - pkg/apis/storage/install
   - pkg/apis/storage/v1
   - pkg/apis/storage/v1beta1
-  - pkg/client
   - pkg/client/clientset_generated/clientset
   - pkg/client/clientset_generated/clientset/scheme
   - pkg/client/clientset_generated/clientset/typed/apps/v1beta1
@@ -438,6 +407,5 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/storage/v1
   - pkg/client/clientset_generated/clientset/typed/storage/v1beta1
   - pkg/util
-  - pkg/util/logs
   - pkg/util/parsers
 testImports: []

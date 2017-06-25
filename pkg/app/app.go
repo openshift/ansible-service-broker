@@ -110,12 +110,6 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
-	app.log.Debug("Creating Docker Client")
-	if err = clients.NewDocker(app.log.Logger); err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
-
 	app.log.Debug("Connecting Registry")
 	if app.registry, err = apb.NewRegistry(
 		app.config.Registry, app.log.Logger,

@@ -1,73 +1,51 @@
 package: github.com/openshift/ansible-service-broker
 import:
-- package: github.com/gorilla/mux
-  version: bcd8bc72b08df0f70df986b97f95590779502d31
-- package: github.com/pborman/uuid
-  version: ^1.0.0
-- package: github.com/spf13/pflag
-- package: gopkg.in/yaml.v2
-- package: k8s.io/kubernetes
-  version: v1.6.0
+- package: github.com/containers/image
   subpackages:
-  - pkg/api/errors
-  - pkg/api/unversioned
-  - pkg/util/logs
-  - pkg/client
-- package: github.com/jessevdk/go-flags
-  version: ^1.1.0
-- package: github.com/op/go-logging
-  version: ^1.0.0
-- package: github.com/ugorji/go
+  - transports
+  - types
 - package: github.com/coreos/etcd
   version: 9d7ed0e63a4e9907c04396d0a9a7a01ba08d2852
   subpackages:
   - client
+  - version
+- package: github.com/gorilla/handlers
+  version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
+- package: github.com/gorilla/mux
+  version: bcd8bc72b08df0f70df986b97f95590779502d31
+- package: github.com/jessevdk/go-flags
+  version: ^1.1.0
+- package: github.com/lestrrat/go-jsschema
+- package: github.com/op/go-logging
+  version: ^1.0.0
+- package: github.com/pkg/errors
+  version: ^0.8.0
+- package: gopkg.in/yaml.v1
+- package: gopkg.in/yaml.v2
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/api/errors
+  - pkg/apis/meta/v1
+  - pkg/version
+- package: k8s.io/client-go
+  version: ^3.0.0-beta.0
+  subpackages:
+  - rest
+  - tools/clientcmd
+  - util/homedir
+- package: k8s.io/kubernetes
+  version: v1.6.0
+  subpackages:
+  - pkg/api/v1
+  - pkg/client/clientset_generated/clientset
+- package: github.com/pborman/uuid
+  version: ^1.0.0
 - package: github.com/docker/docker
   version: ^1.13.1-rc1
   subpackages:
   - api/types/container
   - api/types/mount
-- package: github.com/fsouza/go-dockerclient
-- package: github.com/gogo/protobuf
-  version: ^0.3.0
-  subpackages:
-  - proto
-  - sortkeys
-- package: github.com/golang/glog
-- package: github.com/containers/image
-  subpackages:
-  - types
-  - transports
-- package: github.com/docker/distribution
-  version: ^2.6.0
-- package: github.com/containers/storage
-  version: dbcaa736c4ac87eac3b7e7ea82207f3b62458c25
-  subpackages:
-  - pkg/archive
-- package: github.com/docker/go-connections
-  version: 7da10c8c50cad14494ec818dcdfb6506265c0086
-- package: github.com/gorilla/handlers
-  version: a4043c62cc2329bacda331d33fc908ab11ef0ec3
-- package: github.com/coreos/go-oidc
-- package: github.com/opencontainers/image-spec
-  version: v1.0.0-rc4
 - package: github.com/Sirupsen/logrus
   version: v0.11.4
-- package: github.com/howeyc/gopass
-- package: github.com/opencontainers/go-digest
-  version: ^1.0.0-rc0
-- package: github.com/pkg/errors
-  version: ^0.8.0
-- package: github.com/blang/semver
-  version: ^3.5.0
-- package: k8s.io/client-go
-  version: ^3.0.0-beta.0
-  subpackages:
-  - rest
-- package: github.com/davecgh/go-spew
-  version: ^1.1.0
-  subpackages:
-  - spew
-- package: k8s.io/apimachinery
-- package: github.com/lestrrat/go-jsschema
-- package: github.com/lestrrat/go-jsref
+- package: github.com/docker/go-connections
+  version: 7da10c8c50cad14494ec818dcdfb6506265c0086
