@@ -10,7 +10,7 @@ vendor:
 	@glide install -v
 
 build:
-	go build -ldflags="-s -w" ./cmd/broker
+	go build -i -ldflags="-s -w" ./cmd/broker
 
 
 install:
