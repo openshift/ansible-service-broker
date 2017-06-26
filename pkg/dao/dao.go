@@ -7,63 +7,32 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/coreos/etcd/client"
 	"github.com/coreos/etcd/version"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/pborman/uuid"
 )
 
-// Config - confg holds etcd host and port.
-type Config struct {
-	EtcdHost string `yaml:"etcd_host"`
-	EtcdPort string `yaml:"etcd_port"`
-}
-
-// Dao - retreive, create, and update  objects from etcd
 type Dao struct {
-	config    Config
-	log       *logging.Logger
-	endpoints []string
-	client    client.Client
-	kapi      client.KeysAPI // Used to interact with kvp API over HTTP
+	config clients.EtcdConfig
+	log    *logging.Logger
+	client client.Client
+	kapi   client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
 // NewDao - Create a new Dao object
-func NewDao(config Config, log *logging.Logger) (*Dao, error) {
-	var err error
+func NewDao(config clients.EtcdConfig, log *logging.Logger) *Dao {
 	dao := Dao{
 		config: config,
 		log:    log,
 	}
 
-	// TODO: Config validation
-
-	dao.endpoints = []string{etcdEndpoint(config.EtcdHost, config.EtcdPort)}
-
-	log.Info("== ETCD CX ==")
-	log.Info(fmt.Sprintf("EtcdHost: %s", config.EtcdHost))
-	log.Info(fmt.Sprintf("EtcdPort: %s", config.EtcdPort))
-	log.Info(fmt.Sprintf("Endpoints: %v", dao.endpoints))
-
-	dao.client, err = client.New(client.Config{
-		Endpoints:               dao.endpoints,
-		Transport:               client.DefaultTransport,
-		HeaderTimeoutPerRequest: time.Second,
-	})
-	if err != nil {
-		return nil, err
-	}
-
+	dao.client = clients.Clients.EtcdClient
 	dao.kapi = client.NewKeysAPI(dao.client)
-
-	return &dao, nil
-}
-
-func etcdEndpoint(host string, port string) string {
-	return fmt.Sprintf("http://%s:%s", host, port)
+	return &dao
 }
 
 // SetRaw - Allows the setting of the value json string to the key in the kvp API.
@@ -72,7 +41,7 @@ func (d *Dao) SetRaw(key string, val string) error {
 	return err
 }
 
-func (d *Dao) GetEtcdVersion(config Config) (string, string, error) {
+func (d *Dao) GetEtcdVersion(config clients.EtcdConfig) (string, string, error) {
 	// The next etcd release (1.4) will have client.GetVersion()
 	// We'll use this to test our etcd connection for now
 	resp, err := http.Get("http://" + config.EtcdHost + ":" + config.EtcdPort + "/version")

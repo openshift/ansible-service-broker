@@ -11,6 +11,7 @@ import (
 
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 )
@@ -48,6 +49,8 @@ func CreateApp() App {
 	fmt.Println("==           Starting Ansible Service Broker...           ==")
 	fmt.Println("============================================================")
 
+	//TODO: Let's take all these validations and delegate them to the client
+	// pkg.
 	if app.config, err = CreateConfig(app.args.ConfigFile); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to read config file\n")
 		os.Stderr.WriteString(err.Error())
@@ -60,12 +63,14 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
-	app.log.Debug("Connecting Dao")
-	if app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger); err != nil {
-		app.log.Error("Failed to initialize Dao\n")
+	app.log.Debug("Creating Etcd Client")
+	if err = clients.NewEtcd(app.config.Dao, app.log.Logger); err != nil {
+		app.log.Error("Failed to initialize Etcd Client\n")
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
+
+	app.log.Debug("Connecting to Etcd")
 	serv, clust, err := app.dao.GetEtcdVersion(app.config.Dao)
 	if err != nil {
 		app.log.Error("Failed to connect to Etcd\n")
@@ -74,16 +79,18 @@ func CreateApp() App {
 	}
 	app.log.Info("Etcd Version [Server: %s, Cluster: %s]", serv, clust)
 
-	app.log.Debug("Creating Cluster Client")
-	client, err := apb.NewClient(app.log.Logger)
-	if err != nil {
+	app.log.Debug("Connecting Dao")
+	app.dao = dao.NewDao(app.config.Dao, app.log.Logger)
+
+	app.log.Debug("Creating Kubernetes Client")
+	if err = clients.NewKubernetes(app.log.Logger); err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
-	app.log.Info("Cluster Client Created")
 
 	app.log.Debug("Connecting to Cluster")
-	body, err := client.RESTClient.Get().AbsPath("/version").Do().Raw()
+
+	body, err := clients.Clients.RESTClient.Get().AbsPath("/version").Do().Raw()
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
@@ -99,6 +106,12 @@ func CreateApp() App {
 		app.log.Info("Kubernetes version: %v", kubeServerInfo)
 	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
 	default:
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+
+	app.log.Debug("Creating Docker Client")
+	if err = clients.NewDocker(app.log.Logger); err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
