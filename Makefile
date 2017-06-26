@@ -12,18 +12,8 @@ vendor:
 build:
 	go build -i -ldflags="-s -w" ./cmd/broker
 
-
-install:
-	cp broker ${PREFIX}/bin/ansible-service-broker
-	mkdir -p ${PREFIX}/etc/ansible-service-broker
-	cp etc/example-config.yaml ${PREFIX}/etc/ansible-service-broker/config.yaml
-
 run:
 	cd scripts && ./run_local.sh ${BROKER_CONFIG}
-
-uninstall:
-	rm  -f ${PREFIX}/bin/ansible-service-broker
-	rm -rf ${PREFIX}/etc/ansible-service-broker
 
 prepare-local-env:
 	cd scripts && ./prep_local_devel_env.sh
@@ -57,4 +47,4 @@ deploy:
 test:
 	go test ./pkg/...
 
-.PHONY: vendor build install run uninstall prepare-build-image build-image release-image release push clean deploy test
+.PHONY: vendor build run prepare-build-image build-image release-image release push clean deploy test
