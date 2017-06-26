@@ -23,7 +23,8 @@ func NewServiceAccountManager(log *logging.Logger) ServiceAccountManager {
 // CreateApbSandbox - Sets up ServiceAccount based apb sandbox
 // Returns service account name to be used as a handle for destroying
 // the sandbox at the conclusion of running the apb
-func (s *ServiceAccountManager) CreateApbSandbox(namespace string, apbID string) (string, error) {
+func (s *ServiceAccountManager) CreateApbSandbox(namespace string, apbID string,
+) (string, error) {
 	svcAccountName := apbID
 	roleBindingName := apbID
 
@@ -86,7 +87,9 @@ func (s *ServiceAccountManager) createResources(rFilePath string, namespace stri
 	return nil
 }
 
-func (s *ServiceAccountManager) writeResourceFile(handle string, svcAcctM *map[string]interface{}, roleBindingM *map[string]interface{}) (string, error) {
+func (s *ServiceAccountManager) writeResourceFile(handle string,
+	svcAcctM *map[string]interface{}, roleBindingM *map[string]interface{},
+) (string, error) {
 	// Create file if doesn't already exist
 	filePath, err := s.createFile(handle)
 	if err != nil {

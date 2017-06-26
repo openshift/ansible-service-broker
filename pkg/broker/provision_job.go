@@ -31,7 +31,9 @@ func (m ProvisionMsg) Render() string {
 }
 
 // NewProvisionJob - Create a new provision job.
-func NewProvisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig, log *logging.Logger) *ProvisionJob {
+func NewProvisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
+	log *logging.Logger,
+) *ProvisionJob {
 	return &ProvisionJob{
 		serviceInstance: serviceInstance,
 		clusterConfig:   clusterConfig,

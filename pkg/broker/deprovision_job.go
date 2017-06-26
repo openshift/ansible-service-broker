@@ -31,7 +31,9 @@ func (m DeprovisionMsg) Render() string {
 }
 
 // NewDeprovisionJob - Create a deprovision job.
-func NewDeprovisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig, dao *dao.Dao, log *logging.Logger) *DeprovisionJob {
+func NewDeprovisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
+	dao *dao.Dao, log *logging.Logger,
+) *DeprovisionJob {
 	return &DeprovisionJob{
 		serviceInstance: serviceInstance,
 		clusterConfig:   clusterConfig,

@@ -64,8 +64,9 @@ type AnsibleBroker struct {
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
-func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig, registry apb.Registry, engine WorkEngine, brokerConfig Config) (*AnsibleBroker, error) {
-
+func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
+	registry apb.Registry, engine WorkEngine, brokerConfig Config,
+) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
 		dao:           dao,
 		log:           log,
@@ -280,7 +281,8 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 }
 
 // Provision  - will provision a service
-func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, async bool) (*ProvisionResponse, error) {
+func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, async bool,
+) (*ProvisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	//type ProvisionRequest struct {
 
@@ -450,7 +452,8 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 }
 
 // Deprovision - will deprovision a service.
-func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*DeprovisionResponse, error) {
+func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool,
+) (*DeprovisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	// Deprovision flow
 	// -> Lookup bindings by instance ID; 400 if any are active, related issue:
@@ -496,7 +499,9 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*Deprovi
 	return &DeprovisionResponse{}, nil
 }
 
-func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance, dao *dao.Dao, log *logging.Logger) error {
+func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance, dao *dao.Dao,
+	log *logging.Logger,
+) error {
 	instanceID := instance.ID.String()
 	sm := apb.NewServiceAccountManager(log)
 	log.Info("Destroying APB sandbox...")
@@ -532,7 +537,8 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 }
 
 // Bind - will create a binding between a service.
-func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {
+func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest,
+) (*BindResponse, error) {
 	// binding_id is the id of the binding.
 	// the instanceUUID is the previously provisioned service id.
 	//
@@ -654,13 +660,16 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	return &BindResponse{Credentials: returnCreds}, nil
 }
 
-func mergeCredentials(provExtCreds *apb.ExtractedCredentials, bindExtCreds *apb.ExtractedCredentials) map[string]interface{} {
+func mergeCredentials(provExtCreds *apb.ExtractedCredentials,
+	bindExtCreds *apb.ExtractedCredentials,
+) map[string]interface{} {
 	// TODO: Implement, need to handle case where either are empty
 	return provExtCreds.Credentials
 }
 
 // Unbind - unbind a services previous binding
-func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) (*UnbindResponse, error) {
+func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID,
+) (*UnbindResponse, error) {
 	if _, err := a.dao.GetBindInstance(bindingUUID.String()); err != nil {
 		return nil, ErrorNotFound
 	}
@@ -690,12 +699,14 @@ func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) (*U
 }
 
 // Update - update a service NOTE: not implemented
-func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*UpdateResponse, error) {
+func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest,
+) (*UpdateResponse, error) {
 	return nil, notImplemented
 }
 
 // LastOperation - gets the last operation and status
-func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationRequest) (*LastOperationResponse, error) {
+func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationRequest,
+) (*LastOperationResponse, error) {
 	/*
 		look up the resource in etcd the operation should match what was returned by provision
 		take the status and return that.
