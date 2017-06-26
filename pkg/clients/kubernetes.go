@@ -22,6 +22,7 @@ func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
 	return config, nil
 }
 
+// NewKubernetes - Add new kubernetes client to the Client.
 func NewKubernetes(log *logging.Logger) error {
 	// NOTE: Both the external and internal client object are using the same
 	// clientset library. Internal clientset normally uses a different

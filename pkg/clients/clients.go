@@ -6,6 +6,7 @@ import (
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
 
+// Clients - Object containing clients that the application should be talking too.
 var Clients struct {
 	EtcdClient       client.Client
 	KubernetesClient *clientset.Clientset

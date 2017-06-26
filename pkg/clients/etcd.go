@@ -9,11 +9,13 @@ import (
 	"github.com/coreos/etcd/client"
 )
 
+// EtcdConfig - Etcd configuration
 type EtcdConfig struct {
 	EtcdHost string `yaml:"etcd_host"`
 	EtcdPort string `yaml:"etcd_port"`
 }
 
+// NewEtcd - Create a new etcd client and add to client
 func NewEtcd(config EtcdConfig, log *logging.Logger) error {
 	// TODO: Config validation
 	endpoints := []string{etcdEndpoint(config.EtcdHost, config.EtcdPort)}
