@@ -33,7 +33,6 @@ templates/broker-deployment.yaml
 
 #Compiled binaries
 broker
-mock-registry
 build/broker
 
 # python artifacts

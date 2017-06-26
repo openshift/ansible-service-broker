@@ -27,8 +27,6 @@ func NewRegistry(config RegistryConfig, log *logging.Logger) (Registry, error) {
 	log.Info(fmt.Sprintf("Url: %s", config.Url))
 
 	switch config.Name {
-	case "dev":
-		reg = &DevRegistry{}
 	case "rhcc":
 		reg = &RHCCRegistry{}
 	case "dockerhub":
