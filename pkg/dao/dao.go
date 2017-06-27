@@ -18,7 +18,12 @@ import (
 
 // DaoConfig - contains dao configuration
 type DaoConfig struct {
-	clients.EtcdConfig
+	EtcdHost string `yaml:"etcd_host"`
+	EtcdPort string `yaml:"etcd_port"`
+}
+
+func (c DaoConfig) GetEtcdConfig() clients.EtcdConfig {
+	return clients.EtcdConfig{c.EtcdHost, c.EtcdPort}
 }
 
 // Dao - object to interface with the data store.
@@ -36,7 +41,7 @@ func NewDao(config DaoConfig, log *logging.Logger) (*Dao, error) {
 		log:    log,
 	}
 
-	etcdClient, err := clients.Etcd(config.EtcdConfig, log)
+	etcdClient, err := clients.Etcd(config.GetEtcdConfig(), log)
 	if err != nil {
 		return nil, err
 	}

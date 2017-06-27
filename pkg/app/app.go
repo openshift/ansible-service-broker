@@ -71,7 +71,7 @@ func CreateApp() App {
 	// with official support etcd version request support
 	// Something like, clients.ValidateEtcd()
 	app.log.Debug("Connecting to Etcd")
-	serv, clust, err := dao.GetEtcdVersion(app.config.Dao.EtcdConfig)
+	serv, clust, err := dao.GetEtcdVersion(app.config.Dao.GetEtcdConfig())
 	if err != nil {
 		app.log.Error("Failed to connect to Etcd\n")
 		app.log.Error(err.Error())
