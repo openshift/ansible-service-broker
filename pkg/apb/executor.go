@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -25,10 +26,11 @@ import (
 
 // ClusterConfig - DEPRECATED Configuration struct for clusters
 type ClusterConfig struct {
-	InCluster bool
-	Target    string
-	User      string
-	Password  string `yaml:"pass"`
+	InCluster  bool
+	Target     string
+	User       string
+	Password   string `yaml:"pass"`
+	PullPolicy string `yaml:"image_pull_policy"`
 }
 
 ////////////////////////////////////////////////////////////
@@ -52,6 +54,7 @@ func ExecuteApb(
 	log.Debug("name:[ %s ]", spec.Name)
 	log.Debug("image:[ %s ]", spec.Image)
 	log.Debug("action:[ %s ]", action)
+	log.Debug("pullPolciy:[ %s ]", clusterConfig.PullPolicy)
 
 	// It's a critical error if a Namespace is not provided to the
 	// broker because its required to know where to execute the pods and
@@ -61,6 +64,11 @@ func ExecuteApb(
 		errStr := "Namespace not found within request context. Cannot perform requested " + action
 		log.Error(errStr)
 		return "", errors.New(errStr)
+	}
+
+	pullPolicy, err := checkPullPolicy(clusterConfig.PullPolicy)
+	if err != nil {
+		return "", err
 	}
 
 	ns := context.Namespace
@@ -88,7 +96,7 @@ func ExecuteApb(
 						"--extra-vars",
 						extraVars,
 					},
-					ImagePullPolicy: v1.PullAlways,
+					ImagePullPolicy: pullPolicy,
 				},
 			},
 			RestartPolicy:      v1.RestartPolicyNever,
@@ -121,4 +129,20 @@ func createExtraVars(context *Context, parameters *Parameters) (string, error) {
 	}
 	extraVars, err := json.Marshal(paramsCopy)
 	return string(extraVars), err
+}
+
+// Verify PullPolicy is acceptable
+func checkPullPolicy(policy string) (v1.PullPolicy, error) {
+	n := map[string]v1.PullPolicy{
+		"always":       v1.PullAlways,
+		"never":        v1.PullNever,
+		"ifnotpresent": v1.PullIfNotPresent,
+	}
+	p := strings.ToLower(policy)
+	value, _ := n[p]
+	if value == "" {
+		return "", fmt.Errorf("ImagePullPolicy: %s not found in [%s, %s, %s,]", policy, v1.PullAlways, v1.PullNever, v1.PullIfNotPresent)
+	}
+
+	return value, nil
 }

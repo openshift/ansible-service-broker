@@ -15,6 +15,8 @@ DOCKERHUB_USERNAME=""
 DOCKERHUB_PASSWORD=""
 DOCKERHUB_ORG="ansibleplaybookbundle"
 
+# Always, IfNotPresent, Never
+IMAGE_PULL_POLICY="Always"
 
 BROKER_CMD="../broker"
 GENERATED_BROKER_CONFIG="../etc/generated_local_development.yaml"
