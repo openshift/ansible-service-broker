@@ -12,26 +12,27 @@ import (
 	"github.com/pborman/uuid"
 )
 
-// DaoConfig - contains dao configuration
-type DaoConfig struct {
+// Config - contains dao configuration
+type Config struct {
 	EtcdHost string `yaml:"etcd_host"`
 	EtcdPort string `yaml:"etcd_port"`
 }
 
-func (c DaoConfig) GetEtcdConfig() clients.EtcdConfig {
+// GetEtcdConfig - Simple EtcdConfig getter
+func (c Config) GetEtcdConfig() clients.EtcdConfig {
 	return clients.EtcdConfig{c.EtcdHost, c.EtcdPort}
 }
 
 // Dao - object to interface with the data store.
 type Dao struct {
-	config DaoConfig
+	config Config
 	log    *logging.Logger
 	client *client.Client
 	kapi   client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
 // NewDao - Create a new Dao object
-func NewDao(config DaoConfig, log *logging.Logger) *Dao {
+func NewDao(config Config, log *logging.Logger) *Dao {
 	dao := Dao{
 		config: config,
 		log:    log,

@@ -14,7 +14,7 @@ import (
 // Config - The base config for the pieces of the applcation
 type Config struct {
 	Registry   apb.RegistryConfig
-	Dao        dao.DaoConfig
+	Dao        dao.Config
 	Log        LogConfig
 	Openshift  apb.ClusterConfig
 	ConfigFile string

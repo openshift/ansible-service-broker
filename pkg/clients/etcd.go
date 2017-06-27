@@ -19,11 +19,12 @@ type EtcdConfig struct {
 	EtcdPort string `yaml:"etcd_port"`
 }
 
+// GetEtcdVersion - Connects to ETCD cluster and retrieves server/version info
 func GetEtcdVersion(ec EtcdConfig) (string, string, error) {
 	// The next etcd release (1.4) will have client.GetVersion()
 	// We'll use this to test our etcd connection for now
-	etcdUrl := fmt.Sprintf("http://%s:%s/version", ec.EtcdHost, ec.EtcdPort)
-	resp, err := http.Get(etcdUrl)
+	etcdURL := fmt.Sprintf("http://%s:%s/version", ec.EtcdHost, ec.EtcdPort)
+	resp, err := http.Get(etcdURL)
 	if err != nil {
 		return "", "", err
 	}

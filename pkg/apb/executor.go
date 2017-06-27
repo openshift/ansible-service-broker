@@ -22,6 +22,8 @@ import (
 // I'm planning on submitting a PR to fix this. Yell at me if
 // that hasn't been done. :)
 ////////////////////////////////////////////////////////////
+
+// ClusterConfig - DEPRECATED Configuration struct for clusters
 type ClusterConfig struct {
 	InCluster bool
 	Target    string
@@ -31,6 +33,7 @@ type ClusterConfig struct {
 
 ////////////////////////////////////////////////////////////
 
+// ExecuteApb - Runs an APB Action with a provided set of inputs
 func ExecuteApb(
 	action string,
 	clusterConfig ClusterConfig,
@@ -61,19 +64,19 @@ func ExecuteApb(
 	}
 
 	ns := context.Namespace
-	apbId := fmt.Sprintf("apb-%s", uuid.New())
+	apbID := fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(log)
-	serviceAccountName, err := sam.CreateApbSandbox(ns, apbId)
+	serviceAccountName, err := sam.CreateApbSandbox(ns, apbID)
 
 	if err != nil {
 		log.Error(err.Error())
-		return apbId, err
+		return apbID, err
 	}
 
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: apbId,
+			Name: apbID,
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
@@ -96,7 +99,7 @@ func ExecuteApb(
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, ns))
 	k8scli := clients.Kubernetes(log)
 	_, err = k8scli.CoreV1().Pods(ns).Create(pod)
-	return apbId, err
+	return apbID, err
 }
 
 // TODO: Instead of putting namespace directly as a parameter, we should create a dictionary
