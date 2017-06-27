@@ -45,9 +45,14 @@ elif [[ "$action" == "lint" ]]; then
   echo "================================="
   # to have lint fail build add -set_exit_status option
   # to each golint command
-  golint $PROJECT_ROOT/cmd/...
-  golint $PROJECT_ROOT/pkg/...
-  exit $?
+  if [ -n "$(golint $PROJECT_ROOT/cmd/...)" ]; then
+        golint $PROJECT_ROOT/cmd/...
+        exit 1
+  fi
+  if [ -n "$(golint $PROJECT_ROOT/pkg/...)" ]; then
+        golint $PROJECT_ROOT/pkg/...
+        exit 1
+  fi
 elif [[ "$action" == "format" ]]; then
   echo "================================="
   echo "             Format              "

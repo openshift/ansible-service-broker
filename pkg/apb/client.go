@@ -37,6 +37,7 @@ First cut might have to pass kubecfg from broker. FIRST SPRINT broker passes use
 admin/admin
 */
 
+// ClusterConfig - Configureation for the cluster
 type ClusterConfig struct {
 	InCluster bool
 	Target    string
@@ -44,12 +45,14 @@ type ClusterConfig struct {
 	Password  string `yaml:"pass"`
 }
 
+// Client - contains all the clients that are going to be used.
 type Client struct {
 	ClusterClient *clientset.Clientset
 	RESTClient    restclient.Interface
 	log           *logging.Logger
 }
 
+// NewClient -  Creates a new Client
 func NewClient(log *logging.Logger) (*Client, error) {
 	//TODO: This object gets created each provision, bind, deprovision,
 	// and unbind.  Instead, those functions should be using the global
@@ -65,6 +68,7 @@ func NewClient(log *logging.Logger) (*Client, error) {
 	return client, nil
 }
 
+// RunImage - Runs the image with the specified action, context and parameters.
 func (c *Client) RunImage(
 	action string,
 	clusterConfig ClusterConfig,
@@ -101,19 +105,19 @@ func (c *Client) RunImage(
 	}
 
 	ns := context.Namespace
-	apbId := fmt.Sprintf("apb-%s", uuid.New())
+	apbID := fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(c.log)
-	serviceAccountName, err := sam.CreateApbSandbox(ns, apbId)
+	serviceAccountName, err := sam.CreateApbSandbox(ns, apbID)
 
 	if err != nil {
 		c.log.Error(err.Error())
-		return apbId, err
+		return apbID, err
 	}
 
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: apbId,
+			Name: apbID,
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
@@ -136,9 +140,10 @@ func (c *Client) RunImage(
 	c.log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, ns))
 	_, err = clients.Clients.KubernetesClient.CoreV1().Pods(ns).Create(pod)
 
-	return apbId, err
+	return apbID, err
 }
 
+// OcLogin - runs oc login with args
 // TODO(fabianvf): This function is also called from broker/broker.go
 // We should probably move this logic out of the client to a more
 // generic location.

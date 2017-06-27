@@ -42,7 +42,7 @@ func TestSpecToService(t *testing.T) {
 				Default:     float64(9001)}}}
 
 	spec := apb.Spec{
-		Id:          "50eb5637-6ffe-480d-a52e-a7e603a50fca",
+		ID:          "50eb5637-6ffe-480d-a52e-a7e603a50fca",
 		Name:        "testspec",
 		Bindable:    false,
 		Description: "test spec to be converted",

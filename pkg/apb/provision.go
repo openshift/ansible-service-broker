@@ -7,6 +7,7 @@ import (
 	logging "github.com/op/go-logging"
 )
 
+// Provision - will run the abp with the provision action.
 // TODO: Figure out the right way to allow apb to log
 // It's passed in here, but that's a hard coupling point to
 // github.com/op/go-logging, which is used all over the broker
@@ -19,7 +20,7 @@ func Provision(
 	log.Notice("============================================================")
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
-	log.Notice(fmt.Sprintf("Spec.Id: %s", instance.Spec.Id))
+	log.Notice(fmt.Sprintf("Spec.ID: %s", instance.Spec.ID))
 	log.Notice(fmt.Sprintf("Spec.Name: %s", instance.Spec.Name))
 	log.Notice(fmt.Sprintf("Spec.Image: %s", instance.Spec.Image))
 	log.Notice(fmt.Sprintf("Spec.Description: %s", instance.Spec.Description))
@@ -46,11 +47,10 @@ func Provision(
 			log.Error("Something went wrong creating project %s!", ns)
 			log.Error(err.Error())
 			return "", nil, err
-		} else {
-			log.Info("Successfully created project %s", ns)
-			log.Debug("oc new-project output:")
-			log.Debug(string(output))
 		}
+		log.Info("Successfully created project %s", ns)
+		log.Debug("oc new-project output:")
+		log.Debug(string(output))
 	} else {
 		log.Info("Project %s already exists!", ns)
 	}

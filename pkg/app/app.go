@@ -16,8 +16,10 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 )
 
+// MsgBufferSize - The buffer for the message channel.
 const MsgBufferSize = 20
 
+// App - All the application pieces that are installed.
 type App struct {
 	broker   *broker.AnsibleBroker
 	args     Args
@@ -28,6 +30,7 @@ type App struct {
 	engine   *broker.WorkEngine
 }
 
+//CreateApp - Creates the application
 func CreateApp() App {
 	var err error
 	app := App{}
@@ -136,6 +139,7 @@ func CreateApp() App {
 	return app
 }
 
+// Recover - Recover the application
 // TODO: Make this a go routine once we have a strong and well tested
 // recovery sequence.
 func (a *App) Recover() {
@@ -148,6 +152,7 @@ func (a *App) Recover() {
 	a.log.Notice(msg)
 }
 
+// Start - Will start the application to listen on the specified port.
 func (a *App) Start() {
 	// TODO: probably return an error or some sort of message such that we can
 	// see if we need to go any further.

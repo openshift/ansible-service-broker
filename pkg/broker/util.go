@@ -11,6 +11,7 @@ import (
 	"github.com/pborman/uuid"
 )
 
+// ProjectRoot - return the root path for the application
 func ProjectRoot() string {
 	gopath := os.Getenv("GOPATH")
 	rootPath := path.Join(gopath, "src", "github.com", "openshift",
@@ -40,7 +41,7 @@ func SpecToService(spec *apb.Spec) Service {
 	}
 
 	retSvc := Service{
-		ID:          uuid.Parse(spec.Id),
+		ID:          uuid.Parse(spec.ID),
 		Name:        spec.Name,
 		Description: spec.Description,
 		Tags:        make([]string, len(spec.Tags)),

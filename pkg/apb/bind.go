@@ -6,20 +6,17 @@ import (
 	logging "github.com/op/go-logging"
 )
 
+// Bind - Will run the APB with the bind action.
 // TODO: Figure out the right way to allow apb to log
 // It's passed in here, but that's a hard coupling point to
 // github.com/op/go-logging, which is used all over the broker
 // Maybe apb defines its own interface and accepts that optionally
 // Little looser, but still not great
-func Bind(
-	instance *ServiceInstance,
-	parameters *Parameters,
-	clusterConfig ClusterConfig, log *logging.Logger,
-) (string, *ExtractedCredentials, error) {
+func Bind(instance *ServiceInstance, parameters *Parameters, clusterConfig ClusterConfig, log *logging.Logger) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")
-	log.Notice(fmt.Sprintf("ServiceInstance.Id: %s", instance.Spec.Id))
+	log.Notice(fmt.Sprintf("ServiceInstance.ID: %s", instance.Spec.ID))
 	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.Name))
 	log.Notice(fmt.Sprintf("ServiceInstance.Image: %s", instance.Spec.Image))
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))

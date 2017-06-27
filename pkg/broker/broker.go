@@ -38,13 +38,15 @@ type Broker interface {
 	Recover() (string, error)
 }
 
-type BrokerConfig struct {
+// Config - Configuration for the broker.
+type Config struct {
 	DevBroker       bool `yaml:"dev_broker"`
 	LaunchApbOnBind bool `yaml:"launch_apb_on_bind"`
 	Recovery        bool `yaml:"recovery"`
 	OutputRequest   bool `yaml:"output_request"`
 }
 
+// DevBroker - Interface for the development broker.
 type DevBroker interface {
 	AddSpec(spec apb.Spec) (*CatalogResponse, error)
 	RemoveSpec(specID string) error
@@ -58,19 +60,13 @@ type AnsibleBroker struct {
 	clusterConfig apb.ClusterConfig
 	registry      apb.Registry
 	engine        *WorkEngine
-	brokerConfig  BrokerConfig
+	brokerConfig  Config
 }
 
-// NewAnsibleBroker - creates a new ansible broker
-func NewAnsibleBroker(
-	dao *dao.Dao,
-	log *logging.Logger,
-	clusterConfig apb.ClusterConfig,
-	registry apb.Registry,
-	engine WorkEngine,
-	brokerConfig BrokerConfig,
+// NewAnsibleBroker - Creates a new ansible broker
+func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
+	registry apb.Registry, engine WorkEngine, brokerConfig Config,
 ) (*AnsibleBroker, error) {
-
 	broker := &AnsibleBroker{
 		dao:           dao,
 		log:           log,
@@ -105,6 +101,8 @@ func (a AnsibleBroker) getServiceInstance(instanceUUID uuid.UUID) (*apb.ServiceI
 	return instance, nil
 
 }
+
+//Login - Will login the openshift user.
 func (a AnsibleBroker) Login() error {
 	clientConfig, err := k8srestclient.InClusterConfig()
 	if err != nil {
@@ -152,6 +150,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
 
+// Recover - Will recover the broker.
 func (a AnsibleBroker) Recover() (string, error) {
 	// At startup we should write a key to etcd.
 	// Then in recovery see if that key exists, which means we are restarting
@@ -189,7 +188,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 	for _, rs := range recoverStatuses {
 
 		// We have an in progress job
-		instanceID := rs.InstanceId.String()
+		instanceID := rs.InstanceID.String()
 		instance, err := a.dao.GetServiceInstance(instanceID)
 		if err != nil {
 			return "", err
@@ -206,8 +205,8 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// Handle bad write of service instance
 			if instance.Spec == nil || instance.Parameters == nil {
 				a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token, State: apb.StateFailed})
-				a.dao.DeleteServiceInstance(instance.Id.String())
-				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.Id))
+				a.dao.DeleteServiceInstance(instance.ID.String())
+				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.ID))
 				// skip to the next item
 				continue
 			}
@@ -282,7 +281,8 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 }
 
 // Provision  - will provision a service
-func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, async bool) (*ProvisionResponse, error) {
+func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, async bool,
+) (*ProvisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	//type ProvisionRequest struct {
 
@@ -369,7 +369,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
-		Id:         instanceUUID,
+		ID:         instanceUUID,
 		Spec:       spec,
 		Context:    context,
 		Parameters: parameters,
@@ -383,7 +383,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	if si, err := a.dao.GetServiceInstance(instanceUUID.String()); err == nil {
 		//This will use the package to make sure that if the type is changed away from []byte it can still be evaluated.
-		if uuid.Equal(si.Id, serviceInstance.Id) {
+		if uuid.Equal(si.ID, serviceInstance.ID) {
 			if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
 				a.log.Debug("already have this instance returning 200")
 				return &ProvisionResponse{}, ErrorAlreadyProvisioned
@@ -452,7 +452,8 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 }
 
 // Deprovision - will deprovision a service.
-func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*DeprovisionResponse, error) {
+func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool,
+) (*DeprovisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	// Deprovision flow
 	// -> Lookup bindings by instance ID; 400 if any are active, related issue:
@@ -487,20 +488,21 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*Deprovi
 		// is set and the job was already started. But I need the token.
 		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
 		return &DeprovisionResponse{Operation: token}, nil
-	} else {
-		// TODO: do we want to do synchronous deprovisioning?
-		a.log.Info("Synchronous deprovision in progress")
-		podName, err := apb.Deprovision(instance, a.clusterConfig, a.log)
-		err = cleanupDeprovision(err, podName, instance, a.dao, a.log)
-		if err != nil {
-			return nil, err
-		}
-		return &DeprovisionResponse{}, nil
 	}
+	// TODO: do we want to do synchronous deprovisioning?
+	a.log.Info("Synchronous deprovision in progress")
+	podName, err := apb.Deprovision(instance, a.clusterConfig, a.log)
+	err = cleanupDeprovision(err, podName, instance, a.dao, a.log)
+	if err != nil {
+		return nil, err
+	}
+	return &DeprovisionResponse{}, nil
 }
 
-func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance, dao *dao.Dao, log *logging.Logger) error {
-	instanceID := instance.Id.String()
+func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance, dao *dao.Dao,
+	log *logging.Logger,
+) error {
+	instanceID := instance.ID.String()
 	sm := apb.NewServiceAccountManager(log)
 	log.Info("Destroying APB sandbox...")
 	sm.DestroyApbSandbox(podName, instance.Context.Namespace)
@@ -526,8 +528,8 @@ func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance
 func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error {
 	// -> Lookup bindings by instance ID; 400 if any are active, related issue:
 	//    https://github.com/openservicebrokerapi/servicebroker/issues/127
-	if len(instance.BindingIds) > 0 {
-		a.log.Debugf("Found bindings with ids: %v", instance.BindingIds)
+	if len(instance.BindingIDs) > 0 {
+		a.log.Debugf("Found bindings with ids: %v", instance.BindingIDs)
 		return ErrorBindingExists
 	}
 	// TODO WHAT TO DO IF ASYNC BIND/PROVISION IN PROGRESS
@@ -535,7 +537,8 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 }
 
 // Bind - will create a binding between a service.
-func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest) (*BindResponse, error) {
+func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *BindRequest,
+) (*BindResponse, error) {
 	// binding_id is the id of the binding.
 	// the instanceUUID is the previously provisioned service id.
 	//
@@ -565,8 +568,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 
 	bindingInstance := &apb.BindInstance{
-		Id:         bindingUUID,
-		ServiceId:  instanceUUID,
+		ID:         bindingUUID,
+		ServiceID:  instanceUUID,
 		Parameters: &params,
 	}
 
@@ -580,7 +583,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	//
 	// return 201 when we're done.
 	if bi, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
-		if uuid.Equal(bi.Id, bindingInstance.Id) {
+		if uuid.Equal(bi.ID, bindingInstance.ID) {
 			if reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
 				a.log.Debug("already have this binding instance, returning 200")
 				return &BindResponse{}, ErrorAlreadyProvisioned
@@ -657,15 +660,16 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	return &BindResponse{Credentials: returnCreds}, nil
 }
 
-func mergeCredentials(
-	provExtCreds *apb.ExtractedCredentials, bindExtCreds *apb.ExtractedCredentials,
+func mergeCredentials(provExtCreds *apb.ExtractedCredentials,
+	bindExtCreds *apb.ExtractedCredentials,
 ) map[string]interface{} {
 	// TODO: Implement, need to handle case where either are empty
 	return provExtCreds.Credentials
 }
 
 // Unbind - unbind a services previous binding
-func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) (*UnbindResponse, error) {
+func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID,
+) (*UnbindResponse, error) {
 	if _, err := a.dao.GetBindInstance(bindingUUID.String()); err != nil {
 		return nil, ErrorNotFound
 	}
@@ -695,12 +699,14 @@ func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID) (*U
 }
 
 // Update - update a service NOTE: not implemented
-func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest) (*UpdateResponse, error) {
+func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest,
+) (*UpdateResponse, error) {
 	return nil, notImplemented
 }
 
 // LastOperation - gets the last operation and status
-func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationRequest) (*LastOperationResponse, error) {
+func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationRequest,
+) (*LastOperationResponse, error) {
 	/*
 		look up the resource in etcd the operation should match what was returned by provision
 		take the status and return that.
@@ -726,13 +732,14 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 //AddSpec - adding the spec to the catalog for local developement
 func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
-	if err := a.dao.SetSpec(spec.Id, &spec); err != nil {
+	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err
 	}
 	service := SpecToService(&spec)
 	return &CatalogResponse{Services: []Service{service}}, nil
 }
 
+// RemoveSpec - remove the spec specified from the catalog/etcd
 func (a AnsibleBroker) RemoveSpec(specID string) error {
 	spec, err := a.dao.GetSpec(specID)
 	if client.IsKeyNotFound(err) {
@@ -742,7 +749,7 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 		a.log.Error("Something went real bad trying to retrieve spec for deletion... - %v", err)
 		return err
 	}
-	err = a.dao.DeleteSpec(spec.Id)
+	err = a.dao.DeleteSpec(spec.ID)
 	if err != nil {
 		a.log.Error("Something went real bad trying to delete spec... - %v", err)
 		return err
@@ -750,6 +757,7 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 	return nil
 }
 
+// RemoveSpecs - remove all the specs from the catalog/etcd
 func (a AnsibleBroker) RemoveSpecs() error {
 	dir := "/spec"
 	specs, err := a.dao.BatchGetSpecs(dir)

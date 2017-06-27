@@ -8,16 +8,19 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 
+// ProvisionWorkSubscriber - Lissten for provision messages
 type ProvisionWorkSubscriber struct {
 	dao       *dao.Dao
 	log       *logging.Logger
 	msgBuffer <-chan WorkMsg
 }
 
+// NewProvisionWorkSubscriber - Create a new work subscriber.
 func NewProvisionWorkSubscriber(dao *dao.Dao, log *logging.Logger) *ProvisionWorkSubscriber {
 	return &ProvisionWorkSubscriber{dao: dao, log: log}
 }
 
+// Subscribe - will start the work subscriber listenning on the message buffer for provision messages.
 func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 	p.msgBuffer = msgBuffer
 

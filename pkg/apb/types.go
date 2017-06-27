@@ -7,12 +7,17 @@ import (
 	"github.com/pborman/uuid"
 )
 
+// Parameters - generic string to object or value parameter
 type Parameters map[string]interface{}
+
+//SpecManifest - Spec ID to Spec manifest
 type SpecManifest map[string]*Spec
 
+// BundleSpecLabel - label on the image that we should use to pull out the abp spec.
 // TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
 var BundleSpecLabel = "com.redhat.apb.spec"
 
+// ImageData - APB Image data
 type ImageData struct {
 	Name             string
 	Tag              string
@@ -22,6 +27,7 @@ type ImageData struct {
 	Error            error
 }
 
+// ParameterDescriptor - a parameter to be used by the service catalog to get data.
 type ParameterDescriptor struct {
 	Title       string      `json:"title"`
 	Type        string      `json:"type"`
@@ -36,8 +42,9 @@ type ParameterDescriptor struct {
 array of maps with an array of ParameterDescriptors
 */
 
+// Spec - A APB spec
 type Spec struct {
-	Id          string                 `json:"id"`
+	ID          string                 `json:"id"`
 	Name        string                 `json:"name"`
 	Image       string                 `json:"image"`
 	Tags        []string               `json:"tags"`
@@ -51,18 +58,22 @@ type Spec struct {
 	Required   []string                          `json:"required,omitempty"`
 }
 
+// Context - Determines the context in which the service is running
 type Context struct {
 	Platform  string `json:"platform"`
 	Namespace string `json:"namespace"`
 }
 
+// ExtractedCredentials - Credentials that are extracted from the pods
 type ExtractedCredentials struct {
 	Credentials map[string]interface{} `json:"credentials,omitempty"`
 	// might be more one day
 }
 
+// State - Job State
 type State string
 
+// JobState - The job state
 type JobState struct {
 	Token   string `json:"token"`
 	State   State  `json:"state"`
@@ -70,10 +81,14 @@ type JobState struct {
 }
 
 const (
+	// StateInProgress - In progress job state
 	StateInProgress State = "in progress"
-	StateSucceeded  State = "succeeded"
-	StateFailed     State = "failed"
+	// StateSucceeded - Succeeded job state
+	StateSucceeded State = "succeeded"
+	// StateFailed - Failed job state
+	StateFailed State = "failed"
 
+	// ApbRole - role to be used.
 	// NOTE: Applied to APB ServiceAccount via RoleBinding, not ClusterRoleBinding
 	// cluster-admin scoped to the project the apb is operating in
 	ApbRole = "cluster-admin"
@@ -81,7 +96,7 @@ const (
 
 func specLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("============================================================")
-	log.Debug("Spec: %s", spec.Id)
+	log.Debug("Spec: %s", spec.ID)
 	log.Debug("============================================================")
 	log.Debug("Name: %s", spec.Name)
 	log.Debug("Image: %s", spec.Image)
@@ -110,41 +125,48 @@ func specsLogDump(specs []*Spec, log *logging.Logger) {
 	}
 }
 
+// NewSpecManifest - Creates Spec manifest
 func NewSpecManifest(specs []*Spec) SpecManifest {
 	manifest := make(map[string]*Spec)
 	for _, spec := range specs {
-		manifest[spec.Id] = spec
+		manifest[spec.ID] = spec
 	}
 	return manifest
 }
 
+// ServiceInstance - Service Instance describes a running service.
 type ServiceInstance struct {
-	Id         uuid.UUID       `json:"id"`
+	ID         uuid.UUID       `json:"id"`
 	Spec       *Spec           `json:"spec"`
 	Context    *Context        `json:"context"`
 	Parameters *Parameters     `json:"parameters"`
-	BindingIds map[string]bool `json:"binding_ids"`
+	BindingIDs map[string]bool `json:"binding_ids"`
 }
 
+// AddBinding - Add binding ID to service instance
 func (si *ServiceInstance) AddBinding(bindingUUID uuid.UUID) {
-	if si.BindingIds == nil {
-		si.BindingIds = make(map[string]bool)
+	if si.BindingIDs == nil {
+		si.BindingIDs = make(map[string]bool)
 	}
-	si.BindingIds[bindingUUID.String()] = true
+	si.BindingIDs[bindingUUID.String()] = true
 }
 
+// RemoveBinding - Remove binding ID from service instance
 func (si *ServiceInstance) RemoveBinding(bindingUUID uuid.UUID) {
-	if si.BindingIds != nil {
-		delete(si.BindingIds, bindingUUID.String())
+	if si.BindingIDs != nil {
+		delete(si.BindingIDs, bindingUUID.String())
 	}
 }
 
+// BindInstance - Binding Instance describes a completed binding
 type BindInstance struct {
-	Id         uuid.UUID   `json:"id"`
-	ServiceId  uuid.UUID   `json:"service_id"`
+	ID         uuid.UUID   `json:"id"`
+	ServiceID  uuid.UUID   `json:"service_id"`
 	Parameters *Parameters `json:"parameters"`
 }
 
+// LoadJSON - Generic function to unmarshal json
+// TODO: Remove in favor of calling the same method.
 func LoadJSON(payload string, obj interface{}) error {
 	err := json.Unmarshal([]byte(payload), obj)
 	if err != nil {
@@ -154,6 +176,7 @@ func LoadJSON(payload string, obj interface{}) error {
 	return nil
 }
 
+// DumpJSON - Generic function to marshal obj to json string
 func DumpJSON(obj interface{}) (string, error) {
 	payload, err := json.Marshal(obj)
 	if err != nil {
@@ -163,7 +186,8 @@ func DumpJSON(obj interface{}) (string, error) {
 	return string(payload), nil
 }
 
+// RecoverStatus - Status of the recovery.
 type RecoverStatus struct {
-	InstanceId uuid.UUID `json:"id"`
+	InstanceID uuid.UUID `json:"id"`
 	State      JobState  `json:"state"`
 }

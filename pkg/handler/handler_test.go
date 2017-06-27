@@ -89,7 +89,7 @@ func (m MockBroker) RemoveSpecs() error {
 }
 
 var log = logging.MustGetLogger("handler")
-var brokerConfig broker.BrokerConfig
+var brokerConfig broker.Config
 
 func init() {
 	// setup logging
@@ -100,7 +100,7 @@ func init() {
 	backendFormatter := logging.NewBackendFormatter(backend, colorFormatter)
 	logging.SetBackend(backend, backendFormatter)
 	//will default to all config values to false
-	brokerConfig = broker.BrokerConfig{}
+	brokerConfig = broker.Config{}
 }
 
 func TestNewHandler(t *testing.T) {

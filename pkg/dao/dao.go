@@ -16,6 +16,7 @@ import (
 	"github.com/pborman/uuid"
 )
 
+// Dao - object to interface with the data store.
 type Dao struct {
 	config clients.EtcdConfig
 	log    *logging.Logger
@@ -41,6 +42,7 @@ func (d *Dao) SetRaw(key string, val string) error {
 	return err
 }
 
+//GetEtcdVersion - Retrieve the etcd version.
 func (d *Dao) GetEtcdVersion(config clients.EtcdConfig) (string, string, error) {
 	// The next etcd release (1.4) will have client.GetVersion()
 	// We'll use this to test our etcd connection for now
@@ -160,7 +162,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 		spec := &apb.Spec{}
 		apb.LoadJSON(payload, spec)
 		specs[i] = spec
-		d.log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.Id)
+		d.log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.ID)
 	}
 
 	return specs, nil
@@ -170,7 +172,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
 	// TODO: Is there no batch insert in the etcd api?
 	for _, spec := range specs {
-		err := d.DeleteSpec(spec.Id)
+		err := d.DeleteSpec(spec.ID)
 		if err != nil {
 			return err
 		}
@@ -178,7 +180,7 @@ func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
 	return nil
 }
 
-// FindByState - Retrieve all the jobs that match state
+// FindJobStateByState - Retrieve all the jobs that match the specified state
 func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
 	d.log.Debug("Dao::FindByState")
 
@@ -199,7 +201,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	for _, node := range stateNodes {
 		k := fmt.Sprintf("%s/job", node.Key)
 
-		status := apb.RecoverStatus{InstanceId: uuid.Parse(stateKeyId(node.Key))}
+		status := apb.RecoverStatus{InstanceID: uuid.Parse(stateKeyID(node.Key))}
 		jobstate := apb.JobState{}
 		nodes, e := d.kapi.Get(context.Background(), k, opts)
 		if e != nil {
@@ -329,7 +331,7 @@ func stateKey(id string, jobid string) string {
 	return fmt.Sprintf("/state/%s/job/%s", id, jobid)
 }
 
-func stateKeyId(key string) string {
+func stateKeyID(key string) string {
 	s := strings.TrimPrefix(key, "/state/")
 	s = strings.TrimSuffix(s, "/job")
 	return s

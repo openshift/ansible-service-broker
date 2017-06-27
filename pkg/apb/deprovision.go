@@ -5,11 +5,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Deprovision - runs the abp with the deprovision action.
 func Deprovision(instance *ServiceInstance, clusterConfig ClusterConfig, log *logging.Logger) (string, error) {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
-	log.Noticef("ServiceInstance.Id: %s", instance.Spec.Id)
+	log.Noticef("ServiceInstance.Id: %s", instance.Spec.ID)
 	log.Noticef("ServiceInstance.Name: %v", instance.Spec.Name)
 	log.Noticef("ServiceInstance.Image: %s", instance.Spec.Image)
 	log.Noticef("ServiceInstance.Description: %s", instance.Spec.Description)

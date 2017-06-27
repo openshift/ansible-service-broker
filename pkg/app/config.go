@@ -11,15 +11,17 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 )
 
+// Config - The base config for the pieces of the applcation
 type Config struct {
 	Registry   apb.RegistryConfig
 	Dao        clients.EtcdConfig
 	Log        LogConfig
 	Openshift  apb.ClusterConfig
 	ConfigFile string
-	Broker     broker.BrokerConfig
+	Broker     broker.Config
 }
 
+// CreateConfig - Read config file and create the Config struct
 func CreateConfig(configFile string) (Config, error) {
 	var err error
 

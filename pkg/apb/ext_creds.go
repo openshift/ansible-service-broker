@@ -10,15 +10,15 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-var StillWaitingError = "status: still waiting to start"
-var TimeoutFreq = 6    // Seconds
-var TotalTimeout = 900 // 15min
+var stillWaitingError = "status: still waiting to start"
+var timeoutFreq = 6    // Seconds
+var totalTimeout = 900 // 15min
 
+// ExtractCredentials - Extract credentials from pod in a certain namespace.
 // HACK ALERT!
 // A lot of the current approach to extracting credentials and monitoring
 // output is *very* experimental and error prone. Entire approach is going
 // to be thrown out and redone asap.
-
 func ExtractCredentials(
 	podname string, namespace string, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
@@ -33,7 +33,7 @@ func ExtractCredentials(
 	if err != nil {
 		// HACK: this is HORRIBLE. but there is definitely a time between a bind
 		// and when the container is up.
-		totalRetries := TotalTimeout / TimeoutFreq
+		totalRetries := totalTimeout / timeoutFreq
 		retries := 1
 		for {
 			if retries == totalRetries {
@@ -42,7 +42,7 @@ func ExtractCredentials(
 				return nil, errors.New(errstr)
 			}
 
-			time.Sleep(time.Duration(TimeoutFreq) * time.Second)
+			time.Sleep(time.Duration(timeoutFreq) * time.Second)
 			log.Info("Container not up yet, retrying %d of %d on pod %s", retries, totalRetries, podname)
 			credOut, _ = monitorOutput(podname, namespace)
 			log.Debug("oc log output: \n%s", string(credOut))
@@ -55,7 +55,7 @@ func ExtractCredentials(
 					log.Debug("Pod reporting finished and DID NOT return Credentials")
 				}
 				break
-			} else if err.Error() == StillWaitingError {
+			} else if err.Error() == stillWaitingError {
 				// Known error code that's received when we're either waiting for
 				// ContainerCreating, or for the pod resource to be created.
 				// These are expected states, and we'll wait until the pod is up.
@@ -83,7 +83,7 @@ func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
 
 	if stillWaiting {
 		// Still waiting for container to come up
-		return nil, errors.New(StillWaitingError)
+		return nil, errors.New(stillWaitingError)
 	}
 
 	result, err := decodeOutput(output)

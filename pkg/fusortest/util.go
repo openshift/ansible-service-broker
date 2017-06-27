@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+// Condition - the function to use for testing.
 type Condition func(a interface{}, b interface{}) bool
 
 func assert(t *testing.T, a interface{}, b interface{}, message []string, test Condition) {
@@ -28,18 +29,21 @@ func fail(t *testing.T, a interface{}, b interface{}, message string) {
 	t.Fatal(message)
 }
 
+// AssertEqual - Assert that inputs are equivalent.
 func AssertEqual(t *testing.T, a interface{}, b interface{}, message ...string) {
 	assert(t, a, b, message, func(a interface{}, b interface{}) bool {
 		return a == b
 	})
 }
 
+// AssertNotEqual - Assert that inputs are not equivalent
 func AssertNotEqual(t *testing.T, a interface{}, b interface{}, message ...string) {
 	assert(t, a, b, message, func(a interface{}, b interface{}) bool {
 		return a != b
 	})
 }
 
+// AssertTrue - Assert that input is true
 func AssertTrue(t *testing.T, a interface{}, message ...string) {
 	if a == true {
 		return
@@ -56,6 +60,7 @@ func AssertTrue(t *testing.T, a interface{}, message ...string) {
 	t.Fatal(msg)
 }
 
+// AssertFalse - Assert that input is false
 func AssertFalse(t *testing.T, a interface{}, message ...string) {
 	if a == false {
 		return
@@ -72,6 +77,7 @@ func AssertFalse(t *testing.T, a interface{}, message ...string) {
 	t.Fatal(msg)
 }
 
+// AssertNotNil - Assert that input is not nil
 func AssertNotNil(t *testing.T, a interface{}, message ...string) {
 	if a != nil {
 		return
@@ -88,6 +94,7 @@ func AssertNotNil(t *testing.T, a interface{}, message ...string) {
 	t.Fatal(msg)
 }
 
+// AssertError - Assert that input is an error response
 func AssertError(t *testing.T, body *bytes.Buffer, msg string) {
 	var errResp = make(map[string]string)
 
@@ -102,6 +109,7 @@ func AssertError(t *testing.T, body *bytes.Buffer, msg string) {
 	}
 }
 
+// AssertState - Assert that state contianed in the body is of a certain state.
 func AssertState(t *testing.T, body *bytes.Buffer, state string) {
 	var resp = make(map[string]string)
 
@@ -116,6 +124,7 @@ func AssertState(t *testing.T, body *bytes.Buffer, state string) {
 	}
 }
 
+// AssertOperation -  Assert that the operation contained in the body is of a certain operation.
 func AssertOperation(t *testing.T, body *bytes.Buffer, op string) {
 	var resp = make(map[string]string)
 
@@ -130,11 +139,13 @@ func AssertOperation(t *testing.T, body *bytes.Buffer, op string) {
 	}
 }
 
+// StripNewline - String all new lines from string.
 func StripNewline(input string) string {
 	re := regexp.MustCompile("\\n")
 	return re.ReplaceAllString(input, "")
 }
 
+// MinifyJSON - Minify the json outputed.
 func MinifyJSON(input string) string {
 	var mm interface{}
 	json.Unmarshal([]byte(input), &mm)
