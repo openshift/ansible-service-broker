@@ -6,11 +6,12 @@ BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/bu
 PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
 
+vendor:
+	@glide install -v
+
 build:
 	go build -i -ldflags="-s -w" ./cmd/broker
 
-vendor:
-	@glide install -v
 
 install:
 	cp broker ${PREFIX}/bin/ansible-service-broker
