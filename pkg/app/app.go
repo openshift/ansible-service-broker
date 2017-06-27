@@ -9,6 +9,7 @@ import (
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 
+	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
@@ -66,30 +67,13 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
-	////////////////////////////////////////////////////////////
-	// TODO: This should all get moved into clients, PR incoming
-	// with official support etcd version request support
-	// Something like, clients.ValidateEtcd()
-	app.log.Debug("Connecting to Etcd")
-	serv, clust, err := dao.GetEtcdVersion(app.config.Dao.GetEtcdConfig())
-	if err != nil {
-		app.log.Error("Failed to connect to Etcd\n")
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
-	app.log.Info("Etcd Version [Server: %s, Cluster: %s]", serv, clust)
-	////////////////////////////////////////////////////////////
+	// Initializing clients as soon as we have deps ready.
+	initClients(app.log.Logger, app.config.Dao.GetEtcdConfig())
 
 	app.log.Debug("Connecting Dao")
 	app.dao = dao.NewDao(app.config.Dao, app.log.Logger)
 
-	app.log.Debug("Connecting to Cluster")
 	k8scli := clients.Kubernetes(app.log.Logger)
-	if err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
-
 	restcli := k8scli.CoreV1().RESTClient()
 	body, err := restcli.Get().AbsPath("/version").Do().Raw()
 	if err != nil {
@@ -169,4 +153,27 @@ func (a *App) Start() {
 		a.log.Error(err.Error())
 		os.Exit(1)
 	}
+}
+
+func initClients(log *logging.Logger, ec clients.EtcdConfig) {
+	// Designed to panic early if we cannot construct required clients.
+	// this likely means we're in an unrecoverable configuration or enviornment.
+	// Best we can do is alert the operator as early as possible.
+	//
+	// Deliberately forcing the injection of deps here instead of running as a
+	// method on the app. Forces developers at authorship time to think about
+	// dependencies / make sure things are ready.
+	log.Notice("Initializing clients...")
+	log.Debug("Trying to connect to etcd")
+	serv, clust, err := clients.GetEtcdVersion(ec)
+	if err != nil {
+		log.Error("Failed to connect to Etcd\n")
+		log.Error(err.Error())
+		os.Exit(1)
+	}
+	log.Info("Etcd Version [Server: %s, Cluster: %s]", serv, clust)
+
+	clients.Etcd(ec, log)
+	log.Debug("Connecting to Cluster")
+	clients.Kubernetes(log)
 }

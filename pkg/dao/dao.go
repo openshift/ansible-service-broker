@@ -2,14 +2,10 @@ package dao
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strings"
 
 	"github.com/coreos/etcd/client"
-	"github.com/coreos/etcd/version"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
@@ -51,35 +47,6 @@ func NewDao(config DaoConfig, log *logging.Logger) *Dao {
 func (d *Dao) SetRaw(key string, val string) error {
 	_, err := d.kapi.Set(context.Background(), key, val /*opts*/, nil)
 	return err
-}
-
-//GetEtcdVersion - Retrieve the etcd version.
-func GetEtcdVersion(ec clients.EtcdConfig) (string, string, error) {
-	// The next etcd release (1.4) will have client.GetVersion()
-	// We'll use this to test our etcd connection for now
-	etcdUrl := fmt.Sprintf("http://%s:%s/version", ec.EtcdHost, ec.EtcdPort)
-	resp, err := http.Get(etcdUrl)
-	if err != nil {
-		return "", "", err
-	}
-
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		var vresp version.Versions
-		if err := json.Unmarshal(body, &vresp); err != nil {
-			return "", "", err
-		}
-		return vresp.Server, vresp.Cluster, nil
-	default:
-		var connectErr error
-		if err := json.Unmarshal(body, &connectErr); err != nil {
-			return "", "", err
-		}
-		return "", "", connectErr
-	}
 }
 
 // GetRaw - gets a specific json string for a key from the kvp API.

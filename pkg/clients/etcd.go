@@ -1,7 +1,11 @@
 package clients
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/coreos/etcd/version"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	logging "github.com/op/go-logging"
@@ -13,6 +17,34 @@ import (
 type EtcdConfig struct {
 	EtcdHost string `yaml:"etcd_host"`
 	EtcdPort string `yaml:"etcd_port"`
+}
+
+func GetEtcdVersion(ec EtcdConfig) (string, string, error) {
+	// The next etcd release (1.4) will have client.GetVersion()
+	// We'll use this to test our etcd connection for now
+	etcdUrl := fmt.Sprintf("http://%s:%s/version", ec.EtcdHost, ec.EtcdPort)
+	resp, err := http.Get(etcdUrl)
+	if err != nil {
+		return "", "", err
+	}
+
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var vresp version.Versions
+		if err := json.Unmarshal(body, &vresp); err != nil {
+			return "", "", err
+		}
+		return vresp.Server, vresp.Cluster, nil
+	default:
+		var connectErr error
+		if err := json.Unmarshal(body, &connectErr); err != nil {
+			return "", "", err
+		}
+		return "", "", connectErr
+	}
 }
 
 // Etcd - Create a new etcd client if needed, returns reference
