@@ -18,3 +18,4 @@ broker:
   launch_apb_on_bind: false
   recovery: true
   output_request: true
+  org: ansibleplaybookbundle

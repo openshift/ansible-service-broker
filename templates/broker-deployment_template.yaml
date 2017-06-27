@@ -18,7 +18,7 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-        - image: {{registry_org}}/ansible-service-broker:latest
+        - image: {{broker_org}}/ansible-service-broker:latest
           name: asb
           imagePullPolicy: Always
           ports:
