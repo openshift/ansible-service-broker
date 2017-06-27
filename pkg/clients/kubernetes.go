@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"errors"
 	logging "github.com/op/go-logging"
 	restclient "k8s.io/client-go/rest"
 
@@ -11,30 +10,21 @@ import (
 )
 
 // Kubernetes - Create a new kubernetes client if needed, returns reference
-func Kubernetes(log *logging.Logger) (*clientset.Clientset, error) {
-	errMsg := "Something went wrong while initializing kubernetes client!"
+func Kubernetes(log *logging.Logger) *clientset.Clientset {
+	errMsg := "Something went wrong while initializing kubernetes client!\n"
 	once.Kubernetes.Do(func() {
 		client, err := newKubernetes(log)
 		if err != nil {
 			log.Error(errMsg)
-			log.Error(err.Error())
-			instances.Kubernetes = clientResult{nil, err}
+			// NOTE: Looking to leverage panic recovery to gracefully handle this
+			// with things like retries or better intelligence, but the environment
+			// is probably in a unrecoverable state as far as the broker is concerned,
+			// and demands the attention of an operator.
+			panic(err.Error())
 		}
-		instances.Kubernetes = clientResult{client, nil}
+		instances.Kubernetes = client
 	})
-
-	err := instances.Kubernetes.err
-	if err != nil {
-		log.Error(errMsg)
-		log.Error(err.Error())
-		return nil, err
-	}
-
-	if client, ok := instances.Kubernetes.client.(*clientset.Clientset); ok {
-		return client, nil
-	} else {
-		return nil, errors.New(errMsg)
-	}
+	return instances.Kubernetes
 }
 
 func createClientConfigFromFile(configPath string) (*restclient.Config, error) {

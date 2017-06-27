@@ -81,13 +81,10 @@ func CreateApp() App {
 	////////////////////////////////////////////////////////////
 
 	app.log.Debug("Connecting Dao")
-	if app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger); err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
+	app.dao = dao.NewDao(app.config.Dao, app.log.Logger)
 
 	app.log.Debug("Connecting to Cluster")
-	k8scli, err := clients.Kubernetes(app.log.Logger)
+	k8scli := clients.Kubernetes(app.log.Logger)
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)

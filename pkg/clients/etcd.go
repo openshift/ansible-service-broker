@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -17,30 +16,22 @@ type EtcdConfig struct {
 }
 
 // Etcd - Create a new etcd client if needed, returns reference
-func Etcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {
+func Etcd(config EtcdConfig, log *logging.Logger) *etcd.Client {
 	errMsg := "Something went wrong intializing etcd client!"
 	once.Etcd.Do(func() {
 		client, err := newEtcd(config, log)
 		if err != nil {
 			log.Error(errMsg)
-			log.Error(err.Error())
-			instances.Etcd = clientResult{nil, err}
+			// NOTE: Looking to leverage panic recovery to gracefully handle this
+			// with things like retries or better intelligence, but the environment
+			// is probably in a unrecoverable state as far as the broker is concerned,
+			// and demands the attention of an operator.
+			panic(err.Error())
 		}
-		instances.Etcd = clientResult{client, nil}
+		instances.Etcd = client
 	})
 
-	err := instances.Etcd.err
-	if err != nil {
-		log.Error(errMsg)
-		log.Error(err.Error())
-		return nil, err
-	}
-
-	if client, ok := instances.Etcd.client.(*etcd.Client); ok {
-		return client, nil
-	} else {
-		return nil, errors.New(errMsg)
-	}
+	return instances.Etcd
 }
 
 func newEtcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {

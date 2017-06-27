@@ -13,12 +13,23 @@ import (
 	"k8s.io/kubernetes/pkg/api/v1"
 )
 
+////////////////////////////////////////////////////////////
+// TODO (Erik): Need to refactor to get rid of 80% of the usages
+// of this. It's all over the place and doesn't need to be.
+// Think it's going to turn into the natural place for the
+// configurable svcaccount cert/token location and openshift target
+//
+// I'm planning on submitting a PR to fix this. Yell at me if
+// that hasn't been done. :)
+////////////////////////////////////////////////////////////
 type ClusterConfig struct {
 	InCluster bool
 	Target    string
 	User      string
 	Password  string `yaml:"pass"`
 }
+
+////////////////////////////////////////////////////////////
 
 func ExecuteApb(
 	action string,
@@ -83,10 +94,7 @@ func ExecuteApb(
 	}
 
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, ns))
-	k8scli, err := clients.Kubernetes(log)
-	if err != nil {
-		return apbId, err
-	}
+	k8scli := clients.Kubernetes(log)
 	_, err = k8scli.CoreV1().Pods(ns).Create(pod)
 	return apbId, err
 }

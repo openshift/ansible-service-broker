@@ -1,17 +1,14 @@
 package clients
 
 import (
+	etcd "github.com/coreos/etcd/client"
+	k8s "k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 	"sync"
 )
 
-type clientResult struct {
-	client interface{}
-	err    error
-}
-
 var instances struct {
-	Etcd       clientResult
-	Kubernetes clientResult
+	Etcd       *etcd.Client
+	Kubernetes *k8s.Clientset
 }
 
 var once struct {
