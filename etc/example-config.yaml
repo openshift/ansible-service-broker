@@ -13,12 +13,9 @@ log:
   stdout: true
   level: debug
   color: true
-openshift:
-  target: localhost:8443
-  user: OPENSHIFT_USER
-  pass: OPENSHIFT_PASS
 broker:
   dev_broker: true
   launch_apb_on_bind: false
   recovery: true
   output_request: true
+  org: ansibleplaybookbundle
