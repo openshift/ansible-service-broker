@@ -5,28 +5,28 @@ BROKER_IMAGE     ?= $(REGISTRY)/$(PROJECT)/ansible-service-broker
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
+SOURCES          := $(shell find . -name '*.go' -not -path "*/vendor/*")
+SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
+KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token)
+.DEFAULT_GOAL    := build
 
 vendor:
 	@glide install -v
 
-build:
+broker: $(SOURCES)
 	go build -i -ldflags="-s -w" ./cmd/broker
 
+build: broker
+	@echo > /dev/null
 
-install:
-	cp broker ${PREFIX}/bin/ansible-service-broker
-	mkdir -p ${PREFIX}/etc/ansible-service-broker
-	cp etc/example-config.yaml ${PREFIX}/etc/ansible-service-broker/config.yaml
+run: broker | $(KUBERNETES_FILES)
+	@cd scripts && ./run_local.sh ${BROKER_CONFIG}
 
-run:
-	cd scripts && ./run_local.sh ${BROKER_CONFIG}
+$(KUBERNETES_FILES):
+	@cd scripts && ./prep_local_devel_env.sh
 
-uninstall:
-	rm  -f ${PREFIX}/bin/ansible-service-broker
-	rm -rf ${PREFIX}/etc/ansible-service-broker
-
-prepare-local-env:
-	cd scripts && ./prep_local_devel_env.sh
+prepare-local-env: $(KUBERNETES_FILES)
+	@echo > /dev/null
 
 prepare-build-image: build
 	cp broker build/broker
@@ -57,4 +57,4 @@ deploy:
 test:
 	go test ./pkg/...
 
-.PHONY: vendor build install run uninstall prepare-build-image build-image release-image release push clean deploy test
+.PHONY: vendor build run prepare-build-image build-image release-image release push clean deploy test
