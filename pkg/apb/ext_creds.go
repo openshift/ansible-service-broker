@@ -15,6 +15,7 @@ var stillWaitingError = "status: still waiting to start"
 var timeoutFreq = 6    // Seconds
 var totalTimeout = 900 // 15min
 
+// ExtractCredentials - Extract credentials from pod in a certain namespace.
 func ExtractCredentials(
 	podname string, namespace string, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
@@ -38,7 +39,7 @@ func monitorOutput(podname string, mon chan []byte, log *logging.Logger) {
 	retries := 20
 
 	for r := 1; r <= retries; r++ {
-		output, _ := runCommand("oc", "exec", podname, "broker-bind-creds")
+		output, _ := RunCommand("oc", "exec", podname, "broker-bind-creds")
 
 		stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
 			strings.Contains(string(output), "NotFound") ||
