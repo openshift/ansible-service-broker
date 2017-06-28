@@ -89,6 +89,8 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 		return nil, err
 	}
 
+	req.Header.Add("Accept", "application/json")
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
