@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.5
+Version: 0.9.4
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -314,10 +314,6 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
-* Wed Jun 28 2017 Jason Montleon <jmontleo@redhat.com> 0.9.5-1
-- Fixes BZ#1466031 add Accept header with application/json to RHCC get (#243)
-  (jmontleo@redhat.com)
-
 * Thu Jun 22 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.4-1
 - 1463798 - Fix stale APBs present in ASB after bootstrap (#221) (Shawn.Hurley21@gmail.com)
 - use the correct source name in the rpm spec (#220) (jmontleo@redhat.com)
