@@ -55,18 +55,13 @@ func Provision(
 		log.Info("Project %s already exists!", ns)
 	}
 
-	var client *Client
-	var err error
-
-	if client, err = NewClient(log); err != nil {
-		return "", nil, err
-	}
-
-	podName, err := client.RunImage("provision", clusterConfig, instance.Spec, instance.Context, instance.Parameters)
+	podName, err := ExecuteApb(
+		"provision", clusterConfig, instance.Spec,
+		instance.Context, instance.Parameters, log,
+	)
 
 	if err != nil {
-		log.Error("Problem running image")
-		log.Error(string(podName))
+		log.Errorf("Problem executing apb [%s]", podName)
 		log.Error(err.Error())
 		return podName, nil, err
 	}

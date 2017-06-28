@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"errors"
 	logging "github.com/op/go-logging"
 	restclient "k8s.io/client-go/rest"
 
@@ -8,6 +9,27 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
+
+// Kubernetes - Create a new kubernetes client if needed, returns reference
+func Kubernetes(log *logging.Logger) (*clientset.Clientset, error) {
+	errMsg := "Something went wrong while initializing kubernetes client!\n"
+	once.Kubernetes.Do(func() {
+		client, err := newKubernetes(log)
+		if err != nil {
+			log.Error(errMsg)
+			// NOTE: Looking to leverage panic recovery to gracefully handle this
+			// with things like retries or better intelligence, but the environment
+			// is probably in a unrecoverable state as far as the broker is concerned,
+			// and demands the attention of an operator.
+			panic(err.Error())
+		}
+		instances.Kubernetes = client
+	})
+	if instances.Kubernetes == nil {
+		return nil, errors.New("Kubernetes client instance is nil")
+	}
+	return instances.Kubernetes, nil
+}
 
 func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
 	clientConfig, err := clientcmd.LoadFromFile(configPath)
@@ -22,8 +44,7 @@ func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
 	return config, nil
 }
 
-// NewKubernetes - Add new kubernetes client to the Client.
-func NewKubernetes(log *logging.Logger) error {
+func newKubernetes(log *logging.Logger) (*clientset.Clientset, error) {
 	// NOTE: Both the external and internal client object are using the same
 	// clientset library. Internal clientset normally uses a different
 	// library
@@ -35,19 +56,15 @@ func NewKubernetes(log *logging.Logger) error {
 		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
 		if err != nil {
 			log.Error("Failed to create LocalClientSet")
-			return err
+			return nil, err
 		}
 	}
 
 	clientset, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
 		log.Error("Failed to create LocalClientSet")
-		return err
+		return nil, err
 	}
 
-	rest := clientset.CoreV1().RESTClient()
-
-	Clients.RESTClient = rest
-	Clients.KubernetesClient = clientset
-	return nil
+	return clientset, err
 }

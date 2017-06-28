@@ -2,72 +2,55 @@ package dao
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strings"
 
 	"github.com/coreos/etcd/client"
-	"github.com/coreos/etcd/version"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/pborman/uuid"
 )
 
+// Config - contains dao configuration
+type Config struct {
+	EtcdHost string `yaml:"etcd_host"`
+	EtcdPort string `yaml:"etcd_port"`
+}
+
+// GetEtcdConfig - Simple EtcdConfig getter
+func (c Config) GetEtcdConfig() clients.EtcdConfig {
+	return clients.EtcdConfig{c.EtcdHost, c.EtcdPort}
+}
+
 // Dao - object to interface with the data store.
 type Dao struct {
-	config clients.EtcdConfig
+	config Config
 	log    *logging.Logger
-	client client.Client
+	client *client.Client
 	kapi   client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
 // NewDao - Create a new Dao object
-func NewDao(config clients.EtcdConfig, log *logging.Logger) *Dao {
+func NewDao(config Config, log *logging.Logger) (*Dao, error) {
 	dao := Dao{
 		config: config,
 		log:    log,
 	}
 
-	dao.client = clients.Clients.EtcdClient
-	dao.kapi = client.NewKeysAPI(dao.client)
-	return &dao
+	etcdClient, err := clients.Etcd(config.GetEtcdConfig(), log)
+	if err != nil {
+		return nil, err
+	}
+	dao.client = etcdClient
+	dao.kapi = client.NewKeysAPI(*dao.client)
+	return &dao, nil
 }
 
 // SetRaw - Allows the setting of the value json string to the key in the kvp API.
 func (d *Dao) SetRaw(key string, val string) error {
 	_, err := d.kapi.Set(context.Background(), key, val /*opts*/, nil)
 	return err
-}
-
-//GetEtcdVersion - Retrieve the etcd version.
-func (d *Dao) GetEtcdVersion(config clients.EtcdConfig) (string, string, error) {
-	// The next etcd release (1.4) will have client.GetVersion()
-	// We'll use this to test our etcd connection for now
-	resp, err := http.Get("http://" + config.EtcdHost + ":" + config.EtcdPort + "/version")
-	if err != nil {
-		return "", "", err
-	}
-
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		var vresp version.Versions
-		if err := json.Unmarshal(body, &vresp); err != nil {
-			return "", "", err
-		}
-		return vresp.Server, vresp.Cluster, nil
-	default:
-		var connectErr error
-		if err := json.Unmarshal(body, &connectErr); err != nil {
-			return "", "", err
-		}
-		return "", "", connectErr
-	}
 }
 
 // GetRaw - gets a specific json string for a key from the kvp API.

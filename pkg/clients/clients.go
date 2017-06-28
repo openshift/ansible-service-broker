@@ -1,14 +1,17 @@
 package clients
 
 import (
-	"github.com/coreos/etcd/client"
-	"k8s.io/client-go/rest"
-	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
+	etcd "github.com/coreos/etcd/client"
+	k8s "k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
+	"sync"
 )
 
-// Clients - Object containing clients that the application should be talking too.
-var Clients struct {
-	EtcdClient       client.Client
-	KubernetesClient *clientset.Clientset
-	RESTClient       rest.Interface
+var instances struct {
+	Etcd       *etcd.Client
+	Kubernetes *k8s.Clientset
+}
+
+var once struct {
+	Etcd       sync.Once
+	Kubernetes sync.Once
 }
