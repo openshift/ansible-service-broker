@@ -166,7 +166,8 @@ log:
   stdout: true
   level: debug
   color: true
-openshift: {}
+openshift:
+  image_pull_policy: ${IMAGE_PULL_POLICY}
 broker:
   dev_broker: true
   launch_apb_on_bind: false

@@ -17,6 +17,7 @@ openshift:
   target: localhost:8443
   user: OPENSHIFT_USER
   pass: OPENSHIFT_PASS
+  image_pull_policy: IfNotPresent
 broker:
   dev_broker: true
   launch_apb_on_bind: false
