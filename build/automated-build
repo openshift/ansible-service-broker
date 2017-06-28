@@ -33,15 +33,12 @@ RUN yum -y install golang make device-mapper-devel btrfs-progs-devel etcd
 
 ENV GOPATH=/go
 ENV BROKER_PATH=${GOPATH}/src/github.com/openshift
-ENV GLIDE_VERSION=v0.12.3 \
-    GLIDE_HOME=/go/src/github.com/openshift/ansible-service-broker/.glide
-RUN curl -sSL https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz | tar -vxz -C /usr/local/bin --strip=1
 
 RUN mkdir -p /go/src/github.com/openshift/ansible-service-broker
 RUN git clone https://github.com/openshift/ansible-service-broker ${BROKER_PATH}/ansible-service-broker
 WORKDIR /go/src/github.com/openshift/ansible-service-broker
 
-RUN go build -ldflags="-s -w" ./cmd/broker
+RUN go build -i -ldflags="-s -w" ./cmd/broker
 RUN mv broker /usr/bin/asbd
 ######################
 # BUILD BROKER SOURCE
