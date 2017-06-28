@@ -62,19 +62,6 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
 		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: "", Error: ""}
 
-	// need to get the pod name for the job state
-	extCreds, extErr := apb.ExtractCredentials(podName, p.serviceInstance.Context.Namespace, p.log)
-	if extErr != nil {
-		p.log.Error("broker::Provision extError occurred.")
-		p.log.Error("%s", extErr.Error())
-		// send extError message
-		// can't have an extError type in a struct you want marshalled
-		// https://github.com/golang/go/issues/5161
-		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: "", Error: extErr.Error()}
-		return
-	}
-
 	p.log.Info("Destroying APB sandbox...")
 	sm.DestroyApbSandbox(podName, p.serviceInstance.Context.Namespace)
 
