@@ -2,11 +2,13 @@ package clients
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/coreos/etcd/version"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/coreos/etcd/version"
 
 	logging "github.com/op/go-logging"
 
@@ -49,7 +51,7 @@ func GetEtcdVersion(ec EtcdConfig) (string, string, error) {
 }
 
 // Etcd - Create a new etcd client if needed, returns reference
-func Etcd(config EtcdConfig, log *logging.Logger) *etcd.Client {
+func Etcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {
 	errMsg := "Something went wrong intializing etcd client!"
 	once.Etcd.Do(func() {
 		client, err := newEtcd(config, log)
@@ -64,7 +66,11 @@ func Etcd(config EtcdConfig, log *logging.Logger) *etcd.Client {
 		instances.Etcd = client
 	})
 
-	return instances.Etcd
+	if instances.Etcd == nil {
+		return nil, errors.New("Etcd client instance is nil")
+	}
+
+	return instances.Etcd, nil
 }
 
 func newEtcd(config EtcdConfig, log *logging.Logger) (*etcd.Client, error) {

@@ -61,8 +61,7 @@ func Provision(
 	)
 
 	if err != nil {
-		log.Error("Problem executing apb")
-		log.Error(string(podName))
+		log.Errorf("Problem executing apb [%s]", podName)
 		log.Error(err.Error())
 		return podName, nil, err
 	}

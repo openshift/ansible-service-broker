@@ -97,7 +97,10 @@ func ExecuteApb(
 	}
 
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, ns))
-	k8scli := clients.Kubernetes(log)
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		return apbID, err
+	}
 	_, err = k8scli.CoreV1().Pods(ns).Create(pod)
 	return apbID, err
 }

@@ -32,16 +32,19 @@ type Dao struct {
 }
 
 // NewDao - Create a new Dao object
-func NewDao(config Config, log *logging.Logger) *Dao {
+func NewDao(config Config, log *logging.Logger) (*Dao, error) {
 	dao := Dao{
 		config: config,
 		log:    log,
 	}
 
-	etcdClient := clients.Etcd(config.GetEtcdConfig(), log)
+	etcdClient, err := clients.Etcd(config.GetEtcdConfig(), log)
+	if err != nil {
+		return nil, err
+	}
 	dao.client = etcdClient
 	dao.kapi = client.NewKeysAPI(*dao.client)
-	return &dao
+	return &dao, nil
 }
 
 // SetRaw - Allows the setting of the value json string to the key in the kvp API.

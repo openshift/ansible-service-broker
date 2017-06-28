@@ -71,9 +71,18 @@ func CreateApp() App {
 	initClients(app.log.Logger, app.config.Dao.GetEtcdConfig())
 
 	app.log.Debug("Connecting Dao")
-	app.dao = dao.NewDao(app.config.Dao, app.log.Logger)
+	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
+	if err != nil {
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
 
-	k8scli := clients.Kubernetes(app.log.Logger)
+	k8scli, err := clients.Kubernetes(app.log.Logger)
+	if err != nil {
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+
 	restcli := k8scli.CoreV1().RESTClient()
 	body, err := restcli.Get().AbsPath("/version").Do().Raw()
 	if err != nil {
@@ -167,7 +176,7 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) {
 	log.Debug("Trying to connect to etcd")
 	serv, clust, err := clients.GetEtcdVersion(ec)
 	if err != nil {
-		log.Error("Failed to connect to Etcd\n")
+		log.Error("Failed to connect to Etcd:")
 		log.Error(err.Error())
 		os.Exit(1)
 	}
