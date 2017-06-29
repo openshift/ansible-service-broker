@@ -197,7 +197,8 @@ objects:
         stdout: true
         level: debug
         color: true
-      openshift: {}
+      openshift:
+        image_pull_policy: ${IMAGE_PULL_POLICY}
       broker:
         dev_broker: ${DEV_BROKER}
         launch_apb_on_bind: ${LAUNCH_APB_ON_BIND}
@@ -284,3 +285,8 @@ parameters:
   displayname: Recovery
   name: RECOVERY
   value: "true"
+
+- description: APB ImagePullPolicy
+  displayname: APB ImagePullPolicy
+  name: IMAGE_PULL_POLICY
+  value: "IfNotPresent"
