@@ -27,7 +27,7 @@ func (c Config) GetEtcdConfig() clients.EtcdConfig {
 type Dao struct {
 	config Config
 	log    *logging.Logger
-	client *client.Client
+	client client.Client
 	kapi   client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
@@ -43,7 +43,7 @@ func NewDao(config Config, log *logging.Logger) (*Dao, error) {
 		return nil, err
 	}
 	dao.client = etcdClient
-	dao.kapi = client.NewKeysAPI(*dao.client)
+	dao.kapi = client.NewKeysAPI(dao.client)
 	return &dao, nil
 }
 
