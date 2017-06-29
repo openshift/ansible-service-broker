@@ -53,8 +53,10 @@ validate_var "DOCKERHUB_USERNAME" $DOCKERHUB_USERNAME
 validate_var "DOCKERHUB_PASSWORD" $DOCKERHUB_PASSWORD
 validate_var "DOCKERHUB_ORG" $DOCKERHUB_ORG
 
+# configure variables to pass to template
 VARS="-p BROKER_IMAGE=${BROKER_IMAGE} -p OPENSHIFT_TARGET=${OPENSHIFT_TARGET} -p OPENSHIFT_PASS=${OPENSHIFT_PASS} -p OPENSHIFT_USER=${OPENSHIFT_USER} -p DOCKERHUB_ORG=${DOCKERHUB_ORG} -p DOCKERHUB_PASS=${DOCKERHUB_PASS} -p DOCKERHUB_USER=${DOCKERHUB_USER} -p REGISTRY_TYPE=${REGISTRY_TYPE} -p REGISTRY_URL=${REGISTRY} -p DEV_BROKER=${DEV_BROKER} -p LAUNCH_APB_ON_BIND=${LAUNCH_APB_ON_BIND} -p OUTPUT_REQUEST=${OUTPUT_REQUEST} -p RECOVERY=${RECOVERY}"
 
+# cleanup old deployment
 oc delete project ${PROJECT}
 oc projects | grep ${PROJECT}
 while [ $? -eq 0 ]
@@ -64,5 +66,6 @@ do
   oc projects | grep ${PROJECT}
 done
 
+# deploy
 oc new-project ${PROJECT}
 oc process -f deploy-ansible-service-broker.template.yaml -n ${PROJECT} ${VARS}  | oc create -f -
