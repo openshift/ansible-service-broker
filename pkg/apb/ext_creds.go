@@ -22,7 +22,7 @@ func ExtractCredentials(
 	credOut := make(chan []byte)
 
 	log.Debug("Calling monitorOutput on " + podname)
-	go monitorOutput(podname, credOut, log)
+	go monitorOutput(namespace, podname, credOut, log)
 
 	var bindOutput []byte
 	for msg := range credOut {
@@ -32,14 +32,14 @@ func ExtractCredentials(
 	return buildExtractedCredentials(bindOutput)
 }
 
-func monitorOutput(podname string, mon chan []byte, log *logging.Logger) {
+func monitorOutput(namespace string, podname string, mon chan []byte, log *logging.Logger) {
 	// TODO: Error handling here
 	// It would also be nice to gather the script output that exec runs
 	// instead of only getting the credentials
 	retries := 20
 
 	for r := 1; r <= retries; r++ {
-		output, _ := RunCommand("oc", "exec", podname, "broker-bind-creds")
+		output, _ := RunCommand("oc", "exec", podname, "broker-bind-creds", "--namespace="+namespace)
 
 		stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
 			strings.Contains(string(output), "NotFound") ||
