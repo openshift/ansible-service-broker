@@ -32,7 +32,6 @@ func Bind(
 		return podName, nil, err
 	}
 
-	ns := instance.Context.Namespace
-	creds, err := ExtractCredentials(podName, ns, log)
+	creds, err := ExtractCredentials(podName, instance.Context.Namespace, log)
 	return podName, creds, err
 }

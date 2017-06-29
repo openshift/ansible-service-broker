@@ -11,7 +11,6 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-var stillWaitingError = "status: still waiting to start"
 var timeoutFreq = 6    // Seconds
 var totalTimeout = 900 // 15min
 
@@ -44,8 +43,17 @@ func monitorOutput(namespace string, podname string, mon chan []byte, log *loggi
 		stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
 			strings.Contains(string(output), "NotFound") ||
 			strings.Contains(string(output), "container not found")
+		podCompleted := strings.Contains(string(output), "current phase is Succeeded") ||
+			strings.Contains(string(output), "cannot exec into a container in a completed pod")
+
+		// TODO: Replace the string parsing by passing around the pod
+		// object and checking its status
 		if stillWaiting {
 			log.Warning("Retry attempt %d: Waiting for container to start", r)
+		} else if podCompleted {
+			close(mon)
+			log.Notice("APB completed")
+			return
 		} else if strings.Contains(string(output), "BIND_CREDENTIALS") {
 			mon <- output
 			close(mon)

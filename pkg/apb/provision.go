@@ -67,6 +67,11 @@ func Provision(
 	}
 
 	creds, err := ExtractCredentials(podName, instance.Context.Namespace, log)
+	if !instance.Spec.Bindable {
+		log.Warningf("APB %s is not bindable", instance.Spec.Name)
+		log.Warningf("Ignoring Credentials")
+		creds = nil
+	}
 	return podName, creds, err
 }
 

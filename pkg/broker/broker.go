@@ -272,6 +272,9 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// YES, we have a podname
 			a.log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
 
+			// TODO: ExtractCredentials is doing more than it should
+			// be and it needs to be broken up.
+
 			// did the pod finish?
 			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, instance.Context.Namespace, a.log)
 
