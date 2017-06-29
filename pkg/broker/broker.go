@@ -464,24 +464,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
 		podName, extCreds, err := apb.Provision(serviceInstance, a.clusterConfig, a.log)
-
-		sm := apb.NewServiceAccountManager(a.log)
-		a.log.Info("Destroying APB sandbox...")
-		sm.DestroyApbSandbox(podName, context.Namespace)
-		if err != nil {
-			a.log.Error("broker::Provision error occurred.")
-			a.log.Error("%s", err.Error())
-			return nil, err
-		}
-
-		// TODO: do we need podname for synchronous provisions?
-		extCreds, extErr := apb.ExtractCredentials(podName, context.Namespace, a.log)
-		if extErr != nil {
-			a.log.Error("broker::Provision error occurred.")
-			a.log.Error("%s", extErr.Error())
-			return nil, extErr
-		}
-
 		if extCreds != nil {
 			a.log.Debug("broker::Provision, got ExtractedCredentials!")
 			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
@@ -490,6 +472,15 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 				a.log.Error("%s", err.Error())
 				return nil, err
 			}
+		}
+
+		sm := apb.NewServiceAccountManager(a.log)
+		a.log.Info("Destroying APB sandbox...")
+		sm.DestroyApbSandbox(podName, context.Namespace)
+		if err != nil {
+			a.log.Error("broker::Provision error occurred.")
+			a.log.Error("%s", err.Error())
+			return nil, err
 		}
 	}
 
