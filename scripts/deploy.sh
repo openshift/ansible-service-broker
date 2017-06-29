@@ -1,48 +1,68 @@
 #!/bin/bash
-PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/..
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT=${SCRIPT_DIR}/..
 TEMPLATE_DIR="${PROJECT_ROOT}/templates"
 
 set -e
 
-# Based on https://gist.github.com/pkuczynski/8665367
-function parse_yaml() {
-    local prefix=$2
-    local s
-    local w
-    local fs
-    s='[[:space:]]*'
-    w='[a-zA-Z0-9_]*'
-    fs="$(echo @|tr @ '\034')"
-    sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\1$fs\2$fs\3|p" \
-        -e "s|^\($s\)\($w\)$s[:-]$s\(.*\)$s\$|\1$fs\2$fs\3|p" "$1" |
-    awk -F"$fs" '{
-    indent = length($1)/2;
-    vname[indent] = $2;
-    for (i in vname) {if (i > indent) {delete vname[i]}}
-        if (length($3) > 0) {
-            vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
-            printf("%s%s%s=(\"%s\")\n", "'"$prefix"'",vn, $2, $3);
-        }
-    }' | sed 's/_=/+=/g'
-}
+# from makefile
+BROKER_IMAGE=$1
+REGISTRY=$2
 
-function oc_create {
-    oc create -f $TEMPLATE_DIR/$@
-}
+# override with from my_local_dev_vars
+PROJECT="ansible-service-broker"
+OPENSHIFT_TARGET="https://kubernetes.default"
+OPENSHIFT_USER="admin"
+OPENSHIFT_PASS="admin"
+REGISTRY_TYPE="dockerhub"
+DEV_BROKER="true"
+LAUNCH_APB_ON_BIND="false"
+OUTPUT_REQUEST="true"
+RECOVERY="true"
+#DOCKERHUB_USERNAME="CHANGEME"
+#DOCKERHUB_PASSWORD="CHANGEME"
+#DOCKERHUB_ORG="ansibleplaybookbundle"
 
-parse_yaml $PROJECT_ROOT/etc/dev.config.yaml > /tmp/dev-config
-sed -i "s/=(\"--\")//" /tmp/dev-config
+# process myvars
+MY_VARS="${SCRIPT_DIR}/my_local_dev_vars"
+if [ ! -f $MY_VARS ]; then
+  echo "Please create $MY_VARS"
+  echo "cp $MY_VARS.example $MY_VARS"
+  echo "then edit as needed"
+  exit 1
+fi
 
-for tpl in services.yaml route.yaml etcd-deployment.yaml broker-deployment.yaml; do
-    if [ "${tpl}" == "broker-deployment.yaml" ]; then
-        cp $TEMPLATE_DIR/broker-deployment_template.yaml $TEMPLATE_DIR/$tpl
-        sed -i "s/{{dockerhub_pass}}/${registry_pass}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{dockerhub_user}}/${registry_user}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{dockerhub_org}}/${registry_org}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{openshift_pass}}/${openshift_pass}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{openshift_target}}/${openshift_target}/" $TEMPLATE_DIR/$tpl
-        sed -i "s/{{openshift_user}}/${openshift_user}/" $TEMPLATE_DIR/$tpl
+source ${MY_VARS}
+if [ "$?" -ne "0" ]; then
+  echo "Error reading in ${MY_VARS}"
+  exit 1
+fi
+
+function validate_var {
+    if [ -z ${2+x} ]
+    then
+        echo "${1} is unset"
+        exit 1
     fi
-    source /tmp/dev-config
-    oc_create $tpl
+}
+
+# check the variables that do not have defaults
+validate_var "BROKER_IMAGE" $BROKER_IMAGE
+validate_var "REGISTRY" $REGISTRY
+validate_var "DOCKERHUB_USERNAME" $DOCKERHUB_USERNAME
+validate_var "DOCKERHUB_PASSWORD" $DOCKERHUB_PASSWORD
+validate_var "DOCKERHUB_ORG" $DOCKERHUB_ORG
+
+VARS="-p BROKER_IMAGE=${BROKER_IMAGE} -p OPENSHIFT_TARGET=${OPENSHIFT_TARGET} -p OPENSHIFT_PASS=${OPENSHIFT_PASS} -p OPENSHIFT_USER=${OPENSHIFT_USER} -p DOCKERHUB_ORG=${DOCKERHUB_ORG} -p DOCKERHUB_PASS=${DOCKERHUB_PASS} -p DOCKERHUB_USER=${DOCKERHUB_USER} -p REGISTRY_TYPE=${REGISTRY_TYPE} -p REGISTRY_URL=${REGISTRY} -p DEV_BROKER=${DEV_BROKER} -p LAUNCH_APB_ON_BIND=${LAUNCH_APB_ON_BIND} -p OUTPUT_REQUEST=${OUTPUT_REQUEST} -p RECOVERY=${RECOVERY}"
+
+oc delete project ${PROJECT}
+oc projects | grep ${PROJECT}
+while [ $? -eq 0 ]
+do
+  echo "Waiting for ${PROJECT} to be deleted"
+  sleep 5;
+  oc projects | grep ${PROJECT}
 done
+
+oc new-project ${PROJECT}
+oc process -f deploy-ansible-service-broker.template.yaml -n ${PROJECT} ${VARS}  | oc create -f -
