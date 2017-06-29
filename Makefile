@@ -52,7 +52,7 @@ clean:
 	@rm -f build/broker
 
 deploy:
-	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh
+	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh ${BROKER_IMAGE} ${REGISTRY}
 
 test:
 	go test ./pkg/...
