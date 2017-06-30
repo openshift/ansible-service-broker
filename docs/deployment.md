@@ -13,8 +13,6 @@ DOCKERHUB_ORG | ansibleplaybookbundle | Dockerhub organization
 DOCKERHUB_USER | changeme | Dockerhub user Name 
 DOCKERHUB_PASS | changeme | Dockerhub user Password 
 OPENSHIFT_TARGET | https://kubernetes.default | OpenShift Target URL 
-OPENSHIFT_USER | admin | OpenShift User Name 
-OPENSHIFT_PASS | admin | OpenShift User Password 
 REGISTRY_TYPE | dockerhub | Registry Type 
 REGISTRY_URL | docker.io | Registry URL 
 DEV_BROKER | true | Include Broker Development Endpoint (true/false) 
