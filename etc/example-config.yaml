@@ -23,3 +23,5 @@ broker:
   launch_apb_on_bind: false
   recovery: true
   output_request: true
+  whitelist: "/etc/ansible-service-broker/whitelist.yaml"
+  blacklist: "/etc/ansible-service-broker/blacklist.yaml"

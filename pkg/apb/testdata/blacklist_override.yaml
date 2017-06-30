@@ -1,0 +1,4 @@
+---
+- "^foo-apb$"
+- "not-malicious.*-apb$"
+- "^specific-blacklist-apb$"
