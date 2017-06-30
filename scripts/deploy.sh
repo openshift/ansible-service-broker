@@ -63,6 +63,8 @@ do
   sleep 5;
   oc projects | grep ${PROJECT}
 done
+# delete the clusterrolebinding to avoid template error
+oc delete clusterrolebindings --ignore-not-found=true asb
 
 # deploy
 oc new-project ${PROJECT}
