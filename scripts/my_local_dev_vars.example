@@ -15,6 +15,9 @@ DOCKERHUB_USERNAME=""
 DOCKERHUB_PASSWORD=""
 DOCKERHUB_ORG="ansibleplaybookbundle"
 
+BEARER_TOKEN_FILE=""
+CA_FILE=""
+
 # Always, IfNotPresent, Never
 IMAGE_PULL_POLICY="Always"
 

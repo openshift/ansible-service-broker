@@ -3,6 +3,7 @@ package broker
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 
 	"github.com/coreos/etcd/client"
@@ -76,13 +77,9 @@ func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.Clust
 		brokerConfig:  brokerConfig,
 	}
 
-	// If no openshift target is provided, assume we are running in an openshift
-	// cluster and try to log in using mounted cert and token
-	if clusterConfig.InCluster {
-		err := broker.Login()
-		if err != nil {
-			return broker, err
-		}
+	err := broker.Login()
+	if err != nil {
+		return broker, err
 	}
 
 	return broker, nil
@@ -104,16 +101,66 @@ func (a AnsibleBroker) getServiceInstance(instanceUUID uuid.UUID) (*apb.ServiceI
 
 //Login - Will login the openshift user.
 func (a AnsibleBroker) Login() error {
-	clientConfig, err := k8srestclient.InClusterConfig()
+	config, err := a.getLoginDetails()
 	if err != nil {
-		a.log.Error("Failed to create a restclient.InClusterConfig: %v.", err)
 		return err
 	}
 
-	return ocLogin(a.log, clientConfig.Host,
-		"--certificate-authority", clientConfig.CAFile,
-		"--token", clientConfig.BearerToken,
-	)
+	if config.CAFile != "" {
+		err = ocLogin(a.log, config.Host,
+			"--token", config.BearerToken,
+			"--certificate-authority", config.CAFile,
+		)
+	} else {
+		err = ocLogin(a.log, config.Host,
+			"--token", config.BearerToken,
+			"--insecure-skip-tls-verify=false",
+		)
+	}
+
+	return err
+}
+
+type loginDetails struct {
+	Host        string
+	CAFile      string
+	BearerToken string
+}
+
+func (a AnsibleBroker) getLoginDetails() (loginDetails, error) {
+	config := loginDetails{}
+
+	// If overrides are passed into the config map, Host and BearerTokenFile
+	// values *must* be provided, else we'll default to the k8srestclient details
+	if a.clusterConfig.Host != "" && a.clusterConfig.BearerTokenFile != "" {
+		a.log.Info("ClusterConfig Host and BearerToken provided, preferring configurable overrides")
+		a.log.Info("Host: [ %s ]", a.clusterConfig.Host)
+		a.log.Info("BearerTokenFile: [ %s ]", a.clusterConfig.BearerTokenFile)
+
+		token, err := ioutil.ReadFile(a.clusterConfig.BearerTokenFile)
+		if err != nil {
+			return config, err
+		}
+
+		config.Host = a.clusterConfig.Host
+		config.BearerToken = string(token)
+		config.CAFile = a.clusterConfig.CAFile
+	} else {
+		a.log.Info("No cluster credential overrides provided, using k8s InClusterConfig")
+		k8sConfig, err := k8srestclient.InClusterConfig()
+		if err != nil {
+			a.log.Error("Cluster host & bearer_token_file missing from config, and failed to retrieve InClusterConfig")
+			a.log.Error("Be sure you have configured a cluster host and service account credentials if" +
+				" you are running the broker outside of a cluster Pod")
+			return config, err
+		}
+
+		config.Host = k8sConfig.Host
+		config.CAFile = k8sConfig.CAFile
+		config.BearerToken = k8sConfig.BearerToken
+	}
+
+	return config, nil
 }
 
 // Bootstrap - Loads all known specs from a registry into local storage for reference
@@ -779,6 +826,8 @@ func ocLogin(log *logging.Logger, args ...string) error {
 	fullArgs := append([]string{"login"}, args...)
 
 	output, err := apb.RunCommand("oc", fullArgs...)
+	log.Debug("Login output:")
+	log.Debug(string(output))
 
 	if err != nil {
 		log.Debug(string(output))

@@ -198,6 +198,9 @@ objects:
         level: debug
         color: true
       openshift:
+        host: ${CLUSTER_AUTH_HOST}
+        ca_file: ${CA_FILE}
+        bearer_token_file: ${BEARER_TOKEN_FILE}
         image_pull_policy: ${IMAGE_PULL_POLICY}
       broker:
         dev_broker: ${DEV_BROKER}
@@ -290,3 +293,25 @@ parameters:
   displayname: APB ImagePullPolicy
   name: IMAGE_PULL_POLICY
   value: "IfNotPresent"
+
+############################################################
+# NOTE: Default behavior for these are going to use the kubernetes
+# InClusterConfig. These are typically overridden for running
+# the broker outside of a cluster. Under normal circumstances,
+# you probably want to leave these blank.
+############################################################
+- description: Service Account CAFile Path
+  displayname: Service Account CAFile Path
+  name: CA_FILE
+  value: ""
+
+- description: Service Account Bearer Token File
+  displayname: Service Account Bearer Token File
+  name: BEARER_TOKEN_FILE
+  value: ""
+
+- description: Cluster Authentication Host
+  displayname: Cluster Authentication Host
+  name: CLUSTER_AUTH_HOST
+  value: ""
+############################################################
