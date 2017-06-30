@@ -29,7 +29,6 @@ gosrc
 etc/dev.config.yaml
 etc/prod.config.yaml
 etc/mock.config.yaml
-templates/broker-deployment.yaml
 
 #Compiled binaries
 broker
