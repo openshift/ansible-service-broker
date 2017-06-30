@@ -1,13 +1,28 @@
-package apb
+package registry
 
 import (
 	"fmt"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
-// RegistryConfig - Configuration for the registry
-type RegistryConfig struct {
+// BundleSpecLabel - label on the image that we should use to pull out the abp spec.
+// TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
+var BundleSpecLabel = "com.redhat.apb.spec"
+
+// ImageData - APB Image data
+type ImageData struct {
+	Name             string
+	Tag              string
+	Labels           map[string]string
+	Layers           []string
+	IsPlaybookBundle bool
+	Error            error
+}
+
+// Config - Configuration for the registry
+type Config struct {
 	Name string
 	URL  string
 	User string
@@ -17,12 +32,12 @@ type RegistryConfig struct {
 
 // Registry - Interface that wraps the methods need for a registry
 type Registry interface {
-	Init(RegistryConfig, *logging.Logger) error
-	LoadSpecs() ([]*Spec, int, error)
+	Init(Config, *logging.Logger) error
+	LoadSpecs() ([]*apb.Spec, int, error)
 }
 
 // NewRegistry - Create a new registry from the registry config.
-func NewRegistry(config RegistryConfig, log *logging.Logger) (Registry, error) {
+func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 	var reg Registry
 
 	log.Info("== REGISTRY CX == ")

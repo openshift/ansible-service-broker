@@ -9,6 +9,7 @@ import (
 	"github.com/coreos/etcd/client"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/apb/registry"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/pborman/uuid"
 	k8srestclient "k8s.io/client-go/rest"
@@ -59,14 +60,14 @@ type AnsibleBroker struct {
 	dao           *dao.Dao
 	log           *logging.Logger
 	clusterConfig apb.ClusterConfig
-	registry      apb.Registry
+	registry      []registry.Registry
 	engine        *WorkEngine
 	brokerConfig  Config
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
 func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
-	registry apb.Registry, engine WorkEngine, brokerConfig Config,
+	registry []registry.Registry, engine WorkEngine, brokerConfig Config,
 ) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
 		dao:           dao,
@@ -185,14 +186,21 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		a.log.Error("Something went real bad trying to delete batch specs... - %v", err)
 		return nil, err
 	}
+	specs = []*apb.Spec{}
 
-	if specs, imageCount, err = a.registry.LoadSpecs(); err != nil {
-		return nil, err
+	for _, r := range a.registry {
+		s, i, err := r.LoadSpecs()
+		if err != nil {
+			return nil, err
+		}
+		imageCount += i
+		specs = append(specs, s...)
 	}
 
 	if err := a.dao.BatchSetSpecs(apb.NewSpecManifest(specs)); err != nil {
 		return nil, err
 	}
+	a.log.Debugf("specs -> %v", specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }

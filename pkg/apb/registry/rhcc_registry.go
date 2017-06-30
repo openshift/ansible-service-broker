@@ -1,4 +1,4 @@
-package apb
+package registry
 
 import (
 	b64 "encoding/base64"
@@ -8,12 +8,13 @@ import (
 	"strings"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // RHCCRegistry - Red Hat Container Catalog Registry
 type RHCCRegistry struct {
-	config RegistryConfig
+	config Config
 	log    *logging.Logger
 }
 
@@ -35,7 +36,7 @@ type ImageResponse struct {
 }
 
 // Init - Initialize the Red Hat Container Catalog
-func (r *RHCCRegistry) Init(config RegistryConfig, log *logging.Logger) error {
+func (r *RHCCRegistry) Init(config Config, log *logging.Logger) error {
 	log.Debug("RHCCRegistry::Init")
 	r.config = config
 	r.log = log
@@ -57,13 +58,13 @@ func (r RHCCRegistry) cleanHTTPURL(url string) string {
 }
 
 // LoadSpecs - Load Red Hat Container Catalog specs
-func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
+func (r RHCCRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Debug("RHCCRegistry::LoadSpecs")
-	var specs []*Spec
+	var specs []*apb.Spec
 
 	imageList, err := r.LoadImages("*-apb")
 	if err != nil {
-		return []*Spec{}, 0, err
+		return []*apb.Spec{}, 0, err
 	}
 
 	numResults := imageList.NumResults
@@ -71,7 +72,7 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	for _, image := range imageList.Results {
 		spec, err := r.imageToSpec(image)
 		if err != nil {
-			return []*Spec{}, 0, err
+			return []*apb.Spec{}, 0, err
 		}
 		specs = append(specs, spec)
 	}
@@ -79,9 +80,9 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	return specs, numResults, nil
 }
 
-func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
+func (r RHCCRegistry) imageToSpec(image *Image) (*apb.Spec, error) {
 	r.log.Debug("RHCCRegistry::imageToSpec")
-	_spec := &Spec{}
+	_spec := &apb.Spec{}
 	url := r.cleanHTTPURL(r.config.URL)
 
 	req, err := http.NewRequest("GET", url+"/v2/"+image.Name+"manifests/latest", nil)

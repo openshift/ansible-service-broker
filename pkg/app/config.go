@@ -7,14 +7,15 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/apb/registry"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
-	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 )
 
 // Config - The base config for the pieces of the applcation
 type Config struct {
-	Registry   apb.RegistryConfig
-	Dao        dao.Config
+	Registry   []registry.Config
+	Dao        clients.EtcdConfig
 	Log        LogConfig
 	Openshift  apb.ClusterConfig
 	ConfigFile string

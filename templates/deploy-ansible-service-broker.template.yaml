@@ -184,11 +184,11 @@ objects:
   data:
     broker-config: |
       registry:
-        name: ${REGISTRY_TYPE}
-        url: ${REGISTRY_URL}
-        user: ${DOCKERHUB_USER}
-        pass: ${DOCKERHUB_PASS}
-        org: ${DOCKERHUB_ORG}
+        - name: ${REGISTRY_TYPE}
+          url: ${REGISTRY_URL}
+          user: ${DOCKERHUB_USER}
+          pass: ${DOCKERHUB_PASS}
+          org: ${DOCKERHUB_ORG}
       dao:
         etcd_host: etcd
         etcd_port: 2379

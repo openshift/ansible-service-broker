@@ -1,4 +1,4 @@
-package apb
+package registry
 
 import (
 	"bytes"
@@ -13,17 +13,18 @@ import (
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // DockerHubRegistry - Docker Hub registry
 type DockerHubRegistry struct {
-	config RegistryConfig
+	config Config
 	log    *logging.Logger
 }
 
 // Init - Initialize the docker hub registry
-func (r *DockerHubRegistry) Init(config RegistryConfig, log *logging.Logger) error {
+func (r *DockerHubRegistry) Init(config Config, log *logging.Logger) error {
 	log.Debug("DockerHubRegistry::Init")
 	r.config = config
 	r.log = log
@@ -31,17 +32,17 @@ func (r *DockerHubRegistry) Init(config RegistryConfig, log *logging.Logger) err
 }
 
 // LoadSpecs - Will load the specs from the docker hub registry.
-func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, int, error) {
+func (r *DockerHubRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Debug("DockerHubRegistry::LoadSpecs")
 	var err error
 	var rawBundleData []*ImageData
-	var specs []*Spec
+	var specs []*apb.Spec
 
 	if rawBundleData, err = r.loadBundleImageData(r.config.Org); err != nil {
 		return nil, 0, err
 	}
 
-	r.log.Debug("Raw image bundle size: %d", len(rawBundleData))
+	r.log.Debug("Raw image bundle size: %d image bundle -%v", len(rawBundleData), rawBundleData)
 	if specs, err = r.createSpecs(rawBundleData); err != nil {
 		return nil, len(rawBundleData), err
 	}
@@ -49,19 +50,19 @@ func (r *DockerHubRegistry) LoadSpecs() ([]*Spec, int, error) {
 	////////////////////////////////////////////////////////////
 	// TODO: DEBUG Remove dump
 	////////////////////////////////////////////////////////////
-	specsLogDump(specs, r.log)
+	apb.SpecsLogDump(specs, r.log)
 	////////////////////////////////////////////////////////////
 
 	return specs, len(rawBundleData), nil
 }
 
-func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*Spec, error) {
+func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*apb.Spec, error) {
 	var err error
-	var spec *Spec
+	var spec *apb.Spec
 
-	datToSpec := func(dat *ImageData) (*Spec, error) {
+	datToSpec := func(dat *ImageData) (*apb.Spec, error) {
 		var _err error
-		_spec := &Spec{}
+		_spec := &apb.Spec{}
 
 		encodedSpec := dat.Labels[BundleSpecLabel]
 		if encodedSpec == "" {
@@ -83,7 +84,7 @@ func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*Spec, er
 		return _spec, nil
 	}
 
-	var specs []*Spec
+	var specs []*apb.Spec
 	for _, dat := range rawBundleData {
 		if spec, err = datToSpec(dat); err != nil {
 			r.log.Errorf("Unable to create spec - %v image: %v", err, dat.Name)
@@ -91,7 +92,6 @@ func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*Spec, er
 			specs = append(specs, spec)
 		}
 	}
-
 	return specs, nil
 }
 
