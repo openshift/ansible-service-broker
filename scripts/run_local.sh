@@ -1,5 +1,12 @@
 #!/bin/bash
-MY_VARS="./my_local_dev_vars"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT=${SCRIPT_DIR}/..
+
+# sane defaults, can be overridden in my_vars
+BROKER_CMD=${PROJECT_ROOT}/broker
+GENERATED_BROKER_CONFIG=${PROJECT_ROOT}/etc/generated_local_development.yaml
+
+MY_VARS="${SCRIPT_DIR}/my_local_dev_vars"
 if [ ! -f $MY_VARS ]; then
   echo "Please create $MY_VARS"
   echo "cp $MY_VARS.example $MY_VARS"
@@ -7,7 +14,7 @@ if [ ! -f $MY_VARS ]; then
   exit 1
 fi
 
-source ./${MY_VARS}
+source ${MY_VARS}
 if [ "$?" -ne "0" ]; then
   echo "Error reading in ${MY_VARS}"
   exit 1
