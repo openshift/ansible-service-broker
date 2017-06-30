@@ -14,9 +14,9 @@ log:
   level: debug
   color: true
 openshift:
-  target: localhost:8443
-  user: OPENSHIFT_USER
-  pass: OPENSHIFT_PASS
+  host: ""
+  ca_file: ""
+  bearer_token_file: ""
   image_pull_policy: IfNotPresent
 broker:
   dev_broker: true

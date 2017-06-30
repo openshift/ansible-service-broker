@@ -80,6 +80,14 @@ type JobState struct {
 	Podname string `json:"podname"`
 }
 
+// ClusterConfig - Configuration for the cluster.
+type ClusterConfig struct {
+	Host            string `yaml:"host"`
+	CAFile          string `yaml:"ca_file"`
+	BearerTokenFile string `yaml:"bearer_token_file"`
+	PullPolicy      string `yaml:"image_pull_policy"`
+}
+
 const (
 	// StateInProgress - In progress job state
 	StateInProgress State = "in progress"

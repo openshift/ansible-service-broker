@@ -14,27 +14,6 @@ import (
 	"k8s.io/kubernetes/pkg/api/v1"
 )
 
-////////////////////////////////////////////////////////////
-// TODO (Erik): Need to refactor to get rid of 80% of the usages
-// of this. It's all over the place and doesn't need to be.
-// Think it's going to turn into the natural place for the
-// configurable svcaccount cert/token location and openshift target
-//
-// I'm planning on submitting a PR to fix this. Yell at me if
-// that hasn't been done. :)
-////////////////////////////////////////////////////////////
-
-// ClusterConfig - DEPRECATED Configuration struct for clusters
-type ClusterConfig struct {
-	InCluster  bool
-	Target     string
-	User       string
-	Password   string `yaml:"pass"`
-	PullPolicy string `yaml:"image_pull_policy"`
-}
-
-////////////////////////////////////////////////////////////
-
 // ExecuteApb - Runs an APB Action with a provided set of inputs
 func ExecuteApb(
 	action string,

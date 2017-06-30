@@ -6,14 +6,6 @@ import (
 	"syscall"
 )
 
-// HardcodedClusterConfig - Default cluster config.
-var HardcodedClusterConfig = ClusterConfig{
-	//Target:   "cap.example.com:8443",
-	Target:   "10.1.2.2:8443",
-	User:     "admin",
-	Password: "admin",
-}
-
 // RunCommand - runs a command with the args.
 // HACK: really need a better way to do docker run
 func RunCommand(cmd string, args ...string) ([]byte, error) {
