@@ -1,7 +1,7 @@
 REGISTRY         ?= docker.io
-PROJECT          ?= ansibleplaybookbundle
+ORG              ?= ansibleplaybookbundle
 TAG              ?= latest
-BROKER_IMAGE     ?= $(REGISTRY)/$(PROJECT)/ansible-service-broker
+BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/ansible-service-broker
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
@@ -52,7 +52,7 @@ clean:
 	@rm -f build/broker
 
 deploy:
-	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh
+	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG}
 
 test:
 	go test ./pkg/...
