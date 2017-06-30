@@ -6,6 +6,7 @@ TEMPLATE_DIR="${PROJECT_ROOT}/templates"
 # from makefile
 BROKER_IMAGE=$1
 REGISTRY=$2
+DOCKERHUB_ORG=$3
 
 # override with from my_local_dev_vars
 PROJECT="ansible-service-broker"
