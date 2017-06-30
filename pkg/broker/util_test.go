@@ -40,19 +40,20 @@ func TestSpecToService(t *testing.T) {
 				Default:     float64(9001)}}}
 
 	spec := apb.Spec{
-		ID:          "50eb5637-6ffe-480d-a52e-a7e603a50fca",
-		Name:        "testspec",
-		Bindable:    false,
-		Description: "test spec to be converted",
-		Async:       "unsupported",
-		Parameters:  param}
+		ID:           "50eb5637-6ffe-480d-a52e-a7e603a50fca",
+		Name:         "testspec",
+		RegistryName: "test",
+		Bindable:     false,
+		Description:  "test spec to be converted",
+		Async:        "unsupported",
+		Parameters:   param}
 
 	descriptors := make(map[string]interface{})
 	descriptors["parameters"] = param
 
 	expectedsvc := Service{
 		ID:          uuid.Parse("50eb5637-6ffe-480d-a52e-a7e603a50fca"),
-		Name:        "testspec",
+		Name:        "test:testspec",
 		Description: "test spec to be converted",
 		Bindable:    false,
 		Plans:       nil,

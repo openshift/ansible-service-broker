@@ -3,6 +3,7 @@ package broker
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -31,8 +32,10 @@ func SpecToService(spec *apb.Spec) Service {
 	}
 
 	retSvc := Service{
-		ID:          uuid.Parse(spec.ID),
-		Name:        spec.Name,
+		ID: uuid.Parse(spec.ID),
+		Name: fmt.Sprintf(
+			"%v-%v", strings.ToLower(spec.RegistryName), strings.ToLower(spec.Name),
+		),
 		Description: spec.Description,
 		Tags:        make([]string, len(spec.Tags)),
 		Bindable:    spec.Bindable,
