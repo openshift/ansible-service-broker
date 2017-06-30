@@ -168,8 +168,8 @@ log:
   color: true
 openshift:
   host: ${OPENSHIFT_SERVER_HOST}
-  bearer_token_file: ${BEARER_TOKEN_FILE}
-  ca_file: ${CA_FILE}
+  bearer_token_file:${BEARER_TOKEN_FILE}
+  ca_file:${CA_FILE}
   image_pull_policy: ${IMAGE_PULL_POLICY}
 broker:
   dev_broker: true
