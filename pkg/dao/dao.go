@@ -20,7 +20,7 @@ type Config struct {
 
 // GetEtcdConfig - Simple EtcdConfig getter
 func (c Config) GetEtcdConfig() clients.EtcdConfig {
-	return clients.EtcdConfig{c.EtcdHost, c.EtcdPort}
+	return clients.EtcdConfig{EtcdHost: c.EtcdHost, EtcdPort: c.EtcdPort}
 }
 
 // Dao - object to interface with the data store.
