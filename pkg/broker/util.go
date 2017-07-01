@@ -2,22 +2,12 @@ package broker
 
 import (
 	"fmt"
-	"os"
-	"path"
 	"regexp"
 
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
-
-// ProjectRoot - return the root path for the application
-func ProjectRoot() string {
-	gopath := os.Getenv("GOPATH")
-	rootPath := path.Join(gopath, "src", "github.com", "openshift",
-		"ansible-service-broker")
-	return rootPath
-}
 
 // SpecToService converts an apb Spec into a Service usable by the service
 // catalog.

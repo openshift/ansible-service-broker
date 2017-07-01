@@ -2,8 +2,6 @@ package broker
 
 import (
 	"encoding/base64"
-	"os"
-	"path"
 	"testing"
 
 	schema "github.com/lestrrat/go-jsschema"
@@ -135,12 +133,6 @@ func TestGetType(t *testing.T) {
 	ft.AssertTrue(t, getType("nil").Contains(schema.NullType), "no nil type")
 	ft.AssertTrue(t, getType("null").Contains(schema.NullType), "no null type")
 	ft.AssertTrue(t, getType("biteme").Contains(schema.UnspecifiedType), "biteme type returned a known type")
-}
-
-func TestProjectRoot(t *testing.T) {
-	gopath := os.Getenv("GOPATH")
-	rootpath := path.Join(gopath, "src/github.com/openshift/ansible-service-broker")
-	ft.AssertEqual(t, ProjectRoot(), rootpath, "paths not equal")
 }
 
 func TestState(t *testing.T) {
