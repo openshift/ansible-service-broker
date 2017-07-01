@@ -12,7 +12,7 @@ type Args struct {
 	Version    bool   `short:"v" long:"version" description:"Print version information"`
 }
 
-// CreateArgs - Will return the arguements that were passed in to the application
+// CreateArgs - Will return the arguments that were passed in to the application
 func CreateArgs() (Args, error) {
 	args := Args{}
 

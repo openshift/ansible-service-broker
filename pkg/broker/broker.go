@@ -335,7 +335,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	//-> OrganizationID    uuid.UUID
 	//-> SpaceID           uuid.UUID
-	// Used for determining where this service should be provisioned. Analagous to
+	// Used for determining where this service should be provisioned. Analogous to
 	// OCP's namespaces and projects. Re: OrganizationID, spec mentions
 	// "Most brokers will not use this field, it could be helpful in determining
 	// the data placement or applying custom business rules"
@@ -777,7 +777,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	return &LastOperationResponse{State: state, Description: ""}, err
 }
 
-//AddSpec - adding the spec to the catalog for local developement
+//AddSpec - adding the spec to the catalog for local development
 func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err

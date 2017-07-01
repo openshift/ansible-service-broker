@@ -167,7 +167,7 @@ func (a *App) Start() {
 
 func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	// Designed to panic early if we cannot construct required clients.
-	// this likely means we're in an unrecoverable configuration or enviornment.
+	// this likely means we're in an unrecoverable configuration or environment.
 	// Best we can do is alert the operator as early as possible.
 	//
 	// Deliberately forcing the injection of deps here instead of running as a
