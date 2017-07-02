@@ -145,7 +145,7 @@ func StripNewline(input string) string {
 	return re.ReplaceAllString(input, "")
 }
 
-// MinifyJSON - Minify the json outputed.
+// MinifyJSON - Minify the json outputted.
 func MinifyJSON(input string) string {
 	var mm interface{}
 	json.Unmarshal([]byte(input), &mm)
