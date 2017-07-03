@@ -188,6 +188,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	}
 	specs = []*apb.Spec{}
 
+	//Load Specs for each registry
 	for _, r := range a.registry {
 		s, i, err := r.LoadSpecs()
 		if err != nil {
@@ -196,8 +197,15 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		imageCount += i
 		specs = append(specs, s...)
 	}
+	specIDToAdded := map[string]*apb.Spec{}
+	for _, s := range specs {
+		if val, ok := specIDToAdded[s.ID]; ok {
+			a.log.Warningf("spec id collision - %v is overwriting %v", s.Name, val.Name)
+		}
+		specIDToAdded[s.ID] = s
+	}
 
-	if err := a.dao.BatchSetSpecs(apb.NewSpecManifest(specs)); err != nil {
+	if err := a.dao.BatchSetSpecs(specIDToAdded); err != nil {
 		return nil, err
 	}
 	a.log.Debugf("specs -> %v", specs)
