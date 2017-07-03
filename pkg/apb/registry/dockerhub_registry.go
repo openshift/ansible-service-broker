@@ -3,24 +3,43 @@ package registry
 import (
 	"bytes"
 	"context"
-	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/containers/image/transports"
-	"github.com/containers/image/types"
+	yaml "gopkg.in/yaml.v1"
+
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // DockerHubRegistry - Docker Hub registry
 type DockerHubRegistry struct {
 	config Config
 	log    *logging.Logger
+}
+
+// DockerHubImage - Image from a dockerhub registry.
+type DockerHubImage struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
+// DockerHubImageResponse - Image response for dockerhub.
+type DockerHubImageResponse struct {
+	Count   int               `json:"count"`
+	Results []*DockerHubImage `json:"results"`
+	Next    string            `json:"next"`
+}
+
+// DockerHubImageData - used to retrieve specs.
+type DockerHubImageData struct {
+	Name             string
+	Spec             *apb.Spec
+	Error            error
+	IsPlaybookBundle bool
 }
 
 // Init - Initialize the docker hub registry
@@ -35,25 +54,17 @@ func (r *DockerHubRegistry) Init(config Config, log *logging.Logger) error {
 func (r *DockerHubRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Debug("DockerHubRegistry::LoadSpecs")
 	var err error
-	var rawBundleData []*ImageData
 	var specs []*apb.Spec
 
-	if rawBundleData, err = r.loadBundleImageData(r.config.Org); err != nil {
+	if specs, err = r.loadBundleImageData(r.config.Org); err != nil {
 		return nil, 0, err
 	}
-
-	r.log.Debug("Raw image bundle size: %d image bundle -%v", len(rawBundleData), rawBundleData)
-	if specs, err = r.createSpecs(rawBundleData); err != nil {
-		return nil, len(rawBundleData), err
-	}
-
 	////////////////////////////////////////////////////////////
 	// TODO: DEBUG Remove dump
 	////////////////////////////////////////////////////////////
 	apb.SpecsLogDump(specs, r.log)
 	////////////////////////////////////////////////////////////
-
-	return specs, len(rawBundleData), nil
+	return specs, len(specs), nil
 }
 
 // Fail - will determine if this reqistry can cause a failure.
@@ -145,82 +156,21 @@ func (r DockerHubRegistry) getDockerHubToken() (string, error) {
 	return tokenResp.Token, nil
 }
 
-func (r DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error) {
+func (r DockerHubRegistry) loadBundleImageData(org string) ([]*apb.Spec, error) {
 	r.log.Debug("DockerHubRegistry::loadBundleImageData")
 	r.log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 	r.log.Debug("Loading image list for org: [ %s ]", org)
 
-	type Images struct {
-		Name      string `json:"name"`
-		Namespace string `json:"namespace"`
-	}
-
-	type ImageResponse struct {
-		Count   int       `json:"count"`
-		Results []*Images `json:"results"`
-		Next    string    `json:"next"`
-	}
-
 	token, err := r.getDockerHubToken()
 
-	channel := make(chan *ImageData)
+	channel := make(chan *DockerHubImageData)
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
-	// Will kick of go routines for each result in the images.
-	loadImagesFromResult := func(ctx context.Context, images []*Images) {
-		for _, imageName := range images {
-			r.log.Debugf("Trying to load %v/%v", imageName.Namespace, imageName.Name)
-			go r.loadImageData(ctx, "docker://"+imageName.Namespace+"/"+imageName.Name, channel)
-		}
-	}
-
-	// getNextImages - will follow the next URL using go routines.
-	// The workflow is query the url, if Next is defined then kickoff another go routine to get those images.
-	// then kick of the loading of image data.
-	var getNextImages func(ctx context.Context, org, token, url string, ch chan<- *ImageData, cancelFunc context.CancelFunc) (*ImageResponse, error)
-
-	getNextImages = func(ctx context.Context, org, token, url string, ch chan<- *ImageData, cancelFunc context.CancelFunc) (*ImageResponse, error) {
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
-			cancelFunc()
-			close(ch)
-			return nil, err
-		}
-		req.Header.Set("Authorization", fmt.Sprintf("JWT %v", token))
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
-			cancelFunc()
-			close(ch)
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		imageList, err := ioutil.ReadAll(resp.Body)
-
-		iResp := ImageResponse{}
-		err = json.Unmarshal(imageList, &iResp)
-		if err != nil {
-			r.log.Errorf("unable to get next images for url: %v - %v", url, err)
-			cancelFunc()
-			close(ch)
-			return &iResp, err
-		}
-		//Keep getting the images
-		if iResp.Next != "" {
-			r.log.Debugf("getting next page of results - %v", iResp.Next)
-			//Fan out calls to get the next images.
-			go getNextImages(ctx, org, token, iResp.Next, channel, cancelFunc)
-		}
-		loadImagesFromResult(ctx, iResp.Results)
-		return &iResp, nil
-	}
-
 	//Intial call to getNextImages this will fan out to retrieve all the values.
-	imageResp, err := getNextImages(ctx, org, token, fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=100", org), channel, cancelFunc)
+	imageResp, err := r.getNextImages(ctx, org, token,
+		fmt.Sprintf("https://hub.docker.com/v2/repositories/%v/?page_size=100", org),
+		channel, cancelFunc)
 	//if there was an issue with the first call, return the error
 	if err != nil {
 		return nil, err
@@ -230,19 +180,20 @@ func (r DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error)
 		r.log.Info("canceled retrieval as no items in org")
 		close(channel)
 	}
-	var apbData []*ImageData
+	var apbData []*apb.Spec
 	counter := 1
 	for imageData := range channel {
 		if imageData.Error != nil {
-			r.log.Error("Something went wrong loading img data for [ %s ]", imageData.Name)
-			r.log.Error(fmt.Sprintf("Error: %s", imageData.Error))
+			r.log.Errorf("Something went wrong loading img data name: %v -  %v",
+				imageData.Name, imageData.Error)
 		}
 
 		if imageData.IsPlaybookBundle {
-			r.log.Notice("We have a playbook bundle, adding its imagedata")
-			apbData = append(apbData, imageData)
+			r.log.Noticef("We have a playbook bundle, adding its imagedata")
+			apbData = append(apbData, imageData.Spec)
 		} else {
-			r.log.Notice("We did NOT add the imageData for some reason")
+			r.log.Noticef("We did NOT add the imageData - %v for some reason",
+				imageData.Name)
 		}
 
 		if counter < imageResp.Count {
@@ -265,68 +216,122 @@ func (r DockerHubRegistry) loadBundleImageData(org string) ([]*ImageData, error)
 	return apbData, nil
 }
 
-func (r DockerHubRegistry) loadImageData(ctx context.Context, imageName string, channel chan<- *ImageData) {
-	// TODO: Error handling!
-	img, err := parseImage(imageName)
+// getNextImages - will follow the next URL using go routines.
+func (r DockerHubRegistry) getNextImages(ctx context.Context, org, token, url string, ch chan<- *DockerHubImageData,
+	cancelFunc context.CancelFunc) (*DockerHubImageResponse, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		r.log.Errorf("unable to get next images for url: %v - %v", url, err)
+		cancelFunc()
+		close(ch)
+		return nil, err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("JWT %v", token))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		r.log.Errorf("unable to get next images for url: %v - %v", url, err)
+		cancelFunc()
+		close(ch)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	imageList, err := ioutil.ReadAll(resp.Body)
+
+	iResp := DockerHubImageResponse{}
+	err = json.Unmarshal(imageList, &iResp)
+	if err != nil {
+		r.log.Errorf("unable to get next images for url: %v - %v", url, err)
+		cancelFunc()
+		close(ch)
+		return &iResp, err
+	}
+	//Keep getting the images
+	if iResp.Next != "" {
+		r.log.Debugf("getting next page of results - %v", iResp.Next)
+		//Fan out calls to get the next images.
+		go r.getNextImages(ctx, org, token, iResp.Next, ch, cancelFunc)
+	}
+	for _, imageName := range iResp.Results {
+		r.log.Debugf("Trying to load %v/%v", imageName.Namespace, imageName.Name)
+		go r.loadImageData(ctx,
+			fmt.Sprintf("%v/%v", imageName.Namespace, imageName.Name),
+			ch)
+	}
+	return &iResp, nil
+}
+
+func (r DockerHubRegistry) loadImageData(ctx context.Context, imageName string, channel chan<- *DockerHubImageData) {
+	req, err := http.NewRequest("GET", fmt.Sprintf(
+		"https://registry.hub.docker.com/v2/%v/manifests/latest", imageName), nil)
 	if err != nil {
 		select {
 		case <-ctx.Done():
 			r.log.Debugf("loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
 			return
 		default:
-			channel <- &ImageData{Name: imageName, Error: err}
+			channel <- &DockerHubImageData{Error: err, Name: imageName}
 		}
 		return
 	}
-	defer img.Close()
-
-	imgInspect, err := img.Inspect()
+	token, err := getBearerToken(imageName)
 	if err != nil {
 		select {
 		case <-ctx.Done():
 			r.log.Debugf("loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
 			return
 		default:
-			channel <- &ImageData{Name: imageName, Error: err}
+			channel <- &DockerHubImageData{Error: err, Name: imageName}
 		}
 		return
 	}
-
-	outputData := ImageData{
-		Name:             imageName,
-		Tag:              imgInspect.Tag,
-		Labels:           imgInspect.Labels,
-		Layers:           imgInspect.Layers,
-		IsPlaybookBundle: true,
-		Error:            nil,
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+	spec, err := imageToSpec(r.log, req)
+	if err != nil {
+		select {
+		case <-ctx.Done():
+			r.log.Debugf("loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
+			return
+		default:
+			channel <- &DockerHubImageData{Error: err, Name: imageName}
+		}
+		return
 	}
-
-	if outputData.Labels[BundleSpecLabel] != "" {
-		outputData.IsPlaybookBundle = true
-	} else {
-		outputData.IsPlaybookBundle = false
+	if spec == nil {
+		select {
+		case <-ctx.Done():
+			r.log.Debugf("loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
+			return
+		default:
+			channel <- &DockerHubImageData{Name: imageName, IsPlaybookBundle: false}
+		}
+		return
 	}
 	select {
 	case <-ctx.Done():
-		r.log.Debugf("loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
+		r.log.Debugf("loading images failed due to context err - %v name - %v",
+			ctx.Err(), imageName)
 		return
 	default:
-		channel <- &outputData
+		channel <- &DockerHubImageData{IsPlaybookBundle: true, Error: nil, Spec: spec}
 	}
 }
 
-func parseImage(imgName string) (types.Image, error) {
-	ref, err := transports.ParseImageName(imgName)
+func getBearerToken(imageName string) (string, error) {
+	response, err := http.Get(fmt.Sprintf(
+		"https://auth.docker.io/token?service=registry.docker.io&scope=repository:%v:pull",
+		imageName))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return ref.NewImage(contextFromGlobalOptions(false))
-}
-
-func contextFromGlobalOptions(tlsVerify bool) *types.SystemContext {
-	return &types.SystemContext{
-		RegistriesDirPath:           "",
-		DockerCertPath:              "",
-		DockerInsecureSkipTLSVerify: !tlsVerify,
+	defer response.Body.Close()
+	t := struct {
+		Token string `json:"token"`
+	}{}
+	err = json.NewDecoder(response.Body).Decode(&t)
+	if err != nil {
+		return "", err
 	}
+	return t.Token, nil
 }

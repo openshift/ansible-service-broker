@@ -1,7 +1,12 @@
 package registry
 
 import (
+	b64 "encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/http"
+
+	yaml "gopkg.in/yaml.v1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -11,20 +16,11 @@ import (
 // TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
 var BundleSpecLabel = "com.redhat.apb.spec"
 
-// ImageData - APB Image data
-type ImageData struct {
-	Name             string
-	Tag              string
-	Labels           map[string]string
-	Layers           []string
-	IsPlaybookBundle bool
-	Error            error
-}
-
 // Config - Configuration for the registry
 type Config struct {
 	Type string
 	Name string
+	Type string
 	URL  string
 	User string
 	Pass string
@@ -68,4 +64,69 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 	}
 
 	return reg, err
+}
+
+// Retrieve the spec from a registry manifest request
+func imageToSpec(log *logging.Logger, req *http.Request) (*apb.Spec, error) {
+	log.Debug("Registry::imageToSpec")
+	spec := &apb.Spec{}
+
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	type label struct {
+		Spec    string `json:"com.redhat.apb.spec"`
+		Version string `json:"com.redhat.apb.version"`
+	}
+
+	type config struct {
+		Label label `json:"Labels"`
+	}
+
+	hist := struct {
+		History []map[string]string `json:"history"`
+	}{}
+
+	conf := struct {
+		Config *config `json:"config"`
+	}{}
+
+	err = json.NewDecoder(resp.Body).Decode(&hist)
+	if err != nil {
+		log.Error("Error grabbing JSON body from response: %s", err)
+		return nil, err
+	}
+
+	if hist.History == nil {
+		log.Errorf("V1 Schema Manifest does not exist in registry")
+		return nil, nil
+	}
+
+	err = json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf)
+	if err != nil {
+		log.Error("Error unmarshalling intermediary JSON response: %s", err)
+		return nil, err
+	}
+	if conf.Config.Label.Spec == "" {
+		return nil, nil
+	}
+	encodedSpec := conf.Config.Label.Spec
+	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
+	if err != nil {
+		log.Error("Something went wrong decoding spec from label")
+		return nil, err
+	}
+
+	if err = yaml.Unmarshal(decodedSpecYaml, spec); err != nil {
+		log.Error("Something went wrong loading decoded spec yaml, %s", err)
+		return nil, err
+	}
+	log.Debug("Successfully converted Image %s into Spec", spec.Name)
+
+	return spec, nil
 }

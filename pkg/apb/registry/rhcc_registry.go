@@ -1,15 +1,13 @@
 package registry
 
 import (
-	b64 "encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"strings"
+	"net/url"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // RHCCRegistry - Red Hat Container Catalog Registry
@@ -18,8 +16,8 @@ type RHCCRegistry struct {
 	log    *logging.Logger
 }
 
-// Image - RHCC Registry Image that is returned from the RHCC Catalog api.
-type Image struct {
+// RHCCImage - RHCC Registry Image that is returned from the RHCC Catalog api.
+type RHCCImage struct {
 	Description  string `json:"description"`
 	IsOfficial   bool   `json:"is_official"`
 	IsTrusted    bool   `json:"is_trusted"`
@@ -28,18 +26,27 @@ type Image struct {
 	StarCount    int    `json:"star_count"`
 }
 
-// ImageResponse - RHCC Registry Image Response returned for the RHCC Catalog api
-type ImageResponse struct {
-	NumResults int      `json:"num_results"`
-	Query      string   `json:"query"`
-	Results    []*Image `json:"results"`
+// RHCCImageResponse - RHCC Registry Image Response returned for the RHCC Catalog api
+type RHCCImageResponse struct {
+	NumResults int          `json:"num_results"`
+	Query      string       `json:"query"`
+	Results    []*RHCCImage `json:"results"`
 }
 
 // Init - Initialize the Red Hat Container Catalog
 func (r *RHCCRegistry) Init(config Config, log *logging.Logger) error {
 	log.Debug("RHCCRegistry::Init")
-	r.config = config
 	r.log = log
+	u, err := url.Parse(config.URL)
+	if err != nil {
+		r.log.Errorf("URL is to valid - %v", err)
+		return err
+	}
+	if u.Scheme == "" {
+		u.Scheme = "http"
+	}
+	config.URL = u.String()
+	r.config = config
 	return nil
 }
 
@@ -56,7 +63,11 @@ func (r RHCCRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	numResults := imageList.NumResults
 	r.log.Debug("Found %d images in RHCC", numResults)
 	for _, image := range imageList.Results {
-		spec, err := r.imageToSpec(image)
+		req, err := http.NewRequest("GET", r.config.URL+"/v2/"+image.Name+"manifests/latest", nil)
+		if err != nil {
+			return []*apb.Spec{}, 0, err
+		}
+		spec, err := imageToSpec(r.log, req)
 		if err != nil {
 			return []*apb.Spec{}, 0, err
 		}
@@ -74,111 +85,28 @@ func (r RHCCRegistry) Fail(err error) bool {
 	return false
 }
 
-// This function is used because our code expects an HTTP Url for talking to RHCC
-func (r RHCCRegistry) cleanHTTPURL(url string) string {
-	if strings.HasPrefix(url, "http://") == true {
-		return url
-	}
-
-	if strings.HasPrefix(url, "https://") == true {
-		return url
-	}
-
-	url = "http://" + url
-	return url
-}
-
-func (r RHCCRegistry) imageToSpec(image *Image) (*apb.Spec, error) {
-	r.log.Debug("RHCCRegistry::imageToSpec")
-	_spec := &apb.Spec{}
-	url := r.cleanHTTPURL(r.config.URL)
-
-	req, err := http.NewRequest("GET", url+"/v2/"+image.Name+"manifests/latest", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Accept", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	type label struct {
-		Spec    string `json:"com.redhat.apb.spec"`
-		Version string `json:"com.redhat.apb.version"`
-	}
-
-	type config struct {
-		Label label `json:"Labels"`
-	}
-
-	hist := struct {
-		History []map[string]string `json:"history"`
-	}{}
-
-	conf := struct {
-		Config *config `json:"config"`
-	}{}
-
-	err = json.NewDecoder(resp.Body).Decode(&hist)
-	if err != nil {
-		r.log.Error("Error grabbing JSON body from response: %s", err)
-		return nil, err
-	}
-
-	if hist.History == nil {
-		r.log.Error("V1 Schema Manifest does not exist in registry")
-		return nil, nil
-	}
-
-	err = json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf)
-	if err != nil {
-		r.log.Error("Error unmarshalling intermediary JSON response: %s", err)
-		return nil, err
-	}
-
-	encodedSpec := conf.Config.Label.Spec
-	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
-	if err != nil {
-		r.log.Error("Something went wrong decoding spec from label")
-		return nil, err
-	}
-
-	if err = yaml.Unmarshal(decodedSpecYaml, _spec); err != nil {
-		r.log.Error("Something went wrong loading decoded spec yaml, %s", err)
-		return nil, err
-	}
-	r.log.Debug("Successfully converted RHCC Image %s into Spec", _spec.Name)
-
-	return _spec, nil
-}
-
 // LoadImages - Get all the images for a particular query
-func (r RHCCRegistry) LoadImages(Query string) (ImageResponse, error) {
+func (r RHCCRegistry) LoadImages(Query string) (RHCCImageResponse, error) {
 	r.log.Debug("RHCCRegistry::LoadImages")
-	url := r.cleanHTTPURL(r.config.URL)
-	r.log.Debug("Using " + url + " to source APB images using query:" + Query)
-	req, err := http.NewRequest("GET", url+"/v1/search?q="+Query, nil)
+	r.log.Debug("Using " + r.config.URL + " to source APB images using query:" + Query)
+	req, err := http.NewRequest("GET", r.config.URL+"/v1/search?q="+Query, nil)
 	if err != nil {
-		return ImageResponse{}, err
+		return RHCCImageResponse{}, err
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return ImageResponse{}, err
+		return RHCCImageResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	r.log.Debug("Got Image Response from RHCC")
 	imageList, err := ioutil.ReadAll(resp.Body)
 
-	imageResp := ImageResponse{}
+	imageResp := RHCCImageResponse{}
 	err = json.Unmarshal(imageList, &imageResp)
 	if err != nil {
-		return ImageResponse{}, err
+		return RHCCImageResponse{}, err
 	}
 	r.log.Debug("Properly unmarshalled image response")
 
