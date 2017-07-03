@@ -120,10 +120,6 @@ func TestSpecDumpJSON(t *testing.T) {
 	ft.AssertTrue(t, reflect.DeepEqual(knownMap, subjectMap))
 }
 
-func TestSpecLabel(t *testing.T) {
-	ft.AssertEqual(t, BundleSpecLabel, "com.redhat.apb.spec", "spec label does not match dockerhub")
-}
-
 func TestEncodedParameters(t *testing.T) {
 	encodedstring :=
 		`aWQ6IDU1YzUzYTVkLTY1YTYtNGMyNy04OGZjLWUwMjc0MTBiMTMzNwpuYW1lOiBtZWRpYXdpa2kx
