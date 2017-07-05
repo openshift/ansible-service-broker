@@ -137,7 +137,10 @@ func specsLogDump(specs []*Spec, log *logging.Logger) {
 func NewSpecManifest(specs []*Spec) SpecManifest {
 	manifest := make(map[string]*Spec)
 	for _, spec := range specs {
-		manifest[spec.ID] = spec
+		if spec == nil {
+			return nil
+		}
+		manifest[spec.Id] = spec
 	}
 	return manifest
 }

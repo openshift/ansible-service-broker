@@ -3,6 +3,8 @@ package apb
 import (
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
+	logging "github.com/op/go-logging"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -61,7 +63,7 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	r.log.Debug("RHCCRegistry::LoadSpecs")
 	var specs []*Spec
 
-	imageList, err := r.LoadImages("*-apb")
+	imageList, err := r.LoadImages("\"*-apb\"")
 	if err != nil {
 		return []*Spec{}, 0, err
 	}
@@ -69,11 +71,9 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	numResults := imageList.NumResults
 	r.log.Debug("Found %d images in RHCC", numResults)
 	for _, image := range imageList.Results {
-		spec, err := r.imageToSpec(image)
-		if err != nil {
-			return []*Spec{}, 0, err
+		spec, ok := r.imageToSpec(image); ok {
+			specs = append(specs, spec)
 		}
-		specs = append(specs, spec)
 	}
 
 	return specs, numResults, nil
@@ -121,8 +121,8 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 	}
 
 	if hist.History == nil {
-		r.log.Error("V1 Schema Manifest does not exist in registry")
-		return nil, nil
+		r.log.Error("V1 Schema Manifest history does not exist in registry")
+		return nil, errors.New("Error: Image history does not exist")
 	}
 
 	err = json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf)
@@ -131,7 +131,17 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 		return nil, err
 	}
 
+	if conf.Config == nil {
+		r.log.Error("Did not find v1 Manifest in image history. Skipping.")
+		return nil, errors.New("Error: v1 Manifest does not exist for this image")
+	}
+
 	encodedSpec := conf.Config.Label.Spec
+	if len(encodedSpec) == 0 {
+		r.log.Error("Didn't find encoded Spec label. Assuming image is not APB and skipping.")
+		return nil, errors.New("Error: Spec not found")
+	}
+
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
 		r.log.Error("Something went wrong decoding spec from label")
