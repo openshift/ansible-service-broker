@@ -20,10 +20,10 @@ build: broker
 	@echo > /dev/null
 
 run: broker | $(KUBERNETES_FILES)
-	@cd scripts && ./run_local.sh ${BROKER_CONFIG}
+	@./scripts/run_local.sh ${BROKER_CONFIG}
 
 $(KUBERNETES_FILES):
-	@cd scripts && ./prep_local_devel_env.sh
+	@./scripts/prep_local_devel_env.sh
 
 prepare-local-env: $(KUBERNETES_FILES)
 	@echo > /dev/null
@@ -51,8 +51,11 @@ clean:
 	@rm -f broker
 	@rm -f build/broker
 
+really-clean: clean
+	@rm -f $(KUBERNETES_FILES)
+
 deploy:
-	@${GOPATH}/src/github.com/openshift/ansible-service-broker/scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG}
+	@./scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG}
 
 test:
 	go test ./pkg/...

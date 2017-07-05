@@ -12,8 +12,15 @@
 # - Get existing secret for the asb service account and store ca cert/token
 #
 ###
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT=${SCRIPT_DIR}/..
+TEMPLATE_DIR="${PROJECT_ROOT}/templates"
 
-MY_VARS="./my_local_dev_vars"
+# sane defaults, can be overridden in my_vars
+GENERATED_BROKER_CONFIG=${PROJECT_ROOT}/etc/generated_local_development.yaml
+
+# process myvars
+MY_VARS="${SCRIPT_DIR}/my_local_dev_vars"
 if [ ! -f $MY_VARS ]; then
   echo "Please create $MY_VARS"
   echo "cp $MY_VARS.example $MY_VARS"
@@ -21,14 +28,13 @@ if [ ! -f $MY_VARS ]; then
   exit 1
 fi
 
-source ./my_local_dev_vars
+source ${MY_VARS}
 if [ "$?" -ne "0" ]; then
   echo "Error reading in my_local_dev_var"
   exit 1
 fi
 
-
-TEMPLATE_LOCAL_DEV="../templates/deploy-local-dev-changes.yaml"
+TEMPLATE_LOCAL_DEV="${TEMPLATE_DIR}/deploy-local-dev-changes.yaml"
 ASB_PROJECT="ansible-service-broker"
 BROKER_SVC_ACCT_NAME="asb"
 BROKER_SVC_ACCT="system:serviceaccount:${ASB_PROJECT}:${BROKER_SVC_ACCT_NAME}"
