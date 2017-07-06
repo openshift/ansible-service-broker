@@ -1,9 +1,10 @@
-package apb
+package registry
 
 import (
 	"io/ioutil"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -12,12 +13,12 @@ var MockFile = "/etc/ansible-service-broker/mock-registry-data.yaml"
 
 // MockRegistry - a registry that is for mocking data
 type MockRegistry struct {
-	config RegistryConfig
+	config Config
 	log    *logging.Logger
 }
 
 // Init - Initialize the mock registry
-func (r *MockRegistry) Init(config RegistryConfig, log *logging.Logger) error {
+func (r *MockRegistry) Init(config Config, log *logging.Logger) error {
 	log.Debug("MockRegistry::Init")
 	r.config = config
 	r.log = log
@@ -25,7 +26,7 @@ func (r *MockRegistry) Init(config RegistryConfig, log *logging.Logger) error {
 }
 
 // LoadSpecs - Load mock specs
-func (r *MockRegistry) LoadSpecs() ([]*Spec, int, error) {
+func (r *MockRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Debug("MockRegistry::LoadSpecs")
 
 	specYaml, err := ioutil.ReadFile(MockFile)
@@ -34,7 +35,7 @@ func (r *MockRegistry) LoadSpecs() ([]*Spec, int, error) {
 	}
 
 	var parsedData struct {
-		Apps []*Spec `yaml:"apps"`
+		Apps []*apb.Spec `yaml:"apps"`
 	}
 
 	err = yaml.Unmarshal(specYaml, &parsedData)
@@ -51,4 +52,12 @@ func (r *MockRegistry) LoadSpecs() ([]*Spec, int, error) {
 	}
 
 	return parsedData.Apps, len(parsedData.Apps), nil
+}
+
+// Fail - will determine if this reqistry can cause a failure.
+func (r MockRegistry) Fail(err error) bool {
+	if r.config.Fail {
+		return true
+	}
+	return false
 }

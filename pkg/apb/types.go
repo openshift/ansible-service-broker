@@ -13,20 +13,6 @@ type Parameters map[string]interface{}
 //SpecManifest - Spec ID to Spec manifest
 type SpecManifest map[string]*Spec
 
-// BundleSpecLabel - label on the image that we should use to pull out the abp spec.
-// TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
-var BundleSpecLabel = "com.redhat.apb.spec"
-
-// ImageData - APB Image data
-type ImageData struct {
-	Name             string
-	Tag              string
-	Labels           map[string]string
-	Layers           []string
-	IsPlaybookBundle bool
-	Error            error
-}
-
 // ParameterDescriptor - a parameter to be used by the service catalog to get data.
 type ParameterDescriptor struct {
 	Title       string      `json:"title"`
@@ -44,13 +30,14 @@ array of maps with an array of ParameterDescriptors
 
 // Spec - A APB spec
 type Spec struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Image       string                 `json:"image"`
-	Tags        []string               `json:"tags"`
-	Bindable    bool                   `json:"bindable"`
-	Description string                 `json:"description"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	RegistryName string                 `json:"registry_name"`
+	Image        string                 `json:"image"`
+	Tags         []string               `json:"tags"`
+	Bindable     bool                   `json:"bindable"`
+	Description  string                 `json:"description"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
 
 	// required, optional, unsupported
 	Async      string                            `json:"async"`
@@ -102,7 +89,8 @@ const (
 	ApbRole = "cluster-admin"
 )
 
-func specLogDump(spec *Spec, log *logging.Logger) {
+// SpecLogDump - log spec for debug
+func SpecLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("============================================================")
 	log.Debug("Spec: %s", spec.ID)
 	log.Debug("============================================================")
@@ -127,9 +115,10 @@ func specLogDump(spec *Spec, log *logging.Logger) {
 	}
 }
 
-func specsLogDump(specs []*Spec, log *logging.Logger) {
+// SpecsLogDump - log specs for debug
+func SpecsLogDump(specs []*Spec, log *logging.Logger) {
 	for _, spec := range specs {
-		specLogDump(spec, log)
+		SpecLogDump(spec, log)
 	}
 }
 

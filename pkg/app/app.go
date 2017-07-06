@@ -11,7 +11,7 @@ import (
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 
 	logging "github.com/op/go-logging"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/apb/registry"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -28,7 +28,7 @@ type App struct {
 	config   Config
 	dao      *dao.Dao
 	log      *Log
-	registry apb.Registry
+	registry []registry.Registry
 	engine   *broker.WorkEngine
 }
 
@@ -106,12 +106,14 @@ func CreateApp() App {
 	}
 
 	app.log.Debug("Connecting Registry")
-	if app.registry, err = apb.NewRegistry(
-		app.config.Registry, app.log.Logger,
-	); err != nil {
-		app.log.Error("Failed to initialize Registry\n")
-		app.log.Error(err.Error())
-		os.Exit(1)
+	for _, r := range app.config.Registry {
+		reg, err := registry.NewRegistry(r, app.log.Logger)
+		if err != nil {
+			app.log.Errorf(
+				"Failed to initialize %v Registry err - %v \n", r.Name, err)
+			os.Exit(1)
+		}
+		app.registry = append(app.registry, reg)
 	}
 
 	app.log.Debug("Initializing WorkEngine")

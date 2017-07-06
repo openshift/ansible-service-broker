@@ -159,11 +159,12 @@ fi
 cat << EOF  > ${GENERATED_BROKER_CONFIG}
 ---
 registry:
-  name: dockerhub
-  url: https://registry.hub.docker.com
-  user: ${DOCKERHUB_USERNAME}
-  pass: ${DOCKERHUB_PASSWORD}
-  org: ${DOCKERHUB_ORG}
+  - type: dockerhub
+    name: dockerhub
+    url: https://registry.hub.docker.com
+    user: ${DOCKERHUB_USERNAME}
+    pass: ${DOCKERHUB_PASSWORD}
+    org: ${DOCKERHUB_ORG}
 dao:
   etcd_host: ${etcd_route}
   etcd_port: 80
