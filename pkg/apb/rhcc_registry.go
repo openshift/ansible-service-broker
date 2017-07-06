@@ -73,7 +73,7 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	return specs, numResults, nil
 }
 
-func (r RHCCRegistry) imageToSpec(image *Image) (*Spec) {
+func (r RHCCRegistry) imageToSpec(image *Image) *Spec {
 	r.log.Debug("RHCCRegistry::imageToSpec")
 	_spec := &Spec{}
 	url := r.cleanHttpUrl(r.config.Url)
@@ -110,18 +110,18 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec) {
 
 	err = json.NewDecoder(resp.Body).Decode(&hist)
 	if err != nil {
-		r.log.Error("Error grabbing JSON body from response: %s", err)
+		r.log.Info("Error grabbing JSON body from response: %s. Skipping.", err)
 		return nil
 	}
 
 	if hist.History == nil {
-		r.log.Error("V1 Schema Manifest history does not exist in registry")
+		r.log.Info("V1 Schema Manifest history does not exist in registry. Skipping.")
 		return nil
 	}
 
 	err = json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf)
 	if err != nil {
-		r.log.Error("Error unmarshalling intermediary JSON response: %s", err)
+		r.log.Info("Error unmarshalling intermediary JSON response: %s. Skipping.", err)
 		return nil
 	}
 
@@ -132,18 +132,18 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec) {
 
 	encodedSpec := conf.Config.Label.Spec
 	if len(encodedSpec) == 0 {
-		r.log.Error("Didn't find encoded Spec label. Assuming image is not APB and skipping.")
+		r.log.Info("Didn't find encoded Spec label. Assuming image is not APB and skipping.")
 		return nil
 	}
 
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
-		r.log.Error("Something went wrong decoding spec from label")
+		r.log.Info("Something went wrong decoding spec from label. Skipping.")
 		return nil
 	}
 
 	if err = LoadYAML(string(decodedSpecYaml), _spec); err != nil {
-		r.log.Error("Something went wrong loading decoded spec yaml, %s", err)
+		r.log.Info("Something went wrong loading decoded spec yaml, %s. Skipping.", err)
 		return nil
 	}
 	r.log.Debug("Successfully converted RHCC Image %s into Spec", _spec.Name)
