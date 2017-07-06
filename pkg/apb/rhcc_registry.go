@@ -3,7 +3,6 @@ package apb
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"errors"
 	logging "github.com/op/go-logging"
 	"io/ioutil"
 	"net/http"
@@ -66,7 +65,7 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	numResults := imageList.NumResults
 	r.log.Debug("Found %d images in RHCC", numResults)
 	for _, image := range imageList.Results {
-		if spec, err := r.imageToSpec(image); err == nil {
+		if spec := r.imageToSpec(image); spec != nil {
 			specs = append(specs, spec)
 		}
 	}
@@ -74,21 +73,21 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	return specs, numResults, nil
 }
 
-func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
+func (r RHCCRegistry) imageToSpec(image *Image) (*Spec) {
 	r.log.Debug("RHCCRegistry::imageToSpec")
 	_spec := &Spec{}
 	url := r.cleanHttpUrl(r.config.Url)
 
 	req, err := http.NewRequest("GET", url+"/v2/"+image.Name+"/manifests/latest", nil)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	req.Header.Add("Accept", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 	defer resp.Body.Close()
 
@@ -112,44 +111,44 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 	err = json.NewDecoder(resp.Body).Decode(&hist)
 	if err != nil {
 		r.log.Error("Error grabbing JSON body from response: %s", err)
-		return nil, err
+		return nil
 	}
 
 	if hist.History == nil {
 		r.log.Error("V1 Schema Manifest history does not exist in registry")
-		return nil, errors.New("Error: Image history does not exist")
+		return nil
 	}
 
 	err = json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf)
 	if err != nil {
 		r.log.Error("Error unmarshalling intermediary JSON response: %s", err)
-		return nil, err
+		return nil
 	}
 
 	if conf.Config == nil {
-		r.log.Error("Did not find v1 Manifest in image history. Skipping.")
-		return nil, errors.New("Error: v1 Manifest does not exist for this image")
+		r.log.Info("Did not find v1 Manifest in image history. Skipping.")
+		return nil
 	}
 
 	encodedSpec := conf.Config.Label.Spec
 	if len(encodedSpec) == 0 {
 		r.log.Error("Didn't find encoded Spec label. Assuming image is not APB and skipping.")
-		return nil, errors.New("Error: Spec not found")
+		return nil
 	}
 
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
 		r.log.Error("Something went wrong decoding spec from label")
-		return nil, err
+		return nil
 	}
 
 	if err = LoadYAML(string(decodedSpecYaml), _spec); err != nil {
 		r.log.Error("Something went wrong loading decoded spec yaml, %s", err)
-		return nil, err
+		return nil
 	}
 	r.log.Debug("Successfully converted RHCC Image %s into Spec", _spec.Name)
 
-	return _spec, nil
+	return _spec
 }
 
 func (r RHCCRegistry) LoadImages(Query string) (ImageResponse, error) {
