@@ -37,12 +37,12 @@ def req(url, **kwargs):
     return getattr(requests, verb)(url, **kwargs)
 
 
-def consumer_binding_key(svc_record):
+def consumer_binding_key(key):
     # Need to perform a conversion from whatever binding key
     # was provided to the k8s delivered equiv env var
     # i.e external-mlab -> EXTERNAL_MLAB
-    key_in = svc_record['answers']['binding_key']
-    return key_in.upper().replace('-', '_')
+
+    return key.upper().replace('-', '_')
 
 
 def create_binding_record(creds, svc_record):
@@ -59,11 +59,9 @@ def create_binding_record(creds, svc_record):
     # environment.
     ############################################################
     return {
-        'project_name': svc_record['answers']['project_name'],
-        'binding_key': consumer_binding_key(svc_record),
-        'mongo_db': creds['db'],
-        'mongo_user': creds['user'],
-        'mongo_pass': creds['pass'],
+        'project_name': svc_record['service_id'],
+        'binding_key': consumer_binding_key(svc_record['name']),
+        'answers': svc_record['answers'],
     }
 
 
@@ -369,7 +367,7 @@ class App(object):
                 answer = raw_input(query)
 
                 # TODO: This is fugly. Fix it.
-                should_pass = answer == '' and param_name not in required \
+                should_pass = answer == '' and param['required'] \
                     and not supports_default
 
                 if should_pass:
@@ -516,13 +514,12 @@ class App(object):
                (svc_instance_id, binding_instance_id)
 
         req_body = {
-            'plan_id': plan_id,
             'service_id': svc_id,
             'app_guid': '',
             'bind_resource': {},
+            'plan_id': plan_id,
             'parameters': bind_answers,
         }
-
         return (req(self._url(path), verb='put', json=req_body),
                 binding_instance_id)
 
