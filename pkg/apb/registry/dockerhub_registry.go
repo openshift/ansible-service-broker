@@ -4,12 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	yaml "gopkg.in/yaml.v1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -73,45 +70,6 @@ func (r DockerHubRegistry) Fail(err error) bool {
 		return true
 	}
 	return false
-}
-
-func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*apb.Spec, error) {
-	var err error
-	var spec *apb.Spec
-
-	datToSpec := func(dat *ImageData) (*apb.Spec, error) {
-		var _err error
-		_spec := &apb.Spec{}
-
-		encodedSpec := dat.Labels[BundleSpecLabel]
-		if encodedSpec == "" {
-			msg := fmt.Sprintf("Spec label not found on image -> [ %s ]", dat.Name)
-			return nil, errors.New(msg)
-		}
-
-		decodedSpecYaml, _err := b64.StdEncoding.DecodeString(encodedSpec)
-		if _err != nil {
-			r.log.Error("Something went wrong deciding spec from label")
-			return nil, _err
-		}
-
-		if _err = yaml.Unmarshal(decodedSpecYaml, _spec); _err != nil {
-			r.log.Error("Something went wrong loading decoded spec yaml - %v - %v", string(decodedSpecYaml), _err)
-			return nil, _err
-		}
-
-		return _spec, nil
-	}
-
-	var specs []*apb.Spec
-	for _, dat := range rawBundleData {
-		if spec, err = datToSpec(dat); err != nil {
-			r.log.Errorf("Unable to create spec - %v image: %v", err, dat.Name)
-		} else {
-			specs = append(specs, spec)
-		}
-	}
-	return specs, nil
 }
 
 // getDockerHubToken - will retrieve the docker hub token.
@@ -308,6 +266,7 @@ func (r DockerHubRegistry) loadImageData(ctx context.Context, imageName string, 
 		}
 		return
 	}
+	spec.RegistryName = r.config.Name
 	select {
 	case <-ctx.Done():
 		r.log.Debugf("loading images failed due to context err - %v name - %v",

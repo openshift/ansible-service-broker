@@ -192,7 +192,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	registryErrors := []error{}
 	for _, r := range a.registry {
 		s, i, err := r.LoadSpecs()
-		if r.Fail(err) {
+		if err != nil && r.Fail(err) {
 			a.log.Errorf("registry caused bootstrap failure - %v", err)
 			return nil, err
 		}

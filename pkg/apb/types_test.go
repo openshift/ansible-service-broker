@@ -20,6 +20,7 @@ const SpecImage = "fusor/etherpad-apb"
 const SpecBindable = false
 const SpecAsync = "optional"
 const SpecDescription = "A note taking webapp"
+const SpecRegistryName = "test"
 const SpecParameters = `
 	[
 		{ "postgresql_database": { "default": "admin", "type": "string", "title": "PostgreSQL Database Name" } },
@@ -73,9 +74,10 @@ var SpecJSON = fmt.Sprintf(`
 	"tags": %s,
 	"bindable": %t,
 	"async": "%s",
-	"parameters": %s
+	"parameters": %s,
+        "registry_name": "%s"
 }
-`, SpecID, SpecDescription, SpecName, SpecImage, convertedSpecTags, SpecBindable, SpecAsync, SpecParameters)
+`, SpecID, SpecDescription, SpecName, SpecImage, convertedSpecTags, SpecBindable, SpecAsync, SpecParameters, SpecRegistryName)
 
 func TestSpecLoadJSON(t *testing.T) {
 
@@ -97,14 +99,15 @@ func TestSpecLoadJSON(t *testing.T) {
 
 func TestSpecDumpJSON(t *testing.T) {
 	s := Spec{
-		ID:          SpecID,
-		Description: SpecDescription,
-		Name:        SpecName,
-		Image:       SpecImage,
-		Tags:        SpecTags,
-		Bindable:    SpecBindable,
-		Async:       SpecAsync,
-		Parameters:  expectedSpecParameters,
+		ID:           SpecID,
+		Description:  SpecDescription,
+		Name:         SpecName,
+		RegistryName: SpecRegistryName,
+		Image:        SpecImage,
+		Tags:         SpecTags,
+		Bindable:     SpecBindable,
+		Async:        SpecAsync,
+		Parameters:   expectedSpecParameters,
 	}
 
 	var knownMap interface{}

@@ -30,13 +30,14 @@ array of maps with an array of ParameterDescriptors
 
 // Spec - A APB spec
 type Spec struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Image       string                 `json:"image"`
-	Tags        []string               `json:"tags"`
-	Bindable    bool                   `json:"bindable"`
-	Description string                 `json:"description"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	RegistryName string                 `json:"registry_name"`
+	Image        string                 `json:"image"`
+	Tags         []string               `json:"tags"`
+	Bindable     bool                   `json:"bindable"`
+	Description  string                 `json:"description"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
 
 	// required, optional, unsupported
 	Async      string                            `json:"async"`

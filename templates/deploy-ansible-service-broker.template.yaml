@@ -185,6 +185,7 @@ objects:
     broker-config: |
       registry:
         - type: ${REGISTRY_TYPE}
+          name: ${REGISTRY_NAME}
           url: ${REGISTRY_URL}
           user: ${DOCKERHUB_USER}
           pass: ${DOCKERHUB_PASS}
@@ -262,6 +263,11 @@ parameters:
 - description: Registry Type
   displayname: Registry Type
   name: REGISTRY_TYPE
+  value: dockerhub
+
+- description: Registry Name
+  displayname: Registry Name
+  name: REGISTRY_NAME
   value: dockerhub
 
 - description: Registry URL

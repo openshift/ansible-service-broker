@@ -10,6 +10,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/pborman/uuid"
 )
 
 // BundleSpecLabel - label on the image that we should use to pull out the abp spec.
@@ -20,7 +21,6 @@ var BundleSpecLabel = "com.redhat.apb.spec"
 type Config struct {
 	Type string
 	Name string
-	Type string
 	URL  string
 	User string
 	Pass string
@@ -127,6 +127,7 @@ func imageToSpec(log *logging.Logger, req *http.Request) (*apb.Spec, error) {
 		return nil, err
 	}
 	log.Debug("Successfully converted Image %s into Spec", spec.Name)
+	spec.ID = uuid.New()
 
 	return spec, nil
 }

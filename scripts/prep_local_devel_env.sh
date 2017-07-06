@@ -153,7 +153,8 @@ fi
 cat << EOF  > ${GENERATED_BROKER_CONFIG}
 ---
 registry:
-  - name: dockerhub
+  - type: dockerhub
+    name: dockerhub
     url: https://registry.hub.docker.com
     user: ${DOCKERHUB_USERNAME}
     pass: ${DOCKERHUB_PASSWORD}

@@ -63,7 +63,7 @@ func (r RHCCRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	numResults := imageList.NumResults
 	r.log.Debug("Found %d images in RHCC", numResults)
 	for _, image := range imageList.Results {
-		req, err := http.NewRequest("GET", r.config.URL+"/v2/"+image.Name+"manifests/latest", nil)
+		req, err := http.NewRequest("GET", r.config.URL+"/v2/"+image.Name+"/manifests/latest", nil)
 		if err != nil {
 			return []*apb.Spec{}, 0, err
 		}
@@ -71,7 +71,10 @@ func (r RHCCRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 		if err != nil {
 			return []*apb.Spec{}, 0, err
 		}
-		specs = append(specs, spec)
+		if spec != nil {
+			spec.RegistryName = r.config.Name
+			specs = append(specs, spec)
+		}
 	}
 
 	return specs, numResults, nil
