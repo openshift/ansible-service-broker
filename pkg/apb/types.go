@@ -100,6 +100,10 @@ const (
 	// NOTE: Applied to APB ServiceAccount via RoleBinding, not ClusterRoleBinding
 	// cluster-admin scoped to the project the apb is operating in
 	ApbRole = "cluster-admin"
+
+	// Bind credential gathering constants
+	CredentialRetries    = 20
+	GatherCredentialsCMD = "broker-bind-creds"
 )
 
 func specLogDump(spec *Spec, log *logging.Logger) {

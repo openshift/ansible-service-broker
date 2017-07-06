@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -28,6 +27,10 @@ func ExtractCredentials(
 		bindOutput = msg
 	}
 
+	if bindOutput == nil {
+		return nil, nil
+	}
+
 	return buildExtractedCredentials(bindOutput)
 }
 
@@ -35,10 +38,9 @@ func monitorOutput(namespace string, podname string, mon chan []byte, log *loggi
 	// TODO: Error handling here
 	// It would also be nice to gather the script output that exec runs
 	// instead of only getting the credentials
-	retries := 20
 
-	for r := 1; r <= retries; r++ {
-		output, _ := RunCommand("oc", "exec", podname, "broker-bind-creds", "--namespace="+namespace)
+	for r := 1; r <= CredentialRetries; r++ {
+		output, _ := RunCommand("oc", "exec", podname, GatherCredentialsCMD, "--namespace="+namespace)
 
 		stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
 			strings.Contains(string(output), "NotFound") ||
@@ -49,26 +51,22 @@ func monitorOutput(namespace string, podname string, mon chan []byte, log *loggi
 		// TODO: Replace the string parsing by passing around the pod
 		// object and checking its status
 		if stillWaiting {
-			log.Warning("Retry attempt %d: Waiting for container to start", r)
+			log.Warning("[%s] Retry attempt %d: Waiting for container to start", podname, r)
 		} else if podCompleted {
 			close(mon)
-			log.Notice("APB completed")
+			log.Notice("[%s] APB completed", podname)
 			return
 		} else if strings.Contains(string(output), "BIND_CREDENTIALS") {
 			mon <- output
 			close(mon)
-			log.Notice("Bind credentials found")
+			log.Notice("[%s] Bind credentials found", podname)
 			return
-		} else {
-			log.Warning("Retry attempt %d: exec into %s failed", r, podname)
 		}
 
-		log.Debug(string(output))
+		log.Warning("[%s] Retry attempt %d: exec into %s failed", podname, r, podname)
 		time.Sleep(time.Duration(r) * time.Second)
-
 	}
-	t := fmt.Sprintf("ExecTimeout: Failed to gather bind credentials after %d retries", retries)
-	mon <- []byte(t)
+	log.Errorf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, CredentialRetries)
 	close(mon)
 	return
 }
