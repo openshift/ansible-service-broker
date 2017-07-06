@@ -43,20 +43,6 @@ func (r *RHCCRegistry) Init(config Config, log *logging.Logger) error {
 	return nil
 }
 
-// This function is used because our code expects an HTTP Url for talking to RHCC
-func (r RHCCRegistry) cleanHTTPURL(url string) string {
-	if strings.HasPrefix(url, "http://") == true {
-		return url
-	}
-
-	if strings.HasPrefix(url, "https://") == true {
-		return url
-	}
-
-	url = "http://" + url
-	return url
-}
-
 // LoadSpecs - Load Red Hat Container Catalog specs
 func (r RHCCRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Debug("RHCCRegistry::LoadSpecs")
@@ -78,6 +64,28 @@ func (r RHCCRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	}
 
 	return specs, numResults, nil
+}
+
+// Fail - will determine if this reqistry can cause a failure.
+func (r RHCCRegistry) Fail(err error) bool {
+	if r.config.Fail {
+		return true
+	}
+	return false
+}
+
+// This function is used because our code expects an HTTP Url for talking to RHCC
+func (r RHCCRegistry) cleanHTTPURL(url string) string {
+	if strings.HasPrefix(url, "http://") == true {
+		return url
+	}
+
+	if strings.HasPrefix(url, "https://") == true {
+		return url
+	}
+
+	url = "http://" + url
+	return url
 }
 
 func (r RHCCRegistry) imageToSpec(image *Image) (*apb.Spec, error) {

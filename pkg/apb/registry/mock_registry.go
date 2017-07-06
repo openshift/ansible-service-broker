@@ -53,3 +53,11 @@ func (r *MockRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 
 	return parsedData.Apps, len(parsedData.Apps), nil
 }
+
+// Fail - will determine if this reqistry can cause a failure.
+func (r MockRegistry) Fail(err error) bool {
+	if r.config.Fail {
+		return true
+	}
+	return false
+}

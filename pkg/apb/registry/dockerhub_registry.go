@@ -56,6 +56,14 @@ func (r *DockerHubRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 	return specs, len(rawBundleData), nil
 }
 
+// Fail - will determine if this reqistry can cause a failure.
+func (r DockerHubRegistry) Fail(err error) bool {
+	if r.config.Fail {
+		return true
+	}
+	return false
+}
+
 func (r *DockerHubRegistry) createSpecs(rawBundleData []*ImageData) ([]*apb.Spec, error) {
 	var err error
 	var spec *apb.Spec
