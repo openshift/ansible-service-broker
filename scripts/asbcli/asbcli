@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 
 import argparse
-import uuid
+import base64
 import requests
 import getpass
 import os
 import sys
 import json
+import unicodedata
+import uuid
+import yaml
 
 from subprocess import Popen, PIPE
 from distutils import spawn
+
+SCRIPT_DIR = sys.path[0]
 
 RECORDS_FILE = '/tmp/asbcli.dat.json'
 BROKER_IMAGE = 'ansibleplaybookbundle/ansible-service-broker-apb'
@@ -143,31 +148,6 @@ class App(object):
         catalog_entry = self.catalog[opt - 1]
         service = catalog_entry['service']
 
-        binding_recs = self._records['binding']
-        use_binding = self._prompt_binding()
-        sel_binding = None
-
-        if use_binding:
-            # TODO: HACK, bad magic value. Need to get this key dynamically
-            binding_opts = [(idx+1, key, binding_recs[key]['mongo_user'])
-                            for idx, key in
-                            enumerate(binding_recs)]
-
-            opt = None
-            valid_choices = [binding[0] for binding in binding_opts]
-            while True:
-                print 'Select a binding to use:'
-                self._print_binding_menu(binding_opts)
-                opt = int(raw_input('# '))  # TODO: Do this better.
-
-                if int(opt) not in valid_choices:
-                    print 'ERROR: Invalid choice!'
-                else:
-                    break
-
-            binding_opt = binding_opts[opt - 1]
-            sel_binding = binding_recs[binding_opt[1]]
-
         print '[ %s ] selected for provisioning...' % catalog_entry['name']
 
         # get namespace to fill out context
@@ -191,6 +171,7 @@ class App(object):
             'service_id': service['id'],
             'answers': answers,
             'name': catalog_entry['name'],
+            'namespace': namespace,
         }
         self._set_service_record(instance_id, service_record)
         self._save_records()
@@ -206,22 +187,13 @@ class App(object):
             print 'ERROR: Got a non-2xx code back from the broker... %d' % res.status_code
             return True
 
-    def _prompt_binding(self):
-        binding_recs = self._records['binding']
-        if len(binding_recs) != 0:
-            use_binding = None
-            while True:
-                use_binding = raw_input("Do you want to use an existing binding? [y/n] # ")
-                if use_binding == 'y' or use_binding == 'n':
-                    break
-                else:
-                    print 'ERROR: Select y or n.'
-            return use_binding == 'y'
-
     def _cmd_bind(self):
         svc_instances = self._records['service']
         bindable_opts = [(idx+1, key, svc_instances[key]['name'])
                          for idx, key in
+                         enumerate(self._records['service'].keys())]
+
+        bindable_ids = [key for a, key in
                          enumerate(self._records['service'].keys())]
 
         if len(bindable_opts) == 0:
@@ -238,9 +210,28 @@ class App(object):
         #    * binding_id -> {service_instance_id, db, user, pass}
         ############################################################
         opt = None
-        valid_choices = [svc[0] for svc in bindable_opts]
+
+        binding_recs = self._records['binding']
+
+        valid_choices = [b[0] for b in bindable_opts]
         while True:
             print 'Select a service instance to bind to:'
+            self._print_binding_menu(bindable_opts)
+            opt = int(raw_input('# '))  # TODO: Do this better.
+
+            answer = bindable_opts[opt - 1][1]
+            if answer not in bindable_ids:
+                print 'ERROR: Invalid choice!'
+            else:
+                break
+
+        sel_binding = svc_instances[key]['service_id']
+        binding_namespace = svc_instances[key]['namespace']
+        bind_to_app = svc_instances[key]['name'].strip('-apb')
+
+        valid_choices = [svc[0] for svc in bindable_opts]
+        while True:
+            print 'Select a binding to use:'
             self._print_bindable_services(bindable_opts)
             opt = int(raw_input('# '))  # TODO: Do this better.
 
@@ -253,7 +244,6 @@ class App(object):
         svc_instance_id = svc_to_bind[1]
         svc_record = self._records['service'][svc_instance_id]
 
-        # answers = self._get_bind_answers(service)
         bind_answers = self._get_bind_answers()
 
         res, binding_instance_id = self._req_bind(
@@ -270,6 +260,73 @@ class App(object):
         binding_record = create_binding_record(creds, svc_record)
         self._set_binding_record(binding_instance_id, binding_record)
         self._save_records()
+
+        svc_name = str(svc_record['name'])
+        bind_data = self._convert_to_ascii(creds)
+        self._create_secret(bind_data, svc_name)
+        self._create_pod_preset(bind_data, svc_name, binding_namespace, bind_to_app)
+
+    def _create_secret(self, bind_data, svc_name):
+        print "Creating secret from bind creds"
+
+        with open(os.path.join(SCRIPT_DIR, "secret.yaml"), 'r') as s:
+            try:
+                template = yaml.load(s)
+            except yaml.YAMLError as err:
+                print(err)
+
+        template['metadata']['name'] = svc_name + "-secret"
+        template['data'] = bind_data
+        secret = template
+
+        rendered_secret = self._render_template(secret)
+        self._create_k8s_resource(rendered_secret)
+
+    def _create_pod_preset(self, bind_data, svc_name, namespace, bind_to_app):
+        print "Creating pod preset"
+        with open(os.path.join(SCRIPT_DIR, "pod-preset.yaml"), 'r') as pp:
+            try:
+                template = yaml.load(pp)
+            except yaml.YAMLError as err:
+                print(err)
+
+        template['metadata']['namespace'] = namespace
+        template['metadata']['name'] = svc_name + "-bind"
+        template['spec']['selector']['matchLabels']['app'] = bind_to_app
+        template['spec']['env'] = self._create_secret_key_ref(svc_name, bind_data)
+
+        pod_preset = template
+
+        rendered_pod_preset = self._render_template(pod_preset)
+        self._create_k8s_resource(rendered_pod_preset)
+
+    def _render_template(self, template):
+        path="/tmp/asbcli-resource-%s" %str(uuid.uuid4())
+        print "Rendering resource template %s" %path
+
+        with open(path, 'w') as yaml_file:
+            yaml.dump(template, yaml_file, default_flow_style=False)
+        return path
+
+    def _create_k8s_resource(self, resource):
+        cluster_cmd = "kubectl"
+        print "Creating cluster resource: %s create -f %s" %(cluster_cmd, resource)
+        cmd = "%s create -f %s" %(cluster_cmd, resource)
+        os.system(cmd)
+
+    def _create_secret_key_ref(self, name, bind_data):
+        env_list = []
+        for item in bind_data.keys():
+            # Remove all '-' and '_'
+            n = item.replace("-", "").replace("_", "")
+            secret_name = name+"-secret"
+            ref = {'valueFrom': {'secretKeyRef': {'name': secret_name, 'key': item}}, 'name': n.lower()}
+            env_list.append(ref)
+        return env_list
+
+    def _convert_to_ascii(self, l):
+        a = dict((str(k), str(v)) for k, v in l.items())
+        return dict((a, base64.b64encode(b)) for a, b in a.items())
 
     def _cmd_drop_records(self):
         self._records = {
