@@ -118,7 +118,7 @@ func TestLoadSpecs(t *testing.T) {
 	}))
 
 	var log = &logging.Logger{}
-	config := RegistryConfig{Name: "rhcc", Url: serv.URL}
+	config := RegistryConfig{Name: "rhcc", URL: serv.URL}
 	reg, err := NewRegistry(config, log)
 	specs, num, err := reg.LoadSpecs()
 	ft.AssertEqual(t, num, 3)

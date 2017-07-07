@@ -140,7 +140,7 @@ func NewSpecManifest(specs []*Spec) SpecManifest {
 		if spec == nil {
 			return nil
 		}
-		manifest[spec.Id] = spec
+		manifest[spec.ID] = spec
 	}
 	return manifest
 }
