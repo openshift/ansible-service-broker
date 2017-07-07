@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.5
+Version: 0.9.6
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -314,6 +314,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Jul 07 2017 Jason Montleon <jmontleo@redhat.com> 0.9.6-1
+- 1467905 - Added error handling for images with improper APB spec (#258)
+  (dymurray@redhat.com)
+
 * Wed Jun 28 2017 Jason Montleon <jmontleo@redhat.com> 0.9.5-1
 - Fixes BZ#1466031 add Accept header with application/json to RHCC get (#243)
   (jmontleo@redhat.com)
