@@ -1,7 +1,7 @@
 # Ansible Service Broker
-[![Build Status](https://travis-ci.org/fusor/ansible-service-broker.svg?branch=master)](https://travis-ci.org/fusor/ansible-service-broker)
-[![Code Climate](https://codeclimate.com/github/fusor/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
-[![Issue Count](https://codeclimate.com/github/fusor/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/fusor/ansible-service-broker)
+[![Build Status](https://travis-ci.org/openshift/ansible-service-broker.svg?branch=master)](https://travis-ci.org/openshift/ansible-service-broker)
+[![Code Climate](https://codeclimate.com/github/openshift/ansible-service-broker/badges/gpa.svg)](https://codeclimate.com/github/openshift/ansible-service-broker)
+[![Issue Count](https://codeclimate.com/github/openshift/ansible-service-broker/badges/issue_count.svg)](https://codeclimate.com/github/openshift/ansible-service-broker)
 
 An [Open Service Broker](https://github.com/openservicebrokerapi/servicebroker) implementation.
 
@@ -21,9 +21,9 @@ CentOS/RHEL/Fedora (sub dnf for Fedora):
 ## Setup
 
 ```
-mkdir -p $GOPATH/src/github.com/fusor
-git clone https://github.com/fusor/ansible-service-broker.git $GOPATH/src/github.com/fusor/ansible-service-broker
-cd $GOPATH/src/github.com/fusor/ansible-service-broker && glide install
+mkdir -p $GOPATH/src/github.com/openshift
+git clone https://github.com/openshift/ansible-service-broker.git $GOPATH/src/github.com/openshift/ansible-service-broker
+cd $GOPATH/src/github.com/openshift/ansible-service-broker && glide install
 ```
 
 **Config**

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/client"
-	"github.com/fusor/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	logging "github.com/op/go-logging"
 )
 

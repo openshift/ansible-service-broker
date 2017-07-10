@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/fusor/ansible-service-broker/pkg/broker"
-	ft "github.com/fusor/ansible-service-broker/pkg/fusortest"
+	"github.com/openshift/ansible-service-broker/pkg/broker"
+	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
 // test object to marshall in the request

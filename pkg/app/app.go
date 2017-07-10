@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/fusor/ansible-service-broker/pkg/apb"
-	"github.com/fusor/ansible-service-broker/pkg/broker"
-	"github.com/fusor/ansible-service-broker/pkg/dao"
-	"github.com/fusor/ansible-service-broker/pkg/handler"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/handler"
 )
 
 const MsgBufferSize = 20

@@ -6,7 +6,7 @@
 - hosts: asb
   gather_facts: true
   vars:
-    asb_checkout: /opt/go/src/github.com/fusor/ansible-service-broker
+    asb_checkout: /opt/go/src/github.com/openshift/ansible-service-broker
     etc_dest: /etc/ansible-service-broker
     bin_dest: /usr/local/ansible-service-broker/bin
   environment:
@@ -39,7 +39,7 @@
       with_items:
         - { dest: "/var/log/ansible-service-broker.log", mode: "g+rw", state: touch }
         - { dest: "/.kube", mode: "g+rw", state: directory }
-        - { dest: "/opt/go/src/github.com/fusor", mode: "g+rw", state: directory }
+        - { dest: "/opt/go/src/github.com/openshift", mode: "g+rw", state: directory }
         - { dest: "{{ etc_dest }}", mode: "g+rw", state: directory }
         - { dest: "{{ bin_dest }}", mode: "ug+x", state: directory }
 
@@ -69,25 +69,25 @@
         warn: false
     - name: Checkout ansible-service-broker
       git:
-        repo: https://github.com/fusor/ansible-service-broker.git
+        repo: https://github.com/openshift/ansible-service-broker.git
         dest: "{{asb_checkout}}"
         version: demo
     - name: Install ansible-service-broker dependencies
       shell: glide install
       args:
-        chdir: /opt/go/src/github.com/fusor/ansible-service-broker
+        chdir: /opt/go/src/github.com/openshift/ansible-service-broker
       environment:
         PATH: "{{ansible_env.PATH}}:/usr/local/go/bin"
     - name: Build ansible-service-broker
       make:
-        chdir: /opt/go/src/github.com/fusor/ansible-service-broker
+        chdir: /opt/go/src/github.com/openshift/ansible-service-broker
         target: build
       environment:
         PATH: "{{ansible_env.PATH}}:/usr/local/go/bin"
     - name: Record broker sha
       shell: git rev-parse HEAD > /usr/local/ansible-service-broker/sha
       args:
-        chdir: /opt/go/src/github.com/fusor/ansible-service-broker
+        chdir: /opt/go/src/github.com/openshift/ansible-service-broker
     - name: Install ansible-service-broker
       copy: remote_src=True src={{item.src}} dest={{item.dest}} mode={{item.mode}}
       with_items:

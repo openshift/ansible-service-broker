@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/fusor/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
 
@@ -26,7 +26,7 @@ func RunCommand(bin string, args ...string) {
 
 func ProjectRoot() string {
 	gopath := os.Getenv("GOPATH")
-	rootPath := path.Join(gopath, "src", "github.com", "fusor",
+	rootPath := path.Join(gopath, "src", "github.com", "openshift",
 		"ansible-service-broker")
 	return rootPath
 }

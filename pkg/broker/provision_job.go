@@ -3,7 +3,7 @@ package broker
 import (
 	"encoding/json"
 
-	"github.com/fusor/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
 )
