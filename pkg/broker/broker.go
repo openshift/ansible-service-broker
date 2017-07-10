@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"strings"
 
+	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
-	logging "github.com/op/go-logging"
 	"github.com/pborman/uuid"
 )
 

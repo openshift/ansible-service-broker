@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/client"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
 type Config struct {

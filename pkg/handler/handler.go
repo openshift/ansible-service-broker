@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/pborman/uuid"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
