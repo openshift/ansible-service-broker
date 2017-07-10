@@ -21,6 +21,7 @@ type Config struct {
 	Openshift  apb.ClusterConfig
 	ConfigFile string
 	Broker     broker.Config
+	Auth       broker.AuthConfig
 }
 
 // CreateConfig - Read config file and create the Config struct
