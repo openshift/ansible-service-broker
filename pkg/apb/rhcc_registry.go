@@ -84,7 +84,7 @@ func (r RHCCRegistry) imageToSpec(image *Image) *Spec {
 
 	req, err := http.NewRequest("GET", url+"/v2/"+image.Name+"/manifests/latest", nil)
 	if err != nil {
-		r.log.Info("Could not form request. Error: %s. Skipping this Image.", err)
+		r.log.Info("Could not form request. Error: %s. Skipping Image: %s.", err, image.Name)
 		return nil
 	}
 
@@ -92,7 +92,7 @@ func (r RHCCRegistry) imageToSpec(image *Image) *Spec {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		r.log.Info("Could not send request. Error: %s. Skipping this Image.", err)
+		r.log.Info("Could not send request. Error: %s. Skipping Image: %s.", err, image.Name)
 		return nil
 	}
 	defer resp.Body.Close()
@@ -116,43 +116,43 @@ func (r RHCCRegistry) imageToSpec(image *Image) *Spec {
 
 	err = json.NewDecoder(resp.Body).Decode(&hist)
 	if err != nil {
-		r.log.Info("Error grabbing JSON body from response: %s. Skipping.", err)
+		r.log.Info("Error grabbing JSON body from response: %s. Skipping image [%s].", err, image.Name)
 		return nil
 	}
 
 	if hist.History == nil {
-		r.log.Info("V1 Schema Manifest history does not exist in registry. Skipping.")
+		r.log.Info("V1 Schema Manifest history does not exist in registry. Skipping image [%s].", image.Name)
 		return nil
 	}
 
 	err = json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf)
 	if err != nil {
-		r.log.Info("Error unmarshalling intermediary JSON response: %s. Skipping.", err)
+		r.log.Info("Error unmarshalling intermediary JSON response: %s. Skipping image [%s].", err, image.Name)
 		return nil
 	}
 
 	if conf.Config == nil {
-		r.log.Info("Did not find v1 Manifest in image history. Skipping.")
+		r.log.Info("Did not find v1 Manifest in image history. Skipping image [%s].", image.Name)
 		return nil
 	}
 
 	encodedSpec := conf.Config.Label.Spec
 	if len(encodedSpec) == 0 {
-		r.log.Info("Didn't find encoded Spec label. Assuming image is not APB and skipping.")
+		r.log.Info("Didn't find encoded Spec label. Assuming image is not APB and skipping [%s].", image.Name)
 		return nil
 	}
 
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
-		r.log.Info("Something went wrong decoding spec from label. Skipping.")
+		r.log.Info("Something went wrong decoding spec from label. Skipping image [%s].", image.Name)
 		return nil
 	}
 
 	if err = yaml.Unmarshal(decodedSpecYaml, _spec); err != nil {
-		r.log.Info("Something went wrong loading decoded spec yaml, %s. Skipping.", err)
+		r.log.Info("Something went wrong loading decoded spec yaml, %s. Skipping image [%s].", err, image.Name)
 		return nil
 	}
-	r.log.Debug("Successfully converted RHCC Image %s into Spec.", _spec.Name)
+	r.log.Debug("Successfully converted RHCC Image [%s] into Spec [%s].", image.Name, _spec.Name)
 
 	return _spec
 }
