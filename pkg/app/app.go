@@ -147,6 +147,17 @@ func (a *App) Start() {
 		a.Recover()
 	}
 
+	if a.config.Broker.BootstrapOnStartup {
+		a.log.Info("Broker configured to bootstrap on startup")
+		a.log.Info("Attempting bootstrap...")
+		if _, err := a.broker.Bootstrap(); err != nil {
+			a.log.Warning("Failed to bootstrap on startup! You may need to " +
+				"manually trigger a bootstrap to resync APB inventory. See error: ")
+			a.log.Warning(err.Error())
+		}
+		a.log.Notice("Broker successfully bootstrapped on startup")
+	}
+
 	a.log.Notice("Ansible Service Broker Started")
 	listeningAddress := "0.0.0.0:1338"
 	a.log.Notice("Listening on http://%s", listeningAddress)
