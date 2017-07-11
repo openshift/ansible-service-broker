@@ -1,4 +1,4 @@
-package apb
+package registries
 
 import (
 	"os"

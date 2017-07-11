@@ -1,4 +1,4 @@
-package registry
+package adapters
 
 import (
 	"io/ioutil"
@@ -13,12 +13,12 @@ var MockFile = "/etc/ansible-service-broker/mock-registry-data.yaml"
 
 // MockRegistry - a registry that is for mocking data
 type MockRegistry struct {
-	config Config
+	config Configuration
 	log    *logging.Logger
 }
 
 // Init - Initialize the mock registry
-func (r *MockRegistry) Init(config Config, log *logging.Logger) error {
+func (r *MockRegistry) Init(config Configuration, log *logging.Logger) error {
 	log.Debug("MockRegistry::Init")
 	r.config = config
 	r.log = log
@@ -45,19 +45,11 @@ func (r *MockRegistry) LoadSpecs() ([]*apb.Spec, int, error) {
 
 	r.log.Debug("Loaded Specs: %v", parsedData)
 
-	r.log.Info("Loaded [ %d ] specs from %s registry", len(parsedData.Apps), r.config.Name)
+	r.log.Info("Loaded [ %d ] specs from %s registry", len(parsedData.Apps), "Mock")
 
 	for _, spec := range parsedData.Apps {
 		r.log.Debug("ID: %s", spec.ID)
 	}
 
 	return parsedData.Apps, len(parsedData.Apps), nil
-}
-
-// Fail - will determine if this reqistry can cause a failure.
-func (r MockRegistry) Fail(err error) bool {
-	if r.config.Fail {
-		return true
-	}
-	return false
 }

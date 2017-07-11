@@ -11,7 +11,7 @@ func Deprovision(instance *ServiceInstance, clusterConfig ClusterConfig, log *lo
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
 	log.Noticef("ServiceInstance.Id: %s", instance.Spec.ID)
-	log.Noticef("ServiceInstance.Name: %v", instance.Spec.Name)
+	log.Noticef("ServiceInstance.Name: %v", instance.Spec.FQName)
 	log.Noticef("ServiceInstance.Image: %s", instance.Spec.Image)
 	log.Noticef("ServiceInstance.Description: %s", instance.Spec.Description)
 	log.Notice("============================================================")

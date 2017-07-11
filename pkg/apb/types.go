@@ -30,14 +30,13 @@ array of maps with an array of ParameterDescriptors
 
 // Spec - A APB spec
 type Spec struct {
-	ID           string                 `json:"id"`
-	Name         string                 `json:"name"`
-	RegistryName string                 `json:"registry_name"`
-	Image        string                 `json:"image"`
-	Tags         []string               `json:"tags"`
-	Bindable     bool                   `json:"bindable"`
-	Description  string                 `json:"description"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	ID          string                 `json:"id"`
+	FQName      string                 `json:"name"`
+	Image       string                 `json:"image"`
+	Tags        []string               `json:"tags"`
+	Bindable    bool                   `json:"bindable"`
+	Description string                 `json:"description"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 
 	// required, optional, unsupported
 	Async      string                            `json:"async"`
@@ -100,7 +99,7 @@ func SpecLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("============================================================")
 	log.Debug("Spec: %s", spec.ID)
 	log.Debug("============================================================")
-	log.Debug("Name: %s", spec.Name)
+	log.Debug("Name: %s", spec.FQName)
 	log.Debug("Image: %s", spec.Image)
 	log.Debug("Bindable: %t", spec.Bindable)
 	log.Debug("Description: %s", spec.Description)

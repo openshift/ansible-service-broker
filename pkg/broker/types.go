@@ -10,7 +10,7 @@ import (
 // based on https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-objects
 type Service struct {
 	Name            string                 `json:"name"`
-	ID              uuid.UUID              `json:"id"`
+	ID              string                 `json:"id"`
 	Description     string                 `json:"description"`
 	Tags            []string               `json:"tags,omitempty"`
 	Requires        []string               `json:"requires,omitempty"`

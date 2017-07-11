@@ -1,6 +1,8 @@
 package broker
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,8 +11,8 @@ import (
 	"github.com/coreos/etcd/client"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/apb/registry"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/pborman/uuid"
 	k8srestclient "k8s.io/client-go/rest"
 )
@@ -61,14 +63,14 @@ type AnsibleBroker struct {
 	dao           *dao.Dao
 	log           *logging.Logger
 	clusterConfig apb.ClusterConfig
-	registry      []registry.Registry
+	registry      []registries.Registry
 	engine        *WorkEngine
 	brokerConfig  Config
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
 func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
-	registry []registry.Registry, engine WorkEngine, brokerConfig Config,
+	registry []registries.Registry, engine WorkEngine, brokerConfig Config,
 ) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
 		dao:           dao,
@@ -201,25 +203,32 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 			registryErrors = append(registryErrors, err)
 		}
 		imageCount += i
+		addNameAndIDForSpec(s, r.RegistryName())
 		specs = append(specs, s...)
 	}
 	if len(registryErrors) == len(a.registry) {
 		return nil, errors.New("all registries failed on bootstrap")
 	}
-	specIDToAdded := map[string]*apb.Spec{}
+	specManifest := map[string]*apb.Spec{}
 	for _, s := range specs {
-		if val, ok := specIDToAdded[s.ID]; ok {
-			a.log.Warningf("spec id collision - %v is overwriting %v", s.Name, val.Name)
-		}
-		specIDToAdded[s.ID] = s
+		specManifest[s.ID] = s
 	}
-
-	if err := a.dao.BatchSetSpecs(specIDToAdded); err != nil {
+	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
 	a.log.Debugf("specs -> %v", specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
+}
+
+func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
+	for _, spec := range specs {
+		spec.FQName = fmt.Sprintf("%v/%v", registryName, spec.Image)
+		// ID Will be a md5 hash of the fully qualified spec name.
+		hasher := md5.New()
+		hasher.Write([]byte(spec.FQName))
+		spec.ID = hex.EncodeToString(hasher.Sum(nil))
+	}
 }
 
 // Recover - Will recover the broker.

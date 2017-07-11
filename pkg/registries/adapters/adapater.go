@@ -1,69 +1,37 @@
-package registry
+package adapters
 
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
-
-	yaml "gopkg.in/yaml.v1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
+	yaml "gopkg.in/yaml.v1"
 )
+
+type Adapter interface {
+	// RegistryName will return the registiry prefix for the adapter.
+	// Example is docker.io for the dockerhub adapter.
+	RegistryName() string
+	// GetImages will return all the image names for the adapter configuration.
+	GetImages() ([]string, error)
+	//FetchSpecs will retrieve all the specs for the list of images names.
+	FetchSpecs([]string) ([]*apb.Spec, error)
+}
 
 // BundleSpecLabel - label on the image that we should use to pull out the abp spec.
 // TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
-var BundleSpecLabel = "com.redhat.apb.spec"
+const BundleSpecLabel = "com.redhat.apb.spec"
 
-// Config - Configuration for the registry
-type Config struct {
-	Type string
-	Name string
+// Configuration - Adapter configuration. Contains the info that the adapter
+// would need to complete it's request to the images.
+type Configuration struct {
 	URL  string
 	User string
 	Pass string
-	Org  string // Target org to load playbook bundles from
-	// Fail will tell the registry that it is ok to fail the bootstrap if
-	// just this registry has failed.
-	Fail bool `yaml:"fail_on_error"`
-}
-
-// Registry - Interface that wraps the methods need for a registry
-type Registry interface {
-	Init(Config, *logging.Logger) error
-	LoadSpecs() ([]*apb.Spec, int, error)
-	// Will attempt to decide from the error if the registry can fail loudly on LoadSpecs
-	Fail(error) bool
-}
-
-// NewRegistry - Create a new registry from the registry config.
-func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
-	var reg Registry
-
-	log.Info("== REGISTRY CX == ")
-	log.Info(fmt.Sprintf("Name: %s", config.Name))
-	log.Info(fmt.Sprintf("Type: %s", config.Type))
-	log.Info(fmt.Sprintf("Url: %s", config.URL))
-
-	switch config.Type {
-	case "rhcc":
-		reg = &RHCCRegistry{}
-	case "dockerhub":
-		reg = &DockerHubRegistry{}
-	case "mock":
-		reg = &MockRegistry{}
-	default:
-		panic("Unknown registry")
-	}
-
-	err := reg.Init(config, log)
-	if err != nil {
-		return nil, err
-	}
-
-	return reg, err
+	Org  string
 }
 
 // Retrieve the spec from a registry manifest request
@@ -126,7 +94,7 @@ func imageToSpec(log *logging.Logger, req *http.Request) (*apb.Spec, error) {
 		log.Error("Something went wrong loading decoded spec yaml, %s", err)
 		return nil, err
 	}
-	log.Debug("Successfully converted Image %s into Spec", spec.Name)
+	log.Debug("Successfully converted Image %s into Spec", spec.Image)
 	spec.ID = uuid.New()
 
 	return spec, nil

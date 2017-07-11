@@ -1,12 +1,8 @@
-package apb
+package registries
 
 import (
-	"errors"
-	"io/ioutil"
 	"regexp"
 	"sync"
-
-	yaml "gopkg.in/yaml.v2"
 )
 
 type filterMode uint8
@@ -19,50 +15,8 @@ const (
 )
 
 type Filter struct {
-	whitelistFile string
-	blacklistFile string
-	whitelist     []string
-	blacklist     []string
-}
-
-// NewFilter - Creates a new ApbFilter
-func NewFilter(whitelistFile string, blacklistFile string) Filter {
-	return Filter{
-		whitelistFile: whitelistFile,
-		blacklistFile: blacklistFile,
-		whitelist:     []string{},
-		blacklist:     []string{},
-	}
-}
-
-// Init - Initializes a filter, reading in whitelist and blacklist files
-// Will error out if files do not exist, or neither files are provided
-func (f *Filter) Init() error {
-	if f.whitelistFile == "" && f.blacklistFile == "" {
-		return errors.New("No whitelist or blacklist file specified. Cannot init Filter")
-	}
-
-	if f.whitelistFile != "" {
-		contents, err := ioutil.ReadFile(f.whitelistFile)
-		if err != nil {
-			return err
-		}
-		if yaml.Unmarshal(contents, &f.whitelist); err != nil {
-			return err
-		}
-	}
-
-	if f.blacklistFile != "" {
-		contents, err := ioutil.ReadFile(f.blacklistFile)
-		if err != nil {
-			return err
-		}
-		if yaml.Unmarshal(contents, &f.blacklist); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	whitelist []string
+	blacklist []string
 }
 
 // Run - Executes filter based on white and blacklists

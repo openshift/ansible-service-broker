@@ -21,7 +21,7 @@ func Provision(
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
 	log.Notice(fmt.Sprintf("Spec.ID: %s", instance.Spec.ID))
-	log.Notice(fmt.Sprintf("Spec.Name: %s", instance.Spec.Name))
+	log.Notice(fmt.Sprintf("Spec.Name: %s", instance.Spec.FQName))
 	log.Notice(fmt.Sprintf("Spec.Image: %s", instance.Spec.Image))
 	log.Notice(fmt.Sprintf("Spec.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")

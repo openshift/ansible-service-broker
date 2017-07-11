@@ -1,12 +1,13 @@
-package apb
+package adapters
 
 import (
 	"fmt"
-	logging "github.com/op/go-logging"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	logging "github.com/op/go-logging"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
