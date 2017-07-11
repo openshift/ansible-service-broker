@@ -33,10 +33,7 @@ func CreateApp() App {
 
 	// Writing directly to stderr because log has not been bootstrapped
 	if app.args, err = CreateArgs(); err != nil {
-		os.Stderr.WriteString("ERROR: Failed to validate input\n")
-		os.Stderr.WriteString(err.Error() + "\n")
-		ArgsUsage()
-		os.Exit(127)
+		os.Exit(1)
 	}
 
 	if app.args.Version {
@@ -50,7 +47,7 @@ func CreateApp() App {
 
 	if app.config, err = CreateConfig(app.args.ConfigFile); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to read config file\n")
-		os.Stderr.WriteString(err.Error())
+		os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
 
