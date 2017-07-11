@@ -89,7 +89,7 @@ func AssertNotNil(t *testing.T, a interface{}, message ...string) {
 	}
 
 	if len(message) == 0 {
-		msg = fmt.Sprintf("%v is nil! %s", a)
+		msg = fmt.Sprintf("%v is nil!", a)
 	}
 	t.Fatal(msg)
 }
@@ -106,7 +106,7 @@ func AssertNil(t *testing.T, a interface{}, message ...string) {
 	}
 
 	if len(message) == 0 {
-		msg = fmt.Sprintf("%v is not nil! %s", a)
+		msg = fmt.Sprintf("%v is not nil!", a)
 	}
 	t.Fatal(msg)
 }
