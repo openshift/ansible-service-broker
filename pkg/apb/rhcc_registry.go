@@ -61,7 +61,7 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	r.log.Debug("RHCCRegistry::LoadSpecs")
 	var specs []*Spec
 
-	imageList, err := r.LoadImages("*-apb")
+	imageList, err := r.LoadImages("\"*-apb\"")
 	if err != nil {
 		return []*Spec{}, 0, err
 	}
@@ -69,31 +69,31 @@ func (r RHCCRegistry) LoadSpecs() ([]*Spec, int, error) {
 	numResults := imageList.NumResults
 	r.log.Debug("Found %d images in RHCC", numResults)
 	for _, image := range imageList.Results {
-		spec, err := r.imageToSpec(image)
-		if err != nil {
-			return []*Spec{}, 0, err
+		if spec := r.imageToSpec(image); spec != nil {
+			specs = append(specs, spec)
 		}
-		specs = append(specs, spec)
 	}
 
 	return specs, numResults, nil
 }
 
-func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
+func (r RHCCRegistry) imageToSpec(image *Image) *Spec {
 	r.log.Debug("RHCCRegistry::imageToSpec")
 	_spec := &Spec{}
 	url := r.cleanHTTPURL(r.config.URL)
 
-	req, err := http.NewRequest("GET", url+"/v2/"+image.Name+"manifests/latest", nil)
+	req, err := http.NewRequest("GET", url+"/v2/"+image.Name+"/manifests/latest", nil)
 	if err != nil {
-		return nil, err
+		r.log.Info("Could not form request. Error: %s. Skipping Image: %s.", err, image.Name)
+		return nil
 	}
 
 	req.Header.Add("Accept", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		r.log.Info("Could not send request. Error: %s. Skipping Image: %s.", err, image.Name)
+		return nil
 	}
 	defer resp.Body.Close()
 
@@ -116,35 +116,45 @@ func (r RHCCRegistry) imageToSpec(image *Image) (*Spec, error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&hist)
 	if err != nil {
-		r.log.Error("Error grabbing JSON body from response: %s", err)
-		return nil, err
+		r.log.Info("Error grabbing JSON body from response: %s. Skipping image [%s].", err, image.Name)
+		return nil
 	}
 
 	if hist.History == nil {
-		r.log.Error("V1 Schema Manifest does not exist in registry")
-		return nil, nil
+		r.log.Info("V1 Schema Manifest history does not exist in registry. Skipping image [%s].", image.Name)
+		return nil
 	}
 
 	err = json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf)
 	if err != nil {
-		r.log.Error("Error unmarshalling intermediary JSON response: %s", err)
-		return nil, err
+		r.log.Info("Error unmarshalling intermediary JSON response: %s. Skipping image [%s].", err, image.Name)
+		return nil
+	}
+
+	if conf.Config == nil {
+		r.log.Info("Did not find v1 Manifest in image history. Skipping image [%s].", image.Name)
+		return nil
 	}
 
 	encodedSpec := conf.Config.Label.Spec
+	if len(encodedSpec) == 0 {
+		r.log.Info("Didn't find encoded Spec label. Assuming image is not APB and skipping [%s].", image.Name)
+		return nil
+	}
+
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
-		r.log.Error("Something went wrong decoding spec from label")
-		return nil, err
+		r.log.Info("Something went wrong decoding spec from label. Skipping image [%s].", image.Name)
+		return nil
 	}
 
 	if err = yaml.Unmarshal(decodedSpecYaml, _spec); err != nil {
-		r.log.Error("Something went wrong loading decoded spec yaml, %s", err)
-		return nil, err
+		r.log.Info("Something went wrong loading decoded spec yaml, %s. Skipping image [%s].", err, image.Name)
+		return nil
 	}
-	r.log.Debug("Successfully converted RHCC Image %s into Spec", _spec.Name)
+	r.log.Debug("Successfully converted RHCC Image [%s] into Spec [%s].", image.Name, _spec.Name)
 
-	return _spec, nil
+	return _spec
 }
 
 // LoadImages - Get all the images for a particular query
