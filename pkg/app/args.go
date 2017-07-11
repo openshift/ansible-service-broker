@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -21,10 +19,4 @@ func CreateArgs() (Args, error) {
 		return args, err
 	}
 	return args, nil
-}
-
-// ArgsUsage - Will  print the usuage of the arguments.
-func ArgsUsage() {
-	// TODO
-	fmt.Println("USAGE: To be implemented...")
 }
