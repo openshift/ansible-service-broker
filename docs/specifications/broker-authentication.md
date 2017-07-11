@@ -7,11 +7,13 @@ When talking to service brokers, the [Service Catalog uses basic auth](#service-
 
 The plan for this sprint is to do the following:
 
-* make auth routes configurable by enhancing the configuration
+* make auth routes configurable by adding an auth subsection to the broker section
 ```
-auth:
-   - type: basic | INSERT OTHER TYPE HERE
-   - enable: true | false
+broker:
+  ...
+  auth:
+    - type: basic | INSERT OTHER TYPE HERE
+    - enable: true | false
 ```
   * update the following files to reflect the new entry:
       * [deploy-ansible-service-broker.template.yaml](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml)
