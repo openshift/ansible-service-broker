@@ -204,6 +204,7 @@ objects:
         image_pull_policy: ${IMAGE_PULL_POLICY}
       broker:
         dev_broker: ${DEV_BROKER}
+        bootstrap_on_startup: ${BOOTSTRAP_ON_STARTUP}
         launch_apb_on_bind: ${LAUNCH_APB_ON_BIND}
         output_request: ${OUTPUT_REQUEST}
         recovery: ${RECOVERY}
@@ -278,6 +279,11 @@ parameters:
   displayname: Launch APB on bind
   name: LAUNCH_APB_ON_BIND
   value: "false"
+
+- description: Will automatically bootstrap the broker on startup
+  displayname: Bootstrap On Startup
+  name: BOOTSTRAP_ON_STARTUP
+  value: "true"
 
 - description: Output broker requests to log
   displayname: Output broker requests to log

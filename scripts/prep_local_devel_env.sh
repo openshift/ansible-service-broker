@@ -180,6 +180,7 @@ openshift:
 broker:
   dev_broker: true
   launch_apb_on_bind: false
+  bootstrap_on_startup: ${BOOTSTRAP_ON_STARTUP:-true}
   recovery: true
   output_request: true
 EOF

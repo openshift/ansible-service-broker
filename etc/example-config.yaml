@@ -19,6 +19,7 @@ openshift:
   bearer_token_file: ""
   image_pull_policy: IfNotPresent
 broker:
+  bootstrap_on_startup: true
   dev_broker: true
   launch_apb_on_bind: false
   recovery: true
