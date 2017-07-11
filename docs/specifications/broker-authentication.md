@@ -79,10 +79,10 @@ The current [OpenServiceBroker API authentication](https://github.com/openservic
 
 ### Service Catalog Basic Auth
 
-The Service Catalog calls [req.SetBasicAuth(c.username, c.password)](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/brokerapi/openservicebroker/open_service_broker_client.go#L121) when calling teh broker.
+The Service Catalog calls [req.SetBasicAuth(c.username, c.password)](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/brokerapi/openservicebroker/open_service_broker_client.go#L121) when calling the broker.
 
-This is done by creating a secret with the username and password in it. Then
-referencing said secret in the `authInfo` field when creating the `Broker`
+We will create a secret with the username and password in it. Then
+specify said secret in the `authInfo` field when creating the `Broker`
 resource in the Service Catalog.
 
 ```yaml
