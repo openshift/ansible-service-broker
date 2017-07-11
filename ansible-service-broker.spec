@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.6
+Version: 0.9.7
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -314,6 +314,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Jul 11 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.7-1
+- 1468173 - Add bootstrap_on_startup feature (#265) (ernelson@redhat.com)
+- 1469401 - Print out error messages only once (#264) (rhallise@redhat.com)
+- 1467852 - add ENV HOME to Dockerfile (#263) (jmontleo@redhat.com)
+
 * Fri Jul 07 2017 Jason Montleon <jmontleo@redhat.com> 0.9.6-1
 - 1467905 - Added error handling for images with improper APB spec (#258)
   (dymurray@redhat.com)
