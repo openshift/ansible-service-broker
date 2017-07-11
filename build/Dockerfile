@@ -6,6 +6,7 @@ RUN curl https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansibl
 ENV USER_NAME=ansibleservicebroker \
     USER_UID=1001 \
     BASE_DIR=/var/lib/ansibleservicebroker
+ENV HOME=${BASE_DIR}
 
 RUN yum -y update \
  && yum -y install epel-release centos-release-openshift-origin \
