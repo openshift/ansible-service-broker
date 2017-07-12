@@ -11,6 +11,7 @@ import (
 	yaml "gopkg.in/yaml.v1"
 )
 
+//Adapter - Adapter will wrap the methods that a registry needs to fully manage images.
 type Adapter interface {
 	// RegistryName will return the registiry prefix for the adapter.
 	// Example is docker.io for the dockerhub adapter.

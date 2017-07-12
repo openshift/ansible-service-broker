@@ -31,7 +31,7 @@ array of maps with an array of ParameterDescriptors
 // Spec - A APB spec
 type Spec struct {
 	ID          string                 `json:"id"`
-	FQName      string                 `json:"name"`
+	FQName      string                 `json:"name" yaml:"name"`
 	Image       string                 `json:"image"`
 	Tags        []string               `json:"tags"`
 	Bindable    bool                   `json:"bindable"`

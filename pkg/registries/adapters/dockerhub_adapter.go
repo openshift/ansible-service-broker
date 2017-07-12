@@ -17,7 +17,7 @@ const dockerHubLoginURL = "https://hub.docker.com/v2/users/login/"
 const dockerHubRepoImages = "https://hub.docker.com/v2/repositories/%v/?page_size=100"
 const dockerHubManifestURL = "https://registry.hub.docker.com/v2/%v/manifests/latest"
 
-// DockerHubRegistry - Docker Hub registry
+// DockerHubAdapter - Docker Hub Adapter
 type DockerHubAdapter struct {
 	Config Configuration
 	Log    *logging.Logger
@@ -36,10 +36,12 @@ type DockerHubImageResponse struct {
 	Next    string            `json:"next"`
 }
 
+// RegistryName - Retrieve the registry name
 func (r DockerHubAdapter) RegistryName() string {
 	return dockerhubName
 }
 
+// GetImages - retrieve the images
 func (r DockerHubAdapter) GetImages() ([]string, error) {
 	r.Log.Debug("DockerHubAdapter::GetImages")
 	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
@@ -87,6 +89,7 @@ func (r DockerHubAdapter) GetImages() ([]string, error) {
 	return apbData, nil
 }
 
+// FetchSpecs - retrieve the spec for the image names.
 func (r DockerHubAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	specs := []*apb.Spec{}
 	for _, imageName := range imageNames {
@@ -186,16 +189,17 @@ func (r DockerHubAdapter) getNextImages(ctx context.Context,
 	}
 	for _, imageName := range iResp.Results {
 		r.Log.Debugf("Trying to load %v/%v", imageName.Namespace, imageName.Name)
-		go func() {
+		go func(image *DockerHubImage) {
 			select {
 			case <-ctx.Done():
 				r.Log.Debugf(
-					"loading images failed due to context err - %v name - %v", ctx.Err(), imageName)
+					"loading images failed due to context err - %v name - %v",
+					ctx.Err(), image.Name)
 				return
 			default:
-				ch <- fmt.Sprintf("%v/%v", imageName.Namespace, imageName.Name)
+				ch <- fmt.Sprintf("%v/%v", image.Namespace, image.Name)
 			}
-		}()
+		}(imageName)
 	}
 	return &iResp, nil
 }

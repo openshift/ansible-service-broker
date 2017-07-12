@@ -10,7 +10,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
-// RHCCRegistry - Red Hat Container Catalog Registry
+// RHCCAdapter - Red Hat Container Catalog Registry
 type RHCCAdapter struct {
 	Config Configuration
 	Log    *logging.Logger
@@ -33,10 +33,12 @@ type RHCCImageResponse struct {
 	Results    []*RHCCImage `json:"results"`
 }
 
+// RegistryName - retrieve the registry prefix
 func (r RHCCAdapter) RegistryName() string {
 	return r.Config.URL
 }
 
+// GetImages - retrieve the images from the registry
 func (r RHCCAdapter) GetImages() ([]string, error) {
 	imageList, err := r.loadImages("\"*-apb\"")
 	if err != nil {
@@ -49,6 +51,7 @@ func (r RHCCAdapter) GetImages() ([]string, error) {
 	return imageNames, nil
 }
 
+// FetchSpecs - retrieve the spec from the image names
 func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	specs := []*apb.Spec{}
 	for _, imageName := range imageNames {

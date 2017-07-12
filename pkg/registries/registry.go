@@ -31,6 +31,7 @@ type Registry struct {
 	filter  Filter
 }
 
+// LoadSpecs - Load the specs for the registry.
 func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Infof("%#v", r.config)
 	imageNames, err := r.adapter.GetImages()
@@ -54,6 +55,7 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	return specs, len(imageNames), nil
 }
 
+// Fail - should this registry and error cause a failure.
 func (r Registry) Fail(err error) bool {
 	if r.config.Fail {
 		return true
@@ -61,6 +63,7 @@ func (r Registry) Fail(err error) bool {
 	return false
 }
 
+// RegistryName - retrieve the registry name to allow namespacing.
 func (r Registry) RegistryName() string {
 	return r.adapter.RegistryName()
 }

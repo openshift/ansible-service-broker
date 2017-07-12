@@ -97,7 +97,7 @@ const ManifestResponse = `
 }
 `
 
-func TestLoadSpecs(t *testing.T) {
+func TestGetImages(t *testing.T) {
 	serv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var response = RhccResponse
 		if r.Method != "GET" {
@@ -119,13 +119,13 @@ func TestLoadSpecs(t *testing.T) {
 	}))
 
 	var log = &logging.Logger{}
-	config := RegistryConfig{Name: "rhcc", URL: serv.URL}
-	reg, err := NewRegistry(config, log)
-	specs, num, err := reg.LoadSpecs()
-	ft.AssertEqual(t, num, 3)
-	ft.AssertNotNil(t, specs)
+	config := Configuration{URL: serv.URL}
+	adapter := RHCCAdapter{Config: config, Log: log}
+	imageNames, err := adapter.GetImages()
+	//specs, num, err := reg.LoadSpecs()
+	ft.AssertEqual(t, len(imageNames), 3)
+	ft.AssertNotNil(t, imageNames)
 	if err != nil {
 		t.Fatal("ERROR: ", err)
 	}
-
 }

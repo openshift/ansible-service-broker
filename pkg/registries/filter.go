@@ -14,6 +14,8 @@ const (
 	filterModeNone
 )
 
+// Filter - will handle the filtering by using a black list and white list
+// of regular expressions.
 type Filter struct {
 	whitelist []string
 	blacklist []string
@@ -136,7 +138,7 @@ func applyMatchSets(
 
 	if len(whiteMatchSet) != 0 && len(blackMatchSet) != 0 {
 		// Blacklist matches override white
-		for k, _ := range blackMatchSet {
+		for k := range blackMatchSet {
 			if _, ok := blackMatchSet[k]; ok {
 				delete(whiteMatchSet, k)
 			}
@@ -181,7 +183,7 @@ func toMatchSetT(s []string) matchSetT {
 func toSlice(m matchSetT) []string {
 	s := make([]string, len(m))
 	i := 0
-	for k, _ := range m {
+	for k := range m {
 		s[i] = k
 		i++
 	}
