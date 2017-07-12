@@ -121,7 +121,7 @@ func TestGetImages(t *testing.T) {
 	var log = &logging.Logger{}
 	config := Configuration{URL: serv.URL}
 	adapter := RHCCAdapter{Config: config, Log: log}
-	imageNames, err := adapter.GetImages()
+	imageNames, err := adapter.GetImageNames()
 	//specs, num, err := reg.LoadSpecs()
 	ft.AssertEqual(t, len(imageNames), 3)
 	ft.AssertNotNil(t, imageNames)

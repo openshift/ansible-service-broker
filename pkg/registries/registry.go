@@ -2,6 +2,7 @@ package registries
 
 import (
 	"fmt"
+	"strings"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -34,13 +35,12 @@ type Registry struct {
 // LoadSpecs - Load the specs for the registry.
 func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Infof("%#v", r.config)
-	imageNames, err := r.adapter.GetImages()
+	imageNames, err := r.adapter.GetImageNames()
 	if err != nil {
 		r.log.Errorf("unable to retrieve image names for registry %v - %v",
 			r.config.Name, err)
 		return []*apb.Spec{}, 0, err
 	}
-	r.log.Infof("======== Registry is filter =====")
 	validNames, filteredNames := r.filter.Run(imageNames)
 	for _, name := range filteredNames {
 		r.log.Debugf("registry %v filtered out image -%v", r.config.Name, name)
@@ -81,14 +81,13 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		Pass: config.Pass,
 		Org:  config.Org}
 
-	switch config.Type {
+	switch strings.ToLower(config.Type) {
 	case "rhcc":
 		adapter = &adapters.RHCCAdapter{Config: c, Log: log}
 	case "dockerhub":
 		adapter = &adapters.DockerHubAdapter{Config: c, Log: log}
-		/*case "mock":
-		reg = &MockRegistry{}
-		*/
+	case "mock":
+		adapter = &adapters.MockAdapter{Config: c, Log: log}
 	default:
 		panic("Unknown registry")
 	}

@@ -16,8 +16,8 @@ type Adapter interface {
 	// RegistryName will return the registiry prefix for the adapter.
 	// Example is docker.io for the dockerhub adapter.
 	RegistryName() string
-	// GetImages will return all the image names for the adapter configuration.
-	GetImages() ([]string, error)
+	// GetImageNames will return all the image names for the adapter configuration.
+	GetImageNames() ([]string, error)
 	//FetchSpecs will retrieve all the specs for the list of images names.
 	FetchSpecs([]string) ([]*apb.Spec, error)
 }

@@ -38,8 +38,8 @@ func (r RHCCAdapter) RegistryName() string {
 	return r.Config.URL
 }
 
-// GetImages - retrieve the images from the registry
-func (r RHCCAdapter) GetImages() ([]string, error) {
+// GetImageNames - retrieve the images from the registry
+func (r RHCCAdapter) GetImageNames() ([]string, error) {
 	imageList, err := r.loadImages("\"*-apb\"")
 	if err != nil {
 		return nil, err

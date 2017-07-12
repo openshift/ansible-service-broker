@@ -41,8 +41,8 @@ func (r DockerHubAdapter) RegistryName() string {
 	return dockerhubName
 }
 
-// GetImages - retrieve the images
-func (r DockerHubAdapter) GetImages() ([]string, error) {
+// GetImageNames - retrieve the images
+func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	r.Log.Debug("DockerHubAdapter::GetImages")
 	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 	r.Log.Debug("Loading image list for org: [ %s ]", r.Config.Org)
