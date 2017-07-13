@@ -467,15 +467,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
 		podName, extCreds, err := apb.Provision(serviceInstance, a.clusterConfig, a.log)
-		if extCreds != nil {
-			a.log.Debug("broker::Provision, got ExtractedCredentials!")
-			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
-			if err != nil {
-				a.log.Error("Could not persist extracted credentials")
-				a.log.Error("%s", err.Error())
-				return nil, err
-			}
-		}
 
 		sm := apb.NewServiceAccountManager(a.log)
 		a.log.Info("Destroying APB sandbox...")
@@ -484,6 +475,16 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
 			return nil, err
+		}
+
+		if extCreds != nil {
+			a.log.Debug("broker::Provision, got ExtractedCredentials!")
+			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
+			if err != nil {
+				a.log.Error("Could not persist extracted credentials")
+				a.log.Error("%s", err.Error())
+				return nil, err
+			}
 		}
 	}
 

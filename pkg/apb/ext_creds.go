@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -17,30 +18,30 @@ var totalTimeout = 900 // 15min
 func ExtractCredentials(
 	podname string, namespace string, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	credOut := make(chan []byte)
-
 	log.Debug("Calling monitorOutput on " + podname)
-	go monitorOutput(namespace, podname, credOut, log)
-
-	var bindOutput []byte
-	for msg := range credOut {
-		bindOutput = msg
-	}
-
+	bindOutput, err := monitorOutput(namespace, podname, log)
 	if bindOutput == nil {
 		return nil, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return buildExtractedCredentials(bindOutput)
 }
 
-func monitorOutput(namespace string, podname string, mon chan []byte, log *logging.Logger) {
+func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byte, error) {
 	// TODO: Error handling here
 	// It would also be nice to gather the script output that exec runs
 	// instead of only getting the credentials
 
 	for r := 1; r <= CredentialRetries; r++ {
-		output, _ := RunCommand("oc", "exec", podname, GatherCredentialsCMD, "--namespace="+namespace)
+		output, err := RunCommand("oc", "exec", podname, GatherCredentialsCMD, "--namespace="+namespace)
+		if err != nil {
+			// Since we combine stderr and stdout in RunCommand, log
+			// output of RunCommand as Info
+			log.Info(err.Error())
+		}
 
 		stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
 			strings.Contains(string(output), "NotFound") ||
@@ -53,22 +54,18 @@ func monitorOutput(namespace string, podname string, mon chan []byte, log *loggi
 		if stillWaiting {
 			log.Warning("[%s] Retry attempt %d: Waiting for container to start", podname, r)
 		} else if podCompleted {
-			close(mon)
 			log.Notice("[%s] APB completed", podname)
-			return
+			return nil, nil
 		} else if strings.Contains(string(output), "BIND_CREDENTIALS") {
-			mon <- output
-			close(mon)
 			log.Notice("[%s] Bind credentials found", podname)
-			return
+			return output, nil
 		}
 
 		log.Warning("[%s] Retry attempt %d: exec into %s failed", podname, r, podname)
-		time.Sleep(time.Duration(r) * time.Second)
+		time.Sleep(time.Duration(WaitTime) * time.Second)
 	}
-	log.Errorf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, CredentialRetries)
-	close(mon)
-	return
+	timeout := fmt.Sprintf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, CredentialRetries)
+	return nil, errors.New(timeout)
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {

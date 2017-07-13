@@ -102,7 +102,9 @@ const (
 	ApbRole = "cluster-admin"
 
 	// Bind credential gathering constants
-	CredentialRetries    = 20
+	// 5 seconds x 60 retries = 5 minute timout
+	WaitTime             = 5
+	CredentialRetries    = 60
 	GatherCredentialsCMD = "broker-bind-creds"
 )
 
