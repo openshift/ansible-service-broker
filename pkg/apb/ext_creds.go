@@ -35,8 +35,8 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 	// It would also be nice to gather the script output that exec runs
 	// instead of only getting the credentials
 
-	for r := 1; r <= CredentialRetries; r++ {
-		output, err := RunCommand("oc", "exec", podname, GatherCredentialsCMD, "--namespace="+namespace)
+	for r := 1; r <= credentialExtRetries; r++ {
+		output, err := RunCommand("oc", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
 		if err != nil {
 			// Since we combine stderr and stdout in RunCommand, log
 			// output of RunCommand as Info
@@ -62,9 +62,9 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 		}
 
 		log.Warning("[%s] Retry attempt %d: exec into %s failed", podname, r, podname)
-		time.Sleep(time.Duration(WaitTime) * time.Second)
+		time.Sleep(time.Duration(credentialExtInterval) * time.Second)
 	}
-	timeout := fmt.Sprintf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, CredentialRetries)
+	timeout := fmt.Sprintf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, credentialExtRetries)
 	return nil, errors.New(timeout)
 }
 

@@ -103,9 +103,9 @@ const (
 
 	// Bind credential gathering constants
 	// 5 seconds x 60 retries = 5 minute timout
-	WaitTime             = 5
-	CredentialRetries    = 60
-	GatherCredentialsCMD = "broker-bind-creds"
+	credentialExtInterval = 5
+	credentialExtRetries  = 60
+	gatherCredentialsCMD  = "broker-bind-creds"
 )
 
 func specLogDump(spec *Spec, log *logging.Logger) {
