@@ -7,7 +7,8 @@ registry:
     pass: DOCKERHUB_PASS
     org: DOCKERHUB_ORG
     fail_on_error: false
-  - name: rhcc
+  - type: rhcc
+    name: rhcc
     url: registry.access.stage.redhat.com
     fail_on_error: true
 dao:
