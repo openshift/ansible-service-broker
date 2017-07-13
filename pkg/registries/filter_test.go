@@ -85,6 +85,7 @@ func testSetEq(a []string, b []string) bool {
 func TestOnlyBlacklist(t *testing.T) {
 	filter := Filter{whitelist: []string{},
 		blacklist: testGetRegexFromFile(testBlacklistFile)}
+	filter.Init()
 
 	expectedValidNames := []string{
 		"legitimate-postgresql-apb",
@@ -113,6 +114,7 @@ func TestOnlyBlacklist(t *testing.T) {
 func TestOnlyWhitelist(t *testing.T) {
 	filter := Filter{whitelist: testGetRegexFromFile(testWhitelistFile),
 		blacklist: []string{}}
+	filter.Init()
 
 	expectedValidNames := []string{
 		"legitimate-postgresql-apb",
@@ -147,6 +149,7 @@ func TestBlackAndWhitelistOverride(t *testing.T) {
 		whitelist: testGetRegexFromFile(testWhitelistFile),
 		blacklist: testGetRegexFromFile(testBlacklistOverrideFile),
 	}
+	filter.Init()
 
 	expectedValidNames := []string{
 		"legitimate-postgresql-apb",
@@ -176,9 +179,11 @@ func TestBlackAndWhitelistNoOverride(t *testing.T) {
 	// Both lists set, but no overlap between sets. foo-apb should *not*
 	// be filtered compared to the Override case
 	filter := Filter{
-		testGetRegexFromFile(testWhitelistFile),
-		testGetRegexFromFile(testBlacklistFile),
+		whitelist: testGetRegexFromFile(testWhitelistFile),
+		blacklist: testGetRegexFromFile(testBlacklistFile),
 	}
+	filter.Init()
+
 	expectedValidNames := []string{
 		"foo-apb", // NOTE: expected
 		"legitimate-postgresql-apb",

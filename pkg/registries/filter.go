@@ -14,11 +14,47 @@ const (
 	filterModeNone
 )
 
+type failedRegexp struct {
+	regex string
+	err   error
+}
+
 // Filter - will handle the filtering by using a black list and white list
 // of regular expressions.
 type Filter struct {
-	whitelist []string
-	blacklist []string
+	whitelist         []string
+	blacklist         []string
+	whiteRegexp       []*regexp.Regexp
+	blackRegexp       []*regexp.Regexp
+	failedWhiteRegexp []failedRegexp
+	failedBlackRegexp []failedRegexp
+}
+
+// Init - Initializes Filter, precompiling regex
+func (f *Filter) Init() {
+	compiled, failed := compileRegexp(f.whitelist)
+	f.whiteRegexp = compiled
+	f.failedWhiteRegexp = failed
+	compiled, failed = compileRegexp(f.blacklist)
+	f.blackRegexp = compiled
+	f.failedBlackRegexp = failed
+}
+
+func compileRegexp(regexStrs []string) ([]*regexp.Regexp, []failedRegexp) {
+	regexps := make([]*regexp.Regexp, 0, len(regexStrs))
+	failedRegexps := []failedRegexp{}
+
+	for _, str := range regexStrs {
+		cr, err := regexp.Compile(str)
+		if err != nil {
+			failedRegexps = append(failedRegexps, failedRegexp{str, err})
+			continue
+		}
+
+		regexps = append(regexps, cr)
+	}
+
+	return regexps, failedRegexps
 }
 
 // Run - Executes filter based on white and blacklists
@@ -29,7 +65,7 @@ func (f *Filter) Run(totalList []string) ([]string, []string) {
 	}
 
 	whiteMatchSet, blackMatchSet := genMatchSets(
-		filterMode, f.whitelist, f.blacklist, totalList,
+		filterMode, f.whiteRegexp, f.blackRegexp, totalList,
 	)
 
 	return applyMatchSets(whiteMatchSet, blackMatchSet, totalList)
@@ -37,11 +73,11 @@ func (f *Filter) Run(totalList []string) ([]string, []string) {
 
 // FilterMode - FilterMode getter
 func (f *Filter) getFilterMode() filterMode {
-	if len(f.whitelist) != 0 && len(f.blacklist) != 0 {
+	if len(f.whiteRegexp) != 0 && len(f.blackRegexp) != 0 {
 		return filterModeBoth
-	} else if len(f.whitelist) != 0 {
+	} else if len(f.whiteRegexp) != 0 {
 		return filterModeWhite
-	} else if len(f.blacklist) != 0 {
+	} else if len(f.blackRegexp) != 0 {
 		return filterModeBlack
 	}
 
@@ -52,22 +88,22 @@ type matchSetT map[string]bool
 
 func genMatchSets(
 	filterMode filterMode,
-	whitelist []string,
-	blacklist []string,
+	whiteRegexp []*regexp.Regexp,
+	blackRegexp []*regexp.Regexp,
 	totalList []string,
 ) (matchSetT, matchSetT) {
 	var whiteMatchSet, blackMatchSet matchSetT
 
 	if filterMode == filterModeBoth {
-		whiteMatchChan := genMatchSet(whitelist, totalList)
-		blackMatchChan := genMatchSet(blacklist, totalList)
+		whiteMatchChan := genMatchSet(whiteRegexp, totalList)
+		blackMatchChan := genMatchSet(blackRegexp, totalList)
 		whiteMatchSet = <-whiteMatchChan
 		blackMatchSet = <-blackMatchChan
 	} else if filterMode == filterModeWhite {
-		whiteMatchChan := genMatchSet(whitelist, totalList)
+		whiteMatchChan := genMatchSet(whiteRegexp, totalList)
 		whiteMatchSet = <-whiteMatchChan
 	} else if filterMode == filterModeBlack {
-		blackMatchChan := genMatchSet(blacklist, totalList)
+		blackMatchChan := genMatchSet(blackRegexp, totalList)
 		blackMatchSet = <-blackMatchChan
 	}
 
@@ -75,29 +111,29 @@ func genMatchSets(
 }
 
 func genMatchSet(
-	regexList []string,
+	regexpList []*regexp.Regexp,
 	totalList []string,
 ) <-chan matchSetT {
 	matchChunksChan := make(chan []string)
 
 	var wg sync.WaitGroup
-	wg.Add(len(regexList))
+	wg.Add(len(regexpList))
 
 	// Produce set of matches for each regex against each item in totalList
 	// Run each regex against totalList concurrently
 	// Expect one match set per regex, each containing the matches found
 	// when running the regex over the totalList
-	for _, regex := range regexList {
-		go func(regex string) {
+	for _, rx := range regexpList {
+		go func(rx *regexp.Regexp) {
 			matchChunk := []string{}
 			for _, testStr := range totalList {
-				if ok, _ := regexp.MatchString(regex, testStr); ok {
+				if ok := rx.MatchString(testStr); ok {
 					matchChunk = append(matchChunk, testStr)
 				}
 			}
 			matchChunksChan <- matchChunk
 			wg.Done()
-		}(regex)
+		}(rx)
 	}
 
 	// Join workers and close chunks channel when finished

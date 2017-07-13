@@ -54,9 +54,23 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 		return []*apb.Spec{}, 0, err
 	}
 	validNames, filteredNames := r.filter.Run(imageNames)
-	for _, name := range filteredNames {
-		r.log.Debugf("registry %v filtered out image -%v", r.config.Name, name)
+
+	r.log.Debug("Filter applied against registry: %s", r.config.Name)
+
+	if len(validNames) != 0 {
+		r.log.Debugf("Passing APBs:", r.config.Name)
+		for _, name := range validNames {
+			r.log.Debugf("-> %s", name)
+		}
 	}
+
+	if len(filteredNames) != 0 {
+		r.log.Info("Filtered APBs:")
+		for _, name := range filteredNames {
+			r.log.Infof("-> %s", name)
+		}
+	}
+
 	// Debug output filtered out names.
 	specs, err := r.adapter.FetchSpecs(validNames)
 	if err != nil {
@@ -113,10 +127,40 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 	default:
 		panic("Unknown registry")
 	}
+
 	return Registry{config: config,
 		adapter: adapter,
 		log:     log,
-		filter: Filter{config.WhiteList,
-			config.BlackList},
+		filter:  createFilter(config, log),
 	}, nil
+}
+
+func createFilter(config Config, log *logging.Logger) Filter {
+	log.Debug("Creating filte for registry: %s", config.Name)
+	log.Debug("whitelist: %v", config.WhiteList)
+	log.Debug("blacklist: %v", config.BlackList)
+
+	filter := Filter{
+		whitelist: config.WhiteList,
+		blacklist: config.BlackList,
+	}
+
+	filter.Init()
+	if len(filter.failedWhiteRegexp) != 0 {
+		log.Warning("Some whitelist regex failed for registry: %s", config.Name)
+		for _, failed := range filter.failedWhiteRegexp {
+			log.Warning(failed.regex)
+			log.Warning(failed.err.Error())
+		}
+	}
+
+	if len(filter.failedBlackRegexp) != 0 {
+		log.Warning("Some blacklist regex failed for registry: %s", config.Name)
+		for _, failed := range filter.failedBlackRegexp {
+			log.Warning(failed.regex)
+			log.Warning(failed.err.Error())
+		}
+	}
+
+	return filter
 }
