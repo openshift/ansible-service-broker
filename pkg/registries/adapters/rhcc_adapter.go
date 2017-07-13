@@ -35,7 +35,7 @@ type RHCCImageResponse struct {
 
 // RegistryName - retrieve the registry prefix
 func (r RHCCAdapter) RegistryName() string {
-	return r.Config.URL
+	return r.Config.URL.Host
 }
 
 // GetImageNames - retrieve the images from the registry
@@ -56,7 +56,7 @@ func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	specs := []*apb.Spec{}
 	for _, imageName := range imageNames {
 		req, err := http.NewRequest("GET",
-			fmt.Sprintf("%v/v2/%v/manifests/latest", r.Config.URL, imageName), nil)
+			fmt.Sprintf("%v/v2/%v/manifests/latest", r.Config.URL.String(), imageName), nil)
 		if err != nil {
 			return specs, err
 		}
@@ -74,9 +74,9 @@ func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 // LoadImages - Get all the images for a particular query
 func (r RHCCAdapter) loadImages(Query string) (RHCCImageResponse, error) {
 	r.Log.Debug("RHCCRegistry::LoadImages")
-	r.Log.Debug("Using " + r.Config.URL + " to source APB images using query:" + Query)
+	r.Log.Debug("Using " + r.Config.URL.String() + " to source APB images using query:" + Query)
 	req, err := http.NewRequest("GET",
-		fmt.Sprintf("%v/v1/search?q=%v", r.Config.URL, Query), nil)
+		fmt.Sprintf("%v/v1/search?q=%v", r.Config.URL.String(), Query), nil)
 	if err != nil {
 		return RHCCImageResponse{}, err
 	}

@@ -4,6 +4,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -29,7 +30,7 @@ const BundleSpecLabel = "com.redhat.apb.spec"
 // Configuration - Adapter configuration. Contains the info that the adapter
 // would need to complete it's request to the images.
 type Configuration struct {
-	URL  string
+	URL  *url.URL
 	User string
 	Pass string
 	Org  string
@@ -67,7 +68,7 @@ func imageToSpec(log *logging.Logger, req *http.Request) (*apb.Spec, error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&hist)
 	if err != nil {
-		log.Error("Error grabbing JSON body from response: %s", err)
+		log.Errorf("Error grabbing JSON body from response: %s", err)
 		return nil, err
 	}
 
@@ -78,24 +79,29 @@ func imageToSpec(log *logging.Logger, req *http.Request) (*apb.Spec, error) {
 
 	err = json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf)
 	if err != nil {
-		log.Error("Error unmarshalling intermediary JSON response: %s", err)
+		log.Errorf("Error unmarshalling intermediary JSON response: %s", err)
 		return nil, err
 	}
+	if conf.Config == nil {
+		log.Infof("Did not find v1 Manifest in image history. Skipping image")
+		return nil, nil
+	}
 	if conf.Config.Label.Spec == "" {
+		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skiping")
 		return nil, nil
 	}
 	encodedSpec := conf.Config.Label.Spec
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
-		log.Error("Something went wrong decoding spec from label")
+		log.Errorf("Something went wrong decoding spec from label")
 		return nil, err
 	}
 
 	if err = yaml.Unmarshal(decodedSpecYaml, spec); err != nil {
-		log.Error("Something went wrong loading decoded spec yaml, %s", err)
+		log.Errorf("Something went wrong loading decoded spec yaml, %s", err)
 		return nil, err
 	}
-	log.Debug("Successfully converted Image %s into Spec", spec.Image)
+	log.Debugf("Successfully converted Image %s into Spec", spec.Image)
 	spec.ID = uuid.New()
 
 	return spec, nil

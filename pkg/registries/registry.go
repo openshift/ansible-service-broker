@@ -2,12 +2,16 @@ package registries
 
 import (
 	"fmt"
+	"net/url"
+	"regexp"
 	"strings"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/registries/adapters"
 )
+
+var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*`)
 
 // Config - Configuration for the registry
 type Config struct {
@@ -24,6 +28,15 @@ type Config struct {
 	BlackList []string `yaml:"black_list"`
 }
 
+// Validate - makes sure the registry config is valid.
+func (c Config) Validate() bool {
+	if c.Name == "" {
+		return false
+	}
+	m := regex.FindString(c.Name)
+	return m == c.Name
+}
+
 // Registry - manages an adapter to retrieve and manage images to specs.
 type Registry struct {
 	config  Config
@@ -34,7 +47,6 @@ type Registry struct {
 
 // LoadSpecs - Load the specs for the registry.
 func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
-	r.log.Infof("%#v", r.config)
 	imageNames, err := r.adapter.GetImageNames()
 	if err != nil {
 		r.log.Errorf("unable to retrieve image names for registry %v - %v",
@@ -65,7 +77,7 @@ func (r Registry) Fail(err error) bool {
 
 // RegistryName - retrieve the registry name to allow namespacing.
 func (r Registry) RegistryName() string {
-	return r.adapter.RegistryName()
+	return r.config.Name
 }
 
 // NewRegistry - Create a new registry from the registry config.
@@ -76,7 +88,17 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 	log.Info(fmt.Sprintf("Name: %s", config.Name))
 	log.Info(fmt.Sprintf("Type: %s", config.Type))
 	log.Info(fmt.Sprintf("Url: %s", config.URL))
-	c := adapters.Configuration{URL: config.URL,
+	//Validate URL
+	u, err := url.Parse(config.URL)
+	if err != nil {
+		log.Errorf("url is not valid: %v", config.URL)
+		// Default url, allow the registry to fail gracefully or un gracefully.
+		u = &url.URL{}
+	}
+	if u.Scheme == "" {
+		u.Scheme = "http"
+	}
+	c := adapters.Configuration{URL: u,
 		User: config.User,
 		Pass: config.Pass,
 		Org:  config.Org}

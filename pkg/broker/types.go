@@ -71,7 +71,7 @@ type CatalogResponse struct {
 // LastOperationRequest - Request to obtain state information about an action that was taken
 // Defined in more detail here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#polling-last-operation
 type LastOperationRequest struct {
-	ServiceID uuid.UUID `json:"service_id"`
+	ServiceID string    `json:"service_id"`
 	PlanID    uuid.UUID `json:"plan_id"`
 	Operation string    `json:"operation"`
 }
@@ -101,7 +101,7 @@ type LastOperationResponse struct {
 type ProvisionRequest struct {
 	OrganizationID    uuid.UUID      `json:"organization_guid"`
 	PlanID            uuid.UUID      `json:"plan_id"`
-	ServiceID         uuid.UUID      `json:"service_id"`
+	ServiceID         string         `json:"service_id"`
 	SpaceID           uuid.UUID      `json:"space_guid"`
 	Context           apb.Context    `json:"context"`
 	Parameters        apb.Parameters `json:"parameters,omitempty"`
@@ -118,12 +118,12 @@ type ProvisionResponse struct {
 // UpdateRequest - Request for an update for a service instance.
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#request-3
 type UpdateRequest struct {
-	ServiceID      uuid.UUID         `json:"service_id"`
+	ServiceID      string            `json:"service_id"`
 	PlanID         uuid.UUID         `json:"plan_id,omitempty"`
 	Parameters     map[string]string `json:"parameters,omitempty"`
 	PreviousValues struct {
 		PlanID         uuid.UUID `json:"plan_id,omitempty"`
-		ServiceID      uuid.UUID `json:"service_id,omitempty"`
+		ServiceID      string    `json:"service_id,omitempty"`
 		OrganizationID uuid.UUID `json:"organization_id,omitempty"`
 		SpaceID        uuid.UUID `json:"space_id,omitempty"`
 	} `json:"previous_values,omitempty"`
@@ -139,7 +139,7 @@ type UpdateResponse struct {
 // BindRequest - Request for a bind
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#request-4
 type BindRequest struct {
-	ServiceID uuid.UUID `json:"service_id"`
+	ServiceID string    `json:"service_id"`
 	PlanID    uuid.UUID `json:"plan_id"`
 	// Deprecated: AppID deprecated in favor of BindResource.AppID
 	AppID uuid.UUID `json:"app_guid,omitempty"`

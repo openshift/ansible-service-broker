@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -45,14 +46,24 @@ func CreateConfig(configFile string) (Config, error) {
 		return Config{}, err
 	}
 
-	if err = validateConfig(); err != nil {
+	if err = validateConfig(config); err != nil {
 		return Config{}, err
 	}
 
 	return config, nil
 }
 
-func validateConfig() error {
+func validateConfig(c Config) error {
 	// TODO: Config validation!
+	registryName := map[string]bool{}
+	for _, rc := range c.Registry {
+		if !rc.Validate() {
+			return fmt.Errorf("registry config is not valid - %v", rc.Name)
+		}
+		if _, ok := registryName[rc.Name]; ok {
+			return fmt.Errorf("registry name must be unique")
+		}
+		registryName[rc.Name] = true
+	}
 	return nil
 }

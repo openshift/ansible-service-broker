@@ -290,7 +290,7 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 
 	// service_id is optional
 	if val, ok := queryparams["service_id"]; ok {
-		req.ServiceID = uuid.Parse(val[0])
+		req.ServiceID = val[0]
 	}
 
 	// plan_id is optional

@@ -62,7 +62,6 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 		return nil, err
 	}
 	//If no results in the fist call then close the channel as nothing will get loaded.
-	r.Log.Info("%#v", imageResp)
 	if len(imageResp.Results) == 0 {
 		r.Log.Info("canceled retrieval as no items in org")
 		close(channel)
@@ -70,13 +69,10 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	var apbData []string
 	counter := 1
 	for imageData := range channel {
-		r.Log.Infof("%v", apbData)
 		apbData = append(apbData, imageData)
 		if counter < imageResp.Count {
-			r.Log.Infof("%v", apbData)
 			counter++
 		} else {
-			r.Log.Infof("%v", apbData)
 			close(channel)
 		}
 	}

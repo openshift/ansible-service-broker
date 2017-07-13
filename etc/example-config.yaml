@@ -1,10 +1,15 @@
 ---
 registry:
-  name: dockerhub
-  url: http://localhost:1337
-  user: DOCKERHUB_USER
-  pass: DOCKERHUB_PASS
-  org: DOCKERHUB_ORG
+  - type: dockerhub
+    name: docker
+    url: https://registry.hub.docker.com
+    user: DOCKERHUB_USER
+    pass: DOCKERHUB_PASS
+    org: DOCKERHUB_ORG
+    fail_on_error: false
+  - name: rhcc
+    url: registry.access.stage.redhat.com
+    fail_on_error: true
 dao:
   etcd_host: localhost
   etcd_port: 2379

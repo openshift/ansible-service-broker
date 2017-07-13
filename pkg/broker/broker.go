@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"strings"
 
 	"github.com/coreos/etcd/client"
 	logging "github.com/op/go-logging"
@@ -223,7 +224,10 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 
 func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 	for _, spec := range specs {
-		spec.FQName = fmt.Sprintf("%v/%v", registryName, spec.Image)
+		//need to make / a hyphen to allow for global uniqueness but still match spec.
+		spec.FQName = strings.Replace(fmt.Sprintf("%v-%v", registryName, spec.Image),
+			"/", "-", -1)
+
 		// ID Will be a md5 hash of the fully qualified spec name.
 		hasher := md5.New()
 		hasher.Write([]byte(spec.FQName))
@@ -438,7 +442,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	var err error
 
 	// Retrieve requested spec
-	specID := req.ServiceID.String()
+	specID := req.ServiceID
 	if spec, err = a.dao.GetSpec(specID); err != nil {
 		// etcd return not found i.e. code 100
 		if client.IsKeyNotFound(err) {
@@ -791,9 +795,9 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 		if async, provision: it should create a Job that calls apb.Provision. And write the output to etcd.
 	*/
-	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID.String())) // optional
-	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID.String()))       // optional
-	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))          // this is provided with the provision. task id from the work_engine
+	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID))    // optional
+	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID.String())) // optional
+	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))    // this is provided with the provision. task id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
 	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)
