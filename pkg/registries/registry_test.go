@@ -105,13 +105,6 @@ func setUp() Registry {
 	return r
 }
 
-func TestRegistryName(t *testing.T) {
-	r := setUp()
-	nameGot := r.RegistryName()
-	ft.AssertTrue(t, a.Called["RegistryName"])
-	ft.AssertEqual(t, nameGot, a.RegistryName())
-}
-
 func TestRegistryLoadSpecsNoError(t *testing.T) {
 	r := setUp()
 	specs, numImages, err := r.LoadSpecs()

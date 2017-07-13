@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -119,7 +120,11 @@ func TestGetImages(t *testing.T) {
 	}))
 
 	var log = &logging.Logger{}
-	config := Configuration{URL: serv.URL}
+	u, err := url.Parse(serv.URL)
+	if err != nil {
+		t.Fatal("ERROR: ", err)
+	}
+	config := Configuration{URL: u}
 	adapter := RHCCAdapter{Config: config, Log: log}
 	imageNames, err := adapter.GetImageNames()
 	//specs, num, err := reg.LoadSpecs()
