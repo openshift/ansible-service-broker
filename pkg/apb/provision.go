@@ -40,19 +40,8 @@ func Provision(
 	ns := instance.Context.Namespace
 	log.Info("Checking if project %s exists...", ns)
 	if !projectExists(ns) {
-		log.Info("Project %s does NOT exist, creating project...", ns)
-		output, err := createProject(ns)
-		if err != nil {
-			log.Error("Something went wrong creating project %s!", ns)
-			log.Error(err.Error())
-			return "", nil, err
-		} else {
-			log.Info("Successfully created project %s", ns)
-			log.Debug("oc new-project output:")
-			log.Debug(string(output))
-		}
-	} else {
-		log.Info("Project %s already exists!", ns)
+		log.Error("Project %s does NOT exist! Cannot provision requested %s", ns, instance.Spec.Name)
+		return "", nil, errors.New(fmt.Sprintf("Project %s does not exist", ns))
 	}
 
 	var client *Client
@@ -78,8 +67,4 @@ func Provision(
 func projectExists(project string) bool {
 	_, _, code := RunCommandWithExitCode("oc", "get", "project", project)
 	return code == 0
-}
-
-func createProject(project string) ([]byte, error) {
-	return RunCommand("oc", "new-project", project)
 }
