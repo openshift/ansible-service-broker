@@ -272,6 +272,9 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// YES, we have a podname
 			a.log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
 
+			// TODO: ExtractCredentials is doing more than it should
+			// be and it needs to be broken up.
+
 			// did the pod finish?
 			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, instance.Context.Namespace, a.log)
 
@@ -472,14 +475,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			a.log.Error("broker::Provision error occurred.")
 			a.log.Error("%s", err.Error())
 			return nil, err
-		}
-
-		// TODO: do we need podname for synchronous provisions?
-		extCreds, extErr := apb.ExtractCredentials(podName, context.Namespace, a.log)
-		if extErr != nil {
-			a.log.Error("broker::Provision error occurred.")
-			a.log.Error("%s", extErr.Error())
-			return nil, extErr
 		}
 
 		if extCreds != nil {

@@ -4,88 +4,71 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	logging "github.com/op/go-logging"
 )
 
-var stillWaitingError = "status: still waiting to start"
 var timeoutFreq = 6    // Seconds
 var totalTimeout = 900 // 15min
 
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
-// HACK ALERT!
-// A lot of the current approach to extracting credentials and monitoring
-// output is *very* experimental and error prone. Entire approach is going
-// to be thrown out and redone asap.
 func ExtractCredentials(
 	podname string, namespace string, log *logging.Logger,
 ) (*ExtractedCredentials, error) {
 	log.Debug("Calling monitorOutput on " + podname)
-	credOut, _ := monitorOutput(podname, namespace)
-	log.Debug("oc log output: %s", string(credOut))
-
-	var creds *ExtractedCredentials
-	var err error
-	creds, err = buildExtractedCredentials(credOut)
-
+	bindOutput, err := monitorOutput(namespace, podname, log)
+	if bindOutput == nil {
+		return nil, nil
+	}
 	if err != nil {
-		// HACK: this is HORRIBLE. but there is definitely a time between a bind
-		// and when the container is up.
-		totalRetries := totalTimeout / timeoutFreq
-		retries := 1
-		for {
-			if retries == totalRetries {
-				errstr := "TIMED OUT WAITING FOR CONTAINER TO COME UP"
-				log.Error(errstr)
-				return nil, errors.New(errstr)
-			}
-
-			time.Sleep(time.Duration(timeoutFreq) * time.Second)
-			log.Info("Container not up yet, retrying %d of %d on pod %s", retries, totalRetries, podname)
-			credOut, _ = monitorOutput(podname, namespace)
-			log.Debug("oc log output: \n%s", string(credOut))
-			creds, err = buildExtractedCredentials(credOut)
-
-			if err == nil {
-				if creds != nil {
-					log.Debug("Pod reporting finished and returned Credentials")
-				} else {
-					log.Debug("Pod reporting finished and DID NOT return Credentials")
-				}
-				break
-			} else if err.Error() == stillWaitingError {
-				// Known error code that's received when we're either waiting for
-				// ContainerCreating, or for the pod resource to be created.
-				// These are expected states, and we'll wait until the pod is up.
-				log.Debug(err.Error())
-			} else {
-				log.Notice("WARNING: Unexpected output from apb pod")
-				log.Notice("Will keep retrying, but it's possible something has gone wrong.")
-				log.Notice(err.Error())
-			}
-
-			retries++
-		}
+		return nil, err
 	}
 
-	return creds, err
+	return buildExtractedCredentials(bindOutput)
 }
 
-func monitorOutput(podname string, namespace string) ([]byte, error) {
-	return RunCommand("oc", "logs", "-f", "--namespace="+namespace, podname)
+func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byte, error) {
+	// TODO: Error handling here
+	// It would also be nice to gather the script output that exec runs
+	// instead of only getting the credentials
+
+	for r := 1; r <= CredentialRetries; r++ {
+		output, err := RunCommand("oc", "exec", podname, GatherCredentialsCMD, "--namespace="+namespace)
+		if err != nil {
+			// Since we combine stderr and stdout in RunCommand, log
+			// output of RunCommand as Info
+			log.Info(err.Error())
+		}
+
+		stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
+			strings.Contains(string(output), "NotFound") ||
+			strings.Contains(string(output), "container not found")
+		podCompleted := strings.Contains(string(output), "current phase is Succeeded") ||
+			strings.Contains(string(output), "cannot exec into a container in a completed pod")
+
+		// TODO: Replace the string parsing by passing around the pod
+		// object and checking its status
+		if stillWaiting {
+			log.Warning("[%s] Retry attempt %d: Waiting for container to start", podname, r)
+		} else if podCompleted {
+			log.Notice("[%s] APB completed", podname)
+			return nil, nil
+		} else if strings.Contains(string(output), "BIND_CREDENTIALS") {
+			log.Notice("[%s] Bind credentials found", podname)
+			return output, nil
+		}
+
+		log.Warning("[%s] Retry attempt %d: exec into %s failed", podname, r, podname)
+		time.Sleep(time.Duration(WaitTime) * time.Second)
+	}
+	timeout := fmt.Sprintf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, CredentialRetries)
+	return nil, errors.New(timeout)
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
-	stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
-		strings.Contains(string(output), "NotFound")
-
-	if stillWaiting {
-		// Still waiting for container to come up
-		return nil, errors.New(stillWaitingError)
-	}
-
 	result, err := decodeOutput(output)
 	if err != nil {
 		return nil, err
