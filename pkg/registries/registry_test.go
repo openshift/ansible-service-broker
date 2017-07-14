@@ -91,7 +91,7 @@ var r Registry
 func setUp() Registry {
 	a = &TestingAdapter{
 		Name:   "testing",
-		Images: []string{"image1", "image2"},
+		Images: []string{"image1-apb", "image2"},
 		Specs:  []*apb.Spec{&s},
 		Called: map[string]bool{},
 	}
@@ -113,7 +113,7 @@ func TestRegistryLoadSpecsNoError(t *testing.T) {
 	}
 	ft.AssertTrue(t, a.Called["GetImageNames"])
 	ft.AssertTrue(t, a.Called["FetchSpecs"])
-	ft.AssertEqual(t, numImages, 2)
+	ft.AssertEqual(t, numImages, 1)
 	ft.AssertEqual(t, len(specs), 1)
 	ft.AssertEqual(t, specs[0], &s)
 }
