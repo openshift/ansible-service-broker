@@ -10,6 +10,8 @@ objects:
     labels:
       app: ansible-service-broker
       service: asb
+    annotations:
+      service.alpha.openshift.io/serving-cert-secret-name: asb-tls
   spec:
     ports:
       - name: port-1338
@@ -65,6 +67,8 @@ objects:
       name: asb
     port:
       targetPort: port-1338
+    tls:
+      termination: Reencrypt
 
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -109,6 +113,8 @@ objects:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/ansible-service-broker
+            - name: asb-tls
+              mountPath: /etc/tls/private
           ports:
             - containerPort: 1338
               protocol: TCP
@@ -124,7 +130,9 @@ objects:
               items:
               - key: broker-config
                 path: config.yaml
-
+          - name: asb-tls
+            secret:
+              secretName: asb-tls
 - apiVersion: extensions/v1beta1
   kind: Deployment
   metadata:
@@ -210,6 +218,8 @@ objects:
         output_request: ${OUTPUT_REQUEST}
         recovery: ${RECOVERY}
         bootstrap_on_startup: true
+        ssl_cert_key: /etc/tls/private/tls.key
+        ssl_cert: /etc/tls/private/tls.crt
 
 parameters:
 - description: Container Image to use for Ansible Service Broker in format of imagename:tag
