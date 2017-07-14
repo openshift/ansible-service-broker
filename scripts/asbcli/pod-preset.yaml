@@ -1,0 +1,10 @@
+kind: PodPreset
+apiVersion: settings.k8s.io/v1alpha1
+metadata:
+  name: ""
+  namespace: ""
+spec:
+  selector:
+    matchLabels:
+      app: ""
+  env: []
