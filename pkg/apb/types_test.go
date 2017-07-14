@@ -20,7 +20,6 @@ const SpecImage = "fusor/etherpad-apb"
 const SpecBindable = false
 const SpecAsync = "optional"
 const SpecDescription = "A note taking webapp"
-const SpecRegistryName = "test"
 const SpecParameters = `
 	[
 		{ "postgresql_database": { "default": "admin", "type": "string", "title": "PostgreSQL Database Name" } },

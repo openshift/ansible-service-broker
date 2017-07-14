@@ -1,6 +1,7 @@
 package registries
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -58,17 +59,21 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Debug("Filter applied against registry: %s", r.config.Name)
 
 	if len(validNames) != 0 {
-		r.log.Debugf("Passing APBs:", r.config.Name)
+		r.log.Debugf("Passing APBs:")
 		for _, name := range validNames {
 			r.log.Debugf("-> %s", name)
 		}
 	}
 
 	if len(filteredNames) != 0 {
-		r.log.Info("Filtered APBs:")
-		for _, name := range filteredNames {
-			r.log.Infof("-> %s", name)
-		}
+		go func() {
+			var buffer bytes.Buffer
+			buffer.WriteString("Filtered APBs:\n")
+			for _, name := range filteredNames {
+				buffer.WriteString(fmt.Sprintf("-> %s", name))
+			}
+			r.log.Infof(buffer.String())
+		}()
 	}
 
 	// Debug output filtered out names.
@@ -81,7 +86,7 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	return specs, len(imageNames), nil
 }
 
-// Fail - should this registry and error cause a failure.
+// Fail - will determine if the registry should cause a failure.
 func (r Registry) Fail(err error) bool {
 	if r.config.Fail {
 		return true

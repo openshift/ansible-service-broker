@@ -45,7 +45,7 @@ white_list: <The list of regular expressions used to define which image names sh
 black_list: <The list of regular expressions used to define which images names should neve be allowed through.>
 ```
 
-For filter please look at the filtering documentation.
+For filter please look at the [filtering documentation](apb-filter-design.md).
 
 
 ### Mock Registry
