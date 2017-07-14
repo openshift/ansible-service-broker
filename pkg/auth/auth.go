@@ -4,7 +4,7 @@ import "net/http"
 
 // AuthProvider - interface for all Auth providers
 type AuthProvider interface {
-	getPrincipal(*http.Request) Principal
+	GetPrincipal(*http.Request) (Principal, error)
 }
 
 // Principal - principal user or other identity of some kind with access to the
@@ -15,7 +15,7 @@ type Principal interface {
 }
 
 type UserServiceAdapter interface {
-	FindByLogin(string) User
+	FindByLogin(string) (User, error)
 	ValidateUser(string, string) bool
 }
 
@@ -35,8 +35,8 @@ func (u User) GetName() string {
 type DefaultUserServiceAdapter struct {
 }
 
-func (d DefaultUserServiceAdapter) FindByLogin(string) User {
-	return User{Username: "asb", Password: "password"}
+func (d DefaultUserServiceAdapter) FindByLogin(string) (User, error) {
+	return User{Username: "asb", Password: "password"}, nil
 }
 func (d DefaultUserServiceAdapter) ValidateUser(username string, password string) bool {
 	return false
