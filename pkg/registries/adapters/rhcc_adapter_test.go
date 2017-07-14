@@ -1,12 +1,14 @@
-package apb
+package adapters
 
 import (
 	"fmt"
-	logging "github.com/op/go-logging"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
+
+	logging "github.com/op/go-logging"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
@@ -96,7 +98,7 @@ const ManifestResponse = `
 }
 `
 
-func TestLoadSpecs(t *testing.T) {
+func TestGetImages(t *testing.T) {
 	serv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var response = RhccResponse
 		if r.Method != "GET" {
@@ -118,13 +120,16 @@ func TestLoadSpecs(t *testing.T) {
 	}))
 
 	var log = &logging.Logger{}
-	config := RegistryConfig{Name: "rhcc", URL: serv.URL}
-	reg, err := NewRegistry(config, log)
-	specs, num, err := reg.LoadSpecs()
-	ft.AssertEqual(t, num, 3)
-	ft.AssertNotNil(t, specs)
+	u, err := url.Parse(serv.URL)
 	if err != nil {
 		t.Fatal("ERROR: ", err)
 	}
-
+	config := Configuration{URL: u}
+	adapter := RHCCAdapter{Config: config, Log: log}
+	imageNames, err := adapter.GetImageNames()
+	ft.AssertEqual(t, len(imageNames), 3)
+	ft.AssertNotNil(t, imageNames)
+	if err != nil {
+		t.Fatal("ERROR: ", err)
+	}
 }

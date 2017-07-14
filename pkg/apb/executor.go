@@ -30,7 +30,7 @@ func ExecuteApb(
 	}
 
 	log.Debug("ExecutingApb:")
-	log.Debug("name:[ %s ]", spec.Name)
+	log.Debug("name:[ %s ]", spec.FQName)
 	log.Debug("image:[ %s ]", spec.Image)
 	log.Debug("action:[ %s ]", action)
 	log.Debug("pullPolciy:[ %s ]", clusterConfig.PullPolicy)

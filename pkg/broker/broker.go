@@ -1,15 +1,19 @@
 package broker
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"strings"
 
 	"github.com/coreos/etcd/client"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/pborman/uuid"
 	k8srestclient "k8s.io/client-go/rest"
 )
@@ -60,14 +64,14 @@ type AnsibleBroker struct {
 	dao           *dao.Dao
 	log           *logging.Logger
 	clusterConfig apb.ClusterConfig
-	registry      apb.Registry
+	registry      []registries.Registry
 	engine        *WorkEngine
 	brokerConfig  Config
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
 func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
-	registry apb.Registry, engine WorkEngine, brokerConfig Config,
+	registry []registries.Registry, engine WorkEngine, brokerConfig Config,
 ) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
 		dao:           dao,
@@ -186,16 +190,53 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		a.log.Error("Something went real bad trying to delete batch specs... - %v", err)
 		return nil, err
 	}
+	specs = []*apb.Spec{}
 
-	if specs, imageCount, err = a.registry.LoadSpecs(); err != nil {
+	//Load Specs for each registry
+	registryErrors := []error{}
+	for _, r := range a.registry {
+		s, count, err := r.LoadSpecs()
+		if err != nil && r.Fail(err) {
+			a.log.Errorf("registry caused bootstrap failure - %v", err)
+			return nil, err
+		}
+		if err != nil {
+			a.log.Warningf("registry: %v was unable to complete bootstrap - %v",
+				r.RegistryName, err)
+			registryErrors = append(registryErrors, err)
+		}
+		imageCount += count
+		addNameAndIDForSpec(s, r.RegistryName())
+		specs = append(specs, s...)
+	}
+	if len(registryErrors) == len(a.registry) {
+		return nil, errors.New("all registries failed on bootstrap")
+	}
+	specManifest := map[string]*apb.Spec{}
+	for _, s := range specs {
+		specManifest[s.ID] = s
+	}
+	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
-
-	if err := a.dao.BatchSetSpecs(apb.NewSpecManifest(specs)); err != nil {
-		return nil, err
-	}
+	a.log.Debugf("specs -> %v", specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
+}
+
+// addNameAndIDForSpec - will create the unique spec name and id
+// and set it for each spec
+func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
+	for _, spec := range specs {
+		//need to make / a hyphen to allow for global uniqueness but still match spec.
+		spec.FQName = strings.Replace(fmt.Sprintf("%v-%v", registryName, spec.Image),
+			"/", "-", -1)
+
+		// ID Will be a md5 hash of the fully qualified spec name.
+		hasher := md5.New()
+		hasher.Write([]byte(spec.FQName))
+		spec.ID = hex.EncodeToString(hasher.Sum(nil))
+	}
 }
 
 // Recover - Will recover the broker.
@@ -405,7 +446,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	var err error
 
 	// Retrieve requested spec
-	specID := req.ServiceID.String()
+	specID := req.ServiceID
 	if spec, err = a.dao.GetSpec(specID); err != nil {
 		// etcd return not found i.e. code 100
 		if client.IsKeyNotFound(err) {
@@ -758,9 +799,9 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 		if async, provision: it should create a Job that calls apb.Provision. And write the output to etcd.
 	*/
-	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID.String())) // optional
-	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID.String()))       // optional
-	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))          // this is provided with the provision. task id from the work_engine
+	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID))    // optional
+	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID.String())) // optional
+	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))    // this is provided with the provision. task id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
 	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)

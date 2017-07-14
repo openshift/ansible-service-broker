@@ -17,7 +17,7 @@ func Bind(
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")
 	log.Notice(fmt.Sprintf("ServiceInstance.ID: %s", instance.Spec.ID))
-	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.Name))
+	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.FQName))
 	log.Notice(fmt.Sprintf("ServiceInstance.Image: %s", instance.Spec.Image))
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")

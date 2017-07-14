@@ -50,7 +50,7 @@ func TestReadRequest(t *testing.T) {
 	ft.AssertNotNil(t, r, "r")
 	ft.AssertNotNil(t, req, "req")
 	ft.AssertEqual(t, req.PlanID.String(), "4c10ff43-be89-420a-9bab-27a9bef9aed8", "planid doesn't match")
-	ft.AssertEqual(t, req.ServiceID.String(), "f32de3bc-3225-429a-b23b-cef47ca1d25b", "serviceid doesn't match")
+	ft.AssertEqual(t, req.ServiceID, "f32de3bc-3225-429a-b23b-cef47ca1d25b", "serviceid doesn't match")
 	ft.AssertEqual(t, req.Parameters["MYSQL_USER"], "username", "parameters don't match")
 }
 

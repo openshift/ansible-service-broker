@@ -7,7 +7,6 @@ import (
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
-	"github.com/pborman/uuid"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -41,7 +40,7 @@ func TestSpecToService(t *testing.T) {
 
 	spec := apb.Spec{
 		ID:          "50eb5637-6ffe-480d-a52e-a7e603a50fca",
-		Name:        "testspec",
+		FQName:      "testspec",
 		Bindable:    false,
 		Description: "test spec to be converted",
 		Async:       "unsupported",
@@ -51,7 +50,7 @@ func TestSpecToService(t *testing.T) {
 	descriptors["parameters"] = param
 
 	expectedsvc := Service{
-		ID:          uuid.Parse("50eb5637-6ffe-480d-a52e-a7e603a50fca"),
+		ID:          "50eb5637-6ffe-480d-a52e-a7e603a50fca",
 		Name:        "testspec",
 		Description: "test spec to be converted",
 		Bindable:    false,

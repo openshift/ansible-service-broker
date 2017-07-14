@@ -21,7 +21,7 @@ func Provision(
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
 	log.Notice(fmt.Sprintf("Spec.ID: %s", instance.Spec.ID))
-	log.Notice(fmt.Sprintf("Spec.Name: %s", instance.Spec.Name))
+	log.Notice(fmt.Sprintf("Spec.Name: %s", instance.Spec.FQName))
 	log.Notice(fmt.Sprintf("Spec.Image: %s", instance.Spec.Image))
 	log.Notice(fmt.Sprintf("Spec.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
@@ -41,7 +41,7 @@ func Provision(
 	ns := instance.Context.Namespace
 	log.Info("Checking if project %s exists...", ns)
 	if !projectExists(ns) {
-		log.Error("Project %s does NOT exist! Cannot provision requested %s", ns, instance.Spec.Name)
+		log.Error("Project %s does NOT exist! Cannot provision requested %s", ns, instance.Spec.FQName)
 		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}
 
@@ -60,7 +60,7 @@ func Provision(
 	// We should not save credentials from an app that finds them and isn't
 	// bindable
 	if creds != nil && !instance.Spec.Bindable {
-		log.Warningf("APB %s is not bindable", instance.Spec.Name)
+		log.Warningf("APB %s is not bindable", instance.Spec.FQName)
 		log.Warningf("Ignoring Credentials")
 		creds = nil
 	}

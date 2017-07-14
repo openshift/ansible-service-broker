@@ -94,6 +94,23 @@ func AssertNotNil(t *testing.T, a interface{}, message ...string) {
 	t.Fatal(msg)
 }
 
+// AssertNil - Assert input is nil
+func AssertNil(t *testing.T, a interface{}, message ...string) {
+	if a == nil {
+		return
+	}
+
+	var msg string
+	if len(message) != 0 {
+		msg = message[0]
+	}
+
+	if len(message) == 0 {
+		msg = fmt.Sprintf("%v is not nil!", a)
+	}
+	t.Fatal(msg)
+}
+
 // AssertError - Assert that input is an error response
 func AssertError(t *testing.T, body *bytes.Buffer, msg string) {
 	var errResp = make(map[string]string)

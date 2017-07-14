@@ -31,8 +31,8 @@ func SpecToService(spec *apb.Spec) Service {
 	}
 
 	retSvc := Service{
-		ID:          uuid.Parse(spec.ID),
-		Name:        spec.Name,
+		ID:          spec.ID,
+		Name:        spec.FQName,
 		Description: spec.Description,
 		Tags:        make([]string, len(spec.Tags)),
 		Bindable:    spec.Bindable,

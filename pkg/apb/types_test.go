@@ -87,7 +87,7 @@ func TestSpecLoadJSON(t *testing.T) {
 
 	ft.AssertEqual(t, s.ID, SpecID)
 	ft.AssertEqual(t, s.Description, SpecDescription)
-	ft.AssertEqual(t, s.Name, SpecName)
+	ft.AssertEqual(t, s.FQName, SpecName)
 	ft.AssertEqual(t, s.Image, SpecImage)
 	ft.AssertEqual(t, s.Bindable, SpecBindable)
 	ft.AssertEqual(t, s.Async, SpecAsync)
@@ -99,7 +99,7 @@ func TestSpecDumpJSON(t *testing.T) {
 	s := Spec{
 		ID:          SpecID,
 		Description: SpecDescription,
-		Name:        SpecName,
+		FQName:      SpecName,
 		Image:       SpecImage,
 		Tags:        SpecTags,
 		Bindable:    SpecBindable,
@@ -120,13 +120,10 @@ func TestSpecDumpJSON(t *testing.T) {
 	ft.AssertTrue(t, reflect.DeepEqual(knownMap, subjectMap))
 }
 
-func TestSpecLabel(t *testing.T) {
-	ft.AssertEqual(t, BundleSpecLabel, "com.redhat.apb.spec", "spec label does not match dockerhub")
-}
-
 func TestEncodedParameters(t *testing.T) {
 	encodedstring :=
-		`aWQ6IDU1YzUzYTVkLTY1YTYtNGMyNy04OGZjLWUwMjc0MTBiMTMzNwpuYW1lOiBtZWRpYXdpa2kx
+		`
+aWQ6IDU1YzUzYTVkLTY1YTYtNGMyNy04OGZjLWUwMjc0MTBiMTMzNwpuYW1lOiBtZWRpYXdpa2kx
 MjMtYXBiCmltYWdlOiBhbnNpYmxlcGxheWJvb2tidW5kbGUvbWVkaWF3aWtpMTIzLWFwYgpkZXNj
 cmlwdGlvbjogIk1lZGlhd2lraTEyMyBhcGIgaW1wbGVtZW50YXRpb24iCmJpbmRhYmxlOiBmYWxz
 ZQphc3luYzogb3B0aW9uYWwKbWV0YWRhdGE6CiAgZGlzcGxheW5hbWU6ICJSZWQgSGF0IE1lZGlh
@@ -156,8 +153,8 @@ cwo=`
 	if err = yaml.Unmarshal(decodedyaml, spec); err != nil {
 		t.Fatal(err)
 	}
-
-	ft.AssertEqual(t, spec.Name, "mediawiki123-apb")
+	fmt.Printf("%#v", spec)
+	ft.AssertEqual(t, spec.FQName, "mediawiki123-apb")
 	ft.AssertEqual(t, len(spec.Parameters), 5)
 	ft.AssertNotNil(t, spec.Required)
 
