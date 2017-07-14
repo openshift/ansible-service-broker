@@ -53,7 +53,6 @@ type Context struct {
 // ExtractedCredentials - Credentials that are extracted from the pods
 type ExtractedCredentials struct {
 	Credentials map[string]interface{} `json:"credentials,omitempty"`
-	// might be more one day
 }
 
 // State - Job State
