@@ -45,8 +45,7 @@ for APB's. All the registry config options are defined below
 | white_list    | The list of regular expressions used to define which image names should be allowed through.                                     |     N    |
 | black_list    | The list of regular expressions used to define which images names should neve be allowed through.                               |     N    |
 
-For filter please look at the [filtering documentation](apb-filter-design.md).
-
+For filter please look at the [filtering documentation](filtering_apbs.md).
 
 ### Mock Registry
 Using a Mock registry is useful for reading local APB specs. Instead of going
