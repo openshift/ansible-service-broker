@@ -60,7 +60,7 @@ func Provision(
 	// We should not save credentials from an app that finds them and isn't
 	// bindable
 	if creds != nil && !instance.Spec.Bindable {
-		log.Warningf("APB %s is not bindable", instance.Spec.Name)
+		log.Warningf("APB %s is not bindable", instance.Spec.FQName)
 		log.Warningf("Ignoring Credentials")
 		creds = nil
 	}
