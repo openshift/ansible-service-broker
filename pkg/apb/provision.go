@@ -41,7 +41,7 @@ func Provision(
 	ns := instance.Context.Namespace
 	log.Info("Checking if project %s exists...", ns)
 	if !projectExists(ns) {
-		log.Error("Project %s does NOT exist! Cannot provision requested %s", ns, instance.Spec.Name)
+		log.Error("Project %s does NOT exist! Cannot provision requested %s", ns, instance.Spec.FQName)
 		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}
 
