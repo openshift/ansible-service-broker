@@ -38,6 +38,7 @@ type DefaultUserServiceAdapter struct {
 func (d DefaultUserServiceAdapter) FindByLogin(string) (User, error) {
 	return User{Username: "asb", Password: "password"}, nil
 }
+
 func (d DefaultUserServiceAdapter) ValidateUser(username string, password string) bool {
 	return false
 }

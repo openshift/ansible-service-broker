@@ -29,6 +29,19 @@ type handler struct {
 	brokerConfig broker.Config
 }
 
+type AuthHandler struct {
+	wrappedHandler http.Handler
+}
+
+/*
+
+Not 100% sure what I'm doing with this yet
+func (a AuthFilter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// handle auth before calling ServeHTTP
+	a.wrappedHandler.ServeHTTP(w, r)
+}
+*/
+
 // GorillaRouteHandler - gorilla route handler
 // making the handler methods more testable by moving the reliance of mux.Vars()
 // outside of the handlers themselves
