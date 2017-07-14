@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.7
+Version: 0.9.8
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -314,6 +314,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Jul 14 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.8-1
+- 1470860 - Remove broker project creation (#273) (ernelson@redhat.com)
+
 * Tue Jul 11 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.7-1
 - 1468173 - Add bootstrap_on_startup feature (#265) (ernelson@redhat.com)
 - 1469401 - Print out error messages only once (#264) (rhallise@redhat.com)
