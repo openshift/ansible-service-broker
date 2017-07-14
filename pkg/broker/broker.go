@@ -224,6 +224,8 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
 
+// addNameAndIDForSpec - will create the unique spec name and id
+// and set it for each spec
 func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 	for _, spec := range specs {
 		//need to make / a hyphen to allow for global uniqueness but still match spec.
