@@ -195,7 +195,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	//Load Specs for each registry
 	registryErrors := []error{}
 	for _, r := range a.registry {
-		s, i, err := r.LoadSpecs()
+		s, count, err := r.LoadSpecs()
 		if err != nil && r.Fail(err) {
 			a.log.Errorf("registry caused bootstrap failure - %v", err)
 			return nil, err
@@ -205,7 +205,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 				r.RegistryName, err)
 			registryErrors = append(registryErrors, err)
 		}
-		imageCount += i
+		imageCount += count
 		addNameAndIDForSpec(s, r.RegistryName())
 		specs = append(specs, s...)
 	}

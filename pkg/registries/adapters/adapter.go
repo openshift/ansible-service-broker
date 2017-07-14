@@ -12,7 +12,7 @@ import (
 	yaml "gopkg.in/yaml.v1"
 )
 
-//Adapter - Adapter will wrap the methods that a registry needs to fully manage images.
+// Adapter - Adapter will wrap the methods that a registry needs to fully manage images.
 type Adapter interface {
 	// RegistryName will return the registiry prefix for the adapter.
 	// Example is docker.io for the dockerhub adapter.
@@ -28,7 +28,7 @@ type Adapter interface {
 const BundleSpecLabel = "com.redhat.apb.spec"
 
 // Configuration - Adapter configuration. Contains the info that the adapter
-// would need to complete it's request to the images.
+// would need to complete its request to the images.
 type Configuration struct {
 	URL  *url.URL
 	User string
