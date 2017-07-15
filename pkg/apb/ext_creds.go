@@ -52,7 +52,7 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 		// TODO: Replace the string parsing by passing around the pod
 		// object and checking its status
 		if stillWaiting {
-			log.Warning("[%s] Retry attempt %d: Waiting for container to start", podname, r)
+			log.Info("[%s] Retry attempt %d: Waiting for container to start", podname, r)
 		} else if podCompleted {
 			log.Notice("[%s] APB completed", podname)
 			return nil, nil
