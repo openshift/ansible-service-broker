@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/pborman/uuid"
 )
@@ -29,8 +30,27 @@ type handler struct {
 	brokerConfig broker.Config
 }
 
+/*
+DO I MAKE IT A STRUCT?
 type AuthHandler struct {
 	wrappedHandler http.Handler
+}
+*/
+
+/*
+Do I make it a function?
+*/
+func AuthHandler(h http.Handler, providers []auth.AuthProvider) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		principal, err := providers[0].GetPrincipal(r)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		fmt.Printf("%v\n", principal)
+		h.ServeHTTP(w, r)
+		return
+	})
 }
 
 /*
@@ -86,7 +106,10 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	return handlers.LoggingHandler(os.Stdout, h)
+	fusa := auth.NewFileUserServiceAdapter("/tmp/foo")
+	ba := auth.NewBasicAuth(fusa)
+
+	return AuthHandler(handlers.LoggingHandler(os.Stdout, h), []auth.AuthProvider{ba})
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
