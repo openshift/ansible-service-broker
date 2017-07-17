@@ -29,10 +29,11 @@ const BundleSpecLabel = "com.redhat.apb.spec"
 // Configuration - Adapter configuration. Contains the info that the adapter
 // would need to complete its request to the images.
 type Configuration struct {
-	URL  *url.URL
-	User string
-	Pass string
-	Org  string
+	URL    *url.URL
+	User   string
+	Pass   string
+	Org    string
+	Images []string
 }
 
 // Retrieve the spec from a registry manifest request
