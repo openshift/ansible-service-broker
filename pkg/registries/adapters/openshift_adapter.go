@@ -11,7 +11,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
-const openShiftName = "docker.io"
+const openShiftName = "OpenShift"
 const openShiftAuthURL = "https://sso.redhat.com/auth/realms/rhc4tp/protocol/docker-v2/auth?service=docker-registry"
 const openShiftManifestURL = "https://registry.connect.redhat.com/v2/%v/manifests/latest"
 
@@ -72,15 +72,15 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 	}
 	username := r.Config.User
 	password := r.Config.Pass
-	var auth_string = username + ":" + password
+	var authString = username + ":" + password
 
-	auth_string = b64.StdEncoding.EncodeToString([]byte(auth_string))
+	authString = b64.StdEncoding.EncodeToString([]byte(authString))
 
 	req, err := http.NewRequest("GET", openShiftAuthURL, nil)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %v", auth_string))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %v", authString))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
