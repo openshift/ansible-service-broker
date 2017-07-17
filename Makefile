@@ -1,6 +1,6 @@
 REGISTRY         ?= docker.io
-PROJECT          ?= ansibleplaybookbundle
-TAG              ?= latest
+PROJECT          ?= apbsummit2017
+TAG              ?= summit2017
 BROKER_APB_IMAGE = $(REGISTRY)/$(PROJECT)/ansible-service-broker-apb
 
 build: $(shell find cmd pkg)
@@ -34,8 +34,8 @@ asb-image:
 	ansible-container shipit openshift --pull-from $(REGISTRY)/$(PROJECT) --tag $(TAG)
 	# fix bug in ansible-container
 	sed -i 's/-TCP//g' ./ansible/roles/ansible-service-broker-openshift/tasks/main.yml
-	docker build -t $(BROKER_APB_IMAGE) .
-	docker push $(BROKER_APB_IMAGE)
+	docker build -t $(BROKER_APB_IMAGE):$(TAG) .
+	docker push $(BROKER_APB_IMAGE):$(TAG)
 
 
 .PHONY: run run-mock-registry clean test build asb-image

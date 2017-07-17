@@ -6,7 +6,10 @@
 - hosts: asb
   gather_facts: true
   vars:
-    asb_checkout: /opt/go/src/github.com/openshift/ansible-service-broker
+    asb_repo: https://github.com/openshift/ansible-service-broker.git
+    asb_branch: summit2017
+    asb_org_dir: /opt/go/src/github.com/openshift
+    asb_dest: "{{ asb_org_dir }}/ansible-service-broker"
     etc_dest: /etc/ansible-service-broker
     bin_dest: /usr/local/ansible-service-broker/bin
   environment:
@@ -39,7 +42,7 @@
       with_items:
         - { dest: "/var/log/ansible-service-broker.log", mode: "g+rw", state: touch }
         - { dest: "/.kube", mode: "g+rw", state: directory }
-        - { dest: "/opt/go/src/github.com/openshift", mode: "g+rw", state: directory }
+        - { dest: "{{ asb_org_dir }}", mode: "g+rw", state: directory }
         - { dest: "{{ etc_dest }}", mode: "g+rw", state: directory }
         - { dest: "{{ bin_dest }}", mode: "ug+x", state: directory }
 
@@ -69,25 +72,25 @@
         warn: false
     - name: Checkout ansible-service-broker
       git:
-        repo: https://github.com/openshift/ansible-service-broker.git
-        dest: "{{asb_checkout}}"
-        version: demo
+        repo: "{{ asb_repo }}"
+        dest: "{{ asb_dest }}"
+        version: "{{ asb_branch }}"
     - name: Install ansible-service-broker dependencies
       shell: glide install
       args:
-        chdir: /opt/go/src/github.com/openshift/ansible-service-broker
+        chdir: "{{ asb_dest }}"
       environment:
         PATH: "{{ansible_env.PATH}}:/usr/local/go/bin"
     - name: Build ansible-service-broker
       make:
-        chdir: /opt/go/src/github.com/openshift/ansible-service-broker
+        chdir: "{{ asb_dest }}"
         target: build
       environment:
         PATH: "{{ansible_env.PATH}}:/usr/local/go/bin"
     - name: Record broker sha
       shell: git rev-parse HEAD > /usr/local/ansible-service-broker/sha
       args:
-        chdir: /opt/go/src/github.com/openshift/ansible-service-broker
+        chdir: "{{ asb_dest }}"
     - name: Install ansible-service-broker
       copy: remote_src=True src={{item.src}} dest={{item.dest}} mode={{item.mode}}
       with_items:
@@ -97,34 +100,34 @@
             mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
-            src: "{{asb_checkout}}/docker/oc-login.sh",
+            src: "{{asb_dest}}/docker/oc-login.sh",
             dest: /usr/bin,
             mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
-            src: "{{asb_checkout}}/etc/ex.mock.config.yaml",
+            src: "{{asb_dest}}/etc/ex.mock.config.yaml",
             dest: "{{etc_dest}}/config.yaml",
             mode: "u+rw,g+rw,o+rw"
           }
         - {
-            src: "{{asb_checkout}}/scripts/get_images_for_org.sh",
+            src: "{{asb_dest}}/scripts/get_images_for_org.sh",
             dest: "{{bin_dest}}",
             mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
-            src: "{{asb_checkout}}/docker/ansible-service-broker",
+            src: "{{asb_dest}}/docker/ansible-service-broker",
             dest: /usr/bin,
             mode: "u+rwx,g+rwx,o+rwx"
           }
         - {
-            src: "{{asb_checkout}}/extras/mock-registry-data.yaml",
+            src: "{{asb_dest}}/extras/mock-registry-data.yaml",
             dest: "{{etc_dest}}/mock-registry-data.yaml",
             mode: "u+rw,g+rw,o+rw"
           }
     - name: Install entrypoint.sh
       copy:
         remote_src: True
-        src: "{{asb_checkout}}/docker/entrypoint.sh"
+        src: "{{asb_dest}}/docker/entrypoint.sh"
         dest: /usr/bin
         mode: "u+rwx,g+rwx,o+rwx"
     - name: Cleanup build deps

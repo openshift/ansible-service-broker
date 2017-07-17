@@ -23,7 +23,7 @@ CentOS/RHEL/Fedora (sub dnf for Fedora):
 ```
 mkdir -p $GOPATH/src/github.com/openshift
 git clone https://github.com/openshift/ansible-service-broker.git $GOPATH/src/github.com/openshift/ansible-service-broker
-cd $GOPATH/src/github.com/openshift/ansible-service-broker && glide install
+cd $GOPATH/src/github.com/openshift/ansible-service-broker && make vendor
 ```
 
 **Config**
@@ -39,6 +39,16 @@ or the configuration file can be specified by cli args as well.
 `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
 `make run-mock-registry`: Mock registry. Entirely separate binary.
 `make test`: Runs the test suite.
+`make asb-image`: Create image.
+
+Making the asb images requires ansible-container 0.3.0.
+```bash
+virtualenv /tmp/ansible-container
+source /tmp/ansible-container/bin/activate
+pip install "ansible-container==0.3.0"
+DOCKERHUB_USER=<username> DOCKERHUB_PASS=<password> make asb-image
+```
+
 
 **Note**
 
