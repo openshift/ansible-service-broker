@@ -50,7 +50,7 @@ Our dependencies currently require development headers for btrfs and dev-mapper.
 
 CentOS/RHEL/Fedora (sub dnf for Fedora):
 
-`sudo yum install device-mapper-devel btrfs-progs-devel etcd`
+`sudo yum install device-mapper-devel btrfs-progs-devel etcd jq`
 
 ## Setup
 
@@ -75,7 +75,9 @@ configurations.
 * `make vendor`: Installs or updates the dependencies
 * `make build`: Builds the binary from source
 * `make install`: Installs the built binary.
-* `make run`: Runs the broker with the default profile, configured via `/etc/dev.config.yaml`
+* `make prepare-local-env`: will set up the local environemt to test and run the broker against a local deployment of [catasb](https://github.com/fusor/catasb)
+* `make run`: Runs the broker with the default profile, configured via `/etc/generated_local_development.yaml`
+  * make run can be run without catasb and prepare-local-env by setting the `BROKER_INSECURE="true"` variable to true in `scripts/my_local_dev_vars` 
 * `make uninstall` Deletes the installed binary and config.yaml
   * Notes for install, run, and uninstall:
     * The default install prefix is /usr/local. Use `make build && sudo make install` to build and install.
@@ -90,7 +92,7 @@ configurations.
 
 ### Misc Targets
 * `make clean`: Delete binaries built from source
-* `make run`: Runs the broker with the default profile, configured via `/etc/config.yaml`
+* `make run`: Runs the broker with the default profile, configured via `/etc/generated_local_development.yaml`
 * `make install`: Builds the source and installs in `$GOPATH/bin`
 * `make test`: Runs the test suite.
 * `make vendor`: Updates the dependencies

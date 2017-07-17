@@ -4,13 +4,13 @@
 
 We recommend 2 modes of running the broker for development work.
 
-1. Build the broker executable and run it locally connected to a local oc cluster up from [fusor/catasb 'dev' branch](https://github.com/fusor/catasb/tree/dev)
+1. Build the broker executable and run it locally connected to a local oc cluster up from [fusor/catasb 'master' branch](https://github.com/fusor/catasb)
 2. Build a local image and deploy from image
 
 ## Running the broker executable locally
 
 1. Build the Ansible Service Broker executable with the command: ```make build```
-2. Ensure you have a local oc cluster up environment running with [fusor/catasb 'dev' branch](https://github.com/fusor/catasb/tree/dev)
+2. Ensure you have a local oc cluster up environment running with [fusor/catasb 'master' branch](https://github.com/fusor/catasb)
 3. ```cp scripts/my_local_dev_vars.example scripts/my_local_dev_vars```
 4. Edit 'scripts/my_local_dev_vars' 
 5. Prepare your local development environment by running: ```make prepare-local-env```
