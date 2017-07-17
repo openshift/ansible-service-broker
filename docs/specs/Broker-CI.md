@@ -1,6 +1,6 @@
-# Broker CI
+# Broker Continuous Integration
 
-The Broker CI spec will outline how the project is going create CI.
+The Broker CI spec will outline how the project is going to create CI.
 
 ## Introduction
 The Broker CI will involve multiple projects: ansible-service-broker
@@ -10,12 +10,14 @@ each repo to achieve a successful CI run outlined in the next section.
 ## Successful CI Run
 A successful CI run is spawning the broker and using the latest
 rhscl-postgresapb and mediawiki-apb images to build a MediaWiki page.
+The MediiaWiki page will be verified by curling information from the page
+and checking it's correct.
 
 ## Environment
 The expected running service in the environment in all test cases will be:
 - Docker
-- Openshift Cluster
-- Service-Catalog
+- OpenShift Cluster
+- [Service-Catalog](https://github.com/kubernetes-incubator/service-catalog)
 
 The services that will be deployed every CI run are:
 - ansible-service-broker
@@ -34,30 +36,75 @@ Should Jenkins be run in the OpenShift Cluster?
 
 ## Trigger
 Jenkins has a github plugin that will track when a PR has been pushed to a repo.
-So the trigger will be handled entirely by Jenkin.
+So the trigger will be handled entirely by Jenkins.
 
 There will be triggers on both apb-examples and ansible-service-broker repos.
 
+### Advanced CI Triggers
+The more expensive CI operations should only be only started by a trigger.
+After a PR has been testing by the cheap CI and recieved an approval, a
+CI trigger can by used by commenting in the PR.
+
 ## Test Process
-The test process will execute the following tests in order:
-- Deploy the ansible-service-broker
+There will be different levels of CI that will be used for a PR.
+
+- 'Fast and Cheap' will run with every change to a PR.
+- 'Full Test' will be triggered when a PR has been approved and is passing
+the Fast and Cheap CI. Commenting ```full-test``` in Git will trigger the 'Full
+Test'.
+
+< add any additional CI layers here>
+
+### Fast and Cheap
+- Build the Broker, MediaWiki, and rhscl-prosgrsql containers
+- Deploy the Broker
 - Provision MediaWiki
 - Provision rhscl-postgresql
 - Bind rhscl-postgresql to MediaWiki
 - Pull information from the MediaWiki page
 
-### Local Testing
+Runtime with caching: ~2 minutes
+
+### Full Test
+- Deploy OpenShift & Service-Catalog with catasb
+- Build the Broker, MediaWiki, and rhscl-prosgrsql containers
+- Deploy the Broker
+- Provision MediaWiki
+- Provision rhscl-postgresql
+- Bind rhscl-postgresql to MediaWiki
+- Pull information from the MediaWiki page
+
+Runtime with caching: ~5 minutes
+
+## Local Testing
 Locally running that gate would be a huge advantage. It would allow for faster
 failures and would put a lot less strain on the gating jobs.
 
 To achieve local gating, the script executing the [Test Process](#test-process)
-needs to be a workflow only involving locally available tools: service-catalog,
-ansible-service-broker, Openshift cli, Docker, and Ansible/GO/Python/Bash.
+needs to be a workflow only involving locally available tools:
+- service-catalog
+- ansible-service-broker
+- OpenShift cli
+- Docker
+- Ansible/GO/Python/Bash
+
+local workflow:
+- Build MediaWiki & rhscl-postgresql containers
+- ```make run &```
+- Provision MediaWiki
+- Provision rhscl-postgresql
+- Bind rhscl-postgresql to MediaWiki
+- Pull information from the MediaWiki page
+- kill make run process
 
 ## Images
-There are six Docker images that will be *latest* in every CI run: etcd,
-ansible-service-broker, MediaWiki-apb, MediaWiki, rhscl-postgresql-apb,
-postgresql.
+There are six Docker images that will be *latest* in every CI run:
+- etcd
+- ansible-service-broker
+- MediaWiki-apb
+- MediaWiki
+- rhscl-postgresql-apb
+- postgresql
 
 *latest* implies that they are being built locally or pulled using the latest
 tag.
@@ -93,7 +140,12 @@ behind a cli that the CI can use.
 
 #### Using Bash
 The CI job can execute the tests purely from bash by having an OpenShift client
-already installed and configured to point at the service-catalog. In addition,
+already installed and configured to point at the service-catalog.
+
+#### Using GO
+Using a more powerful language to organize the CI will allow for it to be more
+extensible. Ci jobs can be organized behind objects so creating new jobs will
+be easy in the future.
 
 ## Work Items
 - Build a script that will contact the service-catalog to perform operations
