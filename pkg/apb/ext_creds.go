@@ -38,8 +38,8 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 	for r := 1; r <= credentialExtRetries; r++ {
 		// err will be the return code from the exec command
 		// Use the error code to deterine the state
-		FailedToExec := errors.New("exit status 1")
-		CredsNotAvailable := errors.New("exit status 2")
+		failedToExec := errors.New("exit status 1")
+		credsNotAvailable := errors.New("exit status 2")
 
 		output, err := RunCommand("oc", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
 		podCompleted := strings.Contains(string(output), "current phase is Succeeded") ||
@@ -48,13 +48,13 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 		if err == nil {
 			log.Notice("[%s] Bind credentials found", podname)
 			return output, nil
-		} else if podCompleted && err.Error() == FailedToExec.Error() {
+		} else if podCompleted && err.Error() == failedToExec.Error() {
 			log.Notice("[%s] APB completed", podname)
 			return nil, nil
-		} else if err.Error() == FailedToExec.Error() {
+		} else if err.Error() == failedToExec.Error() {
 			log.Info(string(output))
 			log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
-		} else if err.Error() == CredsNotAvailable.Error() {
+		} else if err.Error() == credsNotAvailable.Error() {
 			log.Info(string(output))
 			log.Warning("[%s] Retry attempt %d: Bind credentials not availble yet", podname, r)
 		} else {
