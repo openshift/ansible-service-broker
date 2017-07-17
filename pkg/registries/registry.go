@@ -155,6 +155,8 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		adapter = &adapters.DockerHubAdapter{Config: c, Log: log}
 	case "mock":
 		adapter = &adapters.MockAdapter{Config: c, Log: log}
+	case "openshift":
+		adapter = &adapters.OpenShiftAdapter{Config: c, Log: log}
 	default:
 		panic("Unknown registry")
 	}
