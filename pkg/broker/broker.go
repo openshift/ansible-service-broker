@@ -45,11 +45,13 @@ type Broker interface {
 
 // Config - Configuration for the broker.
 type Config struct {
-	DevBroker          bool `yaml:"dev_broker"`
-	LaunchApbOnBind    bool `yaml:"launch_apb_on_bind"`
-	BootstrapOnStartup bool `yaml:"bootstrap_on_startup"`
-	Recovery           bool `yaml:"recovery"`
-	OutputRequest      bool `yaml:"output_request"`
+	DevBroker          bool   `yaml:"dev_broker"`
+	LaunchApbOnBind    bool   `yaml:"launch_apb_on_bind"`
+	BootstrapOnStartup bool   `yaml:"bootstrap_on_startup"`
+	Recovery           bool   `yaml:"recovery"`
+	OutputRequest      bool   `yaml:"output_request"`
+	SSLCertKey         string `yaml:"ssl_cert_key"`
+	SSLCert            string `yaml:"ssl_cert"`
 }
 
 // DevBroker - Interface for the development broker.

@@ -45,6 +45,8 @@ export KUBERNETES_SERVICE_PORT=${OPENSHIFT_SERVER_PORT}
 SVC_ACCT_TOKEN_DIR=/var/run/secrets/kubernetes.io/serviceaccount
 SVC_ACCT_CA_CRT=$SVC_ACCT_TOKEN_DIR/ca.crt
 SVC_ACCT_TOKEN_FILE=$SVC_ACCT_TOKEN_DIR/token
+TLS_CRT=$SVC_ACCT_TOKEN_DIR/tls.crt
+TLS_KEY=$SVC_ACCT_TOKEN_DIR/tls.key
 
 # We rely on jq for parsing json data from oc/kubectl
 which jq &> /dev/null
@@ -120,6 +122,45 @@ fi
 echo "Service Account: token"
 echo -e "Wrote \n${BROKER_SVC_ACCT_TOKEN}\n to: ${SVC_ACCT_TOKEN_FILE}\n"
 
+###
+# Fetch the tls.crt for the asb deployment
+###
+TLS_CRT_DATA=`oc get secret asb-tls -o json | jq -c '.data["tls.crt"]'`
+# Remove quotes from variable
+TLS_CRT_DATA=( $(eval echo ${TLS_CRT_DATA[@]}) )
+# Base64 Decode
+TLS_CRT_DATA=`echo ${TLS_CRT_DATA} | base64 --decode `
+if [ "$?" -ne 0 ]; then
+  echo "Unable to determine tls.crt for secret asb-tls"
+  exit 1
+fi
+echo "${TLS_CRT_DATA}" &> ${TLS_CRT}
+if [ "$?" -ne "0" ]; then
+  echo "Unable to write the tls.crt data for asb-tls to: ${TLS_CRT}"
+  exit 1
+fi
+echo "TLS Cert: tls.crt"
+echo -e "Wrote \n${TLS_CRT_DATA}\n to: ${TLS_CRT}\n"
+
+###
+# Fetch the tls.crt for the asb deployment
+###
+TLS_KEY_DATA=`oc get secret asb-tls -o json | jq -c '.data["tls.key"]'`
+# Remove quotes from variable
+TLS_KEY_DATA=( $(eval echo ${TLS_KEY_DATA[@]}) )
+# Base64 Decode
+TLS_KEY_DATA=`echo ${TLS_KEY_DATA} | base64 --decode `
+if [ "$?" -ne 0 ]; then
+  echo "Unable to determine tls.crt for secret asb-tls"
+  exit 1
+fi
+echo "${TLS_KEY_DATA}" &> ${TLS_KEY}
+if [ "$?" -ne "0" ]; then
+  echo "Unable to write the tls.crt data for asb-tls to: ${TLS_KEY}"
+  exit 1
+fi
+echo "TLS Cert: tls.crt"
+echo -e "Wrote \n${TLS_KEY_DATA}\n to: ${TLS_KEY}\n"
 # Kill any running broker pods
 oc scale deployments asb --replicas 0 -n ${ASB_PROJECT}
 # Wait for asb pod to be destroyed
@@ -184,5 +225,7 @@ broker:
   bootstrap_on_startup: ${BOOTSTRAP_ON_STARTUP:-true}
   recovery: true
   output_request: true
+  ssl_cert_key: ${TLS_KEY}
+  ssl_cert: ${TLS_CRT}
 EOF
 
