@@ -38,10 +38,6 @@ if [ -z "${BROKER_CONFIG}" ]; then
   exit 1
 fi
 
-if [ "${BROKER_INSECURE}" == "true" ]; then
-  echo "${BROKER_INSECURE}"
-fi
-
 if [ "${BROKER_INSECURE}" = "true" ]; then
     echo "Running ${BROKER_CMD} --config ${BROKER_CONFIG} --insecure" 
     ${BROKER_CMD} --config ${BROKER_CONFIG} --insecure
