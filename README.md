@@ -70,6 +70,13 @@ as desired.
 See the [Broker Configuration](docs/config.md) doc for other example
 configurations.
 
+## Published Images
+The ansible-service-broker community publishes images in (dockerhub)[https://hub.docker.com/u/ansibleplaybookbundle].
+Image tags:
+- **canary** - The newest source build
+- **latest** - The newest release build
+- **<release_number>** - The stable release of an image
+
 ## Targets
 ### Broker Targets
 * `make vendor`: Installs or updates the dependencies
