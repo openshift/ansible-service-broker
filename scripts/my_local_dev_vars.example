@@ -16,6 +16,7 @@ DOCKERHUB_PASSWORD=""
 DOCKERHUB_ORG="ansibleplaybookbundle"
 BOOTSTRAP_ON_STARTUP="true"
 BEARER_TOKEN_FILE=""
+BROKER_INSECURE="true"
 CA_FILE=""
 
 # Always, IfNotPresent, Never
