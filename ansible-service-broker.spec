@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.8
+Version: 0.9.9
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -314,6 +314,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Jul 19 2017 Jason Montleon <jmontleo@redhat.com> 0.9.9-1
+- 1470861 - Lower APB SA permission to admin (#285) (ernelson@redhat.com)
+
 * Fri Jul 14 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.8-1
 - 1470860 - Remove broker project creation (#273) (ernelson@redhat.com)
 
