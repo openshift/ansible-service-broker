@@ -79,5 +79,10 @@ elif [[ "$action" == "test" ]]; then
   echo "              Test               "
   echo "================================="
   make test
+elif [[ "$action" == "ci" ]]; then
+  echo "================================="
+  echo "            Broker CI            "
+  echo "================================="
+  ./scripts/broker-ci/setup.sh
+#  make ci
 fi
-
