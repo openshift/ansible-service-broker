@@ -1,7 +1,7 @@
 apps:
   - id: 7f317094-45b7-47de-99cb-a8973840f4f3
     name: cloudfront-apb
-    image: ansibleplaybookbundle/cloudfront-apb
+    image: apbsummit2017/cloudfront-apb
     description: Content Delivery Network (CDN)
     tags:
       - amazon
@@ -17,7 +17,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/cloudfront/"
   - id: 650fc7c3-12e3-4cce-b36c-2984e076768d
     name: elasticache-apb
-    image: ansibleplaybookbundle/elasticache-apb
+    image: apbsummit2017/elasticache-apb
     description: Fully managed, in-memory data store and cache in the cloud. Compatible with Redis and Memcached.  Provides sub-millisecond latency to power real-time applications.
     tags:
       - amazon
@@ -32,7 +32,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/elasticache/"
   - id: 4daf53ae-460d-4319-8698-212743a1a330
     name: elb-apb
-    image: ansibleplaybookbundle/elb-apb
+    image: apbsummit2017/elb-apb
     description: Elastic Load Balancing
     tags:
       - amazon
@@ -48,7 +48,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/elasticloadbalancing/"
   - id: c9f8f8e1-81ff-4825-ae26-94fb12696f20
     name: emr-apb
-    image: ansibleplaybookbundle/emr-apb
+    image: apbsummit2017/emr-apb
     description: Easily Run and Scale Apache Hadoop, Spark, HBase, Presto, Hive, and other Big Data Frameworks
     tags:
       - amazon
@@ -63,7 +63,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/emr/"
   - id: 334c6ee4-ed6a-4520-9c1b-b068d8d4a7a7
     name: rds-aurora-apb
-    image: ansibleplaybookbundle/rds-aurora-apb
+    image: apbsummit2017/rds-aurora-apb
     description: Managed relational database service with a choice of six popular database engines.  Set up, operate, and scale a relational database in the cloud with just a few clicks.
     tags:
       - amazon
@@ -78,7 +78,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/rds/"
   - id: 202a2432-1d1a-4182-aa35-00402ffc5ee3
     name: rds-mysql-apb
-    image: ansibleplaybookbundle/rds-mysql-apb
+    image: apbsummit2017/rds-mysql-apb
     description: Managed relational database service with a choice of six popular database engines.  Set up, operate, and scale a relational database in the cloud with just a few clicks.
     tags:
       - amazon
@@ -93,7 +93,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/rds/"
   - id: 0aaafc10-132b-41a8-a58c-73268ff1006a
     name: rds-postgres-apb
-    image: ansibleplaybookbundle/rds-postgres-apb
+    image: apbsummit2017/rds-postgres-apb
     description: Managed relational database service with a choice of six popular database engines.  Set up, operate, and scale a relational database in the cloud with just a few clicks.
     tags:
       - amazon
@@ -172,7 +172,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/rds/"
   - id: 9ce41143-1c76-4fc1-9828-4fbe2648ee24
     name: redshift-apb
-    image: ansibleplaybookbundle/redshift-apb
+    image: apbsummit2017/redshift-apb
     description: Fast, simple, cost-effective data warehousing.
     tags:
       - amazon
@@ -187,7 +187,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/redshift/"
   - id: 9e8772a5-73ac-4cab-a089-a167a0d972a5
     name: route53-apb
-    image: ansibleplaybookbundle/route53-apb
+    image: apbsummit2017/route53-apb
     description: Highly available and scalable cloud Domain Name System (DNS) web service.
     tags:
       - amazon
@@ -203,7 +203,7 @@ apps:
       documentationUrl: "https://aws.amazon.com/route53/"
   - id: 64297e88-657c-46ab-bb50-2af7f84e5ec5
     name: postgresql-demo-apb
-    image: ansibleplaybookbundle/postgresql-demo-apb
+    image: apbsummit2017/postgresql-demo-apb
     description: PostgreSQL apb implementation
     bindable: true
     async: optional
@@ -231,7 +231,7 @@ apps:
         default: admin
   - id: b4325aea-0479-4f8d-b502-1922bbaee13e
     name: manageiq-apb
-    image: ansibleplaybookbundle/manageiq-apb
+    image: apbsummit2017/manageiq-apb
     description: "ManageIQ is an open source management platform for Hybrid IT."
     bindable: false
     async: optional
