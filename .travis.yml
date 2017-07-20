@@ -1,20 +1,22 @@
 language: go
 go:
   - "1.7.x"
-language: python
-python:
-  - "2.7"
 dist: trusty
 sudo: required
 group: edge
-services:
- - docker
+
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y python-apt autoconf pkg-config e2fslibs-dev libblkid-dev zlib1g-dev liblzo2-dev asciidoc
 install:
-  - pip install ansible==2.3.1 docker-py
+  - sudo pip install ansible==2.3.1 docker-py
   - ./scripts/travis.sh install
+before_script:
+  - tmp=`mktemp`
+  - echo '{"insecure-registries":["172.30.0.0/16"]}' > ${tmp}
+  - sudo mv ${tmp} /etc/docker/daemon.json
+  - sudo mount --make-shared /
+  - sudo service docker restart
 script:
   - ./scripts/travis.sh format
   - ./scripts/travis.sh vet
@@ -22,3 +24,4 @@ script:
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh ci
+  - sudo docker images
