@@ -295,7 +295,7 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 
 	// plan_id is optional
 	if val, ok := queryparams["plan_id"]; ok {
-		req.PlanID = uuid.Parse(val[0])
+		req.PlanID = val[0]
 	}
 
 	resp, err := h.broker.LastOperation(instanceUUID, &req)

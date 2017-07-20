@@ -32,7 +32,7 @@ type DashboardClient struct {
 // Plan - Plan to be returned
 // based on https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#plan-object
 type Plan struct {
-	ID          uuid.UUID              `json:"id"`
+	ID          string                 `json:"id"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
@@ -71,9 +71,9 @@ type CatalogResponse struct {
 // LastOperationRequest - Request to obtain state information about an action that was taken
 // Defined in more detail here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#polling-last-operation
 type LastOperationRequest struct {
-	ServiceID string    `json:"service_id"`
-	PlanID    uuid.UUID `json:"plan_id"`
-	Operation string    `json:"operation"`
+	ServiceID string `json:"service_id"`
+	PlanID    string `json:"plan_id"`
+	Operation string `json:"operation"`
 }
 
 // LastOperationState - State that the Last Operation is allowed to be.
@@ -100,7 +100,7 @@ type LastOperationResponse struct {
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#request-2
 type ProvisionRequest struct {
 	OrganizationID    uuid.UUID      `json:"organization_guid"`
-	PlanID            uuid.UUID      `json:"plan_id"`
+	PlanID            string         `json:"plan_id"`
 	ServiceID         string         `json:"service_id"`
 	SpaceID           uuid.UUID      `json:"space_guid"`
 	Context           apb.Context    `json:"context"`
@@ -119,10 +119,10 @@ type ProvisionResponse struct {
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#request-3
 type UpdateRequest struct {
 	ServiceID      string            `json:"service_id"`
-	PlanID         uuid.UUID         `json:"plan_id,omitempty"`
+	PlanID         string            `json:"plan_id,omitempty"`
 	Parameters     map[string]string `json:"parameters,omitempty"`
 	PreviousValues struct {
-		PlanID         uuid.UUID `json:"plan_id,omitempty"`
+		PlanID         string    `json:"plan_id,omitempty"`
 		ServiceID      string    `json:"service_id,omitempty"`
 		OrganizationID uuid.UUID `json:"organization_id,omitempty"`
 		SpaceID        uuid.UUID `json:"space_id,omitempty"`
@@ -139,8 +139,8 @@ type UpdateResponse struct {
 // BindRequest - Request for a bind
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#request-4
 type BindRequest struct {
-	ServiceID string    `json:"service_id"`
-	PlanID    uuid.UUID `json:"plan_id"`
+	ServiceID string `json:"service_id"`
+	PlanID    string `json:"plan_id"`
 	// Deprecated: AppID deprecated in favor of BindResource.AppID
 	AppID uuid.UUID `json:"app_guid,omitempty"`
 

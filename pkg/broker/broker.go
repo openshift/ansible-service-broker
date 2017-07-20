@@ -221,7 +221,6 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
-	a.log.Debugf("specs -> %v", specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
@@ -388,8 +387,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// the data placement or applying custom business rules"
 
 	//-> PlanID            uuid.UUID
-	// Unclear how this is relevant
-
 	//-> ServiceID         uuid.UUID
 	// ServiceID maps directly to a Spec.Id found in etcd. Can pull Spec via
 	// Dao::GetSpec(id string)
@@ -459,14 +456,17 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	}
 
 	context := &req.Context
-	parameters := &req.Parameters
+	parameters := req.Parameters
+
+	// Add requested plan ID to the APB parameters
+	parameters["plan"] = req.PlanID
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
 		ID:         instanceUUID,
 		Spec:       spec,
 		Context:    context,
-		Parameters: parameters,
+		Parameters: &parameters,
 	}
 
 	// Verify we're not reprovisioning the same instance
@@ -801,9 +801,9 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 		if async, provision: it should create a Job that calls apb.Provision. And write the output to etcd.
 	*/
-	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID))    // optional
-	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID.String())) // optional
-	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))    // this is provided with the provision. task id from the work_engine
+	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID)) // optional
+	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID))       // optional
+	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation)) // this is provided with the provision. task id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
 	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)
