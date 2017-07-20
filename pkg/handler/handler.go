@@ -32,25 +32,18 @@ type handler struct {
 // AuthHandler - does the authentication for the routes
 func AuthHandler(h http.Handler, providers []auth.Provider) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		principal, err := providers[0].GetPrincipal(r)
+		// TODO: loop through the providers
+
+		// TODO: determine what to do with the Principal. We don't really have a
+		// context or a session to store it on. Do we need it past this?
+		_, err := providers[0].GetPrincipal(r)
 		if err != nil {
-			fmt.Println(err.Error())
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
-		fmt.Printf("principal: %v\n", principal)
-		fmt.Println("calling h.ServeHTTP")
 		h.ServeHTTP(w, r)
 	})
 }
-
-/*
-
-Not 100% sure what I'm doing with this yet
-func (a AuthFilter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// handle auth before calling ServeHTTP
-	a.wrappedHandler.ServeHTTP(w, r)
-}
-*/
 
 // GorillaRouteHandler - gorilla route handler
 // making the handler methods more testable by moving the reliance of mux.Vars()
