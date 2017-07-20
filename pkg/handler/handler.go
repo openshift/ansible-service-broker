@@ -29,22 +29,6 @@ type handler struct {
 	brokerConfig broker.Config
 }
 
-// AuthHandler - does the authentication for the routes
-func AuthHandler(h http.Handler, providers []auth.Provider) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: loop through the providers
-
-		// TODO: determine what to do with the Principal. We don't really have a
-		// context or a session to store it on. Do we need it past this?
-		_, err := providers[0].GetPrincipal(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-		h.ServeHTTP(w, r)
-	})
-}
-
 // GorillaRouteHandler - gorilla route handler
 // making the handler methods more testable by moving the reliance of mux.Vars()
 // outside of the handlers themselves
@@ -92,7 +76,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	fusa := auth.NewFileUserServiceAdapter("/tmp/foo")
 	ba := auth.NewBasicAuth(fusa)
 
-	return handlers.LoggingHandler(os.Stdout, AuthHandler(h, []auth.Provider{ba}))
+	return handlers.LoggingHandler(os.Stdout, auth.Handler(h, []auth.Provider{ba}))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {

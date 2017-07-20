@@ -74,10 +74,9 @@ func (d *FileUserServiceAdapter) buildDb() {
 // error
 func (d FileUserServiceAdapter) FindByLogin(login string) (User, error) {
 
-	fmt.Println(login)
+	// TODO: add some error checking
 	user := d.userdb[login]
 
-	fmt.Println("username: " + user.Username)
 	return user, nil
 }
 
@@ -94,4 +93,20 @@ func (d FileUserServiceAdapter) ValidateUser(username string, password string) b
 	}
 
 	return false
+}
+
+// Handler - does the authentication for the routes
+func Handler(h http.Handler, providers []Provider) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: loop through the providers
+
+		// TODO: determine what to do with the Principal. We don't really have a
+		// context or a session to store it on. Do we need it past this?
+		_, err := providers[0].GetPrincipal(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }
