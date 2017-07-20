@@ -34,9 +34,19 @@ Redeploy catasb nightly?
 Should there be an already existing OpenShift Cluster to land pods on?
 Should Jenkins be run in the OpenShift Cluster?
 
+## Tools
+There are multiple tools availble to use for CI: Travis and Jenkins.
+
+Travis CI will be used for the simpler and less robust CI. It
+will test a provision and bind of an app using code a PR introduces.
+
+Jenkins is going to be used for the more expansive integration CI.
+An example of this is CI around third party software consuming the broker
+to provision applications. These could be any of Amazon's applications.
+
 ## Trigger
-Jenkins has a github plugin that will track when a PR has been pushed to a repo.
-So the trigger will be handled entirely by Jenkins.
+- Jenkins has a github plugin that will track when a PR has been pushed to a repo.
+- Travis will automatically run when a PR is made to the repo.
 
 There will be triggers on both apb-examples and ansible-service-broker repos.
 
@@ -148,8 +158,9 @@ extensible. Ci jobs can be organized behind objects so creating new jobs will
 be easy in the future.
 
 ## Work Items
-- Build a script that will contact the service-catalog to perform operations
-- Build ```make ci``` into the Makefile
-- The ```make ci``` recipe will perform the actions outlined [above](#make-test)
-- Build a Jenkins job triggering ```make ci```
-- Make Automated Builds for each APB in apb-examples
+[x] Make Automated Builds for each APB in apb-examples
+[] Build ```make ci``` into the Makefile
+[] Build a Travis job triggering ```make ci```
+[] Build a CI framework so it's easy to create new CI jobs
+[] Build a script that will contact the service-catalog to perform operations
+[] Build a Jenkins job triggering more robust testing
