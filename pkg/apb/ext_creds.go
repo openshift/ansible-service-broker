@@ -36,29 +36,30 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 	// instead of only getting the credentials
 
 	for r := 1; r <= credentialExtRetries; r++ {
-		output, err := RunCommand("oc", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
-		if err != nil {
-			// Since we combine stderr and stdout in RunCommand, log
-			// output of RunCommand as Info
-			log.Info(err.Error())
-		}
+		// err will be the return code from the exec command
+		// Use the error code to deterine the state
+		failedToExec := errors.New("exit status 1")
+		credsNotAvailable := errors.New("exit status 2")
 
-		stillWaiting := strings.Contains(string(output), "ContainerCreating") ||
-			strings.Contains(string(output), "NotFound") ||
-			strings.Contains(string(output), "container not found")
+		output, err := RunCommand("oc", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
 		podCompleted := strings.Contains(string(output), "current phase is Succeeded") ||
 			strings.Contains(string(output), "cannot exec into a container in a completed pod")
 
-		// TODO: Replace the string parsing by passing around the pod
-		// object and checking its status
-		if stillWaiting {
-			log.Info("[%s] Retry attempt %d: Waiting for container to start", podname, r)
-		} else if podCompleted {
-			log.Notice("[%s] APB completed", podname)
-			return nil, nil
-		} else if strings.Contains(string(output), "BIND_CREDENTIALS") {
+		if err == nil {
 			log.Notice("[%s] Bind credentials found", podname)
 			return output, nil
+		} else if podCompleted && err.Error() == failedToExec.Error() {
+			log.Notice("[%s] APB completed", podname)
+			return nil, nil
+		} else if err.Error() == failedToExec.Error() {
+			log.Info(string(output))
+			log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
+		} else if err.Error() == credsNotAvailable.Error() {
+			log.Info(string(output))
+			log.Warning("[%s] Retry attempt %d: Bind credentials not availble yet", podname, r)
+		} else {
+			log.Info(string(output))
+			log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
 		}
 
 		log.Warning("[%s] Retry attempt %d: exec into %s failed", podname, r, podname)
@@ -83,42 +84,14 @@ func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
 }
 
 func decodeOutput(output []byte) (map[string]string, error) {
-	// Possible return states
-	// 1) nil, nil -> No credentials found, no errors occurred. Valid.
-	// 2) creds, nil -> Credentials found, no errors occurred. Valid.
-	// 3) nil, err -> Credentials found, no errors occurred. Error state.
 	str := string(output)
 
-	startIdx := strings.Index(str, "<BIND_CREDENTIALS>")
-	startOffset := startIdx + len("<BIND_CREDENTIALS>")
-	endIdx := strings.Index(str, "</BIND_CREDENTIALS>")
-
-	if startIdx < 0 || endIdx < 0 {
-		startIdx = strings.Index(str, "<BIND_ERROR>")
-		startOffset := startIdx + len("<BIND_ERROR>")
-		endIdx := strings.Index(str, "</BIND_ERROR>")
-		if startIdx > -1 && endIdx > -1 {
-			// Case 3, error reported
-			return nil, errors.New(str[startOffset:endIdx])
-		}
-
-		if strings.Contains(str, "image can't be pulled") {
-			return nil, errors.New("image can't be pulled")
-		} else if strings.Contains(str, "FAILED! =>") {
-			return nil, errors.New("provision failed, INSERT MESSAGE HERE")
-		} else {
-			// Case 1, no creds found, no errors occurred
-			return nil, nil
-		}
-	}
-
-	decodedjson, err := base64.StdEncoding.DecodeString(str[startOffset:endIdx])
+	decodedjson, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {
 		return nil, err
 	}
 
 	decoded := make(map[string]string)
 	json.Unmarshal(decodedjson, &decoded)
-	// Case 2, creds successfully found and decoded
 	return decoded, nil
 }
