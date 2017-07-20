@@ -21,7 +21,6 @@ import (
 )
 
 // TODO: implement asynchronous operations
-// TODO: authentication / authorization
 
 type handler struct {
 	router       mux.Router
@@ -30,17 +29,8 @@ type handler struct {
 	brokerConfig broker.Config
 }
 
-/*
-DO I MAKE IT A STRUCT?
-type AuthHandler struct {
-	wrappedHandler http.Handler
-}
-*/
-
-/*
-Do I make it a function?
-*/
-func AuthHandler(h http.Handler, providers []auth.AuthProvider) http.Handler {
+// AuthHandler - does the authentication for the routes
+func AuthHandler(h http.Handler, providers []auth.Provider) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		principal, err := providers[0].GetPrincipal(r)
 		if err != nil {
@@ -48,7 +38,7 @@ func AuthHandler(h http.Handler, providers []auth.AuthProvider) http.Handler {
 			return
 		}
 		fmt.Printf("principal: %v\n", principal)
-		fmt.Println("calling ServeHTTP")
+		fmt.Println("calling h.ServeHTTP")
 		h.ServeHTTP(w, r)
 	})
 }
@@ -109,8 +99,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	fusa := auth.NewFileUserServiceAdapter("/tmp/foo")
 	ba := auth.NewBasicAuth(fusa)
 
-	//return AuthHandler(handlers.LoggingHandler(os.Stdout, h), []auth.AuthProvider{ba})
-	return handlers.LoggingHandler(os.Stdout, AuthHandler(h, []auth.AuthProvider{ba}))
+	return handlers.LoggingHandler(os.Stdout, AuthHandler(h, []auth.Provider{ba}))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -121,6 +110,7 @@ func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[st
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("entered handler.ServeHTTP")
 	h.router.ServeHTTP(w, r)
 }
 
