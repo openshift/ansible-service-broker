@@ -7,7 +7,7 @@ PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
 SOURCES          := $(shell find . -name '*.go' -not -path "*/vendor/*")
 SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
-KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token)
+KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token tls.crt tls.key)
 .DEFAULT_GOAL    := build
 
 vendor:
