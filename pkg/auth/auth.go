@@ -79,5 +79,14 @@ func (d FileUserServiceAdapter) FindByLogin(login string) (User, error) {
 }
 
 func (d FileUserServiceAdapter) ValidateUser(username string, password string) bool {
+	user, err := d.FindByLogin(username)
+	if err != nil {
+		return false
+	}
+
+	if user.Username == username && user.Password == password {
+		return true
+	}
+
 	return false
 }

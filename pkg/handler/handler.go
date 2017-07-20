@@ -47,9 +47,9 @@ func AuthHandler(h http.Handler, providers []auth.AuthProvider) http.Handler {
 			fmt.Println(err.Error())
 			return
 		}
-		fmt.Printf("%v\n", principal)
+		fmt.Printf("principal: %v\n", principal)
+		fmt.Println("calling ServeHTTP")
 		h.ServeHTTP(w, r)
-		return
 	})
 }
 
@@ -109,7 +109,8 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	fusa := auth.NewFileUserServiceAdapter("/tmp/foo")
 	ba := auth.NewBasicAuth(fusa)
 
-	return AuthHandler(handlers.LoggingHandler(os.Stdout, h), []auth.AuthProvider{ba})
+	//return AuthHandler(handlers.LoggingHandler(os.Stdout, h), []auth.AuthProvider{ba})
+	return handlers.LoggingHandler(os.Stdout, AuthHandler(h, []auth.AuthProvider{ba}))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
