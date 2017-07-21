@@ -225,7 +225,7 @@ parameters:
 - description: Container Image to use for Ansible Service Broker in format of imagename:tag
   displayname: Ansible Service Broker Image
   name: BROKER_IMAGE
-  value: ansible-service-broker:latest
+  value: ansibleplaybookbundle/ansible-service-broker:latest
 
 - description: Container Image to use for etcd in format of imagename:tag
   displayname: etcd Image
@@ -277,10 +277,14 @@ parameters:
   name: REGISTRY_TYPE
   value: dockerhub
 
+# Intentionally shortening the registry name to lessen impact of
+# PodPreset name has a requirement of being less than 63 chars
+# https://github.com/kubernetes-incubator/service-catalog/issues/1047
+# https://github.com/openshift/ansible-service-broker/issues/283
 - description: Registry Name
   displayname: Registry Name
   name: REGISTRY_NAME
-  value: dockerhub
+  value: dh
 
 - description: Registry URL
   displayname: Registry URL
