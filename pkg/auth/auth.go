@@ -1,9 +1,10 @@
 package auth
 
 import (
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -55,25 +56,42 @@ func (u User) GetName() string {
 // FileUserServiceAdapter - a file based UserServiceAdapter which seeds its
 // users from a file.
 type FileUserServiceAdapter struct {
-	userfile string
-	userdb   map[string]User
+	filedir string
+	userdb  map[string]User
 }
 
 // NewFileUserServiceAdapter - constructor for the FUSA
-func NewFileUserServiceAdapter(filename string) FileUserServiceAdapter {
-	fusa := FileUserServiceAdapter{userfile: filename}
-	fusa.buildDb()
-	return fusa
+func NewFileUserServiceAdapter(dir string) (*FileUserServiceAdapter, error) {
+	if dir == "" {
+		dir = "/var/run/asb-auth"
+	}
+	fusa := FileUserServiceAdapter{filedir: dir}
+	err := fusa.buildDb()
+	if err != nil {
+		return nil, err
+	}
+	return &fusa, nil
 }
 
-func (d *FileUserServiceAdapter) buildDb() {
-	content, err := ioutil.ReadFile(d.userfile)
-	if err != nil {
-		fmt.Println(err.Error())
+func (d *FileUserServiceAdapter) buildDb() error {
+	userfile := path.Join(d.filedir, "username")
+	passfile := path.Join(d.filedir, "password")
+	username, uerr := ioutil.ReadFile(userfile)
+	if uerr != nil {
+		return uerr
 	}
-	userinfo := strings.Split(string(content), "\n")
+	password, perr := ioutil.ReadFile(passfile)
+	if perr != nil {
+		return perr
+	}
+
+	// userdb is probably overkill, but if we ever want to allow multiple users,
+	// it'll come in handy.
 	d.userdb = make(map[string]User)
-	d.userdb[userinfo[0]] = User{Username: userinfo[0], Password: userinfo[1]}
+	unamestr := string(username)
+	d.userdb[unamestr] = User{Username: unamestr, Password: string(password)}
+
+	return nil
 }
 
 // FindByLogin - given a login name, this will return the associated User or an
@@ -81,9 +99,12 @@ func (d *FileUserServiceAdapter) buildDb() {
 func (d FileUserServiceAdapter) FindByLogin(login string) (User, error) {
 
 	// TODO: add some error checking
-	user := d.userdb[login]
+	if user, ok := d.userdb[login]; ok {
+		return user, nil
+	}
 
-	return user, nil
+	return User{}, errors.New("user not found")
+
 }
 
 // ValidateUser - returns true if the given user's credentials match a user in
@@ -106,33 +127,26 @@ func Handler(h http.Handler, providers []Provider) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// TODO: loop through the providers
 
-		fmt.Println("entered handler")
-		fmt.Println(len(providers))
 		// TODO: determine what to do with the Principal. We don't really have a
 		// context or a session to store it on. Do we need it past this?
 		var principalFound error
 		for _, provider := range providers {
-			fmt.Println("Looping through providers")
 			principal, err := provider.GetPrincipal(r)
 			if principal != nil {
-				fmt.Println("Found a user")
 				// we found our principal, stop looking
 				break
 			}
 			if err != nil {
-				fmt.Println("We have an error")
 				principalFound = err
 			}
 		}
 		// if we went through the providers and found no principals. We will
 		// have found an error
 		if principalFound != nil {
-			fmt.Println("found nothing")
 			http.Error(w, principalFound.Error(), http.StatusUnauthorized)
 			return
 		}
 
-		fmt.Println("going to call ServeHTTP")
 		h.ServeHTTP(w, r)
 	})
 }
@@ -164,5 +178,7 @@ func createProvider(providerType string) Provider {
 func GetUserServiceAdapter() UserServiceAdapter {
 	// TODO: really need to figure out a better way to define what should be
 	// returned.
-	return NewFileUserServiceAdapter("/tmp/foo")
+	fusa, _ := NewFileUserServiceAdapter("/var/run/asb-auth")
+
+	return fusa
 }

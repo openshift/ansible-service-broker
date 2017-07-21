@@ -96,6 +96,8 @@ objects:
               mountPath: /etc/ansible-service-broker
             - name: asb-tls
               mountPath: /etc/tls/private
+            - name: asb-auth-volume
+              mountPath: /var/run/asb-auth
           ports:
             - containerPort: 1338
               protocol: TCP
@@ -137,6 +139,18 @@ objects:
           - name: asb-tls
             secret:
               secretName: asb-tls
+          - name: asb-auth-volume
+            secret:
+              secretName: asb-auth-secret
+
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: asb-auth-secret
+    namespace: ansible-service-broker
+  data:
+    username: YnJva2VyLWFkbWlu
+    password: TFl0SU5lc0hBZw==
 
 - apiVersion: v1
   kind: ConfigMap

@@ -13,11 +13,12 @@ RUN yum -y update \
  && yum -y install origin-clients ansible-service-broker ansible-service-broker-container-scripts \
  && yum clean all
 
-RUN mkdir -p ${BASE_DIR} ${BASE_DIR}/etc \
+RUN mkdir -p ${BASE_DIR} ${BASE_DIR}/etc /var/run/asb-auth \
  && userdel ansibleservicebroker \
  && useradd -u ${USER_UID} -r -g 0 -M -d ${BASE_DIR} -b ${BASE_DIR} -s /sbin/nologin -c "ansibleservicebroker user" ${USER_NAME} \
- && chown -R ${USER_NAME}:0 ${BASE_DIR} /var/log/ansible-service-broker /etc/ansible-service-broker \
- && chmod -R g+rw ${BASE_DIR} /etc/passwd /etc/ansible-service-broker /var/log/ansible-service-broker
+ && chown -R ${USER_NAME}:0 ${BASE_DIR} /var/log/ansible-service-broker /etc/ansible-service-broker /var/run/asb-auth \
+ && chmod -R g+rw ${BASE_DIR} /etc/passwd /etc/ansible-service-broker /var/log/ansible-service-broker /var/run/asb-auth \
+
 
 USER ${USER_UID}
 RUN sed "s@${USER_NAME}:x:${USER_UID}:@${USER_NAME}:x:\${USER_ID}:@g" /etc/passwd > ${BASE_DIR}/etc/passwd.template
