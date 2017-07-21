@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+// AuthConfig - Configuration for authentication
+type AuthEntry struct {
+	Type    string `yaml:"type"`
+	Enabled bool   `yaml:"enabled"`
+}
+
 // Provider - an auth provider is an adapter that provides the principal
 // object required for authentication. This can be a User, a System, or some
 // other entity.
@@ -102,11 +108,52 @@ func Handler(h http.Handler, providers []Provider) http.Handler {
 
 		// TODO: determine what to do with the Principal. We don't really have a
 		// context or a session to store it on. Do we need it past this?
-		_, err := providers[0].GetPrincipal(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+		var searchError error
+		for _, provider := range providers {
+			principal, err := provider.GetPrincipal(r)
+			if principal != nil {
+				// we found our principal, stop looking
+				break
+			}
+			if err != nil {
+				searchError = err
+			}
+		}
+		// if we went through the providers and found no principals. We will
+		// have found an error
+		if searchError != nil {
+			http.Error(w, searchError.Error(), http.StatusUnauthorized)
 			return
 		}
 		h.ServeHTTP(w, r)
 	})
+}
+
+// GetProviders - returns the list of configured providers
+func GetProviders(entries []AuthEntry) []Provider {
+	providers := make([]Provider, 0, len(entries))
+
+	for _, cfg := range entries {
+		if cfg.Enabled {
+			provider := createProvider(cfg.Type)
+			providers = append(providers, provider)
+		}
+	}
+	return providers
+}
+
+func createProvider(providerType string) Provider {
+	switch strings.ToLower(providerType) {
+	case "basic":
+		return NewBasicAuth(GetUserServiceAdapter())
+	// add case "oauth":
+	default:
+		panic("Unkown auth provider")
+	}
+}
+
+// TODO: really need to figure out a better way to define what should be
+// returned.
+func GetUserServiceAdapter() UserServiceAdapter {
+	return NewFileUserServiceAdapter("/tmp/foo")
 }
