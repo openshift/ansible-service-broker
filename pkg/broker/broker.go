@@ -710,28 +710,10 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		return nil, err
 	}
 
-	/*
-		NOTE:
-
-		type BindResponse struct {
-		    Credentials     map[string]interface{} `json:"credentials,omitempty"`
-		    SyslogDrainURL  string                 `json:"syslog_drain_url,omitempty"`
-		    RouteServiceURL string                 `json:"route_service_url,omitempty"`
-		    VolumeMounts    []interface{}          `json:"volume_mounts,omitempty"`
-		}
-	*/
-
-	// NOTE: Design here is very WIP
-	// Potentially have data from provision stashed away, and bind may also
-	// produce new binding data. Take both sets and merge?
 	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
-	if err != nil {
-		a.log.Debug("provExtCreds a miss!")
-		a.log.Debug("%s", err.Error())
-	} else {
-		a.log.Debug("Got provExtCreds hit!")
-		a.log.Debug("%+v", provExtCreds)
-	}
+
+	//Add the DB Credentials this will allow the
+	params["db_creds"] = provExtCreds.Credentials
 
 	// NOTE: We are currently disabling running an APB on bind via 'LaunchApbOnBind'
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
@@ -764,18 +746,16 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		return nil, errors.New("No credentials available")
 	}
 
-	returnCreds := mergeCredentials(provExtCreds, bindExtCreds)
-	// TODO: Insert merged credentials into etcd? Separate into bind/provision
-	// so none are overwritten?
-
-	return &BindResponse{Credentials: returnCreds}, nil
-}
-
-func mergeCredentials(provExtCreds *apb.ExtractedCredentials,
-	bindExtCreds *apb.ExtractedCredentials,
-) map[string]interface{} {
-	// TODO: Implement, need to handle case where either are empty
-	return provExtCreds.Credentials
+	if bindExtCreds != nil {
+		err = a.dao.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
+		if err != nil {
+			a.log.Error("Could not persist extracted credentials")
+			a.log.Error("%s", err.Error())
+			return nil, err
+		}
+		return &BindResponse{Credentials: bindExtCreds.Credentials}, nil
+	}
+	return &BindResponse{Credentials: provExtCreds.Credentials}, nil
 }
 
 // Unbind - unbind a services previous binding
@@ -789,12 +769,31 @@ func (a AnsibleBroker) Unbind(
 		return nil, errors.New(errMsg)
 	}
 
+	params := make(apb.Parameters)
+	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
+	if err != nil {
+		return nil, err
+	}
+	bindExtCreds, err := a.dao.GetExtractedCredentials(bindingUUID.String())
+	if err != nil {
+		return nil, err
+	}
+	//Add the DB Credentials this will allow the
+	params["db_creds"] = provExtCreds.Credentials
+	params["bind_creds"] = bindExtCreds.Credentials
 	serviceInstance, err := a.getServiceInstance(instanceUUID)
 	if err != nil {
 		a.log.Debugf("Service instance with id %s does not exist", instanceUUID.String())
 	}
+	if serviceInstance.Parameters != nil {
+		params["provision_params"] = *serviceInstance.Parameters
+	}
+	err = apb.Unbind(serviceInstance, a.clusterConfig, a.log, &params)
+	if err != nil {
+		return nil, err
+	}
 
-	err = apb.Unbind(serviceInstance, a.clusterConfig, a.log)
+	err = a.dao.DeleteExtractedCredentials(bindingUUID.String())
 	if err != nil {
 		return nil, err
 	}
@@ -803,7 +802,6 @@ func (a AnsibleBroker) Unbind(
 	if err != nil {
 		return nil, err
 	}
-
 	serviceInstance.RemoveBinding(bindingUUID)
 	err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance)
 	if err != nil {
