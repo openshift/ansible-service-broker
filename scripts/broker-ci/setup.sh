@@ -2,23 +2,6 @@
 
 set -ex
 
-CATASB_ROOT=$(dirname "${BASH_SOURCE}")/../../catasb
-
-function old-cluster-setup (){
-    git clone https://github.com/rthallisey/catasb
-    cat <<EOF > "${CATASB_ROOT}/config/my_vars.yml"
----
-dockerhub_user_name: brokerciuser
-dockerhub_org_name: ansibleplaybookbundle
-dockerhub_user_password: brokerciuser
-EOF
-
-    pushd ${CATASB_ROOT}/local/linux
-    git checkout gate-testing
-    ./run_setup_local.sh
-    popd
-}
-
 function cluster-setup () {
     wget https://storage.googleapis.com/kubernetes-release/release/v1.6.0/bin/linux/amd64/kubectl
     sudo mv kubectl /usr/bin
@@ -29,19 +12,7 @@ function cluster-setup () {
     sudo mv /tmp/oc /usr/bin
     sudo chmod 755 /usr/bin/oc
 
-    oc cluster up --image=docker.io/openshift/origin --version=v3.6.0-rc.0  --service-catalog=true
-    oc login -u system:admin
-    oc get pods --all-namespaces
-}
-
-echo "========== Broker CI ==========="
-echo "Setting up cluster"
-cluster-setup
-
-echo "Build broker image"
-make build-image
-
-cat <<EOF > "scripts/my_local_dev_vars"
+    cat <<EOF > "scripts/my_local_dev_vars"
 OPENSHIFT_SERVER_HOST=172.17.0.1
 OPENSHIFT_SERVER_PORT=8443
 
@@ -58,6 +29,8 @@ CA_FILE=""
 # Always, IfNotPresent, Never
 IMAGE_PULL_POLICY="Always"
 EOF
+}
 
-echo "Deploygin broker"
-make deploy
+echo "========== Broker CI ==========="
+echo "Setting up cluster"
+cluster-setup

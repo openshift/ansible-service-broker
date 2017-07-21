@@ -24,4 +24,10 @@ script:
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh ci
-  - sudo docker images
+  - oc cluster up --image=docker.io/openshift/origin --version=v3.6.0-rc.0 --service-catalog=true
+  - oc login -u system:admin
+  - make build-image
+  - make deploy
+  - oc get pods --all-namespaces
+  - sleep 15
+  - oc logs $(oc get pods -o name -l service=asb | cut -f 2 -d '/')
