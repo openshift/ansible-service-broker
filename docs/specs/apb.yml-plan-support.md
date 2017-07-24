@@ -119,8 +119,6 @@ metadata:
   dependencies: ['registry.access.redhat.com/rhscl/postgresql-95-rhel7']
   displayName: PostgreSQL (APB)
   console.openshift.io/iconClass: icon-postgresql
-dependencies:
-  - postgresql_version
 plans:
   - name: default
     description: Postgresql DB
@@ -193,8 +191,6 @@ metadata:
   dependencies: ['registry.access.redhat.com/rhscl/postgresql-95-rhel7']
   displayName: PostgreSQL (APB)
   console.openshift.io/iconClass: icon-postgresql
-dependencies:
-  - postgresql_version
 plans:
   - name: dev
     description: A single DB server with no storage
