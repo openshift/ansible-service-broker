@@ -24,12 +24,21 @@ script:
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh ci
+  - sudo docker pull docker.io/openshift/origin:v3.6.0-rc.0
   - oc cluster up --image=docker.io/openshift/origin --version=v3.6.0-rc.0 --service-catalog=true
   - oc login -u system:admin
   - make build-image
   - make deploy
   - sleep 15
   - oc logs $(oc get pods -o name -l service=asb | cut -f 2 -d '/')
-  - ./scripts/broker-ci/provision.sh
-  - oc get route | grep mediawiki | cut -f 4 -d ' ' | xargs curl | grep "\<title\>"
+  - oc get instances
+  - oc create -f ./scripts/broker-ci/mediawiki123.yaml
+  - oc create -f ./scripts/broker-ci/postgresql.yaml
+  - sleep 20
+  - oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml
+  - sleep 10
+  - oc get secrets --all-namespaces
+  - oc get secret mediawiki-postgresql-binding -o yaml -n default
+  - oc get podpresets --all-namespaces
   - oc get pods
+  - curl $(oc get route -n default | grep mediawiki | cut -f 4 -d ' ')/index.php/Main_Page

@@ -1,0 +1,13 @@
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Instance
+metadata:
+  name: postgresql
+  namespace: default
+spec:
+  serviceClassName: dh-ansibleplaybookbundle-rhscl-postgresql-apb
+  planName: default
+  parameters:
+    postgresql_database: "admin"
+    postgresql_password: "admin"
+    postgresql_user: "admin"
+    postgresql_version: "9.5"
