@@ -151,9 +151,9 @@ func (a *App) Start() {
 		a.log.Info("Broker configured to bootstrap on startup")
 		a.log.Info("Attempting bootstrap...")
 		if _, err := a.broker.Bootstrap(); err != nil {
-			a.log.Warning("Failed to bootstrap on startup! You may need to " +
-				"manually trigger a bootstrap to resync APB inventory. See error: ")
-			a.log.Warning(err.Error())
+			a.log.Error("Failed to bootstrap on startup!")
+			a.log.Error(err.Error())
+			os.Exit(1)
 		}
 		a.log.Notice("Broker successfully bootstrapped on startup")
 	}
