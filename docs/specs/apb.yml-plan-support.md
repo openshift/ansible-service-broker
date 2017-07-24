@@ -43,7 +43,7 @@ cost | string | no | "" | Cost string used for display purposes only
 ---
 
 3) Move any example of a `[]map[string]T` to `[]T`. The former introduced an entirely
-unecessary map layer. They started to get nested after moving params onto plans and
+unnecessary map layer. They started to get nested after moving params onto plans and
 things got very ugly because of it. Reintroduce `name` onto `T`s.
 
 **Old Format**
@@ -103,7 +103,57 @@ How do we want to make across the board so things get rolled out as smoothly as 
 apbs? I think it makes sense to have that in lock setup with broker release versions. Is
 broker master considered `0.10` since it's `release-0.9++`?
 
-## Full example
+## Full examples
+
+### Single plan example
+
+```yaml
+name: rhscl-postgresql-apb
+image: ansibleplaybookbundle/rhscl-postgresql-apb
+description: SCL PostgreSQL apb implementation
+bindable: true
+async: optional
+metadata:
+  documentationUrl: https://www.postgresql.org/docs/
+  longDescription: An apb that deploys postgresql 9.4 or 9.5.
+  dependencies: ['registry.access.redhat.com/rhscl/postgresql-95-rhel7']
+  displayName: PostgreSQL (APB)
+  console.openshift.io/iconClass: icon-postgresql
+dependencies:
+  - postgresql_version
+plans:
+  - name: default
+    description: Postgresql DB
+    free: true
+    metadata:
+      displayName: Default Postgresql DB
+      longDescription: This plan provides a simple PostgreSQL server with persistent storage
+      cost: $0.00
+    parameters:
+      - name: postgresql_database
+        default: admin
+        type: string
+        title: PostgreSQL Database Name
+        required: true
+      - name: postgresql_password
+        type: string
+        description: A random alphanumeric string if left blank
+        title: PostgreSQL Password
+      - name: postgresql_user
+        default: admin
+        title: PostgreSQL User
+        type: string
+        maxlength: 63
+        required: true
+      - name: postgresql_version
+        default: 9.5
+        enum: ['9.5', '9.4']
+        type: enum
+        title: PostgreSQL Version
+        required: true
+```
+
+### Shared param set
 
 ```yaml
 ################################################################################
