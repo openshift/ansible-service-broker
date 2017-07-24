@@ -28,7 +28,8 @@ script:
   - oc login -u system:admin
   - make build-image
   - make deploy
-  - oc get pods --all-namespaces
   - sleep 15
   - oc logs $(oc get pods -o name -l service=asb | cut -f 2 -d '/')
   - ./scripts/broker-ci/provision.sh
+  - oc get route | grep mediawiki | cut -f 4 -d ' ' | xargs curl | grep "\<title\>"
+  - oc get pods
