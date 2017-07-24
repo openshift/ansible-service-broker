@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.9
+Version: 0.9.10
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -314,6 +314,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Jul 24 2017 Jason Montleon <jmontleo@redhat.com> 0.9.10-1
+- 1468173- Error out when bootstrap fails (#300)
+  (fabianvf@users.noreply.github.com)
+
 * Wed Jul 19 2017 Jason Montleon <jmontleo@redhat.com> 0.9.9-1
 - 1470861 - Lower APB SA permission to admin (#285) (ernelson@redhat.com)
 
