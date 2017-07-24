@@ -6,6 +6,10 @@ import (
 	"github.com/pborman/uuid"
 )
 
+const (
+	PlanParameterKey = "_apb_plan_id"
+)
+
 // Service - Service object to be returned.
 // based on https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-objects
 type Service struct {
