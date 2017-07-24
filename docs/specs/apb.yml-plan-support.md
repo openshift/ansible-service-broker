@@ -36,8 +36,8 @@ parameters | `[]Parameter` |  no | | Plan parameters
 
 Field Name | Type | Required | Default | Description
 ---|---|---|---|---
-display_name | string | no | "" | Name of plan for display purposes
-long_description | string | no | "" | A detailed description of the plan
+displayName | string | no | "" | Name of plan for display purposes
+longDescription | string | no | "" | A detailed description of the plan
 cost | string | no | "" | Cost string used for display purposes only
 
 ---
@@ -150,16 +150,16 @@ plans:
     description: A single DB server with no storage
     free: true
     metadata:
-      display_name: Development
-      long_description: This plan provides a single non-HA PostgreSQL server without persistent storage
+      displayName: Development
+      longDescription: This plan provides a single non-HA PostgreSQL server without persistent storage
       cost: $0.00
     parameters: *_p
   - name: prod
     description: HA DB Server with 1TB of Storage
     free: false
     metadata:
-      display_name: Production
-      long_description: This plan provides a single non-HA PostgreSQL server with persistent storage
+      displayName: Production
+      longDescription: This plan provides a single non-HA PostgreSQL server with persistent storage
       cost: $5.99 monthly
     parameters: *_p
 ```
