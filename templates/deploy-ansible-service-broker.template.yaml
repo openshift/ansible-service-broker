@@ -23,21 +23,6 @@ objects:
       service: asb
 
 - apiVersion: v1
-  kind: Service
-  metadata:
-    name: etcd
-    labels:
-      app: ansible-service-broker
-      service: etcd
-  spec:
-    ports:
-      - name: etcd-advertise
-        port: 2379
-    selector:
-      app: ansible-service-broker
-      service: etcd
-
-- apiVersion: v1
   kind: ServiceAccount
   metadata:
     name: asb
@@ -119,6 +104,7 @@ objects:
             value: ${BROKER_CONFIG}
           resources: {}
           terminationMessagePath: /tmp/termination-log
+
         - image: ${ETCD_IMAGE}
           name: etcd
           imagePullPolicy: IfNotPresent
@@ -169,7 +155,7 @@ objects:
           pass: ${DOCKERHUB_PASS}
           org: ${DOCKERHUB_ORG}
       dao:
-        etcd_host: etcd
+        etcd_host: 0.0.0.0
         etcd_port: 2379
       log:
         logfile: /var/log/ansible-service-broker/asb.log
