@@ -26,6 +26,7 @@ type ParameterDescriptor struct {
 	Required    bool        `json:"required"`
 }
 
+// Plan - Plan object describing an APB deployment plan and associated parameters
 type Plan struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`

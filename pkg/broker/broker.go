@@ -468,8 +468,8 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	a.log.Debugf(
 		"Injecting PlanID as parameter: { %s: %s }",
-		PlanParameterKey, req.PlanID)
-	parameters[PlanParameterKey] = req.PlanID
+		planParameterKey, req.PlanID)
+	parameters[planParameterKey] = req.PlanID
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
@@ -677,8 +677,8 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 
 	a.log.Debugf(
 		"Injecting PlanID as parameter: { %s: %s }",
-		PlanParameterKey, req.PlanID)
-	params[PlanParameterKey] = req.PlanID
+		planParameterKey, req.PlanID)
+	params[planParameterKey] = req.PlanID
 
 	// Create a BindingInstance with a reference to the serviceinstance.
 	bindingInstance := &apb.BindInstance{

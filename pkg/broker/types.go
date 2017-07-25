@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	PlanParameterKey = "_apb_plan_id"
+	planParameterKey = "_apb_plan_id"
 )
 
 // Service - Service object to be returned.
