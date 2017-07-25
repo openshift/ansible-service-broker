@@ -3,14 +3,22 @@
 set -ex
 
 function cluster-setup () {
-    wget https://storage.googleapis.com/kubernetes-release/release/v1.6.0/bin/linux/amd64/kubectl
-    sudo mv kubectl /usr/bin
-    sudo chmod 755 /usr/bin/kubectl
+    git clone https://github.com/rthallisey/catasb
 
-    wget https://mirror.openshift.com/pub/openshift-v3/clients/3.6.153/linux/oc.tar.gz
-    tar -xzf oc.tar.gz -C /tmp/
-    sudo mv /tmp/oc /usr/bin
-    sudo chmod 755 /usr/bin/oc
+    cat <<EOF > "catasb/config/my_vars.yml"
+---
+dockerhub_user_name: brokerciuser
+dockerhub_org_name: ansibleplaybookbundle
+dockerhub_user_password: brokerciuser
+EOF
+
+    pushd catasb
+    git checkout gate-testing
+    popd
+
+    pushd catasb/gate
+    ./run_gate.sh
+    popd
 
     cat <<EOF > "scripts/my_local_dev_vars"
 OPENSHIFT_SERVER_HOST=172.17.0.1
@@ -29,6 +37,7 @@ CA_FILE=""
 # Always, IfNotPresent, Never
 IMAGE_PULL_POLICY="Always"
 EOF
+
 }
 
 echo "========== Broker CI ==========="
