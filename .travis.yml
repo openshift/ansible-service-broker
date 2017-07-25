@@ -25,25 +25,23 @@ script:
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh ci
-  - oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u admin -p admi
+  - oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u admin -p admin
+  - oc project default
   - make build-image
   - make deploy
   - sleep 15
   - oc create -f scripts/broker-ci/broker-resource.yaml
-  - oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/')
   - oc get serviceclasses --all-namespaces
   - oc create -f ./scripts/broker-ci/mediawiki123.yaml
   - oc create -f ./scripts/broker-ci/postgresql.yaml
-  - oc get instances --all-namespaces
-  - sleep 20
-  - oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/')
-  - oc get pods -n default
-  - sudo docker images
+  - ./scripts/broker-ci/wait-for-pods.sh
+  - sleep 50
   - oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml
-  - sleep 10
+  - sleep 5
   - oc get secrets --all-namespaces | grep mediawiki-postgresql-binding
-  - oc get secrets --all-namespaces
   - oc get secret mediawiki-postgresql-binding -o yaml -n default
+  - oc logs $(oc get pods  --all-namespaces | grep controller-manager | awk $'{ print $2 }') -n service-catalog
   - oc get podpresets -n default
   - oc get pods --all-namespaces
   - curl $(oc get route -n default | grep mediawiki | cut -f 4 -d ' ')/index.php/Main_Page
+  - oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/')
