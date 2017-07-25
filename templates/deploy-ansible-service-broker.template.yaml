@@ -119,41 +119,6 @@ objects:
             value: ${BROKER_CONFIG}
           resources: {}
           terminationMessagePath: /tmp/termination-log
-        volumes:
-          - name: config-volume
-            configMap:
-              name: broker-config
-              items:
-              - key: broker-config
-                path: config.yaml
-          - name: asb-tls
-            secret:
-              secretName: asb-tls
-- apiVersion: extensions/v1beta1
-  kind: Deployment
-  metadata:
-    name: etcd
-    labels:
-      app: ansible-service-broker
-      service: etcd
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: ansible-service-broker
-        service: etcd
-    strategy:
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
-      type: RollingUpdate
-    template:
-      metadata:
-        labels:
-          app: ansible-service-broker
-          service: etcd
-      spec:
-        containers:
         - image: ${ETCD_IMAGE}
           name: etcd
           imagePullPolicy: IfNotPresent
@@ -177,6 +142,15 @@ objects:
           - name: etcd
             persistentVolumeClaim:
               claimName: etcd
+          - name: config-volume
+            configMap:
+              name: broker-config
+              items:
+              - key: broker-config
+                path: config.yaml
+          - name: asb-tls
+            secret:
+              secretName: asb-tls
 
 - apiVersion: v1
   kind: ConfigMap
