@@ -23,9 +23,9 @@ NOTE: The launch_apb_on_bind will eventually be deprecated.
 * The APB is responsible for handling the deletion/creation of users for their image.
 
 #### Example Usage (workflow proposed): 
-1. On APB provision, the APB decides to create an admin user & password. 
-2. This admin user should not be given out during binding. Instead the APB author would like to create new user accounts (by using the already saved/created admin user & password), and pass those back as credentials during the bind. 
-3. The same is true for unbind. The APB author could want to delete the bind credentials and would need to use the admin user & password. 
+1. On APB provision, the APB decides that, for what ever application it is responsible for deploying, to create an admin user & password. 
+2. The APB does not want to hand out the admin user and password, for the application that it is responsible for, to all the other applications that could be bound. Instead the APB author would like to create new user accounts (by using the already saved/created admin user & password), and pass those back as credentials during the bind. The new credentials are for the application that the APB is responsible for.
+3. The same is true for unbind. The APB author could want to delete the user and password, for the application that it manages, credentials and would need to use the admin user & password. 
 
 #### Example Usage: 
 1. APB author would like to keep only 1 account, and use that 1 account for all the bindings(current behavior).
