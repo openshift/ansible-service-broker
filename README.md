@@ -104,7 +104,7 @@ Our dependencies currently require development headers for btrfs and dev-mapper.
 
 CentOS/RHEL/Fedora (sub dnf for Fedora):
 
-`sudo yum install device-mapper-devel btrfs-progs-devel etcd jq`
+`sudo yum install device-mapper-devel btrfs-progs-devel etcd`
 
 
 ### Setup

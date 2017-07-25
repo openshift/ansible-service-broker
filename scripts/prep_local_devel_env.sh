@@ -48,13 +48,6 @@ SVC_ACCT_TOKEN_FILE=$SVC_ACCT_TOKEN_DIR/token
 TLS_CRT=$SVC_ACCT_TOKEN_DIR/tls.crt
 TLS_KEY=$SVC_ACCT_TOKEN_DIR/tls.key
 
-# We rely on jq for parsing json data from oc/kubectl
-which jq &> /dev/null
-if [ "$?" -ne 0 ]; then
-  echo "Please ensure 'jq' is installed and in your path"
-  exit 1
-fi
-
 # We will fake out the service account directory locally on the machine
 # The directory is under /var/run and likely to be deleted between reboots
 if [ ! -d "$SVC_ACCT_TOKEN_DIR" ]; then
@@ -73,17 +66,13 @@ fi
 
 
 # Determine the name of the secret which has the 'asb' service account info
-BROKER_SVC_ACCT_SECRET_NAME=`oc get serviceaccount asb -n ansible-service-broker -o json | jq -c '.secrets[] | select(.name | contains("asb-token"))' | jq -c '.name'`
-# Remove quotes from variable
-BROKER_SVC_ACCT_SECRET_NAME=( $(eval echo ${BROKER_SVC_ACCT_SECRET_NAME[@]}) )
+BROKER_SVC_ACCT_SECRET_NAME=`oc get serviceaccount asb -n ansible-service-broker -o jsonpath='{.secrets[0].name}'`
 echo "Broker Service Account Token is in secret: ${BROKER_SVC_ACCT_SECRET_NAME}"
 
 ###
 # Fetch the service-ca.crt for the service account
 ###
-SVC_ACCT_CA_CRT_DATA=`oc get secret ${BROKER_SVC_ACCT_SECRET_NAME} -n ${ASB_PROJECT} -o json | jq -c '.data["service-ca.crt"]'`
-# Remove quotes from variable
-SVC_ACCT_CA_CRT_DATA=( $(eval echo ${SVC_ACCT_CA_CRT_DATA[@]}) )
+SVC_ACCT_CA_CRT_DATA=`oc get secret ${BROKER_SVC_ACCT_SECRET_NAME} -n ${ASB_PROJECT} -o jsonpath='{ .data.service-ca\.crt }'`
 # Base64 Decode
 SVC_ACCT_CA_CRT_DATA=`echo ${SVC_ACCT_CA_CRT_DATA} | base64 --decode `
 if [ "$?" -ne 0 ]; then
@@ -106,8 +95,7 @@ if [ ! -d $SVC_ACCT_TOKEN_DIR ]; then
   echo "Ensure your user can write to it."
   exit 1
 fi
-BROKER_SVC_ACCT_TOKEN=`oc get secret ${BROKER_SVC_ACCT_SECRET_NAME} -n ${ASB_PROJECT} -o json | jq -c '.data["token"]'`
-BROKER_SVC_ACCT_TOKEN=( $(eval echo ${BROKER_SVC_ACCT_TOKEN[@]}) )
+BROKER_SVC_ACCT_TOKEN=`oc get secret ${BROKER_SVC_ACCT_SECRET_NAME} -n ${ASB_PROJECT} -o jsonpath='{ .data.token }'`
 BROKER_SVC_ACCT_TOKEN=`echo ${BROKER_SVC_ACCT_TOKEN} | base64 --decode`
 ###
 # Note:
@@ -125,7 +113,7 @@ echo -e "Wrote \n${BROKER_SVC_ACCT_TOKEN}\n to: ${SVC_ACCT_TOKEN_FILE}\n"
 ###
 # Fetch the tls.crt for the asb deployment
 ###
-TLS_CRT_DATA=`oc get secret asb-tls -o json | jq -c '.data["tls.crt"]'`
+TLS_CRT_DATA=`oc get secret asb-tls -o jsonpath='{ .data.tls\.key }'`
 # Remove quotes from variable
 TLS_CRT_DATA=( $(eval echo ${TLS_CRT_DATA[@]}) )
 # Base64 Decode
@@ -145,7 +133,7 @@ echo -e "Wrote \n${TLS_CRT_DATA}\n to: ${TLS_CRT}\n"
 ###
 # Fetch the tls.crt for the asb deployment
 ###
-TLS_KEY_DATA=`oc get secret asb-tls -o json | jq -c '.data["tls.key"]'`
+TLS_KEY_DATA=`oc get secret asb-tls -o jsonpath='{ .data.tls\.key }'`
 # Remove quotes from variable
 TLS_KEY_DATA=( $(eval echo ${TLS_KEY_DATA[@]}) )
 # Base64 Decode
