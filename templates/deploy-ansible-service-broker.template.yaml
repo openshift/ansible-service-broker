@@ -82,8 +82,8 @@ objects:
       requests:
         storage: 1Gi
 
-- apiVersion: extensions/v1beta1
-  kind: Deployment
+- apiVersion: v1
+  kind: DeploymentConfig
   metadata:
     name: asb
     labels:
@@ -92,13 +92,9 @@ objects:
   spec:
     replicas: 1
     selector:
-      matchLabels:
-        app: ansible-service-broker
+      app: ansible-service-broker
     strategy:
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
-      type: RollingUpdate
+      type: Rolling
     template:
       metadata:
         labels:
