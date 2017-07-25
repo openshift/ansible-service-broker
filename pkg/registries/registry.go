@@ -209,9 +209,9 @@ func validateSpecs(log *logging.Logger, inSpecs []*apb.Spec) []*apb.Spec {
 	out := make(chan resultT)
 	for _, spec := range inSpecs {
 		go func(s *apb.Spec) {
+			defer wg.Done()
 			ok, failReason := validateSpecPlans(s)
 			out <- resultT{ok, s, failReason}
-			wg.Done()
 		}(spec)
 	}
 

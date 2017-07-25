@@ -182,12 +182,10 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		async, _ = strconv.ParseBool(val[0])
 	}
 
-	var planID string
-	val, ok := queryparams["plan_id"]
-	if !ok {
+	planID := r.FormValue("plan_id")
+	if planID == "" {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "deprovision request missing plan_id query parameter"})
 	}
-	planID = val[0]
 
 	resp, err := h.broker.Deprovision(instanceUUID, planID, async)
 
@@ -252,7 +250,6 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 	h.printRequest(r)
-	queryparams := r.URL.Query()
 
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
@@ -266,12 +263,10 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
-	var planID string
-	val, ok := queryparams["plan_id"]
-	if !ok && len(val) == 0 {
+	planID := r.FormValue("plan_id")
+	if planID == "" {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})
 	}
-	planID = val[0]
 
 	resp, err := h.broker.Unbind(instanceUUID, bindingUUID, planID)
 
