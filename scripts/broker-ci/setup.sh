@@ -3,7 +3,7 @@
 set -ex
 
 function cluster-setup () {
-    git clone https://github.com/rthallisey/catasb
+    git clone https://github.com/fusor/catasb
 
     cat <<EOF > "catasb/config/my_vars.yml"
 ---
@@ -13,10 +13,11 @@ dockerhub_user_password: brokerciuser
 EOF
 
     pushd catasb
-    git checkout gate-testing
+    git checkout -b rthallisey-gate-testing master
+    git pull https://github.com/rthallisey/catasb.git gate-testing
     popd
 
-    pushd catasb/gate
+    pushd catasb/local/gate/
     ./run_gate.sh
     popd
 
