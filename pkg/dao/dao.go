@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -257,6 +258,65 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	}
 
 	return recoverstatus, nil
+}
+
+// GetSvcInstJobsByState - Lookup all jobs of a given state for a specific instance
+func (d *Dao) GetSvcInstJobsByState(
+	instanceId string, reqState apb.State,
+) ([]apb.JobState, error) {
+	d.log.Debug("Dao::GetSvcInstJobsByState")
+	allStates, err := d.getJobsForSvcInst(instanceId)
+
+	if err != nil {
+		return nil, err
+	} else if len(allStates) == 0 {
+		return allStates, nil
+	}
+
+	filtStates := []apb.JobState{}
+	for _, state := range allStates {
+		if state.State == reqState {
+			filtStates = append(filtStates, state)
+		}
+	}
+
+	d.log.Debugf("Filtered on state: [ %s ], returning %d jobs", len(filtStates))
+
+	return filtStates, nil
+}
+
+func (d *Dao) getJobsForSvcInst(instanceId string) ([]apb.JobState, error) {
+	d.log.Debug("Dao::getJobsForSvcInst")
+
+	var res *client.Response
+	var err error
+
+	lookupKey := fmt.Sprintf("/state/%s/job", instanceId)
+	opts := &client.GetOptions{Recursive: true}
+	if res, err = d.kapi.Get(context.Background(), lookupKey, opts); err != nil {
+		return nil, err
+	}
+
+	jobNodes := res.Node.Nodes
+	jobsCount := len(jobNodes)
+	if jobsCount == 0 {
+		return []apb.JobState{}, nil
+	}
+
+	d.log.Debug("Successfully loaded [ %d ] jobs objects from [ %s ]",
+		jobsCount, lookupKey)
+
+	retJobs := []apb.JobState{}
+	for _, node := range jobNodes {
+		js := apb.JobState{}
+		err := apb.LoadJSON(node.Value, &js)
+		if err != nil {
+			return nil, errors.New(
+				fmt.Sprintf("An error occurred trying to parse job state of [ %s ]\n%s", node.Key, err.Error()))
+		}
+		retJobs = append(retJobs, js)
+	}
+	return retJobs, nil
 }
 
 // GetServiceInstance - Retrieve specific service instance from the kvp API.

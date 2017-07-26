@@ -41,9 +41,12 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 				// updates one day.
 				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken, State: apb.StateInProgress, Podname: pmsg.PodName})
 			} else {
-				json.Unmarshal([]byte(pmsg.Msg), &extCreds)
+				if pmsg.Msg != "_deprovision" {
+					// HACK
+					json.Unmarshal([]byte(pmsg.Msg), &extCreds)
+					p.dao.SetExtractedCredentials(pmsg.InstanceUUID, extCreds)
+				}
 				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken, State: apb.StateSucceeded, Podname: pmsg.PodName})
-				p.dao.SetExtractedCredentials(pmsg.InstanceUUID, extCreds)
 			}
 		}
 	}()

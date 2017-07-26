@@ -470,8 +470,22 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool) (*Deprovi
 		return nil, err
 	}
 
-	var token string
+	// NOTE, HACK: Check to see if there are any outstanding jobs for the
+	// requested ServiceInstance. Not perfect, but we've decided its acceptable
+	// to assume that **any** running jobs are a deprovision job, and we should
+	// therefore return a 202 to indicate that the job is still running. Avoid
+	// Spawning a new deprovision pod.
+	jobsInProgress, err := a.dao.GetSvcInstJobsByState(
+		instanceUUID.String(), apb.StateInProgress)
+	if err != nil {
+		return nil, err
+	} else if len(jobsInProgress) != 0 {
+		// HACK: Assuming this is the token, there should only be one
+		op := jobsInProgress[0].Token
+		return &DeprovisionResponse{Operation: op}, nil
+	}
 
+	var token string
 	if async {
 		a.log.Info("ASYNC deprovision in progress")
 		// asynchronously provision and return the token for the lastoperation
