@@ -35,13 +35,16 @@ script:
   - oc create -f ./scripts/broker-ci/mediawiki123.yaml
   - oc create -f ./scripts/broker-ci/postgresql.yaml
   - ./scripts/broker-ci/wait-for-pods.sh
-  - sleep 50
+  - sleep 30
   - oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml
   - sleep 5
   - oc get secrets --all-namespaces | grep mediawiki-postgresql-binding
   - oc get secret mediawiki-postgresql-binding -o yaml -n default
-  - oc logs $(oc get pods  --all-namespaces | grep controller-manager | awk $'{ print $2 }') -n service-catalog
   - oc get podpresets -n default
+  - oc get pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -o yaml -n default
+  - oc delete pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -n default
+  - sleep 20
+  - oc get pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -o yaml -n default
   - oc get pods --all-namespaces
   - curl $(oc get route -n default | grep mediawiki | cut -f 4 -d ' ')/index.php/Main_Page
   - oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/')
