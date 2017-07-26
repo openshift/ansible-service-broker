@@ -84,5 +84,4 @@ elif [[ "$action" == "ci" ]]; then
   echo "            Broker CI            "
   echo "================================="
   ./scripts/broker-ci/setup.sh
-#  make ci
 fi

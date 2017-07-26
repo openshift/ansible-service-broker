@@ -12,11 +12,6 @@ dockerhub_org_name: ansibleplaybookbundle
 dockerhub_user_password: brokerciuser
 EOF
 
-    pushd catasb
-    git checkout -b rthallisey-gate-testing master
-    git pull https://github.com/rthallisey/catasb.git gate-testing
-    popd
-
     pushd catasb/local/gate/
     ./run_gate.sh
     popd
