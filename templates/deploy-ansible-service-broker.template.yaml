@@ -23,21 +23,6 @@ objects:
       service: asb
 
 - apiVersion: v1
-  kind: Service
-  metadata:
-    name: etcd
-    labels:
-      app: ansible-service-broker
-      service: etcd
-  spec:
-    ports:
-      - name: etcd-advertise
-        port: 2379
-    selector:
-      app: ansible-service-broker
-      service: etcd
-
-- apiVersion: v1
   kind: ServiceAccount
   metadata:
     name: asb
@@ -82,8 +67,8 @@ objects:
       requests:
         storage: 1Gi
 
-- apiVersion: extensions/v1beta1
-  kind: Deployment
+- apiVersion: v1
+  kind: DeploymentConfig
   metadata:
     name: asb
     labels:
@@ -92,13 +77,9 @@ objects:
   spec:
     replicas: 1
     selector:
-      matchLabels:
-        app: ansible-service-broker
+      app: ansible-service-broker
     strategy:
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
-      type: RollingUpdate
+      type: Rolling
     template:
       metadata:
         labels:
@@ -123,41 +104,7 @@ objects:
             value: ${BROKER_CONFIG}
           resources: {}
           terminationMessagePath: /tmp/termination-log
-        volumes:
-          - name: config-volume
-            configMap:
-              name: broker-config
-              items:
-              - key: broker-config
-                path: config.yaml
-          - name: asb-tls
-            secret:
-              secretName: asb-tls
-- apiVersion: extensions/v1beta1
-  kind: Deployment
-  metadata:
-    name: etcd
-    labels:
-      app: ansible-service-broker
-      service: etcd
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: ansible-service-broker
-        service: etcd
-    strategy:
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
-      type: RollingUpdate
-    template:
-      metadata:
-        labels:
-          app: ansible-service-broker
-          service: etcd
-      spec:
-        containers:
+
         - image: ${ETCD_IMAGE}
           name: etcd
           imagePullPolicy: IfNotPresent
@@ -181,6 +128,15 @@ objects:
           - name: etcd
             persistentVolumeClaim:
               claimName: etcd
+          - name: config-volume
+            configMap:
+              name: broker-config
+              items:
+              - key: broker-config
+                path: config.yaml
+          - name: asb-tls
+            secret:
+              secretName: asb-tls
 
 - apiVersion: v1
   kind: ConfigMap
@@ -199,7 +155,7 @@ objects:
           pass: ${DOCKERHUB_PASS}
           org: ${DOCKERHUB_ORG}
       dao:
-        etcd_host: etcd
+        etcd_host: 0.0.0.0
         etcd_port: 2379
       log:
         logfile: /var/log/ansible-service-broker/asb.log
