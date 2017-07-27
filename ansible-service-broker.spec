@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 0.9.10
+Version: 0.9.11
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -314,6 +314,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Jul 27 2017 jesus m. rodriguez <jesusr@redhat.com> 0.9.11-1
+- 1475251 - Async deprovision fixes (#306) (ernelson@redhat.com)
+
 * Mon Jul 24 2017 Jason Montleon <jmontleo@redhat.com> 0.9.10-1
 - 1468173- Error out when bootstrap fails (#300)
   (fabianvf@users.noreply.github.com)
