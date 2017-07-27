@@ -60,4 +60,10 @@ deploy:
 test:
 	go test ./pkg/...
 
-.PHONY: vendor build run prepare-build-image build-image release-image release push clean deploy test
+cleanup-ci:
+	./scripts/broker-ci/cleanup-ci.sh
+
+ci:
+	./scripts/broker-ci/local-ci.sh
+
+.PHONY: vendor build run prepare-build-image build-image release-image release push clean deploy test ci cleanup-ci
