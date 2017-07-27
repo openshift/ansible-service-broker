@@ -1,16 +1,52 @@
 language: go
 go:
-  - 1.7.x
+  - "1.8.x"
 dist: trusty
 sudo: required
 group: edge
+
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y autoconf pkg-config e2fslibs-dev libblkid-dev zlib1g-dev liblzo2-dev asciidoc
-install: ./scripts/travis.sh install
+  - sudo apt-get install -y python-apt autoconf pkg-config e2fslibs-dev libblkid-dev zlib1g-dev liblzo2-dev asciidoc
+install:
+  - sudo pip install ansible==2.3.1
+  - ./scripts/travis.sh install
+before_script:
+  - sudo ufw disable
+  - tmp=`mktemp`
+  - echo '{"insecure-registries":["172.30.0.0/16"]}' > ${tmp}
+  - sudo mv ${tmp} /etc/docker/daemon.json
+  - sudo mount --make-shared /
+  - sudo service docker restart
+  - export ERROR=false
 script:
   - ./scripts/travis.sh format
   - ./scripts/travis.sh vet
   - ./scripts/travis.sh lint
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
+  - ./scripts/travis.sh ci
+  - oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u admin -p admin
+  - oc project default
+  - make build-image
+  - make deploy
+  - sleep 15
+  - oc create -f scripts/broker-ci/broker-resource.yaml || export ERROR=true
+  - oc create -f ./scripts/broker-ci/mediawiki123.yaml || export ERROR=true
+  - oc create -f ./scripts/broker-ci/postgresql.yaml || export ERROR=true
+  - ./scripts/broker-ci/wait-for-pods.sh &> /tmp/wait-for-pods-log || export ERROR=true
+  - sleep 30
+  - oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || export ERROR=true
+  - sleep 5
+  - oc delete pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -n default || export ERROR=true
+  - sleep 20
+  - export BIND_CHECK=$(curl $(oc get route -n default | grep mediawiki | cut -f 4 -d ' ')/index.php/Main_Page | grep "div class" | cut -f 2 -d "'")
+  - if [ "${BIND_CHECK}" = "error" ]; then export ERROR=true; exit 1; fi
+  - if ${ERROR}; then oc get serviceclasses --all-namespaces; fi
+  - if ${ERROR}; then oc get secrets --all-namespaces | grep mediawiki-postgresql-binding; fi
+  - if ${ERROR}; then oc get secret mediawiki-postgresql-binding -o yaml -n default; fi
+  - if ${ERROR}; then oc get podpresets -n default; fi
+  - if ${ERROR}; then oc get pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -o yaml -n default; fi
+  - if ${ERROR}; then oc get pods --all-namespaces; fi
+  - if ${ERROR}; then cat /tmp/wait-for-pods-log; fi
+  - if ${ERROR}; then oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/') -n ansible-service-broker; fi

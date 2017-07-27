@@ -1,0 +1,14 @@
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Instance
+metadata:
+  name: mediawiki
+  namespace: default
+spec:
+  serviceClassName: dh-ansibleplaybookbundle-mediawiki123-apb
+  planName: default
+  parameters:
+    mediawiki_db_schema: "mediawiki"
+    mediawiki_site_name: "Mediawiki-CI"
+    mediawiki_site_lang: "en"
+    mediawiki_admin_user: "ci-user"
+    mediawiki_admin_pass: "admin"
