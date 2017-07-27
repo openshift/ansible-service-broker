@@ -32,8 +32,8 @@ script:
   - make deploy
   - sleep 15
   - oc create -f scripts/broker-ci/broker-resource.yaml || export ERROR=true
-  - oc create -f ./scripts/broker-ci/mediawiki123.yaml || export ERROR=true
   - oc create -f ./scripts/broker-ci/postgresql.yaml || export ERROR=true
+  - oc create -f ./scripts/broker-ci/mediawiki123.yaml || export ERROR=true
   - ./scripts/broker-ci/wait-for-pods.sh &> /tmp/wait-for-pods-log || export ERROR=true
   - sleep 30
   - oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || export ERROR=true
@@ -49,4 +49,4 @@ script:
   - if ${ERROR}; then oc get pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -o yaml -n default; fi
   - if ${ERROR}; then oc get pods --all-namespaces; fi
   - if ${ERROR}; then cat /tmp/wait-for-pods-log; fi
-  - if ${ERROR}; then oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/') -n ansible-service-broker; fi
+  - if ${ERROR}; then oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/') -c asb -n ansible-service-broker; fi
