@@ -159,9 +159,20 @@ while [ "$?" -ne 1 ]; do
   oc get pods -n ${ASB_PROJECT} | grep asb
 done
 
+oc scale deployment etcd --replicas 0 -n ${ASB_PROJECT}
+# Wait for asb pod to be destroyed
+oc get pods -n ${ASB_PROJECT} | grep etcd
+while [ "$?" -ne 1 ]; do
+  echo "Waiting for etcd deployment to scale down"
+  sleep 5
+  oc get pods -n ${ASB_PROJECT} | grep etcd
+done
+
+oc delete deployment etcd -n ${ASB_PROJECT}
 oc delete endpoints asb -n ${ASB_PROJECT}
 oc delete service asb  -n ${ASB_PROJECT}
 oc delete route asb-etcd -n ${ASB_PROJECT}
+oc delete service etcd -n ${ASB_PROJECT}
 # Process required changes for local development
 oc process -f ${TEMPLATE_LOCAL_DEV} -n ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} | oc create -n ${ASB_PROJECT} -f -
 
