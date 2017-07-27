@@ -1,6 +1,6 @@
 ## Bind / Unbind New Work flow
 
-The goal of this new work flow is to give more control over the actions that the database takes on bind and unbind to the APB author. This means that we want the apb to be launched and to run the bind or unbind actions.
+The goal of this new work flow is to give more control over the actions that the APB takes on bind and unbind to the APB author. This means that we want the APB should have the ability to manage the bindings that are requested of it.
 
 While this is still using existing workflow pieces (i.e extracting credentials, saving those credentials), it is also creating a new workflow. This is an enhancement on the current design and will allow for the APB to choose which workflow it would prefer to follow. 
 
@@ -25,7 +25,7 @@ NOTE: The launch_apb_on_bind will eventually be deprecated.
 #### Example Usage (workflow proposed): 
 1. On APB provision, the APB decides that, for what ever application it is responsible for deploying, to create an admin user & password. 
 2. The APB does not want to hand out the admin user and password, for the application that it is responsible for, to all the other applications that could be bound. Instead the APB author would like to create new user accounts (by using the already saved/created admin user & password), and pass those back as credentials during the bind. The new credentials are for the application that the APB is responsible for.
-3. The same is true for unbind. The APB author could want to delete the user and password, for the application that it manages, credentials and would need to use the admin user & password. 
+3. The same is true for unbind. The APB author could want to delete the user and password, for the application that it manages, credentials and would need to use the admin user & password. The broker would alse be deleting credentials from etcd at this time.
 
 #### Example Usage: 
 1. APB author would like to keep only 1 account, and use that 1 account for all the bindings(current behavior).
