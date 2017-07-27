@@ -182,19 +182,15 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 	resp, err := h.broker.Deprovision(instanceUUID, async)
 
 	if err != nil {
-		h.log.Debug("err for deprovision - %#v", err)
-	}
+		h.log.Debug("err for deprovision - %s", err.Error())
 
-	if err != nil {
 		switch err {
 		case broker.ErrorNotFound:
 			writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
 		case broker.ErrorBindingExists:
 			writeResponse(w, http.StatusBadRequest, broker.DeprovisionResponse{})
 		}
-	}
-
-	if async {
+	} else if async {
 		writeDefaultResponse(w, http.StatusAccepted, resp, err)
 	} else {
 		writeDefaultResponse(w, http.StatusOK, resp, err)
