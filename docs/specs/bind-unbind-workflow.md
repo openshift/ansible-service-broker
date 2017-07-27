@@ -14,6 +14,7 @@ NOTE: The launch_apb_on_bind will eventually be deprecated.
 * The broker will save the credentials for each bind. this will be saved in etcd under the `extracted_credentials` directory. The key will be the binding id.
 * The broker will be responsible for providing the provisioned credentials (extracted credentials given at provision time) to the APB as extra vars during bind and unbind. Example
   - `--extra-vars '{..., "_apb_provision_creds:{}`
+  - during unbind `{..., "_apb_provision_creds:{}, "_apb_bind_creds:{}}`
 * The broker will be responsible for deleting the bindings extracted credentials in etcd during unbind.
 
 ### APB Responsibility
