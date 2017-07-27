@@ -73,7 +73,6 @@ containers scripts for ansible-service-broker
 Summary: selinux policy module for %{name}
 BuildRequires: checkpolicy, selinux-policy-devel, hardlink, policycoreutils
 BuildRequires: /usr/bin/pod2man
-Requires: selinux-policy >= %{selinux_policy_ver}
 Requires(post): /usr/sbin/semodule, /sbin/restorecon, /usr/sbin/setsebool, /usr/sbin/selinuxenabled, /usr/sbin/semanage
 Requires(post): policycoreutils-python
 Requires(post): selinux-policy-targeted
