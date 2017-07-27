@@ -10,6 +10,69 @@ kind: Template
 metadata:
   name: ansible-service-broker-local-development
 objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: etcd
+    labels:
+      app: ansible-service-broker
+      service: etcd
+  spec:
+    ports:
+      - name: etcd-advertise
+        port: 2379
+    selector:
+      app: ansible-service-broker
+      service: etcd
+
+- apiVersion: extensions/v1beta1
+  kind: Deployment
+  metadata:
+    name: etcd
+    labels:
+      app: ansible-service-broker
+      service: etcd
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: ansible-service-broker
+        service: etcd
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: ansible-service-broker
+          service: etcd
+      spec:
+        containers:
+        - image: ${ETCD_IMAGE}
+          name: etcd
+          imagePullPolicy: IfNotPresent
+          terminationMessagePath: /tmp/termination-log
+          workingDir: /etcd
+          args:
+            - ${ETCD_PATH}
+            - --data-dir=/data
+            - --listen-client-urls=http://0.0.0.0:2379
+            - --advertise-client-urls=http://0.0.0.0:2379
+          ports:
+          - containerPort: 2379
+            protocol: TCP
+          env:
+          - name: ETCDCTL_API
+            value: "3"
+          volumeMounts:
+            - mountPath: /data
+              name: etcd
+        volumes:
+          - name: etcd
+            persistentVolumeClaim:
+              claimName: etcd
 
 - apiVersion: v1
   kind: Route
@@ -71,3 +134,13 @@ parameters:
 - description: Brokers IP Address
   displayname: BROKER_IP_ADDR
   name: BROKER_IP_ADDR
+
+- description: Container Image to use for etcd in format of imagename:tag
+  displayname: etcd Image
+  name: ETCD_IMAGE
+  value: quay.io/coreos/etcd:latest
+
+- description: Path of the etcd binary
+  displayname: etcd path
+  name: ETCD_PATH
+  value: /usr/local/bin/etcd
