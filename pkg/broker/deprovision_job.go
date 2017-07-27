@@ -20,6 +20,7 @@ type DeprovisionMsg struct {
 	JobToken     string `json:"job_token"`
 	SpecId       string `json:"spec_id"`
 	Error        string `json:"error"`
+	Msg          string `json:"msg"`
 }
 
 func (m DeprovisionMsg) Render() string {
@@ -57,5 +58,5 @@ func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	// send creds
 	p.log.Debug("sending message to channel")
 	msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.Id.String(),
-		JobToken: token, SpecId: p.serviceInstance.Spec.Id, Error: ""}
+		JobToken: token, SpecId: p.serviceInstance.Spec.Id, Error: "", Msg: "_deprovision"}
 }
