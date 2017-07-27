@@ -150,7 +150,7 @@ fi
 echo "TLS Cert: tls.crt"
 echo -e "Wrote \n${TLS_KEY_DATA}\n to: ${TLS_KEY}\n"
 # Kill any running broker pods
-oc scale deployments asb --replicas 0 -n ${ASB_PROJECT}
+oc scale deploymentconfig asb --replicas 0 -n ${ASB_PROJECT}
 # Wait for asb pod to be destroyed
 oc get pods -n ${ASB_PROJECT} | grep asb
 while [ "$?" -ne 1 ]; do
