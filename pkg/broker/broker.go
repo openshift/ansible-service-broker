@@ -717,7 +717,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		a.log.Warningf("unable to retrieve provision time credentials - %v", err)
 	}
 
-	//Add the DB Credentials this will allow the
+	// Add the DB Credentials this will allow the apb to use these credentials if it so chooses.
 	params[provisionCredentialsKey] = provExtCreds.Credentials
 
 	// NOTE: We are currently disabling running an APB on bind via 'LaunchApbOnBind'

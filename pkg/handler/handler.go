@@ -266,7 +266,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 	if planID == "" {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})
 	}
-	resp, err := h.broker.Unbind(instanceUUID, bindingUUID)
+	resp, err := h.broker.Unbind(instanceUUID, bindingUUID, planID)
 	if errors.IsNotFound(err) {
 		writeResponse(w, http.StatusGone, resp)
 	} else {

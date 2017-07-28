@@ -105,7 +105,7 @@ enable the full functionality.
 **field**|**description**|**default value**|**required**
 :-----:|:-----:|:-----:|:-----:
 dev_broker|Allow development routes to be accessable|false|N
-launch_apb_on_bind|Allow bind be be no op|true|N
+launch_apb_on_bind|Allow bind be be no op|false|N
 bootstrap_on_startup|Allow the broker attempt to bootstrap itself on start up. Will retrieve the APBs from configured registries|false|N
 recovery|Allow the broker to attempt to recover itself by dealing with pending jobs noted in etcd|false|N
 output_request|Allow the broker to output the requests to the log file as they come in for easier debugging|false|N
