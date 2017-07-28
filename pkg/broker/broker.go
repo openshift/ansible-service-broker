@@ -30,8 +30,10 @@ var (
 )
 
 const (
+	// provisionCredentialsKey - Key used to pass credentials to apb.
 	provisionCredentialsKey = "_apb_provision_creds"
-	bindCredentialsKey      = "_apb_bind_creds"
+	// bindCredentialsKey - Key used to pas bind credentials to apb.
+	bindCredentialsKey = "_apb_bind_creds"
 )
 
 // Broker - A broker is used to to compelete all the tasks that a broker must be able to do.
@@ -656,19 +658,11 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 
 	// GET SERVICE get provision parameters
-
-	// build bind parameters args:
-	// {
-	//     provision_params: {} same as what was stored in etcd
-	//	   bind_params: {}
-	// }
-	// asbcli passes in user: aone, which bind passes to apb
 	params := make(apb.Parameters)
 	if instance.Parameters != nil {
 		params["provision_params"] = *instance.Parameters
 	}
 	params["bind_params"] = req.Parameters
-
 	// Inject PlanID into parameters passed to APBs
 	if req.PlanID == "" {
 		errMsg :=
@@ -683,6 +677,9 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	params[planParameterKey] = req.PlanID
 
 	// Create a BindingInstance with a reference to the serviceinstance.
+	//
+	// Create a BindingInstance with a reference to the serviceinstance.
+	//
 	bindingInstance := &apb.BindInstance{
 		ID:         bindingUUID,
 		ServiceID:  instanceUUID,
@@ -716,6 +713,9 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 
 	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
+	if err != nil {
+		a.log.Warningf("unable to retrieve provision time credentials - %v", err)
+	}
 
 	//Add the DB Credentials this will allow the
 	params[provisionCredentialsKey] = provExtCreds.Credentials
@@ -726,9 +726,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	var podName string
 	var bindExtCreds *apb.ExtractedCredentials
 	if a.brokerConfig.LaunchApbOnBind {
-		bindExtCreds = &apb.ExtractedCredentials{Credentials: make(map[string]interface{})}
 		a.log.Info("Broker configured to run APB bind")
-		a.log.Info("Starting APB bind...")
 		podName, bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
 
 		sm := apb.NewServiceAccountManager(a.log)
@@ -739,7 +737,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 			return nil, err
 		}
 	} else {
-		a.log.Warning("Broker configured to *NOT* launch and run APB bind")
+		a.log.Warningf("Broker configured to *NOT* launch and run APB bind")
 	}
 	instance.AddBinding(bindingUUID)
 	if err := a.dao.SetServiceInstance(instanceUUID.String(), instance); err != nil {
@@ -747,16 +745,15 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 	// Can't bind to anything if we have nothing to return to the catalog
 	if provExtCreds == nil && bindExtCreds == nil {
-		a.log.Error("No extracted credentials found from provision or bind")
-		a.log.Error("Instance ID: %s", instanceUUID.String())
+		a.log.Errorf("No extracted credentials found from provision or bind instance ID: %s",
+			instanceUUID.String())
 		return nil, errors.New("No credentials available")
 	}
 
 	if bindExtCreds != nil {
 		err = a.dao.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
 		if err != nil {
-			a.log.Error("Could not persist extracted credentials")
-			a.log.Error("%s", err.Error())
+			a.log.Errorf("Could not persist extracted credentials - %v", err)
 			return nil, err
 		}
 		return &BindResponse{Credentials: bindExtCreds.Credentials}, nil
@@ -784,7 +781,8 @@ func (a AnsibleBroker) Unbind(
 	if err != nil && !client.IsKeyNotFound(err) {
 		return nil, err
 	}
-	//Add the DB Credentials this will allow the
+	// Add the credentials to the parameters so that an APB can choose what
+	// it would like to do.
 	params[provisionCredentialsKey] = provExtCreds.Credentials
 	if bindExtCreds != nil {
 		params[bindCredentialsKey] = bindExtCreds.Credentials
@@ -796,6 +794,7 @@ func (a AnsibleBroker) Unbind(
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
 	}
+	// only launch apb if we are always launching the APB.
 	if a.brokerConfig.LaunchApbOnBind {
 		err = apb.Unbind(serviceInstance, a.clusterConfig, a.log, &params)
 		if err != nil {
