@@ -17,7 +17,6 @@ Some good questions to answer in detail:
  - Will this change APBs?
 
 ## Work Items
-
 A list of items that you plan to implement. You don't have to follow it
 exactly during implementation, but it's good to compact all the details
 about the spec into a series of steps that anyone can follow.
