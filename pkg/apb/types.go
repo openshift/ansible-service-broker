@@ -45,10 +45,8 @@ type Spec struct {
 	Bindable    bool                   `json:"bindable"`
 	Description string                 `json:"description"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-
-	// required, optional, unsupported
-	Async string `json:"async"`
-	Plans []Plan `json:"plans"`
+	Async       string                 `json:"async"`
+	Plans       []Plan                 `json:"plans"`
 }
 
 // Context - Determines the context in which the service is running

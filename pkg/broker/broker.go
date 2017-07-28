@@ -462,7 +462,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		errMsg :=
 			"PlanID from provision request is blank. " +
 				"Provision requests must specify PlanIDs"
-		a.log.Error(errMsg)
 		return nil, errors.New(errMsg)
 	}
 
@@ -570,7 +569,6 @@ func (a AnsibleBroker) Deprovision(
 
 	if planID == "" {
 		errMsg := "Deprovision request contains an empty plan_id"
-		a.log.Error(errMsg)
 		return nil, errors.New(errMsg)
 	}
 
@@ -671,7 +669,6 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		errMsg :=
 			"PlanID from bind request is blank. " +
 				"Bind requests must specify PlanIDs"
-		a.log.Error(errMsg)
 		return nil, errors.New(errMsg)
 	}
 
@@ -789,7 +786,6 @@ func (a AnsibleBroker) Unbind(
 		errMsg :=
 			"PlanID from unbind request is blank. " +
 				"Unbind requests must specify PlanIDs"
-		a.log.Error(errMsg)
 		return nil, errors.New(errMsg)
 	}
 
