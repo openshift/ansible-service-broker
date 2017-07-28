@@ -20,36 +20,57 @@ const SpecAsync = "optional"
 const SpecDescription = "A note taking webapp"
 const SpecRegistryName = "test"
 
-var expectedSpecParameters = []map[string]*apb.ParameterDescriptor{
-	map[string]*apb.ParameterDescriptor{
-		"postgresql_database": &apb.ParameterDescriptor{
-			Default: "admin",
-			Type:    "string",
-			Title:   "PostgreSQL Database Name"}},
-	map[string]*apb.ParameterDescriptor{
-		"postgresql_password": &apb.ParameterDescriptor{
-			Default:     "admin",
-			Type:        "string",
-			Description: "A random alphanumeric string if left blank",
-			Title:       "PostgreSQL Password"}},
-	map[string]*apb.ParameterDescriptor{
-		"postgresql_user": &apb.ParameterDescriptor{
-			Default:   "admin",
-			Title:     "PostgreSQL User",
-			Type:      "string",
-			Maxlength: 63}},
-	map[string]*apb.ParameterDescriptor{
-		"postgresql_version": &apb.ParameterDescriptor{
-			Default: 9.5,
-			Enum:    []string{"9.5", "9.4"},
-			Type:    "enum",
-			Title:   "PostgreSQL Version"}},
-	map[string]*apb.ParameterDescriptor{
-		"postgresql_email": &apb.ParameterDescriptor{
-			Pattern:     "\u201c^\\\\S+@\\\\S+$\u201d",
-			Type:        "string",
-			Description: "email address",
-			Title:       "email"}},
+const PlanName = "dev"
+const PlanDescription = "Basic development plan"
+
+var PlanMetadata = map[string]interface{}{
+	"displayName":     "Development",
+	"longDescription": PlanDescription,
+	"cost":            "$0.00",
+}
+
+const PlanFree = true
+const PlanBindable = true
+
+var expectedPlanParameters = []apb.ParameterDescriptor{
+	apb.ParameterDescriptor{
+		Name:    "postgresql_database",
+		Default: "admin",
+		Type:    "string",
+		Title:   "PostgreSQL Database Name"},
+	apb.ParameterDescriptor{
+		Name:        "postgresql_password",
+		Default:     "admin",
+		Type:        "string",
+		Description: "A random alphanumeric string if left blank",
+		Title:       "PostgreSQL Password"},
+	apb.ParameterDescriptor{
+		Name:      "postgresql_user",
+		Default:   "admin",
+		Title:     "PostgreSQL User",
+		Type:      "string",
+		Maxlength: 63},
+	apb.ParameterDescriptor{
+		Name:    "postgresql_version",
+		Default: 9.5,
+		Enum:    []string{"9.5", "9.4"},
+		Type:    "enum",
+		Title:   "PostgreSQL Version"},
+	apb.ParameterDescriptor{
+		Name:        "postgresql_email",
+		Pattern:     "\u201c^\\\\S+@\\\\S+$\u201d",
+		Type:        "string",
+		Description: "email address",
+		Title:       "email"},
+}
+
+var p = apb.Plan{
+	Name:        PlanName,
+	Description: PlanDescription,
+	Metadata:    PlanMetadata,
+	Free:        PlanFree,
+	Bindable:    PlanBindable,
+	Parameters:  expectedPlanParameters,
 }
 
 var s = apb.Spec{
@@ -60,7 +81,17 @@ var s = apb.Spec{
 	Tags:        SpecTags,
 	Bindable:    SpecBindable,
 	Async:       SpecAsync,
-	Parameters:  expectedSpecParameters,
+	Plans:       []apb.Plan{p},
+}
+
+var noPlansSpec = apb.Spec{
+	ID:          SpecID,
+	Description: SpecDescription,
+	FQName:      SpecName,
+	Image:       SpecImage,
+	Tags:        SpecTags,
+	Bindable:    SpecBindable,
+	Async:       SpecAsync,
 }
 
 type TestingAdapter struct {
@@ -105,6 +136,23 @@ func setUp() Registry {
 	return r
 }
 
+func setUpNoPlans() Registry {
+	a = &TestingAdapter{
+		Name:   "testing",
+		Images: []string{"image1-apb", "image2"},
+		Specs:  []*apb.Spec{&noPlansSpec},
+		Called: map[string]bool{},
+	}
+	filter := Filter{}
+	c := Config{}
+	log := &logging.Logger{}
+	r = Registry{config: c,
+		adapter: a,
+		log:     log,
+		filter:  filter}
+	return r
+}
+
 func TestRegistryLoadSpecsNoError(t *testing.T) {
 	r := setUp()
 	specs, numImages, err := r.LoadSpecs()
@@ -116,6 +164,17 @@ func TestRegistryLoadSpecsNoError(t *testing.T) {
 	ft.AssertEqual(t, numImages, 1)
 	ft.AssertEqual(t, len(specs), 1)
 	ft.AssertEqual(t, specs[0], &s)
+}
+
+func TestRegistryLoadSpecsNoPlans(t *testing.T) {
+	r := setUpNoPlans()
+	specs, _, err := r.LoadSpecs()
+	if err != nil {
+		ft.AssertTrue(t, false)
+	}
+	ft.AssertTrue(t, a.Called["GetImageNames"])
+	ft.AssertTrue(t, a.Called["FetchSpecs"])
+	ft.AssertEqual(t, len(specs), 0)
 }
 
 func TestFail(t *testing.T) {
