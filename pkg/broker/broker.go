@@ -29,6 +29,11 @@ var (
 	ErrorBindingExists = errors.New("binding exists")
 )
 
+const (
+	provisionCredentialsKey = "_apb_provision_creds"
+	bindCredentialsKey      = "_apb_bind_creds"
+)
+
 // Broker - A broker is used to to compelete all the tasks that a broker must be able to do.
 type Broker interface {
 	Bootstrap() (*BootstrapResponse, error)
@@ -713,14 +718,15 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
 
 	//Add the DB Credentials this will allow the
-	params["db_creds"] = provExtCreds.Credentials
+	params[provisionCredentialsKey] = provExtCreds.Credentials
 
 	// NOTE: We are currently disabling running an APB on bind via 'LaunchApbOnBind'
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
 	// Currently, the 'launchapbonbind' is set to false in the 'config' ConfigMap
-	bindExtCreds := &apb.ExtractedCredentials{Credentials: make(map[string]interface{})}
 	var podName string
+	var bindExtCreds *apb.ExtractedCredentials
 	if a.brokerConfig.LaunchApbOnBind {
+		bindExtCreds = &apb.ExtractedCredentials{Credentials: make(map[string]interface{})}
 		a.log.Info("Broker configured to run APB bind")
 		a.log.Info("Starting APB bind...")
 		podName, bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
@@ -775,12 +781,14 @@ func (a AnsibleBroker) Unbind(
 		return nil, err
 	}
 	bindExtCreds, err := a.dao.GetExtractedCredentials(bindingUUID.String())
-	if err != nil {
+	if err != nil && !client.IsKeyNotFound(err) {
 		return nil, err
 	}
 	//Add the DB Credentials this will allow the
-	params["db_creds"] = provExtCreds.Credentials
-	params["bind_creds"] = bindExtCreds.Credentials
+	params[provisionCredentialsKey] = provExtCreds.Credentials
+	if bindExtCreds != nil {
+		params[bindCredentialsKey] = bindExtCreds.Credentials
+	}
 	serviceInstance, err := a.getServiceInstance(instanceUUID)
 	if err != nil {
 		a.log.Debugf("Service instance with id %s does not exist", instanceUUID.String())
@@ -788,14 +796,18 @@ func (a AnsibleBroker) Unbind(
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
 	}
-	err = apb.Unbind(serviceInstance, a.clusterConfig, a.log, &params)
-	if err != nil {
-		return nil, err
+	if a.brokerConfig.LaunchApbOnBind {
+		err = apb.Unbind(serviceInstance, a.clusterConfig, a.log, &params)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	err = a.dao.DeleteExtractedCredentials(bindingUUID.String())
-	if err != nil {
-		return nil, err
+	if bindExtCreds != nil {
+		err = a.dao.DeleteExtractedCredentials(bindingUUID.String())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = a.dao.DeleteBindInstance(bindingUUID.String())
