@@ -35,9 +35,9 @@ type Broker interface {
 	Catalog() (*CatalogResponse, error)
 	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest) (*UpdateResponse, error)
-	Deprovision(uuid.UUID, bool) (*DeprovisionResponse, error)
+	Deprovision(uuid.UUID, string, bool) (*DeprovisionResponse, error)
 	Bind(uuid.UUID, uuid.UUID, *BindRequest) (*BindResponse, error)
-	Unbind(uuid.UUID, uuid.UUID) (*UnbindResponse, error)
+	Unbind(uuid.UUID, uuid.UUID, string) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	// TODO: consider returning a struct + error
 	Recover() (string, error)
@@ -221,7 +221,6 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
-	a.log.Debugf("specs -> %v", specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
@@ -388,8 +387,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// the data placement or applying custom business rules"
 
 	//-> PlanID            uuid.UUID
-	// Unclear how this is relevant
-
 	//-> ServiceID         uuid.UUID
 	// ServiceID maps directly to a Spec.Id found in etcd. Can pull Spec via
 	// Dao::GetSpec(id string)
@@ -459,14 +456,26 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	}
 
 	context := &req.Context
-	parameters := &req.Parameters
+	parameters := req.Parameters
+
+	if req.PlanID == "" {
+		errMsg :=
+			"PlanID from provision request is blank. " +
+				"Provision requests must specify PlanIDs"
+		return nil, errors.New(errMsg)
+	}
+
+	a.log.Debugf(
+		"Injecting PlanID as parameter: { %s: %s }",
+		planParameterKey, req.PlanID)
+	parameters[planParameterKey] = req.PlanID
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
 		ID:         instanceUUID,
 		Spec:       spec,
 		Context:    context,
-		Parameters: parameters,
+		Parameters: &parameters,
 	}
 
 	// Verify we're not reprovisioning the same instance
@@ -538,7 +547,8 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 }
 
 // Deprovision - will deprovision a service.
-func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool,
+func (a AnsibleBroker) Deprovision(
+	instanceUUID uuid.UUID, planID string, async bool,
 ) (*DeprovisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	// Deprovision flow
@@ -555,6 +565,11 @@ func (a AnsibleBroker) Deprovision(instanceUUID uuid.UUID, async bool,
 	instance, err := a.getServiceInstance(instanceUUID)
 	if err != nil {
 		return nil, err
+	}
+
+	if planID == "" {
+		errMsg := "Deprovision request contains an empty plan_id"
+		return nil, errors.New(errMsg)
 	}
 
 	if err := a.validateDeprovision(instance); err != nil {
@@ -649,10 +664,20 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 	params["bind_params"] = req.Parameters
 
-	//
-	// Create a BindingInstance with a reference to the serviceinstance.
-	//
+	// Inject PlanID into parameters passed to APBs
+	if req.PlanID == "" {
+		errMsg :=
+			"PlanID from bind request is blank. " +
+				"Bind requests must specify PlanIDs"
+		return nil, errors.New(errMsg)
+	}
 
+	a.log.Debugf(
+		"Injecting PlanID as parameter: { %s: %s }",
+		planParameterKey, req.PlanID)
+	params[planParameterKey] = req.PlanID
+
+	// Create a BindingInstance with a reference to the serviceinstance.
 	bindingInstance := &apb.BindInstance{
 		ID:         bindingUUID,
 		ServiceID:  instanceUUID,
@@ -754,10 +779,14 @@ func mergeCredentials(provExtCreds *apb.ExtractedCredentials,
 }
 
 // Unbind - unbind a services previous binding
-func (a AnsibleBroker) Unbind(instanceUUID uuid.UUID, bindingUUID uuid.UUID,
+func (a AnsibleBroker) Unbind(
+	instanceUUID uuid.UUID, bindingUUID uuid.UUID, planID string,
 ) (*UnbindResponse, error) {
-	if _, err := a.dao.GetBindInstance(bindingUUID.String()); err != nil {
-		return nil, ErrorNotFound
+	if planID == "" {
+		errMsg :=
+			"PlanID from unbind request is blank. " +
+				"Unbind requests must specify PlanIDs"
+		return nil, errors.New(errMsg)
 	}
 
 	serviceInstance, err := a.getServiceInstance(instanceUUID)
@@ -801,9 +830,9 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 		if async, provision: it should create a Job that calls apb.Provision. And write the output to etcd.
 	*/
-	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID))    // optional
-	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID.String())) // optional
-	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation))    // this is provided with the provision. task id from the work_engine
+	a.log.Debug(fmt.Sprintf("service_id: %s", req.ServiceID)) // optional
+	a.log.Debug(fmt.Sprintf("plan_id: %s", req.PlanID))       // optional
+	a.log.Debug(fmt.Sprintf("operation:  %s", req.Operation)) // this is provided with the provision. task id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
 	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)

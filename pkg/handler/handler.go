@@ -174,6 +174,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
 		return
 	}
+
 	var async bool
 	queryparams := r.URL.Query()
 	if val, ok := queryparams["accepts_incomplete"]; ok {
@@ -181,7 +182,12 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		async, _ = strconv.ParseBool(val[0])
 	}
 
-	resp, err := h.broker.Deprovision(instanceUUID, async)
+	planID := r.FormValue("plan_id")
+	if planID == "" {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "deprovision request missing plan_id query parameter"})
+	}
+
+	resp, err := h.broker.Deprovision(instanceUUID, planID, async)
 
 	if err != nil {
 		h.log.Debug("err for deprovision - %#v", err)
@@ -257,7 +263,12 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
-	resp, err := h.broker.Unbind(instanceUUID, bindingUUID)
+	planID := r.FormValue("plan_id")
+	if planID == "" {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})
+	}
+
+	resp, err := h.broker.Unbind(instanceUUID, bindingUUID, planID)
 
 	if errors.IsNotFound(err) {
 		writeResponse(w, http.StatusGone, resp)
@@ -295,7 +306,7 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 
 	// plan_id is optional
 	if val, ok := queryparams["plan_id"]; ok {
-		req.PlanID = uuid.Parse(val[0])
+		req.PlanID = val[0]
 	}
 
 	resp, err := h.broker.LastOperation(instanceUUID, &req)

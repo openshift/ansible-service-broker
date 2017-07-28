@@ -15,6 +15,7 @@ type SpecManifest map[string]*Spec
 
 // ParameterDescriptor - a parameter to be used by the service catalog to get data.
 type ParameterDescriptor struct {
+	Name        string      `json:"name"`
 	Title       string      `json:"title"`
 	Type        string      `json:"type"`
 	Description string      `json:"description,omitempty"`
@@ -22,11 +23,18 @@ type ParameterDescriptor struct {
 	Maxlength   int         `json:"maxlength,omitempty"`
 	Pattern     string      `json:"pattern,omitempty"`
 	Enum        []string    `json:"enum,omitempty"`
+	Required    bool        `json:"required"`
 }
 
-/*
-array of maps with an array of ParameterDescriptors
-*/
+// Plan - Plan object describing an APB deployment plan and associated parameters
+type Plan struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Free        bool                   `json:"free,omitempty"`
+	Bindable    bool                   `json:"bindable,omitempty"`
+	Parameters  []ParameterDescriptor  `json:"parameters"`
+}
 
 // Spec - A APB spec
 type Spec struct {
@@ -37,11 +45,8 @@ type Spec struct {
 	Bindable    bool                   `json:"bindable"`
 	Description string                 `json:"description"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-
-	// required, optional, unsupported
-	Async      string                            `json:"async"`
-	Parameters []map[string]*ParameterDescriptor `json:"parameters"`
-	Required   []string                          `json:"required,omitempty"`
+	Async       string                 `json:"async"`
+	Plans       []Plan                 `json:"plans"`
 }
 
 // Context - Determines the context in which the service is running
@@ -104,16 +109,17 @@ func SpecLogDump(spec *Spec, log *logging.Logger) {
 	log.Debug("Description: %s", spec.Description)
 	log.Debug("Async: %s", spec.Async)
 
-	for _, params := range spec.Parameters {
-		log.Debug("ParameterDescriptor")
-		for k, param := range params {
-			log.Debug("  Name: %#v", k)
+	for _, plan := range spec.Plans {
+		log.Debugf("Plan: %s", plan.Name)
+		for _, param := range plan.Parameters {
+			log.Debug("  Name: %#v", param.Name)
 			log.Debug("  Title: %s", param.Title)
 			log.Debug("  Type: %s", param.Type)
 			log.Debug("  Description: %s", param.Description)
 			log.Debug("  Default: %#v", param.Default)
 			log.Debug("  Maxlength: %d", param.Maxlength)
 			log.Debug("  Pattern: %s", param.Pattern)
+			log.Debug("  Pattern: %s", param.Required)
 			log.Debug("  Enum: %v", param.Enum)
 		}
 	}

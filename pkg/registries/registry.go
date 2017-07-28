@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -61,7 +62,7 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	r.log.Debug("Filter applied against registry: %s", r.config.Name)
 
 	if len(validNames) != 0 {
-		r.log.Debugf("Passing APBs:")
+		r.log.Debugf("APBs passing white/blacklist filter:")
 		for _, name := range validNames {
 			r.log.Debugf("-> %s", name)
 		}
@@ -70,7 +71,7 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	if len(filteredNames) != 0 {
 		go func() {
 			var buffer bytes.Buffer
-			buffer.WriteString("Filtered APBs:\n")
+			buffer.WriteString("APBs filtered by white/blacklist filter:")
 			for _, name := range filteredNames {
 				buffer.WriteString(fmt.Sprintf("-> %s", name))
 			}
@@ -85,7 +86,20 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 			r.config.Name, err)
 		return []*apb.Spec{}, 0, err
 	}
-	return specs, len(imageNames), nil
+
+	r.log.Infof("Validating specs...")
+	validatedSpecs := validateSpecs(r.log, specs)
+	failedSpecsCount := len(specs) - len(validatedSpecs)
+
+	if failedSpecsCount != 0 {
+		r.log.Warningf(
+			"%d specs of %d discovered specs failed validation from registry: %s",
+			failedSpecsCount, len(specs), r.adapter.RegistryName())
+	} else {
+		r.log.Notice("All specs passed validation!")
+	}
+
+	return validatedSpecs, len(imageNames), nil
 }
 
 func registryFilterImagesForAPBs(imageNames []string) []string {
@@ -153,7 +167,7 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 }
 
 func createFilter(config Config, log *logging.Logger) Filter {
-	log.Debug("Creating filte for registry: %s", config.Name)
+	log.Debug("Creating filter for registry: %s", config.Name)
 	log.Debug("whitelist: %v", config.WhiteList)
 	log.Debug("blacklist: %v", config.BlackList)
 
@@ -180,4 +194,64 @@ func createFilter(config Config, log *logging.Logger) Filter {
 	}
 
 	return filter
+}
+
+func validateSpecs(log *logging.Logger, inSpecs []*apb.Spec) []*apb.Spec {
+	var wg sync.WaitGroup
+	wg.Add(len(inSpecs))
+
+	type resultT struct {
+		ok         bool
+		spec       *apb.Spec
+		failReason string
+	}
+
+	out := make(chan resultT)
+	for _, spec := range inSpecs {
+		go func(s *apb.Spec) {
+			defer wg.Done()
+			ok, failReason := validateSpecPlans(s)
+			out <- resultT{ok, s, failReason}
+		}(spec)
+	}
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+
+	validSpecs := make([]*apb.Spec, 0, len(inSpecs))
+	for result := range out {
+		if result.ok {
+			validSpecs = append(validSpecs, result.spec)
+		} else {
+			log.Warningf(
+				"Spec [ %s ] failed validation for the following reason: [ %s ]. "+
+					"It will not be made available.",
+				result.spec.FQName, result.failReason,
+			)
+		}
+	}
+
+	return validSpecs
+}
+
+func validateSpecPlans(spec *apb.Spec) (bool, string) {
+	// Specs must have at least one plan
+	if !(len(spec.Plans) > 0) {
+		return false, "Specs must have at least one plan"
+	}
+
+	dupes := make(map[string]bool)
+	for _, plan := range spec.Plans {
+		if _, contains := dupes[plan.Name]; contains {
+			reason := fmt.Sprintf("%s: %s",
+				"Plans within a spec must not contain duplicate value", plan.Name)
+
+			return false, reason
+		}
+		dupes[plan.Name] = true
+	}
+
+	return true, ""
 }
