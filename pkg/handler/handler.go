@@ -73,8 +73,8 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	providers := auth.GetProviders(brokerConfig.Auth)
-	return handlers.LoggingHandler(os.Stdout, auth.Handler(h, providers))
+	providers := auth.GetProviders(brokerConfig.Auth, log)
+	return handlers.LoggingHandler(os.Stdout, auth.Handler(h, providers, log))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {

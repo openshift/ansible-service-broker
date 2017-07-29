@@ -3,9 +3,10 @@ package auth
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
+
+	logging "github.com/op/go-logging"
 )
 
 // UserPrincipal - represents a User as a Principal to the auth system.
@@ -27,11 +28,12 @@ func (u UserPrincipal) GetName() string {
 // BasicAuth - Performs an HTTP Basic Auth validation.
 type BasicAuth struct {
 	usa UserServiceAdapter
+	log *logging.Logger
 }
 
 // NewBasicAuth - constructs a BasicAuth instance.
-func NewBasicAuth(userSvcAdapter UserServiceAdapter) BasicAuth {
-	return BasicAuth{usa: userSvcAdapter}
+func NewBasicAuth(userSvcAdapter UserServiceAdapter, log *logging.Logger) BasicAuth {
+	return BasicAuth{usa: userSvcAdapter, log: log}
 }
 
 // GetPrincipal - returns the User Principal that matches the credentials in the
@@ -46,7 +48,7 @@ func (b BasicAuth) GetPrincipal(r *http.Request) (Principal, error) {
 		// get the encoded part of the header
 		decodedheader, err := base64.StdEncoding.DecodeString(authheader[6:])
 		if err != nil {
-			fmt.Println(err.Error())
+			b.log.Error(err.Error())
 		}
 		userpass := strings.Split(string(decodedheader), ":")
 		username = userpass[0]
