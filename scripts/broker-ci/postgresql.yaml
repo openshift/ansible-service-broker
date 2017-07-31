@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   serviceClassName: dh-ansibleplaybookbundle-rhscl-postgresql-apb
-  planName: default
+  planName: prod
   parameters:
     postgresql_database: "admin"
     postgresql_password: "admin"
