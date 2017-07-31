@@ -19,6 +19,14 @@ before_script:
   - sudo mount --make-shared /
   - sudo service docker restart
   - export ERROR=false
+  - echo $TRAVIS_SECURE_ENV_VARS
+  - export TRAVIS_SECURE_ENV_VARS=true
+  - echo $DOCKERHUBUSERNAME
+  - echo $DOCKERHUBPASSWORD
+  - echo $DOCKERHUB_USERNAME
+  - echo $DOCKERHUB_PASSWORD
+  - export DOCKERHUB_USERNAME=${DOCKERHUBUSERNAME}
+  - export DOCKERHUB_PASSWORD=${DOCKERHUBPASSWORD}
 script:
   - ./scripts/travis.sh format
   - ./scripts/travis.sh vet
