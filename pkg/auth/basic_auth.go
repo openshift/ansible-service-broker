@@ -60,9 +60,10 @@ func (b BasicAuth) GetPrincipal(r *http.Request) (Principal, error) {
 		if !b.usa.ValidateUser(username, password) {
 			return nil, errors.New("invalid credentials")
 		}
+		return b.createPrincipal(username)
 	}
 
-	return b.createPrincipal(username)
+	return nil, errors.New("invalid credentials, corrupt header")
 }
 
 func (b BasicAuth) createPrincipal(username string) (Principal, error) {

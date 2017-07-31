@@ -32,6 +32,7 @@ func TestNewFusa(t *testing.T) {
 	ft.AssertEqual(t, adminuser.Password, "admin", "password does not match")
 	ft.AssertTrue(t, fusa.ValidateUser("admin", "admin"), "validation failed")
 	ft.AssertFalse(t, fusa.ValidateUser("notme", "admin"), "validation passed, expected failure")
+	ft.AssertFalse(t, fusa.ValidateUser("", ""), "expected failure on empty string")
 }
 
 func TestErrorBuild(t *testing.T) {
