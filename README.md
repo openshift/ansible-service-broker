@@ -40,7 +40,7 @@ Read more about the Ansible Service Broker and Ansible Playbook Bundles in this 
 * [Other Documentation](docs/README.md)
 
 ## Published Images
-The ansible-service-broker community publishes images in (dockerhub)[https://hub.docker.com/u/ansibleplaybookbundle].
+The ansible-service-broker community publishes images in [Docker Hub](https://hub.docker.com/u/ansibleplaybookbundle).
 Image tags:
 - **canary** - The newest source build
 - **latest** - The newest release build
@@ -56,12 +56,14 @@ The script will run from start to finish in under 2 minutes, giving you an easy 
   1. Ensure that your system is setup to run `oc cluster up`
       * Follow [these instructions](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md) if you haven't already seen success with `oc cluster up`
   1. Download [run_latest_build.sh](https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh)
-
-              wget https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh
-              chmod +x ./run_latest_build.sh
-
+      ```
+      wget https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh
+      chmod +x ./run_latest_build.sh
+      ```
   1. Execute [run_latest_build.sh](https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh), this will take ~90 seconds.
-      * ./run_latest_build.sh
+      ```
+      ./run_latest_build.sh
+      ```
   1. You now have a cluster running with the Service Catalog and Ansible Service Broker ready
 
 ### Sample Workflow
