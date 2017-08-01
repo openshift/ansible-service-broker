@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
@@ -162,6 +163,29 @@ func (a *App) Start() {
 			os.Exit(1)
 		}
 		a.log.Notice("Broker successfully bootstrapped on startup")
+	}
+
+	interval := a.config.Broker.RefreshInterval
+	if interval != 0 {
+		ticker := time.NewTicker(time.Duration(interval) * time.Second)
+		quit := make(chan struct{})
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					a.log.Info("Broker configured to refresh specs every %v seconds", interval)
+					a.log.Info("Attempting bootstrap...")
+					if _, err := a.broker.Bootstrap(); err != nil {
+						a.log.Error("Failed to bootstrap")
+						a.log.Error(err.Error())
+					}
+					a.log.Notice("Broker successfully bootstrapped")
+				case <-quit:
+					ticker.Stop()
+					return
+				}
+			}
+		}()
 	}
 
 	a.log.Notice("Ansible Service Broker Started")
