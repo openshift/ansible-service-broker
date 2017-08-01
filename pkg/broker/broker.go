@@ -457,6 +457,9 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	context := &req.Context
 	parameters := req.Parameters
+	if parameters == nil {
+		parameters = make(apb.Parameters)
+	}
 
 	if req.PlanID == "" {
 		errMsg :=
