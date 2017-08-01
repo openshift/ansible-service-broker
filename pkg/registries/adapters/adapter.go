@@ -8,7 +8,6 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/pborman/uuid"
 	yaml "gopkg.in/yaml.v1"
 )
 
@@ -97,15 +96,13 @@ func imageToSpec(log *logging.Logger, req *http.Request) (*apb.Spec, error) {
 		return nil, err
 	}
 
-	log.Debugf("NSK: raw decoded yaml: %s", decodedSpecYaml)
 	if err = yaml.Unmarshal(decodedSpecYaml, spec); err != nil {
 		log.Errorf("Something went wrong loading decoded spec yaml, %s", err)
 		return nil, err
 	}
-	log.Debugf("Successfully converted Image %s into Spec", spec.Image)
-	spec.ID = uuid.New()
 
-	log.Debugf("NSK: Got plans: %+v", spec.Plans)
+	log.Debugf("adapter::imageToSpec -> Got plans %+v", spec.Plans)
+	log.Debugf("Successfully converted Image %s into Spec", spec.Image)
 
 	return spec, nil
 }
