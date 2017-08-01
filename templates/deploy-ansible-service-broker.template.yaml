@@ -265,7 +265,7 @@ parameters:
 - description: Refresh the available broker images every interval of seconds
   displayname: Refresh Interval
   name: REFRESH_INTERVAL
-  value: "600"
+  value: "600s"
 
 - description: Output broker requests to log
   displayname: Output broker requests to log

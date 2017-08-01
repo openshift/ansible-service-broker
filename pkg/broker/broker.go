@@ -52,7 +52,7 @@ type Config struct {
 	OutputRequest      bool   `yaml:"output_request"`
 	SSLCertKey         string `yaml:"ssl_cert_key"`
 	SSLCert            string `yaml:"ssl_cert"`
-	RefreshInterval    int    `yaml:"refresh_interval"`
+	RefreshInterval    string `yaml:"refresh_interval"`
 }
 
 // DevBroker - Interface for the development broker.

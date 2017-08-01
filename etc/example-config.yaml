@@ -37,4 +37,4 @@ broker:
   output_request: true
   ssl_cert_key: /path/to/key
   ssl_cert: /path/to/cert
-  refresh_interval: 600
+  refresh_interval: "600s"
