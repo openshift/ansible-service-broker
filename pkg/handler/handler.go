@@ -107,12 +107,9 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 	}
 
 	var async bool
-	queryparams := r.URL.Query()
 
-	if val, ok := queryparams["accepts_incomplete"]; ok {
-		// ignore the error, if async can't be parsed it will be false
-		async, _ = strconv.ParseBool(val[0])
-	}
+	// ignore the error, if async can't be parsed it will be false
+	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	var req *broker.ProvisionRequest
 	err := readRequest(r, &req)
@@ -176,11 +173,8 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 	}
 
 	var async bool
-	queryparams := r.URL.Query()
-	if val, ok := queryparams["accepts_incomplete"]; ok {
-		// ignore the error, if async can't be parsed it will be false
-		async, _ = strconv.ParseBool(val[0])
-	}
+	// ignore the error, if async can't be parsed it will be false
+	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	planID := r.FormValue("plan_id")
 	if planID == "" {
@@ -290,23 +284,24 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 
 	req := broker.LastOperationRequest{}
 
-	queryparams := r.URL.Query()
-
 	// operation is rqeuired
-	if val, ok := queryparams["operation"]; ok {
-		req.Operation = val[0]
+	op := r.FormValue("operation")
+	if op != "" {
+		req.Operation = op
 	} else {
 		h.log.Warning(fmt.Sprintf("operation not supplied, relying solely on the instance_uuid [%s]", instanceUUID))
 	}
 
 	// service_id is optional
-	if val, ok := queryparams["service_id"]; ok {
-		req.ServiceID = val[0]
+	serviceID := r.FormValue("service_id")
+	if serviceID != "" {
+		req.ServiceID = serviceID
 	}
 
 	// plan_id is optional
-	if val, ok := queryparams["plan_id"]; ok {
-		req.PlanID = val[0]
+	planID := r.FormValue("plan_id")
+	if planID != "" {
+		req.PlanID = planID
 	}
 
 	resp, err := h.broker.LastOperation(instanceUUID, &req)
