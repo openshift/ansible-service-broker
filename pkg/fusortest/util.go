@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -107,7 +109,8 @@ func fail(t *testing.T, a interface{}, b interface{}, message string) {
 	if len(message) == 0 {
 		message = fmt.Sprintf("%v != %v", a, b)
 	}
-	t.Fatal(message)
+	_, file, line, _ := runtime.Caller(3)
+	t.Fatal(fmt.Sprintf("\n%v had error on line %v\nMessage: %v", file[strings.LastIndex(file, "/")+1:], line, message))
 }
 
 // AssertEqual - Assert that inputs are equivalent.
