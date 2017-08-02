@@ -23,8 +23,8 @@ OPENSHIFT_SERVER_PORT=8443
 # BROKER_IP_ADDR must be the IP address of where to reach broker
 #   it should not be 127.0.0.1, needs to be an address the pods will be able to reach
 BROKER_IP_ADDR=${OPENSHIFT_SERVER_HOST}
-DOCKERHUB_USERNAME="brokerciuser"
-DOCKERHUB_PASSWORD="brokerciuser"
+DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME}
+DOCKERHUB_PASSWORD=${DOCKERHUB_PASSWORD}
 DOCKERHUB_ORG="ansibleplaybookbundle"
 BOOTSTRAP_ON_STARTUP="true"
 BEARER_TOKEN_FILE=""
