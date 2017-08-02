@@ -132,36 +132,6 @@ func (d FileUserServiceAdapter) ValidateUser(username string, password string) b
 	return false
 }
 
-// Handler - does the authentication for the routes
-func Handler(h http.Handler, providers []Provider, log *logging.Logger) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		// TODO: determine what to do with the Principal. We don't really have a
-		// context or a session to store it on. Do we need it past this?
-		var principalFound error
-		for _, provider := range providers {
-			principal, err := provider.GetPrincipal(r)
-			if principal != nil {
-				log.Debug("We found one. HOORAY!")
-				// we found our principal, stop looking
-				break
-			}
-			if err != nil {
-				principalFound = err
-			}
-		}
-		// if we went through the providers and found no principals. We will
-		// have found an error
-		if principalFound != nil {
-			log.Debug("no principal found")
-			http.Error(w, principalFound.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		h.ServeHTTP(w, r)
-	})
-}
-
 // GetProviders - returns the list of configured providers
 func GetProviders(entries []ConfigEntry, log *logging.Logger) []Provider {
 	providers := make([]Provider, 0, len(entries))

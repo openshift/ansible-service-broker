@@ -2,8 +2,6 @@ package auth
 
 import (
 	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -54,55 +52,4 @@ func TestUser(t *testing.T) {
 	user := User{Username: "admin", Password: "password"}
 	ft.AssertEqual(t, user.GetType(), "user", "type doesn't match user")
 	ft.AssertEqual(t, user.GetName(), user.Username, "get name and username do not match")
-}
-
-// auth handler tests
-func TestHandlerAuthorized(t *testing.T) {
-	handlerCalled := false
-	testhandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handlerCalled = true
-	})
-
-	ba := NewBasicAuth(
-		MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}}, log)
-
-	authhandler := Handler(testhandler, []Provider{ba}, log)
-
-	w := httptest.NewRecorder()
-
-	r, err := http.NewRequest(http.MethodPost, "/v2/bootstrap", nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	r.SetBasicAuth("admin", "password")
-
-	authhandler.ServeHTTP(w, r)
-
-	ft.AssertTrue(t, handlerCalled, "handler not called")
-	ft.AssertEqual(t, w.Code, http.StatusOK)
-}
-
-func TestHandlerRejected(t *testing.T) {
-	handlerCalled := false
-	testhandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handlerCalled = true
-	})
-
-	ba := NewBasicAuth(
-		MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}}, log)
-
-	authhandler := Handler(testhandler, []Provider{ba}, log)
-
-	w := httptest.NewRecorder()
-
-	r, err := http.NewRequest(http.MethodPost, "/v2/bootstrap", nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	r.SetBasicAuth("admin", "invalid")
-
-	authhandler.ServeHTTP(w, r)
-
-	ft.AssertFalse(t, handlerCalled, "handler called")
-	ft.AssertEqual(t, w.Code, http.StatusUnauthorized)
 }

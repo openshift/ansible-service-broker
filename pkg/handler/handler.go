@@ -29,6 +29,36 @@ type handler struct {
 	brokerConfig broker.Config
 }
 
+// authHandler - does the authentication for the routes
+func authHandler(h http.Handler, providers []auth.Provider, log *logging.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// TODO: determine what to do with the Principal. We don't really have a
+		// context or a session to store it on. Do we need it past this?
+		var principalFound error
+		for _, provider := range providers {
+			principal, err := provider.GetPrincipal(r)
+			if principal != nil {
+				log.Debug("We found one. HOORAY!")
+				// we found our principal, stop looking
+				break
+			}
+			if err != nil {
+				principalFound = err
+			}
+		}
+		// if we went through the providers and found no principals. We will
+		// have found an error
+		if principalFound != nil {
+			log.Debug("no principal found")
+			writeResponse(w, http.StatusUnauthorized, broker.ErrorResponse{Description: principalFound.Error()})
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
+}
+
 // GorillaRouteHandler - gorilla route handler
 // making the handler methods more testable by moving the reliance of mux.Vars()
 // outside of the handlers themselves
@@ -74,7 +104,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	}
 
 	providers := auth.GetProviders(brokerConfig.Auth, log)
-	return handlers.LoggingHandler(os.Stdout, auth.Handler(h, providers, log))
+	return handlers.LoggingHandler(os.Stdout, authHandler(h, providers, log))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
