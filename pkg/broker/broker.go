@@ -677,9 +677,6 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	params[planParameterKey] = req.PlanID
 
 	// Create a BindingInstance with a reference to the serviceinstance.
-	//
-	// Create a BindingInstance with a reference to the serviceinstance.
-	//
 	bindingInstance := &apb.BindInstance{
 		ID:         bindingUUID,
 		ServiceID:  instanceUUID,
