@@ -1,10 +1,8 @@
 package auth
 
 import (
-	"encoding/base64"
 	"errors"
 	"net/http"
-	"strings"
 
 	logging "github.com/op/go-logging"
 )
@@ -39,24 +37,7 @@ func NewBasicAuth(userSvcAdapter UserServiceAdapter, log *logging.Logger) BasicA
 // GetPrincipal - returns the User Principal that matches the credentials in the
 // Authorization header.
 func (b BasicAuth) GetPrincipal(r *http.Request) (Principal, error) {
-	var username string
-	var password string
-
-	// get Authorization header
-	authheader := r.Header.Get("Authorization")
-	if strings.HasPrefix(strings.ToUpper(authheader), "BASIC ") {
-		// get the encoded part of the header
-		decodedheader, err := base64.StdEncoding.DecodeString(authheader[6:])
-		if err != nil {
-			b.log.Error(err.Error())
-		}
-		userpass := strings.Split(string(decodedheader), ":")
-		username = userpass[0]
-
-		if len(userpass) > 1 {
-			password = userpass[1]
-		}
-
+	if username, password, ok := r.BasicAuth(); ok {
 		if !b.usa.ValidateUser(username, password) {
 			return nil, errors.New("invalid credentials")
 		}

@@ -75,7 +75,8 @@ func TestOnlyUsername(t *testing.T) {
 	r.Header.Add("Authorization", auth)
 	principal, err := ba.GetPrincipal(r)
 	ft.AssertNil(t, principal, "we should not have a principal")
-	ft.AssertEqual(t, err.Error(), "invalid credentials", "wrong error returned")
+	t.Log(err.Error())
+	ft.AssertEqual(t, err.Error(), "invalid credentials, corrupt header", "wrong error returned")
 }
 
 func TestEmptyHeader(t *testing.T) {
@@ -86,7 +87,7 @@ func TestEmptyHeader(t *testing.T) {
 	r.Header.Add("Authorization", auth)
 	principal, err := ba.GetPrincipal(r)
 	ft.AssertNil(t, principal, "we should not have a principal")
-	ft.AssertEqual(t, err.Error(), "invalid credentials", "wrong error returned")
+	ft.AssertEqual(t, err.Error(), "invalid credentials, corrupt header", "wrong error returned")
 }
 
 func TestOnlyPassword(t *testing.T) {
