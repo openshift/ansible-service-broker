@@ -177,9 +177,8 @@ func (a *App) Start() {
 		go func() {
 			for {
 				select {
-				case <-ticker.C:
+				case v := <-ticker.C:
 					a.log.Info("Broker configured to refresh specs every %v seconds", interval)
-					v := <-ticker.C
 					a.log.Info("Attempting bootstrap at %v", v.UTC())
 					if _, err := a.broker.Bootstrap(); err != nil {
 						a.log.Error("Failed to bootstrap")
