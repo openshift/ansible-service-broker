@@ -33,9 +33,22 @@ CA_FILE=""
 # Always, IfNotPresent, Never
 IMAGE_PULL_POLICY="Always"
 EOF
+}
 
+function local-env() {
+    oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u admin -p admin
+    oc project default
+    make build-image
+    make deploy
+    sleep 15
+    oc create -f ./scripts/broker-ci/broker-resource.yaml
 }
 
 echo "========== Broker CI ==========="
 echo "Setting up cluster"
 cluster-setup
+
+echo "Setting up local environment"
+local-env
+
+set +e

@@ -3,6 +3,7 @@
 ACTION=$1
 RESOURCE=$2
 RESOURCE_NAME=$3
+RESOURCE_ERROR=true
 
 if [ "${RESOURCE}" = "pod" ] && [ "${ACTION}" = "create" ]; then
     for r in $(seq 100); do
@@ -10,6 +11,7 @@ if [ "${RESOURCE}" = "pod" ] && [ "${ACTION}" = "create" ]; then
 	oc get pods -n default | grep ${RESOURCE_NAME}
 	if [ "${pod}" = 'Running' ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} is running"
+	    RESOURCE_ERROR=false
 	    break
 	fi
 	echo "Waiting for ${RESOURCE_NAME} ${RESOURCE} to be running"
@@ -20,6 +22,7 @@ elif [ "${ACTION}" = "create" ]; then
 	oc get ${RESOURCE} -n default | grep ${RESOURCE_NAME}
 	if [ $? -eq 0 ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} has been created"
+	    RESOURCE_ERROR=false
 	    break
 	fi
 	echo "Waiting for ${RESOURCE_NAME} ${RESOURCE} to be created"
@@ -30,6 +33,7 @@ elif [ "${ACTION}" = "delete" ]; then
 	oc get ${RESOURCE} -n default | grep ${RESOURCE_NAME}
 	if [ $? -eq 1 ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} has been deleted"
+	    RESOURCE_ERROR=false
 	    break
 	fi
 	echo "Waiting for ${RESOURCE_NAME} ${RESOURCE} to be deleted"
