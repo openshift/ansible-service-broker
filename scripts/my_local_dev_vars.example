@@ -20,5 +20,14 @@ BROKER_INSECURE="true"
 CA_FILE=""
 REFRESH_INTERVAL="600s"
 
+# Disable basic auth. it is enabled by default
+#ENABLE_BASIC_AUTH="false"
+
+# BROKER_USER and BROKER_PASS must be base64 encoded.
+# If not set, broker defaults to admin:admin
+# echo admin | base64
+#BROKER_USER=
+#BROKER_PASS=
+
 # Always, IfNotPresent, Never
 IMAGE_PULL_POLICY="Always"

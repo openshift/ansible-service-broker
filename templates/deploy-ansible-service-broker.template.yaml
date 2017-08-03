@@ -149,8 +149,8 @@ objects:
     name: asb-auth-secret
     namespace: ansible-service-broker
   data:
-    username: YnJva2VyLWFkbWlu
-    password: TFl0SU5lc0hBZw==
+    username: ${BROKER_USER}
+    password: ${BROKER_PASS}
 
 - apiVersion: v1
   kind: ConfigMap
@@ -192,7 +192,7 @@ objects:
         ssl_cert: /etc/tls/private/tls.crt
         auth:
           - type: basic
-            enabled: true
+            enabled: ${ENABLE_BASIC_AUTH}
 
 parameters:
 - description: Container Image to use for Ansible Service Broker in format of imagename:tag
@@ -294,10 +294,25 @@ parameters:
   name: RECOVERY
   value: "true"
 
-- description: APB ImagePullPolicy
-  displayname: APB ImagePullPolicy
-  name: IMAGE_PULL_POLICY
-  value: "IfNotPresent"
+- description: Will enable basic authentication
+  displayname: Enable basic authentication
+  name: ENABLE_BASIC_AUTH
+  value: "true"
+
+############################################################
+# NOTE: These values MUST be base64 encoded.
+# http://red.ht/2wbrCYo states "The value associated with
+# keys in the data map must be base64 encoded."
+############################################################
+- description: Broker user password
+  displayname: Broker user password
+  name: BROKER_PASS
+  value: YWRtaW4K
+
+- description: Broker user name
+  displayname: Broker user name
+  name: BROKER_USER
+  value: YWRtaW4K
 
 ############################################################
 # NOTE: Default behavior for these are going to use the kubernetes
