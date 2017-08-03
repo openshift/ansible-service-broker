@@ -285,22 +285,19 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 	req := broker.LastOperationRequest{}
 
 	// operation is rqeuired
-	op := r.FormValue("operation")
-	if op != "" {
+	if op := r.FormValue("operation"); op != "" {
 		req.Operation = op
 	} else {
 		h.log.Warning(fmt.Sprintf("operation not supplied, relying solely on the instance_uuid [%s]", instanceUUID))
 	}
 
 	// service_id is optional
-	serviceID := r.FormValue("service_id")
-	if serviceID != "" {
+	if serviceID := r.FormValue("service_id"); serviceID != "" {
 		req.ServiceID = serviceID
 	}
 
 	// plan_id is optional
-	planID := r.FormValue("plan_id")
-	if planID != "" {
+	if planID := r.FormValue("plan_id"); planID != "" {
 		req.PlanID = planID
 	}
 
