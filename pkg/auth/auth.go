@@ -153,6 +153,7 @@ func GetProviders(entries []ConfigEntry, log *logging.Logger) []Provider {
 func createProvider(providerType string, log *logging.Logger) (Provider, error) {
 	switch strings.ToLower(providerType) {
 	case "basic":
+		log.Info("Configured for basic auth")
 		usa, err := GetUserServiceAdapter(log)
 		if err != nil {
 			return nil, err
