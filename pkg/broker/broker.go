@@ -734,7 +734,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 			return nil, err
 		}
 	} else {
-		a.log.Warningf("Broker configured to *NOT* launch and run APB bind")
+		a.log.Warning("Broker configured to *NOT* launch and run APB bind")
 	}
 	instance.AddBinding(bindingUUID)
 	if err := a.dao.SetServiceInstance(instanceUUID.String(), instance); err != nil {
@@ -793,7 +793,7 @@ func (a AnsibleBroker) Unbind(
 	}
 	// only launch apb if we are always launching the APB.
 	if a.brokerConfig.LaunchApbOnBind {
-		err = apb.Unbind(serviceInstance, a.clusterConfig, a.log, &params)
+		err = apb.Unbind(serviceInstance, &params, a.clusterConfig, a.log)
 		if err != nil {
 			return nil, err
 		}
@@ -810,6 +810,7 @@ func (a AnsibleBroker) Unbind(
 	if err != nil {
 		return nil, err
 	}
+
 	serviceInstance.RemoveBinding(bindingUUID)
 	err = a.dao.SetServiceInstance(instanceUUID.String(), serviceInstance)
 	if err != nil {
