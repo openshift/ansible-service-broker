@@ -53,6 +53,7 @@ clean:
 
 really-clean: clean
 	@rm -f $(KUBERNETES_FILES)
+	cleanup-ci
 
 deploy:
 	@./scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG}

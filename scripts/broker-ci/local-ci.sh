@@ -33,6 +33,9 @@ function verify-ci-run {
     fi
 }
 
+######
+# Main
+######
 provision
 bind
 pickup-pod-presets
