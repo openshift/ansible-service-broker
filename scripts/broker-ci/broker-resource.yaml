@@ -3,4 +3,8 @@ kind: Broker
 metadata:
   name: ansible-service-broker
 spec:
-  url: https://asb-1338-ansible-service-broker.172.17.0.1.nip.io
+  url: https://asb-1337-ansible-service-broker.172.17.0.1.nip.io
+  authInfo:
+    basicAuthSecret:
+      namespace: ansible-service-broker
+      name: asb-auth-secret
