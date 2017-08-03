@@ -39,8 +39,16 @@ function bind {
 function pickup-pod-presets {
     print-with-green "Waiting for broker to return bind creds"
     sleep 20
-    oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default
+    oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default || BIND_ERROR=true
     ./scripts/broker-ci/wait-for-resource.sh create pod mediawiki >> /tmp/wait-for-pods-log 2>&1
+
+    # Filter for 'podpreset.admission.kubernetes.io' in the pod
+    preset_test=$(oc get pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -o yaml -n default | grep podpreset | awk $'{ print $1}' | cut -f 1 -d '/')
+    if [ "${preset_test}" != "podpreset.admission.kubernetes.io" ]; then
+	print-with-red "Pod presets aren't in the Mediawiki pod"
+	BIND_ERROR=true
+    fi
+
     error-check "pickup-pod-presets"
 }
 
