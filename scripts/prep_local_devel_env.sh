@@ -226,5 +226,5 @@ broker:
   output_request: true
   ssl_cert_key: ${TLS_KEY}
   ssl_cert: ${TLS_CRT}
+  refresh_interval: "600s"
 EOF
-

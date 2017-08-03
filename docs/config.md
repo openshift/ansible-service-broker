@@ -109,3 +109,4 @@ recovery|Allow the broker to attempt to recover itself by dealing with pending j
 output_request|Allow the broker to output the requests to the log file as they come in for easier debugging|false|N
 ssl_cert_key|Tells the broker where to find the tls key file. Can be ignored if using `--inscure` option but otherwise is required|""|N
 ssl_cert|Tells the broker where to find the tls crt file. Can be ignored if using the `--insecure` option but otherwise is required|""|N
+refresh_interval|The interval to query registries for new image specs|"600s"|N

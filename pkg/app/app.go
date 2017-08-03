@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
@@ -164,9 +165,36 @@ func (a *App) Start() {
 		a.log.Notice("Broker successfully bootstrapped on startup")
 	}
 
+	interval, err := time.ParseDuration(a.config.Broker.RefreshInterval)
+	a.log.Debug("RefreshInterval: %v", interval.String())
+	if err != nil {
+		a.log.Error(err.Error())
+		a.log.Error("Not using a refresh interval")
+	} else {
+		ticker := time.NewTicker(interval)
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		defer cancelFunc()
+		go func() {
+			for {
+				select {
+				case v := <-ticker.C:
+					a.log.Info("Broker configured to refresh specs every %v seconds", interval)
+					a.log.Info("Attempting bootstrap at %v", v.UTC())
+					if _, err := a.broker.Bootstrap(); err != nil {
+						a.log.Error("Failed to bootstrap")
+						a.log.Error(err.Error())
+					}
+					a.log.Notice("Broker successfully bootstrapped")
+				case <-ctx.Done():
+					ticker.Stop()
+					return
+				}
+			}
+		}()
+	}
+
 	a.log.Notice("Ansible Service Broker Started")
 	listeningAddress := "0.0.0.0:1338"
-	var err error
 	if a.args.Insecure {
 		a.log.Notice("Listening on http://%s", listeningAddress)
 		err = http.ListenAndServe(":1338",
