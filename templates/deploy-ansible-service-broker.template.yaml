@@ -294,6 +294,11 @@ parameters:
   name: RECOVERY
   value: "true"
 
+- description: APB ImagePullPolicy
+  displayname: APB ImagePullPolicy
+  name: IMAGE_PULL_POLICY
+  value: "IfNotPresent"
+
 - description: Will enable basic authentication
   displayname: Enable basic authentication
   name: ENABLE_BASIC_AUTH
