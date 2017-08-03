@@ -34,11 +34,12 @@ script:
   - oc create -f scripts/broker-ci/broker-resource.yaml || export ERROR=true
   - oc create -f ./scripts/broker-ci/postgresql.yaml || export ERROR=true
   - oc create -f ./scripts/broker-ci/mediawiki123.yaml || export ERROR=true
-  - ./scripts/broker-ci/wait-for-pods.sh &> /tmp/wait-for-pods-log || export ERROR=true
+  - ./scripts/broker-ci/wait-for-resource.sh create pod mediawiki >> /tmp/wait-for-pods-log 2>&1 || export ERROR=true
+  - ./scripts/broker-ci/wait-for-resource.sh create pod postgresql >> /tmp/wait-for-pods-log 2>&1 || export ERROR=true
   - sleep 30
   - oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || export ERROR=true
   - sleep 5
-  - oc delete pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -n default || export ERROR=true
+  - oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default
   - sleep 20
   - export BIND_CHECK=$(curl $(oc get route -n default | grep mediawiki | cut -f 4 -d ' ')/index.php/Main_Page | grep "div class" | cut -f 2 -d "'")
   - if [ "${BIND_CHECK}" = "error" ]; then export ERROR=true; exit 1; fi

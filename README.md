@@ -141,6 +141,19 @@ configurations.
     * The default install prefix is /usr/local. Use `make build && sudo make install` to build and install.
     * Alternatively you can alter the installation directory by using PREFIX, e.g if you don't want to install somewhere that requires escalated privileges. `make build && PREFIX=~ make install`
 
+#### CI Target
+* `make ci`: Run the CI workflow that gets executed by travis, locally.
+   * Workflow:
+     - Provision Mediawiki
+     - Provision Postgresql
+     - Bind Postgresql and Mediawiki
+     - Curl the Mediawiki endpoint to check for success
+   * Requires:
+     - Cluster
+     - Service Catalog
+     - Ansible-service-broker either running locally or in the cluster
+     - DOCKERHUB_ORG="ansibleplaybookbundle"
+
 #### Docker Development Build Targets
 * `make build-image`: Builds a docker container of the current source
 
