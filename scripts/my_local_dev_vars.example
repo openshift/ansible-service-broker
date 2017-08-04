@@ -25,7 +25,8 @@ REFRESH_INTERVAL="600s"
 
 # BROKER_USER and BROKER_PASS must be base64 encoded.
 # If not set, broker defaults to admin:admin
-# echo admin | base64
+#   echo -n admin | base64
+# the -n is VERY important
 #BROKER_USER=
 #BROKER_PASS=
 

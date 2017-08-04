@@ -115,7 +115,6 @@ func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[st
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("entered handler.ServeHTTP")
 	h.router.ServeHTTP(w, r)
 }
 

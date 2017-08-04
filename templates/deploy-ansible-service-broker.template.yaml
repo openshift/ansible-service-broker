@@ -312,12 +312,12 @@ parameters:
 - description: Broker user password
   displayname: Broker user password
   name: BROKER_PASS
-  value: YWRtaW4K
+  value: YWRtaW4=
 
 - description: Broker user name
   displayname: Broker user name
   name: BROKER_USER
-  value: YWRtaW4K
+  value: YWRtaW4=
 
 ############################################################
 # NOTE: Default behavior for these are going to use the kubernetes
