@@ -782,6 +782,11 @@ func (a AnsibleBroker) Unbind(
 	}
 	// Add the credentials to the parameters so that an APB can choose what
 	// it would like to do.
+	if provExtCreds == nil && bindExtCreds == nil {
+		a.log.Warningf("Unable to find credentials for instance id: %v and binding id: %v"+
+			" something may have gone wrong. Proceeding with unbind.",
+			instanceUUID, bindingUUID)
+	}
 	if provExtCreds != nil {
 		params[provisionCredentialsKey] = provExtCreds.Credentials
 	}
