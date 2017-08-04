@@ -41,5 +41,3 @@ broker:
   auth:
     - type: basic
       enabled: true
-    - type: oauth
-      enabled: false

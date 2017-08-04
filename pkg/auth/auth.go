@@ -64,21 +64,6 @@ type FileUserServiceAdapter struct {
 	userdb  map[string]User
 }
 
-// NewFileUserServiceAdapter - constructor for the FUSA
-func NewFileUserServiceAdapter(dir string, log *logging.Logger) (*FileUserServiceAdapter, error) {
-	if dir == "" {
-		return nil, fmt.Errorf("directory is empty, defaulting to %s", dir)
-	}
-
-	fusa := FileUserServiceAdapter{filedir: dir, log: log}
-	err := fusa.buildDB()
-	if err != nil {
-		log.Error("we had a problem building the DB for FileUserServiceAdapter. ", err)
-		return nil, err
-	}
-	return &fusa, nil
-}
-
 func (d *FileUserServiceAdapter) buildDB() error {
 	userfile := path.Join(d.filedir, "username")
 	passfile := path.Join(d.filedir, "password")
@@ -130,6 +115,21 @@ func (d FileUserServiceAdapter) ValidateUser(username string, password string) b
 	}
 
 	return false
+}
+
+// NewFileUserServiceAdapter - constructor for the FUSA
+func NewFileUserServiceAdapter(dir string, log *logging.Logger) (*FileUserServiceAdapter, error) {
+	if dir == "" {
+		return nil, fmt.Errorf("directory is empty, defaulting to %s", dir)
+	}
+
+	fusa := FileUserServiceAdapter{filedir: dir, log: log}
+	err := fusa.buildDB()
+	if err != nil {
+		log.Error("we had a problem building the DB for FileUserServiceAdapter. ", err)
+		return nil, err
+	}
+	return &fusa, nil
 }
 
 // GetProviders - returns the list of configured providers
