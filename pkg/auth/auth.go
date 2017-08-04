@@ -11,8 +11,8 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-// ConfigEntry - Configuration for authentication
-type ConfigEntry struct {
+// Config - Configuration for authentication
+type Config struct {
 	Type    string `yaml:"type"`
 	Enabled bool   `yaml:"enabled"`
 }
@@ -133,7 +133,7 @@ func NewFileUserServiceAdapter(dir string, log *logging.Logger) (*FileUserServic
 }
 
 // GetProviders - returns the list of configured providers
-func GetProviders(entries []ConfigEntry, log *logging.Logger) []Provider {
+func GetProviders(entries []Config, log *logging.Logger) []Provider {
 	providers := make([]Provider, 0, len(entries))
 
 	for _, cfg := range entries {
