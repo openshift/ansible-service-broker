@@ -83,7 +83,7 @@ func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
 	return &ExtractedCredentials{Credentials: creds}, nil
 }
 
-func decodeOutput(output []byte) (map[string]string, error) {
+func decodeOutput(output []byte) (map[string]interface{}, error) {
 	str := string(output)
 
 	decodedjson, err := base64.StdEncoding.DecodeString(str)
@@ -91,7 +91,7 @@ func decodeOutput(output []byte) (map[string]string, error) {
 		return nil, err
 	}
 
-	decoded := make(map[string]string)
+	decoded := make(map[string]interface{})
 	json.Unmarshal(decodedjson, &decoded)
 	return decoded, nil
 }
