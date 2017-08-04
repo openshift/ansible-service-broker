@@ -7,6 +7,11 @@ import (
 )
 
 const (
+	// Development tooling consts
+	apbPushRegName = "apb-push"
+)
+
+const (
 	planParameterKey = "_apb_plan_id"
 )
 

@@ -337,6 +337,7 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 
 // apbAddSpec - Development only route. Will be used by for local developers to add images to the catalog.
 func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	h.log.Debug("handler::apbAddSpec")
 	//Read Request for an image name
 
 	// create helper method from MockRegistry
@@ -359,13 +360,28 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter encoding"})
 		return
 	}
+	h.log.Debug("Successfully decoded pushed spec:")
+	h.log.Debugf("%s", decodedSpecYaml)
+
 	var spec apb.Spec
 	if err = yaml.Unmarshal([]byte(decodedSpecYaml), &spec); err != nil {
 		h.log.Errorf("Unable to decode yaml - %v to spec err - %v", decodedSpecYaml, err)
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter yaml"})
 		return
 	}
+
+	h.log.Debug("Unmarshalled into apb.Spec:")
+	h.log.Debugf("%+v", spec)
+
 	resp, err := ansibleBroker.AddSpec(spec)
+	if err != nil {
+		h.log.Errorf("An error occurred while trying to add a spec via apb push:")
+		h.log.Errorf("%s", err.Error())
+		writeResponse(w, http.StatusInternalServerError,
+			broker.ErrorResponse{Description: err.Error()})
+		return
+	}
+
 	writeDefaultResponse(w, http.StatusOK, resp, err)
 }
 
