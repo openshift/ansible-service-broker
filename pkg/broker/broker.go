@@ -12,6 +12,7 @@ import (
 	"github.com/coreos/etcd/client"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/pborman/uuid"
@@ -45,14 +46,15 @@ type Broker interface {
 
 // Config - Configuration for the broker.
 type Config struct {
-	DevBroker          bool   `yaml:"dev_broker"`
-	LaunchApbOnBind    bool   `yaml:"launch_apb_on_bind"`
-	BootstrapOnStartup bool   `yaml:"bootstrap_on_startup"`
-	Recovery           bool   `yaml:"recovery"`
-	OutputRequest      bool   `yaml:"output_request"`
-	SSLCertKey         string `yaml:"ssl_cert_key"`
-	SSLCert            string `yaml:"ssl_cert"`
-	RefreshInterval    string `yaml:"refresh_interval"`
+	DevBroker          bool          `yaml:"dev_broker"`
+	LaunchApbOnBind    bool          `yaml:"launch_apb_on_bind"`
+	BootstrapOnStartup bool          `yaml:"bootstrap_on_startup"`
+	Recovery           bool          `yaml:"recovery"`
+	OutputRequest      bool          `yaml:"output_request"`
+	SSLCertKey         string        `yaml:"ssl_cert_key"`
+	SSLCert            string        `yaml:"ssl_cert"`
+	RefreshInterval    string        `yaml:"refresh_interval"`
+	Auth               []auth.Config `yaml:"auth"`
 }
 
 // DevBroker - Interface for the development broker.

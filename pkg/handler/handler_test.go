@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
@@ -22,6 +23,25 @@ type MockBroker struct {
 	Verify    map[string]bool
 	Err       error
 	Operation string
+}
+
+type MockUserServiceAdapter struct {
+	userdb map[string]string
+}
+
+func (m MockUserServiceAdapter) FindByLogin(username string) (auth.User, error) {
+	if m.userdb[username] == "" {
+		return auth.User{}, errors.New("user not found")
+	}
+
+	return auth.User{Username: username, Password: m.userdb[username]}, nil
+}
+
+func (m MockUserServiceAdapter) ValidateUser(username string, password string) bool {
+	if m.userdb[username] == "" {
+		return false
+	}
+	return m.userdb[username] == password
 }
 
 const base64TestSpec = "aWQ6IDU1YzUzYTVkLTY1YTYtNGMyNy04OGZjLWUwMjc0MTBiMTMzNw0KbmFtZTogbWVkaWF3aWtpMTIzLWFwYg0KaW1hZ2U6IGFuc2libGVwbGF5Ym9va2J1bmRsZS9tZWRpYXdpa2kxMjMtYXBiDQpkZXNjcmlwdGlvbjogIk1lZGlhd2lraTEyMyBhcGIgaW1wbGVtZW50YXRpb24iDQpiaW5kYWJsZTogZmFsc2UNCmFzeW5jOiBvcHRpb25hbA0KbWV0YWRhdGE6DQogIGRpc3BsYXluYW1lOiAiUmVkIEhhdCBNZWRpYXdpa2kiDQogIGxvbmdEZXNjcmlwdGlvbjogIkFuIGFwYiB0aGF0IGRlcGxveXMgTWVkaWF3aWtpIDEuMjMiDQogIGltYWdlVVJMOiAiaHR0cHM6Ly91cGxvYWQud2lraW1lZGlhLm9yZy93aWtpcGVkaWEvY29tbW9ucy8wLzAxL01lZGlhV2lraS1zbWFsbGVyLWxvZ28ucG5nIg0KICBkb2N1bWVudGF0aW9uVVJMOiAiaHR0cHM6Ly93d3cubWVkaWF3aWtpLm9yZy93aWtpL0RvY3VtZW50YXRpb24iDQpwYXJhbWV0ZXJzOg0KICAtIG1lZGlhd2lraV9kYl9zY2hlbWE6DQogICAgLSB0aXRsZTogTWVkaWF3aWtpIERCIFNjaGVtYQ0KICAgICAgdHlwZTogc3RyaW5nDQogICAgICBkZWZhdWx0OiBtZWRpYXdpa2kNCiAgLSBtZWRpYXdpa2lfc2l0ZV9uYW1lOg0KICAgIC0gdGl0bGU6IE1lZGlhd2lraSBTaXRlIE5hbWUNCiAgICAgIHR5cGU6IHN0cmluZw0KICAgICAgZGVmYXVsdDogTWVkaWFXaWtpDQogIC0gbWVkaWF3aWtpX3NpdGVfbGFuZzoNCiAgICAtIHRpdGxlOiBNZWRpYXdpa2kgU2l0ZSBMYW5ndWFnZQ0KICAgICAgdHlwZTogc3RyaW5nDQogICAgICBkZWZhdWx0OiBlbg0KICAtIG1lZGlhd2lraV9hZG1pbl91c2VyOg0KICAgIC0gdGl0bGU6IE1lZGlhd2lraSBBZG1pbiBVc2VyDQogICAgICB0eXBlOiBzdHJpbmcNCiAgICAgIGRlZmF1bHQ6IGFkbWluDQogIC0gbWVkaWF3aWtpX2FkbWluX3Bhc3M6DQogICAgLSB0aXRsZTogTWVkaWF3aWtpIEFkbWluIFVzZXIgUGFzc3dvcmQNCiAgICAgIHR5cGU6IHN0cmluZw0KcmVxdWlyZWQ6DQogIC0gbWVkaWF3aWtpX2RiX3NjaGVtYQ0KICAtIG1lZGlhd2lraV9zaXRlX25hbWUNCiAgLSBtZWRpYXdpa2lfc2l0ZV9sYW5nDQogIC0gbWVkaWF3aWtpX2FkbWluX3VzZXINCiAgLSBtZWRpYXdpa2lfYWRtaW5fcGFzcw0K"
@@ -434,4 +454,55 @@ func buildBindHandler(testuuid string, err error) (handler, *httptest.ResponseRe
 		"binding_uuid":  testuuid,
 	}
 	return testhandler, w, r, params
+}
+
+// auth handler tests
+func TestHandlerAuthorized(t *testing.T) {
+	handlerCalled := false
+	testhandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerCalled = true
+	})
+
+	ba := auth.NewBasicAuth(
+		MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}}, log)
+
+	authhandler := authHandler(testhandler, []auth.Provider{ba}, log)
+
+	w := httptest.NewRecorder()
+
+	r, err := http.NewRequest(http.MethodPost, "/v2/bootstrap", nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	r.SetBasicAuth("admin", "password")
+
+	authhandler.ServeHTTP(w, r)
+
+	ft.AssertTrue(t, handlerCalled, "handler not called")
+	ft.AssertEqual(t, w.Code, http.StatusOK)
+}
+
+func TestHandlerRejected(t *testing.T) {
+	handlerCalled := false
+	testhandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerCalled = true
+	})
+
+	ba := auth.NewBasicAuth(
+		MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}}, log)
+
+	authhandler := authHandler(testhandler, []auth.Provider{ba}, log)
+
+	w := httptest.NewRecorder()
+
+	r, err := http.NewRequest(http.MethodPost, "/v2/bootstrap", nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	r.SetBasicAuth("admin", "invalid")
+
+	authhandler.ServeHTTP(w, r)
+
+	ft.AssertFalse(t, handlerCalled, "handler called")
+	ft.AssertEqual(t, w.Code, http.StatusUnauthorized)
 }
