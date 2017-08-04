@@ -710,12 +710,14 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 
 	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
-	if err != nil {
+	if err != nil && !client.IsKeyNotFound(err) {
 		a.log.Warningf("unable to retrieve provision time credentials - %v", err)
 	}
 
 	// Add the DB Credentials this will allow the apb to use these credentials if it so chooses.
-	params[provisionCredentialsKey] = provExtCreds.Credentials
+	if provExtCreds != nil {
+		params[provisionCredentialsKey] = provExtCreds.Credentials
+	}
 
 	// NOTE: We are currently disabling running an APB on bind via 'LaunchApbOnBind'
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
@@ -771,7 +773,7 @@ func (a AnsibleBroker) Unbind(
 
 	params := make(apb.Parameters)
 	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
-	if err != nil {
+	if err != nil && !client.IsKeyNotFound(err) {
 		return nil, err
 	}
 	bindExtCreds, err := a.dao.GetExtractedCredentials(bindingUUID.String())
@@ -780,13 +782,16 @@ func (a AnsibleBroker) Unbind(
 	}
 	// Add the credentials to the parameters so that an APB can choose what
 	// it would like to do.
-	params[provisionCredentialsKey] = provExtCreds.Credentials
+	if provExtCreds != nil {
+		params[provisionCredentialsKey] = provExtCreds.Credentials
+	}
 	if bindExtCreds != nil {
 		params[bindCredentialsKey] = bindExtCreds.Credentials
 	}
 	serviceInstance, err := a.getServiceInstance(instanceUUID)
 	if err != nil {
 		a.log.Debugf("Service instance with id %s does not exist", instanceUUID.String())
+		return nil, err
 	}
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
@@ -797,6 +802,8 @@ func (a AnsibleBroker) Unbind(
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		a.log.Warning("Broker configured to *NOT* launch and run APB unbind")
 	}
 
 	if bindExtCreds != nil {
