@@ -100,6 +100,8 @@ The broker config section will tell the broker what functionality should be enab
 and disabled. It will also tell the broker where to find files on disk that will
 enable the full functionality.
 
+*Note: with the absence of async bind, setting launch_apb_on_bind to true can cause the bind action to timeout and will span a retry. The broker will handle with with 409 Conflicts because it is the same bind request with different parameters.*
+
 **field**|**description**|**default value**|**required**
 :-----:|:-----:|:-----:|:-----:
 dev_broker|Allow development routes to be accessable|false|N

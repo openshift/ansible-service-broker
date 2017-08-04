@@ -30,6 +30,13 @@ var (
 	ErrorBindingExists = errors.New("binding exists")
 )
 
+const (
+	// provisionCredentialsKey - Key used to pass credentials to apb.
+	provisionCredentialsKey = "_apb_provision_creds"
+	// bindCredentialsKey - Key used to pas bind credentials to apb.
+	bindCredentialsKey = "_apb_bind_creds"
+)
+
 // Broker - A broker is used to to compelete all the tasks that a broker must be able to do.
 type Broker interface {
 	Bootstrap() (*BootstrapResponse, error)
@@ -657,19 +664,11 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 
 	// GET SERVICE get provision parameters
-
-	// build bind parameters args:
-	// {
-	//     provision_params: {} same as what was stored in etcd
-	//	   bind_params: {}
-	// }
-	// asbcli passes in user: aone, which bind passes to apb
 	params := make(apb.Parameters)
 	if instance.Parameters != nil {
 		params["provision_params"] = *instance.Parameters
 	}
 	params["bind_params"] = req.Parameters
-
 	// Inject PlanID into parameters passed to APBs
 	if req.PlanID == "" {
 		errMsg :=
@@ -716,37 +715,23 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 		return nil, err
 	}
 
-	/*
-		NOTE:
-
-		type BindResponse struct {
-		    Credentials     map[string]interface{} `json:"credentials,omitempty"`
-		    SyslogDrainURL  string                 `json:"syslog_drain_url,omitempty"`
-		    RouteServiceURL string                 `json:"route_service_url,omitempty"`
-		    VolumeMounts    []interface{}          `json:"volume_mounts,omitempty"`
-		}
-	*/
-
-	// NOTE: Design here is very WIP
-	// Potentially have data from provision stashed away, and bind may also
-	// produce new binding data. Take both sets and merge?
 	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
-	if err != nil {
-		a.log.Debug("provExtCreds a miss!")
-		a.log.Debug("%s", err.Error())
-	} else {
-		a.log.Debug("Got provExtCreds hit!")
-		a.log.Debug("%+v", provExtCreds)
+	if err != nil && !client.IsKeyNotFound(err) {
+		a.log.Warningf("unable to retrieve provision time credentials - %v", err)
+	}
+
+	// Add the DB Credentials this will allow the apb to use these credentials if it so chooses.
+	if provExtCreds != nil {
+		params[provisionCredentialsKey] = provExtCreds.Credentials
 	}
 
 	// NOTE: We are currently disabling running an APB on bind via 'LaunchApbOnBind'
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
 	// Currently, the 'launchapbonbind' is set to false in the 'config' ConfigMap
-	bindExtCreds := &apb.ExtractedCredentials{Credentials: make(map[string]interface{})}
 	var podName string
+	var bindExtCreds *apb.ExtractedCredentials
 	if a.brokerConfig.LaunchApbOnBind {
 		a.log.Info("Broker configured to run APB bind")
-		a.log.Info("Starting APB bind...")
 		podName, bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
 
 		sm := apb.NewServiceAccountManager(a.log)
@@ -765,23 +750,20 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	}
 	// Can't bind to anything if we have nothing to return to the catalog
 	if provExtCreds == nil && bindExtCreds == nil {
-		a.log.Error("No extracted credentials found from provision or bind")
-		a.log.Error("Instance ID: %s", instanceUUID.String())
+		a.log.Errorf("No extracted credentials found from provision or bind instance ID: %s",
+			instanceUUID.String())
 		return nil, errors.New("No credentials available")
 	}
 
-	returnCreds := mergeCredentials(provExtCreds, bindExtCreds)
-	// TODO: Insert merged credentials into etcd? Separate into bind/provision
-	// so none are overwritten?
-
-	return &BindResponse{Credentials: returnCreds}, nil
-}
-
-func mergeCredentials(provExtCreds *apb.ExtractedCredentials,
-	bindExtCreds *apb.ExtractedCredentials,
-) map[string]interface{} {
-	// TODO: Implement, need to handle case where either are empty
-	return provExtCreds.Credentials
+	if bindExtCreds != nil {
+		err = a.dao.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
+		if err != nil {
+			a.log.Errorf("Could not persist extracted credentials - %v", err)
+			return nil, err
+		}
+		return &BindResponse{Credentials: bindExtCreds.Credentials}, nil
+	}
+	return &BindResponse{Credentials: provExtCreds.Credentials}, nil
 }
 
 // Unbind - unbind a services previous binding
@@ -795,14 +777,51 @@ func (a AnsibleBroker) Unbind(
 		return nil, errors.New(errMsg)
 	}
 
+	params := make(apb.Parameters)
+	provExtCreds, err := a.dao.GetExtractedCredentials(instanceUUID.String())
+	if err != nil && !client.IsKeyNotFound(err) {
+		return nil, err
+	}
+	bindExtCreds, err := a.dao.GetExtractedCredentials(bindingUUID.String())
+	if err != nil && !client.IsKeyNotFound(err) {
+		return nil, err
+	}
+	// Add the credentials to the parameters so that an APB can choose what
+	// it would like to do.
+	if provExtCreds == nil && bindExtCreds == nil {
+		a.log.Warningf("Unable to find credentials for instance id: %v and binding id: %v"+
+			" something may have gone wrong. Proceeding with unbind.",
+			instanceUUID, bindingUUID)
+	}
+	if provExtCreds != nil {
+		params[provisionCredentialsKey] = provExtCreds.Credentials
+	}
+	if bindExtCreds != nil {
+		params[bindCredentialsKey] = bindExtCreds.Credentials
+	}
 	serviceInstance, err := a.getServiceInstance(instanceUUID)
 	if err != nil {
 		a.log.Debugf("Service instance with id %s does not exist", instanceUUID.String())
+		return nil, err
+	}
+	if serviceInstance.Parameters != nil {
+		params["provision_params"] = *serviceInstance.Parameters
+	}
+	// only launch apb if we are always launching the APB.
+	if a.brokerConfig.LaunchApbOnBind {
+		err = apb.Unbind(serviceInstance, &params, a.clusterConfig, a.log)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		a.log.Warning("Broker configured to *NOT* launch and run APB unbind")
 	}
 
-	err = apb.Unbind(serviceInstance, a.clusterConfig, a.log)
-	if err != nil {
-		return nil, err
+	if bindExtCreds != nil {
+		err = a.dao.DeleteExtractedCredentials(bindingUUID.String())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = a.dao.DeleteBindInstance(bindingUUID.String())
