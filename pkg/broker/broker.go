@@ -872,6 +872,10 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 //AddSpec - adding the spec to the catalog for local development
 func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
+	a.log.Debug("broker::AddSpec")
+	addNameAndIDForSpec([]*apb.Spec{&spec}, apbPushRegName)
+	a.log.Debugf("Generated name for pushed APB: [%s], ID: [%s]", spec.FQName, spec.ID)
+
 	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err
 	}
