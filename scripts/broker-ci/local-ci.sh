@@ -36,18 +36,34 @@ function bind {
     error-check "bind"
 }
 
-function pickup-pod-presets {
-    print-with-green "Waiting for broker to return bind creds"
-    sleep 20
-    oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default || BIND_ERROR=true
-    ./scripts/broker-ci/wait-for-resource.sh create pod mediawiki >> /tmp/wait-for-pods-log 2>&1
+function bind-credential-check {
+    set +x
+    RETRIES=10
+    for x in $(seq $RETRIES); do
+	oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default || BIND_ERROR=true
+	./scripts/broker-ci/wait-for-resource.sh create pod mediawiki >> /tmp/wait-for-pods-log 2>&1
 
-    # Filter for 'podpreset.admission.kubernetes.io' in the pod
-    preset_test=$(oc get pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -o yaml -n default | grep podpreset | awk $'{ print $1}' | cut -f 1 -d '/')
-    if [ "${preset_test}" != "podpreset.admission.kubernetes.io" ]; then
+	# Filter for 'podpreset.admission.kubernetes.io' in the pod
+	preset_test=$(oc get pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -o yaml -n default | grep podpreset | awk $'{ print $1}' | cut -f 1 -d '/')
+	if [ "${preset_test}" = "podpreset.admission.kubernetes.io" ]; then
+	    print-with-green "Pod presets found in the Mediawiki pod"
+	    break
+	else
+	    print-with-yellow "Pod presets not found in the Mediawiki pod"
+	    print-with-yellow "Retrying..."
+	fi
+    done
+
+    if [ "${x}" -eq "${RETRIES}" ]; then
 	print-with-red "Pod presets aren't in the Mediawiki pod"
 	BIND_ERROR=true
     fi
+    set -x
+}
+
+function pickup-pod-presets {
+    print-with-green "Checking if mediawiki recieved bind credentials"
+    bind-credential-check
 
     error-check "pickup-pod-presets"
 }
