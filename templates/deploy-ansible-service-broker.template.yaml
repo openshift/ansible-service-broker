@@ -178,7 +178,7 @@ objects:
         color: true
       openshift:
         host: "${CLUSTER_AUTH_HOST}"
-        ca_file: "{CA_FILE}"
+        ca_file: "${CA_FILE}"
         bearer_token_file: "${BEARER_TOKEN_FILE}"
         image_pull_policy: "${IMAGE_PULL_POLICY}"
       broker:
