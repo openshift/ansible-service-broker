@@ -24,6 +24,21 @@ func TestExitGracefully(t *testing.T) {
 	ft.AssertEqual(t, err, nil)
 }
 
+func TestInt(t *testing.T) {
+	output := []byte("eyJEQl9OQU1FIjogImZvb2JhciIsICJEQl9QQVNTV09SRCI6ICJzdXBlcnNlY3JldCIsICJEQl9UWVBFIjogIm15c3FsIiwgIkRCX1BPUlQiOiAzMzA2LCAiREJfVVNFUiI6ICJkdWRlciIsICJEQl9IT1NUIjogIm15aW5zdGFuY2UuMTIzNDU2Nzg5MDEyLnVzLWVhc3QtMS5yZHMuYW1hem9uYXdzLmNvbSJ9")
+
+	do, err := decodeOutput(output)
+	if err != nil {
+		t.Log(err.Error())
+	}
+	ft.AssertEqual(t, do["DB_NAME"], "foobar", "name does not match")
+	ft.AssertEqual(t, do["DB_PASSWORD"], "supersecret", "password does not match")
+	ft.AssertEqual(t, do["DB_TYPE"], "mysql", "type does not match")
+	ft.AssertEqual(t, do["DB_PORT"], float64(3306), "port does not match")
+	ft.AssertEqual(t, do["DB_USER"], "duder", "user does not match")
+	ft.AssertEqual(t, do["DB_HOST"], "myinstance.123456789012.us-east-1.rds.amazonaws.com", "invalid hostname")
+}
+
 // didn't think this was generic enough to go in ft.
 func assertError(t *testing.T, err error, verifystr string) {
 	if err != nil {
