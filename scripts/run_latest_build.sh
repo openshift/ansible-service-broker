@@ -58,8 +58,8 @@ oc cluster up --image=openshift/origin --version=v3.6.0-rc.0 --service-catalog=t
 # 'ansibleplaybookbundle' organization, this can be overridden with the
 # parameter DOCKERHUB_ORG being passed into the template.
 #
-DOCKERHUB_USER=""
-DOCKERHUB_PASS=""
+DOCKERHUB_USER="changeme"
+DOCKERHUB_PASS="changeme"
 DOCKERHUB_ORG="ansibleplaybookbundle"
 
 curl -s https://raw.githubusercontent.com/openshift/ansible-service-broker/master/templates/deploy-ansible-service-broker.template.yaml > deploy-ansible-service-broker.template.yaml
@@ -71,9 +71,9 @@ oc login -u system:admin
 oc new-project ansible-service-broker
 oc process -f ./deploy-ansible-service-broker.template.yaml \
     -n ansible-service-broker \
-    -p DOCKERHUB_USER=$DOCKERHUB_USER \
-    -p DOCKERHUB_PASS=$DOCKERHUB_PASS \
-    -p DOCKERHUB_ORG=$DOCKERHUB_ORG | oc create -f -
+    -p DOCKERHUB_USER="$DOCKERHUB_USER" \
+    -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
+    -p DOCKERHUB_ORG="$DOCKERHUB_ORG" | oc create -f -
 
 if [ "$?" -ne 0 ]; then
 	echo "Error processing template and creating deployment"
@@ -89,6 +89,10 @@ cat <<EOF > ansible-service-broker.broker
       name: ansible-service-broker
     spec:
       url: https://${ASB_ROUTE}
+      authInfo:
+        basicAuthSecret:
+          namespace: ansible-service-broker
+          name: asb-auth-secret
 EOF
 
 oc create -f ./ansible-service-broker.broker

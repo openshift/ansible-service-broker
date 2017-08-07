@@ -7,5 +7,6 @@ import (
 )
 
 func TestDockerhubName(t *testing.T) {
-	ft.AssertEqual(t, dockerhubName, "docker.io", "dockerhub name does not match docker.io")
+	dha := DockerHubAdapter{}
+	ft.AssertEqual(t, dha.RegistryName(), "docker.io", "dockerhub name does not match docker.io")
 }

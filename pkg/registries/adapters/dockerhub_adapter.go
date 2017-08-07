@@ -49,7 +49,7 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 
 	token, err := r.getDockerHubToken()
 	if err != nil {
-		r.Log.Error("unable to generate docker hub token")
+		r.Log.Errorf("unable to generate docker hub token - %v", err)
 		return nil, err
 	}
 
@@ -82,7 +82,7 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	}
 	// check to see if the context had an error
 	if ctx.Err() != nil {
-		r.Log.Error("encountered an error while loading images, we may not have all the apb in the catalog - %v", ctx.Err())
+		r.Log.Errorf("encountered an error while loading images, we may not have all the apb in the catalog - %v", ctx.Err())
 		return apbData, ctx.Err()
 	}
 
