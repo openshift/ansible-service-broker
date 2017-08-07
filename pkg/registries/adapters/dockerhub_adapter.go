@@ -48,6 +48,10 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	r.Log.Debug("Loading image list for org: [ %s ]", r.Config.Org)
 
 	token, err := r.getDockerHubToken()
+	if err != nil {
+		r.Log.Error("unable to generate docker hub token")
+		return nil, err
+	}
 
 	channel := make(chan string)
 	ctx, cancelFunc := context.WithCancel(context.Background())
