@@ -104,7 +104,7 @@ objects:
           env:
           - name: BROKER_CONFIG
             value: ${BROKER_CONFIG}
-          - name: INSCURE
+          - name: INSECURE
             value: ${INSECURE}
           resources: {}
           terminationMessagePath: /tmp/termination-log
