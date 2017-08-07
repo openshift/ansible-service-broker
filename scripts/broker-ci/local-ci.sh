@@ -75,3 +75,5 @@ provision
 bind
 pickup-pod-presets
 verify-ci-run
+convert-to-red
+error-variables

@@ -2,7 +2,7 @@
 
 function redirect-output {
     if ${LOCAL_CI}; then
-	# If local CI don't output logs. Let the user do it.
+	# If local CI don't output logs. Let the developer check them.
 	exec 3>&1 4>&2 >/dev/null
     fi
 }
@@ -10,13 +10,12 @@ function redirect-output {
 function restore-output {
     if ${LOCAL_CI}; then
 	# Restore stdout and stderr
-	exec 1>&3 2>&4
+	exec 1>&3 2>&4 3>&- 4>&-
     fi
 }
 
 function log-header {
     set +x
-    redirect-output
     header=$1
     print-with-red "##### START ${header} ######"
 }
@@ -24,7 +23,6 @@ function log-header {
 function log-footer {
     footer=$1
     print-with-red "##### END ${footer} ######"
-    restore-output
 }
 
 function wait-logs {
