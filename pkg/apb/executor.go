@@ -100,10 +100,30 @@ func ExecuteApb(
 						extraVars,
 					},
 					ImagePullPolicy: pullPolicy,
+					VolumeMounts: []v1.VolumeMount{
+						{
+							Name:      "apb-secrets-volume",
+							MountPath: "/etc/apb-secrets",
+							ReadOnly:  true,
+						},
+					},
 				},
 			},
 			RestartPolicy:      v1.RestartPolicyNever,
 			ServiceAccountName: serviceAccountName,
+			Volumes: []v1.Volume{
+				{
+					Name: "apb-secrets-volume",
+					VolumeSource: v1.VolumeSource{
+						Secret: &v1.SecretVolumeSource{
+							// TODO: for now just grabs first secret name
+							SecretName: GetSecrets(spec)[0],
+							Optional:   &[]bool{false}[0],
+							// Eventually, we can include: Items []KeyToPath here to specify specific keys
+						},
+					},
+				},
+			},
 		},
 	}
 

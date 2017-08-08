@@ -31,7 +31,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
-	"github.com/openshift/ansible-service-broker/pkg/secrets"
 )
 
 // Config - The base config for the pieces of the applcation
@@ -42,7 +41,7 @@ type Config struct {
 	Openshift  apb.ClusterConfig
 	ConfigFile string
 	Broker     broker.Config
-	Secrets    []secrets.Config
+	Secrets    []apb.SecretsConfig
 }
 
 // CreateConfig - Read config file and create the Config struct

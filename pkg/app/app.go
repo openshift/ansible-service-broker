@@ -32,12 +32,12 @@ import (
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
-	"github.com/openshift/ansible-service-broker/pkg/secrets"
 )
 
 // MsgBufferSize - The buffer for the message channel.
@@ -153,10 +153,10 @@ func CreateApp() App {
 	}
 	app.log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
-	sekrets := secrets.NewSecrets(app.config.Secrets, app.log.Logger)
+	apb.NewSecrets(app.config.Secrets, app.log.Logger)
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker, sekrets,
+		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker,
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
 		app.log.Error(err.Error())

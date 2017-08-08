@@ -36,7 +36,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
-	"github.com/openshift/ansible-service-broker/pkg/secrets"
 	"github.com/pborman/uuid"
 	k8srestclient "k8s.io/client-go/rest"
 )
@@ -101,12 +100,11 @@ type AnsibleBroker struct {
 	registry      []registries.Registry
 	engine        *WorkEngine
 	brokerConfig  Config
-	secrets       secrets.Secrets
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
 func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
-	registry []registries.Registry, engine WorkEngine, brokerConfig Config, sekrets secrets.Secrets,
+	registry []registries.Registry, engine WorkEngine, brokerConfig Config,
 ) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
 		dao:           dao,
@@ -115,7 +113,6 @@ func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.Clust
 		registry:      registry,
 		engine:        &engine,
 		brokerConfig:  brokerConfig,
-		secrets:       sekrets,
 	}
 
 	err := broker.Login()
@@ -409,7 +406,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 		return nil, err
 	}
 
-	specs, err = a.secrets.Filter(specs)
+	specs, err = apb.FilterSecrets(specs)
 	if err != nil {
 		// TODO: Should we blow up or warn and continue?
 		a.log.Errorf("Something went real bad trying to load secrets %v", err)
