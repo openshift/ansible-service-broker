@@ -128,21 +128,127 @@ in each of them
 | ClusterRoles |  | X | X |
 | Project |  | X | X |
 
-## APBs
-The APBs only target OpenShift as a cluster. The APBs will differ in two ways:
+## Cluster Identification
+Since the plan is for the Broker to run on two clusters, there needs to be a way
+to identify which is being used.
+
+### Broker Configuration and Validation
+The broker will have a configuration setting for the cluster.
+```diff
+broker:
++ Cluster: OpenShift
+```
+or
+```diff
+broker:
++ Cluster: Kubernetes
+```
+
+When the broker is started, there will be a validation test to make sure
+the cluster setting is correct.
+
+### APB Spec
+APBs will be written only for a single cluster and should identify which cluster
+they work with.
+
+```diff
+bindable: false
++ cluster: kubernetes
+async: optional
+```
+
+## APB Cluster Identification
+One of the trickiest parts of having one APB per cluster is identification.
+It needs to be obvious for a user to know that an APB only works with OpenShift
+or Kubernetes. Currently, the only annotation outlined is the 'cluster' option
+in apb.yml, but there needs to be further identification.
+
+### New APB Level Directory
+Add a new directory layer into each APB.
+
+mediawiki123-apb/
+├── kubernetes
+│   ├── apb.yml
+│   ├── Dockerfile
+│   ├── Dockerfile-dev
+│   ├── playbooks
+│   │   ├── deprovision.yml
+│   │   └── provision.yml
+│   └── roles
+│       └── provision-mediawiki123-apb
+│           ├── defaults
+│           │   └── main.yml
+│           └── tasks
+│               └── main.yml
+└── openshift
+    ├── apb.yml
+    ├── Dockerfile
+    ├── Dockerfile-dev
+    ├── playbooks
+    │   ├── deprovision.yml
+    │   └── provision.yml
+    └── roles
+        └── provision-mediawiki123-apb
+            ├── defaults
+            │   └── main.yml
+            └── tasks
+                └── main.yml
+
+### New Top Level Directory
+Add a new directory layer at the top level.
+
+apb-examples/
+├── kubernetes
+│   └── mediawiki123-apb
+│       ├── apb.yml
+│       ├── Dockerfile
+│       ├── Dockerfile-dev
+│       └── playbooks
+│           ├── deprovision.yml
+│           └── provision.yml
+│               └── roles
+│                    └── provision-mediawiki123-apb
+│                        ├── defaults
+│                        │   └── main.yml
+│                        └── tasks
+│                            └── main.yml
+│  
+└── openshift
+    └── mediawiki123-apb
+        ├── apb.yml
+        ├── Dockerfile
+        ├── Dockerfile-dev
+        ├── playbooks
+        │   ├── deprovision.yml
+        │   └── provision.yml
+        └── roles
+            └── provision-mediawiki123-apb
+                ├── defaults
+                │   └── main.yml
+                └── tasks
+                    └── main.yml
+
+### Combine Repos
+A bit more complex scenario, but apb-examples could be folded into the
+ansible-service-broker repo under the 'examples' or 'apb' directory. That
+directory can use either the 'New APB Level Directory' strategy or the
+'New Top Level Directory' strategy.
+
+## APB Containers
+In order to target multiple clusters the APB containers require two changes:
  - Packages
  - oc-login.sh
 
 ### Packages
-The main issue with packaging is that folks using Kubernetes may only want the
-Kubernetes client. The package ```origin-clients``` installs both the OpenShift
-and Kubernetes clients.  If this the container size isn't an issue, then there
-may not be a problem using ```origin-clients```.
+The main issue with packaging is that folks using Kubernetes may **only** want
+the Kubernetes client. The package ```origin-clients``` installs both the
+OpenShift and Kubernetes clients.  If this the container size isn't an issue,
+then there may not be a problem using ```origin-clients```.
 
 ### Script
 The ```oc-login.sh``` script should be changed to accept an environment varible
 identifing the $COE.  Based on $COE, the login will use the ```kubectl``` or
-```oc``` client.
+```oc``` client.  Also, it should be renamed to ```login.sh```
 
 ## Tools and Docs that reference the OpenShift client
 **Tools**
@@ -160,11 +266,16 @@ identifing the $COE.  Based on $COE, the login will use the ```kubectl``` or
  - docs/local_development.md
  - README.md
 
+## Documentation Impact
+The apb-examples repo will be most impacted by the documentation change.
+There needs to be a section in the README.md or another document detailing
+the difference between writing an APB for Kubernetes pr OpenShift.
+
 ## CI
 The community has two tools for CI: Jenkins and Travis. When adding
 Kubernetes support to the broker, the upstream Travis CI job should test the
-broker and catalog on top of the upstream COE, Kubernetes.  Jenkins will become
-the downstream CI testing on OpenShift.
+broker and catalog on top of both Kubernetes and OpenShift.  Jenkins will do
+testing on OpenShift.
 
 ## Phased Plan
 Moving to a cluster agnostic architecure will require a large about of effort.
@@ -216,9 +327,11 @@ edges.
 **Ansible-service-broker**
 
  9. Convert all the client commands to API [calls](https://github.com/openshift/ansible-service-broker/search?p=1&q=%22oc%22&type=&utf8=%E2%9C%93).
+ 10. Update broker documentation
 
 **apb-examples**
- 10. Address any packaging concerns.
+ 11. Address any packaging concerns.
+ 12. Update apb documentation
 
 ## Work Items
 ### Ansible-service-broker
@@ -232,16 +345,19 @@ edges.
  - Create a Kubernetes solution for ClusterRoleBindings, ClusterRoles, and
     Projects using the clients.
  - Convert all the client commands to API [calls](https://github.com/openshift/ansible-service-broker/search?p=1&q=%22oc%22&type=&utf8=%E2%9C%93).
+ - Update documentation
 
 ### apb-examples
  - Add support for Kubernetes to ```oc-login.sh``` script. Also, it should
    be renamed.
  - Address any packaging concerns.
  - Additional [comments](https://github.com/fusor/apb-examples/issues/60).
+ - Update documentation
 
 ### catasb
  - Create playbook for Kubernetes setup.
  - Add the ability to spawn the latest service-catalog in the cluster.
+ - Update documentation
 
 ### CI
  - Convert upstream CI, Travis, to using Kubernetes
