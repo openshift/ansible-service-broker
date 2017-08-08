@@ -168,13 +168,19 @@ while [ "$?" -ne 1 ]; do
   oc get pods -n ${ASB_PROJECT} | grep etcd
 done
 
+TERMINATION="reencrypt"
+
 oc delete deployment etcd -n ${ASB_PROJECT}
 oc delete endpoints asb -n ${ASB_PROJECT}
 oc delete service asb  -n ${ASB_PROJECT}
 oc delete route asb-etcd -n ${ASB_PROJECT}
+if [ "${BROKER_INSECURE}" = "true" ]; then
+    oc delete route asb-1338 -n ${ASB_PROJECT}
+    TERMINATION="edge"
+fi
 oc delete service etcd -n ${ASB_PROJECT}
 # Process required changes for local development
-oc process -f ${TEMPLATE_LOCAL_DEV} -n ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} | oc create -n ${ASB_PROJECT} -f -
+oc process -f ${TEMPLATE_LOCAL_DEV} -n ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} -p TERMINATION=${TERMINATION} | oc create -n ${ASB_PROJECT} -f -
 
 echo "Sleeping for a few seconds to avoid issues with broker not being able to talk to etcd."
 echo "Appears like there is a delay of when we create the asb-etcd route and when it is available for use"

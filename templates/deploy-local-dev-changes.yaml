@@ -89,6 +89,22 @@ objects:
       targetPort: ${ETCD_TARGET_PORT}
 
 - apiVersion: v1
+  kind: Route
+  metadata:
+    name: asb-1338
+    labels:
+      app: ansible-service-broker
+      service: asb
+  spec:
+    to:
+      kind: Service
+      name: asb
+    port:
+      targetPort: port-1338
+    tls:
+      termination: ${TERMINATION}
+
+- apiVersion: v1
   kind: Endpoints
   metadata:
     labels:
@@ -144,3 +160,8 @@ parameters:
   displayname: etcd path
   name: ETCD_PATH
   value: /usr/local/bin/etcd
+
+- description: Route termination policy
+  displayname: Termination policy
+  name: TERMINATION
+  value: edge
