@@ -4,7 +4,7 @@
 The ansible-service-broker and all of the tooling around it
 (apb-examples, catasb, and ansible-playbook-bundles) specifically target
 OpenShift as the underlying COE (container orchestration engine) when it
-should be cluster agnostic.
+should be runtime agnostic.
 
 ## Problem Description
 Issues have been coming up during testing because the broker does not target
@@ -19,17 +19,17 @@ The Broker's functionality won't change, but all the tooling around it will.
 
 ## Split Out All Cluster logic
 OpenShift is Kubernetes plus a few features, API name changes, and tools.
-In the core ansible-service-broker code, ```pkg/cluster/kubernetes.go```
+In the core ansible-service-broker code, ```pkg/runtime/kubernetes.go```
 should be able to account for about 80% of the cluster opertations required
-by the broker. The remaining ~20% will be held in ```pkg/cluster/openshift.go```.
+by the broker. The remaining ~20% will be held in ```pkg/runtime/openshift.go```.
 
 ### Code
-Start by creating a new pkg for cluster objects, ```pkg/cluster/...```. From
-there, the cluster pkg will hold ```pkg/cluster/cluster.go```,
-```pkg/cluster/kubernetes.go```, and ```pkg/cluster/openshift.go```.
+Start by creating a new pkg for cluster objects, ```pkg/runtime/...```. From
+there, the runtime pkg will hold ```pkg/runtime/cluster.go```,
+```pkg/cluster/kubernetes.go```, and ```pkg/runtime/openshift.go```.
 
-The file ```pkg/cluster/cluster.go``` will provide an object that will abstract
-cluster logic.
+The file ```pkg/runtime/cluster.go``` will provide an object that will abstract
+runtime logic.
 ```diff
 +type COE interface {
 +     CreateSandbox()
@@ -37,14 +37,14 @@ cluster logic.
 +     DestroySandbox()
 +}
 
-+struct Cluster {
++struct RunTime {
 +     ...
 +}
 
-+func (c *Cluster) ApbAction(...) {
-+     c.cluster.CreateSandbox()
-+     c.cluster.Run(APBActionProvision, req)
-+     c.cluster.DeleteSandbox()
++func (c *RunTime) ApbAction(...) {
++     c.runTime.CreateSandbox()
++     c.runTime.Run(APBActionProvision, req)
++     c.runTime.DeleteSandbox()
 +}
 
 +func (k *Kubernetes) Run(action, req) {
@@ -55,7 +55,7 @@ cluster logic.
 ```
 
 The ```COE``` interface will hold all the public functions whose details are
-hidden away inside the cluster files, kubernetes.go and openshift.go. Adding a
+hidden away inside the runtime files, kubernetes.go and openshift.go. Adding a
 new COE operation requires adding an abstraced function that describes what
 the interface does so it remains agnostic.
 
@@ -70,17 +70,17 @@ type COE interface {
 ```
 
 Using an abstration is an advantage because the broker code will only have a
-single path and have no knowlege of cluster resources. It will call the cluster
-object using broker native information, which will translate into cluster
+single path and have no knowlege of runtime resources. It will call the runtime
+object using broker native information, which will translate into runtime
 resource allocation.
 
 To provision an APB:
 ```diff
 - k8scli.CoreV1().Pods(ns).Create(pod)
-+ Cluster.ApbAction(APBActionProvision, req)
++ RunTime.ApbAction(APBActionProvision, req)
 ```
 
-Down inside the cluster delegates, kubernetes.go and openshift.go, there will be
+Down inside the runtime delegates, kubernetes.go and openshift.go, there will be
 functions that handle the resource specific work.
 ```diff
 + func (k *Kubernetes) CreatePod(name string, image spec.Image, extraVars string,
@@ -143,7 +143,7 @@ functions that handle the resource specific work.
 The diagram represents the code split into two files and the API objects
 in each of them
 
-**pkg/cluster/kubernetes.go**
+**pkg/runtime/kubernetes.go**
 
 | API Resource | Uses API | Uses CLI | Different between OpenShift and Kubernetes |
 |:---:|:---:|:---:|:---:|
@@ -163,45 +163,45 @@ in each of them
 | ClusterRoles |  | X | X |
 | Project |  | X | X |
 
-## Cluster Identification
-Since the plan is for the Broker to run on two clusters, there needs to be a way
-to identify which is being used.
+## Runtime Identification
+Since the plan is for the Broker to run on at least two clusters, there needs to
+be a way to identify which is being used.
 
 ### Broker Configuration and Validation
-The broker will have configuration settings for the cluster.
-```ClusterVersion``` will accept the special character '+'
+The broker will have configuration settings for the runtime.
+```RuntimeVersion``` will accept the special character '+'
 to account for multiple versions.
 
 ```diff
 broker:
-+ Cluster: OpenShift
-+ ClusterVersion: "1.6+"
++ Runtime: OpenShift
++ RuntimeVersion: "1.6+"
 ```
 or
 ```diff
 broker:
-+ Cluster: Kubernetes
-+ ClusterVersion: "1.7"
++ Runtime: Kubernetes
++ RuntimeVersion: "1.7"
 ```
 
 When the broker is started, there will be a validation test to make sure
-the cluster setting is correct.
+the Runtime setting is correct.
 
 ### APB Spec
-APBs will be written only for a single cluster and should identify which cluster
-they work with. If not cluster is specified in the APB, assume it's meant for
-OpenShift all the current examples work.
+APBs will be written only for a single runtime and should identify which runtime
+they work with. If runtime is not specified in the APB, assume it's meant for
+OpenShift so all the current examples work.
 
 ```diff
 bindable: false
-+ cluster: kubernetes
++ runtime: kubernetes
 async: optional
 ```
 
-## APB Cluster Identification
-One of the trickiest parts of having one APB per cluster is identification.
+## APB Runtime Identification
+One of the trickiest parts of having one APB per runtime is identification.
 It needs to be obvious for a user to know that an APB only works with OpenShift
-or Kubernetes. Currently, the only annotation outlined is the 'cluster' option
+or Kubernetes. Currently, the only annotation outlined is the 'runtime' option
 in apb.yml, but there needs to be further identification.
 
 ### New APB Level Directory
@@ -280,7 +280,7 @@ directory can use either the 'New APB Level Directory' strategy or the
 'New Top Level Directory' strategy.
 
 ## APB Containers
-In order to target multiple clusters the APB containers require two changes:
+In order to target multiple runtimes the APB containers require two changes:
  - Packages
  - oc-login.sh
 
@@ -323,7 +323,7 @@ broker and catalog on top of both Kubernetes and OpenShift.  Jenkins will do
 testing on OpenShift.
 
 ## Phased Plan
-Moving to a cluster agnostic architecure will require a large about of effort.
+Moving to a runtime agnostic architecure will require a large about of effort.
 We'll use a phased approach to accomplish the move so things don't get too
 chaotic all at once.
 
@@ -338,12 +338,12 @@ and begin transitioning broker code.
 
 **Ansible-service-broker**
 
- 3a. Create ```pkg/cluster/kubernetes-hack.go``` that will run client commands
+ 3a. Create ```pkg/runtime/kubernetes-hack.go``` that will run client commands
      via  ```kubectl```.
- 3b. Create ```pkg/cluster/openshift-hack.go``` that will run client commands
+ 3b. Create ```pkg/runtime/openshift-hack.go``` that will run client commands
      via  ```oc```.
- 4.  Split out the cluster logic into a ```pkg/cluster/openshift.go``` and
-     ```pkg/cluster/kubernetes.go```.
+ 4.  Split out the cluster logic into a ```pkg/runtime/openshift.go``` and
+     ```pkg/runtime/kubernetes.go```.
 
 ### Phase Two
 Tool Transition - Get all the environment tools working and the gate green.
@@ -354,8 +354,8 @@ Tool Transition - Get all the environment tools working and the gate green.
     Projects, using the clients.
  6. Convert any broker tools and scripts to target either OpenShift or
     Kubernetes.
- 7. Hook up the broker to the Cluster pkg.
- 8. Accept Cluster and ClusterVersion parameters and create validations.
+ 7. Hook up the broker to the RunTime pkg.
+ 8. Accept Runtime and RuntimeVersion parameters and create validations.
  9. Pass $CLUSTER as a variable to the APB.
 
 **apb-examples**
@@ -383,12 +383,12 @@ edges.
 
 ## Work Items
 ### Ansible-service-broker
- - Create ```pkg/cluster/kubernetes-hack.go``` that will run client commands
+ - Create ```pkg/runtime/kubernetes-hack.go``` that will run client commands
     via  ```kubectl```.
- - Create ```pkg/cluster/openshift-hack.go``` that will run client commands
+ - Create ```pkg/runtime/openshift-hack.go``` that will run client commands
     via  ```oc```.
- - Split out all the cluster logic into a ```pkg/cluster/openshift.go``` and
-    ```pkg/cluster/kubernetes.go```.
+ - Split out all the cluster logic into a ```pkg/runtime/openshift.go``` and
+    ```pkg/runtime/kubernetes.go```.
  - Convert any broker tools to target either OpenShift or Kubernetes.
  - Create a Kubernetes solution for ClusterRoleBindings, ClusterRoles, and
     Projects using the clients.
