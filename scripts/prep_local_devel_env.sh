@@ -113,7 +113,7 @@ echo -e "Wrote \n${BROKER_SVC_ACCT_TOKEN}\n to: ${SVC_ACCT_TOKEN_FILE}\n"
 ###
 # Fetch the tls.crt for the asb deployment
 ###
-TLS_CRT_DATA=`oc get secret asb-tls -o jsonpath='{ .data.tls\.crt }'`
+TLS_CRT_DATA=`oc get secret -n ${ASB_PROJECT} asb-tls -o jsonpath='{ .data.tls\.crt }'`
 # Remove quotes from variable
 TLS_CRT_DATA=( $(eval echo ${TLS_CRT_DATA[@]}) )
 # Base64 Decode
@@ -133,7 +133,7 @@ echo -e "Wrote \n${TLS_CRT_DATA}\n to: ${TLS_CRT}\n"
 ###
 # Fetch the tls.crt for the asb deployment
 ###
-TLS_KEY_DATA=`oc get secret asb-tls -o jsonpath='{ .data.tls\.key }'`
+TLS_KEY_DATA=`oc get secret -n ${ASB_PROJECT} asb-tls -o jsonpath='{ .data.tls\.key }'`
 # Remove quotes from variable
 TLS_KEY_DATA=( $(eval echo ${TLS_KEY_DATA[@]}) )
 # Base64 Decode
