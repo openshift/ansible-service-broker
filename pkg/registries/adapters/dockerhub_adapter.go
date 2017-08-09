@@ -48,6 +48,10 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	r.Log.Debug("Loading image list for org: [ %s ]", r.Config.Org)
 
 	token, err := r.getDockerHubToken()
+	if err != nil {
+		r.Log.Errorf("unable to generate docker hub token - %v", err)
+		return nil, err
+	}
 
 	channel := make(chan string)
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -78,7 +82,7 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	}
 	// check to see if the context had an error
 	if ctx.Err() != nil {
-		r.Log.Error("encountered an error while loading images, we may not have all the apb in the catalog - %v", ctx.Err())
+		r.Log.Errorf("encountered an error while loading images, we may not have all the apb in the catalog - %v", ctx.Err())
 		return apbData, ctx.Err()
 	}
 
