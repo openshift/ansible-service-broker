@@ -7,6 +7,7 @@ source "${BROKER_DIR}/scripts/broker-ci/logs.sh"
 BUILD_ERROR=false
 MAKE_DEPLOY_ERROR=false
 CLUSTER_SETUP_ERROR=false
+RESOURCE_ERROR=false
 
 set -ex
 
@@ -68,7 +69,7 @@ function make-build-image {
 
 function make-deploy {
     make deploy
-    NAMESPACE="ansible-service-broker" wait-for-resource pod create asb
+    NAMESPACE="ansible-service-broker" ./scripts/broker-ci/wait-for-resource.sh create pod asb >> /tmp/wait-for-pods-log 2>&1
     env-error-check "make-deploy"
 }
 

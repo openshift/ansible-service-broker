@@ -4,12 +4,12 @@ BROKER_DIR="$(dirname "${BASH_SOURCE}")/../.."
 source "${BROKER_DIR}/scripts/broker-ci/logs.sh"
 source "${BROKER_DIR}/scripts/broker-ci/error.sh"
 
-RESOURCE_ERROR=false
 BIND_ERROR=false
 PROVISION_ERROR=false
 POD_PRESET_ERROR=false
 VERIFY_CI_ERROR=false
 
+RESOURCE_ERROR="${RESOURCE_ERROR:-false}"
 BUILD_ERROR="${BUILD_ERROR:-false}"
 MAKE_DEPLOY_ERROR="${MAKE_DELOY_ERROR:-false}"
 CLUSTER_SETUP_ERROR="${CLUSTER_SETUP_ERROR:-false}"
