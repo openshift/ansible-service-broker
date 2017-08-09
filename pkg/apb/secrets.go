@@ -54,7 +54,7 @@ type AssociationRule struct {
 }
 
 type secretsCache struct {
-	secrets map[string][]string
+	mapping map[string][]string
 	rwSync  sync.RWMutex
 	rules   []AssociationRule
 	config  []SecretsConfig
@@ -66,7 +66,33 @@ var secrets secretsCache
 func GetSecrets(spec *Spec) []string {
 	secrets.rwSync.RLock()
 	defer secrets.rwSync.RUnlock()
-	return secrets.secrets[spec.FQName]
+	return secrets.mapping[spec.FQName]
+}
+
+func AddSecrets(specs []*Spec) {
+	for _, spec := range specs {
+		AddSecretsFor(spec)
+	}
+}
+
+func AddSecretsFor(spec *Spec) {
+	secrets.rwSync.Lock()
+	defer secrets.rwSync.Unlock()
+
+	for _, rule := range secrets.rules {
+		if match(spec, rule) {
+			addSecret(spec, rule)
+		}
+	}
+
+}
+
+func addSecret(spec *Spec, rule AssociationRule) {
+	secrets.mapping[spec.FQName] = append(secrets.mapping[spec.FQName], rule.secret)
+}
+
+func match(spec *Spec, rule AssociationRule) bool {
+	return spec.FQName == rule.apbName
 }
 
 func NewSecrets(config []SecretsConfig, log *logging.Logger) {
@@ -75,7 +101,7 @@ func NewSecrets(config []SecretsConfig, log *logging.Logger) {
 		rules = append(rules, AssociationRule{cfg.ApbName, cfg.Secret})
 	}
 	secrets = secretsCache{
-		secrets: make(map[string][]string),
+		mapping: make(map[string][]string),
 		rwSync:  sync.RWMutex{},
 		log:     log,
 		rules:   rules,

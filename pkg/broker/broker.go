@@ -252,6 +252,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
+	apb.AddSecrets(specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
@@ -905,6 +906,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err
 	}
+	apb.AddSecretsFor(&spec)
 	service := SpecToService(&spec)
 	return &CatalogResponse{Services: []Service{service}}, nil
 }
