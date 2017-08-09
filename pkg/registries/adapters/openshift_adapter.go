@@ -3,7 +3,6 @@ package adapters
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	b64 "encoding/base64"
@@ -11,7 +10,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
-const openShiftName = "OpenShift"
+const openShiftName = "registry.connect.redhat.com"
 const openShiftAuthURL = "https://sso.redhat.com/auth/realms/rhc4tp/protocol/docker-v2/auth?service=docker-registry"
 const openShiftManifestURL = "https://registry.connect.redhat.com/v2/%v/manifests/latest"
 
@@ -27,13 +26,6 @@ type OpenShiftImage struct {
 	Namespace string `json:"namespace"`
 }
 
-// OpenShiftImageResponse - Image response for OpenShift.
-type OpenShiftImageResponse struct {
-	Count   int               `json:"count"`
-	Results []*OpenShiftImage `json:"results"`
-	Next    string            `json:"next"`
-}
-
 // RegistryName - Retrieve the registry name
 func (r OpenShiftAdapter) RegistryName() string {
 	return openShiftName
@@ -41,18 +33,21 @@ func (r OpenShiftAdapter) RegistryName() string {
 
 // GetImageNames - retrieve the images
 func (r OpenShiftAdapter) GetImageNames() ([]string, error) {
-	r.Log.Debug("OpenShiftAdapter::GetImages")
+	r.Log.Debug("OpenShiftAdapter::GetImageNames")
 	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 
 	images := r.Config.Images
+	r.Log.Debug("HERE: %v", images)
 
 	return images, nil
 }
 
 // FetchSpecs - retrieve the spec for the image names.
 func (r OpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
+	r.Log.Debug("OpenShiftAdapter::FetchSpecs")
 	specs := []*apb.Spec{}
 	for _, imageName := range imageNames {
+		r.Log.Debug("%v", imageName)
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
 			r.Log.Errorf("unable to retrieve spec data for image - %v", err)
@@ -72,7 +67,7 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 	}
 	username := r.Config.User
 	password := r.Config.Pass
-	var authString = username + ":" + password
+	authString := fmt.Sprintf("%v:%v", username, password)
 
 	authString = b64.StdEncoding.EncodeToString([]byte(authString))
 
@@ -88,10 +83,8 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	jsonToken, err := ioutil.ReadAll(resp.Body)
-
 	tokenResp := TokenResponse{}
-	err = json.Unmarshal(jsonToken, &tokenResp)
+	err = json.NewDecoder(resp.Body).Decode(&tokenResp)
 	if err != nil {
 		return "", err
 	}
@@ -99,6 +92,7 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 }
 
 func (r OpenShiftAdapter) loadSpec(imageName string) (*apb.Spec, error) {
+	r.Log.Debug("OpenShiftAdapter::LoadSpec")
 	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, imageName), nil)
 	if err != nil {
 		return nil, err

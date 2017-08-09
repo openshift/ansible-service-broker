@@ -145,9 +145,10 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		u.Scheme = "http"
 	}
 	c := adapters.Configuration{URL: u,
-		User: config.User,
-		Pass: config.Pass,
-		Org:  config.Org}
+		User:   config.User,
+		Pass:   config.Pass,
+		Org:    config.Org,
+		Images: config.Images}
 
 	switch strings.ToLower(config.Type) {
 	case "rhcc":
