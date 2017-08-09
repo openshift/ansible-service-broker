@@ -82,6 +82,8 @@ func ExecuteApb(
 		return apbID, err
 	}
 
+	volumes, volumeMounts := buildVolumeSpecs(GetSecrets(spec))
+
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: apbID,
@@ -100,30 +102,12 @@ func ExecuteApb(
 						extraVars,
 					},
 					ImagePullPolicy: pullPolicy,
-					VolumeMounts: []v1.VolumeMount{
-						{
-							Name:      "apb-secrets-volume",
-							MountPath: "/etc/apb-secrets",
-							ReadOnly:  true,
-						},
-					},
+					VolumeMounts:    volumeMounts,
 				},
 			},
 			RestartPolicy:      v1.RestartPolicyNever,
 			ServiceAccountName: serviceAccountName,
-			Volumes: []v1.Volume{
-				{
-					Name: "apb-secrets-volume",
-					VolumeSource: v1.VolumeSource{
-						Secret: &v1.SecretVolumeSource{
-							// TODO: for now just grabs first secret name
-							SecretName: GetSecrets(spec)[0],
-							Optional:   &[]bool{false}[0],
-							// Eventually, we can include: Items []KeyToPath here to specify specific keys
-						},
-					},
-				},
-			},
+			Volumes:            volumes,
 		},
 	}
 
@@ -134,6 +118,31 @@ func ExecuteApb(
 	}
 	_, err = k8scli.CoreV1().Pods(ns).Create(pod)
 	return apbID, err
+}
+
+func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {
+	volumes := []v1.Volume{}
+	volumeMounts := []v1.VolumeMount{}
+	mountName := ""
+	for _, secret := range secrets {
+		mountName = "apb-" + secret
+		volumes = append(volumes, v1.Volume{
+			Name: mountName,
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: secret,
+					Optional:   &[]bool{false}[0],
+					// Eventually, we can include: Items: []v1.KeyToPath here to specify specific keys in the secret
+				},
+			},
+		})
+		volumeMounts = append(volumeMounts, v1.VolumeMount{
+			Name:      mountName,
+			MountPath: "/etc/apb-secrets/" + mountName,
+			ReadOnly:  true,
+		})
+	}
+	return volumes, volumeMounts
 }
 
 // TODO: Instead of putting namespace directly as a parameter, we should create a dictionary
