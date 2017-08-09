@@ -2,6 +2,7 @@
 
 BROKER_DIR="$(dirname "${BASH_SOURCE}")/../.."
 source "${BROKER_DIR}/scripts/broker-ci/error.sh"
+source "${BROKER_DIR}/scripts/broker-ci/logs.sh"
 
 BUILD_ERROR=false
 MAKE_DEPLOY_ERROR=false
