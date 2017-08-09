@@ -121,6 +121,7 @@ func ExecuteApb(
 }
 
 func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {
+	optional := false
 	volumes := []v1.Volume{}
 	volumeMounts := []v1.VolumeMount{}
 	mountName := ""
@@ -131,7 +132,7 @@ func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
 					SecretName: secret,
-					Optional:   &[]bool{false}[0],
+					Optional:   &optional,
 					// Eventually, we can include: Items: []v1.KeyToPath here to specify specific keys in the secret
 				},
 			},
