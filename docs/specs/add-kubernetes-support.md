@@ -28,20 +28,62 @@ Start by creating a new pkg for cluster objects, ```pkg/cluster/...```. From
 there, the cluster pkg will hold ```pkg/cluster/cluster.go```,
 ```pkg/cluster/kubernetes.go```, and ```pkg/cluster/openshift.go```.
 
-The file ```pkg/cluster/cluster.go```  will provide an object that will abstract
+The file ```pkg/cluster/cluster.go``` will provide an object that will abstract
 cluster logic.
-
-Using an abstration is an advantage because the broker code will only have a
-single path. It will call the cluster object asking for an operation. For
-example, to create a new Pod:
 ```diff
-- k8scli.CoreV1().Pods(ns).Create(pod)
-+ Cluster.CreatePod(name, image, extraVars, pullPolicy, serviceAccountName, ns)
++type COE interface {
++     CreateSandbox()
++     Run(APBActionProvision APBAction, req Context)
++     DestroySandbox()
++}
+
++struct Cluster {
++     ...
++}
+
++func (c *Cluster) ApbAction(...) {
++     c.cluster.CreateSandbox()
++     c.cluster.Run(APBActionProvision, req)
++     c.cluster.DeleteSandbox()
++}
+
++func (k *Kubernetes) Run(action, req) {
++     if action == provison {
++         k.CreatePod(req)
++     }
++}
 ```
 
-The Cluster object will recieve the request and call the correct API.
+The ```COE``` interface will hold all the public functions whose details are
+hidden away inside the cluster files, kubernetes.go and openshift.go. Adding a
+new COE operation requires adding an abstraced function that describes what
+the interface does so it remains agnostic.
+
+Adding a secret:
 ```diff
-+ func CreatePod(name string, image spec.Image, extraVars string,
+type COE interface {
+     CreateSandbox()
+     Run(APBActionProvision APBAction, req Context)
+     DestroySandbox()
++    UpdatePermissions(req Context)
+}
+```
+
+Using an abstration is an advantage because the broker code will only have a
+single path and have no knowlege of cluster resources. It will call the cluster
+object using broker native information, which will translate into cluster
+resource allocation.
+
+To provision an APB:
+```diff
+- k8scli.CoreV1().Pods(ns).Create(pod)
++ Cluster.ApbAction(APBActionProvision, req)
+```
+
+Down inside the cluster delegates, kubernetes.go and openshift.go, there will be
+functions that handle the resource specific work.
+```diff
++ func (k *Kubernetes) CreatePod(name string, image spec.Image, extraVars string,
 +                pullPolicy string, serviceAccountName string, ns string) {
 +	pod := &v1.Pod{
 +		ObjectMeta: metav1.ObjectMeta{
@@ -65,16 +107,13 @@ The Cluster object will recieve the request and call the correct API.
 +		},
 +	}
 +
-+       k8scli.CoreV1().Pods(ns).Create(pod)
-+
++       k.client.CoreV1().Pods(ns).Create(pod)
 + }
 
 ```
 
-If there are identical API objects between COEs, check which cluster is
-being used.
 ```diff
-+ func CreateClusterRoleBinding(roleBindingName string, svcAccountName string,
++ func (o OpenShift) CreateClusterRoleBinding(roleBindingName string, svcAccountName string,
 +                               ApbRole string, ns string) {
 +	roleBindingM := map[string]interface{}{
 +		"apiVersion": "v1",
@@ -95,11 +134,7 @@ being used.
 +		},
 +      }
 +
-+      if OpenShift {
-+         OCcli.CoreV1().ClusterRoleBinding(ns).Create(roleBindingM)
-+      } elif Kubernetes {
-+         k8scli.CoreV1().ClusterRoleBinding(ns).Create(roleBindingM)
-+      }
++      o.client.CoreV1().ClusterRoleBinding(ns).Create(roleBindingM)
 + }
 
 ```
@@ -124,7 +159,7 @@ in each of them
 
 | API Resource | Uses API | Uses CLI | Different between OpenShift and Kubernetes |
 |:---:|:---:|:---:|:---:|
-| ClusterRoleBindings |  | X | X |
+| ClusterRoleBindings |  | X | X |n
 | ClusterRoles |  | X | X |
 | Project |  | X | X |
 
@@ -133,15 +168,20 @@ Since the plan is for the Broker to run on two clusters, there needs to be a way
 to identify which is being used.
 
 ### Broker Configuration and Validation
-The broker will have a configuration setting for the cluster.
+The broker will have configuration settings for the cluster.
+```ClusterVersion``` will accept the special character '+'
+to account for multiple versions.
+
 ```diff
 broker:
 + Cluster: OpenShift
++ ClusterVersion: "1.6+"
 ```
 or
 ```diff
 broker:
 + Cluster: Kubernetes
++ ClusterVersion: "1.7"
 ```
 
 When the broker is started, there will be a validation test to make sure
@@ -149,7 +189,8 @@ the cluster setting is correct.
 
 ### APB Spec
 APBs will be written only for a single cluster and should identify which cluster
-they work with.
+they work with. If not cluster is specified in the APB, assume it's meant for
+OpenShift all the current examples work.
 
 ```diff
 bindable: false
@@ -166,6 +207,7 @@ in apb.yml, but there needs to be further identification.
 ### New APB Level Directory
 Add a new directory layer into each APB.
 
+```
 mediawiki123-apb/
 ├── kubernetes
 │   ├── apb.yml
@@ -193,10 +235,12 @@ mediawiki123-apb/
             │   └── main.yml
             └── tasks
                 └── main.yml
+```
 
 ### New Top Level Directory
 Add a new directory layer at the top level.
 
+```
 apb-examples/
 ├── kubernetes
 │   └── mediawiki123-apb
@@ -227,6 +271,7 @@ apb-examples/
                 │   └── main.yml
                 └── tasks
                     └── main.yml
+```
 
 ### Combine Repos
 A bit more complex scenario, but apb-examples could be folded into the
@@ -309,16 +354,19 @@ Tool Transition - Get all the environment tools working and the gate green.
     Projects, using the clients.
  6. Convert any broker tools and scripts to target either OpenShift or
     Kubernetes.
+ 7. Hook up the broker to the Cluster pkg.
+ 8. Accept Cluster and ClusterVersion parameters and create validations.
+ 9. Pass $CLUSTER as a variable to the APB.
 
 **apb-examples**
 
- 7. Add support for Kubernetes to ```oc-login.sh``` script. Also, it should
+ 10. Add support for Kubernetes to ```oc-login.sh``` script. Also, it should
     be renamed.
 
 **CI**
 
- 8. Convert upstream CI, Travis, to using catasb to setup Kubernetes and the
-    latest service-catalog so the gate can be used to test new PRs.
+ 11. Convert upstream CI, Travis, to using catasb to setup Kubernetes and the
+     latest service-catalog so the gate can be used to test new PRs.
 
 ### Phase Three
 Broker Overhaul - Convert all the CLI commands to API calls and round out any
@@ -326,12 +374,12 @@ edges.
 
 **Ansible-service-broker**
 
- 9. Convert all the client commands to API [calls](https://github.com/openshift/ansible-service-broker/search?p=1&q=%22oc%22&type=&utf8=%E2%9C%93).
- 10. Update broker documentation
+ 12. Convert all the client commands to API [calls](https://github.com/openshift/ansible-service-broker/search?p=1&q=%22oc%22&type=&utf8=%E2%9C%93).
+ 13. Update broker documentation.
 
 **apb-examples**
- 11. Address any packaging concerns.
- 12. Update apb documentation
+ 14. Address any packaging concerns.
+ 15. Update apb documentation.
 
 ## Work Items
 ### Ansible-service-broker
