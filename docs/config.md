@@ -30,7 +30,7 @@ broker:
 ```
 ## Registry Configuration
 
-The Registry section will allow you to define the registries that the broker should look at 
+The Registry section will allow you to define the registries that the broker should look at
 for APB's. All the registry config options are defined below
 
 | field         | description                                                                                                                     | Required |
@@ -71,7 +71,7 @@ registry:
 ```
 
 ### Red Hat Container Catalog (RHCC) Registry
-Using the RHCC (Red Hat Container Catalog) registry will allow you to load APB's that are published to this type of [registry](https://access.redhat.com/containers). 
+Using the RHCC (Red Hat Container Catalog) registry will allow you to load APB's that are published to this type of [registry](https://access.redhat.com/containers).
 
 ```yaml
 registry:
@@ -81,7 +81,7 @@ registry:
 ```
 
 ### Multiple Registries Example
-You can use more then one registry to seperate apbs into logical organizations and be able to manage them from the same broker. The main thing here is that the registries must have a unigue non-empty name. If there is no unique name the service broker will fail to start with an error message alerting you to the problem.
+You can use more then one registry to separate apbs into logical organizations and be able to manage them from the same broker. The main thing here is that the registries must have a unique non-empty name. If there is no unique name the service broker will fail to start with an error message alerting you to the problem.
 
 ```yaml
 registry:
@@ -96,7 +96,7 @@ registry:
 ```
 
 ## Broker Config
-The broker config section will tell the broker what functionality should be enabled 
+The broker config section will tell the broker what functionality should be enabled
 and disabled. It will also tell the broker where to find files on disk that will
 enable the full functionality.
 
@@ -104,11 +104,11 @@ enable the full functionality.
 
 **field**|**description**|**default value**|**required**
 :-----:|:-----:|:-----:|:-----:
-dev_broker|Allow development routes to be accessable|false|N
+dev_broker|Allow development routes to be accessible|false|N
 launch_apb_on_bind|Allow bind be be no op|false|N
 bootstrap_on_startup|Allow the broker attempt to bootstrap itself on start up. Will retrieve the APBs from configured registries|false|N
 recovery|Allow the broker to attempt to recover itself by dealing with pending jobs noted in etcd|false|N
 output_request|Allow the broker to output the requests to the log file as they come in for easier debugging|false|N
-ssl_cert_key|Tells the broker where to find the tls key file. Can be ignored if using `--inscure` option but otherwise is required|""|N
+ssl_cert_key|Tells the broker where to find the tls key file. Can be ignored if using `--insecure` option but otherwise is required|""|N
 ssl_cert|Tells the broker where to find the tls crt file. Can be ignored if using the `--insecure` option but otherwise is required|""|N
 refresh_interval|The interval to query registries for new image specs|"600s"|N
