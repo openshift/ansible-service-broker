@@ -10,11 +10,14 @@ if [[ -z "$BROKER_CONFIG" ]] ; then
   exit 1
 fi
 
-
 if [ ! -f "$BROKER_CONFIG" ] ; then
   echo "No config file mounted to $BROKER_CONFIG"
   exit 1
 fi
 echo "Using config file mounted to $BROKER_CONFIG"
 
-asbd -c $BROKER_CONFIG
+if ${INSECURE}; then
+    FLAGS+=" --insecure"
+fi
+
+asbd -c $BROKER_CONFIG $FLAGS

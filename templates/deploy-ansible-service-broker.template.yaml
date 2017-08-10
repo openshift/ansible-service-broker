@@ -53,7 +53,7 @@ objects:
     port:
       targetPort: port-1338
     tls:
-      termination: Reencrypt
+      termination: ${TERMINATION}
 
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -104,6 +104,8 @@ objects:
           env:
           - name: BROKER_CONFIG
             value: ${BROKER_CONFIG}
+          - name: INSECURE
+            value: ${INSECURE}
           resources: {}
           terminationMessagePath: /tmp/termination-log
 
@@ -214,6 +216,18 @@ parameters:
   displayname: Ansible Service Broker Configuration File
   name: BROKER_CONFIG
   value: /etc/ansible-service-broker/config.yaml
+
+# SSL enabled: INSECURE="false", TERMINATION=Reencrypt
+# Insecure enabled: INSECURE="true", TERMINATION=edge
+- description: Run in insecure mode
+  displayname: Ansible Service Broker Insecure
+  name: INSECURE
+  value: "false"
+
+- description: Secure the route with TLS
+  displayname: Ansible Service Broker Termination
+  name: TERMINATION
+  value: Reencrypt
 
 - description: Dockerhub user password
   displayname: Dockerhub user password
