@@ -31,21 +31,25 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 		for {
 			msg := <-msgBuffer
 
-			p.log.Debug("Processed message from buffer")
+			p.log.Debug("Processed provision message from buffer")
 			// HACK: this seems like a hack, there's probably a better way to
 			// get the data sent through instead of a string
 			json.Unmarshal([]byte(msg.Render()), &pmsg)
 
 			if pmsg.Error != "" {
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken, State: apb.StateFailed, Podname: pmsg.PodName})
+				p.log.Errorf("Provision job reporting error: %s", pmsg.Error)
+				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken,
+					State: apb.StateFailed, Podname: pmsg.PodName})
 			} else if pmsg.Msg == "" {
 				// HACK: OMG this is horrible. We should probably pass in a
 				// state. Since we'll also be using this to get more granular
 				// updates one day.
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken, State: apb.StateInProgress, Podname: pmsg.PodName})
+				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken,
+					State: apb.StateInProgress, Podname: pmsg.PodName})
 			} else {
 				json.Unmarshal([]byte(pmsg.Msg), &extCreds)
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken, State: apb.StateSucceeded, Podname: pmsg.PodName})
+				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken,
+					State: apb.StateSucceeded, Podname: pmsg.PodName})
 				p.dao.SetExtractedCredentials(pmsg.InstanceUUID, extCreds)
 			}
 		}

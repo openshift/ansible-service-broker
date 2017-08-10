@@ -315,7 +315,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
-			a.engine.StartNewJob(rs.State.Token, pjob)
+			a.engine.StartNewJobOnTopic(rs.State.Token, pjob, ProvisionTopic)
 
 			// HACK: there might be a delay between the first time the state in etcd
 			// is set and the job was already started. But I need the token.
@@ -523,7 +523,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// asyncronously provision and return the token for the lastoperation
 		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
 
-		token = a.engine.StartNewJob("", pjob)
+		token = a.engine.StartNewJobOnTopic("", pjob, ProvisionTopic)
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
@@ -596,47 +596,26 @@ func (a AnsibleBroker) Deprovision(
 		// asynchronously provision and return the token for the lastoperation
 		dpjob := NewDeprovisionJob(instance, a.clusterConfig, a.dao, a.log)
 
-		token = a.engine.StartNewJob("", dpjob)
+		token = a.engine.StartNewJobOnTopic("", dpjob, DeprovisionTopic)
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
 		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
 		return &DeprovisionResponse{Operation: token}, nil
 	}
+
 	// TODO: do we want to do synchronous deprovisioning?
 	a.log.Info("Synchronous deprovision in progress")
 	podName, err := apb.Deprovision(instance, a.clusterConfig, a.log)
-	err = cleanupDeprovision(err, podName, instance, a.dao, a.log)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cleanupDeprovision(podName, instance, a.dao, a.log)
 	if err != nil {
 		return nil, err
 	}
 	return &DeprovisionResponse{}, nil
-}
-
-func cleanupDeprovision(err error, podName string, instance *apb.ServiceInstance, dao *dao.Dao,
-	log *logging.Logger,
-) error {
-	instanceID := instance.ID.String()
-	sm := apb.NewServiceAccountManager(log)
-	log.Info("Destroying APB sandbox...")
-	sm.DestroyApbSandbox(podName, instance.Context.Namespace)
-
-	// bubble up error.
-	if err != nil {
-		log.Error("error from deprovision - %#v", err)
-		return err
-	}
-
-	if err := dao.DeleteExtractedCredentials(instanceID); err != nil {
-		log.Error("ERROR - failed to delete extracted credentials - %#v", err)
-	}
-
-	if err := dao.DeleteServiceInstance(instanceID); err != nil {
-		log.Error("ERROR - failed to delete service instance - %#v", err)
-		return err
-	}
-	return nil
-
 }
 
 func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error {

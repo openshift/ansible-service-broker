@@ -15,6 +15,12 @@ const (
 	planParameterKey = "_apb_plan_id"
 )
 
+// Work Engine messaging consts
+const (
+	ProvisionTopic   WorkTopic = "provision_topic"
+	DeprovisionTopic WorkTopic = "deprovision_topic"
+)
+
 // Service - Service object to be returned.
 // based on https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-objects
 type Service struct {

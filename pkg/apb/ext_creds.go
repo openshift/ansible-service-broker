@@ -11,9 +11,6 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-var timeoutFreq = 6    // Seconds
-var totalTimeout = 900 // 15min
-
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
 func ExtractCredentials(
 	podname string, namespace string, log *logging.Logger,
@@ -35,7 +32,7 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 	// It would also be nice to gather the script output that exec runs
 	// instead of only getting the credentials
 
-	for r := 1; r <= credentialExtRetries; r++ {
+	for r := 1; r <= apbWatchRetries; r++ {
 		// err will be the return code from the exec command
 		// Use the error code to deterine the state
 		failedToExec := errors.New("exit status 1")
@@ -63,9 +60,10 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 		}
 
 		log.Warning("[%s] Retry attempt %d: exec into %s failed", podname, r, podname)
-		time.Sleep(time.Duration(credentialExtInterval) * time.Second)
+		time.Sleep(time.Duration(apbWatchInterval) * time.Second)
 	}
-	timeout := fmt.Sprintf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, credentialExtRetries)
+
+	timeout := fmt.Sprintf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, apbWatchRetries)
 	return nil, errors.New(timeout)
 }
 
