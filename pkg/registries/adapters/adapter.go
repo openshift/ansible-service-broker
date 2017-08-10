@@ -3,6 +3,7 @@ package adapters
 import (
 	b64 "encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -34,13 +35,13 @@ type Configuration struct {
 	Pass   string
 	Org    string
 	Images []string
+	Tag    string
 }
 
 // Retrieve the spec from a registry manifest request
-func imageToSpec(log *logging.Logger, req *http.Request) (*apb.Spec, error) {
+func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Spec, error) {
 	log.Debug("Registry::imageToSpec")
 	spec := &apb.Spec{}
-
 	req.Header.Add("Accept", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -101,6 +102,8 @@ func imageToSpec(log *logging.Logger, req *http.Request) (*apb.Spec, error) {
 		log.Errorf("Something went wrong loading decoded spec yaml, %s", err)
 		return nil, err
 	}
+
+	spec.Image = fmt.Sprintf("%s:%s", spec.Image, apbtag)
 
 	log.Debugf("adapter::imageToSpec -> Got plans %+v", spec.Plans)
 	log.Debugf("Successfully converted Image %s into Spec", spec.Image)

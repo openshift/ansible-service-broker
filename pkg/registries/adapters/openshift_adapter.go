@@ -12,7 +12,7 @@ import (
 
 const openShiftName = "registry.connect.redhat.com"
 const openShiftAuthURL = "https://sso.redhat.com/auth/realms/rhc4tp/protocol/docker-v2/auth?service=docker-registry"
-const openShiftManifestURL = "https://registry.connect.redhat.com/v2/%v/manifests/latest"
+const openShiftManifestURL = "https://registry.connect.redhat.com/v2/%v/manifests/%v"
 
 // OpenShiftAdapter - Docker Hub Adapter
 type OpenShiftAdapter struct {
@@ -93,7 +93,10 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 
 func (r OpenShiftAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 	r.Log.Debug("OpenShiftAdapter::LoadSpec")
-	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, imageName), nil)
+	if r.Config.Tag == "" {
+		r.Config.Tag = "latest"
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, imageName, r.Config.Tag), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -102,5 +105,5 @@ func (r OpenShiftAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-	return imageToSpec(r.Log, req)
+	return imageToSpec(r.Log, req, r.Config.Tag)
 }

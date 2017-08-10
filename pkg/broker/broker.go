@@ -240,8 +240,11 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 	for _, spec := range specs {
 		//need to make / a hyphen to allow for global uniqueness but still match spec.
-		spec.FQName = strings.Replace(fmt.Sprintf("%v-%v", registryName, spec.Image),
+
+		imageName := strings.Replace(spec.Image, ":", "-", -1)
+		spec.FQName = strings.Replace(fmt.Sprintf("%v-%v", registryName, imageName),
 			"/", "-", -1)
+		spec.FQName = fmt.Sprintf("%.51v", spec.FQName)
 
 		// ID Will be a md5 hash of the fully qualified spec name.
 		hasher := md5.New()
