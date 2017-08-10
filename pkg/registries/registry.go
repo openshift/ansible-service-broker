@@ -17,12 +17,13 @@ var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-
 
 // Config - Configuration for the registry
 type Config struct {
-	URL  string
-	User string
-	Pass string
-	Org  string
-	Type string
-	Name string
+	URL    string
+	User   string
+	Pass   string
+	Org    string
+	Type   string
+	Name   string
+	Images []string
 	// Fail will tell the registry that it is ok to fail the bootstrap if
 	// just this registry has failed.
 	Fail      bool     `yaml:"fail_on_error"`
@@ -144,9 +145,10 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		u.Scheme = "http"
 	}
 	c := adapters.Configuration{URL: u,
-		User: config.User,
-		Pass: config.Pass,
-		Org:  config.Org}
+		User:   config.User,
+		Pass:   config.Pass,
+		Org:    config.Org,
+		Images: config.Images}
 
 	switch strings.ToLower(config.Type) {
 	case "rhcc":
@@ -155,6 +157,8 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		adapter = &adapters.DockerHubAdapter{Config: c, Log: log}
 	case "mock":
 		adapter = &adapters.MockAdapter{Config: c, Log: log}
+	case "openshift":
+		adapter = &adapters.OpenShiftAdapter{Config: c, Log: log}
 	default:
 		panic("Unknown registry")
 	}
