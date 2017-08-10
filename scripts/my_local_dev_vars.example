@@ -19,6 +19,7 @@ BEARER_TOKEN_FILE=""
 BROKER_INSECURE="true"
 CA_FILE=""
 REFRESH_INTERVAL="600s"
+#LOCAL_ETCD="false" # Use localhost:2379 for etcd
 
 # Disable basic auth. it is enabled by default
 #ENABLE_BASIC_AUTH="false"

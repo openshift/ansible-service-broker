@@ -180,8 +180,16 @@ echo "Sleeping for a few seconds to avoid issues with broker not being able to t
 echo "Appears like there is a delay of when we create the asb-etcd route and when it is available for use"
 sleep 5
 
-etcd_route=`oc get route asb-etcd -n ${ASB_PROJECT} -o=jsonpath=\'\{.spec.host\}\'`
-echo "etcd route is at: ${etcd_route}"
+if [ "$LOCAL_ETCD" == "true" ]; then
+  ETCD_ROUTE="localhost"
+  ETCD_PORT=2379
+else
+  ETCD_ROUTE=`oc get route asb-etcd -n ${ASB_PROJECT} -o=jsonpath=\'\{.spec.host\}\'`
+  ETCD_PORT=80
+fi
+
+echo "etcd route is at: ${ETCD_ROUTE}"
+echo "etcd port is: ${ETCD_PORT}"
 
 if [ -z "$DOCKERHUB_USERNAME" ]; then
   echo "Please set the environment variable DOCKERHUB_USERNAME and re-run"
@@ -206,8 +214,8 @@ registry:
     pass: ${DOCKERHUB_PASSWORD}
     org: ${DOCKERHUB_ORG}
 dao:
-  etcd_host: ${etcd_route}
-  etcd_port: 80
+  etcd_host: ${ETCD_ROUTE}
+  etcd_port: ${ETCD_PORT}
 log:
   logfile: /tmp/ansible-service-broker-asb.log
   stdout: true
