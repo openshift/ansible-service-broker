@@ -62,6 +62,11 @@ DOCKERHUB_USER="changeme"
 DOCKERHUB_PASS="changeme"
 DOCKERHUB_ORG="ansibleplaybookbundle"
 
+#
+# Disabling basic auth allows "apb push" to work.
+#
+ENABLE_BASIC_AUTH="false"
+
 curl -s https://raw.githubusercontent.com/openshift/ansible-service-broker/master/templates/deploy-ansible-service-broker.template.yaml > deploy-ansible-service-broker.template.yaml
 
 #
@@ -73,7 +78,8 @@ oc process -f ./deploy-ansible-service-broker.template.yaml \
     -n ansible-service-broker \
     -p DOCKERHUB_USER="$DOCKERHUB_USER" \
     -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
-    -p DOCKERHUB_ORG="$DOCKERHUB_ORG" | oc create -f -
+    -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
+    -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" | oc create -f -
 
 if [ "$?" -ne 0 ]; then
 	echo "Error processing template and creating deployment"
