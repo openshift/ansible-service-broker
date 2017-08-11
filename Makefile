@@ -5,33 +5,49 @@ BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/ansible-service-broker
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
+SOURCE_DIRS      = cmd pkg
 SOURCES          := $(shell find . -name '*.go' -not -path "*/vendor/*")
 SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
 KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token tls.crt tls.key)
 .DEFAULT_GOAL    := build
 
-vendor:
+vendor: ## Install project dependencies
 	@glide install -v
 
-broker: $(SOURCES)
+broker: $(SOURCES) ## Build the broker
 	go build -i -ldflags="-s -w" ./cmd/broker
 
-build: broker
+build: broker ## Build the project
 	@echo > /dev/null
 
-run: broker | $(KUBERNETES_FILES)
+lint: ## Run golint
+	@golint -set_exit_status $(addsuffix /... , $(SOURCE_DIRS))
+
+fmt: ## Run go fmt
+	@gofmt -d $(SOURCES)
+
+fmtcheck: ## Check go formatting
+	@gofmt -l $(SOURCES) | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
+
+test: ## Run unit tests
+	@go test ./pkg/...
+
+vet: ## Run go vet
+	@go tool vet ./cmd ./pkg
+
+pre-flight: fmtcheck vet lint build test ## Pre-flight checks before creating PR
+
+run: broker | $(KUBERNETES_FILES) ## Run the broker executable locally
 	@./scripts/run_local.sh ${BROKER_CONFIG}
 
 $(KUBERNETES_FILES):
 	@./scripts/prep_local_devel_env.sh
 
-prepare-local-env: $(KUBERNETES_FILES)
+prepare-local-env: $(KUBERNETES_FILES) ## Prepare the local environment for running the broker locally
 	@echo > /dev/null
 
-prepare-build-image: build
+build-image: ## Build a docker image with the broker binary
 	cp broker build/broker
-
-build-image: prepare-build-image
 	docker build -f ${BUILD_DIR}/Dockerfile-src -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
@@ -47,24 +63,30 @@ release: release-image
 
 push:
 	docker push ${BROKER_IMAGE}:${TAG}
-clean:
+
+clean: ## Clean up your working environment
 	@rm -f broker
 	@rm -f build/broker
 
-really-clean: clean
+really-clean: clean ## Really clean up the working environment
 	@rm -f $(KUBERNETES_FILES)
 	cleanup-ci
 
-deploy:
+deploy: ## Deploy a built broker docker image to a running cluster
 	@./scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG}
 
-test:
-	go test ./pkg/...
-
-cleanup-ci:
+cleanup-ci: ## Cleanup after ci run
 	./scripts/broker-ci/cleanup-ci.sh
 
-ci:
+ci: ## Run CI (fmtcheck, vet, lint, build, test)
 	./scripts/broker-ci/local-ci.sh
 
-.PHONY: vendor build run prepare-build-image build-image release-image release push clean deploy test ci cleanup-ci
+help: ## Show this help screen
+	@echo 'Usage: make <OPTIONS> ... <TARGETS>'
+	@echo ''
+	@echo 'Available targets are:'
+	@echo ''
+	@grep -E '^[ a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help

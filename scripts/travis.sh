@@ -8,9 +8,20 @@
 action=$1
 
 export GLIDE_TARBALL="https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz"
-export PROJECT_ROOT=$GOPATH/src/github.com/openshift/ansible-service-broker
 
-if [[ "$action" == "install" ]]; then
+if [[ "$action" == "before_install" ]]; then
+  echo "================================="
+  echo "        Before Install           "
+  echo "================================="
+  sudo apt-get -qq update
+  sudo apt-get install -y python-apt autoconf pkg-config e2fslibs-dev libblkid-dev zlib1g-dev liblzo2-dev asciidoc
+elif [[ "$action" == "install" ]]; then
+  echo "================================="
+  echo "           Install               "
+  echo "================================="
+  # Install ansible
+  sudo pip install ansible==2.3.1
+
   # dash? wtf is dash? UGH! use a real shell
   sudo rm /bin/sh
   sudo ln -s  /bin/bash /bin/sh
@@ -30,7 +41,7 @@ if [[ "$action" == "install" ]]; then
   ./configure
   make
   sudo make install
-  cd $PROJECT_ROOT
+  cd $TRAVIS_BUILD_DIR
 
   # now install deps
   wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
@@ -39,34 +50,32 @@ if [[ "$action" == "install" ]]; then
 
   # install golint
   go get -u github.com/golang/lint/golint
+elif [[ "$action" == "before_script" ]]; then
+  echo "================================="
+  echo "          Before Script          "
+  echo "================================="
+  sudo ufw disable
+  tmp=`mktemp`
+  echo '{"insecure-registries":["172.30.0.0/16"]}' > ${tmp}
+  sudo mv ${tmp} /etc/docker/daemon.json
+  sudo mount --make-shared /
+  sudo service docker restart
+  export ERROR=false
 elif [[ "$action" == "lint" ]]; then
   echo "================================="
   echo "              Lint               "
   echo "================================="
-  # to have lint fail build add -set_exit_status option
-  # to each golint command
-  if [ -n "$(golint $PROJECT_ROOT/cmd/...)" ]; then
-        golint $PROJECT_ROOT/cmd/...
-        exit 1
-  fi
-  if [ -n "$(golint $PROJECT_ROOT/pkg/...)" ]; then
-        golint $PROJECT_ROOT/pkg/...
-        exit 1
-  fi
+  make lint
 elif [[ "$action" == "format" ]]; then
   echo "================================="
   echo "             Format              "
   echo "================================="
-  if [ -n "$(gofmt -l $PROJECT_ROOT/cmd $PROJECT_ROOT/pkg)" ]; then
-      gofmt -d $PROJECT_ROOT/cmd $PROJECT_ROOT/pkg
-      exit 1
-  fi
+  make fmtcheck
 elif [[ "$action" == "vet" ]]; then
   echo "================================="
   echo "              Vet                "
   echo "================================="
-  go tool vet $PROJECT_ROOT/cmd $PROJECT_ROOT/pkg
-  exit $?
+  make vet
 elif [[ "$action" == "build" ]]; then
   echo "================================="
   echo "             Build               "
@@ -84,4 +93,5 @@ elif [[ "$action" == "ci" ]]; then
   echo "            Broker CI            "
   echo "================================="
   ./scripts/broker-ci/setup.sh
+  make ci LOCAL_CI=false
 fi

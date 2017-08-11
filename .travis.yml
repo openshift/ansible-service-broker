@@ -6,19 +6,11 @@ sudo: required
 group: edge
 
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y python-apt autoconf pkg-config e2fslibs-dev libblkid-dev zlib1g-dev liblzo2-dev asciidoc
+  - ./scripts/travis.sh before_install
 install:
-  - sudo pip install ansible==2.3.1
   - ./scripts/travis.sh install
 before_script:
-  - sudo ufw disable
-  - tmp=`mktemp`
-  - echo '{"insecure-registries":["172.30.0.0/16"]}' > ${tmp}
-  - sudo mv ${tmp} /etc/docker/daemon.json
-  - sudo mount --make-shared /
-  - sudo service docker restart
-  - export ERROR=false
+  - ./scripts/travis.sh before_script
 script:
   - ./scripts/travis.sh format
   - ./scripts/travis.sh vet
@@ -26,4 +18,3 @@ script:
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh ci
-  - make ci LOCAL_CI=false
