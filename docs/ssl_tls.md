@@ -87,7 +87,7 @@ broker:
 
 ## Broker Insecure Mode
 
-The service broker is able to be run in an insecure mode, meaning it will not attempt to load the ```ssl_cert_key``` or ```ssl_cert```. The insecure mode will allow the broker to listen for unencrypted traffic.
+The service broker is able to be run in insecure mode, meaning it will not attempt to load the ```ssl_cert_key``` or ```ssl_cert```. The insecure mode will allow the broker to listen for unencrypted traffic.
 
 There are several mechanisms that can disable TLS/SSL in the broker depending on
 how they are being run. A flag can be passed to the broker executable.
@@ -98,7 +98,7 @@ The first, when running the broker binary directly you can use the insecure opti
 broker --insecure -c /path/to/config
 ```
 
-When running the broker using catasb, you can start the broker in an insecure by
+When running the broker using catasb, you can start the broker in insecure mode by
 setting the `broker_insecure_mode` and `broker_endpoint_termination` in the `my_vars`
 configuration file.
 
@@ -120,7 +120,7 @@ For example, add this to your `my_local_dev_vars`:
  ...
 ```
 
-Once the configuration is changed, run `scripts/prep_local_devel_env.sh` to prepare the environment. Then run `make run` will start the broker in an insecure mode, and the service catalog can connect to your local broker.
+Once the configuration is changed, run `scripts/prep_local_devel_env.sh` to prepare the environment. Then run `make run` will start the broker in insecure mode, and the service catalog can connect to your local broker.
 
 ### Insecure Broker and Termination Policy Matrix
 The broker and [termination](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#secured-routes) policy are tied together.  Below is a matrix of starting the broker in insecure and secure and the
