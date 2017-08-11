@@ -92,7 +92,7 @@ elif [[ "$action" == "ci" ]]; then
   echo "            Broker CI            "
   echo "================================="
   ./scripts/broker-ci/setup.sh
-  if [ $? -ne 0 ]; then
+  if [ $? -eq 0 ]; then
       make ci LOCAL_CI=false
   fi
 fi
