@@ -70,6 +70,6 @@ func Provision(
 }
 
 func projectExists(project string) bool {
-	_, _, code := runtime.RunCommandWithExitCode("oc", "get", "project", project)
+	_, _, code := runtime.RunCommandWithExitCode("kubectl", "get", "project", project)
 	return code == 0
 }

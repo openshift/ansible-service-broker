@@ -23,7 +23,7 @@ func watchPod(podName string, namespace string, log *logging.Logger) (string, er
 	for r := 1; r <= apbWatchRetries; r++ {
 		log.Info("Watch pod [ %s ] tick %d", podName, r)
 		output, err := runtime.RunCommand(
-			"oc", "get", "pod", "--no-headers=true", "--namespace="+namespace, podName)
+			"kubectl", "get", "pod", "--no-headers=true", "--namespace="+namespace, podName)
 
 		outStr := string(output)
 
