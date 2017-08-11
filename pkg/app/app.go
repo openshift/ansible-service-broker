@@ -116,10 +116,10 @@ func CreateApp() App {
 
 	app.log.Debug("Initializing WorkEngine")
 	app.engine = broker.NewWorkEngine(MsgBufferSize)
-	app.engine.AttachSubscriberToTopic(
+	app.engine.AttachSubscriber(
 		broker.NewProvisionWorkSubscriber(app.dao, app.log.Logger),
 		broker.ProvisionTopic)
-	app.engine.AttachSubscriberToTopic(
+	app.engine.AttachSubscriber(
 		broker.NewDeprovisionWorkSubscriber(app.dao, app.log.Logger),
 		broker.DeprovisionTopic)
 	app.log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())

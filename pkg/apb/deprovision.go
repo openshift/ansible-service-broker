@@ -42,8 +42,7 @@ func Deprovision(
 
 	podOutput, err := watchPod(podName, instance.Context.Namespace, log)
 	if err != nil {
-		log.Error("Error returned from watching pod")
-		log.Errorf("error: %s", err.Error())
+		log.Errorf("Error returned from watching pod\nerror: %s", err.Error())
 		log.Errorf("output: %s", podOutput)
 	}
 

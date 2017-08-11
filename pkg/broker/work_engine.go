@@ -20,11 +20,9 @@ func NewWorkEngine(bufferSize int) *WorkEngine {
 	return &WorkEngine{topics: make(map[WorkTopic]chan WorkMsg)}
 }
 
-//msgBuffer: make(chan WorkMsg, bufferSize),
-
-// StartNewJobOnTopic - Starts a job in an new goroutine, reporting to a specific topic.
+// StartNewJob - Starts a job in an new goroutine, reporting to a specific topic.
 // returns token, or generated token if an empty token is passed in.
-func (engine *WorkEngine) StartNewJobOnTopic(
+func (engine *WorkEngine) StartNewJob(
 	token string, work Work, topic WorkTopic,
 ) string {
 	var jobToken string
@@ -45,9 +43,9 @@ func (engine *WorkEngine) StartNewJobOnTopic(
 	return jobToken
 }
 
-// AttachSubscriberToTopic - Attach a subscriber a specific messaging topic.
+// AttachSubscriber - Attach a subscriber a specific messaging topic.
 // Will send the WorkMsg to the subscribers through the message buffer.
-func (engine *WorkEngine) AttachSubscriberToTopic(
+func (engine *WorkEngine) AttachSubscriber(
 	subscriber WorkSubscriber, topic WorkTopic,
 ) {
 	msgBuffer, topicExists := engine.topics[topic]

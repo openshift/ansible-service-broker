@@ -315,7 +315,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
-			a.engine.StartNewJobOnTopic(rs.State.Token, pjob, ProvisionTopic)
+			a.engine.StartNewJob(rs.State.Token, pjob, ProvisionTopic)
 
 			// HACK: there might be a delay between the first time the state in etcd
 			// is set and the job was already started. But I need the token.
@@ -523,7 +523,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// asyncronously provision and return the token for the lastoperation
 		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
 
-		token = a.engine.StartNewJobOnTopic("", pjob, ProvisionTopic)
+		token = a.engine.StartNewJob("", pjob, ProvisionTopic)
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
@@ -596,7 +596,7 @@ func (a AnsibleBroker) Deprovision(
 		// asynchronously provision and return the token for the lastoperation
 		dpjob := NewDeprovisionJob(instance, a.clusterConfig, a.dao, a.log)
 
-		token = a.engine.StartNewJobOnTopic("", dpjob, DeprovisionTopic)
+		token = a.engine.StartNewJob("", dpjob, DeprovisionTopic)
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
