@@ -4,10 +4,11 @@ ACTION=$1
 RESOURCE=$2
 RESOURCE_NAME=$3
 RESOURCE_ERROR=true
+NAMESPACE="${NAMESPACE:-default}"
 
 if [ "${RESOURCE}" = "pod" ] && [ "${ACTION}" = "create" ]; then
     for r in $(seq 100); do
-	pod=$(oc get pods -n default | grep ${RESOURCE_NAME} | awk $'{ print $3 }')
+	pod=$(oc get pods -n ${NAMESPACE} | grep ${RESOURCE_NAME} | awk $'{ print $3 }')
 	oc get pods -n default | grep ${RESOURCE_NAME}
 	if [ "${pod}" = 'Running' ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} is running"
@@ -19,7 +20,7 @@ if [ "${RESOURCE}" = "pod" ] && [ "${ACTION}" = "create" ]; then
     done
 elif [ "${ACTION}" = "create" ]; then
     for r in $(seq 100); do
-	oc get ${RESOURCE} -n default | grep ${RESOURCE_NAME}
+	oc get ${RESOURCE} -n ${NAMESPACE} | grep ${RESOURCE_NAME}
 	if [ $? -eq 0 ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} has been created"
 	    RESOURCE_ERROR=false
@@ -30,7 +31,7 @@ elif [ "${ACTION}" = "create" ]; then
     done
 elif [ "${ACTION}" = "delete" ]; then
     for r in $(seq 100); do
-	oc get ${RESOURCE} -n default | grep ${RESOURCE_NAME}
+	oc get ${RESOURCE} -n ${NAMESPACE} | grep ${RESOURCE_NAME}
 	if [ $? -eq 1 ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} has been deleted"
 	    RESOURCE_ERROR=false

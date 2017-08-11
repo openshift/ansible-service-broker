@@ -60,7 +60,6 @@ elif [[ "$action" == "before_script" ]]; then
   sudo mv ${tmp} /etc/docker/daemon.json
   sudo mount --make-shared /
   sudo service docker restart
-  export ERROR=false
 elif [[ "$action" == "lint" ]]; then
   echo "================================="
   echo "              Lint               "
@@ -93,5 +92,7 @@ elif [[ "$action" == "ci" ]]; then
   echo "            Broker CI            "
   echo "================================="
   ./scripts/broker-ci/setup.sh
-  make ci LOCAL_CI=false
+  if [ $? -ne 0 ]; then
+      make ci LOCAL_CI=false
+  fi
 fi
