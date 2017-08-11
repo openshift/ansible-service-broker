@@ -1,14 +1,14 @@
 package broker
 
-import "github.com/pborman/uuid"
+import (
+	"errors"
+	"github.com/pborman/uuid"
+)
 
 // Work - is the interface that wraps the basic run method.
 type Work interface {
 	Run(token string, msgBuffer chan<- WorkMsg)
 }
-
-// WorkTopic - Topic jobs can publish messages to, and subscribers can listen to
-type WorkTopic string
 
 // WorkEngine - a new engine for doing work.
 type WorkEngine struct {
@@ -24,7 +24,11 @@ func NewWorkEngine(bufferSize int) *WorkEngine {
 // returns token, or generated token if an empty token is passed in.
 func (engine *WorkEngine) StartNewJob(
 	token string, work Work, topic WorkTopic,
-) string {
+) (string, error) {
+	if valid := IsValidWorkTopic(topic); !valid {
+		return "", errors.New("invalid work topic")
+	}
+
 	var jobToken string
 
 	if token == "" {
@@ -40,14 +44,18 @@ func (engine *WorkEngine) StartNewJob(
 	}
 
 	go work.Run(jobToken, msgBuffer)
-	return jobToken
+	return jobToken, nil
 }
 
 // AttachSubscriber - Attach a subscriber a specific messaging topic.
 // Will send the WorkMsg to the subscribers through the message buffer.
 func (engine *WorkEngine) AttachSubscriber(
 	subscriber WorkSubscriber, topic WorkTopic,
-) {
+) error {
+	if valid := IsValidWorkTopic(topic); !valid {
+		return errors.New("invalid work topic")
+	}
+
 	msgBuffer, topicExists := engine.topics[topic]
 	if !topicExists {
 		msgBuffer = make(chan WorkMsg)
@@ -55,6 +63,7 @@ func (engine *WorkEngine) AttachSubscriber(
 	}
 
 	subscriber.Subscribe(msgBuffer)
+	return nil
 }
 
 // GetActiveTopics - Get list of topics

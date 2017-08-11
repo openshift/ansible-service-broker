@@ -315,7 +315,10 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
-			a.engine.StartNewJob(rs.State.Token, pjob, ProvisionTopic)
+			_, err := a.engine.StartNewJob(rs.State.Token, pjob, ProvisionTopic)
+			if err != nil {
+				return "", err
+			}
 
 			// HACK: there might be a delay between the first time the state in etcd
 			// is set and the job was already started. But I need the token.
@@ -523,7 +526,11 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// asyncronously provision and return the token for the lastoperation
 		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
 
-		token = a.engine.StartNewJob("", pjob, ProvisionTopic)
+		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
+		if err != nil {
+			a.log.Error("Failed to start new job for async provision\n%s", err.Error())
+			return nil, err
+		}
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
@@ -596,7 +603,11 @@ func (a AnsibleBroker) Deprovision(
 		// asynchronously provision and return the token for the lastoperation
 		dpjob := NewDeprovisionJob(instance, a.clusterConfig, a.dao, a.log)
 
-		token = a.engine.StartNewJob("", dpjob, DeprovisionTopic)
+		token, err = a.engine.StartNewJob("", dpjob, DeprovisionTopic)
+		if err != nil {
+			a.log.Error("Failed to start new job for async deprovision\n%s", err.Error())
+			return nil, err
+		}
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
