@@ -4,6 +4,7 @@
   * [Introduction](introduction.md)
   * [Design](design.md)
   * [Broker Configuration](config.md)
+  * [SSL/TLS Encryption](ssl_tls.md)
 * Ansible Playbook Bundle
   * [Design](https://github.com/fusor/ansible-playbook-bundle/blob/master/docs/design.md)
 * Bind Operation
