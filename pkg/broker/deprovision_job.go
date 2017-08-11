@@ -19,6 +19,7 @@ type DeprovisionJob struct {
 // DeprovisionMsg - Message returned for a deprovison job.
 type DeprovisionMsg struct {
 	InstanceUUID string `json:"instance_uuid"`
+	PodName      string `json:"podname"`
 	JobToken     string `json:"job_token"`
 	SpecID       string `json:"spec_id"`
 	Error        string `json:"error"`
@@ -44,20 +45,15 @@ func NewDeprovisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.C
 // Run - will run the deprovision job.
 func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	podName, err := apb.Deprovision(p.serviceInstance, p.clusterConfig, p.log)
-	err = cleanupDeprovision(err, podName, p.serviceInstance, p.dao, p.log)
 	if err != nil {
 		p.log.Error("broker::Deprovision error occurred.")
-		p.log.Error("%s", err.Error())
-		// send error message
-		// can't have an error type in a struct you want marshalled
-		// https://github.com/golang/go/issues/5161
-		msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
+		p.log.Errorf("%s", err.Error())
+		msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(), PodName: podName,
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: err.Error()}
 		return
 	}
 
-	// send creds
-	p.log.Debug("sending message to channel")
-	msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
+	p.log.Debug("sending deprovision complete msg to channel")
+	msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(), PodName: podName,
 		JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: ""}
 }

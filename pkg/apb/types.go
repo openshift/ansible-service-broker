@@ -91,11 +91,10 @@ const (
 	// cluster-admin scoped to the project the apb is operating in
 	ApbRole = "cluster-admin"
 
-	// Bind credential gathering constants
-	// 5 seconds x 7200 retries = 2 hour timeout
-	credentialExtInterval = 5
-	credentialExtRetries  = 7200
-	gatherCredentialsCMD  = "broker-bind-creds"
+	// 5s x 7200 retries, 2 hours
+	apbWatchInterval     = 5
+	apbWatchRetries      = 7200
+	gatherCredentialsCMD = "broker-bind-creds"
 )
 
 // SpecLogDump - log spec for debug

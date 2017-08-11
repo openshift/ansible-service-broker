@@ -15,6 +15,26 @@ const (
 	planParameterKey = "_apb_plan_id"
 )
 
+// WorkTopic - Topic jobs can publish messages to, and subscribers can listen to
+type WorkTopic string
+
+// Work Engine messaging consts
+const (
+	ProvisionTopic   WorkTopic = "provision_topic"
+	DeprovisionTopic WorkTopic = "deprovision_topic"
+)
+
+var workTopicSet = map[WorkTopic]bool{
+	ProvisionTopic:   true,
+	DeprovisionTopic: true,
+}
+
+// IsValidWorkTopic - Check if WorkTopic is part of acceptable set
+func IsValidWorkTopic(topic WorkTopic) bool {
+	_, ok := workTopicSet[topic]
+	return ok
+}
+
 // Service - Service object to be returned.
 // based on https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-objects
 type Service struct {

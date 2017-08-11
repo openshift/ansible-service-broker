@@ -6,7 +6,9 @@ import (
 )
 
 // Deprovision - runs the abp with the deprovision action.
-func Deprovision(instance *ServiceInstance, clusterConfig ClusterConfig, log *logging.Logger) (string, error) {
+func Deprovision(
+	instance *ServiceInstance, clusterConfig ClusterConfig, log *logging.Logger,
+) (string, error) {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
@@ -33,12 +35,16 @@ func Deprovision(instance *ServiceInstance, clusterConfig ClusterConfig, log *lo
 		"deprovision", clusterConfig, instance.Spec,
 		instance.Context, instance.Parameters, log,
 	)
-
 	if err != nil {
 		log.Error("Problem executing apb %s", err)
 		return podName, err
 	}
 
-	log.Info(string(podName))
+	podOutput, err := watchPod(podName, instance.Context.Namespace, log)
+	if err != nil {
+		log.Errorf("Error returned from watching pod\nerror: %s", err.Error())
+		log.Errorf("output: %s", podOutput)
+	}
+
 	return podName, err
 }

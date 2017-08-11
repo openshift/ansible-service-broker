@@ -47,7 +47,7 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 
 	if err != nil {
 		p.log.Error("broker::Provision error occurred.")
-		p.log.Error("%s", err.Error())
+		p.log.Errorf("%s", err.Error())
 
 		p.log.Error("Attempting to destroy APB sandbox if it has been created")
 		sm.DestroyApbSandbox(podName, p.serviceInstance.Context.Namespace)
@@ -59,15 +59,17 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		return
 	}
 
-	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
-		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: "", Error: ""}
-
 	p.log.Info("Destroying APB sandbox...")
 	sm.DestroyApbSandbox(podName, p.serviceInstance.Context.Namespace)
 
 	// send creds
-	jsonmsg, _ := json.Marshal(extCreds)
-	p.log.Debug("sending message to channel")
+	jsonmsg, err := json.Marshal(extCreds)
+	if err != nil {
+		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
+			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
+		return
+	}
+
 	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
 		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
 }
