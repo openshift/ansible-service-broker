@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
+
 	logging "github.com/op/go-logging"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -72,7 +74,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(namespace string, apbID string,
 
 func (s *ServiceAccountManager) createResources(rFilePath string, namespace string) error {
 	s.log.Debug("Creating resources from file at path: %s", rFilePath)
-	output, err := RunCommand("oc", "create", "-f", rFilePath, "--namespace="+namespace)
+	output, err := runtime.RunCommand("oc", "create", "-f", rFilePath, "--namespace="+namespace)
 	// TODO: Parse output somehow to validate things got created?
 	if err != nil {
 		s.log.Error("Something went wrong trying to create resources in cluster")
@@ -165,7 +167,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(handle string, namespace strin
 	}
 
 	s.log.Debug("Deleting serviceaccount %s, namespace %s", handle, namespace)
-	output, err := RunCommand(
+	output, err := runtime.RunCommand(
 		"oc", "delete", "serviceaccount", handle, "--namespace="+namespace,
 	)
 	if err != nil {
@@ -180,7 +182,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(handle string, namespace strin
 	s.log.Debug(string(output))
 
 	s.log.Debug("Deleting rolebinding %s, namespace %s", handle, namespace)
-	output, err = RunCommand(
+	output, err = runtime.RunCommand(
 		"oc", "delete", "rolebinding", handle, "--namespace="+namespace,
 	)
 	if err != nil {

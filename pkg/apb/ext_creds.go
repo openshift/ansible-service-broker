@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
+
 	logging "github.com/op/go-logging"
 )
 
@@ -38,7 +40,7 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 		failedToExec := errors.New("exit status 1")
 		credsNotAvailable := errors.New("exit status 2")
 
-		output, err := RunCommand("oc", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
+		output, err := runtime.RunCommand("oc", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
 		podCompleted := strings.Contains(string(output), "current phase is Succeeded") ||
 			strings.Contains(string(output), "cannot exec into a container in a completed pod")
 
