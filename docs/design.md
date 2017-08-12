@@ -51,7 +51,7 @@ or the ServiceBroker.
 
 ### Pre-broker install
 
-It's possible to have registries containing ~15k APBs. On ASB's installation,
+It's possible to have registries containing ~15k APBs. On APBs installation,
 `/catalog` will be called by the Service Catalog, and the ASB needs to respond with
 the inventory of known spec files in the form of Service objects (defined by OSB spec).
 
@@ -65,7 +65,7 @@ Therefore, ASB needs to be bootstrapped so APB spec files can be downloaded and 
 ASB pulls inventory of spec files from local store, converts to Service, sends to Service Catalog
 
 Note: Parameter handling is still a [topic of discussion](https://github.com/openservicebrokerapi/servicebroker/pull/74)
-Configurable parameters for an AA should be defined within the spec file. Param
+Configurable parameters for an AA should be defined within the spec file. Parameter
 schema is passed to the Service Catalog via the `/catalog` response as metadata.
 Purpose of this is to inform Catalog Clients of the configuration parameters that
 can be set by a user at provision time.
@@ -104,7 +104,7 @@ query a registry for available APBs via a Registry Adapter. This is an
 interface that can be implemented. Its most important method, `LoadSpecs() []*Spec`,
 is responsible for returning a slice of `Spec` structs representing the available
 APBs that were discovered. It is called when a broker is bootstrapped.
-A registry is instantiated as part of the applicaton's initialization process.
+A registry is instantiated as part of the application's initialization process.
 The specific registry adapter used is configured via the broker
 [configuration file](../etc/example-config.yaml) under the name field.
 
@@ -118,8 +118,8 @@ a broker to be bootstrapped from the Docker Hub registry via the standard
 Docker Registry API. First, it will retrieve the list of images that a specified
 registry contains. Next, it will inspect each of the images and [retrieve
 their associated metadata](https://github.com/containers/image). The API queries
-are critical to apb discoverability because it allows the broker to retrieve
-the `com.redhat.apb.spec` label containing an apb's base64
+are critical to APB discoverability because it allows the broker to retrieve
+the `com.redhat.apb.spec` label containing an APB's base64
 encoded spec information. The adapter filters any non-apb images
 based on the presence of these labels, decodes each of their specs, and loads
 the specs into etcd via the `Registry::LoadSpecs` method.
