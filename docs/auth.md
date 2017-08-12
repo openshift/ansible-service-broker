@@ -63,7 +63,7 @@ The secret needs to contain username and password. The values need to be **base6
 encoded. The easiest way to generate the values for those entries is to use the
 echo and base64 commands:
 
-```
+```bash
 $ echo -n admin | base64
 YWRtaW4=
 ```
@@ -178,7 +178,7 @@ name.
 
 You could hook that `DBUserServiceAdapter` to the existing `BasicAuth`
 
-```golan
+```golang
 func createProvider(providerType string, log *logging.Logger) (Provider, error) {
 
     switch providerType {
@@ -190,6 +190,7 @@ func createProvider(providerType string, log *logging.Logger) (Provider, error) 
        ...
     }
 }
+```
 
 or created a new `Provider`
 
