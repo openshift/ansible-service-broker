@@ -18,7 +18,7 @@ NOTE: The launch_apb_on_bind will eventually be deprecated.
 * The broker will be responsible for deleting the bindings extracted credentials in etcd during unbind.
 
 ### APB Responsibility
-* The APB is responsible for encoding credentails. Using the [asb_encode_binding](https://github.com/fusor/apb-examples/pull/93/files/3d444b778e27ac3fb266fc5cc55d55eee211fb50#diff-c0c3dd5820ea9b91bd5f865af6a41f67) ansible module.
+* The APB is responsible for encoding credentials. Using the [asb_encode_binding](https://github.com/fusor/apb-examples/pull/93/files/3d444b778e27ac3fb266fc5cc55d55eee211fb50#diff-c0c3dd5820ea9b91bd5f865af6a41f67) ansible module.
 - Note: will be unused until PR is merged and we everything can use this method.
 * The APB is responsible for handling the use of superuser/admin user vs. regular user to manage their image. 
 * The APB is responsible for handling the deletion/creation of users for their image.
@@ -26,7 +26,7 @@ NOTE: The launch_apb_on_bind will eventually be deprecated.
 #### Example Usage (workflow proposed): 
 1. On APB provision, the APB decides that, for what ever application it is responsible for deploying, to create an admin user & password. 
 2. The APB does not want to hand out the admin user and password, for the application that it is responsible for, to all the other applications that could be bound. Instead the APB author would like to create new user accounts (by using the already saved/created admin user & password), and pass those back as credentials during the bind. The new credentials are for the application that the APB is responsible for.
-3. The same is true for unbind. The APB author could want to delete the user and password, for the application that it manages, credentials and would need to use the admin user & password. The broker would alse be deleting credentials from etcd at this time.
+3. The same is true for unbind. The APB author could want to delete the user and password, for the application that it manages, credentials and would need to use the admin user & password. The broker would also be deleting credentials from etcd at this time.
 
 #### Example Usage: 
 1. APB author would like to keep only 1 account, and use that 1 account for all the bindings(current behavior).
