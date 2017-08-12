@@ -15,7 +15,7 @@ john matthews
 Q: What are plans? Is this a gap in the spec documentation?
 
 A: Plans are a "tier of service". Bronze, silver, gold plans. Ex: DBs on single
-   vs multitenant instances.
+   vs multi-tenant instances.
 
 --
 
@@ -35,7 +35,7 @@ A: Spec is unclear and self contradicting here. Issue needs to be filed for disc
 --
 
 Q: How are configuration parameters expected to be handled? Each Ansible App is going
-to have a different set of configuration params specific to that app.
+to have a different set of configuration parameters specific to that app.
 
 A: https://github.com/openservicebrokerapi/servicebroker/pull/74
 Proposed JSONSchema based spec for standardizing how to represent this.
@@ -98,7 +98,7 @@ the orphaned bindings?
 
   cli-client is being done by atomic-openshift.
 
-* Question #2 was 'does catalog support pagination'. It is concievable that the
+* Question #2 was 'does catalog support pagination'. It is conceivable that the
   ansible service broker could get a 10k list of services.
 
   Answer: Definitely a gap in the spec. typical brokers are 1-10. Someone using
@@ -111,7 +111,7 @@ the orphaned bindings?
   setup route/service
 
 * Question #4: spec mentions only 4 types, are these the only supported ones?
-  Answer: mean nothing; cloud foundary specific. binding desc?
+  Answer: mean nothing; cloud foundry specific. binding desc?
 
 * Question #5 Does deprovisioning care about outstanding bindings?
   Answer: there is some confusion in the spec about this. One part states to
