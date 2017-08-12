@@ -31,6 +31,11 @@ Typically the broker is configured via a
 You supply the auth configuration the same way as in the file configuration.
 
 [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L195-L197)
+```
+auth:
+  - type: basic
+    enabled: ${ENABLE_BASIC_AUTH}
+```
 
 ### Basic auth secret
 There is another part to basic auth, that is the username and password used to
@@ -54,7 +59,7 @@ In the [deployment template](https://github.com/openshift/ansible-service-broker
     password: ${BROKER_PASS}
 ```
 
-The secret needs to contain username and password. The values are base64
+The secret needs to contain username and password. The values need to be **base64**
 encoded. The easiest way to generate the values for those entries is to use the
 echo and base64 commands:
 
@@ -62,6 +67,8 @@ echo and base64 commands:
 $ echo -n admin | base64
 YWRtaW4=
 ```
+
+NOTE: the `-n` option is very important
 
 This secret now needs to be injected to the pod via a volume mount. This is
 configured in the deployment template as well.
@@ -116,14 +123,87 @@ spec:
       name: asb-auth-secret
 ```
 
-
 ## Developer section
 
-* how to configure the broker
-  * enable basic auth
-  * disable basic auth
-* how to configure the broker resource
-* how to update the username and password in the secret
+### Auth design
 
-    Developer section
-* how to add a new auth to the broker
+The authentication system is built with a set of interfaces to allow for easily
+adding new methods of authentication. The 3 core interfaces are: Provider,
+Principal, and UserServiceAdapter. You can see these interfaces below:
+
+
+```golang
+// Provider - an auth provider is an adapter that provides the principal
+// object required for authentication. This can be a User, a System, or some
+// other entity.
+type Provider interface {
+    GetPrincipal(*http.Request) (Principal, error)
+}
+
+// Principal - principal user or other identity of some kind with access to the
+// broker.
+type Principal interface {
+    GetType() string
+    GetName() string
+}
+
+// UserServiceAdapter - is the interface for a service that stores Users. It can
+// be anything you want: file, database, whatever as long as you can search and
+// validate them.
+type UserServiceAdapter interface {
+    FindByLogin(string) (User, error)
+    ValidateUser(string, string) bool
+}
+```
+
+The `BasicAuth` struct is a `Provider` and takes in a `UserServiceAdapter`.
+`BasicAuth` will return a Principal that it gets from the `UserServiceAdapter`.
+
+At current we have one `UserServiceAdapter` implementation, the `FileUserServiceAdapter`.
+This `FileUserServiceAdapter` reads from the filesystem, specifically the
+username and password files located in the given directory. It knows how to
+validate the username and password.
+
+### Extending the auth system
+
+As stated above, there are 2 core concepts `Provider` and `UserServiceAdapter`.
+Let's say you want to validate users against a user database. You would create a
+`DBUserServiceAdapter` that takes a DB connection, possibly a database table
+name.
+
+You could hook that `DBUserServiceAdapter` to the existing `BasicAuth`
+
+```golan
+func createProvider(providerType string, log *logging.Logger) (Provider, error) {
+
+    switch providerType {
+    case "basic":
+       ...
+    case "basicdb":
+       dbusa := DBUserServiceAdapter{...}
+       return NewBasicAuth(dbusa, log)
+       ...
+    }
+}
+
+or created a new `Provider`
+
+```golang
+
+// TrustedUserAuth allows for a consumer id to be passed in a clear http header.
+// this should be used only if the environment is known to be secure.
+type TrustedUserAuth struct {
+   usa UserServiceAdapter
+}
+
+func (t TrustedUserAuth) GetPrincipal(r *http.Request) (Princpal, error) {
+    userHeader := r.getHeader("cp-user")
+    user, err := t.usa.FindByLogin(userHeader)
+    if err != nil {
+        return nil, err
+    }
+
+    // some other validatoin code
+    return TrustedUserPrincipal{username: user.Name}, nil
+}
+```
