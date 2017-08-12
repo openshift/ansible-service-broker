@@ -40,7 +40,7 @@ auth:
 ### Basic auth secret
 There is another part to basic auth, that is the username and password used to
 authenticate against the broker. While the basic auth implementation can be
-backed by different backend services, the currently supported one is backed by a
+backed by different back end services, the currently supported one is backed by a
 [Secret](https://docs.openshift.com/container-platform/3.5/dev_guide/secrets.html).
 The secret needs to be injected into the pod via a volume mount at the
 `/var/run/asb_auth` location. This is where the broker will read the username
@@ -107,7 +107,7 @@ service catalog how to communicate with the broker. This is accomplished by the
 `authInfo` section of the broker resource.
 
 Here is an example of creating a broker resource in the service catalog. The
-`spec` tells the service catalog what url the broker is listening at. The
+`spec` tells the service catalog what URL the broker is listening at. The
 `authInfo` tells it what secret to read to get the authentication information.
 
 ```yaml
@@ -124,7 +124,7 @@ spec:
 ```
 
 *NOTE*: this section is highly dependent on what the service catalog expects. If
-the format for the secret changes we will need to create a seperate secret for
+the format for the secret changes we will need to create a separate secret for
 just the service catalog today OR we need to add a new `UserServiceAdapter` that
 understands that secret.
 
@@ -209,7 +209,7 @@ func (t TrustedUserAuth) GetPrincipal(r *http.Request) (Princpal, error) {
         return nil, err
     }
 
-    // some other validatoin code
+    // some other validation code
     return TrustedUserPrincipal{username: user.Name}, nil
 }
 ```
