@@ -30,7 +30,7 @@ Typically the broker is configured via a
 [ConfigMap](https://docs.openshift.com/container-platform/3.5/dev_guide/configmaps.html) in a deployment template.
 You supply the auth configuration the same way as in the file configuration.
 
-[deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L195-L197)
+Here is an example of the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L195-L197):
 ```
 auth:
   - type: basic
