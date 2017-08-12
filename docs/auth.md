@@ -123,6 +123,11 @@ spec:
       name: asb-auth-secret
 ```
 
+*NOTE*: this section is highly dependent on what the service catalog expects. If
+the format for the secret changes we will need to create a seperate secret for
+just the service catalog today OR we need to add a new `UserServiceAdapter` that
+understands that secret.
+
 ## Developer section
 
 ### Auth design
