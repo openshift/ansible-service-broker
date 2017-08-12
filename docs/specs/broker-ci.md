@@ -9,7 +9,7 @@ each repo to achieve a successful CI run outlined in the next section.
 
 ## Successful CI Run
 A successful CI run is spawning the broker and using the latest
-rhscl-postgresapb and mediawiki-apb images to build a MediaWiki page.
+rhscl-postgresql-apb and mediawiki-apb images to build a MediaWiki page.
 The MediiaWiki page will be verified by curling information from the page
 and checking it's correct.
 
@@ -35,7 +35,7 @@ Should there be an already existing OpenShift Cluster to land pods on?
 Should Jenkins be run in the OpenShift Cluster?
 
 ## Tools
-There are multiple tools availble to use for CI: Travis and Jenkins.
+There are multiple tools available to use for CI: Travis and Jenkins.
 
 Travis CI will be used for the simpler and less robust CI. It
 will test a provision and bind of an app using code a PR introduces.
@@ -52,7 +52,7 @@ There will be triggers on both apb-examples and ansible-service-broker repos.
 
 ### Advanced CI Triggers
 The more expensive CI operations should only be only started by a trigger.
-After a PR has been testing by the cheap CI and recieved an approval, a
+After a PR has been testing by the cheap CI and received an approval, a
 CI trigger can by used by commenting in the PR.
 
 ## Test Process
@@ -66,7 +66,7 @@ Test'.
 < add any additional CI layers here>
 
 ### Fast and Cheap
-- Build the Broker, MediaWiki, and rhscl-prosgrsql containers
+- Build the Broker, MediaWiki, and rhscl-postgresql-apb containers
 - Deploy the Broker
 - Provision MediaWiki
 - Provision rhscl-postgresql
@@ -77,7 +77,7 @@ Runtime with caching: ~2 minutes
 
 ### Full Test
 - Deploy OpenShift & Service-Catalog with catasb
-- Build the Broker, MediaWiki, and rhscl-prosgrsql containers
+- Build the Broker, MediaWiki, and rhscl-postgresql containers
 - Deploy the Broker
 - Provision MediaWiki
 - Provision rhscl-postgresql
