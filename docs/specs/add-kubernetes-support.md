@@ -10,7 +10,7 @@ should be runtime agnostic.
 Issues have been coming up during testing because the broker does not target
 the latest code for either the service-catalog or the underlying cluster.
 Kubernetes is the upstream community for OpenShift and the broker should be
-consumuing the latest upstream code for development purposes.
+consuming the latest upstream code for development purposes.
 
 This change will improve the Broker development process by having the Broker
 constantly being developed and tested against the latest upstream code.
@@ -20,7 +20,7 @@ The Broker's functionality won't change, but all the tooling around it will.
 ## Split Out All Cluster logic
 OpenShift is Kubernetes plus a few features, API name changes, and tools.
 In the core ansible-service-broker code, ```pkg/runtime/kubernetes.go```
-should be able to account for about 80% of the cluster opertations required
+should be able to account for about 80% of the cluster operations required
 by the broker. The remaining ~20% will be held in ```pkg/runtime/openshift.go```.
 
 ### Code
@@ -48,7 +48,7 @@ runtime logic.
 +}
 
 +func (k *Kubernetes) Run(action, req) {
-+     if action == provison {
++     if action == provision {
 +         k.CreatePod(req)
 +     }
 +}
@@ -56,7 +56,7 @@ runtime logic.
 
 The ```COE``` interface will hold all the public functions whose details are
 hidden away inside the runtime files, kubernetes.go and openshift.go. Adding a
-new COE operation requires adding an abstraced function that describes what
+new COE operation requires adding an abstracted function that describes what
 the interface does so it remains agnostic.
 
 Adding a secret:
@@ -69,8 +69,8 @@ type COE interface {
 }
 ```
 
-Using an abstration is an advantage because the broker code will only have a
-single path and have no knowlege of runtime resources. It will call the runtime
+Using an abstraction is an advantage because the broker code will only have a
+single path and have no knowledge of runtime resources. It will call the runtime
 object using broker native information, which will translate into runtime
 resource allocation.
 
@@ -291,8 +291,8 @@ OpenShift and Kubernetes clients.  If this the container size isn't an issue,
 then there may not be a problem using ```origin-clients```.
 
 ### Script
-The ```oc-login.sh``` script should be changed to accept an environment varible
-identifing the $COE.  Based on $COE, the login will use the ```kubectl``` or
+The ```oc-login.sh``` script should be changed to accept an environment variable
+identifying the $COE.  Based on $COE, the login will use the ```kubectl``` or
 ```oc``` client.  Also, it should be renamed to ```login.sh```
 
 ## Tools and Docs that reference the OpenShift client
@@ -323,12 +323,12 @@ broker and catalog on top of both Kubernetes and OpenShift.  Jenkins will do
 testing on OpenShift.
 
 ## Phased Plan
-Moving to a runtime agnostic architecure will require a large about of effort.
+Moving to a runtime agnostic architecture will require a large about of effort.
 We'll use a phased approach to accomplish the move so things don't get too
 chaotic all at once.
 
 ### Phase One
-Infrastructure setup - Make sure there's a repeatable infrastracture setup
+Infrastructure setup - Make sure there's a repeatable infrastructure setup
 and begin transitioning broker code.
 
 **catasb**
@@ -379,7 +379,7 @@ edges.
 
 **apb-examples**
  14. Address any packaging concerns.
- 15. Update apb documentation.
+ 15. Update APB documentation.
 
 ## Work Items
 ### Ansible-service-broker

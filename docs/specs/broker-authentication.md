@@ -1,7 +1,7 @@
 # Broker Authentication
 
 This document attempts to outline the high-level plan for adding authentication
-to the broker api routes.
+to the broker API routes.
 
 When talking to service brokers, the [Service Catalog uses basic auth](#service-catalog-basic-auth). The Ansible Service Broker will implement Basic Auth using a secret shared between the catalog and the broker. The authentication will be configurable allowing a user i.e. developer to disable it.
 
@@ -45,7 +45,7 @@ broker:
 
 ## Open Issues
 
-* reloading secrets is different between kubernetes and openshift. [see updating secrets](#updating-secrets)
+* reloading secrets is different between Kubernetes and OpenShift. [see updating secrets](#updating-secrets)
     * might need to reconcile the secret on an interval if not automatic
 * shared secrets are mysterious. [OpenShift docs](https://github.com/openshift/openshift-docs/blob/master/dev_guide/secrets.adoc#creating-secrets) state:
 > Secret data can be shared within a namespace

@@ -5,7 +5,7 @@
 * Broker previously hid the concept of plans from APBs by faking it and generating
 a "Default" plan . It entirely ignored the `PlanID` on requests.
 Now the Broker should read the `PlanID` on the request and inject it into the parameters
-along with the rest of the user provided params.
+along with the rest of the user provided parameters.
 * Use this as an opportunity to establish a namespace on parameters that the
 broker can use for standard, special parameters it sends into APBs. `_apb_<param>`.
 In this case, PlanID is passed to APBs as `_apb_plan_id`. APBs should be written
@@ -26,7 +26,7 @@ is not conformant and filter from available set. Validations:
 
 Field Name | Type | Required | Default | Description
 ---|---|---|---|---
-name | string| yes |  | Name of the plan, used as an identifier. **Must be unique amongt plans on the apb**
+name | string| yes |  | Name of the plan, used as an identifier. **Must be unique amongst plans on the APB**
 description | string | yes | | A human readable description of the plan.
 free | bool | yes | | Indicates whether the plan has an associated cost
 metadata | `PlanMetadata` |  no | | Plan metadata
@@ -43,7 +43,7 @@ cost | string | no | "" | Cost string used for display purposes only
 ---
 
 3) Move any example of a `[]map[string]T` to `[]T`. The former introduced an entirely
-unnecessary map layer. They started to get nested after moving params onto plans and
+unnecessary map layer. They started to get nested after moving parameters onto plans and
 things got very ugly because of it. Reintroduce `name` onto `T`s.
 
 **Old Format**
@@ -92,7 +92,7 @@ parameters:
 
 ## Notes
 
-* Use yaml anchors and inheritence to cut down on parameter duplication if plans share
+* Use yaml anchors and inheritance to cut down on parameter duplication if plans share
 parameters, see full example.
 
 ## Questions
@@ -100,7 +100,7 @@ parameters, see full example.
 * Obviously this is a large, breaking change to **all** existing APBs and their `apb.yml` files.
 How do we want to make across the board so things get rolled out as smoothly as possible?
 * Is this a good opportunity to have the broker start respecting the version label found on
-apbs? I think it makes sense to have that in lock setup with broker release versions. Is
+APBs? I think it makes sense to have that in lock setup with broker release versions. Is
 broker master considered `0.10` since it's `release-0.9++`?
 
 ## Full examples
@@ -151,7 +151,7 @@ plans:
         required: true
 ```
 
-### Shared param set
+### Shared parameter set
 
 ```yaml
 ################################################################################
@@ -182,7 +182,7 @@ _p: &_p
 ################################################################################
 name: rhscl-postgresql-apb
 image: eriknelson/rhscl-postgresql-apb
-description: SCL PostgreSQL apb implementation
+description: SCL PostgreSQL APB implementation
 bindable: True
 async: optional
 metadata:

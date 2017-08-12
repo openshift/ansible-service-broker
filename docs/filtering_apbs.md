@@ -50,7 +50,7 @@ black_list:
 ```
 
 Here, `totally-legitimate-rootkit-apb` is specifically blocked by the blacklist
-despite its match in the whitelist because the whitelist match is overriden.
+despite its match in the whitelist because the whitelist match is overridden.
 
 Otherwise, only those matching on `totally-legitimate.*-apb$` and
 `my-favorite-apb` will be allowed through.

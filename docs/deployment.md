@@ -8,7 +8,7 @@ Name | Default Value | Description
 PROJECT | ansible-service-broker | Project Namespace
 BROKER_IMAGE | ansibleplaybookbundle/ansible-service-broker:latest| Container Image to use for Ansible Service Broker in format of imagename:tag 
 ETCD_IMAGE | quay.io/coreos/etcd:latest | Container Image to use for etcd in format of imagename:tag
-BROKER_CONFIG | /etc/ansible-service-broker/config.yaml | Configuration filepath for Ansible Service Broker
+BROKER_CONFIG | /etc/ansible-service-broker/config.yaml | Configuration file path for Ansible Service Broker
 DOCKERHUB_ORG | ansibleplaybookbundle | Dockerhub organization 
 DOCKERHUB_USER | changeme | Dockerhub user Name 
 DOCKERHUB_PASS | changeme | Dockerhub user Password 
@@ -22,7 +22,7 @@ The following is the template used to deploy the ASB:
  * [deploy-ansible-service-broker.template.yaml](../templates/deploy-ansible-service-broker.template.yaml)
 
 ### Launch APB on Bind Parameter
-Currently, we are ***disabling*** running an APB on `Bind()` due to the lack of async support of bind in the Open Service Broker API.  This is achieved via `launchapbonbind` which is currently set to `false`.  You may enable launching of APB on Bind by changing it to `true`.  However, since there is a timeout of ~15 seconds assiated from the Service Catalog, you will likely see failures running and APB.
+Currently, we are ***disabling*** running an APB on `Bind()` due to the lack of async support of bind in the Open Service Broker API.  This is achieved via `launchapbonbind` which is currently set to `false`.  You may enable launching of APB on Bind by changing it to `true`.  However, since there is a timeout of ~15 seconds asserted from the Service Catalog, you will likely see failures running an APB.
 
 ## Run Deployment Script
 The script below sets the parameter values that the deployment template expects, and deploys the Ansible Service Broker to the cluster.

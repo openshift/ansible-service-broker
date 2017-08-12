@@ -1,7 +1,7 @@
 # Bind Use Cases
 
 ## External Service with Bind (mLab and webapp)
-The external service use case is where an Ansible Playbook Bundle (APB) is able to connect to a service outside of the cluster. One example, is a webapp that uses mLab as their backend store. There will be a specific APB for the external service.
+The external service use case is where an Ansible Playbook Bundle (APB) is able to connect to a service outside of the cluster. One example, is a webapp that uses mLab as their back end store. There will be a specific APB for the external service.
 
 Catalog Operator does the following:
 * Creates a broker resource which calls the AnsibleServiceBroker /catalog endpoint
@@ -12,7 +12,7 @@ The Service Consumer then utilizes the ServiceClasses for their needs. After get
 * Creates an instance of the mLab service.
   * ServiceCatalog calls provision endpoint on AnsibleServiceBroker
   * AnsibleServiceBroker provisions the mLab APB
-  * mLab APB configures the mLab instance being made avaiable
+  * mLab APB configures the mLab instance being made available
   * mLab service ready for consumption
 * Create a binding resource for the mLab service
   * ServiceCatalog calls the binding endpoint on the AnsibleServiceBroker

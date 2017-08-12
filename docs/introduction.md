@@ -1,7 +1,7 @@
 # Introducing Ansible Service Broker and Ansible Playbook Bundles (APB)
 
 ## Ansible Service Broker
-In December 2016 CloudFoundry [announced](https://www.cloudfoundry.org/open-service-broker-api-launches-as-industry-standard/)
+In December 2016 Cloud Foundry [announced](https://www.cloudfoundry.org/open-service-broker-api-launches-as-industry-standard/)
 the open sourcing of its service broker APIs, [Open Service Broker API](https://www.openservicebrokerapi.org/).
 The Open Service Broker API defines methods for creating a broker, an entity responsible for delivering
 applications or services to a cloud platform. The Ansible Service Broker is a specialized broker created

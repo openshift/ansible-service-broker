@@ -87,12 +87,12 @@ Steps to accomplish this are:
       * Chose a 'PostgreSQL Version', either version will work.
       * Select 'Create'
   1. View the 'demo' project
-  1. Wait till both APBs have finished deploying and you see pods running for mediawiki and postgres
-  1. Right click on the kebab menu for mediawiki
+  1. Wait till both APBs have finished deploying and you see pods running for MediaWiki and PostgreSQL
+  1. Right click on the kebab menu for MediaWiki
   1. Select 'Create Binding'
-  1. Select the Postgres service and complete creating the Binding
-  1. Redeploy mediawiki so the pod is able to consume the credentials for the database.
-  1. View the route for mediawiki and verify the wiki is up and running.
+  1. Select the PostgreSQL service and complete creating the Binding
+  1. Redeploy MediaWiki so the pod is able to consume the credentials for the database.
+  1. View the route for MediaWiki and verify the wiki is up and running.
 
 ## Developer Focused Information Below
 ### Prerequisites
@@ -133,7 +133,7 @@ configurations.
 * `make vendor`: Installs or updates the dependencies
 * `make build`: Builds the binary from source
 * `make install`: Installs the built binary.
-* `make prepare-local-env`: will set up the local environemt to test and run the broker against a local deployment of [catasb](https://github.com/fusor/catasb)
+* `make prepare-local-env`: will set up the local environment to test and run the broker against a local deployment of [catasb](https://github.com/fusor/catasb)
 * `make run`: Runs the broker with the default profile, configured via `etc/generated_local_development.yaml`
   * make run can be run without catasb and prepare-local-env by setting the `BROKER_INSECURE="true"` variable to true in `scripts/my_local_dev_vars`
 * `make uninstall` Deletes the installed binary and config.yaml
@@ -145,8 +145,8 @@ configurations.
 * `make ci`: Run the CI workflow that gets executed by travis, locally.
    * Workflow:
      - Provision Mediawiki
-     - Provision Postgresql
-     - Bind Postgresql and Mediawiki
+     - Provision PostgreSQL
+     - Bind PostgreSQL and Mediawiki
      - Curl the Mediawiki endpoint to check for success
    * Requires:
      - Cluster
