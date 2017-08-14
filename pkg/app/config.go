@@ -67,6 +67,13 @@ func CreateConfig(configFile string) (Config, error) {
 		return Config{}, err
 	}
 
+	if config.Openshift.Namespace == "" {
+		if dat, err = ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err != nil {
+			return Config{}, err
+		}
+		config.Openshift.Namespace = string(dat)
+	}
+
 	if err = validateConfig(config); err != nil {
 		return Config{}, err
 	}
@@ -87,5 +94,12 @@ func validateConfig(c Config) error {
 		registryName[rc.Name] = true
 	}
 
+	for _, sc := range c.Secrets {
+		if !sc.Validate() {
+			// TODO: Terrible error message
+			return fmt.Errorf("secrets config is not valid - %#v", sc)
+		}
+
+	}
 	return nil
 }

@@ -99,6 +99,7 @@ type ClusterConfig struct {
 	BearerTokenFile string `yaml:"bearer_token_file"`
 	PullPolicy      string `yaml:"image_pull_policy"`
 	SandboxRole     string `yaml:"sandbox_role"`
+	Namespace       string `yaml:"namespace"`
 }
 
 const (
