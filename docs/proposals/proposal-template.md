@@ -1,14 +1,14 @@
-# Example spec
+# Example proposal
 
 ## Introduction
-Introductory paragraph to your spec. What is the goal of the spec?
+Introductory paragraph to your proposal. What is the goal of the proposal?
 
 ## Problem Description
 Describe the problem you're trying to solve. Then answer how you're going
 to solve it in the <Implementation Details>.
 
 ## <Implementation Details>
-The body of the spec will be filled with details about the feature you're
+The body of the proposal will be filled with details about the feature you're
 trying to land.
 
 Some good questions to answer in detail:
@@ -19,7 +19,7 @@ Some good questions to answer in detail:
 ## Work Items
 A list of items that you plan to implement. You don't have to follow it
 exactly during implementation, but it's good to compact all the details
-about the spec into a series of steps that anyone can follow.
+about the proposal into a series of steps that anyone can follow.
 
 example:
  - Add a new pkg SpeedUpBindings
