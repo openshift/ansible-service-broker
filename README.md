@@ -35,7 +35,7 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
    and our [library of example APBs](https://github.com/fusor/apb-examples)
 - [catasb](https://github.com/fusor/catasb) gives you more control over your development environment
 - [Amazon Web Services deployed into OpenShift via Ansible Service Broker](https://www.youtube.com/watch?v=EKo3khfmhi8&index=2&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
-- [Presentation OpenService Broker API + Ansible Service Broker/Ansible Playbook Bundles](https://www.youtube.com/watch?v=BaPMFZZ5lsc&index=1&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
+- [Presentation Open Service Broker API + Ansible Service Broker/Ansible Playbook Bundles](https://www.youtube.com/watch?v=BaPMFZZ5lsc&index=1&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
 
 # Getting Started with the Ansible Service Broker
 
@@ -43,7 +43,7 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 1. You will need a system setup for local [OpenShift Origin Cluster Management](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md)
     * Your OpenShift Client binary (`oc`) must be `>=` [v3.6.0-rc.0](https://github.com/openshift/origin/releases/tag/v3.6.0-rc.0)
 
-**Deploy an Openshift Origin Cluster with the Ansible Service Broker**
+**Deploy an OpenShift Origin Cluster with the Ansible Service Broker**
 1. Download and execute our [run_latest_build.sh](https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh) script
     ```
     wget https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh
@@ -55,7 +55,7 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 **Provision an instance of MediaWiki and PostgreSQL**
 1. Log into OpenShift Web Console
 1. Create a new project 'apb-demo'
-1. Provision [Mediawiki APB](https://github.com/fusor/apb-examples/tree/master/mediawiki123-apb)
+1. Provision [MediaWiki APB](https://github.com/fusor/apb-examples/tree/master/mediawiki123-apb)
     * Select the 'apb-demo' project
     * Enter a 'MediaWiki Admin User Password': 's3curepw'
     * Select 'Create'
@@ -92,7 +92,7 @@ project run:
 # Check your go source files (gofmt, go vet, golint), build the broker, and run unit tests
 make check
 
-# Get helpful imformation about our make targets
+# Get helpful information about our make targets
 make help
 ```
 
