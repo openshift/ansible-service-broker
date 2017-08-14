@@ -67,18 +67,19 @@ func Provision(
 		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}
 
-	podName, err := ExecuteApb(
+	executionContext, err := ExecuteApb(
 		"provision", clusterConfig, instance.Spec,
 		instance.Context, instance.Parameters, log,
 	)
 
 	if err != nil {
-		log.Errorf("Problem executing apb [%s]", podName)
+		log.Errorf("Problem executing apb [%s]", executionContext.PodName)
 		log.Error(err.Error())
-		return podName, nil, err
+		return executionContext.PodName, nil, err
 	}
 
-	creds, err := ExtractCredentials(podName, instance.Context.Namespace, log)
+	creds, err := ExtractCredentials(executionContext.PodName, executionContext.Namespace, log)
+
 	// We should not save credentials from an app that finds them and isn't
 	// bindable
 	if creds != nil && !instance.Spec.Bindable {
@@ -86,7 +87,16 @@ func Provision(
 		log.Warningf("Ignoring Credentials")
 		creds = nil
 	}
-	return podName, creds, err
+
+	sm := NewServiceAccountManager(log)
+	sm.DestroyApbSandbox(executionContext)
+	if err != nil {
+		log.Error("apb::Provision error occurred.")
+		log.Error("%s", err.Error())
+		return executionContext.PodName, creds, err
+	}
+
+	return executionContext.PodName, creds, err
 }
 
 func projectExists(project string) bool {

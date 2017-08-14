@@ -42,11 +42,12 @@ func ExecuteApb(
 	context *Context,
 	p *Parameters,
 	log *logging.Logger,
-) (string, error) {
+) (ApbExecutionContext, error) {
+	executionContext := ApbExecutionContext{}
 	extraVars, err := createExtraVars(context, p)
 
 	if err != nil {
-		return "", err
+		return executionContext, err
 	}
 
 	log.Debug("ExecutingApb:")
@@ -63,30 +64,39 @@ func ExecuteApb(
 	if context.Namespace == "" {
 		errStr := "Namespace not found within request context. Cannot perform requested " + action
 		log.Error(errStr)
-		return "", errors.New(errStr)
+		return executionContext, errors.New(errStr)
 	}
 
 	pullPolicy, err := checkPullPolicy(clusterConfig.PullPolicy)
 	if err != nil {
-		return "", err
+		return executionContext, err
 	}
 
-	ns := context.Namespace
-	apbID := fmt.Sprintf("apb-%s", uuid.New())
+	secrets := GetSecrets(spec)
+
+	var roleScope string
+	if len(secrets) > 0 {
+		executionContext.Namespace = clusterConfig.Namespace
+		roleScope = "ClusterRole"
+	} else {
+		executionContext.Namespace = context.Namespace
+		roleScope = "Role"
+	}
+	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(log)
-	serviceAccountName, err := sam.CreateApbSandbox(ns, apbID, clusterConfig.SandboxRole)
+	executionContext.ServiceAccount, err = sam.CreateApbSandbox(executionContext.Namespace, executionContext.PodName, clusterConfig.SandboxRole, roleScope)
 
 	if err != nil {
 		log.Error(err.Error())
-		return apbID, err
+		return executionContext, err
 	}
 
-	volumes, volumeMounts := buildVolumeSpecs(GetSecrets(spec))
+	volumes, volumeMounts := buildVolumeSpecs(secrets)
 
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: apbID,
+			Name: executionContext.PodName,
 			Labels: map[string]string{
 				"apb-fqname": spec.FQName,
 			},
@@ -106,18 +116,19 @@ func ExecuteApb(
 				},
 			},
 			RestartPolicy:      v1.RestartPolicyNever,
-			ServiceAccountName: serviceAccountName,
+			ServiceAccountName: executionContext.ServiceAccount,
 			Volumes:            volumes,
 		},
 	}
 
-	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, ns))
+	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
 	k8scli, err := clients.Kubernetes(log)
 	if err != nil {
-		return apbID, err
+		return executionContext, err
 	}
-	_, err = k8scli.CoreV1().Pods(ns).Create(pod)
-	return apbID, err
+	_, err = k8scli.CoreV1().Pods(executionContext.Namespace).Create(pod)
+
+	return executionContext, err
 }
 
 func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {

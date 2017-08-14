@@ -51,20 +51,23 @@ func Deprovision(
 	}
 
 	// Might need to change up this interface to feed in instance ids
-	podName, err := ExecuteApb(
+	executionContext, err := ExecuteApb(
 		"deprovision", clusterConfig, instance.Spec,
 		instance.Context, instance.Parameters, log,
 	)
 	if err != nil {
 		log.Error("Problem executing apb %s", err)
-		return podName, err
+		return executionContext.PodName, err
 	}
 
-	podOutput, err := watchPod(podName, instance.Context.Namespace, log)
+	podOutput, err := watchPod(executionContext.PodName, executionContext.Namespace, log)
 	if err != nil {
 		log.Errorf("Error returned from watching pod\nerror: %s", err.Error())
 		log.Errorf("output: %s", podOutput)
 	}
 
-	return podName, err
+	sm := NewServiceAccountManager(log)
+	err = sm.DestroyApbSandbox(executionContext)
+
+	return executionContext.PodName, err
 }

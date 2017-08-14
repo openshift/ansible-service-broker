@@ -219,3 +219,9 @@ type RecoverStatus struct {
 	InstanceID uuid.UUID `json:"id"`
 	State      JobState  `json:"state"`
 }
+
+type ApbExecutionContext struct {
+	PodName        string
+	Namespace      string
+	ServiceAccount string
+}

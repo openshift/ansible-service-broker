@@ -101,9 +101,6 @@ func cleanupDeprovision(
 ) error {
 	var err error
 	id := instance.ID.String()
-	sm := apb.NewServiceAccountManager(log)
-	log.Info("Destroying APB sandbox...")
-	sm.DestroyApbSandbox(podName, instance.Context.Namespace)
 
 	if err = dao.DeleteExtractedCredentials(id); err != nil {
 		log.Error("failed to delete extracted credentials - %#v", err)
