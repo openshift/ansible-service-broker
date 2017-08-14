@@ -9,8 +9,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 )
 
-type secret string
-
 // secrets:
 // - title: All database apbs
 // 	whitelist:
@@ -26,9 +24,9 @@ type secret string
 // 	- aws_production_credentials
 
 type SecretsConfig struct {
-	Title   string
-	ApbName string
-	Secret  string
+	Title   string `yaml:"title"`
+	ApbName string `yaml:"apb_name"`
+	Secret  string `yaml:"secret"`
 	// Whitelist []string
 	// Secrets   []string
 }
@@ -111,11 +109,13 @@ func NewSecrets(config []SecretsConfig, log *logging.Logger) {
 
 func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 	for _, spec := range inSpecs {
+		secrets.log.Debugf("Filtering spec %v", spec.FQName)
 		for _, secret := range GetSecrets(spec) {
 			secretKeys, err := getSecretKeys(secret)
 			if err != nil {
 				return nil, err
 			}
+			secrets.log.Debugf("Found secret with name %v", secret)
 			spec.Plans = filterPlans(spec.Plans, secretKeys)
 		}
 	}
@@ -146,6 +146,7 @@ func filterParameters(inParams []ParameterDescriptor, secretKeys []string) []Par
 func paramInSecret(param ParameterDescriptor, secretKeys []string) bool {
 	for _, key := range secretKeys {
 		if key == param.Name {
+			secrets.log.Debugf("Param %v matched", param.Name, key)
 			return true
 		}
 	}
