@@ -33,4 +33,4 @@ example:
  - Fix tests so they use SpeedUpBindings
 
 ## References
-[1] [RFC 6750 Section 2.1](https://tools.ietf.org/html/rfc6750#section-2.1)
+[1]: [RFC 6750 Section 2.1](https://tools.ietf.org/html/rfc6750#section-2.1)
