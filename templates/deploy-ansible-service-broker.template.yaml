@@ -170,6 +170,7 @@ objects:
           user: "${DOCKERHUB_USER}"
           pass: "${DOCKERHUB_PASS}"
           org: "${DOCKERHUB_ORG}"
+          tag: "${TAG}"
       dao:
         etcd_host: 0.0.0.0
         etcd_port: 2379
@@ -243,6 +244,11 @@ parameters:
   displayname: Dockerhub organization
   name: DOCKERHUB_ORG
   value: ansibleplaybookbundle
+
+- description: APB Image Tag
+  displayname: APB Image Tag
+  name: TAG
+  value: latest
 
 - description: OpenShift User Password
   displayname: OpenShift User Password

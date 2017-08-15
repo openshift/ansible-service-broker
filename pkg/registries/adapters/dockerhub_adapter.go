@@ -15,7 +15,7 @@ import (
 const dockerhubName = "docker.io"
 const dockerHubLoginURL = "https://hub.docker.com/v2/users/login/"
 const dockerHubRepoImages = "https://hub.docker.com/v2/repositories/%v/?page_size=100"
-const dockerHubManifestURL = "https://registry.hub.docker.com/v2/%v/manifests/latest"
+const dockerHubManifestURL = "https://registry.hub.docker.com/v2/%v/manifests/%v"
 
 // DockerHubAdapter - Docker Hub Adapter
 type DockerHubAdapter struct {
@@ -205,7 +205,10 @@ func (r DockerHubAdapter) getNextImages(ctx context.Context,
 }
 
 func (r DockerHubAdapter) loadSpec(imageName string) (*apb.Spec, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf(dockerHubManifestURL, imageName), nil)
+	if r.Config.Tag == "" {
+		r.Config.Tag = "latest"
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf(dockerHubManifestURL, imageName, r.Config.Tag), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +217,7 @@ func (r DockerHubAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-	return imageToSpec(r.Log, req)
+	return imageToSpec(r.Log, req, r.Config.Tag)
 }
 
 func getBearerToken(imageName string) (string, error) {

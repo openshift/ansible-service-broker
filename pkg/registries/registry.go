@@ -21,6 +21,7 @@ type Config struct {
 	User   string
 	Pass   string
 	Org    string
+	Tag    string
 	Type   string
 	Name   string
 	Images []string
@@ -148,7 +149,8 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		User:   config.User,
 		Pass:   config.Pass,
 		Org:    config.Org,
-		Images: config.Images}
+		Images: config.Images,
+		Tag:    config.Tag}
 
 	switch strings.ToLower(config.Type) {
 	case "rhcc":

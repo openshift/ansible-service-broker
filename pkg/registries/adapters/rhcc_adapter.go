@@ -54,13 +54,16 @@ func (r RHCCAdapter) GetImageNames() ([]string, error) {
 // FetchSpecs - retrieve the spec from the image names
 func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	specs := []*apb.Spec{}
+	if r.Config.Tag == "" {
+		r.Config.Tag = "latest"
+	}
 	for _, imageName := range imageNames {
 		req, err := http.NewRequest("GET",
-			fmt.Sprintf("%v/v2/%v/manifests/latest", r.Config.URL.String(), imageName), nil)
+			fmt.Sprintf("%v/v2/%v/manifests/%v", r.Config.URL.String(), imageName, r.Config.Tag), nil)
 		if err != nil {
 			return specs, err
 		}
-		spec, err := imageToSpec(r.Log, req)
+		spec, err := imageToSpec(r.Log, req, r.Config.Tag)
 		if err != nil {
 			return specs, err
 		}
