@@ -22,7 +22,7 @@ environment to a dedicated environment for a service's database.
 
 NOTE: The Service Catalog currently does **not** implement update, so triggering
 these from the UI is not possible. Updates should be considered very "alpha".
-To demonstrate , plan is to enhance `asbcli` for update support.
+To demonstrate , the plan is to enhance `asbcli` to support update.
 
 Updates are a potentially very complex subject considering the full breadth
 of what that can mean for any given APB, so the desire here is to control scope
@@ -62,7 +62,7 @@ part of that version update
 ### Broker
 
 As outlined in the spec, broker must support both async and sync update variants.
-Async is requested via `accepts_incomplete` qparam.
+Async is requested via `accepts_incomplete` query param.
 
 Broker should prefer to delegate any details of what an "update" actually means
 to the APBs. That means passing all the `previous_values` it receives as part
