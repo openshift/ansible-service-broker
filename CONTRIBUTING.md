@@ -136,11 +136,11 @@ See what work is in progress, upcoming, and planned via our [Trello Board](https
 
 # Download images from Docker Hub
 
-Docker images are available on [Docker Hub](https://hub.docker.com/r/ansibleplaybookbundle/ansible-service-broker/)
+Docker images are available on [Docker Hub](https://hub.docker.com/r/ansibleplaybookbundle/origin-ansible-service-broker/)
 
 * [Docker Hub published APBs](https://hub.docker.com/u/ansibleplaybookbundle/)
 
-Image [tags](https://hub.docker.com/r/ansibleplaybookbundle/ansible-service-broker/tags):
+Image [tags](https://hub.docker.com/r/ansibleplaybookbundle/origin-ansible-service-broker/tags):
 - **canary** - The newest source build
 - **latest** - The newest release build
 - **<release_number>** - The stable release of an image
