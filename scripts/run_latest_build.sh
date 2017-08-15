@@ -88,7 +88,7 @@ fi
 
 ASB_ROUTE=`oc get routes | grep ansible-service-broker | awk '{print $2}'`
 
-cat <<EOF > ansible-service-broker.broker
+cat <<EOF | oc create -f -
     apiVersion: servicecatalog.k8s.io/v1alpha1
     kind: Broker
     metadata:
@@ -100,8 +100,6 @@ cat <<EOF > ansible-service-broker.broker
           namespace: ansible-service-broker
           name: asb-auth-secret
 EOF
-
-oc create -f ./ansible-service-broker.broker
 
 #
 # Then login as 'developer'/'developer' to WebUI
