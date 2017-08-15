@@ -40,12 +40,12 @@ broker:
       * if no match, return [401 Unauthorized](https://golang.org/pkg/net/http/#pkg-constants)
 
 ## Future improvements to authentication
-* the [OpenServiceBroker API proposes](https://github.com/openservicebrokerapi/servicebroker/pull/223) making auth optional, but also allow things like [OAuth](https://oauth.net/2/), or other mechanism.
+* the [OpenServiceBroker API proposes](https://github.com/openservicebrokerapi/servicebroker/pull/223) making auth optional, but also allow things like [OAuth](https://oauth.net/2/), or another mechanism.
 * the Service Catalog has an issue open to implement [JSON Web Token (JWT)](https://jwt.io/): [issue #990](https://github.com/kubernetes-incubator/service-catalog/issues/990)
 
 ## Open Issues
 
-* reloading secrets is different between Kubernetes and OpenShift. [see updating secrets](#updating-secrets)
+* reloading secrets are different between Kubernetes and OpenShift. [see updating secrets](#updating-secrets)
     * might need to reconcile the secret on an interval if not automatic
 * shared secrets are mysterious. [OpenShift docs](https://github.com/openshift/openshift-docs/blob/master/dev_guide/secrets.adoc#creating-secrets) state:
 > Secret data can be shared within a namespace
