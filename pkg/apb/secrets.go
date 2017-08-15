@@ -9,32 +9,15 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 )
 
-// secrets:
-// - title: All database apbs
-// 	whitelist:
-// 	- *db-apb
-// 	secrets:
-// 	- default_db_credentials
-// - title: All amazon apbs
-// 	whitelist:
-// 	- amazon-*
-// 	- aws-*
-// 	secrets:
-// 	- default_db_credentials
-// 	- aws_production_credentials
-
+// SecretsConfig - Entry for a secret config block in broker config
 type SecretsConfig struct {
 	Title   string `yaml:"title"`
 	ApbName string `yaml:"apb_name"`
 	Secret  string `yaml:"secret"`
-	// Whitelist []string
-	// Secrets   []string
 }
 
+// Validate - Ensures that the secrets config is valid (ie, all strings are non-empty
 func (c SecretsConfig) Validate() bool {
-	// strs := append(c.Whitelist, append(c.Secrets, c.Title)...)
-
-	// for _, str := range strs {
 	for _, str := range []string{c.Title, c.ApbName, c.Secret} {
 		if str == "" {
 			return false
@@ -43,12 +26,10 @@ func (c SecretsConfig) Validate() bool {
 	return true
 }
 
+// AssociationRule - A rule to associate apbs with a secrets
 type AssociationRule struct {
 	apbName string
 	secret  string
-	// apbFilter registries.Filter
-	// planFilter registries.Filter
-	// secretKeys       []string
 }
 
 type secretsCache struct {
@@ -61,18 +42,21 @@ type secretsCache struct {
 
 var secrets secretsCache
 
+// GetSecrets - Returns a list of secrets to be attached to a specified spec
 func GetSecrets(spec *Spec) []string {
 	secrets.rwSync.RLock()
 	defer secrets.rwSync.RUnlock()
 	return secrets.mapping[spec.FQName]
 }
 
+// AddSecrets - Uses the AssociationRules generated from config to link specs to secrets and add them to the global secrets cache
 func AddSecrets(specs []*Spec) {
 	for _, spec := range specs {
 		AddSecretsFor(spec)
 	}
 }
 
+// AddSecretsFor - Uses AssociationRules for a given spec to link the spec to secrets and add them to the global secrets cache
 func AddSecretsFor(spec *Spec) {
 	secrets.rwSync.Lock()
 	defer secrets.rwSync.Unlock()
@@ -93,6 +77,7 @@ func match(spec *Spec, rule AssociationRule) bool {
 	return spec.FQName == rule.apbName
 }
 
+// NewSecrets - Generates AssociationRules from config and initializes the global secrets cache
 func NewSecrets(config []SecretsConfig, log *logging.Logger) {
 	rules := []AssociationRule{}
 	for _, cfg := range config {
@@ -107,6 +92,7 @@ func NewSecrets(config []SecretsConfig, log *logging.Logger) {
 	}
 }
 
+// FilterSecrets - Filters all parameters masked by a secret out of the given specs
 func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 	for _, spec := range inSpecs {
 		secrets.log.Debugf("Filtering spec %v", spec.FQName)
@@ -171,37 +157,3 @@ func getSecretKeys(secretName string) ([]string, error) {
 	}
 	return ret, nil
 }
-
-// func FilterParameters(
-
-// func FilterParameters(inSpecs []*Spec) ([]*Spec, string) {
-// 	var wg sync.WaitGroup
-// 	wg.Add(len(inSpecs))
-
-// 	type resultT struct {
-// 		spec       *Spec
-// 		failReason string
-// 	}
-
-// 	results := make(chan resultT)
-// 	for _, inSpec := range inSpecs {
-// 		go func(spec *Spec) {
-// 			defer wg.Done()
-// 			updatedSpec, failReason := s.filterSecrets(spec)
-// 			results <- resultT{updatedSpec, failReason}
-// 		}(inSpec)
-// 	}
-
-// 	go func() {
-// 		wg.Wait()
-// 		close(results)
-// 	}()
-
-// 	filtered := make([]*Spec, 0, len(inSpecs))
-// 	for _, spec := range len(inSpecs) {
-// 		filtered = append(filtered, spec)
-// 	}
-
-// 	return filtered, nil
-
-// }

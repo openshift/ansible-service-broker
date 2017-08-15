@@ -186,7 +186,7 @@ func (s *ServiceAccountManager) createFile(handle string) (string, error) {
 }
 
 // DestroyApbSandbox - Destroys the apb sandbox
-func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ApbExecutionContext) error {
+func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext) error {
 	s.log.Info("Destroying APB sandbox...")
 	if executionContext.PodName == "" {
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")

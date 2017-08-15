@@ -220,7 +220,8 @@ type RecoverStatus struct {
 	State      JobState  `json:"state"`
 }
 
-type ApbExecutionContext struct {
+// ExecutionContext - Contains the information necessary to track and clean up an APB run
+type ExecutionContext struct {
 	PodName        string
 	Namespace      string
 	ServiceAccount string

@@ -42,8 +42,8 @@ func ExecuteApb(
 	context *Context,
 	p *Parameters,
 	log *logging.Logger,
-) (ApbExecutionContext, error) {
-	executionContext := ApbExecutionContext{}
+) (ExecutionContext, error) {
+	executionContext := ExecutionContext{}
 	extraVars, err := createExtraVars(context, p)
 
 	if err != nil {
