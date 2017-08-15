@@ -11,13 +11,13 @@ SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
 KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token tls.crt tls.key)
 .DEFAULT_GOAL    := build
 
-vendor: ## Install project dependencies
+vendor: ## Install or update project dependencies
 	@glide install -v
 
 broker: $(SOURCES) ## Build the broker
 	go build -i -ldflags="-s -w" ./cmd/broker
 
-build: broker ## Build the project
+build: broker ## Build binary from source
 	@echo > /dev/null
 
 lint: ## Run golint
@@ -35,9 +35,9 @@ test: ## Run unit tests
 vet: ## Run go vet
 	@go tool vet ./cmd ./pkg
 
-pre-flight: fmtcheck vet lint build test ## Pre-flight checks before creating PR
+check: fmtcheck vet lint build test ## Pre-flight checks before creating PR
 
-run: broker | $(KUBERNETES_FILES) ## Run the broker executable locally
+run: broker | $(KUBERNETES_FILES) ## Run the broker locally, configure via etc/generated_local_development.yaml
 	@./scripts/run_local.sh ${BROKER_CONFIG}
 
 $(KUBERNETES_FILES):
@@ -59,7 +59,8 @@ release-image:
 	@echo "Remember you need to push your image before calling make deploy"
 	@echo "    make push"
 
-release: release-image
+# https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker/
+release: release-image ## Builds docker container using latest rpm from Copr
 
 push:
 	docker push ${BROKER_IMAGE}:${TAG}
@@ -75,10 +76,12 @@ really-clean: clean ## Really clean up the working environment
 deploy: ## Deploy a built broker docker image to a running cluster
 	@./scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG}
 
+## Continuous integration stuff
+
 cleanup-ci: ## Cleanup after ci run
 	./scripts/broker-ci/cleanup-ci.sh
 
-ci: ## Run CI (fmtcheck, vet, lint, build, test)
+ci: ## Run the CI workflow locally
 	./scripts/broker-ci/local-ci.sh
 
 help: ## Show this help screen
