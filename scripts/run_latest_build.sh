@@ -36,7 +36,7 @@
 PUBLIC_IP="$(ip addr show docker0 | grep -Po 'inet \K[\d.]+')"
 HOSTNAME=${PUBLIC_IP}.nip.io
 ROUTING_SUFFIX="${HOSTNAME}"
-oc cluster up --image=openshift/origin --version=v3.6.0-rc.0 --service-catalog=true --routing-suffix=${ROUTING_SUFFIX} --public-hostname=${HOSTNAME}
+oc cluster up --image=openshift/origin --version=v3.6.0 --service-catalog=true --routing-suffix=${ROUTING_SUFFIX} --public-hostname=${HOSTNAME}
 
 
 #
