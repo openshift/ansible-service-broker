@@ -147,6 +147,6 @@ Image [tags](https://hub.docker.com/r/ansibleplaybookbundle/ansible-service-brok
 
 # Stay in Touch
 
-- Chat with us on [IRC (Freenode): #asbroker](https://botbot.me/freenode/openshift-dev/)
-- Email us at ansible-service-broker@redhat.com
+- IRC: Join the conversation on [Freenode: #asbroker](https://botbot.me/freenode/openshift-dev/)
+- Email: Subscribe to the Ansible Service Broker's [mailing list](https://www.redhat.com/mailman/listinfo/ansible-service-broker)
 - Our [YouTube Channel](https://www.youtube.com/channel/UC04eOMIMiV06_RSZPb4OOBw)
