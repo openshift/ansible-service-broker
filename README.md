@@ -27,7 +27,8 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 - [Documentation](docs/README.md)
 - Our [Trello Board](https://trello.com/b/50JhiC5v/ansible-service-broker)
 - Chat with us on [IRC (Freenode): #asbroker](https://botbot.me/freenode/openshift-dev/)
-- Email us at ansible-service-broker@redhat.com
+- Email us at ansible-service-broker@redhat.com and subscribe to the Ansible Service Broker's
+  [mailing list](https://www.redhat.com/mailman/listinfo/ansible-service-broker)
 - Our [YouTube Channel](https://www.youtube.com/channel/UC04eOMIMiV06_RSZPb4OOBw)
 
 **Important Links**
