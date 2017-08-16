@@ -9,7 +9,7 @@ authentication.
 ## Problem Description
 The broker will need to support bearer token authentication.
 
-## <Implementation Details>
+## Implementation Details
 Bearer token authentication uses the `Authorization` header followed by `Bearer`
 + 1 space + a base64 encoded token, see [RFC 6750 Section 2.1] [1]
 
@@ -76,25 +76,55 @@ func (s SomeExternalService) Validate(token string) bool {
 }
 ```
 
+
 Basic questions about the impact to Broker and APBs:
 
  - How will the broker's behavior change?
 
-   The broker will now have 2 ways for authentication: basic auth and bearer
-   token. This can continue to expand as we see the need.
+With the addition of `BearerAuth` we have expanded the broker's authentication
+mechanisms to 2 ways for authentication. These mechanisms are NOT mutually
+exclusive. The broker supports running all of the authentication mechanisms at
+the same time.
+
+Basically, the middleware handler will pass the request to each of the configured
+`AuthProviders`. The first `AuthProvider` that knows how to handle the auth
+wins.
+
+Assume both basic auth and bearer token are enabled. If a Bearer token header is
+submitted, the basic auth provider will ignore it. The bearer token provider
+will pick it up. All other configured auth providers would be skipped since the
+auth has occurred.
+
+For example, if we had an SSL auth provider, it would have gotten skipped because
+the bearer token provider already processed the authentication.
 
  - Will this change APBs?
 
-   The bearer token will have no affect on the APBs.
+The bearer token will have no affect on the APBs.
+
+ - Will there be any developer impact?
+
+By default auth is disabled when running the broker locally, the broker developer
+will only be impacted if they need to enable authentication while running
+locally. Then it will require modifying the ConfigMap in the
+`deploy-local-dev-changes.yaml` template to enable auth of choice.
+
+They will also need to create directories required by the auth system to
+simulate auth secrets.
+
+The best way to test broker with authentication is to build a new image, `make
+build-image ORG=YOURORG TAG=YOURTAG` and run `make deploy`.
+
+
 
 #### Issues
 
  - What's the best way to configure different auths?
 
-   For example, I want to have a `BasicAuth` that uses the `FileUserService` and a
-   `BasicAuth` that uses `DBUserService`, a fictitious service that loads users from a
-   database. Today's configuration does not support specifying a service backend
-   to a particular `AuthProvider`. Thoughts?
+For example, I want to have a `BasicAuth` that uses the `FileUserService` and a
+`BasicAuth` that uses `DBUserService`, a fictitious service that loads users from a
+database. Today's configuration does not support specifying a service backend
+to a particular `AuthProvider`. Thoughts?
 
 
 ## Work Items
