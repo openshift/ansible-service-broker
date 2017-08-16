@@ -6,7 +6,7 @@ The following are the configurable parameters that you can set for deploying the
 Name | Default Value | Description
 ---|---|---
 PROJECT | ansible-service-broker | Project Namespace
-BROKER_IMAGE | ansibleplaybookbundle/ansible-service-broker:latest| Container Image to use for Ansible Service Broker in format of imagename:tag 
+BROKER_IMAGE | ansibleplaybookbundle/origin-ansible-service-broker:latest| Container Image to use for Ansible Service Broker in format of imagename:tag 
 ETCD_IMAGE | quay.io/coreos/etcd:latest | Container Image to use for etcd in format of imagename:tag
 BROKER_CONFIG | /etc/ansible-service-broker/config.yaml | Configuration file path for Ansible Service Broker
 DOCKERHUB_ORG | ansibleplaybookbundle | Dockerhub organization 

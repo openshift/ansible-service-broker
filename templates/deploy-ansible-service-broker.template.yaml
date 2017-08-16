@@ -201,7 +201,7 @@ parameters:
 - description: Container Image to use for Ansible Service Broker in format of imagename:tag
   displayname: Ansible Service Broker Image
   name: BROKER_IMAGE
-  value: ansibleplaybookbundle/ansible-service-broker:latest
+  value: ansibleplaybookbundle/origin-ansible-service-broker:latest
 
 - description: Container Image to use for etcd in format of imagename:tag
   displayname: etcd Image
