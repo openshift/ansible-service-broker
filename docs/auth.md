@@ -19,7 +19,7 @@ broker:
 ```
 
 The type field specifies the type of authentication to use. At the moment we
-only support basic auth. There is a desire to support other types like oauth,
+only support basic auth. There is a desire to support other types like OAuth,
 bearer token, certificates, etc.
 
 The enabled field allows you to disable a particular auth. This keeps you from
