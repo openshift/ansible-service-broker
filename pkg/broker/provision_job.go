@@ -76,9 +76,6 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		return
 	}
 
-	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
-		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: "", Error: ""}
-
 	// send creds
 	jsonmsg, err := json.Marshal(extCreds)
 	if err != nil {

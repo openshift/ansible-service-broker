@@ -132,10 +132,11 @@ func ExecuteApb(
 }
 
 func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {
-	optional := false
+	var optional bool
+	var mountName string
 	volumes := []v1.Volume{}
 	volumeMounts := []v1.VolumeMount{}
-	mountName := ""
+
 	for _, secret := range secrets {
 		mountName = "apb-" + secret
 		volumes = append(volumes, v1.Volume{

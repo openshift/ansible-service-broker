@@ -27,7 +27,7 @@ func (c SecretsConfig) Validate() bool {
 	return true
 }
 
-// AssociationRule - A rule to associate apbs with a secrets
+// AssociationRule - A rule to associate an apb with a secret
 type AssociationRule struct {
 	apbName string
 	secret  string
