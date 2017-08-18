@@ -16,7 +16,8 @@ type SecretsConfig struct {
 	Secret  string `yaml:"secret"`
 }
 
-// Validate - Ensures that the secrets config is valid (ie, all strings are non-empty
+// Validate - Ensures that the secrets config is valid (ie, all strings are
+// non-empty
 func (c SecretsConfig) Validate() bool {
 	for _, str := range []string{c.Title, c.ApbName, c.Secret} {
 		if str == "" {
@@ -49,14 +50,16 @@ func GetSecrets(spec *Spec) []string {
 	return secrets.mapping[spec.FQName]
 }
 
-// AddSecrets - Uses the AssociationRules generated from config to link specs to secrets and add them to the global secrets cache
+// AddSecrets - Uses the AssociationRules generated from config to link specs to
+// secrets and add them to the global secrets cache
 func AddSecrets(specs []*Spec) {
 	for _, spec := range specs {
 		AddSecretsFor(spec)
 	}
 }
 
-// AddSecretsFor - Uses AssociationRules for a given spec to link the spec to secrets and add them to the global secrets cache
+// AddSecretsFor - Uses AssociationRules for a given spec to link the spec to
+// secrets and add them to the global secrets cache
 func AddSecretsFor(spec *Spec) {
 	secrets.rwSync.Lock()
 	defer secrets.rwSync.Unlock()
@@ -66,7 +69,6 @@ func AddSecretsFor(spec *Spec) {
 			addSecret(spec, rule)
 		}
 	}
-
 }
 
 func addSecret(spec *Spec, rule AssociationRule) {
@@ -77,8 +79,9 @@ func match(spec *Spec, rule AssociationRule) bool {
 	return spec.FQName == rule.apbName
 }
 
-// NewSecrets - Generates AssociationRules from config and initializes the global secrets cache
-func NewSecrets(config []SecretsConfig, log *logging.Logger) {
+// InitializeSecretsCache - Generates AssociationRules from config and
+// initializes the global secrets cache
+func InitializeSecretsCache(config []SecretsConfig, log *logging.Logger) {
 	rules := []AssociationRule{}
 	for _, cfg := range config {
 		rules = append(rules, AssociationRule{cfg.ApbName, cfg.Secret})
@@ -92,7 +95,8 @@ func NewSecrets(config []SecretsConfig, log *logging.Logger) {
 	}
 }
 
-// FilterSecrets - Filters all parameters masked by a secret out of the given specs
+// FilterSecrets - Filters all parameters masked by a secret out of the given
+// specs
 func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 	for _, spec := range inSpecs {
 		secrets.log.Debugf("Filtering spec %v", spec.FQName)
@@ -137,7 +141,6 @@ func paramInSecret(param ParameterDescriptor, secretKeys []string) bool {
 		}
 	}
 	return false
-
 }
 
 func getSecretKeys(secretName string) ([]string, error) {
