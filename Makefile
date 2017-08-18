@@ -48,7 +48,7 @@ prepare-local-env: $(KUBERNETES_FILES) ## Prepare the local environment for runn
 
 build-image: ## Build a docker image with the broker binary
 	cp broker build/broker
-	docker build -f ${BUILD_DIR}/Dockerfile-canary -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
+	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
 	@echo "    docker push ${BROKER_IMAGE}:${TAG}"
