@@ -39,6 +39,16 @@ function convert-to-red {
     if ${VERIFY_CI_ERROR}; then
 	VERIFY_CI_ERROR="${color_red}true${color_norm}"
     fi
+    if ${UNBIND_ERROR}; then
+    UNBIND_ERROR="${color_red}true${color_norm}"
+    fi
+    if ${DEPROVISION_ERROR}; then
+    DEPROVISION_ERROR="${color_red}true${color_norm}"
+    fi
+    if ${DEVAPI_ERROR}; then
+    DEVAPI_ERROR="${color_red}true${color_norm}"
+    fi
+
 }
 
 function error-variables {
@@ -55,6 +65,9 @@ function error-variables {
     print-with-yellow "PROVISION_ERROR: ${PROVISION_ERROR}"
     print-with-yellow "POD_PRESET_ERROR: ${POD_PRESET_ERROR}"
     print-with-yellow "VERIFY_CI_ERROR: ${VERIFY_CI_ERROR}"
+    print-with-yellow "UNBIND_ERROR: ${UNBIND_ERROR}"
+    print-with-yellow "DEPROVISION_ERROR: ${DEPROVISION_ERROR}"
+    print-with-yellow "DEVAPI_ERROR: ${DEVAPI_ERROR}"
 }
 
 function error-check {
@@ -87,10 +100,23 @@ function error-check {
 	print-with-red "VERIFY CI ERROR reported from ${1}"
 	redirect-output
 	print-all-logs
+    elif ${UNBIND_ERROR}; then
+	print-with-red "UNBIND ERROR reported from ${1}"
+	redirect-output
+	print-all-logs
+    elif ${DEPROVISION_ERROR}; then
+	print-with-red "DEPROVISION ERROR reported from ${1}"
+	redirect-output
+	print-all-logs
+    elif ${DEVAPI_ERROR}; then
+	print-with-red "DEVAPI ERROR reported from ${1}"
+	redirect-output
+	print-all-logs
     fi
 
     if ${VERIFY_CI_ERROR} || ${POD_PRESET_ERROR} || ${PROVISION_ERROR} ||
-	${BIND_ERROR} || ${RESOURCE_ERROR}; then
+	${BIND_ERROR} || ${RESOURCE_ERROR} || ${UNBIND_ERROR} || 
+    ${DEPROVISION_ERROR} || ${DEVAPI_ERROR} ; then
 	restore-output
 	convert-to-red
 	error-variables
