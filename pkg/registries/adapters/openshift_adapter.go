@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	b64 "encoding/base64"
+
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )

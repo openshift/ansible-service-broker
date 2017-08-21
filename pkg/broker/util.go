@@ -33,7 +33,7 @@ func toBrokerPlans(apbPlans []apb.Plan) []Plan {
 			ID:          plan.Name,
 			Name:        plan.Name,
 			Description: plan.Description,
-			Metadata:    plan.Metadata,
+			Metadata:    updateMetadata(plan.Metadata, plan.Parameters),
 			Free:        plan.Free,
 			Bindable:    plan.Bindable,
 			Schemas:     parametersToSchema(plan.Parameters),
@@ -41,6 +41,82 @@ func toBrokerPlans(apbPlans []apb.Plan) []Plan {
 		i++
 	}
 	return brokerPlans
+}
+
+func updateMetadata(metadata map[string]interface{}, params []apb.ParameterDescriptor) map[string]interface{} {
+	if params == nil || len(params) == 0 {
+		return metadata
+	}
+
+	if metadata == nil {
+		metadata = make(map[string]interface{})
+	}
+
+	formDefinition := make([]interface{}, 0)
+
+	for paramIdx := 0; paramIdx < len(params); {
+		var formItem interface{}
+		pd := params[paramIdx]
+		if pd.DisplayGroup == "" {
+			formItem, paramIdx = createUIFormItem(pd, paramIdx)
+		} else {
+			formItem, paramIdx = createUIFormGroup(params, pd.DisplayGroup, paramIdx)
+		}
+
+		formDefinition = append(formDefinition, formItem)
+	}
+
+	metadata["schemas"] = map[string]interface{}{
+		"service_instance": map[string]interface{}{
+			"create": map[string]interface{}{
+				"form_definition": formDefinition,
+			},
+			"update": map[string]interface{}{},
+		},
+		"service_binding": map[string]interface{}{
+			"create": map[string]interface{}{
+				"form_definition": formDefinition,
+			},
+		},
+	}
+
+	return metadata
+}
+
+func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, paramIndex int) (map[string]interface{}, int) {
+	var formItem interface{}
+	items := []interface{}{}
+
+	for paramIndex < len(params) {
+		pd := params[paramIndex]
+		if pd.DisplayGroup != groupName {
+			break
+		}
+
+		formItem, paramIndex = createUIFormItem(pd, paramIndex)
+		items = append(items, formItem)
+	}
+
+	group := make(map[string]interface{})
+	group["type"] = "fieldset"
+	group["items"] = items
+	return group, paramIndex + 1
+}
+
+func createUIFormItem(pd apb.ParameterDescriptor, paramIndex int) (interface{}, int) {
+	var formItem interface{}
+
+	// if the name is the only key, it defaults to a string instead of a dictionary
+	if pd.DisplayType == "" {
+		formItem = pd.Name
+	} else {
+		formItem = map[string]string{
+			"key":  pd.Name,
+			"type": pd.DisplayType,
+		}
+	}
+
+	return formItem, paramIndex + 1
 }
 
 // getType transforms an apb parameter type to a JSON Schema type

@@ -2,6 +2,7 @@ package broker
 
 import (
 	"errors"
+
 	"github.com/pborman/uuid"
 )
 

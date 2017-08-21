@@ -15,15 +15,17 @@ type SpecManifest map[string]*Spec
 
 // ParameterDescriptor - a parameter to be used by the service catalog to get data.
 type ParameterDescriptor struct {
-	Name        string      `json:"name"`
-	Title       string      `json:"title"`
-	Type        string      `json:"type"`
-	Description string      `json:"description,omitempty"`
-	Default     interface{} `json:"default,omitempty"`
-	Maxlength   int         `json:"maxlength,omitempty"`
-	Pattern     string      `json:"pattern,omitempty"`
-	Enum        []string    `json:"enum,omitempty"`
-	Required    bool        `json:"required"`
+	Name         string      `json:"name"`
+	Title        string      `json:"title"`
+	Type         string      `json:"type"`
+	Description  string      `json:"description,omitempty"`
+	Default      interface{} `json:"default,omitempty"`
+	Maxlength    int         `json:"maxlength,omitempty"`
+	Pattern      string      `json:"pattern,omitempty"`
+	Enum         []string    `json:"enum,omitempty"`
+	Required     bool        `json:"required"`
+	DisplayType  string      `json:"display_type,omitempty" yaml:"display_type,omitempty"`
+	DisplayGroup string      `json:"display_group,omitempty" yaml:"display_group,omitempty"`
 }
 
 // Plan - Plan object describing an APB deployment plan and associated parameters
