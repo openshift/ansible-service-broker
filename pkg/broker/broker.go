@@ -15,6 +15,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pborman/uuid"
 	k8srestclient "k8s.io/client-go/rest"
 )
@@ -915,7 +916,7 @@ func ocLogin(log *logging.Logger, args ...string) error {
 
 	fullArgs := append([]string{"login"}, args...)
 
-	output, err := apb.RunCommand("oc", fullArgs...)
+	output, err := runtime.RunCommand("oc", fullArgs...)
 	log.Debug("Login output:")
 	log.Debug(string(output))
 

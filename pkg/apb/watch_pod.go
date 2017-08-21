@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
+
 	logging "github.com/op/go-logging"
 )
 
@@ -20,8 +22,8 @@ func watchPod(podName string, namespace string, log *logging.Logger) (string, er
 
 	for r := 1; r <= apbWatchRetries; r++ {
 		log.Info("Watch pod [ %s ] tick %d", podName, r)
-		output, err := RunCommand(
-			"oc", "get", "pod", "--no-headers=true", "--namespace="+namespace, podName)
+		output, err := runtime.RunCommand(
+			"kubectl", "get", "pod", "--no-headers=true", "--namespace="+namespace, podName)
 
 		outStr := string(output)
 

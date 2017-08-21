@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
+
 	logging "github.com/op/go-logging"
 )
 
@@ -68,6 +70,6 @@ func Provision(
 }
 
 func projectExists(project string) bool {
-	_, _, code := RunCommandWithExitCode("oc", "get", "project", project)
+	_, _, code := runtime.RunCommandWithExitCode("kubectl", "get", "project", project)
 	return code == 0
 }
