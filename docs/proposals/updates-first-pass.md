@@ -180,7 +180,7 @@ plans:
     parameters: *_p # param anchor
     updates_to:
       - gold
-  - name: silver
+  - name: gold
     description: A single DB server with persistent storage
     free: true
     metadata: # ...snip
