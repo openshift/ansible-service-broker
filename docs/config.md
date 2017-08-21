@@ -33,17 +33,18 @@ broker:
 The Registry section will allow you to define the registries that the broker should look at
 for APBs. All the registry config options are defined below
 
-| field         | description                                                                                                                     | Required |
-|---------------|---------------------------------------------------------------------------------------------------------------------------------|----------|
-| name          | The name of the registry. Used by the broker to identify APBs from this registry.                                              |     Y    |
-| user          | The username for authenticating to the registry                                                                                 |     N    |
-| pass          | The password for authenticating to the registry                                                                                 |     N    |
-| org           | The namespace/organization that the image is contained in                                                                       |     N    |
-| type          | The type of registry. The only adapters so far are mock, RHCC, and dockerhub.                                                   |     Y    |
+| field         | description                                                                                                                      | Required |
+|---------------|----------------------------------------------------------------------------------------------------------------------------------|----------|
+| name          | The name of the registry. Used by the broker to identify APBs from this registry.                                                |     Y    |
+| user          | The username for authenticating to the registry                                                                                  |     N    |
+| pass          | The password for authenticating to the registry                                                                                  |     N    |
+| org           | The namespace/organization that the image is contained in                                                                        |     N    |
+| type          | The type of registry. The only adapters so far are mock, RHCC, openshift, and dockerhub.                                         |     Y    |
 | url           | The url that is used to retrieve image information. Used extensively for RHCC while the docker hub adapter uses hard-coded URLs. |     N    |
-| fail_on_error | Should this registry fail the bootstrap request if it fails. will stop the execution of other registries loading.               |     N    |
-| white_list    | The list of regular expressions used to define which image names should be allowed through.                                     |     N    |
+| fail_on_error | Should this registry fail the bootstrap request if it fails. will stop the execution of other registries loading.                |     N    |
+| white_list    | The list of regular expressions used to define which image names should be allowed through.                                      |     N    |
 | black_list    | The list of regular expressions used to define which images names should never be allowed through.                               |     N    |
+| images        | The list of images to be used with OpenShift Registry.                                                                           |     N    |
 
 For filter please look at the [filtering documentation](filtering_apbs.md).
 
@@ -79,6 +80,23 @@ registry:
     type: rhcc
     url: <rhcc url>
 ```
+
+### OpenShift Registry
+Using the OpenShift registry will allow you to load APBs that are published to this type of [registry](http://www.projectatomic.io/registry/).
+
+```yaml
+registry:
+  - name: openshift
+    type: openshift
+    user: <RH_user>
+    pass: <RH_pass>
+    url: <openshift_url>
+    images:
+      - <image_1>
+      - <image_2>
+```
+
+There is a limitation when working with the OpenShift Registry right now. We have no capability to search the registry so we require that the user configure the broker with a list of images they would like to source from for when the broker bootstraps. The image name must be the fully qualified name without the registry URL. 
 
 ### Multiple Registries Example
 You can use more then one registry to separate APBs into logical organizations and be able to manage them from the same broker. The main thing here is that the registries must have a unique non-empty name. If there is no unique name the service broker will fail to start with an error message alerting you to the problem.
