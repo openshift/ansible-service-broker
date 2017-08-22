@@ -13,7 +13,6 @@ Before anything else, [fork](https://help.github.com/articles/fork-a-repo) the
 
 ### Installing Prerequisites
 
-
 **Fedora/RHEL/CENTOS**
 
 You are going to need git, docker, golang, and make.
@@ -36,27 +35,10 @@ $ sudo dnf install device-mapper-devel btrfs-progs-devel
 $ sudo yum install device-mapper-devel btrfs-progs-devel
 ```
 
-The broker uses etcd as it's backend.
-
-```
-# Fedora
-$ sudo dnf install etcd
-
-# RHEL/CENTOS
-$ sudo yum install etcd
-```
-
-To start etcd.
-```
-# Start/Restart etcd, this is largely dependent on your init system
-# For example, systemd
-$ sudo systemctl restart etcd
-```
-
 Dependency management is handled using [glide](https://glide.sh/) and
 binaries are available on the [releases page](https://github.com/Masterminds/glide/releases).
 
-### OpenShift Origin Cluster Setup
+### Install OpenShift Origin Client
 
 The broker relies heavily on services provided by OpenShift Origin and it's tools.
 You will need to setup your system for local
@@ -73,24 +55,74 @@ developing in Go.
 mkdir -p $GOPATH/src/github.com/openshift
 git clone https://github.com/openshift/ansible-service-broker.git $GOPATH/src/github.com/openshift/ansible-service-broker
 cd $GOPATH/src/github.com/openshift/ansible-service-broker
+# Install or update project dependencies
 make vendor
 ```
 
-## Setup
+### Deploy an OpenShift Origin Cluster with the Ansible Service Broker
 
-**Config**
-A broker is configured via the `config.yaml` file. It's recommended to
-copy over `etc/example-config.yaml` to `etc/ansible-service-broker/config.yaml`, and edit
-as desired.
+At some point, when contributing to the Ansible Service Broker project (or just checking it out),
+you are going to want to have a cluster to integrate with. There are two primary methods for
+starting an OpenShift Origin Cluster with the Ansible Service Broker:
 
-See the [Broker Configuration](docs/config.md) doc for other example
-configurations.
+1. Use [fusor/catasb to gain more control over the environment](https://github.com/fusor/catasb).
+1. Use [run_latest_build.sh](../scripts/run_latest_build.sh) to create a cluster with the service
+   catalog enabled and the Ansible Service Broker running. We covered this before in
+   ["Getting Started with the Ansible Service Broker"](README.md#getting-started-with-the-ansible-service-broker).
 
+   ```
+   cd $GOPATH/src/github.com/openshift/ansible-service-broker
+   bash -x scripts/run_latest_build.sh
+   ```
 
-**Note**
+### Building the Ansible Service Broker from Source
 
-Scripts found in `/test` can act as manual Service Catalog requests until a larger
-user scenario can be scripted.
+Building the Ansible Service Broker is as simple as running `make build` from the root
+of the project:
+
+```
+cd $GOPATH/src/github.com/openshift/ansible-service-broker
+make build
+```
+
+Now you can [run your broker locally](#run-your-broker-locally) with `make run` or
+[package your broker using docker](#package-your-broker-using-docker) with `make build-image`.
+
+#### Package Your Broker Using Docker
+
+You can also package your built Ansible Service Broker binary into a Docker image through
+`make build-image`.
+
+```
+cd $GOPATH/src/github.com/openshift/ansible-service-broker
+export ORG=${YOUR_DOCKERHUB_ID}
+export TAG=my_custom_tag
+make build-image
+```
+
+Once you have a built Docker image, you can [deploy broker from image](#deploy-broker-from-image)
+with `make deploy` **BUT** only after you have pushed your image to the registry
+(ie. `docker push ${REGISTRY}/${ORG}/origin-ansible-service-broker:${TAG}`).
+
+### Run Your Broker Locally
+
+1. Build the Ansible Service Broker executable with the command: ```make build```
+1. Ensure you have a local oc cluster up environment running with [fusor/catasb 'master' branch](https://github.com/fusor/catasb)
+1. ```cp scripts/my_local_dev_vars.example scripts/my_local_dev_vars```
+1. Edit 'scripts/my_local_dev_vars'
+1. Prepare your local development environment by running: ```make prepare-local-env```
+    * This will remove the running 'asb' pod and replace the endpoint of the asb route with the locally running broker executable.
+    * You __must__ rerun this whenever you have reset your cluster.
+    * It is safe to run this multiple times
+1. Run the broker executable locally:  ```make run```
+    * Use the cluster as you normally would for testing.
+    * When you want to make a change and rebuild the broker.  CTRL-C, rebuild and re-run
+
+### Deploy Broker From Image
+
+1. Build the Ansible Service Broker executable with the command: ```make build ```
+1. Build a development image:  ```make build-image BROKER_IMAGE_NAME=asb-dev TAG=local```
+1. Deploy from [templates/deploy-ansible-service-broker.template.yaml](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml) setting the parameter "-p BROKER_IMAGE=asb-dev:local" to your local image name/tag
 
 # Submitting changes to Ansible Service Broker
 

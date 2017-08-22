@@ -40,11 +40,11 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 
 # Getting Started with the Ansible Service Broker
 
-**Prerequisites**
+## Prerequisites
 1. You will need a system setup for local [OpenShift Origin Cluster Management](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md)
     * Your OpenShift Client binary (`oc`) must be `>=` [v3.6.0-rc.0](https://github.com/openshift/origin/releases/tag/v3.6.0-rc.0)
 
-**Deploy an OpenShift Origin Cluster with the Ansible Service Broker**
+## Deploy an OpenShift Origin Cluster with the Ansible Service Broker
 
 [![Watch the full asciicast](docs/images/run_latest.gif)](https://asciinema.org/a/134509)
 
