@@ -69,9 +69,8 @@ clean: ## Clean up your working environment
 	@rm -f broker
 	@rm -f build/broker
 
-really-clean: clean ## Really clean up the working environment
+really-clean: clean cleanup-ci ## Really clean up the working environment
 	@rm -f $(KUBERNETES_FILES)
-	cleanup-ci
 
 deploy: ## Deploy a built broker docker image to a running cluster
 	@./scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG}
