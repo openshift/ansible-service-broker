@@ -68,19 +68,19 @@ DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"}
 #
 ENABLE_BASIC_AUTH="false"
 
-curl -s https://raw.githubusercontent.com/openshift/ansible-service-broker/master/templates/deploy-ansible-service-broker.template.yaml > deploy-ansible-service-broker.template.yaml
-
 #
 #  Logging in as system:admin so we can create a clusterrolebinding
 #
+TEMPLATE_URL="https://raw.githubusercontent.com/openshift/ansible-service-broker/master/templates/deploy-ansible-service-broker.template.yaml"
 oc login -u system:admin
 oc new-project ansible-service-broker
-oc process -f ./deploy-ansible-service-broker.template.yaml \
+curl -s $TEMPLATE_URL \
+    | oc process \
     -n ansible-service-broker \
     -p DOCKERHUB_USER="$DOCKERHUB_USER" \
     -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
     -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
-    -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" | oc create -f -
+    -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" -f - | oc create -f -
 
 if [ "$?" -ne 0 ]; then
 	echo "Error processing template and creating deployment"
