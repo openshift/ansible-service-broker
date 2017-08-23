@@ -59,9 +59,9 @@ oc cluster up --image=openshift/origin --version=v3.6.0 --service-catalog=true -
 # 'ansibleplaybookbundle' organization, this can be overridden with the
 # parameter DOCKERHUB_ORG being passed into the template.
 #
-DOCKERHUB_USER="changeme"
-DOCKERHUB_PASS="changeme"
-DOCKERHUB_ORG="ansibleplaybookbundle"
+DOCKERHUB_USER=${DOCKERHUB_USER:-"changeme"}
+DOCKERHUB_PASS=${DOCKERHUB_PASS:-"changeme"}
+DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"}
 
 #
 # Disabling basic auth allows "apb push" to work.
