@@ -195,7 +195,7 @@ cat << EOF  > ${GENERATED_BROKER_CONFIG}
 registry:
   - type: dockerhub
 # NOTE: Careful with registry.name; it *must* match the name that was used when
-# catasb was originally brought up
+# the broker was originally brought up
     name: dh
     url: https://registry.hub.docker.com
     user: ${DOCKERHUB_USERNAME}
