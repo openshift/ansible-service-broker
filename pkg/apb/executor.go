@@ -64,6 +64,9 @@ func ExecuteApb(
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: apbID,
+			Labels: map[string]string{
+				"apb-fqname": spec.FQName,
+			},
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
