@@ -88,8 +88,7 @@ const (
 
 	// ApbRole - role to be used.
 	// NOTE: Applied to APB ServiceAccount via RoleBinding, not ClusterRoleBinding
-	// cluster-admin scoped to the project the apb is operating in
-	ApbRole = "cluster-admin"
+	ApbRole = "edit"
 
 	// 5s x 7200 retries, 2 hours
 	apbWatchInterval     = 5

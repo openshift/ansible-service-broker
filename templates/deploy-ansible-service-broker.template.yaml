@@ -33,7 +33,7 @@ objects:
   metadata:
     name: asb
   roleRef:
-    name: cluster-admin
+    name: admin
   subjects:
   - kind: ServiceAccount
     name: asb
