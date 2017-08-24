@@ -125,23 +125,22 @@ func TestUpdateMetadata(t *testing.T) {
 func verifyFormDefinition(t *testing.T, planMetadata map[string]interface{}, path []string) {
 
 	formDefnMap := verifyMapPath(t, planMetadata, path)
-	formDefnMetadata, correctType := formDefnMap["form_definition"].([]interface{})
+	formDefnMetadata, correctType := formDefnMap["openshift_form_definition"].([]interface{})
 	ft.AssertTrue(t, correctType, strings.Join(path, ".")+" Form definition is of the wrong type")
 	ft.AssertNotNil(t, formDefnMetadata, "Form definition is nil")
 
-	passwordParam, correctType := formDefnMetadata[1].(map[string]string)
+	passwordParam, correctType := formDefnMetadata[1].(formItem)
 	ft.AssertTrue(t, correctType, strings.Join(path, ".")+" Form definition password param is of the wrong type")
 	ft.AssertNotNil(t, passwordParam)
-	ft.AssertEqual(t, passwordParam["key"], PlanParams[1].Name, "Password parameter has the wrong name")
-	ft.AssertEqual(t, passwordParam["type"], PlanParams[1].DisplayType, "Password parameter display type is incorrect")
+	ft.AssertEqual(t, passwordParam.Key, PlanParams[1].Name, "Password parameter has the wrong name")
+	ft.AssertEqual(t, passwordParam.Type, PlanParams[1].DisplayType, "Password parameter display type is incorrect")
 
-	group, correctType := formDefnMetadata[2].(map[string]interface{})
+	group, correctType := formDefnMetadata[2].(formItem)
 	ft.AssertTrue(t, correctType, strings.Join(path, ".")+" Form definition parameter group is of the wrong type")
 	ft.AssertNotNil(t, group, "Parameter group is empty")
-	ft.AssertEqual(t, group["type"], "fieldset")
+	ft.AssertEqual(t, group.Type, "fieldset")
 
-	groupedItems, correctType := group["items"].([]interface{})
-	ft.AssertTrue(t, correctType, strings.Join(path, ".")+" Form definition parameter group items are the wrong type")
+	groupedItems := group.Items
 	ft.AssertNotNil(t, groupedItems, "Group missing parameter items")
 	ft.AssertEqual(t, len(groupedItems), 2, "Incorrect number of parameters in group")
 

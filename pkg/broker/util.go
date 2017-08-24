@@ -8,6 +8,12 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
+type formItem struct {
+	Key   string        `json:"key,omitempty"`
+	Type  string        `json:"type,omitempty"`
+	Items []interface{} `json:"items,omitempty"`
+}
+
 // SpecToService converts an apb Spec into a Service usable by the service
 // catalog.
 func SpecToService(spec *apb.Spec) Service {
@@ -55,27 +61,30 @@ func updateMetadata(metadata map[string]interface{}, params []apb.ParameterDescr
 	formDefinition := make([]interface{}, 0)
 
 	for paramIdx := 0; paramIdx < len(params); {
-		var formItem interface{}
+		var item interface{}
+		var numItems int
+
 		pd := params[paramIdx]
 		if pd.DisplayGroup == "" {
-			formItem, paramIdx = createUIFormItem(pd, paramIdx)
+			item, numItems = createUIFormItem(pd, paramIdx)
 		} else {
-			formItem, paramIdx = createUIFormGroup(params, pd.DisplayGroup, paramIdx)
+			item, numItems = createUIFormGroup(params, pd.DisplayGroup, paramIdx)
 		}
+		paramIdx = paramIdx + numItems
 
-		formDefinition = append(formDefinition, formItem)
+		formDefinition = append(formDefinition, item)
 	}
 
 	metadata["schemas"] = map[string]interface{}{
 		"service_instance": map[string]interface{}{
 			"create": map[string]interface{}{
-				"form_definition": formDefinition,
+				"openshift_form_definition": formDefinition,
 			},
 			"update": map[string]interface{}{},
 		},
 		"service_binding": map[string]interface{}{
 			"create": map[string]interface{}{
-				"form_definition": formDefinition,
+				"openshift_form_definition": formDefinition,
 			},
 		},
 	}
@@ -83,9 +92,10 @@ func updateMetadata(metadata map[string]interface{}, params []apb.ParameterDescr
 	return metadata
 }
 
-func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, paramIndex int) (map[string]interface{}, int) {
-	var formItem interface{}
+func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, paramIndex int) (formItem, int) {
+	var item interface{}
 	items := []interface{}{}
+	numItems := 0
 
 	for paramIndex < len(params) {
 		pd := params[paramIndex]
@@ -93,30 +103,33 @@ func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, param
 			break
 		}
 
-		formItem, paramIndex = createUIFormItem(pd, paramIndex)
-		items = append(items, formItem)
+		item, numItems = createUIFormItem(pd, paramIndex)
+		items = append(items, item)
+		paramIndex = paramIndex + numItems
 	}
 
-	group := make(map[string]interface{})
-	group["type"] = "fieldset"
-	group["items"] = items
-	return group, paramIndex + 1
+	group := formItem{
+		Type:  "fieldset",
+		Items: items,
+	}
+
+	return group, numItems
 }
 
 func createUIFormItem(pd apb.ParameterDescriptor, paramIndex int) (interface{}, int) {
-	var formItem interface{}
+	var item interface{}
 
 	// if the name is the only key, it defaults to a string instead of a dictionary
 	if pd.DisplayType == "" {
-		formItem = pd.Name
+		item = pd.Name
 	} else {
-		formItem = map[string]string{
-			"key":  pd.Name,
-			"type": pd.DisplayType,
+		item = formItem{
+			Key:  pd.Name,
+			Type: pd.DisplayType,
 		}
 	}
 
-	return formItem, paramIndex + 1
+	return item, 1
 }
 
 // getType transforms an apb parameter type to a JSON Schema type
