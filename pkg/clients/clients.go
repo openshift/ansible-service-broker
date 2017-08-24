@@ -1,9 +1,10 @@
 package clients
 
 import (
+	"sync"
+
 	etcd "github.com/coreos/etcd/client"
 	k8s "k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
-	"sync"
 )
 
 var instances struct {
