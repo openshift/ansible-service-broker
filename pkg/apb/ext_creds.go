@@ -36,7 +36,7 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 
 	for r := 1; r <= apbWatchRetries; r++ {
 		// err will be the return code from the exec command
-		// Use the error code to deterine the state
+		// Use the error code to determine the state
 		failedToExec := errors.New("exit status 1")
 		credsNotAvailable := errors.New("exit status 2")
 
@@ -55,7 +55,7 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 			log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
 		} else if err.Error() == credsNotAvailable.Error() {
 			log.Info(string(output))
-			log.Warning("[%s] Retry attempt %d: Bind credentials not availble yet", podname, r)
+			log.Warning("[%s] Retry attempt %d: Bind credentials not available yet", podname, r)
 		} else {
 			log.Info(string(output))
 			log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
