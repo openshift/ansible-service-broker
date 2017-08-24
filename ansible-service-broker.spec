@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.1
+Version: 1.0.2
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -313,6 +313,21 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Aug 24 2017 Jason Montleon <jmontleo@redhat.com> 1.0.2-1
+- Reduce broker/apb sandbox permissions (#393) (david.j.zager@gmail.com)
+- Added UI form information to metadata fields for parsing by OpenShift (#386)
+  (cfc@chasenc.com)
+- adding broker build to build of image. (#396) (Shawn.Hurley21@gmail.com)
+- Updates first-pass proposal (#368) (ernelson@redhat.com)
+- Update Dockerfile names (#382) (jmontleo@redhat.com)
+- Allow dockerhub credentials to be specified as env variables without being
+  written directly in the script (#392) (jason.dobies@redhat.com)
+- Label APBs with their FQNames (#390) (ernelson@redhat.com)
+- Added documentation update for openshift registry (#383)
+  (dymurray@redhat.com)
+- Form metadata proposal. (#376) (cfc@chasenc.com)
+- Move the client calls to the runtime pkg (#362) (rhallise@redhat.com)
+
 * Fri Aug 18 2017 Jason Montleon <jmontleo@redhat.com> 1.0.1-1
 - rename Dockerfiles to reflect the tags being used for (#375)
   (jmontleo@redhat.com)
