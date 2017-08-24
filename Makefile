@@ -46,7 +46,7 @@ $(KUBERNETES_FILES):
 prepare-local-env: $(KUBERNETES_FILES) ## Prepare the local environment for running the broker locally
 	@echo > /dev/null
 
-build-image: ## Build a docker image with the broker binary
+build-image: broker | ## Build a docker image with the broker binary
 	cp broker build/broker
 	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
 	@echo
