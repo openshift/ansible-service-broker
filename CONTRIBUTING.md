@@ -118,7 +118,7 @@ export TAG=my_custom_tag
 make build-image
 ```
 
-If you have a look at the [Dockerfile](build/Dockerfile-canary) used when building a Docker
+If you have a look at the [Dockerfile](build/Dockerfile-localdev) used when building a Docker
 image with the broker, there are a few things worth pointing out:
 
 - The `broker` image is copied to `/usr/bin/asbd`.
