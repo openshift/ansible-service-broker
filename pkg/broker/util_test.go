@@ -128,6 +128,7 @@ func verifyFormDefinition(t *testing.T, planMetadata map[string]interface{}, pat
 	formDefnMetadata, correctType := formDefnMap["openshift_form_definition"].([]interface{})
 	ft.AssertTrue(t, correctType, strings.Join(path, ".")+" Form definition is of the wrong type")
 	ft.AssertNotNil(t, formDefnMetadata, "Form definition is nil")
+	ft.AssertEqual(t, len(formDefnMetadata), 3, "Incorrect number of parameters in form definition")
 
 	passwordParam, correctType := formDefnMetadata[1].(formItem)
 	ft.AssertTrue(t, correctType, strings.Join(path, ".")+" Form definition password param is of the wrong type")

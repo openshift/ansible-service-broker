@@ -93,9 +93,7 @@ func updateMetadata(metadata map[string]interface{}, params []apb.ParameterDescr
 }
 
 func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, paramIndex int) (formItem, int) {
-	var item interface{}
 	items := []interface{}{}
-	numItems := 0
 
 	for paramIndex < len(params) {
 		pd := params[paramIndex]
@@ -103,7 +101,7 @@ func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, param
 			break
 		}
 
-		item, numItems = createUIFormItem(pd, paramIndex)
+		item, numItems := createUIFormItem(pd, paramIndex)
 		items = append(items, item)
 		paramIndex = paramIndex + numItems
 	}
@@ -113,7 +111,7 @@ func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, param
 		Items: items,
 	}
 
-	return group, numItems
+	return group, len(items)
 }
 
 func createUIFormItem(pd apb.ParameterDescriptor, paramIndex int) (interface{}, int) {
