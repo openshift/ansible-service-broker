@@ -8,6 +8,9 @@ BIND_ERROR=false
 PROVISION_ERROR=false
 POD_PRESET_ERROR=false
 VERIFY_CI_ERROR=false
+UNBIND_ERROR=false
+DEPROVISION_ERROR=false
+DEVAPI_ERROR=false
 
 RESOURCE_ERROR="${RESOURCE_ERROR:-false}"
 BUILD_ERROR="${BUILD_ERROR:-false}"
@@ -32,12 +35,25 @@ function provision {
     error-check "provision"
 }
 
+function deprovision {
+    oc delete -f ./scripts/broker-ci/mediawiki123.yaml || PROVISION_ERROR=true
+    oc delete -f ./scripts/broker-ci/postgresql.yaml || PROVISION_ERROR=true
+    ./scripts/broker-ci/wait-for-resource.sh delete pod mediawiki >> /tmp/wait-for-pods-log 2>&1
+    ./scripts/broker-ci/wait-for-resource.sh delete pod postgresql >> /tmp/wait-for-pods-log 2>&1
+}
+
 function bind {
     print-with-green "Waiting for services to be ready"
     sleep 10
     oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || BIND_ERROR=true
     ./scripts/broker-ci/wait-for-resource.sh create bindings.v1alpha1.servicecatalog.k8s.io mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
     error-check "bind"
+}
+
+function unbind {
+    print-with-green "Waiting for podpresets to be removed"
+    oc delete -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || BIND_ERROR=true
+    ./scripts/broker-ci/wait-for-resource.sh delete podpresets mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
 }
 
 function bind-credential-check {
@@ -88,6 +104,29 @@ function verify-ci-run {
     error-check "verify-ci-run"
 }
 
+function verify-cleanup {
+  if oc get -n default podpresets mediawiki-postgresql-binding ; then
+    UNBIND_ERROR=true
+  elif oc get -n default dc mediawiki || oc get -n default dc postgresql ; then
+    DEPROVISION_ERROR=true
+  fi
+}
+
+function dev-api-test {
+  print-with-green "Waiting for foo apb servicename"
+  BROKERURL=$(oc get -n ansible-service-broker route -o custom-columns=host:spec.host --no-headers)
+  APBID=$(curl -s -k -XPOST -u admin:admin https://$BROKERURL/apb/spec -d "apbSpec=$(base64 scripts/broker-ci/apb.yml)"| \
+          python -c "import sys; import json; print json.load(sys.stdin)['services'][0]['id']")
+  sleep 10
+  oc delete pod -n service-catalog -l app=controller-manager
+
+  ./scripts/broker-ci/wait-for-resource.sh create serviceclass apb-push-ansibleplaybookbundle-foo-apb >> /tmp/wait-for-pods-log 2>&1
+
+  if ! curl -I -s -k -XDELETE  -u admin:admin https://$BROKERURL/apb/spec/$APBID | grep -q "204 No Content" ; then 
+    DEVAPI_ERROR=true
+  fi
+}
+
 ######
 # Main
 ######
@@ -95,5 +134,9 @@ provision
 bind
 pickup-pod-presets
 verify-ci-run
+unbind
+deprovision
+verify-cleanup
+dev-api-test
 convert-to-red
 error-variables
