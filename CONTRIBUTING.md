@@ -73,10 +73,10 @@ starting an OpenShift Origin Cluster with the Ansible Service Broker:
 
    ```
    cd $GOPATH/src/github.com/openshift/ansible-service-broker
-   bash -x scripts/run_latest_build.sh
+   ./scripts/run_latest_build.sh
    ```
 
-**Congratulations**, you should now have a running OpenShift Origin Cluster with the Service Catalog
+**Congratulations**, you now have a running OpenShift Origin Cluster with the Service Catalog
 and Ansible Service Broker running inside. If you are having issues, have a look at
 [fusor/catasb](https://github.com/fusor/catasb) for some troubleshooting steps.
 
@@ -108,8 +108,8 @@ Now you can [run your broker locally](#run-your-broker-locally) with `make run` 
 
 ## Package Your Broker Using Docker
 
-You can also package your built Ansible Service Broker binary into a Docker image through
-`make build-image`.
+As stated above, you can also package your built Ansible Service Broker binary
+into a Docker image with `make build-image`.
 
 ```
 cd $GOPATH/src/github.com/openshift/ansible-service-broker
@@ -118,15 +118,15 @@ export TAG=my_custom_tag
 make build-image
 ```
 
-If you have a look at the [Dockerfile](build/Dockerfile-localdev) used when building a Docker
+Look at the [Dockerfile](build/Dockerfile-localdev) used when building a Docker
 image with the broker, there are a few things worth pointing out:
 
 - The `broker` image is copied to `/usr/bin/asbd`.
 - The home directory in the image is `/opt/ansibleservicebroker`.
-- The directory `/etc/ansible-service-broker` is where, by default, the broker's configuration
-  file is mounted when deployed in OpenShift. Looking at the
+- The directory `/etc/ansible-service-broker` is where the broker's configuration
+  file is mounted, by default, when deployed in OpenShift. The
   [deploy-ansible-service-broker template](templates/deploy-ansible-service-broker.template.yaml)
-  you can find the `broker-config` included  as `config-volume` in the `asb` container and mounted at
+  shows that the `broker-config` is included as `config-volume` in the `asb` container and mounted at
   `/etc/ansible-service-broker`.
 - The entrypoint to the image is [entrypoint.sh](build/entrypoint.sh). This script is what starts
   the broker when deployed as a container.
@@ -134,7 +134,6 @@ image with the broker, there are a few things worth pointing out:
 Once you have a built Docker image, you can [deploy broker from image](#deploy-broker-from-image)
 with `make deploy` **BUT** only after you have pushed your image to the registry
 (ie. `docker push ${REGISTRY}/${ORG}/origin-ansible-service-broker:${TAG}`).
-
 
 # Run Your Broker
 
@@ -170,9 +169,9 @@ or use an insecure broker with `BROKER_INSECURE="true"`.
 Running `make prepare-local-env` will do several things on your behalf:
 
 * Remove the running `ansible-service-broker` from the cluster, leaving only
-  etcd running in the namespace.
+  `etcd` running in the namespace.
 * Modify the `asb` service to point where our locally running broker will be.
-* Generate a configuration file for the broker (`etc/generated_local_development.yaml`)
+* Generate a configuration file for the broker, `etc/generated_local_development.yaml`
 
 This would be a good time to have a look at the broker's configuration and make
 changes. Have a look at [the broker configuration examples](docs/config.md).
@@ -188,9 +187,9 @@ registry:
     org: ansibleplaybookbundle
 ```
 
-It may server your purposes to append additional registries, for example, if
-you wanted to develop APB's in your organization while still seeing those in
-the ansibleplaybookbundle organization. That may look something like:
+If you want registries in addition to those in the
+[**ansibleplaybookbundle**](https://hub.docker.com/r/ansibleplaybookbundle/)
+organization, add them to the registry section of the config. For example:
 
 ```
 registry:
@@ -215,7 +214,9 @@ With the environment prepared, running your broker is as simple as running
 
 ## Deploy Broker From Image
 
-Once you have [built a Docker image with your broker binary](#package-your-broker-using-docker),
+In the previous section we detailed how to [run your broker
+locally](#run-your-broker-locally). If you chose to
+[build a Docker image with your broker binary](#package-your-broker-using-docker),
 you can run your broker inside the cluster. Now is an excellent time to point out that
 [fusor/catasb](https://github.com/fusor/catasb) gives you the ability to deploy
 an OpenShift Origin Cluster with the Service Catalog and **your** broker image. If that
@@ -232,12 +233,10 @@ make deploy
 The `deploy` target runs [scripts/deploy.sh](scripts/deploy.sh) to:
 
 - Remove the existing deployment of the Ansible Service Broker.
-- Create any broker clusterrolebindings from a previous run (they will be
-  created again when the template is processed).
-- Process the [deploy-ansible-service-broker template](templates/deploy-ansible-service-broker.template.yaml)
-  that we introduced before when we [packaged your broker using docker](#package-your-broker-using-docker).
+- Create any broker clusterrolebindings from a previous run, they will be
+  created again when the template is processed.
+- Process the [deploy-ansible-service-broker template](templates/deploy-ansible-service-broker.template.yaml).
 - Create the objects from the template in OpenShift Origin.
-
 
 # Submitting changes to Ansible Service Broker
 

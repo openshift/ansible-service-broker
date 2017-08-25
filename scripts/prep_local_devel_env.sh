@@ -155,8 +155,8 @@ oc delete endpoints asb -n ${ASB_PROJECT}
 oc delete service asb  -n ${ASB_PROJECT}
 oc delete route asb-etcd -n ${ASB_PROJECT}
 if [ "${BROKER_INSECURE}" = "true" ]; then
-    oc delete route asb-1338 -n ${ASB_PROJECT}
-    TERMINATION="edge"
+  oc delete route asb-1338 -n ${ASB_PROJECT}
+  TERMINATION="edge"
 fi
 oc delete service etcd -n ${ASB_PROJECT}
 # Process required changes for local development

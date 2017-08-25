@@ -13,18 +13,18 @@ export KUBERNETES_SERVICE_PORT=${OPENSHIFT_SERVER_PORT}
 
 BROKER_CONFIG=$GENERATED_BROKER_CONFIG
 if [ ! -z "$1" ]; then
-    BROKER_CONFIG="$1"
+  BROKER_CONFIG="$1"
 fi
 
 if [ -z "${BROKER_CONFIG}" ]; then
-    echo "Please specify a broker configuration file to run"
-    exit 1
+  echo "Please specify a broker configuration file to run"
+  exit 1
 fi
 
 if [ "${BROKER_INSECURE}" = "true" ]; then
-    echo "Running ${BROKER_CMD} --config ${BROKER_CONFIG} --insecure" 
-    ${BROKER_CMD} --config ${BROKER_CONFIG} --insecure
+  echo "Running ${BROKER_CMD} --config ${BROKER_CONFIG} --insecure"
+  ${BROKER_CMD} --config ${BROKER_CONFIG} --insecure
 else
-    echo "Running ${BROKER_CMD} --config ${BROKER_CONFIG}"
-    ${BROKER_CMD} --config ${BROKER_CONFIG}
+  echo "Running ${BROKER_CMD} --config ${BROKER_CONFIG}"
+  ${BROKER_CMD} --config ${BROKER_CONFIG}
 fi

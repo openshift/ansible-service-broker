@@ -51,8 +51,8 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 1. Download and execute our [run_latest_build.sh](https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh) script
     ```
     wget https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh
-    # Use trace to see what we are doing
-    bash -x ./run_latest_build.sh
+    chmod +x run_latest_build.sh
+    ./run_latest_build.sh
     ```
 1. At this point you should have a running cluster with the [service-catalog](https://github.com/kubernetes-incubator/service-catalog/) and the Ansible Service Broker running.
 

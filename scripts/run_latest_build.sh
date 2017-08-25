@@ -75,16 +75,16 @@ TEMPLATE_URL="https://raw.githubusercontent.com/openshift/ansible-service-broker
 oc login -u system:admin
 oc new-project ansible-service-broker
 curl -s $TEMPLATE_URL \
-    | oc process \
-    -n ansible-service-broker \
-    -p DOCKERHUB_USER="$DOCKERHUB_USER" \
-    -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
-    -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
-    -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" -f - | oc create -f -
+  | oc process \
+  -n ansible-service-broker \
+  -p DOCKERHUB_USER="$DOCKERHUB_USER" \
+  -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
+  -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
+  -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" -f - | oc create -f -
 
 if [ "$?" -ne 0 ]; then
-	echo "Error processing template and creating deployment"
-	exit
+  echo "Error processing template and creating deployment"
+  exit
 fi
 
 ASB_ROUTE=`oc get routes | grep ansible-service-broker | awk '{print $2}'`
