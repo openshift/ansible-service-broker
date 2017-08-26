@@ -246,6 +246,9 @@ func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 		spec.FQName = strings.Replace(fmt.Sprintf("%v-%v", registryName, imageName),
 			"/", "-", -1)
 		spec.FQName = fmt.Sprintf("%.51v", spec.FQName)
+		if strings.HasSuffix(spec.FQName, "-") {
+			spec.FQName = spec.FQName[:len(spec.FQName)-1]
+		}
 
 		// ID Will be a md5 hash of the fully qualified spec name.
 		hasher := md5.New()
