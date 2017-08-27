@@ -25,7 +25,10 @@ func NewServiceAccountManager(log *logging.Logger) ServiceAccountManager {
 // CreateApbSandbox - Sets up ServiceAccount based apb sandbox
 // Returns service account name to be used as a handle for destroying
 // the sandbox at the conclusion of running the apb
-func (s *ServiceAccountManager) CreateApbSandbox(namespace string, apbID string,
+func (s *ServiceAccountManager) CreateApbSandbox(
+	namespace string,
+	apbID string,
+	apbRole string,
 ) (string, error) {
 	svcAccountName := apbID
 	roleBindingName := apbID
@@ -54,7 +57,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(namespace string, apbID string,
 			},
 		},
 		"roleRef": map[string]string{
-			"name": ApbRole,
+			"name": apbRole,
 		},
 	}
 
