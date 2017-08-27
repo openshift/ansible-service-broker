@@ -29,6 +29,7 @@ openshift:
   ca_file: ""
   bearer_token_file: ""
   image_pull_policy: IfNotPresent
+  sandbox_role: "edit"
 broker:
   bootstrap_on_startup: true
   dev_broker: true

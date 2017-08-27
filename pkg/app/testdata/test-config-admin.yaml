@@ -12,7 +12,7 @@ registry:
     url: registry.access.stage.redhat.com
     fail_on_error: true
     white_list:
-      - "^legitimate.*-apb$"    
+      - "^legitimate.*-apb$"
     black_list:
       - "malicious.*-apb$"
       - "^specific-blacklist-apb$"
@@ -29,7 +29,7 @@ openshift:
   ca_file: ""
   bearer_token_file: ""
   image_pull_policy: IfNotPresent
-  sandbox_role: "edit"
+  sandbox_role: "admin"
 broker:
   bootstrap_on_startup: true
   dev_broker: true
@@ -38,7 +38,8 @@ broker:
   output_request: true
   ssl_cert_key: /path/to/key
   ssl_cert: /path/to/cert
-  refresh_interval: "600s"
   auth:
     - type: basic
       enabled: true
+    - type: oauth
+      enabled: false
