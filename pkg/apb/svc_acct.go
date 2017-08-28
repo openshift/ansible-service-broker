@@ -3,6 +3,7 @@ package apb
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 
@@ -57,7 +58,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 			},
 		},
 		"roleRef": map[string]string{
-			"name": apbRole,
+			"name": strings.ToLower(apbRole),
 		},
 	}
 

@@ -66,11 +66,5 @@ func validateConfig(c Config) error {
 		registryName[rc.Name] = true
 	}
 
-	switch role := c.Openshift.SandboxRole; role {
-	case apb.ApbRoleAdmin, apb.ApbRoleEdit:
-	default:
-		return fmt.Errorf("sandbox role is not valid - %v", role)
-	}
-
 	return nil
 }

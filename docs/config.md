@@ -147,7 +147,7 @@ registry:
 | ca_file | Location of the certificate authority file | N |
 | bearer_token_file | Location of bearer token to be used | N |
 | image_pull_policy | When to pull the image | Y |
-| sandbox_role | Role to give to apb sandbox environment. Supported values: `admin`, `edit` | Y |
+| sandbox_role | Role to give to apb sandbox environment | Y |
 
 ## Broker Configuration
 The broker config section will tell the broker what functionality should be enabled

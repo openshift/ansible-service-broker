@@ -89,13 +89,6 @@ const (
 	// StateFailed - Failed job state
 	StateFailed State = "failed"
 
-	// The APB Roles that we support referencing when we create the APB Sandbox
-
-	// ApbRoleAdmin - Admin role
-	ApbRoleAdmin = "admin"
-	// ApbRoleEdit - Edit role
-	ApbRoleEdit = "edit"
-
 	// 5s x 7200 retries, 2 hours
 	apbWatchInterval     = 5
 	apbWatchRetries      = 7200

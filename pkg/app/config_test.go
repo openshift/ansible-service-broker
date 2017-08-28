@@ -61,9 +61,3 @@ func TestAdminRole(t *testing.T) {
 
 	ft.AssertEqual(t, config.Openshift.SandboxRole, "admin", "")
 }
-
-func TestInvalidRole(t *testing.T) {
-	_, err := CreateConfig("testdata/test-config-invalid-role.yaml")
-	ft.AssertNotNil(t, err, "")
-	ft.AssertEqual(t, err.Error(), "sandbox role is not valid - cluster-admin", "")
-}
