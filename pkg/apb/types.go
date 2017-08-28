@@ -10,7 +10,7 @@ import (
 // Parameters - generic string to object or value parameter
 type Parameters map[string]interface{}
 
-//SpecManifest - Spec ID to Spec manifest
+// SpecManifest - Spec ID to Spec manifest
 type SpecManifest map[string]*Spec
 
 // ParameterDescriptor - a parameter to be used by the service catalog to get data.

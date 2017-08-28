@@ -19,7 +19,7 @@ type Adapter interface {
 	RegistryName() string
 	// GetImageNames will return all the image names for the adapter configuration.
 	GetImageNames() ([]string, error)
-	//FetchSpecs will retrieve all the specs for the list of images names.
+	// FetchSpecs will retrieve all the specs for the list of images names.
 	FetchSpecs([]string) ([]*apb.Spec, error)
 }
 

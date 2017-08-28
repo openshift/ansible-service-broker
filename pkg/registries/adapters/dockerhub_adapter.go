@@ -57,15 +57,15 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
-	//Intial call to getNextImages this will fan out to retrieve all the values.
+	// Intial call to getNextImages this will fan out to retrieve all the values.
 	imageResp, err := r.getNextImages(ctx, r.Config.Org, token,
 		fmt.Sprintf(dockerHubRepoImages, r.Config.Org),
 		channel, cancelFunc)
-	//if there was an issue with the first call, return the error
+	// if there was an issue with the first call, return the error
 	if err != nil {
 		return nil, err
 	}
-	//If no results in the fist call then close the channel as nothing will get loaded.
+	// If no results in the fist call then close the channel as nothing will get loaded.
 	if len(imageResp.Results) == 0 {
 		r.Log.Info("canceled retrieval as no items in org")
 		close(channel)
@@ -181,10 +181,10 @@ func (r DockerHubAdapter) getNextImages(ctx context.Context,
 		close(ch)
 		return &iResp, err
 	}
-	//Keep getting the images
+	// Keep getting the images
 	if iResp.Next != "" {
 		r.Log.Debugf("getting next page of results - %v", iResp.Next)
-		//Fan out calls to get the next images.
+		// Fan out calls to get the next images.
 		go r.getNextImages(ctx, org, token, iResp.Next, ch, cancelFunc)
 	}
 	for _, imageName := range iResp.Results {

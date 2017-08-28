@@ -33,7 +33,7 @@ type App struct {
 	engine   *broker.WorkEngine
 }
 
-//CreateApp - Creates the application
+// CreateApp - Creates the application
 func CreateApp() App {
 	var err error
 	app := App{}
@@ -52,7 +52,7 @@ func CreateApp() App {
 	fmt.Println("==           Starting Ansible Service Broker...           ==")
 	fmt.Println("============================================================")
 
-	//TODO: Let's take all these validations and delegate them to the client
+	// TODO: Let's take all these validations and delegate them to the client
 	// pkg.
 	if app.config, err = CreateConfig(app.args.ConfigFile); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to read config file\n")
