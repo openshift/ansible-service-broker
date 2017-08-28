@@ -34,7 +34,7 @@ type AssociationRule struct {
 }
 
 type secretsCache struct {
-	mapping map[string][]string
+	mapping map[string]map[string]bool
 	rwSync  sync.RWMutex
 	rules   []AssociationRule
 	config  []SecretsConfig
@@ -47,7 +47,11 @@ var secrets secretsCache
 func GetSecrets(spec *Spec) []string {
 	secrets.rwSync.RLock()
 	defer secrets.rwSync.RUnlock()
-	return secrets.mapping[spec.FQName]
+	keys := []string{}
+	for key := range secrets.mapping[spec.FQName] {
+		keys = append(keys, key)
+	}
+	return keys
 }
 
 // AddSecrets - Uses the AssociationRules generated from config to link specs to
@@ -66,13 +70,15 @@ func AddSecretsFor(spec *Spec) {
 
 	for _, rule := range secrets.rules {
 		if match(spec, rule) {
+			secrets.log.Debugf("Spec %v matched rule %v", spec.FQName, rule)
 			addSecret(spec, rule)
 		}
 	}
 }
 
 func addSecret(spec *Spec, rule AssociationRule) {
-	secrets.mapping[spec.FQName] = append(secrets.mapping[spec.FQName], rule.secret)
+	secrets.mapping[spec.FQName] = make(map[string]bool)
+	secrets.mapping[spec.FQName][rule.secret] = true
 }
 
 func match(spec *Spec, rule AssociationRule) bool {
@@ -87,7 +93,7 @@ func InitializeSecretsCache(config []SecretsConfig, log *logging.Logger) {
 		rules = append(rules, AssociationRule{cfg.ApbName, cfg.Secret})
 	}
 	secrets = secretsCache{
-		mapping: make(map[string][]string),
+		mapping: make(map[string]map[string]bool),
 		rwSync:  sync.RWMutex{},
 		log:     log,
 		rules:   rules,

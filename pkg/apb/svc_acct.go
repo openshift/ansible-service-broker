@@ -93,7 +93,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 	// Create resources in cluster
 	s.createResources(rFilePath, namespace)
 
-	s.log.Info("Successfully created apb sandbox: [ %s ]", apbID)
+	s.log.Info("Successfully created apb sandbox: [ %s ], with %s scoped %s permissions in namespace %s", apbID, roleScope, ApbRole, namespace)
 
 	return apbID, nil
 }
@@ -208,18 +208,19 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	s.log.Debug("oc delete output:")
 	s.log.Debug(string(output))
 
-	s.log.Debug("Deleting rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
+	roleScope := strings.ToLower(executionContext.RoleScope)
+	s.log.Debug("Deleting %sbinding %s, namespace %s", roleScope, executionContext.PodName, executionContext.Namespace)
 	output, err = runtime.RunCommand(
-		"oc", "delete", "rolebinding", executionContext.PodName, "--namespace="+executionContext.Namespace,
+		"oc", "delete", roleScope+"binding", executionContext.PodName, "--namespace="+executionContext.Namespace,
 	)
 	if err != nil {
-		s.log.Error("Something went wrong trying to destroy the rolebinding!")
+		s.log.Error("Something went wrong trying to destroy the %sbinding!", roleScope)
 		s.log.Error(err.Error())
 		s.log.Error("oc delete output:")
 		s.log.Error(string(output))
 		return err
 	}
-	s.log.Debug("Successfully deleted rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
+	s.log.Debug("Successfully deleted %sbinding %s, namespace %s", roleScope, executionContext.PodName, executionContext.Namespace)
 	s.log.Debug("oc delete output:")
 	s.log.Debug(string(output))
 

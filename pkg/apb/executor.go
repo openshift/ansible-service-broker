@@ -74,18 +74,17 @@ func ExecuteApb(
 
 	secrets := GetSecrets(spec)
 
-	var roleScope string
 	if len(secrets) > 0 {
 		executionContext.Namespace = clusterConfig.Namespace
-		roleScope = "ClusterRole"
+		executionContext.RoleScope = "ClusterRole"
 	} else {
 		executionContext.Namespace = context.Namespace
-		roleScope = "Role"
+		executionContext.RoleScope = "Role"
 	}
 	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(log)
-	executionContext.ServiceAccount, err = sam.CreateApbSandbox(executionContext.Namespace, executionContext.PodName, clusterConfig.SandboxRole, roleScope)
+	executionContext.ServiceAccount, err = sam.CreateApbSandbox(executionContext.Namespace, executionContext.PodName, clusterConfig.SandboxRole, executionContext.RoleScope)
 
 	if err != nil {
 		log.Error(err.Error())

@@ -226,4 +226,5 @@ type ExecutionContext struct {
 	PodName        string
 	Namespace      string
 	ServiceAccount string
+	RoleScope      string
 }
