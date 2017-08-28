@@ -30,6 +30,7 @@ import (
 
 type formItem struct {
 	Key   string        `json:"key,omitempty"`
+	Title string        `json:"title,omitempty"`
 	Type  string        `json:"type,omitempty"`
 	Items []interface{} `json:"items,omitempty"`
 }
@@ -127,6 +128,7 @@ func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, param
 	}
 
 	group := formItem{
+		Title: groupName,
 		Type:  "fieldset",
 		Items: items,
 	}
