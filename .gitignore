@@ -31,9 +31,9 @@ etc/prod.config.yaml
 etc/mock.config.yaml
 
 #Compiled binaries
-broker
+/broker
 build/broker
-!pkg/broker
+#!pkg/broker
 
 # python artifacts
 .python-version
