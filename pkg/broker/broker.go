@@ -191,7 +191,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	var specs []*apb.Spec
 	var imageCount int
 
-	//Remove all specs that have been saved.
+	// Remove all specs that have been saved.
 	dir := "/spec"
 	specs, err = a.dao.BatchGetSpecs(dir)
 	if err != nil {
@@ -205,7 +205,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	}
 	specs = []*apb.Spec{}
 
-	//Load Specs for each registry
+	// Load Specs for each registry
 	registryErrors := []error{}
 	for _, r := range a.registry {
 		s, count, err := r.LoadSpecs()
@@ -240,7 +240,8 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 // and set it for each spec
 func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 	for _, spec := range specs {
-		//need to make / a hyphen to allow for global uniqueness but still match spec.
+		// need to make / a hyphen to allow for global uniqueness
+		// but still match spec.
 
 		imageName := strings.Replace(spec.Image, ":", "-", -1)
 		spec.FQName = strings.Replace(fmt.Sprintf("%v-%v", registryName, imageName),
@@ -365,7 +366,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 	// if no pods, do we restart? or just return failed?
 
-	//binding
+	// binding
 
 	a.log.Info("Recovery complete")
 	return "recover called", nil
@@ -508,7 +509,8 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// if err is not nil, we will just bubble that up
 
 	if si, err := a.dao.GetServiceInstance(instanceUUID.String()); err == nil {
-		//This will use the package to make sure that if the type is changed away from []byte it can still be evaluated.
+		// This will use the package to make sure that if the type is changed
+		// away from []byte it can still be evaluated.
 		if uuid.Equal(si.ID, serviceInstance.ID) {
 			if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
 				a.log.Debug("already have this instance returning 200")

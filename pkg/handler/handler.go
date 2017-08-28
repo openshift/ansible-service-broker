@@ -83,7 +83,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	}
 
 	// TODO: Reintroduce router restriction based on API version when settled upstream
-	//root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()
+	// root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()
 
 	h.router.HandleFunc("/v2/bootstrap", createVarHandler(h.bootstrap)).Methods("POST")
 	h.router.HandleFunc("/v2/catalog", createVarHandler(h.catalog)).Methods("GET")
@@ -338,7 +338,7 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 // apbAddSpec - Development only route. Will be used by for local developers to add images to the catalog.
 func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	h.log.Debug("handler::apbAddSpec")
-	//Read Request for an image name
+	// Read Request for an image name
 
 	// create helper method from MockRegistry
 	ansibleBroker, ok := h.broker.(broker.DevBroker)
@@ -347,7 +347,7 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
 		return
 	}
-	//Decode
+	// Decode
 	spec64Yaml := r.FormValue("apbSpec")
 	if spec64Yaml == "" {
 		h.log.Errorf("Could not find form parameter apbSpec")

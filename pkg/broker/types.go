@@ -110,11 +110,11 @@ type LastOperationRequest struct {
 type LastOperationState string
 
 const (
-	//LastOperationStateInProgress - In Progress state for last operation.
+	// LastOperationStateInProgress - In Progress state for last operation.
 	LastOperationStateInProgress LastOperationState = "in progress"
-	//LastOperationStateSucceeded - Succeeded state for the last operation.
+	// LastOperationStateSucceeded - Succeeded state for the last operation.
 	LastOperationStateSucceeded LastOperationState = "succeeded"
-	//LastOperationStateFailed - Failed state for the last operation.
+	// LastOperationStateFailed - Failed state for the last operation.
 	LastOperationStateFailed LastOperationState = "failed"
 )
 
@@ -190,7 +190,7 @@ type BindResponse struct {
 }
 
 // DeprovisionResponse - Response for a deprovision
-//  Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#response-6
+// Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#response-6
 type DeprovisionResponse struct {
 	Operation string `json:"operation,omitempty"`
 }

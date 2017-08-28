@@ -135,7 +135,7 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 	log.Info(fmt.Sprintf("Name: %s", config.Name))
 	log.Info(fmt.Sprintf("Type: %s", config.Type))
 	log.Info(fmt.Sprintf("Url: %s", config.URL))
-	//Validate URL
+	// Validate URL
 	u, err := url.Parse(config.URL)
 	if err != nil {
 		log.Errorf("url is not valid: %v", config.URL)

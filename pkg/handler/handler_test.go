@@ -119,7 +119,7 @@ func init() {
 	backend := logging.NewLogBackend(os.Stdout, "", 1)
 	backendFormatter := logging.NewBackendFormatter(backend, colorFormatter)
 	logging.SetBackend(backend, backendFormatter)
-	//will default to all config values to false
+	// will default to all config values to false
 	brokerConfig = broker.Config{}
 }
 
