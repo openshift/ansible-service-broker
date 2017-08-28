@@ -117,7 +117,7 @@ func (a AnsibleBroker) getServiceInstance(instanceUUID uuid.UUID) (*apb.ServiceI
 
 }
 
-//Login - Will login the openshift user.
+// Login - Will login the openshift user.
 func (a AnsibleBroker) Login() error {
 	config, err := a.getLoginDetails()
 	if err != nil {
@@ -867,7 +867,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	return &LastOperationResponse{State: state, Description: ""}, err
 }
 
-//AddSpec - adding the spec to the catalog for local development
+// AddSpec - adding the spec to the catalog for local development
 func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	a.log.Debug("broker::AddSpec")
 	addNameAndIDForSpec([]*apb.Spec{&spec}, apbPushRegName)

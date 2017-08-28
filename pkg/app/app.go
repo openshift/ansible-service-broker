@@ -33,7 +33,7 @@ type App struct {
 	engine   *broker.WorkEngine
 }
 
-//CreateApp - Creates the application
+// CreateApp - Creates the application
 func CreateApp() App {
 	var err error
 	app := App{}

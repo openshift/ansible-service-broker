@@ -180,7 +180,7 @@ type BindRequest struct {
 	Parameters apb.Parameters `json:"parameters,omitempty"`
 }
 
-//BindResponse - Response for a bind
+// BindResponse - Response for a bind
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#response-4
 type BindResponse struct {
 	Credentials     map[string]interface{} `json:"credentials,omitempty"`

@@ -416,7 +416,7 @@ func (h handler) apbRemoveSpecs(w http.ResponseWriter, r *http.Request, params m
 	writeDefaultResponse(w, http.StatusNoContent, struct{}{}, err)
 }
 
-//printRequest - will print the request with the body.
+// printRequest - will print the request with the body.
 func (h handler) printRequest(req *http.Request) {
 	if h.brokerConfig.OutputRequest {
 		b, err := httputil.DumpRequest(req, true)
