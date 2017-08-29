@@ -1,0 +1,197 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ansible-service-broker
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: asb
+  namespace: ansible-service-broker
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: asb
+subjects:
+- kind: ServiceAccount
+  name: asb
+  namespace: ansible-service-broker
+roleRef:
+  kind: ClusterRole
+  name: admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: asb
+   namespace: ansible-service-broker
+spec:
+  ports:
+    - name: port-1338
+      port: 1338
+  selector:
+    app: ansible-service-broker
+    service: asb
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etcd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: etcd
+   namespace: ansible-service-broker
+spec:
+  ports:
+    - name: etcd-advertise
+      port: 2379
+  selector:
+    app: ansible-service-broker
+    service: etcd
+
+---
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: broker-config
+    namespace: ansible-service-broker
+    labels:
+      app: ansible-service-broker
+  data:
+    broker-config: |
+      registry:
+        - type: "{{ registry_type }}"
+          name: "{{ registry_name }}"
+          url: "{{ registry_url }}"
+          user: "{{ dockerhub_user_name }}"
+          pass: "{{ dockerhub_user_password }}"
+          org: "{{ dockerhub_org }}"
+          tag: "{{ tag }}"
+      dao:
+        etcd_host: 0.0.0.0
+        etcd_port: 2379
+      log:
+        logfile: /var/log/ansible-service-broker/asb.log
+        stdout: true
+        level: debug
+        color: true
+      openshift:
+        host: "{{ cluster_auth_host }}"
+        ca_file: "{{ ca_file }}"
+        bearer_token_file: "{{ bearer_token_file }}"
+        image_pull_policy: "{{ image_pull_policy }}"
+      broker:
+        dev_broker: {{ dev_broker }}
+        bootstrap_on_startup: {{ bootstrap_on_startup }}
+        refresh_interval: "{{ refresh_interval }}"
+        launch_apb_on_bind: {{ launch_apb_on_bind }}
+        output_request: {{ output_request }}
+        recovery: {{ recovery }}
+        ssl_cert_key: /etc/tls/private/tls.key
+        ssl_cert: /etc/tls/private/tls.crt
+        auth:
+          - type: basic
+            enabled: {{ enable_basic_auth }}
+
+---
+apiversion: v1
+kind: Endpoints
+metadata:
+  name: asb-1338
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+    service: asb
+spec:
+  to:
+    kind: Service
+    name: asb
+  port:
+    targetPort: port-1338
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: asb
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+    service: asb
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ansible-service-broker
+        service: asb
+    spec:
+      restartPolicy: Always
+      containers:
+        - image: "{{ broker_image }}"
+          name: asb
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 1338
+              protocol: TCP
+
+---
+kind: Deployment
+metadata:
+  name: etcd
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+    service: etcd
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ansible-service-broker
+        service: etcd
+    spec:
+      restartPolicy: Always
+      containers:
+        - image: "{{ etcd_image }}"
+          name: main
+          imagePullPolicy: IfNotPresent
+          workingDir: /etcd
+          args:
+            - ./etcd
+            - --data-dir=/data
+            - --listen-client-urls=http://0.0.0.0:2379
+            - --advertise-client-urls=http://0.0.0.0:2379
+          ports:
+          - containerPort: 2379
+            protocol: TCP
+          env:
+          - name: ETCDCTL_API
+            value: "3"
+          volumeMounts:
+            - mountPath: /data
+              name: etcd
+      volumes:
+        - name: etcd
+          persistentVolumeClaim:
+            claimName: etcd
