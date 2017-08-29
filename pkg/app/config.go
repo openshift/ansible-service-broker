@@ -85,5 +85,6 @@ func validateConfig(c Config) error {
 		}
 		registryName[rc.Name] = true
 	}
+
 	return nil
 }

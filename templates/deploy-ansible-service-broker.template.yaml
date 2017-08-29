@@ -184,6 +184,7 @@ objects:
         ca_file: "${CA_FILE}"
         bearer_token_file: "${BEARER_TOKEN_FILE}"
         image_pull_policy: "${IMAGE_PULL_POLICY}"
+        sandbox_role: "${SANDBOX_ROLE}"
       broker:
         dev_broker: ${DEV_BROKER}
         bootstrap_on_startup: ${BOOTSTRAP_ON_STARTUP}
@@ -359,4 +360,10 @@ parameters:
   displayname: Cluster Authentication Host
   name: CLUSTER_AUTH_HOST
   value: ""
+
+- description: Role to use for APB Sandboxes
+  displayname: Role to use for APB Sandboxes
+  name: SANDBOX_ROLE
+  value: "edit"
+
 ############################################################

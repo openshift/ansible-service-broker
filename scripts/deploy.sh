@@ -15,6 +15,7 @@ LAUNCH_APB_ON_BIND="false"
 OUTPUT_REQUEST="true"
 RECOVERY="true"
 REFRESH_INTERVAL="600s"
+SANDBOX_ROLE="edit"
 
 # load development variables
 asb::load_vars
@@ -38,7 +39,8 @@ VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p LAUNCH_APB_ON_BIND=${LAUNCH_APB_ON_BIND} \
   -p OUTPUT_REQUEST=${OUTPUT_REQUEST} \
   -p RECOVERY=${RECOVERY} \
-  -p REFRESH_INTERVAL=${REFRESH_INTERVAL}"
+  -p REFRESH_INTERVAL=${REFRESH_INTERVAL} \
+  -p SANDBOX_ROLE=${SANDBOX_ROLE}"
 
 # cleanup old deployment
 asb::delete_project ${PROJECT}

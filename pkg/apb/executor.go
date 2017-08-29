@@ -54,6 +54,7 @@ func ExecuteApb(
 	log.Debug("image:[ %s ]", spec.Image)
 	log.Debug("action:[ %s ]", action)
 	log.Debug("pullPolciy:[ %s ]", clusterConfig.PullPolicy)
+	log.Debug("role:[ %s ]", clusterConfig.SandboxRole)
 
 	// It's a critical error if a Namespace is not provided to the
 	// broker because its required to know where to execute the pods and
@@ -74,7 +75,7 @@ func ExecuteApb(
 	apbID := fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(log)
-	serviceAccountName, err := sam.CreateApbSandbox(ns, apbID)
+	serviceAccountName, err := sam.CreateApbSandbox(ns, apbID, clusterConfig.SandboxRole)
 
 	if err != nil {
 		log.Error(err.Error())

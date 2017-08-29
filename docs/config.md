@@ -1,33 +1,14 @@
 # Ansible Service Broker Configuration Examples
 
-## Production
+The behavior of the broker is largely dictated by the broker's configuration
+file loaded on startup and contains:
 
-The Production broker configuration is designed to be pointed at a trusted
-container distribution registry.
+- [Registry Configuration](#registry-configuration)
+- [DAO Configuration](#dao-configuration)
+- [Log Configuration](#log-configuration)
+- [OpenShift Configuration](#openshift-configuration)
+- [Broker Configuration](#broker-configuration)
 
-```
-registry:
-  - name: rhcc
-    url: http://rhcc.redhat.com/api
-    user: USER
-    pass: PASS
-```
-
-## Development
-
-The Developer configuration is the primarily used by developers working on the
-broker. Set the registry name to 'dev' and 'devbroker' field to 'true' to enable
-developer settings.
-
-```
-registry:
-  name: dev
-```
-
-```
-broker:
-  devbroker: true
-```
 ## Registry Configuration
 
 The Registry section will allow you to define the registries that the broker should look at
@@ -47,6 +28,35 @@ for APBs. All the registry config options are defined below
 | images        | The list of images to be used with OpenShift Registry.                                                                           |     N    |
 
 For filter please look at the [filtering documentation](filtering_apbs.md).
+
+### Production
+
+The Production broker configuration is designed to be pointed at a trusted
+container distribution registry.
+
+```
+registry:
+  - name: rhcc
+    url: http://rhcc.redhat.com/api
+    user: USER
+    pass: PASS
+```
+
+### Development
+
+The developer configuration is primarily used by developers working on the
+broker. Set the registry name to 'dev' and 'devbroker' field to 'true' to enable
+developer settings.
+
+```
+registry:
+  name: dev
+```
+
+```
+broker:
+  devbroker: true
+```
 
 ### Mock Registry
 Using a Mock registry is useful for reading local APB specs. Instead of going
@@ -113,7 +123,33 @@ registry:
     url: <rhcc url>
 ```
 
-## Broker Config
+## DAO Configuration
+
+| field  | description | Required |
+|--------|-------------|----------|
+| etcd_host | The url of the etcd host. | Y |
+| etcd_port | The port to use when communicating with `etcd_host` | Y |
+
+## Log Configuration
+
+| field  | description | Required |
+|--------|-------------|----------|
+| logfile | Where to write the broker's logs | Y |
+| stdout | Write logs to stdout | Y |
+| level | Level of the log output | Y |
+| color | Color the logs | Y |
+
+## OpenShift Configuration
+
+| field  | description | Required |
+|--------|-------------|----------|
+| host | OpenShift host  | N |
+| ca_file | Location of the certificate authority file | N |
+| bearer_token_file | Location of bearer token to be used | N |
+| image_pull_policy | When to pull the image | Y |
+| sandbox_role | Role to give to apb sandbox environment | Y |
+
+## Broker Configuration
 The broker config section will tell the broker what functionality should be enabled
 and disabled. It will also tell the broker where to find files on disk that will
 enable the full functionality.

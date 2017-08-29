@@ -57,6 +57,7 @@ func TestCreateConfig(t *testing.T) {
 	ft.AssertEqual(t, config.Openshift.CAFile, "", "")
 	ft.AssertEqual(t, config.Openshift.BearerTokenFile, "", "")
 	ft.AssertEqual(t, config.Openshift.PullPolicy, "IfNotPresent", "")
+	ft.AssertEqual(t, config.Openshift.SandboxRole, "edit", "")
 
 	ft.AssertTrue(t, config.Broker.BootstrapOnStartup, "mismatch bootstrap")
 	ft.AssertTrue(t, config.Broker.DevBroker, "mismatch dev")
@@ -72,14 +73,11 @@ func TestCreateConfig(t *testing.T) {
 	ft.AssertFalse(t, config.Broker.Auth[1].Enabled, "mismatch enable")
 }
 
-func TestValidateConfig(t *testing.T) {
-	config, err := CreateConfig("testdata/test-config.yaml")
+func TestAdminRole(t *testing.T) {
+	config, err := CreateConfig("testdata/test-config-admin.yaml")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	err = validateConfig(config)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	ft.AssertEqual(t, config.Openshift.SandboxRole, "admin", "")
 }

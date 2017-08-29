@@ -98,6 +98,7 @@ type ClusterConfig struct {
 	CAFile          string `yaml:"ca_file"`
 	BearerTokenFile string `yaml:"bearer_token_file"`
 	PullPolicy      string `yaml:"image_pull_policy"`
+	SandboxRole     string `yaml:"sandbox_role"`
 }
 
 const (
@@ -107,10 +108,6 @@ const (
 	StateSucceeded State = "succeeded"
 	// StateFailed - Failed job state
 	StateFailed State = "failed"
-
-	// ApbRole - role to be used.
-	// NOTE: Applied to APB ServiceAccount via RoleBinding, not ClusterRoleBinding
-	ApbRole = "edit"
 
 	// 5s x 7200 retries, 2 hours
 	apbWatchInterval     = 5
