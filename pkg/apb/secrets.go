@@ -105,9 +105,10 @@ func InitializeSecretsCache(config []SecretsConfig, log *logging.Logger) {
 // specs
 func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 	for _, spec := range inSpecs {
-		secrets.log.Debugf("Filtering spec %v", spec.FQName)
+		secrets.log.Debugf("Filtering secrets from spec %v", spec.FQName)
 		for _, secret := range GetSecrets(spec) {
 			secretKeys, err := getSecretKeys(secret)
+			secrets.log.Debugf("Found secret keys: %v", secretKeys)
 			if err != nil {
 				return nil, err
 			}
@@ -121,6 +122,7 @@ func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 func filterPlans(inPlans []Plan, secretKeys []string) []Plan {
 	newPlans := []Plan{}
 	for _, plan := range inPlans {
+		secrets.log.Debugf("Filtering secrets from plan %v", plan.Name)
 		plan.Parameters = filterParameters(plan.Parameters, secretKeys)
 		newPlans = append(newPlans, plan)
 	}
