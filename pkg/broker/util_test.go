@@ -159,7 +159,8 @@ func verifyFormDefinition(t *testing.T, planMetadata map[string]interface{}, pat
 	group, correctType := formDefnMetadata[2].(formItem)
 	ft.AssertTrue(t, correctType, strings.Join(path, ".")+" Form definition parameter group is of the wrong type")
 	ft.AssertNotNil(t, group, "Parameter group is empty")
-	ft.AssertEqual(t, group.Type, "fieldset")
+	ft.AssertEqual(t, group.Type, "fieldset", "Group form item type is incorrect")
+	ft.AssertEqual(t, group.Title, "User Information", "Group form item title is incorrect.")
 
 	groupedItems := group.Items
 	ft.AssertNotNil(t, groupedItems, "Group missing parameter items")
