@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.2
+Version: 1.0.3
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -313,6 +313,21 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Aug 29 2017 Jason Montleon <jmontleo@redhat.com> 1.0.3-1
+- 399 - APB Sandbox Role should be configurable (#403)
+  (david.j.zager@gmail.com)
+- 82 - add copyright headers to each file (#402) (jmrodri@gmail.com)
+- delete line (#406) (jmrodri@gmail.com)
+- make comments consistent '// ' (#405) (jmrodri@gmail.com)
+- ignore the broker only at the root (#404) (jmrodri@gmail.com)
+- 377 - The service name returned by asb is invalid (#380)
+  (Shawn.Hurley21@gmail.com)
+- Improve CONTRIBUTING guide (#389) (david.j.zager@gmail.com)
+- add unbind and deprovision checks (#384) (jmontleo@redhat.com)
+- Add proposal for logging changes (#381) (Shawn.Hurley21@gmail.com)
+- Fixed duplicate parameter after group. (#398) (cfc@chasenc.com)
+- Fix spelling in logs (#397) (david.j.zager@gmail.com)
+
 * Thu Aug 24 2017 Jason Montleon <jmontleo@redhat.com> 1.0.2-1
 - Reduce broker/apb sandbox permissions (#393) (david.j.zager@gmail.com)
 - Added UI form information to metadata fields for parsing by OpenShift (#386)
