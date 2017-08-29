@@ -87,21 +87,6 @@ if [ "$?" -ne 0 ]; then
   exit
 fi
 
-ASB_ROUTE=`oc get routes | grep ansible-service-broker | awk '{print $2}'`
-
-cat <<EOF | oc create -f -
-    apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: Broker
-    metadata:
-      name: ansible-service-broker
-    spec:
-      url: https://${ASB_ROUTE}
-      authInfo:
-        basicAuthSecret:
-          namespace: ansible-service-broker
-          name: asb-auth-secret
-EOF
-
 #
 # Then login as 'developer'/'developer' to WebUI
 # Create a project
