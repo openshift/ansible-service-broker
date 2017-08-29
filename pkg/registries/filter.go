@@ -21,6 +21,7 @@
 package registries
 
 import (
+	"fmt"
 	"regexp"
 	"sync"
 )
@@ -81,7 +82,8 @@ func compileRegexp(regexStrs []string) ([]*regexp.Regexp, []failedRegexp) {
 func (f *Filter) Run(totalList []string) ([]string, []string) {
 	filterMode := f.getFilterMode()
 	if filterMode == filterModeNone {
-		return totalList, nil
+		fmt.Printf("!!!!!!filter mode is none")
+		return nil, nil
 	}
 
 	whiteMatchSet, blackMatchSet := genMatchSets(

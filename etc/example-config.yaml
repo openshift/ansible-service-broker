@@ -13,6 +13,9 @@ registry:
     fail_on_error: true
     white_list:
       - "^legitimate.*-apb$"    
+      # will allow all the APBs to be included. You must have at least 1 white 
+      # list to retrieve APBs and this is the most permissive 
+      - ".*-apb$" 
     black_list:
       - "malicious.*-apb$"
       - "^specific-blacklist-apb$"
