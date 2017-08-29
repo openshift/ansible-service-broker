@@ -41,9 +41,24 @@ spec:
 
 ---
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: etcd
+  namespace: ansible-service-broker
+spec:
+  capacity:
+    storage: "10Gi"
+  accessModes:
+    - "ReadWriteOnce"
+  hostPath:
+    path: "/var/lib/etcd"
+
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: etcd
+  namespace: ansible-service-broker
 spec:
   accessModes:
     - ReadWriteOnce
@@ -66,51 +81,51 @@ spec:
     service: etcd
 
 ---
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: broker-config
-    namespace: ansible-service-broker
-    labels:
-      app: ansible-service-broker
-  data:
-    broker-config: |
-      registry:
-        - type: "{{ registry_type }}"
-          name: "{{ registry_name }}"
-          url: "{{ registry_url }}"
-          user: "{{ dockerhub_user_name }}"
-          pass: "{{ dockerhub_user_password }}"
-          org: "{{ dockerhub_org }}"
-          tag: "{{ tag }}"
-      dao:
-        etcd_host: 0.0.0.0
-        etcd_port: 2379
-      log:
-        logfile: /var/log/ansible-service-broker/asb.log
-        stdout: true
-        level: debug
-        color: true
-      openshift:
-        host: "{{ cluster_auth_host }}"
-        ca_file: "{{ ca_file }}"
-        bearer_token_file: "{{ bearer_token_file }}"
-        image_pull_policy: "{{ image_pull_policy }}"
-      broker:
-        dev_broker: {{ dev_broker }}
-        bootstrap_on_startup: {{ bootstrap_on_startup }}
-        refresh_interval: "{{ refresh_interval }}"
-        launch_apb_on_bind: {{ launch_apb_on_bind }}
-        output_request: {{ output_request }}
-        recovery: {{ recovery }}
-        ssl_cert_key: /etc/tls/private/tls.key
-        ssl_cert: /etc/tls/private/tls.crt
-        auth:
-          - type: basic
-            enabled: {{ enable_basic_auth }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: broker-config
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+data:
+  broker-config: |
+    registry:
+      - type: "{{ registry_type }}"
+        name: "{{ registry_name }}"
+        url: "{{ registry_url }}"
+        user: "{{ dockerhub_user_name }}"
+        pass: "{{ dockerhub_user_password }}"
+        org: "{{ dockerhub_org }}"
+        tag: "{{ tag }}"
+    dao:
+      etcd_host: 0.0.0.0
+      etcd_port: 2379
+    log:
+      logfile: /var/log/ansible-service-broker/asb.log
+      stdout: true
+      level: debug
+      color: true
+    openshift:
+      host: "{{ cluster_auth_host }}"
+      ca_file: "{{ ca_file }}"
+      bearer_token_file: "{{ bearer_token_file }}"
+      image_pull_policy: "{{ image_pull_policy }}"
+    broker:
+      dev_broker: {{ dev_broker }}
+      bootstrap_on_startup: {{ bootstrap_on_startup }}
+      refresh_interval: "{{ refresh_interval }}"
+      launch_apb_on_bind: {{ launch_apb_on_bind }}
+      output_request: {{ output_request }}
+      recovery: {{ recovery }}
+      ssl_cert_key: /etc/tls/private/tls.key
+      ssl_cert: /etc/tls/private/tls.crt
+      auth:
+        - type: basic
+          enabled: {{ enable_basic_auth }}
 
 ---
-apiversion: v1
+apiVersion: v1
 kind: Endpoints
 metadata:
   name: asb-1338
@@ -118,12 +133,11 @@ metadata:
   labels:
     app: ansible-service-broker
     service: asb
-spec:
-  to:
-    kind: Service
-    name: asb
-  port:
-    targetPort: port-1338
+subsets:
+  - addresses:
+      - ip: 172.17.0.1
+    ports:
+      - port: 1338
 
 ---
 apiVersion: extensions/v1beta1
@@ -154,6 +168,7 @@ spec:
               protocol: TCP
 
 ---
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: etcd

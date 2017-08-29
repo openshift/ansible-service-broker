@@ -1,0 +1,81 @@
+template_dest: /tmp/k8s-ansible-service-broker.yaml
+
+dockerhub_user_name: changeme
+dockerhub_user_password: changeme
+dockerhub_org: ansibleplaybookbundle
+
+asb_src_dir: /tmp/ansible-service-broker
+
+broker_image: "ansibleplaybookbundle/ansible-service-broker:latest"
+etcd_image: "quay.io/coreos/etcd:latest"
+
+#
+# Template defaults
+#
+
+# Path of the etcd binary
+etcd_path: /usr/local/bin/etcd
+
+# Configuration filepath for Ansible Service Broker
+broker_config: /etc/ansible-service-broker/config.yaml
+
+# SSL enabled: insecure="false", termination=Reencrypt
+# Insecure enabled: insecure="true", termination=edge
+# Run in insecure mode
+insecure: "false"
+termination: Reencrypt
+
+# APB Image Tag
+tag: latest
+
+# OpenShift info
+openshift_pass: admin
+openshift_user: admin
+openshift_target: kubernetes.default
+
+# Registry Info
+registry_type: dockerhub
+registry_name: dh
+registry_url: https://registry.hub.docker.com
+
+# Include Broker Development Endpoint
+dev_broker: "true"
+
+# Launch APB on bind
+launch_apb_on_bind: "false"
+
+# Will automatically bootstrap the broker on startup
+bootstrap_on_startup: "true"
+
+# Refresh the available broker images every interval of seconds
+refresh_interval: "600s"
+
+# Output broker requests to log
+output_request: "true"
+
+# Recover unfinshed jobs on restart
+recovery: "true"
+
+# APB ImagePullPolicy
+image_pull_policy: "IfNotPresent"
+
+# Will enable basic authentication
+enable_basic_auth: "true"
+
+############################################################
+# NOTE: These values MUST be base64 encoded.
+# http://red.ht/2wbrCYo states "The value associated with
+# keys in the data map must be base64 encoded."
+############################################################
+broker_pass: YWRtaW4=
+broker_user: YWRtaW4=
+
+############################################################
+# NOTE: Default behavior for these are going to use the kubernetes
+# InClusterConfig. These are typically overridden for running
+# the broker outside of a cluster. Under normal circumstances,
+# you probably want to leave these blank.
+############################################################
+ca_file: ""
+bearer_token_file: ""
+cluster_auth_host: ""
