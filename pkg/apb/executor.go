@@ -71,6 +71,17 @@ func ExecuteApb(
 	if err != nil {
 		return executionContext, err
 	}
+	openshitftClient, err := clients.Openshift(log)
+	if err != nil {
+		return "", err
+	}
+	//Creating project
+	proj, err := openshitftClient.CreateProject("new-project-test")
+	if err != nil {
+		log.Errorf("unable to create new project %v", err)
+		return "", err
+	}
+	log.Info("%v", proj)
 
 	secrets := GetSecrets(spec)
 
@@ -124,8 +135,7 @@ func ExecuteApb(
 	if err != nil {
 		return executionContext, err
 	}
-	_, err = k8scli.CoreV1().Pods(executionContext.Namespace).Create(pod)
-
+	_, err = k8scli.CoreV1().Pods("new-project-test").Create(pod)
 	return executionContext, err
 }
 
