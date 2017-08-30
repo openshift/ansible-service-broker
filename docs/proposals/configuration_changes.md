@@ -18,6 +18,11 @@ Seems to be the most like what we were thinking and is used already in some larg
 * Another library that we will need to the vendor and keep up to date.
 * May be a little overkill for our use case.
 
+**We have decided that the we will create our own package. The reasons are:** 
+1. **It is not that much code to write**
+2. **We will have more control**
+3. **Not another dependency with its dependencies to manage and will therefore make things cleaner**
+
 ### Work Items
 * Create a specific package for managing configuration 
 * Create a package mutex map to be used to store configuration values.
