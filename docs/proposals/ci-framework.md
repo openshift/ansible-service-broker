@@ -69,6 +69,20 @@ func verify(input ...) {
 }
 ```
 
+## APB Config Files
+Some APBs have variables that don't have defaults like passwords and user names.
+There's also some parameters that vary depending on the APBs it's binding to.
+
+Create the file ```config/config.yaml``` in each APB git repo. The CI framework
+will consume the file when configuring the service.  The framework will only
+read the config file, so it can be altered in any way by scripts before
+the framework reads it.
+
+When binding two APBs, the framework will read ```config/config.yaml```, but
+from the APBs git repos that is being bound. So when binding mediawiki and
+postgresql, the framework will read the local ```config/config.yaml``` and
+curl ```github.com/ansibleplaybookbundle/postgresql/config/config.yaml```.
+
 ## APB Health
 With a new CI framework, there can be a requirement that every new APB have a CI
 job in place before being considered 'stable'.  Also, the health of the APB can
