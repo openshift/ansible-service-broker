@@ -99,7 +99,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 					},
 				},
 				"roleRef": map[string]string{
-					"name": ApbRole,
+					"name": apbRole,
 				},
 			},
 		)
@@ -111,11 +111,11 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 		return "", err
 	}
 
-	s.log.Debug("Trying to create apb sandbox: [ %s ], with  %s permissions in namespace %s", apbID, ApbRole, executionContext.Namespace)
+	s.log.Debug("Trying to create apb sandbox: [ %s ], with  %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
 	// Create resources in cluster
 	s.createResources(rFilePath, executionContext.Namespace)
 
-	s.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, ApbRole, executionContext.Namespace)
+	s.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
 
 	return apbID, nil
 }
