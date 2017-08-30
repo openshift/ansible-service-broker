@@ -4,18 +4,21 @@ import os
 import jinja2
 import yaml
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 def render(tpl_path, content):
-    path, filename = os.path.split(tpl_path)
+    abs_path = os.path.join(dir_path, tpl_path)
+    path, filename = os.path.split(abs_path)
     return jinja2.Environment(
         loader=jinja2.FileSystemLoader(path or './')
     ).get_template(filename).render(content)
 
-with open('k8s-variables.yaml', 'r') as content_file:
+with open(os.path.join(dir_path, 'k8s-variables.yaml'), 'r') as content_file:
     data = content_file.read()
 
 content = yaml.load(data)
 
 result = render('./k8s-ansible-service-broker.yaml.j2', content)
 
-with open('k8s-ansible-service-broker.yaml', 'w') as rendered_file:
+with open(os.path.join(dir_path, 'k8s-ansible-service-broker.yaml'), 'w') as rendered_file:
     rendered_file.write(result)
