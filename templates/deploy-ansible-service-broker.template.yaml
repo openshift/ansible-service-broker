@@ -198,7 +198,28 @@ objects:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
 
+- apiVersion: servicecatalog.k8s.io/v1alpha1
+  kind: Broker
+  metadata:
+    name: ansible-service-broker
+  spec:
+    url: ${ASB_SCHEME}://asb-1338-ansible-service-broker.${ROUTING_SUFFIX}
+    authInfo:
+      basicAuthSecret:
+        namespace: ansible-service-broker
+        name: asb-auth-secret
+
 parameters:
+- description: Scheme for ansible service broker (http/https)
+  displayname: Scheme for ansible service broker (http/https)
+  name: ASB_SCHEME
+  value: "https"
+
+- description: Suffix for OpenShift routes
+  displayname: Suffix for OpenShift routes
+  name: ROUTING_SUFFIX
+  value: "172.17.0.1.nip.io"
+
 - description: Container Image to use for Ansible Service Broker in format of imagename:tag
   displayname: Ansible Service Broker Image
   name: BROKER_IMAGE

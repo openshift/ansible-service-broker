@@ -78,7 +78,6 @@ function local-env() {
     oc project default
     make-build-image
     make-deploy
-    oc create -f ./scripts/broker-ci/broker-resource.yaml
 }
 
 echo "========== Broker CI ==========="
