@@ -1,3 +1,9 @@
+#
+# Limitations With the Kubernetes template
+# ----------------------------------------
+# - ssl
+#
+
 ---
 apiVersion: v1
 kind: Namespace
@@ -27,14 +33,29 @@ roleRef:
 
 ---
 apiVersion: v1
+kind: Secret
+metadata:
+  name: asb-auth-secret
+  namespace: ansible-service-broker
+data:
+  username: "{{ broker_user }}"
+  password: "{{ broker_pass }}"
+
+---
+apiVersion: v1
 kind: Service
 metadata:
    name: asb
    namespace: ansible-service-broker
+   labels:
+     app: ansible-service-broker
+     service: asb
 spec:
   ports:
     - name: port-1338
       port: 1338
+      targetPort: 1338
+      protocol: TCP
   selector:
     app: ansible-service-broker
     service: asb
@@ -99,7 +120,7 @@ data:
         org: "{{ dockerhub_org }}"
         tag: "{{ tag }}"
     dao:
-      etcd_host: 0.0.0.0
+      etcd_host: etcd
       etcd_port: 2379
     log:
       logfile: /var/log/ansible-service-broker/asb.log
@@ -118,26 +139,11 @@ data:
       launch_apb_on_bind: {{ launch_apb_on_bind }}
       output_request: {{ output_request }}
       recovery: {{ recovery }}
-      ssl_cert_key: /etc/tls/private/tls.key
-      ssl_cert: /etc/tls/private/tls.crt
+      ssl_cert_key: ""
+      ssl_cert: ""
       auth:
         - type: basic
           enabled: {{ enable_basic_auth }}
-
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: asb-1338
-  namespace: ansible-service-broker
-  labels:
-    app: ansible-service-broker
-    service: asb
-subsets:
-  - addresses:
-      - ip: 172.17.0.1
-    ports:
-      - port: 1338
 
 ---
 apiVersion: extensions/v1beta1
@@ -165,7 +171,7 @@ spec:
           imagePullPolicy: IfNotPresent
           workingDir: /etcd
           args:
-            - ./etcd
+            - {{ etcd_path }}
             - --data-dir=/data
             - --listen-client-urls=http://0.0.0.0:2379
             - --advertise-client-urls=http://0.0.0.0:2379
@@ -211,18 +217,14 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/ansible-service-broker
-            - name: asb-tls
-              mountPath: /etc/tls/private
-            - name: asb-auth-volume
-              mountPath: /var/run/asb-auth
           ports:
             - containerPort: 1338
               protocol: TCP
           env:
           - name: BROKER_CONFIG
-            value: {{ broker_config }}
+            value: "{{ broker_config }}"
           - name: INSECURE
-            value: {{ insecure }}
+            value: "{{ insecure }}"
           resources: {}
           terminationMessagePath: /tmp/termination-log
       volumes:
@@ -232,9 +234,3 @@ spec:
             items:
             - key: broker-config
               path: config.yaml
-        - name: asb-tls
-          secret:
-            secretName: asb-tls
-        - name: asb-auth-volume
-          secret:
-            secretName: asb-auth-secret
