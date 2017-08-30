@@ -108,11 +108,10 @@ func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 		secrets.log.Debugf("Filtering secrets from spec %v", spec.FQName)
 		for _, secret := range GetSecrets(spec) {
 			secretKeys, err := getSecretKeys(secret)
-			secrets.log.Debugf("Found secret keys: %v", secretKeys)
 			if err != nil {
 				return nil, err
 			}
-			secrets.log.Debugf("Found secret with name %v", secret)
+			secrets.log.Debugf("Found secret keys: %v", secretKeys)
 			spec.Plans = filterPlans(spec.Plans, secretKeys)
 		}
 	}
@@ -159,8 +158,10 @@ func getSecretKeys(secretName string) ([]string, error) {
 
 	secretData, err := k8scli.CoreV1().Secrets("ansible-service-broker").Get(secretName, meta_v1.GetOptions{})
 	if err != nil {
-		return nil, err
+		secrets.log.Warningf("Unable to load secret '%s' from namespace 'ansible-service-broker'", secretName)
+		return []string{}, nil
 	}
+	secrets.log.Debugf("Found secret with name %v", secret)
 
 	ret := []string{}
 	for key := range secretData.Data {
