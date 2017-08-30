@@ -51,7 +51,7 @@ spec:
   accessModes:
     - "ReadWriteOnce"
   hostPath:
-    path: "/var/lib/etcd"
+    path: "/tmp/etcd"
 
 ---
 apiVersion: v1
@@ -143,34 +143,6 @@ subsets:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: asb
-  namespace: ansible-service-broker
-  labels:
-    app: ansible-service-broker
-    service: asb
-spec:
-  strategy:
-    type: Recreate
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: ansible-service-broker
-        service: asb
-    spec:
-      restartPolicy: Always
-      containers:
-        - image: "{{ broker_image }}"
-          name: asb
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 1338
-              protocol: TCP
-
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
   name: etcd
   namespace: ansible-service-broker
   labels:
@@ -210,3 +182,59 @@ spec:
         - name: etcd
           persistentVolumeClaim:
             claimName: etcd
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: asb
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+    service: asb
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ansible-service-broker
+        service: asb
+    spec:
+      serviceAccount: asb
+      restartPolicy: Always
+      containers:
+        - image: "{{ broker_image }}"
+          name: asb
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/ansible-service-broker
+            - name: asb-tls
+              mountPath: /etc/tls/private
+            - name: asb-auth-volume
+              mountPath: /var/run/asb-auth
+          ports:
+            - containerPort: 1338
+              protocol: TCP
+          env:
+          - name: BROKER_CONFIG
+            value: {{ broker_config }}
+          - name: INSECURE
+            value: {{ insecure }}
+          resources: {}
+          terminationMessagePath: /tmp/termination-log
+      volumes:
+        - name: config-volume
+          configMap:
+            name: broker-config
+            items:
+            - key: broker-config
+              path: config.yaml
+        - name: asb-tls
+          secret:
+            secretName: asb-tls
+        - name: asb-auth-volume
+          secret:
+            secretName: asb-auth-secret
