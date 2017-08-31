@@ -150,13 +150,7 @@ cp -r pkg src/github.com/openshift/ansible-service-broker
 
 %build
 export GOPATH=$(pwd):%{gopath}
-export LDFLAGS='-s -w'
-BUILDTAGS="seccomp selinux"
-%if ! 0%{?gobuild:1}
-%define gobuild() go build -ldflags "${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n')" -a -v -x %{**};
-%endif
-
-%gobuild -tags "$BUILDTAGS" ./cmd/broker
+go build -tags "seccomp selinux" -ldflags "-s -w" ./cmd/broker
 
 #Build selinux modules
 # create selinux-friendly version from VR and replace it inplace
