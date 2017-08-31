@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -111,6 +112,19 @@ func (o OpenshiftClient) CreateProject(name string) (result *Project, err error)
 	result = &Project{}
 	err = o.restClient.Post().
 		Resource("projects").
+		Body(body).
+		Do().
+		Into(result)
+	return
+}
+
+func (o OpenshiftClient) SubjectRulesReview(user, namespace string) (result *authorization.SubjectRulesReview, err error) {
+	body := &authorization.SubjectRulesReview{}
+	body.Spec.User = user
+	result = &authorization.SubjectRulesReview{}
+	err = o.restClient.Post().
+		Namespace(namespace).
+		Resource("subjectrulesreviews").
 		Body(body).
 		Do().
 		Into(result)
