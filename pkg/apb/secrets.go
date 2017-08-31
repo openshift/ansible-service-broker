@@ -161,7 +161,7 @@ func getSecretKeys(secretName string) ([]string, error) {
 		secrets.log.Warningf("Unable to load secret '%s' from namespace 'ansible-service-broker'", secretName)
 		return []string{}, nil
 	}
-	secrets.log.Debugf("Found secret with name %v", secret)
+	secrets.log.Debugf("Found secret with name %v", secretName)
 
 	ret := []string{}
 	for key := range secretData.Data {
