@@ -1,7 +1,9 @@
 package clients
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
@@ -11,10 +13,12 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/homedir"
+	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
 type OpenshiftClient struct {
-	restClient rest.Interface
+	restClient     rest.Interface
+	restClientAuth rest.Interface
 }
 
 type Project struct {
@@ -33,6 +37,41 @@ type ProjectSpec struct {
 
 type ProjectStatus struct {
 	Phase string `json:"phase,omitempty" protobuf:"bytes,1,opt,name=phase"`
+}
+type OptionalScopes []string
+
+func (t OptionalScopes) String() string {
+	return fmt.Sprintf("%v", []string(t))
+}
+
+// SubjectRulesReview is a resource you can create to determine which actions another user can perform in a namespace
+type SubjectRulesReview struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// Spec adds information about how to conduct the check
+	Spec SubjectRulesReviewSpec `json:"spec" protobuf:"bytes,1,opt,name=spec"`
+
+	// Status is completed by the server to tell which permissions you have
+	Status SubjectRulesReviewStatus `json:"status,omitempty" protobuf:"bytes,2,opt,name=status"`
+}
+
+// SubjectRulesReviewSpec adds information about how to conduct the check
+type SubjectRulesReviewSpec struct {
+	// User is optional.  At least one of User and Groups must be specified.
+	User string `json:"user" protobuf:"bytes,1,opt,name=user"`
+	// Groups is optional.  Groups is the list of groups to which the User belongs.  At least one of User and Groups must be specified.
+	Groups []string `json:"groups" protobuf:"bytes,2,rep,name=groups"`
+	// Scopes to use for the evaluation.  Empty means "use the unscoped (full) permissions of the user/groups".
+	Scopes []string `json:"scopes" protobuf:"bytes,3,opt,name=scopes"`
+}
+
+// SubjectRulesReviewStatus is contains the result of a rules check
+type SubjectRulesReviewStatus struct {
+	// Rules is the list of rules (no particular sort) that are allowed for the subject
+	Rules []rbac.PolicyRule `json:"rules" protobuf:"bytes,1,rep,name=rules"`
+	// EvaluationError can appear in combination with Rules.  It means some error happened during evaluation
+	// that may have prevented additional rules from being populated.
+	EvaluationError string `json:"evaluationError,omitempty" protobuf:"bytes,2,opt,name=evaluationError"`
 }
 
 // Openshift - Create a new openshift client if needed, returns reference
@@ -90,13 +129,33 @@ func newForConfig(c *rest.Config) (*OpenshiftClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &OpenshiftClient{client}, nil
+	if err := setConfigDefaultsAuth(&config); err != nil {
+		return nil, err
+	}
+	clientAuth, err := rest.RESTClientFor(&config)
+	if err != nil {
+		return nil, err
+	}
+	return &OpenshiftClient{restClient: client, restClientAuth: clientAuth}, nil
 }
 
 func setConfigDefaults(config *rest.Config) error {
 	gv := v1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/oapi"
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
+
+	if config.UserAgent == "" {
+		config.UserAgent = rest.DefaultKubernetesUserAgent()
+	}
+
+	return nil
+}
+
+func setConfigDefaultsAuth(config *rest.Config) error {
+	gv := v1.SchemeGroupVersion
+	config.GroupVersion = &gv
+	config.APIPath = "/apis/authorization.openshift.io"
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
 	if config.UserAgent == "" {
@@ -118,15 +177,37 @@ func (o OpenshiftClient) CreateProject(name string) (result *Project, err error)
 	return
 }
 
-func (o OpenshiftClient) SubjectRulesReview(user, namespace string) (result *authorization.SubjectRulesReview, err error) {
-	body := &authorization.SubjectRulesReview{}
-	body.Spec.User = user
-	result = &authorization.SubjectRulesReview{}
-	err = o.restClient.Post().
+func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging.Logger) (result *authorization.SubjectRulesReview, err error) {
+	body := &SubjectRulesReview{
+		Spec: SubjectRulesReviewSpec{
+			User: "admin",
+		},
+	}
+	body.Kind = "SubjectRulesReview"
+	body.APIVersion = "authorization.openshift.io/v1"
+	b, _ := json.Marshal(body)
+	r := &SubjectRulesReview{}
+	res, err := o.restClientAuth.Post().
 		Namespace(namespace).
 		Resource("subjectrulesreviews").
-		Body(body).
-		Do().
-		Into(result)
+		Body(b, log).
+		DoRaw()
+	err = json.Unmarshal(res, r)
+	if err != nil {
+		log.Errorf("error - %v\n unmarshall - %q", err, res)
+	}
+	result = &authorization.SubjectRulesReview{
+		Spec: authorization.SubjectRulesReviewSpec{
+			User:   r.Spec.User,
+			Groups: r.Spec.Groups,
+			Scopes: r.Spec.Scopes,
+		},
+		Status: authorization.SubjectRulesReviewStatus{
+			EvaluationError: r.Status.EvaluationError,
+			Rules:           authorization.Convert_rbac_PolicyRules_To_authorization_PolicyRules(r.Status.Rules),
+		},
+	}
+	result.Kind = r.Kind
+	result.APIVersion = r.APIVersion
 	return
 }

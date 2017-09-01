@@ -79,7 +79,6 @@ func Provision(
 	}
 
 	creds, err := ExtractCredentials(executionContext.PodName, executionContext.Namespace, log)
-
 	// We should not save credentials from an app that finds them and isn't
 	// bindable
 	if creds != nil && !instance.Spec.Bindable {

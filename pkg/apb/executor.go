@@ -30,6 +30,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 	"github.com/pborman/uuid"
 	"k8s.io/kubernetes/pkg/api/v1"
 )
@@ -56,7 +57,6 @@ func ExecuteApb(
 	log.Debug("action:[ %s ]", action)
 	log.Debug("pullPolciy:[ %s ]", clusterConfig.PullPolicy)
 	log.Debug("role:[ %s ]", clusterConfig.SandboxRole)
-
 	// It's a critical error if a Namespace is not provided to the
 	// broker because its required to know where to execute the pods and
 	// sandbox them based on that Namespace. Should fail fast and loud,
@@ -71,17 +71,11 @@ func ExecuteApb(
 	if err != nil {
 		return executionContext, err
 	}
+
 	openshitftClient, err := clients.Openshift(log)
 	if err != nil {
 		return "", err
 	}
-	//Creating project
-	proj, err := openshitftClient.CreateProject("new-project-test")
-	if err != nil {
-		log.Errorf("unable to create new project %v", err)
-		return "", err
-	}
-	log.Info("%v", proj)
 
 	secrets := GetSecrets(spec)
 
@@ -89,20 +83,58 @@ func ExecuteApb(
 		executionContext.Namespace = clusterConfig.Namespace
 		executionContext.Targets = append(executionContext.Targets, context.Namespace)
 	} else {
-		executionContext.Namespace = context.Namespace
+		executionContext.Namespace = "" //genName
+		executionContext.Targets = append(executionContext.Targets, context.Namespace)
+		//Creating project
+		proj, err := openshitftClient.CreateProject(executionContext.Namespace)
+		if err != nil {
+			log.Errorf("unable to create new project %v", err)
+			return "", err
+		}
 	}
+
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		return executionContext, err
+	}
+	/*
+	 * ---------------------------------------------------User Rule Review Refactor ----------
+	 */
+	//Determine if the calling user covers all of the permisions that that apb role has
+	//TODO: "admin" should be switched to the user from the header when that is available.
+	res, err := openshitftClient.SubjectRulesReview("admin", context.Namespace, log)
+	if err != nil {
+		log.Info("%v - unable to run subject rules review", err)
+		return "", err
+	}
+	k8sRole, err := k8scli.Rbac().ClusterRoles().Get(clusterConfig.SandboxRole, metav1.GetOptions{})
+	if err != nil {
+		log.Info("%v - unable to run subject rules review", err)
+		return "", err
+	}
+	cRole := &authorization.ClusterRole{}
+	err = authorization.Convert_rbac_ClusterRole_To_authorization_ClusterRole(k8sRole, cRole, nil)
+	if err != nil {
+		log.Info("%v - Unable to conver cluster role", err)
+		return "", err
+	}
+	covered, _ := authorization.Covers(res.Status.Rules, cRole.Rules)
+	log.Info("%v - Does admin cover cluster role ", covered)
+
+	/*
+	 * ---------------------------------------------------User Rule Review Refactor ----------
+	 */
+
+	log.Info("%v", proj)
 	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(log)
 	executionContext.ServiceAccount, err = sam.CreateApbSandbox(executionContext, clusterConfig.SandboxRole)
-
 	if err != nil {
 		log.Error(err.Error())
 		return executionContext, err
 	}
-
 	volumes, volumeMounts := buildVolumeSpecs(secrets)
-
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: executionContext.PodName,
@@ -131,10 +163,6 @@ func ExecuteApb(
 	}
 
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
-	k8scli, err := clients.Kubernetes(log)
-	if err != nil {
-		return executionContext, err
-	}
 	_, err = k8scli.CoreV1().Pods("new-project-test").Create(pod)
 	return executionContext, err
 }

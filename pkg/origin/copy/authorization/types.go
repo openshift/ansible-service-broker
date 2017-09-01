@@ -86,21 +86,21 @@ var RbacDiscoveryRule = rbac.PolicyRule{
 // about who the rule applies to or which namespace the rule applies to.
 type PolicyRule struct {
 	// Verbs is a list of Verbs that apply to ALL the ResourceKinds and AttributeRestrictions contained in this rule.  VerbAll represents all kinds.
-	Verbs sets.String
+	Verbs sets.String `json:"verbs"`
 	// AttributeRestrictions will vary depending on what the Authorizer/AuthorizationAttributeBuilder pair supports.
 	// If the Authorizer does not recognize how to handle the AttributeRestrictions, the Authorizer should report an error.
-	AttributeRestrictions kruntime.Object
+	AttributeRestrictions kruntime.Object `json:"attributeRestrictions"`
 	// APIGroups is the name of the APIGroup that contains the resources.  If this field is empty, then both kubernetes and origin API groups are assumed.
 	// That means that if an action is requested against one of the enumerated resources in either the kubernetes or the origin API group, the request
 	// will be allowed
-	APIGroups []string
+	APIGroups []string `json:"apiGroups"`
 	// Resources is a list of resources this rule applies to.  ResourceAll represents all resources.
-	Resources sets.String
+	Resources sets.String `json:"resources"`
 	// ResourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed.
-	ResourceNames sets.String
+	ResourceNames sets.String `json:"resourceNames"`
 	// NonResourceURLs is a set of partial urls that a user should have access to.  *s are allowed, but only as the full, final step in the path
 	// If an action is not a resource API request, then the URL is split on '/' and is checked against the NonResourceURLs to look for a match.
-	NonResourceURLs sets.String
+	NonResourceURLs sets.String `json:"nonResourceURLS"`
 }
 
 // IsPersonalSubjectAccessReview is a marker for PolicyRule.AttributeRestrictions that denotes that subjectaccessreviews on self should be allowed
@@ -208,29 +208,29 @@ type SubjectRulesReview struct {
 	metav1.TypeMeta
 
 	// Spec adds information about how to conduct the check
-	Spec SubjectRulesReviewSpec
+	Spec SubjectRulesReviewSpec `json:"spec"`
 
 	// Status is completed by the server to tell which permissions you have
-	Status SubjectRulesReviewStatus
+	Status SubjectRulesReviewStatus `json:"status"`
 }
 
 // SubjectRulesReviewSpec adds information about how to conduct the check
 type SubjectRulesReviewSpec struct {
 	// User is optional.  At least one of User and Groups must be specified.
-	User string
+	User string `json:"user"`
 	// Groups is optional.  Groups is the list of groups to which the User belongs.  At least one of User and Groups must be specified.
-	Groups []string
+	Groups []string `json:"groups"`
 	// Scopes to use for the evaluation.  Empty means "use the unscoped (full) permissions of the user/groups".
-	Scopes []string
+	Scopes []string `json:"scopes"`
 }
 
 // SubjectRulesReviewStatus is contains the result of a rules check
 type SubjectRulesReviewStatus struct {
 	// Rules is the list of rules (no particular sort) that are allowed for the subject
-	Rules []PolicyRule
+	Rules []PolicyRule `json:"rules"`
 	// EvaluationError can appear in combination with Rules.  It means some error happened during evaluation
 	// that may have prevented additional rules from being populated.
-	EvaluationError string
+	EvaluationError string `json:"evaluation_error"`
 }
 
 // ResourceAccessReviewResponse describes who can perform the action
