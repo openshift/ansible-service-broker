@@ -42,11 +42,12 @@ func ExecuteApb(
 	context *Context,
 	p *Parameters,
 	log *logging.Logger,
-) (string, error) {
+) (ExecutionContext, error) {
+	executionContext := ExecutionContext{}
 	extraVars, err := createExtraVars(context, p)
 
 	if err != nil {
-		return "", err
+		return executionContext, err
 	}
 
 	log.Debug("ExecutingApb:")
@@ -63,28 +64,37 @@ func ExecuteApb(
 	if context.Namespace == "" {
 		errStr := "Namespace not found within request context. Cannot perform requested " + action
 		log.Error(errStr)
-		return "", errors.New(errStr)
+		return executionContext, errors.New(errStr)
 	}
 
 	pullPolicy, err := checkPullPolicy(clusterConfig.PullPolicy)
 	if err != nil {
-		return "", err
+		return executionContext, err
 	}
 
-	ns := context.Namespace
-	apbID := fmt.Sprintf("apb-%s", uuid.New())
+	secrets := GetSecrets(spec)
+
+	if len(secrets) > 0 {
+		executionContext.Namespace = clusterConfig.Namespace
+		executionContext.Targets = append(executionContext.Targets, context.Namespace)
+	} else {
+		executionContext.Namespace = context.Namespace
+	}
+	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(log)
-	serviceAccountName, err := sam.CreateApbSandbox(ns, apbID, clusterConfig.SandboxRole)
+	executionContext.ServiceAccount, err = sam.CreateApbSandbox(executionContext, clusterConfig.SandboxRole)
 
 	if err != nil {
 		log.Error(err.Error())
-		return apbID, err
+		return executionContext, err
 	}
+
+	volumes, volumeMounts := buildVolumeSpecs(secrets)
 
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: apbID,
+			Name: executionContext.PodName,
 			Labels: map[string]string{
 				"apb-fqname": spec.FQName,
 			},
@@ -100,20 +110,50 @@ func ExecuteApb(
 						extraVars,
 					},
 					ImagePullPolicy: pullPolicy,
+					VolumeMounts:    volumeMounts,
 				},
 			},
 			RestartPolicy:      v1.RestartPolicyNever,
-			ServiceAccountName: serviceAccountName,
+			ServiceAccountName: executionContext.ServiceAccount,
+			Volumes:            volumes,
 		},
 	}
 
-	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, ns))
+	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
 	k8scli, err := clients.Kubernetes(log)
 	if err != nil {
-		return apbID, err
+		return executionContext, err
 	}
-	_, err = k8scli.CoreV1().Pods(ns).Create(pod)
-	return apbID, err
+	_, err = k8scli.CoreV1().Pods(executionContext.Namespace).Create(pod)
+
+	return executionContext, err
+}
+
+func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {
+	var optional bool
+	var mountName string
+	volumes := []v1.Volume{}
+	volumeMounts := []v1.VolumeMount{}
+
+	for _, secret := range secrets {
+		mountName = "apb-" + secret
+		volumes = append(volumes, v1.Volume{
+			Name: mountName,
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: secret,
+					Optional:   &optional,
+					// Eventually, we can include: Items: []v1.KeyToPath here to specify specific keys in the secret
+				},
+			},
+		})
+		volumeMounts = append(volumeMounts, v1.VolumeMount{
+			Name:      mountName,
+			MountPath: "/etc/apb-secrets/" + mountName,
+			ReadOnly:  true,
+		})
+	}
+	return volumes, volumeMounts
 }
 
 // TODO: Instead of putting namespace directly as a parameter, we should create a dictionary

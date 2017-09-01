@@ -63,14 +63,11 @@ func NewProvisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.Clu
 // Run - run the provision job.
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
-	sm := apb.NewServiceAccountManager(p.log)
 
 	if err != nil {
 		p.log.Error("broker::Provision error occurred.")
 		p.log.Errorf("%s", err.Error())
 
-		p.log.Error("Attempting to destroy APB sandbox if it has been created")
-		sm.DestroyApbSandbox(podName, p.serviceInstance.Context.Namespace)
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
@@ -78,9 +75,6 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
-
-	p.log.Info("Destroying APB sandbox...")
-	sm.DestroyApbSandbox(podName, p.serviceInstance.Context.Namespace)
 
 	// send creds
 	jsonmsg, err := json.Marshal(extCreds)

@@ -32,6 +32,7 @@ import (
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -152,6 +153,7 @@ func CreateApp() App {
 	}
 	app.log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
+	apb.InitializeSecretsCache(app.config.Secrets, app.log.Logger)
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
 		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker,

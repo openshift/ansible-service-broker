@@ -99,6 +99,7 @@ type ClusterConfig struct {
 	BearerTokenFile string `yaml:"bearer_token_file"`
 	PullPolicy      string `yaml:"image_pull_policy"`
 	SandboxRole     string `yaml:"sandbox_role"`
+	Namespace       string `yaml:"namespace"`
 }
 
 const (
@@ -217,4 +218,13 @@ func DumpJSON(obj interface{}) (string, error) {
 type RecoverStatus struct {
 	InstanceID uuid.UUID `json:"id"`
 	State      JobState  `json:"state"`
+}
+
+// ExecutionContext - Contains the information necessary to track and clean up
+// an APB run
+type ExecutionContext struct {
+	PodName        string
+	Namespace      string
+	ServiceAccount string
+	Targets        []string
 }

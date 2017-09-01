@@ -30,6 +30,7 @@ openshift:
   bearer_token_file: ""
   image_pull_policy: IfNotPresent
   sandbox_role: "edit"
+  namespace: openshift-ansible-service-broker
 broker:
   bootstrap_on_startup: true
   dev_broker: true
@@ -43,3 +44,7 @@ broker:
       enabled: true
     - type: oauth
       enabled: false
+secrets:
+  - title: Best secret
+    apb_name: test
+    secret: test_secret

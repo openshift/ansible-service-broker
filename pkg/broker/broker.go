@@ -252,6 +252,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
+	apb.AddSecrets(specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
@@ -403,6 +404,14 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 
 	if specs, err = a.dao.BatchGetSpecs(dir); err != nil {
 		a.log.Error("Something went real bad trying to retrieve batch specs...")
+		return nil, err
+	}
+
+	a.log.Debugf("Filtering secret parameters out of specs...")
+	specs, err = apb.FilterSecrets(specs)
+	if err != nil {
+		// TODO: Should we blow up or warn and continue?
+		a.log.Errorf("Something went real bad trying to load secrets %v", err)
 		return nil, err
 	}
 
@@ -567,17 +576,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
-		podName, extCreds, err := apb.Provision(serviceInstance, a.clusterConfig, a.log)
-
-		sm := apb.NewServiceAccountManager(a.log)
-		a.log.Info("Destroying APB sandbox...")
-		sm.DestroyApbSandbox(podName, context.Namespace)
-		if err != nil {
-			a.log.Error("broker::Provision error occurred.")
-			a.log.Error("%s", err.Error())
-			return nil, err
-		}
-
+		_, extCreds, err := apb.Provision(serviceInstance, a.clusterConfig, a.log)
 		if extCreds != nil {
 			a.log.Debug("broker::Provision, got ExtractedCredentials!")
 			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
@@ -747,15 +746,10 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	// NOTE: We are currently disabling running an APB on bind via 'LaunchApbOnBind'
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
 	// Currently, the 'launchapbonbind' is set to false in the 'config' ConfigMap
-	var podName string
 	var bindExtCreds *apb.ExtractedCredentials
 	if a.brokerConfig.LaunchApbOnBind {
 		a.log.Info("Broker configured to run APB bind")
-		podName, bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
-
-		sm := apb.NewServiceAccountManager(a.log)
-		a.log.Info("Destroying APB sandbox...")
-		sm.DestroyApbSandbox(podName, instance.Context.Namespace)
+		_, bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
 
 		if err != nil {
 			return nil, err
@@ -898,6 +892,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err
 	}
+	apb.AddSecretsFor(&spec)
 	service := SpecToService(&spec)
 	return &CatalogResponse{Services: []Service{service}}, nil
 }

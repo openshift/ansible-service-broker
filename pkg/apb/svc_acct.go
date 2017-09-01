@@ -47,19 +47,19 @@ func NewServiceAccountManager(log *logging.Logger) ServiceAccountManager {
 // Returns service account name to be used as a handle for destroying
 // the sandbox at the conclusion of running the apb
 func (s *ServiceAccountManager) CreateApbSandbox(
-	namespace string,
-	apbID string,
+	executionContext ExecutionContext,
 	apbRole string,
 ) (string, error) {
-	svcAccountName := apbID
-	roleBindingName := apbID
+	apbID := executionContext.PodName
+	svcAccountName := executionContext.PodName
+	roleBindingName := executionContext.PodName
 
 	svcAcctM := map[string]interface{}{
 		"apiVersion": "v1",
 		"kind":       "ServiceAccount",
 		"metadata": map[string]string{
-			"name":      apbID,
-			"namespace": namespace,
+			"name":      svcAccountName,
+			"namespace": executionContext.Namespace,
 		},
 	}
 
@@ -68,37 +68,61 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 		"kind":       "RoleBinding",
 		"metadata": map[string]string{
 			"name":      roleBindingName,
-			"namespace": namespace,
+			"namespace": executionContext.Namespace,
 		},
 		"subjects": []map[string]string{
 			map[string]string{
 				"kind":      "ServiceAccount",
 				"name":      svcAccountName,
-				"namespace": namespace,
+				"namespace": executionContext.Namespace,
 			},
 		},
 		"roleRef": map[string]string{
 			"name": strings.ToLower(apbRole),
 		},
 	}
+	targetRoleBindingsM := []map[string]interface{}{}
+	for _, target := range executionContext.Targets {
+		targetRoleBindingsM = append(targetRoleBindingsM,
+			map[string]interface{}{
+				"apiVersion": "v1",
+				"kind":       "RoleBinding",
+				"metadata": map[string]string{
+					"name":      roleBindingName,
+					"namespace": target,
+				},
+				"subjects": []map[string]string{
+					map[string]string{
+						"kind":      "ServiceAccount",
+						"name":      svcAccountName,
+						"namespace": executionContext.Namespace,
+					},
+				},
+				"roleRef": map[string]string{
+					"name": apbRole,
+				},
+			},
+		)
+	}
 
 	s.createResourceDir()
-	rFilePath, err := s.writeResourceFile(apbID, &svcAcctM, &roleBindingM)
+	rFilePath, err := s.writeResourceFile(apbID, &svcAcctM, &roleBindingM, &targetRoleBindingsM)
 	if err != nil {
 		return "", err
 	}
 
+	s.log.Debug("Trying to create apb sandbox: [ %s ], with  %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
 	// Create resources in cluster
-	s.createResources(rFilePath, namespace)
+	s.createResources(rFilePath, executionContext.Namespace)
 
-	s.log.Info("Successfully created apb sandbox: [ %s ]", apbID)
+	s.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
 
 	return apbID, nil
 }
 
 func (s *ServiceAccountManager) createResources(rFilePath string, namespace string) error {
 	s.log.Debug("Creating resources from file at path: %s", rFilePath)
-	output, err := runtime.RunCommand("oc", "create", "-f", rFilePath, "--namespace="+namespace)
+	output, err := runtime.RunCommand("oc", "create", "-f", rFilePath)
 	// TODO: Parse output somehow to validate things got created?
 	if err != nil {
 		s.log.Error("Something went wrong trying to create resources in cluster")
@@ -114,7 +138,7 @@ func (s *ServiceAccountManager) createResources(rFilePath string, namespace stri
 }
 
 func (s *ServiceAccountManager) writeResourceFile(handle string,
-	svcAcctM *map[string]interface{}, roleBindingM *map[string]interface{},
+	svcAcctM *map[string]interface{}, roleBindingM *map[string]interface{}, targetRoleBindingsM *[]map[string]interface{},
 ) (string, error) {
 	// Create file if doesn't already exist
 	filePath, err := s.createFile(handle)
@@ -148,6 +172,17 @@ func (s *ServiceAccountManager) writeResourceFile(handle string,
 		return "", err
 	}
 	file.WriteString(string(roleBindingY))
+
+	for _, bindingM := range *targetRoleBindingsM {
+		targetRoleBindingY, err := yaml.Marshal(bindingM)
+		if err != nil {
+			s.log.Error("Something went wrong marshalling role binding to yaml")
+			s.log.Error(err.Error())
+			return "", err
+		}
+		file.WriteString("---\n")
+		file.WriteString(string(targetRoleBindingY))
+	}
 
 	s.log.Info("Successfully wrote resources to %s", filePath)
 	return filePath, nil
@@ -184,15 +219,16 @@ func (s *ServiceAccountManager) createFile(handle string) (string, error) {
 }
 
 // DestroyApbSandbox - Destroys the apb sandbox
-func (s *ServiceAccountManager) DestroyApbSandbox(handle string, namespace string) error {
-	if handle == "" {
+func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext) error {
+	s.log.Info("Destroying APB sandbox...")
+	if executionContext.PodName == "" {
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return nil
 	}
 
-	s.log.Debug("Deleting serviceaccount %s, namespace %s", handle, namespace)
+	s.log.Debug("Deleting serviceaccount %s, namespace %s", executionContext.PodName, executionContext.Namespace)
 	output, err := runtime.RunCommand(
-		"oc", "delete", "serviceaccount", handle, "--namespace="+namespace,
+		"oc", "delete", "serviceaccount", executionContext.PodName, "--namespace="+executionContext.Namespace,
 	)
 	if err != nil {
 		s.log.Error("Something went wrong trying to destroy the serviceaccount!")
@@ -201,13 +237,13 @@ func (s *ServiceAccountManager) DestroyApbSandbox(handle string, namespace strin
 		s.log.Error(string(output))
 		return err
 	}
-	s.log.Debug("Successfully deleted serviceaccount %s, namespace %s", handle, namespace)
+	s.log.Debug("Successfully deleted serviceaccount %s, namespace %s", executionContext.PodName, executionContext.Namespace)
 	s.log.Debug("oc delete output:")
 	s.log.Debug(string(output))
 
-	s.log.Debug("Deleting rolebinding %s, namespace %s", handle, namespace)
+	s.log.Debugf("Deleting rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
 	output, err = runtime.RunCommand(
-		"oc", "delete", "rolebinding", handle, "--namespace="+namespace,
+		"oc", "delete", "rolebinding", executionContext.PodName, "--namespace="+executionContext.Namespace,
 	)
 	if err != nil {
 		s.log.Error("Something went wrong trying to destroy the rolebinding!")
@@ -216,14 +252,32 @@ func (s *ServiceAccountManager) DestroyApbSandbox(handle string, namespace strin
 		s.log.Error(string(output))
 		return err
 	}
-	s.log.Debug("Successfully deleted rolebinding %s, namespace %s", handle, namespace)
+	s.log.Debug("Successfully deleted rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
 	s.log.Debug("oc delete output:")
 	s.log.Debug(string(output))
+
+	for _, target := range executionContext.Targets {
+		s.log.Debugf("Deleting rolebinding %s, namespace %s", executionContext.PodName, target)
+		output, err = runtime.RunCommand(
+			"oc", "delete", "rolebinding", executionContext.PodName, "--namespace="+target,
+		)
+		if err != nil {
+			s.log.Error("Something went wrong trying to destroy the rolebinding!")
+			s.log.Error(err.Error())
+			s.log.Error("oc delete output:")
+			s.log.Error(string(output))
+			return err
+		}
+		s.log.Debug("Successfully deleted rolebinding %s, namespace %s", executionContext.PodName, target)
+		s.log.Debug("oc delete output:")
+		s.log.Debug(string(output))
+
+	}
 
 	// If file doesn't exist, ignore
 	// "If there is an error, it will be of type *PathError"
 	// We don't care, because it's gone
-	os.Remove(filePathFromHandle(handle))
+	os.Remove(filePathFromHandle(executionContext.PodName))
 
 	return nil
 }
