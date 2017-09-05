@@ -217,6 +217,8 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/ansible-service-broker
+            - name: asb-auth-volume
+              mountPath: /var/run/asb-auth
           ports:
             - containerPort: 1338
               protocol: TCP
@@ -234,3 +236,6 @@ spec:
             items:
             - key: broker-config
               path: config.yaml
+        - name: asb-auth-volume
+          secret:
+            secretName: asb-auth-secret

@@ -22,7 +22,7 @@ broker_config: /etc/ansible-service-broker/config.yaml
 # SSL enabled: insecure="false", termination=Reencrypt
 # Insecure enabled: insecure="true", termination=edge
 # Run in insecure mode
-insecure: "false"
+insecure: "true"
 termination: Reencrypt
 
 # APB Image Tag
