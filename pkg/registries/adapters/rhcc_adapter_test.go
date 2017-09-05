@@ -30,6 +30,7 @@ import (
 
 	logging "github.com/op/go-logging"
 
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
@@ -144,8 +145,12 @@ func TestGetImages(t *testing.T) {
 	if err != nil {
 		t.Fatal("ERROR: ", err)
 	}
-	config := Configuration{URL: u}
-	adapter := RHCCAdapter{Config: config, Log: log}
+	fmt.Printf("%v", u.String())
+	c, err := config.CreateConfig("testdata/rhcc_adapter_config.yaml")
+	if err != nil {
+		t.Fatal("ERROR: ", err)
+	}
+	adapter := RHCCAdapter{Config: c, Log: log, url: u}
 	imageNames, err := adapter.GetImageNames()
 	ft.AssertEqual(t, len(imageNames), 3)
 	ft.AssertNotNil(t, imageNames)

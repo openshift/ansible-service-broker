@@ -81,7 +81,10 @@ func CreateApp() App {
 		os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
-	fmt.Printf("%#v", app.config)
+	if app.config.Empty() {
+		os.Stderr.WriteString("ERROR: No values in config file\n")
+		os.Exit(1)
+	}
 
 	if app.log, err = NewLog(app.config); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to initialize logger\n")
@@ -97,38 +100,20 @@ func CreateApp() App {
 	}
 
 	app.log.Debug("Connecting Dao")
-	app.dao, err = dao.NewDao(app.config.GetSubConfig("dao"), app.log.Logger)
+	app.dao, err = dao.NewDao(app.config, app.log.Logger)
 
-	k8scli, err := clients.Kubernetes(app.log.Logger)
+	app.log.Debug("Validating Kubernetes")
+	err = validateKubernetesClient(app.log.Logger)
 	if err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
-
-	restcli := k8scli.CoreV1().RESTClient()
-	body, err := restcli.Get().AbsPath("/version").Do().Raw()
-	if err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
-	switch {
-	case err == nil:
-		var kubeServerInfo kubeversiontypes.Info
-		err = json.Unmarshal(body, &kubeServerInfo)
-		if err != nil && len(body) > 0 {
-			app.log.Error(err.Error())
-			os.Exit(1)
-		}
-		app.log.Info("Kubernetes version: %v", kubeServerInfo)
-	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
-	default:
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
 
 	app.log.Debug("Connecting Registry")
 	for name := range app.config.GetSubConfig("registry").ToMap() {
-		reg, err := registries.NewRegistry(app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)), app.log.Logger)
+		reg, err := registries.NewRegistry(
+			app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)),
+			app.log.Logger)
 		if err != nil {
 			app.log.Errorf(
 				"Failed to initialize %v Registry err - %v \n", name, err)
@@ -282,5 +267,28 @@ func initClients(log *logging.Logger, c *config.Config) error {
 		return err
 	}
 
+	return nil
+}
+
+// Validate the kubernetes config
+func validateKubernetesClient(log *logging.Logger) error {
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		return err
+	}
+	restcli := k8scli.CoreV1().RESTClient()
+	body, err := restcli.Get().AbsPath("/version").Do().Raw()
+	switch {
+	case err == nil:
+		var kubeServerInfo kubeversiontypes.Info
+		err = json.Unmarshal(body, &kubeServerInfo)
+		if err != nil && len(body) > 0 {
+			return err
+		}
+		log.Info("Kubernetes version: %v", kubeServerInfo)
+	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
+	default:
+		return err
+	}
 	return nil
 }

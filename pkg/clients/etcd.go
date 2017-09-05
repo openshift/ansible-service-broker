@@ -95,9 +95,11 @@ func Etcd(config *config.Config, log *logging.Logger) (etcd.Client, error) {
 }
 
 func newEtcd(config *config.Config, log *logging.Logger) (etcd.Client, error) {
-	// TODO: Config validation
 	host := config.GetString("dao.etcd_host")
 	port := config.GetString("dao.etcd_port")
+	if host == "" {
+		return nil, errors.New("invalid etcd host")
+	}
 	endpoints := []string{etcdEndpoint(host, port)}
 
 	log.Info("== ETCD CX ==")

@@ -148,12 +148,13 @@ func setUp() Registry {
 		Called: map[string]bool{},
 	}
 	filter := Filter{}
-	c := Config{}
 	log := &logging.Logger{}
-	r = Registry{config: c,
-		adapter: a,
-		log:     log,
-		filter:  filter}
+	r = Registry{
+		adapter:     a,
+		log:         log,
+		filter:      filter,
+		Name:        "test-registry",
+		FailOnError: false}
 	return r
 }
 
@@ -165,9 +166,8 @@ func setUpNoPlans() Registry {
 		Called: map[string]bool{},
 	}
 	filter := Filter{}
-	c := Config{}
 	log := &logging.Logger{}
-	r = Registry{config: c,
+	r = Registry{
 		adapter: a,
 		log:     log,
 		filter:  filter}
@@ -200,7 +200,7 @@ func TestRegistryLoadSpecsNoPlans(t *testing.T) {
 
 func TestFail(t *testing.T) {
 	r := setUp()
-	r.config.Fail = true
+	r.FailOnError = true
 
 	fail := r.Fail(fmt.Errorf("new error"))
 	ft.AssertTrue(t, fail)
@@ -208,7 +208,7 @@ func TestFail(t *testing.T) {
 
 func TestFailIsFalse(t *testing.T) {
 	r := setUp()
-	r.config.Fail = false
+	r.FailOnError = false
 
 	fail := r.Fail(fmt.Errorf("new error"))
 	ft.AssertFalse(t, fail)

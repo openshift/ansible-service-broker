@@ -30,6 +30,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 )
 
 const dockerhubName = "docker.io"
@@ -38,8 +39,10 @@ const dockerHubRepoImages = "https://hub.docker.com/v2/repositories/%v/?page_siz
 const dockerHubManifestURL = "https://registry.hub.docker.com/v2/%v/manifests/%v"
 
 // DockerHubAdapter - Docker Hub Adapter
+// Configuration will need to have an org, dockerhub user and password
+// Takes an optional tag value.
 type DockerHubAdapter struct {
-	Config Configuration
+	Config *config.Config
 	Log    *logging.Logger
 }
 
@@ -65,7 +68,7 @@ func (r DockerHubAdapter) RegistryName() string {
 func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	r.Log.Debug("DockerHubAdapter::GetImages")
 	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
-	r.Log.Debug("Loading image list for org: [ %s ]", r.Config.Org)
+	r.Log.Debug("Loading image list for org: [ %s ]", r.Config.GetString("org"))
 
 	token, err := r.getDockerHubToken()
 	if err != nil {
@@ -78,8 +81,8 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	defer cancelFunc()
 
 	// Intial call to getNextImages this will fan out to retrieve all the values.
-	imageResp, err := r.getNextImages(ctx, r.Config.Org, token,
-		fmt.Sprintf(dockerHubRepoImages, r.Config.Org),
+	imageResp, err := r.getNextImages(ctx, r.Config.GetString("org"), token,
+		fmt.Sprintf(dockerHubRepoImages, r.Config.GetString("org")),
 		channel, cancelFunc)
 	// if there was an issue with the first call, return the error
 	if err != nil {
@@ -136,8 +139,8 @@ func (r DockerHubAdapter) getDockerHubToken() (string, error) {
 		Token string `json:"token"`
 	}
 	data := Payload{
-		Username: r.Config.User,
-		Password: r.Config.Pass,
+		Username: r.Config.GetString("user"),
+		Password: r.Config.GetString("pass"),
 	}
 	payloadBytes, err := json.Marshal(data)
 	if err != nil {
@@ -225,10 +228,11 @@ func (r DockerHubAdapter) getNextImages(ctx context.Context,
 }
 
 func (r DockerHubAdapter) loadSpec(imageName string) (*apb.Spec, error) {
-	if r.Config.Tag == "" {
-		r.Config.Tag = "latest"
+	tag := r.Config.GetString("tag")
+	if tag == "" {
+		tag = "latest"
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(dockerHubManifestURL, imageName, r.Config.Tag), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(dockerHubManifestURL, imageName, tag), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +241,7 @@ func (r DockerHubAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-	return imageToSpec(r.Log, req, r.Config.Tag)
+	return imageToSpec(r.Log, req, tag)
 }
 
 func getBearerToken(imageName string) (string, error) {

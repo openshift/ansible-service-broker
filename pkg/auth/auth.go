@@ -32,12 +32,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/config"
 )
 
-// Config - Configuration for authentication
-type Config struct {
-	Type    string `yaml:"type"`
-	Enabled bool   `yaml:"enabled"`
-}
-
 // Provider - an auth provider is an adapter that provides the principal
 // object required for authentication. This can be a User, a System, or some
 // other entity.
