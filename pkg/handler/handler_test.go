@@ -262,7 +262,6 @@ func TestDevHandlerDoesHaveAPBSpecsDeleteRoute(t *testing.T) {
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
-/*
 func TestBootstrap(t *testing.T) {
 	testhandler, w, r := buildBootstrapHandler(nil)
 	testhandler.bootstrap(w, r, nil)
@@ -426,7 +425,7 @@ func TestLastOperation(t *testing.T) {
 	ft.AssertEqual(t, w.Code, 200, "lastoperation should've returned 200")
 	ft.AssertState(t, w.Body, "in progress")
 }
-*/
+
 // utility functions
 
 func buildBootstrapHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
