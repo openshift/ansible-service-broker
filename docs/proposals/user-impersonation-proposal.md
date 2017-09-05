@@ -6,7 +6,7 @@ We will need to add some security settings to help administrators lock down the 
 ## Problem Description
 The problem is that currently privilege escalation is a concern for users who have access to the broker. We want to give the cluster admin who is setting up the service broker to have assurances that the broker can have some safety assurances.  
 
-## <Implementation Details>
+## Implementation Details
 We will need to do three things to satisfy the requirements.
 1. Check if the user has the permissions to cover the cluster role to be used.
 2. If the cluster admin while setting up the broker has set a config value to auto escalate we will immediately continue and not check the user's permissions.
