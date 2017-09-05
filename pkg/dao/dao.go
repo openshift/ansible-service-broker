@@ -29,6 +29,7 @@ import (
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/pborman/uuid"
 )
 
@@ -45,20 +46,18 @@ func (c Config) GetEtcdConfig() clients.EtcdConfig {
 
 // Dao - object to interface with the data store.
 type Dao struct {
-	config Config
 	log    *logging.Logger
 	client client.Client
 	kapi   client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
 // NewDao - Create a new Dao object
-func NewDao(config Config, log *logging.Logger) (*Dao, error) {
+func NewDao(config *config.Config, log *logging.Logger) (*Dao, error) {
 	dao := Dao{
-		config: config,
-		log:    log,
+		log: log,
 	}
 
-	etcdClient, err := clients.Etcd(config.GetEtcdConfig(), log)
+	etcdClient, err := clients.Etcd(config, log)
 	if err != nil {
 		return nil, err
 	}

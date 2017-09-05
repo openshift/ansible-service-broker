@@ -22,6 +22,7 @@ package registries
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -30,6 +31,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/registries/adapters"
 )
 
@@ -63,10 +65,10 @@ func (c Config) Validate() bool {
 
 // Registry - manages an adapter to retrieve and manage images to specs.
 type Registry struct {
-	config  Config
 	adapter adapters.Adapter
 	log     *logging.Logger
 	filter  Filter
+	config  Config
 }
 
 // LoadSpecs - Load the specs for the registry.
@@ -148,17 +150,33 @@ func (r Registry) RegistryName() string {
 }
 
 // NewRegistry - Create a new registry from the registry config.
-func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
+func NewRegistry(con *config.Config, log *logging.Logger) (Registry, error) {
 	var adapter adapters.Adapter
+	configuration := Config{
+		URL:       con.GetString("url"),
+		User:      con.GetString("user"),
+		Pass:      con.GetString("pass"),
+		Org:       con.GetString("org"),
+		Tag:       con.GetString("tag"),
+		Type:      con.GetString("type"),
+		Name:      con.GetString("name"),
+		Images:    con.GetSliceOfStrings("images"),
+		Fail:      con.GetBool("fail_on_error"),
+		WhiteList: con.GetSliceOfStrings("white_list"),
+		BlackList: con.GetSliceOfStrings("black_list"),
+	}
+	if !configuration.Validate() {
+		return Registry{}, errors.New("unable to validate registry name")
+	}
 
 	log.Info("== REGISTRY CX == ")
-	log.Info(fmt.Sprintf("Name: %s", config.Name))
-	log.Info(fmt.Sprintf("Type: %s", config.Type))
-	log.Info(fmt.Sprintf("Url: %s", config.URL))
+	log.Info(fmt.Sprintf("Name: %s", configuration.Name))
+	log.Info(fmt.Sprintf("Type: %s", configuration.Type))
+	log.Info(fmt.Sprintf("Url: %s", configuration.URL))
 	// Validate URL
-	u, err := url.Parse(config.URL)
+	u, err := url.Parse(configuration.URL)
 	if err != nil {
-		log.Errorf("url is not valid: %v", config.URL)
+		log.Errorf("url is not valid: %v", configuration.URL)
 		// Default url, allow the registry to fail gracefully or un gracefully.
 		u = &url.URL{}
 	}
@@ -166,13 +184,13 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		u.Scheme = "http"
 	}
 	c := adapters.Configuration{URL: u,
-		User:   config.User,
-		Pass:   config.Pass,
-		Org:    config.Org,
-		Images: config.Images,
-		Tag:    config.Tag}
+		User:   configuration.User,
+		Pass:   configuration.Pass,
+		Org:    configuration.Org,
+		Images: configuration.Images,
+		Tag:    configuration.Tag}
 
-	switch strings.ToLower(config.Type) {
+	switch strings.ToLower(configuration.Type) {
 	case "rhcc":
 		adapter = &adapters.RHCCAdapter{Config: c, Log: log}
 	case "dockerhub":
@@ -185,10 +203,11 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		panic("Unknown registry")
 	}
 
-	return Registry{config: config,
+	return Registry{
 		adapter: adapter,
 		log:     log,
-		filter:  createFilter(config, log),
+		filter:  createFilter(configuration, log),
+		config:  configuration,
 	}, nil
 }
 

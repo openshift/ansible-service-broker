@@ -6,6 +6,9 @@ registry:
     user: shurley
     pass: testingboom
     org: shurley
+    black_list:
+      - "malicious.*-apb$"
+      - "^specific-blacklist-apb$"
   - type: dockerhub
     name: play
     user: shurley

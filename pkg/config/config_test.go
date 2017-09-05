@@ -138,6 +138,16 @@ func TestConfigGetString(t *testing.T) {
 	ft.AssertEqual(t, "", testInvalidString)
 }
 
+func TestConfigGetSliceString(t *testing.T) {
+	testString := config.GetSliceOfStrings("registry.dh.black_list")
+	testInvalidString := config.GetString("makes.no.sense")
+	value := []string{"malicious.*-apb$", "^specific-blacklist-apb$"}
+	for i, str := range testString {
+		ft.AssertEqual(t, value[i], str)
+	}
+	ft.AssertEqual(t, "", testInvalidString)
+}
+
 func TestConfigGetFloat32(t *testing.T) {
 	testFloat32 := config.GetFloat32("broker.testFloat32")
 	testInvalidFloat32 := config.GetFloat32("makes.no.sense")

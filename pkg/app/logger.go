@@ -26,6 +26,7 @@ import (
 	"os"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 )
 
 // LogConfig - The configuration for the logging.
@@ -47,8 +48,17 @@ const MODULE = "asb"
 
 // NewLog - Creates a new logging object
 // TODO: Consider no output?
-func NewLog(config LogConfig) (*Log, error) {
+func NewLog(c *config.Config) (*Log, error) {
 	var err error
+	if c.Empty() {
+		return nil, errors.New("Cannot have a blank logfile and not log to stdout")
+	}
+	config := LogConfig{
+		LogFile: c.GetString("log.logfile"),
+		Stdout:  c.GetBool("log.stdout"),
+		Level:   c.GetString("log.level"),
+		Color:   c.GetBool("log.color"),
+	}
 
 	if config.LogFile == "" && !config.Stdout {
 		return nil, errors.New("Cannot have a blank logfile and not log to stdout")

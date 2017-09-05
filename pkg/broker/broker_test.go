@@ -26,6 +26,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
 )
@@ -42,10 +43,11 @@ func init() {
 }
 
 func TestUpdate(t *testing.T) {
-	brokerConfig := new(Config)
-	brokerConfig.DevBroker = true
-	brokerConfig.LaunchApbOnBind = false
-	broker, _ := NewAnsibleBroker(nil, log, apb.ClusterConfig{}, nil, WorkEngine{}, *brokerConfig)
+	config, err := config.CreateConfig("testdata/broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	broker, _ := NewAnsibleBroker(nil, log, config, nil, WorkEngine{}, config)
 	resp, err := broker.Update(uuid.NewUUID(), nil)
 	if resp != nil {
 		t.Fail()

@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/version"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 
 	logging "github.com/op/go-logging"
 
@@ -71,7 +72,7 @@ func GetEtcdVersion(ec EtcdConfig) (string, string, error) {
 }
 
 // Etcd - Create a new etcd client if needed, returns reference
-func Etcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
+func Etcd(config *config.Config, log *logging.Logger) (etcd.Client, error) {
 	errMsg := "Something went wrong intializing etcd client!"
 	once.Etcd.Do(func() {
 		client, err := newEtcd(config, log)
@@ -93,13 +94,15 @@ func Etcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 	return instances.Etcd, nil
 }
 
-func newEtcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
+func newEtcd(config *config.Config, log *logging.Logger) (etcd.Client, error) {
 	// TODO: Config validation
-	endpoints := []string{etcdEndpoint(config.EtcdHost, config.EtcdPort)}
+	host := config.GetString("dao.etcd_host")
+	port := config.GetString("dao.etcd_port")
+	endpoints := []string{etcdEndpoint(host, port)}
 
 	log.Info("== ETCD CX ==")
-	log.Infof("EtcdHost: %s", config.EtcdHost)
-	log.Infof("EtcdPort: %s", config.EtcdPort)
+	log.Infof("EtcdHost: %s", host)
+	log.Infof("EtcdPort: %s", port)
 	log.Infof("Endpoints: %v", endpoints)
 
 	etcdClient, err := etcd.New(etcd.Config{

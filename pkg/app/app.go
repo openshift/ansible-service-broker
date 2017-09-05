@@ -35,6 +35,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
@@ -47,7 +48,7 @@ const MsgBufferSize = 20
 type App struct {
 	broker   *broker.AnsibleBroker
 	args     Args
-	config   Config
+	config   *config.Config
 	dao      *dao.Dao
 	log      *Log
 	registry []registries.Registry
@@ -75,27 +76,28 @@ func CreateApp() App {
 
 	// TODO: Let's take all these validations and delegate them to the client
 	// pkg.
-	if app.config, err = CreateConfig(app.args.ConfigFile); err != nil {
+	if app.config, err = config.CreateConfig(app.args.ConfigFile); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to read config file\n")
 		os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
+	fmt.Printf("%#v", app.config)
 
-	if app.log, err = NewLog(app.config.Log); err != nil {
+	if app.log, err = NewLog(app.config); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to initialize logger\n")
 		os.Stderr.WriteString(err.Error())
 		os.Exit(1)
 	}
 
 	// Initializing clients as soon as we have deps ready.
-	err = initClients(app.log.Logger, app.config.Dao.GetEtcdConfig())
+	err = initClients(app.log.Logger, app.config)
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
 
 	app.log.Debug("Connecting Dao")
-	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
+	app.dao, err = dao.NewDao(app.config.GetSubConfig("dao"), app.log.Logger)
 
 	k8scli, err := clients.Kubernetes(app.log.Logger)
 	if err != nil {
@@ -125,11 +127,11 @@ func CreateApp() App {
 	}
 
 	app.log.Debug("Connecting Registry")
-	for _, r := range app.config.Registry {
-		reg, err := registries.NewRegistry(r, app.log.Logger)
+	for name := range app.config.GetSubConfig("registry").ToMap() {
+		reg, err := registries.NewRegistry(app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)), app.log.Logger)
 		if err != nil {
 			app.log.Errorf(
-				"Failed to initialize %v Registry err - %v \n", r.Name, err)
+				"Failed to initialize %v Registry err - %v \n", name, err)
 			os.Exit(1)
 		}
 		app.registry = append(app.registry, reg)
@@ -153,10 +155,10 @@ func CreateApp() App {
 	}
 	app.log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
-	apb.InitializeSecretsCache(app.config.Secrets, app.log.Logger)
+	apb.InitializeSecretsCache(app.config.GetSubConfig("secrets"), app.log.Logger)
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker,
+		app.dao, app.log.Logger, app.config.GetSubConfig("openshift"), app.registry, *app.engine, app.config.GetSubConfig("broker"),
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
 		app.log.Error(err.Error())
@@ -184,12 +186,12 @@ func (a *App) Start() {
 	// TODO: probably return an error or some sort of message such that we can
 	// see if we need to go any further.
 
-	if a.config.Broker.Recovery {
+	if a.config.GetBool("broker.recovery") {
 		a.log.Info("Initiating Recovery Process")
 		a.Recover()
 	}
 
-	if a.config.Broker.BootstrapOnStartup {
+	if a.config.GetBool("broker.bootstrap_on_startup") {
 		a.log.Info("Broker configured to bootstrap on startup")
 		a.log.Info("Attempting bootstrap...")
 		if _, err := a.broker.Bootstrap(); err != nil {
@@ -200,7 +202,7 @@ func (a *App) Start() {
 		a.log.Notice("Broker successfully bootstrapped on startup")
 	}
 
-	interval, err := time.ParseDuration(a.config.Broker.RefreshInterval)
+	interval, err := time.ParseDuration(a.config.GetString("broker.refresh_interval"))
 	a.log.Debug("RefreshInterval: %v", interval.String())
 	if err != nil {
 		a.log.Error(err.Error())
@@ -233,13 +235,13 @@ func (a *App) Start() {
 	if a.args.Insecure {
 		a.log.Notice("Listening on http://%s", listeningAddress)
 		err = http.ListenAndServe(":1338",
-			handler.NewHandler(a.broker, a.log.Logger, a.config.Broker))
+			handler.NewHandler(a.broker, a.log.Logger, a.config))
 	} else {
 		a.log.Notice("Listening on https://%s", listeningAddress)
 		err = http.ListenAndServeTLS(":1338",
-			a.config.Broker.SSLCert,
-			a.config.Broker.SSLCertKey,
-			handler.NewHandler(a.broker, a.log.Logger, a.config.Broker))
+			a.config.GetString("broker.ssl_cert"),
+			a.config.GetString("broker.ssl_cert_key"),
+			handler.NewHandler(a.broker, a.log.Logger, a.config))
 	}
 	if err != nil {
 		a.log.Error("Failed to start HTTP server")
@@ -248,7 +250,7 @@ func (a *App) Start() {
 	}
 }
 
-func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
+func initClients(log *logging.Logger, c *config.Config) error {
 	// Designed to panic early if we cannot construct required clients.
 	// this likely means we're in an unrecoverable configuration or environment.
 	// Best we can do is alert the operator as early as possible.
@@ -259,7 +261,7 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	log.Notice("Initializing clients...")
 	log.Debug("Trying to connect to etcd")
 
-	etcdClient, err := clients.Etcd(ec, log)
+	etcdClient, err := clients.Etcd(c, log)
 	if err != nil {
 		return err
 	}
