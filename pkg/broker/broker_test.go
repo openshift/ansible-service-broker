@@ -22,6 +22,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
@@ -36,6 +37,22 @@ func init() {
 	logging.SetBackend(backend, backendFormatter)
 }
 
+<<<<<<< HEAD
+=======
+func TestUpdate(t *testing.T) {
+	config, err := config.CreateConfig("testdata/broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	broker, _ := NewAnsibleBroker(nil, log, config, nil, WorkEngine{}, config)
+	resp, err := broker.Update(uuid.NewUUID(), nil)
+	if resp != nil {
+		t.Fail()
+	}
+	ft.AssertEqual(t, err, notImplemented, "Update must have been implemented")
+}
+
+>>>>>>> changing everyting for configuration changes
 func TestAddNameAndIDForSpecStripsTailingDash(t *testing.T) {
 	spec1 := apb.Spec{FQName: "1234567890123456789012345678901234567890-"}
 	spec2 := apb.Spec{FQName: "org/hello-world-apb"}

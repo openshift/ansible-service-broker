@@ -29,7 +29,7 @@ import (
 	"github.com/coreos/etcd/client"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/auth"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
@@ -87,6 +87,7 @@ type Broker interface {
 	GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error)
 }
 
+<<<<<<< HEAD
 // Config - Configuration for the broker.
 type Config struct {
 	DevBroker          bool          `yaml:"dev_broker"`
@@ -102,6 +103,8 @@ type Config struct {
 	ClusterURL         string        `yaml:"cluster_url"`
 }
 
+=======
+>>>>>>> changing everyting for configuration changes
 // DevBroker - Interface for the development broker.
 type DevBroker interface {
 	AddSpec(spec apb.Spec) (*CatalogResponse, error)
@@ -116,20 +119,27 @@ type AnsibleBroker struct {
 	clusterConfig apb.ClusterConfig
 	registry      []registries.Registry
 	engine        *WorkEngine
-	brokerConfig  Config
+	brokerConfig  *config.Config
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
-func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
-	registry []registries.Registry, engine WorkEngine, brokerConfig Config,
+func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig *config.Config,
+	registry []registries.Registry, engine WorkEngine, brokerConfig *config.Config,
 ) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
-		dao:           dao,
-		log:           log,
-		clusterConfig: clusterConfig,
-		registry:      registry,
-		engine:        &engine,
-		brokerConfig:  brokerConfig,
+		dao: dao,
+		log: log,
+		clusterConfig: apb.ClusterConfig{
+			Host:            clusterConfig.GetString("host"),
+			CAFile:          clusterConfig.GetString("ca_file"),
+			BearerTokenFile: clusterConfig.GetString("bearer_token_file"),
+			PullPolicy:      clusterConfig.GetString("image_pull_policy"),
+			SandboxRole:     clusterConfig.GetString("sandbox_role"),
+			Namespace:       clusterConfig.GetString("namespace"),
+		},
+		registry:     registry,
+		engine:       &engine,
+		brokerConfig: brokerConfig,
 	}
 
 	err := broker.Login()
@@ -921,8 +931,12 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
 	// Currently, the 'launchapbonbind' is set to false in the 'config' ConfigMap
 	var bindExtCreds *apb.ExtractedCredentials
+<<<<<<< HEAD
 	metrics.ActionStarted("bind")
 	if a.brokerConfig.LaunchApbOnBind {
+=======
+	if a.brokerConfig.GetBool("launch_apb_on_bind") {
+>>>>>>> changing everyting for configuration changes
 		a.log.Info("Broker configured to run APB bind")
 		_, bindExtCreds, err = apb.Bind(&instance, &params, a.clusterConfig, a.log)
 
@@ -1002,6 +1016,7 @@ func (a AnsibleBroker) Unbind(
 	}
 	metrics.ActionStarted("unbind")
 	// only launch apb if we are always launching the APB.
+<<<<<<< HEAD
 	if a.brokerConfig.LaunchApbOnBind {
 		if skipApbExecution {
 			a.log.Debug("Skipping unbind apb execution")
@@ -1009,6 +1024,10 @@ func (a AnsibleBroker) Unbind(
 		} else {
 			err = apb.Unbind(&serviceInstance, &params, a.clusterConfig, a.log)
 		}
+=======
+	if a.brokerConfig.GetBool("launch_apb_on_bind") {
+		err = apb.Unbind(serviceInstance, &params, a.clusterConfig, a.log)
+>>>>>>> changing everyting for configuration changes
 		if err != nil {
 			return nil, err
 		}

@@ -38,7 +38,11 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
+<<<<<<< HEAD
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+=======
+	"github.com/openshift/ansible-service-broker/pkg/config"
+>>>>>>> changing everyting for configuration changes
 	"github.com/pborman/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/kubernetes/pkg/api/v1"
@@ -59,11 +63,18 @@ const (
 // TODO: implement asynchronous operations
 
 type handler struct {
+<<<<<<< HEAD
 	router           mux.Router
 	broker           broker.Broker
 	log              *logging.Logger
 	brokerConfig     broker.Config
 	clusterRoleRules []rbac.PolicyRule
+=======
+	router       mux.Router
+	broker       broker.Broker
+	log          *logging.Logger
+	brokerConfig *config.Config
+>>>>>>> changing everyting for configuration changes
 }
 
 // authHandler - does the authentication for the routes
@@ -157,9 +168,13 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
+<<<<<<< HEAD
 func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string,
 	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule,
 ) http.Handler {
+=======
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig *config.Config) http.Handler {
+>>>>>>> changing everyting for configuration changes
 	h := handler{
 		router:           *mux.NewRouter(),
 		broker:           b,
@@ -189,6 +204,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
 
+<<<<<<< HEAD
 	if h.brokerConfig.DevBroker {
 		s.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
 		s.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
@@ -196,6 +212,16 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	}
 
 	return handlers.LoggingHandler(os.Stdout, authHandler(userInfoHandler(h, log), providers, log))
+=======
+	if brokerConfig.GetBool("broker.dev_broker") {
+		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
+		h.router.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
+		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
+	}
+
+	providers := auth.GetProviders(brokerConfig, log)
+	return handlers.LoggingHandler(os.Stdout, authHandler(h, providers, log))
+>>>>>>> changing everyting for configuration changes
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -685,7 +711,7 @@ func (h handler) apbRemoveSpecs(w http.ResponseWriter, r *http.Request, params m
 
 // printRequest - will print the request with the body.
 func (h handler) printRequest(req *http.Request) {
-	if h.brokerConfig.OutputRequest {
+	if h.brokerConfig.GetBool("broker.output_request") {
 		b, err := httputil.DumpRequest(req, true)
 		if err != nil {
 			h.log.Errorf("unable to dump request to log: %v", err)

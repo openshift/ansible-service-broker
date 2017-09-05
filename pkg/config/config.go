@@ -85,6 +85,27 @@ func (c *Config) GetString(key string) string {
 	return ""
 }
 
+// GetSliceOfStrings - Retrieve the configuration value that is a slice of strings.
+func (c *Config) GetSliceOfStrings(key string) []string {
+	c.mutex.RLock()
+	subMap := createNewMap(c.config)
+	//Can unlock the map for reading after we copy the map.
+	c.mutex.RUnlock()
+	keys := strings.Split(key, ".")
+	val := retrieveValueFromKeys(keys, subMap)
+	var s []string
+	if v, ok := val.([]interface{}); ok {
+		for _, str := range v {
+			if st, ok := str.(string); ok {
+				s = append(s, st)
+			} else {
+				return nil
+			}
+		}
+	}
+	return nil
+}
+
 // GetInt - Retrieve the configuration value as a int.
 func (c *Config) GetInt(key string) int {
 	c.mutex.RLock()
@@ -157,6 +178,15 @@ func (c *Config) GetSubConfig(key string) *Config {
 	}
 }
 
+// ToMap - Retrieve a copy of the undlying map for the config.
+func (c *Config) ToMap() map[string]interface{} {
+	c.mutex.RLock()
+	subMap := createNewMap(c.config)
+	//Can unlock the map for reading after we copy the map.
+	c.mutex.RUnlock()
+	return subMap
+}
+
 //createNewMap - Need to create a new map to work with.
 func createNewMap(config map[string]interface{}) map[string]interface{} {
 	newMap := map[string]interface{}{}
@@ -186,7 +216,7 @@ func retrieveValueFromKeys(keys []string, subMap map[string]interface{}) interfa
 			}
 			// We do not know what to do if the key is not a string. Error here.
 			if i == len(keys)-1 {
-				return &Config{mutex: sync.RWMutex{}, config: val.(map[string]interface{})}
+				return &Config{mutex: sync.RWMutex{}, config: subMap}
 			}
 		case []interface{}:
 			//If array of values we will attempt to make a map using the a
@@ -194,11 +224,11 @@ func retrieveValueFromKeys(keys []string, subMap map[string]interface{}) interfa
 			//TODO: we should eventually add this back to the original map,
 			// then we could check for existence of this sub map.
 			subMap = createSubMapFromArray(val.([]interface{}))
-			if len(subMap) == 0 {
+			if len(subMap) > 0 && i == len(keys)-1 {
 				return &Config{config: subMap, mutex: sync.RWMutex{}}
 			}
 			if i == len(keys)-1 {
-				return &Config{config: subMap, mutex: sync.RWMutex{}}
+				return val
 			}
 		default:
 			if i == len(keys)-1 {
@@ -234,7 +264,11 @@ func createSubMapFromArray(val []interface{}) map[string]interface{} {
 					subMap[n] = value
 				}
 			}
-
+			if t, ok := s["type"]; ok {
+				if tp, ok := t.(string); ok {
+					subMap[tp] = value
+				}
+			}
 		} else {
 			//We don't know what to do if they are not key value pairs.
 			return subMap
@@ -253,31 +287,4 @@ func createStringMap(val map[interface{}]interface{}) (map[string]interface{}, e
 		}
 	}
 	return subMap, nil
-
 }
-
-/*
-// TODO: THIS NEEDS TO BE MOVED BACK TO APP.
-func validateConfig(c Config) error {
-	// TODO: Config validation!
-	registryName := map[string]bool{}
-	for _, rc := range c.Registry {
-		if !rc.Validate() {
-			return fmt.Errorf("registry config is not valid - %v", rc.Name)
-		}
-		if _, ok := registryName[rc.Name]; ok {
-			return fmt.Errorf("registry name must be unique")
-		}
-		registryName[rc.Name] = true
-	}
-
-	for _, sc := range c.Secrets {
-		if !sc.Validate() {
-			// TODO: Terrible error message
-			return fmt.Errorf("secrets config is not valid - %#v", sc)
-		}
-
-	}
-	return nil
-}
-*/
