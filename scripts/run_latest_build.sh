@@ -39,6 +39,12 @@ HOSTNAME=${PUBLIC_IP}.nip.io
 ROUTING_SUFFIX="${HOSTNAME}"
 oc cluster up --image=openshift/origin --version=v3.6.0 --service-catalog=true --routing-suffix=${ROUTING_SUFFIX} --public-hostname=${HOSTNAME}
 
+#
+# Logging in as system:admin so we can create a clusterrolebinding and
+# creating ansible-service-broker project
+#
+oc login -u system:admin
+oc new-project ansible-service-broker
 
 #
 # A valid dockerhub username/password is required so the broker may
@@ -59,21 +65,12 @@ oc cluster up --image=openshift/origin --version=v3.6.0 --service-catalog=true -
 # 'ansibleplaybookbundle' organization, this can be overridden with the
 # parameter DOCKERHUB_ORG being passed into the template.
 #
-DOCKERHUB_USER=${DOCKERHUB_USER:-"changeme"}
-DOCKERHUB_PASS=${DOCKERHUB_PASS:-"changeme"}
-DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"}
-
-#
-# Disabling basic auth allows "apb push" to work.
-#
-ENABLE_BASIC_AUTH="false"
-
-#
-#  Logging in as system:admin so we can create a clusterrolebinding
-#
 TEMPLATE_URL="https://raw.githubusercontent.com/openshift/ansible-service-broker/master/templates/deploy-ansible-service-broker.template.yaml"
-oc login -u system:admin
-oc new-project ansible-service-broker
+DOCKERHUB_USER=${DOCKERHUB_USER:-"changeme"} # DockerHub login username, default 'changeme'
+DOCKERHUB_PASS=${DOCKERHUB_PASS:-"changeme"} # DockerHub login password, default 'changeme'
+DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where APBs can be found, default 'ansibleplaybookbundle'
+ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"false"} # Secure broker with basic authentication, default 'false'. Disabling basic auth allows "apb push" to work.
+
 curl -s $TEMPLATE_URL \
   | oc process \
   -n ansible-service-broker \
