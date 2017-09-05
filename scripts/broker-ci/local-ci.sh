@@ -60,7 +60,7 @@ function bind-credential-check {
     set +x
     RETRIES=10
     for x in $(seq $RETRIES); do
-	oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default || BIND_ERROR=true
+	oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default  --force --grace-period=10 || BIND_ERROR=true
 	./scripts/broker-ci/wait-for-resource.sh create pod mediawiki >> /tmp/wait-for-pods-log 2>&1
 
 	# Filter for 'podpreset.admission.kubernetes.io' in the pod
