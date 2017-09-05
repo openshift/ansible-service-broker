@@ -152,9 +152,7 @@ func GetProviders(authConfig *config.Config, log *logging.Logger) []Provider {
 	providers := make([]Provider, 0, len(authConfig.GetSubConfig("broker.auth").ToMap()))
 
 	for t := range authConfig.GetSubConfig("broker.auth").ToMap() {
-		fmt.Printf("%v - here", t)
 		if authConfig.GetBool(fmt.Sprintf("broker.auth.%v.enabled", t)) {
-			fmt.Printf("here")
 			provider, err := createProvider(t, log)
 			if err != nil {
 				log.Warning("Unable to create provider for %v. %v", t, err)

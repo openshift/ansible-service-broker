@@ -493,6 +493,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if spec, err = a.dao.GetSpec(specID); err != nil {
 		// etcd return not found i.e. code 100
 		if client.IsKeyNotFound(err) {
+			a.log.Debug("broker::Could not find spec")
 			return nil, ErrorNotFound
 		}
 		// otherwise unknown error bubble it up
@@ -506,6 +507,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	}
 
 	if req.PlanID == "" {
+		a.log.Debug("broker::request did not pass along plan ID")
 		errMsg :=
 			"PlanID from provision request is blank. " +
 				"Provision requests must specify PlanIDs"

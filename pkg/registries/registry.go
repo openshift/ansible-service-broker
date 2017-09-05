@@ -41,8 +41,8 @@ type Registry struct {
 	adapter     adapters.Adapter
 	log         *logging.Logger
 	filter      Filter
-	Name        string
-	FailOnError bool
+	name        string
+	failOnError bool
 }
 
 // LoadSpecs - Load the specs for the registry.
@@ -50,14 +50,14 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	imageNames, err := r.adapter.GetImageNames()
 	if err != nil {
 		r.log.Errorf("unable to retrieve image names for registry %v - %v",
-			r.Name, err)
+			r.name, err)
 		return []*apb.Spec{}, 0, err
 	}
 	// Registry will throw out all images that do not end in -apb
 	imageNames = registryFilterImagesForAPBs(imageNames)
 	validNames, filteredNames := r.filter.Run(imageNames)
 
-	r.log.Debug("Filter applied against registry: %s", r.Name)
+	r.log.Debug("Filter applied against registry: %s", r.name)
 
 	if len(validNames) != 0 {
 		r.log.Debugf("APBs passing white/blacklist filter:")
@@ -81,7 +81,7 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	specs, err := r.adapter.FetchSpecs(validNames)
 	if err != nil {
 		r.log.Errorf("unable to fetch specs for registry %v - %v",
-			r.Name, err)
+			r.name, err)
 		return []*apb.Spec{}, 0, err
 	}
 
@@ -112,7 +112,7 @@ func registryFilterImagesForAPBs(imageNames []string) []string {
 
 // Fail - will determine if the registry should cause a failure.
 func (r Registry) Fail(err error) bool {
-	if r.FailOnError {
+	if r.failOnError {
 		return true
 	}
 	return false
@@ -120,7 +120,7 @@ func (r Registry) Fail(err error) bool {
 
 // RegistryName - retrieve the registry name to allow namespacing.
 func (r Registry) RegistryName() string {
-	return r.Name
+	return r.name
 }
 
 // NewRegistry - Create a new registry from the registry config.
@@ -150,9 +150,11 @@ func NewRegistry(con *config.Config, log *logging.Logger) (Registry, error) {
 	}
 
 	return Registry{
-		adapter: adapter,
-		log:     log,
-		filter:  createFilter(con, log),
+		adapter:     adapter,
+		log:         log,
+		filter:      createFilter(con, log),
+		name:        con.GetString("name"),
+		failOnError: con.GetBool("fail_on_error"),
 	}, nil
 }
 

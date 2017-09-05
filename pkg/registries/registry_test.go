@@ -153,8 +153,8 @@ func setUp() Registry {
 		adapter:     a,
 		log:         log,
 		filter:      filter,
-		Name:        "test-registry",
-		FailOnError: false}
+		name:        "test-registry",
+		failOnError: false}
 	return r
 }
 
@@ -200,7 +200,7 @@ func TestRegistryLoadSpecsNoPlans(t *testing.T) {
 
 func TestFail(t *testing.T) {
 	r := setUp()
-	r.FailOnError = true
+	r.failOnError = true
 
 	fail := r.Fail(fmt.Errorf("new error"))
 	ft.AssertTrue(t, fail)
@@ -208,7 +208,7 @@ func TestFail(t *testing.T) {
 
 func TestFailIsFalse(t *testing.T) {
 	r := setUp()
-	r.FailOnError = false
+	r.failOnError = false
 
 	fail := r.Fail(fmt.Errorf("new error"))
 	ft.AssertFalse(t, fail)
