@@ -1,17 +1,13 @@
-template_dest: /tmp/k8s-ansible-service-broker.yaml
+#
+# Local Template defaults
+#
 
 dockerhub_user_name: changeme
 dockerhub_user_password: changeme
 dockerhub_org: ansibleplaybookbundle
 
-asb_src_dir: /tmp/ansible-service-broker
-
 broker_image: "ansibleplaybookbundle/ansible-service-broker:latest"
 etcd_image: "quay.io/coreos/etcd:latest"
-
-#
-# Template defaults
-#
 
 # Path of the etcd binary
 etcd_path: /usr/local/bin/etcd
@@ -19,11 +15,8 @@ etcd_path: /usr/local/bin/etcd
 # Configuration filepath for Ansible Service Broker
 broker_config: /etc/ansible-service-broker/config.yaml
 
-# SSL enabled: insecure="false", termination=Reencrypt
-# Insecure enabled: insecure="true", termination=edge
-# Run in insecure mode
-insecure: "true"
-termination: Reencrypt
+# Broker SSL with Kubernetes isn't supported, but will be in the future
+# insecure: "true"
 
 # APB Image Tag
 tag: latest
