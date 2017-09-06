@@ -8,6 +8,7 @@ file loaded on startup and contains:
 - [Log Configuration](#log-configuration)
 - [OpenShift Configuration](#openshift-configuration)
 - [Broker Configuration](#broker-configuration)
+- [Secrets Configuration](#secrets-configuration)
 
 ## Registry Configuration
 
@@ -166,3 +167,25 @@ output_request|Allow the broker to output the requests to the log file as they c
 ssl_cert_key|Tells the broker where to find the tls key file. Can be ignored if using `--insecure` option but otherwise is required|""|N
 ssl_cert|Tells the broker where to find the tls crt file. Can be ignored if using the `--insecure` option but otherwise is required|""|N
 refresh_interval|The interval to query registries for new image specs|"600s"|N
+
+
+## Secrets Configuration
+The secrets config section will create associations between secrets in the broker's namespace and apbs the broker runs. 
+The broker will use these rules to mount secrets into running apbs, allowing the user to use secrets to pass parameters
+without exposing them to the catalog or users. The config section is a list where each entry has the following structure:
+
+| field         | description                                                                                                                 | Required |
+|---------------|-----------------------------------------------------------------------------------------------------------------------------|----------|
+| title         | The title of the rule. This is just for display/output purposes.                                                            |     Y    |
+| apb_name      | The name of the APB to associate with the specified secret. This is the fully qualified name (registry_name-org-image-tag). |     Y    |
+| secret        | The name of the secret to pull parameters from.                                                                             |     Y    |
+
+You can use the script in scripts/create_broker_secret.py to create and format this configuration section.
+
+### Secrets Example
+```yaml
+secrets:
+- title: Database credentials
+  secret: db_creds
+  apb_name: dh-fabianvf-rhscl-postgresql-apb-latest
+```
