@@ -30,7 +30,6 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
-	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 	"github.com/pborman/uuid"
 	"k8s.io/kubernetes/pkg/api/v1"
 )
@@ -74,7 +73,7 @@ func ExecuteApb(
 
 	openshitftClient, err := clients.Openshift(log)
 	if err != nil {
-		return "", err
+		return executionContext, err
 	}
 
 	secrets := GetSecrets(spec)
@@ -83,13 +82,15 @@ func ExecuteApb(
 		executionContext.Namespace = clusterConfig.Namespace
 		executionContext.Targets = append(executionContext.Targets, context.Namespace)
 	} else {
-		executionContext.Namespace = "" //genName
+		// Using a new UUID is sane, because it will have some gurantee
+		// of uniquenes and will meet DNS name requirements.
+		executionContext.Namespace = uuid.New()
 		executionContext.Targets = append(executionContext.Targets, context.Namespace)
 		//Creating project
-		proj, err := openshitftClient.CreateProject(executionContext.Namespace)
+		_, err := openshitftClient.CreateProject(executionContext.Namespace)
 		if err != nil {
 			log.Errorf("unable to create new project %v", err)
-			return "", err
+			return executionContext, err
 		}
 	}
 
@@ -97,35 +98,6 @@ func ExecuteApb(
 	if err != nil {
 		return executionContext, err
 	}
-	/*
-	 * ---------------------------------------------------User Rule Review Refactor ----------
-	 */
-	//Determine if the calling user covers all of the permisions that that apb role has
-	//TODO: "admin" should be switched to the user from the header when that is available.
-	res, err := openshitftClient.SubjectRulesReview("admin", context.Namespace, log)
-	if err != nil {
-		log.Info("%v - unable to run subject rules review", err)
-		return "", err
-	}
-	k8sRole, err := k8scli.Rbac().ClusterRoles().Get(clusterConfig.SandboxRole, metav1.GetOptions{})
-	if err != nil {
-		log.Info("%v - unable to run subject rules review", err)
-		return "", err
-	}
-	cRole := &authorization.ClusterRole{}
-	err = authorization.Convert_rbac_ClusterRole_To_authorization_ClusterRole(k8sRole, cRole, nil)
-	if err != nil {
-		log.Info("%v - Unable to conver cluster role", err)
-		return "", err
-	}
-	covered, _ := authorization.Covers(res.Status.Rules, cRole.Rules)
-	log.Info("%v - Does admin cover cluster role ", covered)
-
-	/*
-	 * ---------------------------------------------------User Rule Review Refactor ----------
-	 */
-
-	log.Info("%v", proj)
 	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(log)

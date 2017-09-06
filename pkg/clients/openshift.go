@@ -190,7 +190,7 @@ func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging
 	res, err := o.restClientAuth.Post().
 		Namespace(namespace).
 		Resource("subjectrulesreviews").
-		Body(b, log).
+		Body(b).
 		DoRaw()
 	err = json.Unmarshal(res, r)
 	if err != nil {

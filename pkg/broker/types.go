@@ -237,5 +237,5 @@ type UserInfo struct {
 	Username string
 	UID      string
 	Groups   []string
-	Extra    map[string]ExtraValue
+	Extra    map[string][]string
 }

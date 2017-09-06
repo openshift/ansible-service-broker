@@ -29,6 +29,7 @@ import (
 	"net/http/httputil"
 	"os"
 	"strconv"
+	"strings"
 
 	yaml "gopkg.in/yaml.v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -39,6 +40,8 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 	"github.com/pborman/uuid"
 )
 
@@ -57,10 +60,11 @@ const (
 // TODO: implement asynchronous operations
 
 type handler struct {
-	router       mux.Router
-	broker       broker.Broker
-	log          *logging.Logger
-	brokerConfig broker.Config
+	router           mux.Router
+	broker           broker.Broker
+	log              *logging.Logger
+	brokerConfig     broker.Config
+	clusterRoleRules []authorization.PolicyRule
 }
 
 // authHandler - does the authentication for the routes
@@ -104,28 +108,43 @@ type VarHandler func(http.ResponseWriter, *http.Request, map[string]string)
 func createVarHandler(r VarHandler) GorillaRouteHandler {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		//Retrieve the UserInfo from request if available.
-		userJSONStr := r.Header.Get(OriginatingIdentityHeader)
+		userJSONStr := request.Header.Get(OriginatingIdentityHeader)
 		if userJSONStr != "" {
-			userInfo := broker.UserInfo{}
-			err := json.Unmarshal([]byte(userJsonStr), &userInfo)
-			if err != nil {
+			userStr := strings.Split(userJSONStr, " ")
+			if len(userStr) != 2 {
 				//If we do not understand the user, but something was sent, we should return a 404.
-				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid User Info in Originating Identity Header"})
+				writeResponse(writer, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header",
+				})
 				return
 			}
-			request = request.WithContext(context.WithValue(r.Context(), UserInfoContext, userInfo))
+
+			userInfo := broker.UserInfo{}
+			err := json.Unmarshal([]byte(userStr[1]), &userInfo)
+			if err != nil {
+				//If we do not understand the user, but something was sent, we should return a 404.
+				writeResponse(writer, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header",
+				})
+				return
+			}
+			request = request.WithContext(context.WithValue(
+				request.Context(), UserInfoContext, userInfo),
+			)
 		}
 		r(writer, request, mux.Vars(request))
 	}
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string, providers []auth.Provider) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string,
+	providers []auth.Provider, clusterRoleRules []authorization.PolicyRule) http.Handler {
 	h := handler{
-		router:       *mux.NewRouter(),
-		broker:       b,
-		log:          log,
-		brokerConfig: brokerConfig,
+		router:           *mux.NewRouter(),
+		broker:           b,
+		log:              log,
+		brokerConfig:     brokerConfig,
+		clusterRoleRules: clusterRoleRules,
 	}
 	var s *mux.Router
 	if prefix == "/" {
@@ -202,9 +221,37 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 	}
 
 	// Check if user has the ability.
-
+	// Retrieve the user from the context.
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+	if !ok {
+		// if no user, we should error out with bad request.
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+			Description: "Invalid user info from originating origin header.",
+		})
+		return
+	}
+	// Let's see if user can cover the cluster role.
+	openshiftClient, err := clients.Openshift(h.log)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{
+			Description: "Unable to connect to the cluster",
+		})
+		return
+	}
+	res, err := openshiftClient.SubjectRulesReview(userInfo.Username, req.Context.Namespace, h.log)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{
+			Description: "Unable to connect to the cluster",
+		})
+		return
+	}
+	if covered, _ := authorization.Covers(res.Status.Rules, h.clusterRoleRules); !covered {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+			Description: "User does not have sufficient permissions",
+		})
+		return
+	}
 	// Ok let's provision this bad boy
-
 	resp, err := h.broker.Provision(instanceUUID, req, async)
 
 	if err != nil {
