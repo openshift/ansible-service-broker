@@ -21,7 +21,9 @@
 package handler
 
 import (
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -38,6 +40,18 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/pborman/uuid"
+)
+
+// RequestContextKey - keys that will be used in the request context
+type RequestContextKey string
+
+const (
+	// OriginatingIdentityHeader is the header for the originating identity
+	// or the user to check/impersonate
+	OriginatingIdentityHeader = "X-Broker-API-Originating-Identity"
+	// UserInfoContext - Broker.UserInfo retrieved from the
+	// originating identity header
+	UserInfoContext RequestContextKey = "userInfo"
 )
 
 // TODO: implement asynchronous operations
@@ -89,6 +103,18 @@ type VarHandler func(http.ResponseWriter, *http.Request, map[string]string)
 
 func createVarHandler(r VarHandler) GorillaRouteHandler {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		//Retrieve the UserInfo from request if available.
+		userJSONStr := r.Header.Get(OriginatingIdentityHeader)
+		if userJSONStr != "" {
+			userInfo := broker.UserInfo{}
+			err := json.Unmarshal([]byte(userJsonStr), &userInfo)
+			if err != nil {
+				//If we do not understand the user, but something was sent, we should return a 404.
+				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid User Info in Originating Identity Header"})
+				return
+			}
+			request = request.WithContext(context.WithValue(r.Context(), UserInfoContext, userInfo))
+		}
 		r(writer, request, mux.Vars(request))
 	}
 }
@@ -174,6 +200,8 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "could not read request: " + err.Error()})
 		return
 	}
+
+	// Check if user has the ability.
 
 	// Ok let's provision this bad boy
 

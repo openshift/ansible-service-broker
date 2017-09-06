@@ -33,7 +33,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	logging "github.com/op/go-logging"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -565,48 +564,6 @@ func (r *Request) Body(obj interface{}) *Request {
 	return r
 }
 
-func (r *Request) BodyLog(obj interface{}, log *logging.Logger) *Request {
-	if r.err != nil {
-		return r
-	}
-	switch t := obj.(type) {
-	case string:
-		data, err := ioutil.ReadFile(t)
-		if err != nil {
-			r.err = err
-			return r
-		}
-		glogBody("Request Body", data)
-		log.Info("Request Body string- %v", t)
-		r.body = bytes.NewReader(data)
-	case []byte:
-		glogBody("Request Body", t)
-		log.Info("Request Body byte- %q", t)
-		r.body = bytes.NewReader(t)
-	case io.Reader:
-		log.Info("Request Body io.reader- %v", t)
-		r.body = t
-	case runtime.Object:
-		// callers may pass typed interface pointers, therefore we must check nil with reflection
-		log.Info("Request Body - %q", t)
-		if reflect.ValueOf(t).IsNil() {
-			return r
-		}
-		data, err := runtime.Encode(r.serializers.Encoder, t)
-		if err != nil {
-			r.err = err
-			return r
-		}
-		glogBody("Request Body", data)
-		log.Info("Request Body - %q", data)
-		r.body = bytes.NewReader(data)
-		r.SetHeader("Content-Type", r.content.ContentType)
-	default:
-		r.err = fmt.Errorf("unknown type used for body: %+v", obj)
-	}
-	return r
-}
-
 // Context adds a context to the request. Contexts are only used for
 // timeouts, deadlines, and cancellations.
 func (r *Request) Context(ctx context.Context) *Request {
@@ -845,7 +802,6 @@ func (r *Request) request(fn func(*http.Request, *http.Response)) error {
 	retries := 0
 	for {
 		url := r.URL().String()
-		fmt.Printf("url")
 		req, err := http.NewRequest(r.verb, url, r.body)
 		if err != nil {
 			return err

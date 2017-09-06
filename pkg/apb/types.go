@@ -164,11 +164,12 @@ func NewSpecManifest(specs []*Spec) SpecManifest {
 
 // ServiceInstance - Service Instance describes a running service.
 type ServiceInstance struct {
-	ID         uuid.UUID       `json:"id"`
-	Spec       *Spec           `json:"spec"`
-	Context    *Context        `json:"context"`
-	Parameters *Parameters     `json:"parameters"`
-	BindingIDs map[string]bool `json:"binding_ids"`
+	ID                  uuid.UUID       `json:"id"`
+	Spec                *Spec           `json:"spec"`
+	Context             *Context        `json:"context"`
+	Parameters          *Parameters     `json:"parameters"`
+	BindingIDs          map[string]bool `json:"binding_ids"`
+	OriginatingIdentity string          `json:"user_info"`
 }
 
 // AddBinding - Add binding ID to service instance

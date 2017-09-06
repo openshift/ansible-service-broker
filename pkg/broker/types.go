@@ -231,3 +231,11 @@ type BootstrapResponse struct {
 	SpecCount  int `json:"spec_count"`
 	ImageCount int `json:"image_count"`
 }
+
+// UserInfo - holds information about the user that created a resource.
+type UserInfo struct {
+	Username string
+	UID      string
+	Groups   []string
+	Extra    map[string]ExtraValue
+}
