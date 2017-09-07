@@ -97,6 +97,48 @@ func authHandler(h http.Handler, providers []auth.Provider, log *logging.Logger)
 	})
 }
 
+func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//Retrieve the UserInfo from request if available.
+		userJSONStr := r.Header.Get(OriginatingIdentityHeader)
+		if userJSONStr != "" {
+			userStr := strings.Split(userJSONStr, " ")
+			if len(userStr) != 2 {
+				//If we do not understand the user, but something was sent, we should return a 404.
+				log.Debugf("Not enough values in header - %v", userJSONStr)
+				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header",
+				})
+				return
+			}
+			userInfo := broker.UserInfo{}
+			uStr, err := base64.StdEncoding.DecodeString(userStr[1])
+			if err != nil {
+				//If we do not understand the user, but something was sent, we should return a 404.
+				log.Debugf("Unable to decode base64 encoding - %v", err)
+				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header",
+				})
+				return
+			}
+
+			err = json.Unmarshal(uStr, &userInfo)
+			if err != nil {
+				log.Debugf("Unable to marshal into object - %v", err)
+				//If we do not understand the user, but something was sent, we should return a 404.
+				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header",
+				})
+				return
+			}
+			r = r.WithContext(context.WithValue(
+				r.Context(), UserInfoContext, userInfo),
+			)
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 // GorillaRouteHandler - gorilla route handler
 // making the handler methods more testable by moving the reliance of mux.Vars()
 // outside of the handlers themselves
@@ -107,43 +149,6 @@ type VarHandler func(http.ResponseWriter, *http.Request, map[string]string)
 
 func createVarHandler(r VarHandler) GorillaRouteHandler {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		//Retrieve the UserInfo from request if available.
-		userJSONStr := request.Header.Get(OriginatingIdentityHeader)
-		if userJSONStr != "" {
-			userStr := strings.Split(userJSONStr, " ")
-			if len(userStr) != 2 {
-				//If we do not understand the user, but something was sent, we should return a 404.
-				fmt.Printf("Not enough values in header - %v", userJSONStr)
-				writeResponse(writer, http.StatusBadRequest, broker.ErrorResponse{
-					Description: "Invalid User Info in Originating Identity Header - not enough values",
-				})
-				return
-			}
-
-			userInfo := broker.UserInfo{}
-			uStr, err := base64.StdEncoding.DecodeString(userStr[1])
-			if err != nil {
-				//If we do not understand the user, but something was sent, we should return a 404.
-				fmt.Printf("Unable to decode base64 encoding - %v", err)
-				writeResponse(writer, http.StatusBadRequest, broker.ErrorResponse{
-					Description: "Invalid User Info in Originating Identity Header - unable to decode value",
-				})
-				return
-			}
-
-			err = json.Unmarshal(uStr, &userInfo)
-			if err != nil {
-				fmt.Printf("Unable to marshal into object - %v", err)
-				//If we do not understand the user, but something was sent, we should return a 404.
-				writeResponse(writer, http.StatusBadRequest, broker.ErrorResponse{
-					Description: "Invalid User Info in Originating Identity Header - unable to marshal info",
-				})
-				return
-			}
-			request = request.WithContext(context.WithValue(
-				request.Context(), UserInfoContext, userInfo),
-			)
-		}
 		r(writer, request, mux.Vars(request))
 	}
 }
@@ -186,7 +191,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 		s.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	return handlers.LoggingHandler(os.Stdout, authHandler(h, providers, log))
+	return handlers.LoggingHandler(os.Stdout, authHandler(userInfoHandler(h, log), providers, log))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
