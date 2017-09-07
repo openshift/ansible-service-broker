@@ -1,6 +1,7 @@
 # Initial APB Update support
 
 [OBS Update Spec](https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#updating-a-service-instance)
+[Relevant spec discussion](https://github.com/openservicebrokerapi/servicebroker/issues/139)
 
 ## Introduction
 
