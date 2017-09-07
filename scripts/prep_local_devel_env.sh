@@ -25,6 +25,7 @@ export KUBERNETES_SERVICE_PORT=${OPENSHIFT_SERVER_PORT}
 SVC_ACCT_TOKEN_DIR=/var/run/secrets/kubernetes.io/serviceaccount
 SVC_ACCT_CA_CRT=$SVC_ACCT_TOKEN_DIR/ca.crt
 SVC_ACCT_TOKEN_FILE=$SVC_ACCT_TOKEN_DIR/token
+SVC_ACCT_SECRET_NAMESPACE=$SVC_ACCT_TOKEN_DIR/namespace
 TLS_CRT=$SVC_ACCT_TOKEN_DIR/tls.crt
 TLS_KEY=$SVC_ACCT_TOKEN_DIR/tls.key
 
@@ -59,6 +60,7 @@ if [ "$?" -ne 0 ]; then
   echo "Unable to determine service-ca.crt for secret '${BROKER_SVC_ACCT_SECRET_NAME}'"
   exit 1
 fi
+echo "ansible-service-broker" &> ${SVC_ACCT_SECRET_NAMESPACE}
 echo "${SVC_ACCT_CA_CRT_DATA}" &> ${SVC_ACCT_CA_CRT}
 if [ "$?" -ne "0" ]; then
   echo "Unable to write the service-ca.crt data for ${BROKER_SVC_ACCT_SECRET_NAME} to: ${SVC_ACCT_CA_CRT}"
