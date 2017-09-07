@@ -113,18 +113,30 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 			userStr := strings.Split(userJSONStr, " ")
 			if len(userStr) != 2 {
 				//If we do not understand the user, but something was sent, we should return a 404.
+				fmt.Printf("Not enough values in header - %v", userJSONStr)
 				writeResponse(writer, http.StatusBadRequest, broker.ErrorResponse{
-					Description: "Invalid User Info in Originating Identity Header",
+					Description: "Invalid User Info in Originating Identity Header - not enough values",
 				})
 				return
 			}
 
 			userInfo := broker.UserInfo{}
-			err := json.Unmarshal([]byte(userStr[1]), &userInfo)
+			uStr, err := base64.StdEncoding.DecodeString(userStr[1])
 			if err != nil {
 				//If we do not understand the user, but something was sent, we should return a 404.
+				fmt.Printf("Unable to decode base64 encoding - %v", err)
 				writeResponse(writer, http.StatusBadRequest, broker.ErrorResponse{
-					Description: "Invalid User Info in Originating Identity Header",
+					Description: "Invalid User Info in Originating Identity Header - unable to decode value",
+				})
+				return
+			}
+
+			err = json.Unmarshal(uStr, &userInfo)
+			if err != nil {
+				fmt.Printf("Unable to marshal into object - %v", err)
+				//If we do not understand the user, but something was sent, we should return a 404.
+				writeResponse(writer, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header - unable to marshal info",
 				})
 				return
 			}
@@ -220,36 +232,42 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
-	// Check if user has the ability.
-	// Retrieve the user from the context.
 	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !ok {
+		h.log.Debugf("%#v", userInfo)
 		// if no user, we should error out with bad request.
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 			Description: "Invalid user info from originating origin header.",
 		})
 		return
 	}
-	// Let's see if user can cover the cluster role.
-	openshiftClient, err := clients.Openshift(h.log)
-	if err != nil {
-		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{
-			Description: "Unable to connect to the cluster",
-		})
-		return
-	}
-	res, err := openshiftClient.SubjectRulesReview(userInfo.Username, req.Context.Namespace, h.log)
-	if err != nil {
-		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{
-			Description: "Unable to connect to the cluster",
-		})
-		return
-	}
-	if covered, _ := authorization.Covers(res.Status.Rules, h.clusterRoleRules); !covered {
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
-			Description: "User does not have sufficient permissions",
-		})
-		return
+
+	if !h.brokerConfig.AutoEscalate {
+		// Check if user has the ability.
+		// Retrieve the user from the context.
+		// Let's see if user can cover the cluster role.
+		openshiftClient, err := clients.Openshift(h.log)
+		if err != nil {
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{
+				Description: "Unable to connect to the cluster",
+			})
+			return
+		}
+		res, err := openshiftClient.SubjectRulesReview(userInfo.Username, req.Context.Namespace, h.log)
+		if err != nil {
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{
+				Description: "Unable to connect to the cluster",
+			})
+			return
+		}
+		if covered, _ := authorization.Covers(res.Status.Rules, h.clusterRoleRules); !covered {
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "User does not have sufficient permissions",
+			})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating %v permissions", userInfo.Username)
 	}
 	// Ok let's provision this bad boy
 	resp, err := h.broker.Provision(instanceUUID, req, async)

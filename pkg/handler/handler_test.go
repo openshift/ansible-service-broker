@@ -21,6 +21,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -141,6 +142,7 @@ func init() {
 	logging.SetBackend(backend, backendFormatter)
 	// will default to all config values to false
 	brokerConfig = broker.Config{}
+	brokerConfig.AutoEscalate = true
 }
 
 func TestNewHandler(t *testing.T) {
@@ -253,7 +255,6 @@ func TestCatalog(t *testing.T) {
 	ft.AssertEqual(t, w.Code, 200, "code not equal")
 }
 
-/* CANNOT TEST PROVISION WITHOUT MOCKING OUT CLIENT
 func TestProvisionCreate(t *testing.T) {
 	testhandler, w, r, params := buildProvisionHandler(uuid.New(), nil, "")
 	testhandler.provision(w, r, params)
@@ -312,7 +313,6 @@ func TestProvisionAccepted(t *testing.T) {
 	ft.AssertEqual(t, w.Code, 201, "should've been 201 accepted")
 	ft.AssertOperation(t, w.Body, testuuid)
 }
-*/
 func TestUpdate(t *testing.T) {
 }
 
@@ -436,6 +436,7 @@ func buildProvisionHandler(testuuid string, err error, operation string) (handle
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT", fmt.Sprintf("/v2/service_instance/%s", testuuid), trr)
 	r.Header.Add("Content-Type", "application/json")
+	r = r.WithContext(context.WithValue(r.Context(), UserInfoContext, broker.UserInfo{Username: "admin"}))
 	w := httptest.NewRecorder()
 	params := map[string]string{
 		"instance_uuid":      testuuid,

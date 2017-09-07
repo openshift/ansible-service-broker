@@ -82,6 +82,7 @@ type Config struct {
 	SSLCertKey         string        `yaml:"ssl_cert_key"`
 	SSLCert            string        `yaml:"ssl_cert"`
 	RefreshInterval    string        `yaml:"refresh_interval"`
+	AutoEscalate       bool          `yaml:"auto_escalate"`
 	Auth               []auth.Config `yaml:"auth"`
 	ClusterURL         string        `yaml:"cluster_url"`
 }
