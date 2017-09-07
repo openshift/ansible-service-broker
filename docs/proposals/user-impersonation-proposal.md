@@ -8,7 +8,7 @@ The problem is that currently privilege escalation is a concern for users who ha
 
 ## Implementation Details
 We will need to do 5 things to satisfy the requirements.
-1. Check if the user has the permissions to cover the cluster role to be used.
+1.  Check if the user has the permissions to cover the cluster role to be used. If the `auto_escalate` option is enabled in the broker config, we will immediately continue and not check the user's permissions.
 2. If the cluster admin while setting up the broker has set a config value to auto escalate we will immediately continue and not check the user's permissions.
 3. Create transient namespace/project
 4. Create a service account with permissions to the target namespace/project.
@@ -31,7 +31,7 @@ The current proposal will achieve the re-use of the conversion and cover methods
 
 #### Pros Of Not Vendoring Origin
 * The broker still remains independent of origin.
-* We could have wrote the functions ourselves, but they already had them. 
+* We could have written the functions ourselves, but they already had them. Updating wording to address PR comments.
 * The vendor for ASB is still manageable. If we bring in origin we will bring in many dependencies that we don not even need.
 
 #### Cons OF Not Vendoring Origin
