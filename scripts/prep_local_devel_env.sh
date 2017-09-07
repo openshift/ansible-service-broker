@@ -214,7 +214,8 @@ openshift:
   bearer_token_file:${BEARER_TOKEN_FILE}
   ca_file:${CA_FILE}
   image_pull_policy: ${IMAGE_PULL_POLICY}
-  sandbox_role: ${SANDBOX_ROLE}
+  sandbox_role: ${SANDBOX_ROLE:-edit}
+  namespace: ${NAMESPACE:-ansible-service-broker}
 broker:
   dev_broker: true
   launch_apb_on_bind: false
