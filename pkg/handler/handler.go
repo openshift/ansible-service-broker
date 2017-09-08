@@ -330,8 +330,14 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
-		writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
-		return
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
+			return
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
 	}
 
 	if !h.brokerConfig.AutoEscalate {
@@ -396,8 +402,12 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
-		return
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		}
 	}
 
 	if !h.brokerConfig.AutoEscalate {
@@ -459,7 +469,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		writeResponse(w, http.StatusGone, resp)
 		return
 	}
 
