@@ -121,7 +121,7 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 				})
 				return
 			}
-
+			log.Debugf("!!!!!-userinfodecoded %q", uStr)
 			err = json.Unmarshal(uStr, &userInfo)
 			if err != nil {
 				log.Debugf("Unable to marshal into object - %v", err)
@@ -134,6 +134,8 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 			r = r.WithContext(context.WithValue(
 				r.Context(), UserInfoContext, userInfo),
 			)
+		} else {
+			log.Debugf("Unable to find header")
 		}
 		h.ServeHTTP(w, r)
 	})

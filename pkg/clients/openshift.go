@@ -142,7 +142,7 @@ func newForConfig(c *rest.Config) (*OpenshiftClient, error) {
 func setConfigDefaults(config *rest.Config) error {
 	gv := v1.SchemeGroupVersion
 	config.GroupVersion = &gv
-	config.APIPath = "/oapi"
+	config.APIPath = "/apis/project.openshift.io"
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
 	if config.UserAgent == "" {

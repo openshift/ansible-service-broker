@@ -234,8 +234,8 @@ type BootstrapResponse struct {
 
 // UserInfo - holds information about the user that created a resource.
 type UserInfo struct {
-	Username string
-	UID      string
-	Groups   []string
-	Extra    map[string][]string
+	Username string              `json:"username"`
+	UID      string              `json:"uid"`
+	Groups   []string            `json:"groups,omitempty"`
+	Extra    map[string][]string `json:"extra,omitempty"`
 }

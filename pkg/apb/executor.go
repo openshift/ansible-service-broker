@@ -135,7 +135,7 @@ func ExecuteApb(
 	}
 
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
-	_, err = k8scli.CoreV1().Pods("new-project-test").Create(pod)
+	_, err = k8scli.CoreV1().Pods(executionContext.Namespace).Create(pod)
 	return executionContext, err
 }
 
