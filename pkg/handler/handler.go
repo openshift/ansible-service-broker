@@ -105,7 +105,8 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 			userStr := strings.Split(userJSONStr, " ")
 			if len(userStr) != 2 {
 				//If we do not understand the user, but something was sent, we should return a 404.
-				log.Debugf("Not enough values in header - %v", userJSONStr)
+				log.Debugf("Not enough values in header "+
+					"for originating origin header - %v", userJSONStr)
 				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 					Description: "Invalid User Info in Originating Identity Header",
 				})
@@ -115,16 +116,17 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 			uStr, err := base64.StdEncoding.DecodeString(userStr[1])
 			if err != nil {
 				//If we do not understand the user, but something was sent, we should return a 404.
-				log.Debugf("Unable to decode base64 encoding - %v", err)
+				log.Debugf("Unable to decode base64 encoding "+
+					"for originating origin header - %v", err)
 				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 					Description: "Invalid User Info in Originating Identity Header",
 				})
 				return
 			}
-			log.Debugf("!!!!!-userinfodecoded %q", uStr)
 			err = json.Unmarshal(uStr, &userInfo)
 			if err != nil {
-				log.Debugf("Unable to marshal into object - %v", err)
+				log.Debugf("Unable to marshal into object "+
+					"for originating origin header - %v", err)
 				//If we do not understand the user, but something was sent, we should return a 404.
 				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 					Description: "Invalid User Info in Originating Identity Header",
@@ -135,7 +137,7 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 				r.Context(), UserInfoContext, userInfo),
 			)
 		} else {
-			log.Debugf("Unable to find header")
+			log.Debugf("Unable to find originating origin header")
 		}
 		h.ServeHTTP(w, r)
 	})
@@ -241,7 +243,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 
 	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !ok {
-		h.log.Debugf("%#v", userInfo)
+		h.log.Debugf("unable to retrieve user info from request context")
 		// if no user, we should error out with bad request.
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 			Description: "Invalid user info from originating origin header.",
@@ -320,7 +322,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 
 	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !ok {
-		h.log.Debugf("%#v", userInfo)
+		h.log.Debugf("unable to retrieve user info from request context")
 		// if no user, we should error out with bad request.
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 			Description: "Invalid user info from originating origin header.",
@@ -392,7 +394,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 
 	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !ok {
-		h.log.Debugf("%#v", userInfo)
+		h.log.Debugf("unable to retrieve user info from request context")
 		// if no user, we should error out with bad request.
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 			Description: "Invalid user info from originating origin header.",
@@ -459,7 +461,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 	}
 	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !ok {
-		h.log.Debugf("%#v", userInfo)
+		h.log.Debugf("unable to retrieve user info from request context")
 		// if no user, we should error out with bad request.
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 			Description: "Invalid user info from originating origin header.",
@@ -469,7 +471,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
-		writeResponse(w, http.StatusGone, resp)
+		writeResponse(w, http.StatusGone, nil)
 		return
 	}
 
@@ -618,14 +620,15 @@ func (h handler) printRequest(req *http.Request) {
 	}
 }
 
+// validateUser will use the cached cluster role's rules, and retrieve
+// the rules for the user in the namespace to determine if the user's roles
+// can cover the  all of the cluster role's rules.
 func (h handler) validateUser(userName, namespace string) (bool, int, error) {
-	// Check if user has the ability.
-	// Retrieve the user from the context.
-	// Let's see if user can cover the cluster role.
 	openshiftClient, err := clients.Openshift(h.log)
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
+	// Retrieving the rules for the user in the namespace.
 	res, err := openshiftClient.SubjectRulesReview(userName, namespace, h.log)
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
