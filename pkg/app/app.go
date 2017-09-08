@@ -29,7 +29,16 @@ import (
 	"time"
 
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
+	"k8s.io/apiserver/pkg/authentication/authenticatorfactory"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+
+	//    genericoptions "k8s.io/apiserver/pkg/server/options"
+	//   authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -38,6 +47,11 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
+)
+
+var (
+	Scheme = runtime.NewScheme()
+	Codecs = serializer.NewCodecFactory(Scheme)
 )
 
 // MsgBufferSize - The buffer for the message channel.
@@ -52,6 +66,79 @@ type App struct {
 	log      *Log
 	registry []registries.Registry
 	engine   *broker.WorkEngine
+}
+
+func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
+	clientConfig, err := clientcmd.LoadFromFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	config, err := clientcmd.NewDefaultClientConfig(*clientConfig, &clientcmd.ConfigOverrides{}).ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func ApiServer(log *logging.Logger) (*App, error) {
+	serverConfig := genericapiserver.NewConfig(Codecs)
+	if err := o.SecureServing.ApplyTo(serverConfig); err != nil {
+		return nil, err
+	}
+
+	// vvvv STOLEN FROM clients.go vvvv
+	clientConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		log.Warning("Failed to create a InternalClientSet: %v.", err)
+
+		log.Debug("Checking for a local Cluster Config")
+		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
+		if err != nil {
+			log.Error("Failed to create LocalClientSet")
+			return nil, err
+		}
+	}
+	// ^^^^ STOLEN FROM clients.go ^^^^
+
+	client, err := authenticationclient.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	authenticationConfig := authenticatorfactory.DelegatingAuthenticatorConfig{
+		Anonymous:               true,
+		TokenAccessReviewClient: client.TokenReviews(),
+		CacheTTL:                o.Authentication.CacheTTL,
+	}
+	authenticator, _, err := authenticationConfig.New()
+	if err != nil {
+		return nil, err
+	}
+	serverConfig.Authenticator = authenticator
+
+	if err := o.Authorization.ApplyTo(serverConfig); err != nil {
+		return nil, err
+	}
+
+	/*
+	   config := &server.TemplateServiceBrokerConfig{
+	       GenericConfig: serverConfig,
+
+	       TemplateNamespaces: o.TSBConfig.TemplateNamespaces,
+	       // TODO add the code to set up the client and informers that you need here
+	   }
+	   return config, nil
+	*/
+
+	// TSB had the following, TemplateServiceBrokerConfig.GenericConfig -- serverConfig
+	// genericServer, err := c.TemplateServiceBrokerConfig.GenericConfig.SkipComplete().New("template-service-broker", delegationTarget)
+	fmt.Println("apiserver creating?")
+	genericServer, err := serverConfig.SkipComplete().New("ansible-service-broker", nil)
+
+	fmt.Println("apiserver created")
+
+	return nil, nil
 }
 
 // CreateApp - Creates the application
