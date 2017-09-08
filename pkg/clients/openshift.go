@@ -177,6 +177,13 @@ func (o OpenshiftClient) CreateProject(name string) (result *Project, err error)
 	return
 }
 
+func (o OpenshiftClient) DeleteProject(name string) (err error) {
+	return o.restClient.Delete().
+		Resource("projects").
+		Name(name).
+		Do().
+		Error()
+}
 func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging.Logger) (result *authorization.SubjectRulesReview, err error) {
 	body := &SubjectRulesReview{
 		Spec: SubjectRulesReviewSpec{

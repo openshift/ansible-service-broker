@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 
 	logging "github.com/op/go-logging"
@@ -225,24 +226,19 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return nil
 	}
-
-	s.log.Debug("Deleting serviceaccount %s, namespace %s", executionContext.PodName, executionContext.Namespace)
-	output, err := runtime.RunCommand(
-		"oc", "delete", "serviceaccount", executionContext.PodName, "--namespace="+executionContext.Namespace,
-	)
+	s.log.Debug("Deleting namespace %s", executionContext.Namespace)
+	openshitftClient, err := clients.Openshift(s.log)
 	if err != nil {
-		s.log.Error("Something went wrong trying to destroy the serviceaccount!")
-		s.log.Error(err.Error())
-		s.log.Error("oc delete output:")
-		s.log.Error(string(output))
 		return err
 	}
-	s.log.Debug("Successfully deleted serviceaccount %s, namespace %s", executionContext.PodName, executionContext.Namespace)
-	s.log.Debug("oc delete output:")
-	s.log.Debug(string(output))
+
+	err = openshitftClient.DeleteProject(executionContext.Namespace)
+	if err != nil {
+		return err
+	}
 
 	s.log.Debugf("Deleting rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
-	output, err = runtime.RunCommand(
+	output, err := runtime.RunCommand(
 		"oc", "delete", "rolebinding", executionContext.PodName, "--namespace="+executionContext.Namespace,
 	)
 	if err != nil {
