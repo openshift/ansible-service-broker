@@ -248,27 +248,8 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 	}
 
 	if !h.brokerConfig.AutoEscalate {
-		// Check if user has the ability.
-		// Retrieve the user from the context.
-		// Let's see if user can cover the cluster role.
-		openshiftClient, err := clients.Openshift(h.log)
-		if err != nil {
-			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{
-				Description: "Unable to connect to the cluster",
-			})
-			return
-		}
-		res, err := openshiftClient.SubjectRulesReview(userInfo.Username, req.Context.Namespace, h.log)
-		if err != nil {
-			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{
-				Description: "Unable to connect to the cluster",
-			})
-			return
-		}
-		if covered, _ := authorization.Covers(res.Status.Rules, h.clusterRoleRules); !covered {
-			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
-				Description: "User does not have sufficient permissions",
-			})
+		if ok, status, err := h.validateUser(userInfo.Username, req.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 			return
 		}
 	} else {
@@ -335,7 +316,32 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "deprovision request missing plan_id query parameter"})
 	}
 
-	resp, err := h.broker.Deprovision(instanceUUID, planID, async)
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+	if !ok {
+		h.log.Debugf("%#v", userInfo)
+		// if no user, we should error out with bad request.
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+			Description: "Invalid user info from originating origin header.",
+		})
+		return
+	}
+
+	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
+		return
+	}
+
+	if !h.brokerConfig.AutoEscalate {
+		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating %v permissions", userInfo.Username)
+	}
+
+	resp, err := h.broker.Deprovision(serviceInstance, planID, async)
 
 	if err != nil {
 		h.log.Debug("err for deprovision - %#v", err)
@@ -376,8 +382,33 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		return
 	}
 
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+	if !ok {
+		h.log.Debugf("%#v", userInfo)
+		// if no user, we should error out with bad request.
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+			Description: "Invalid user info from originating origin header.",
+		})
+		return
+	}
+
+	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		return
+	}
+
+	if !h.brokerConfig.AutoEscalate {
+		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating %v permissions", userInfo.Username)
+	}
+
 	// process binding request
-	resp, err := h.broker.Bind(instanceUUID, bindingUUID, req)
+	resp, err := h.broker.Bind(serviceInstance, bindingUUID, req)
 
 	if err != nil {
 		switch err {
@@ -414,7 +445,32 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 	if planID == "" {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})
 	}
-	resp, err := h.broker.Unbind(instanceUUID, bindingUUID, planID)
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+	if !ok {
+		h.log.Debugf("%#v", userInfo)
+		// if no user, we should error out with bad request.
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+			Description: "Invalid user info from originating origin header.",
+		})
+		return
+	}
+
+	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		return
+	}
+
+	if !h.brokerConfig.AutoEscalate {
+		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating %v permissions", userInfo.Username)
+	}
+
+	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID)
 
 	if errors.IsNotFound(err) {
 		writeResponse(w, http.StatusGone, resp)
@@ -548,4 +604,22 @@ func (h handler) printRequest(req *http.Request) {
 		}
 		h.log.Infof("Request: %q", b)
 	}
+}
+
+func (h handler) validateUser(userName, namespace string) (bool, int, error) {
+	// Check if user has the ability.
+	// Retrieve the user from the context.
+	// Let's see if user can cover the cluster role.
+	openshiftClient, err := clients.Openshift(h.log)
+	if err != nil {
+		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
+	}
+	res, err := openshiftClient.SubjectRulesReview(userName, namespace, h.log)
+	if err != nil {
+		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
+	}
+	if covered, _ := authorization.Covers(res.Status.Rules, h.clusterRoleRules); !covered {
+		return false, http.StatusBadRequest, fmt.Errorf("User does not have sufficient permissions")
+	}
+	return true, http.StatusOK, nil
 }

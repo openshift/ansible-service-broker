@@ -93,21 +93,25 @@ func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest) (*broker.UpdateResp
 	m.called("update", true)
 	return nil, m.Err
 }
-func (m MockBroker) Deprovision(uuid.UUID, string, bool) (*broker.DeprovisionResponse, error) {
+func (m MockBroker) Deprovision(apb.ServiceInstance, string, bool) (*broker.DeprovisionResponse, error) {
 	m.called("deprovision", true)
 	return nil, m.Err
 }
-func (m MockBroker) Bind(uuid.UUID, uuid.UUID, *broker.BindRequest) (*broker.BindResponse, error) {
+func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest) (*broker.BindResponse, error) {
 	m.called("bind", true)
 	return nil, m.Err
 }
-func (m MockBroker) Unbind(uuid.UUID, uuid.UUID, string) (*broker.UnbindResponse, error) {
+func (m MockBroker) Unbind(apb.ServiceInstance, uuid.UUID, string) (*broker.UnbindResponse, error) {
 	m.called("unbind", true)
 	return nil, m.Err
 }
 func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*broker.LastOperationResponse, error) {
 	state := broker.LastOperationStateInProgress
 	return &broker.LastOperationResponse{State: state, Description: ""}, m.Err
+}
+
+func (m MockBroker) GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error) {
+	return apb.ServiceInstance{}, nil
 }
 
 func (m MockBroker) Recover() (string, error) {
@@ -470,6 +474,7 @@ func buildBindHandler(testuuid string, err error) (handler, *httptest.ResponseRe
 	r := httptest.NewRequest("PUT",
 		fmt.Sprintf("/v2/service_instance/%s/service_bindings/%s", testuuid, testuuid), trr)
 	r.Header.Add("Content-Type", "application/json")
+	r = r.WithContext(context.WithValue(r.Context(), UserInfoContext, broker.UserInfo{Username: "admin"}))
 	w := httptest.NewRecorder()
 	params := map[string]string{
 		"instance_uuid": testuuid,
