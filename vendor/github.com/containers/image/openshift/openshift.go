@@ -2,6 +2,7 @@ package openshift
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -11,7 +12,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/containers/image/docker"
 	"github.com/containers/image/docker/reference"
 	"github.com/containers/image/manifest"
@@ -19,6 +19,7 @@ import (
 	"github.com/containers/image/version"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // openshiftClient is configuration for dealing with a single image stream, for reading or writing.
@@ -70,7 +71,7 @@ func newOpenshiftClient(ref openshiftReference) (*openshiftClient, error) {
 }
 
 // doRequest performs a correctly authenticated request to a specified path, and returns response body or an error object.
-func (c *openshiftClient) doRequest(method, path string, requestBody []byte) ([]byte, error) {
+func (c *openshiftClient) doRequest(ctx context.Context, method, path string, requestBody []byte) ([]byte, error) {
 	url := *c.baseURL
 	url.Path = path
 	var requestBodyReader io.Reader
@@ -82,6 +83,7 @@ func (c *openshiftClient) doRequest(method, path string, requestBody []byte) ([]
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 
 	if len(c.bearerToken) != 0 {
 		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
@@ -132,10 +134,10 @@ func (c *openshiftClient) doRequest(method, path string, requestBody []byte) ([]
 }
 
 // getImage loads the specified image object.
-func (c *openshiftClient) getImage(imageStreamImageName string) (*image, error) {
+func (c *openshiftClient) getImage(ctx context.Context, imageStreamImageName string) (*image, error) {
 	// FIXME: validate components per validation.IsValidPathSegmentName?
 	path := fmt.Sprintf("/oapi/v1/namespaces/%s/imagestreamimages/%s@%s", c.ref.namespace, c.ref.stream, imageStreamImageName)
-	body, err := c.doRequest("GET", path, nil)
+	body, err := c.doRequest(ctx, "GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -160,18 +162,15 @@ func (c *openshiftClient) convertDockerImageReference(ref string) (string, error
 type openshiftImageSource struct {
 	client *openshiftClient
 	// Values specific to this image
-	ctx                        *types.SystemContext
-	requestedManifestMIMETypes []string
+	ctx *types.SystemContext
 	// State
 	docker               types.ImageSource // The Docker Registry endpoint, or nil if not resolved yet
 	imageStreamImageName string            // Resolved image identifier, or "" if not known yet
 }
 
-// newImageSource creates a new ImageSource for the specified reference,
-// asking the backend to use a manifest from requestedManifestMIMETypes if possible.
-// nil requestedManifestMIMETypes means manifest.DefaultRequestedManifestMIMETypes.
+// newImageSource creates a new ImageSource for the specified reference.
 // The caller must call .Close() on the returned ImageSource.
-func newImageSource(ctx *types.SystemContext, ref openshiftReference, requestedManifestMIMETypes []string) (types.ImageSource, error) {
+func newImageSource(ctx *types.SystemContext, ref openshiftReference) (types.ImageSource, error) {
 	client, err := newOpenshiftClient(ref)
 	if err != nil {
 		return nil, err
@@ -180,7 +179,6 @@ func newImageSource(ctx *types.SystemContext, ref openshiftReference, requestedM
 	return &openshiftImageSource{
 		client: client,
 		ctx:    ctx,
-		requestedManifestMIMETypes: requestedManifestMIMETypes,
 	}, nil
 }
 
@@ -191,15 +189,19 @@ func (s *openshiftImageSource) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized ImageSource, if any.
-func (s *openshiftImageSource) Close() {
+func (s *openshiftImageSource) Close() error {
 	if s.docker != nil {
-		s.docker.Close()
+		err := s.docker.Close()
 		s.docker = nil
+
+		return err
 	}
+
+	return nil
 }
 
 func (s *openshiftImageSource) GetTargetManifest(digest digest.Digest) ([]byte, string, error) {
-	if err := s.ensureImageIsResolved(); err != nil {
+	if err := s.ensureImageIsResolved(context.TODO()); err != nil {
 		return nil, "", err
 	}
 	return s.docker.GetTargetManifest(digest)
@@ -208,7 +210,7 @@ func (s *openshiftImageSource) GetTargetManifest(digest digest.Digest) ([]byte, 
 // GetManifest returns the image's manifest along with its MIME type (which may be empty when it can't be determined but the manifest is available).
 // It may use a remote (= slow) service.
 func (s *openshiftImageSource) GetManifest() ([]byte, string, error) {
-	if err := s.ensureImageIsResolved(); err != nil {
+	if err := s.ensureImageIsResolved(context.TODO()); err != nil {
 		return nil, "", err
 	}
 	return s.docker.GetManifest()
@@ -216,18 +218,18 @@ func (s *openshiftImageSource) GetManifest() ([]byte, string, error) {
 
 // GetBlob returns a stream for the specified blob, and the blob’s size (or -1 if unknown).
 func (s *openshiftImageSource) GetBlob(info types.BlobInfo) (io.ReadCloser, int64, error) {
-	if err := s.ensureImageIsResolved(); err != nil {
+	if err := s.ensureImageIsResolved(context.TODO()); err != nil {
 		return nil, 0, err
 	}
 	return s.docker.GetBlob(info)
 }
 
-func (s *openshiftImageSource) GetSignatures() ([][]byte, error) {
-	if err := s.ensureImageIsResolved(); err != nil {
+func (s *openshiftImageSource) GetSignatures(ctx context.Context) ([][]byte, error) {
+	if err := s.ensureImageIsResolved(ctx); err != nil {
 		return nil, err
 	}
 
-	image, err := s.client.getImage(s.imageStreamImageName)
+	image, err := s.client.getImage(ctx, s.imageStreamImageName)
 	if err != nil {
 		return nil, err
 	}
@@ -241,14 +243,14 @@ func (s *openshiftImageSource) GetSignatures() ([][]byte, error) {
 }
 
 // ensureImageIsResolved sets up s.docker and s.imageStreamImageName
-func (s *openshiftImageSource) ensureImageIsResolved() error {
+func (s *openshiftImageSource) ensureImageIsResolved(ctx context.Context) error {
 	if s.docker != nil {
 		return nil
 	}
 
 	// FIXME: validate components per validation.IsValidPathSegmentName?
 	path := fmt.Sprintf("/oapi/v1/namespaces/%s/imagestreams/%s", s.client.ref.namespace, s.client.ref.stream)
-	body, err := s.client.doRequest("GET", path, nil)
+	body, err := s.client.doRequest(ctx, "GET", path, nil)
 	if err != nil {
 		return err
 	}
@@ -280,7 +282,7 @@ func (s *openshiftImageSource) ensureImageIsResolved() error {
 	if err != nil {
 		return err
 	}
-	d, err := dockerRef.NewImageSource(s.ctx, s.requestedManifestMIMETypes)
+	d, err := dockerRef.NewImageSource(s.ctx)
 	if err != nil {
 		return err
 	}
@@ -329,15 +331,12 @@ func (d *openshiftImageDestination) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized ImageDestination, if any.
-func (d *openshiftImageDestination) Close() {
-	d.docker.Close()
+func (d *openshiftImageDestination) Close() error {
+	return d.docker.Close()
 }
 
 func (d *openshiftImageDestination) SupportedManifestMIMETypes() []string {
-	return []string{
-		manifest.DockerV2Schema1SignedMediaType,
-		manifest.DockerV2Schema1MediaType,
-	}
+	return d.docker.SupportedManifestMIMETypes()
 }
 
 // SupportsSignatures returns an error (to be displayed to the user) if the destination certainly can't store signatures.
@@ -357,6 +356,11 @@ func (d *openshiftImageDestination) AcceptsForeignLayerURLs() bool {
 	return true
 }
 
+// MustMatchRuntimeOS returns true iff the destination can store only images targeted for the current runtime OS. False otherwise.
+func (d *openshiftImageDestination) MustMatchRuntimeOS() bool {
+	return false
+}
+
 // PutBlob writes contents of stream and returns data representing the result (with all data filled in).
 // inputInfo.Digest can be optionally provided if known; it is not mandatory for the implementation to verify it.
 // inputInfo.Size is the expected length of stream, if known.
@@ -367,6 +371,10 @@ func (d *openshiftImageDestination) PutBlob(stream io.Reader, inputInfo types.Bl
 	return d.docker.PutBlob(stream, inputInfo)
 }
 
+// HasBlob returns true iff the image destination already contains a blob with the matching digest which can be reapplied using ReapplyBlob.
+// Unlike PutBlob, the digest can not be empty.  If HasBlob returns true, the size of the blob must also be returned.
+// If the destination does not contain the blob, or it is unknown, HasBlob ordinarily returns (false, -1, nil);
+// it returns a non-nil error only on an unexpected failure.
 func (d *openshiftImageDestination) HasBlob(info types.BlobInfo) (bool, int64, error) {
 	return d.docker.HasBlob(info)
 }
@@ -375,6 +383,10 @@ func (d *openshiftImageDestination) ReapplyBlob(info types.BlobInfo) (types.Blob
 	return d.docker.ReapplyBlob(info)
 }
 
+// PutManifest writes manifest to the destination.
+// FIXME? This should also receive a MIME type if known, to differentiate between schema versions.
+// If the destination is in principle available, refuses this manifest type (e.g. it does not recognize the schema),
+// but may accept a different manifest type, the returned error must be an ManifestTypeRejectedError.
 func (d *openshiftImageDestination) PutManifest(m []byte) error {
 	manifestDigest, err := manifest.Digest(m)
 	if err != nil {
@@ -396,7 +408,7 @@ func (d *openshiftImageDestination) PutSignatures(signatures [][]byte) error {
 		return nil // No need to even read the old state.
 	}
 
-	image, err := d.client.getImage(d.imageStreamImageName)
+	image, err := d.client.getImage(context.TODO(), d.imageStreamImageName)
 	if err != nil {
 		return err
 	}
@@ -437,7 +449,7 @@ sigExists:
 			Content:    newSig,
 		}
 		body, err := json.Marshal(sig)
-		_, err = d.client.doRequest("POST", "/oapi/v1/imagesignatures", body)
+		_, err = d.client.doRequest(context.TODO(), "POST", "/oapi/v1/imagesignatures", body)
 		if err != nil {
 			return err
 		}

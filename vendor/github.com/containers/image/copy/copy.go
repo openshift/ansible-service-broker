@@ -3,27 +3,26 @@ package copy
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"reflect"
+	"runtime"
+	"strings"
+	"time"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/containers/image/image"
-	"github.com/containers/image/manifest"
+	"github.com/containers/image/pkg/compression"
 	"github.com/containers/image/signature"
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
-
-// preferredManifestMIMETypes lists manifest MIME types in order of our preference, if we can't use the original manifest and need to convert.
-// Prefer v2s2 to v2s1 because v2s2 does not need to be changed when uploading to a different location.
-// Include v2s1 signed but not v2s1 unsigned, because docker/distribution requires a signature even if the unsigned MIME type is used.
-var preferredManifestMIMETypes = []string{manifest.DockerV2Schema2MediaType, manifest.DockerV2Schema1SignedMediaType}
 
 type digestingReader struct {
 	source           io.Reader
@@ -45,6 +44,8 @@ type imageCopier struct {
 	diffIDsAreNeeded  bool
 	canModifyManifest bool
 	reportWriter      io.Writer
+	progressInterval  time.Duration
+	progress          chan types.ProgressProperties
 }
 
 // newDigestingReader returns an io.Reader implementation with contents of source, which will eventually return a non-EOF error
@@ -92,14 +93,28 @@ type Options struct {
 	ReportWriter     io.Writer
 	SourceCtx        *types.SystemContext
 	DestinationCtx   *types.SystemContext
+	ProgressInterval time.Duration                 // time to wait between reports to signal the progress channel
+	Progress         chan types.ProgressProperties // Reported to when ProgressInterval has arrived for a single artifact+offset.
 }
 
-// Image copies image from srcRef to destRef, using policyContext to validate source image admissibility.
-func Image(policyContext *signature.PolicyContext, destRef, srcRef types.ImageReference, options *Options) error {
+// Image copies image from srcRef to destRef, using policyContext to validate
+// source image admissibility.
+func Image(policyContext *signature.PolicyContext, destRef, srcRef types.ImageReference, options *Options) (retErr error) {
+	// NOTE this function uses an output parameter for the error return value.
+	// Setting this and returning is the ideal way to return an error.
+	//
+	// the defers in this routine will wrap the error return with its own errors
+	// which can be valuable context in the middle of a multi-streamed copy.
+	if options == nil {
+		options = &Options{}
+	}
+
 	reportWriter := ioutil.Discard
-	if options != nil && options.ReportWriter != nil {
+
+	if options.ReportWriter != nil {
 		reportWriter = options.ReportWriter
 	}
+
 	writeReport := func(f string, a ...interface{}) {
 		fmt.Fprintf(reportWriter, f, a...)
 	}
@@ -108,17 +123,22 @@ func Image(policyContext *signature.PolicyContext, destRef, srcRef types.ImageRe
 	if err != nil {
 		return errors.Wrapf(err, "Error initializing destination %s", transports.ImageName(destRef))
 	}
-	defer dest.Close()
-	destSupportedManifestMIMETypes := dest.SupportedManifestMIMETypes()
+	defer func() {
+		if err := dest.Close(); err != nil {
+			retErr = errors.Wrapf(retErr, " (dest: %v)", err)
+		}
+	}()
 
-	rawSource, err := srcRef.NewImageSource(options.SourceCtx, destSupportedManifestMIMETypes)
+	rawSource, err := srcRef.NewImageSource(options.SourceCtx)
 	if err != nil {
 		return errors.Wrapf(err, "Error initializing source %s", transports.ImageName(srcRef))
 	}
 	unparsedImage := image.UnparsedFromSource(rawSource)
 	defer func() {
 		if unparsedImage != nil {
-			unparsedImage.Close()
+			if err := unparsedImage.Close(); err != nil {
+				retErr = errors.Wrapf(retErr, " (unparsed: %v)", err)
+			}
 		}
 	}()
 
@@ -131,18 +151,26 @@ func Image(policyContext *signature.PolicyContext, destRef, srcRef types.ImageRe
 		return errors.Wrapf(err, "Error initializing image from source %s", transports.ImageName(srcRef))
 	}
 	unparsedImage = nil
-	defer src.Close()
+	defer func() {
+		if err := src.Close(); err != nil {
+			retErr = errors.Wrapf(retErr, " (source: %v)", err)
+		}
+	}()
+
+	if err := checkImageDestinationForCurrentRuntimeOS(src, dest); err != nil {
+		return err
+	}
 
 	if src.IsMultiImage() {
 		return errors.Errorf("can not copy %s: manifest contains multiple images", transports.ImageName(srcRef))
 	}
 
 	var sigs [][]byte
-	if options != nil && options.RemoveSignatures {
+	if options.RemoveSignatures {
 		sigs = [][]byte{}
 	} else {
 		writeReport("Getting image source signatures\n")
-		s, err := src.Signatures()
+		s, err := src.Signatures(context.TODO())
 		if err != nil {
 			return errors.Wrap(err, "Error reading signatures")
 		}
@@ -157,8 +185,16 @@ func Image(policyContext *signature.PolicyContext, destRef, srcRef types.ImageRe
 
 	canModifyManifest := len(sigs) == 0
 	manifestUpdates := types.ManifestUpdateOptions{}
+	manifestUpdates.InformationOnly.Destination = dest
 
-	if err := determineManifestConversion(&manifestUpdates, src, destSupportedManifestMIMETypes, canModifyManifest); err != nil {
+	if err := updateEmbeddedDockerReference(&manifestUpdates, dest, src, canModifyManifest); err != nil {
+		return err
+	}
+
+	// We compute preferredManifestMIMEType only to show it in error messages.
+	// Without having to add this context in an error message, we would be happy enough to know only that no conversion is needed.
+	preferredManifestMIMEType, otherManifestMIMETypeCandidates, err := determineManifestConversion(&manifestUpdates, src, dest.SupportedManifestMIMETypes(), canModifyManifest)
+	if err != nil {
 		return err
 	}
 
@@ -173,53 +209,64 @@ func Image(policyContext *signature.PolicyContext, destRef, srcRef types.ImageRe
 		diffIDsAreNeeded:  src.UpdatedImageNeedsLayerDiffIDs(manifestUpdates),
 		canModifyManifest: canModifyManifest,
 		reportWriter:      reportWriter,
+		progressInterval:  options.ProgressInterval,
+		progress:          options.Progress,
 	}
 
 	if err := ic.copyLayers(); err != nil {
 		return err
 	}
 
-	pendingImage := src
-	if !reflect.DeepEqual(manifestUpdates, types.ManifestUpdateOptions{InformationOnly: manifestUpdates.InformationOnly}) {
-		if !canModifyManifest {
-			return errors.Errorf("Internal error: copy needs an updated manifest but that was known to be forbidden")
-		}
-		manifestUpdates.InformationOnly.Destination = dest
-		pendingImage, err = src.UpdatedImage(manifestUpdates)
-		if err != nil {
-			return errors.Wrap(err, "Error creating an updated image manifest")
-		}
-	}
-	manifest, _, err := pendingImage.Manifest()
+	// With docker/distribution registries we do not know whether the registry accepts schema2 or schema1 only;
+	// and at least with the OpenShift registry "acceptschema2" option, there is no way to detect the support
+	// without actually trying to upload something and getting a types.ManifestTypeRejectedError.
+	// So, try the preferred manifest MIME type. If the process succeeds, fine…
+	manifest, err := ic.copyUpdatedConfigAndManifest()
 	if err != nil {
-		return errors.Wrap(err, "Error reading manifest")
+		logrus.Debugf("Writing manifest using preferred type %s failed: %v", preferredManifestMIMEType, err)
+		// … if it fails, _and_ the failure is because the manifest is rejected, we may have other options.
+		if _, isManifestRejected := errors.Cause(err).(types.ManifestTypeRejectedError); !isManifestRejected || len(otherManifestMIMETypeCandidates) == 0 {
+			// We don’t have other options.
+			// In principle the code below would handle this as well, but the resulting  error message is fairly ugly.
+			// Don’t bother the user with MIME types if we have no choice.
+			return err
+		}
+		// If the original MIME type is acceptable, determineManifestConversion always uses it as preferredManifestMIMEType.
+		// So if we are here, we will definitely be trying to convert the manifest.
+		// With !canModifyManifest, that would just be a string of repeated failures for the same reason,
+		// so let’s bail out early and with a better error message.
+		if !canModifyManifest {
+			return errors.Wrap(err, "Writing manifest failed (and converting it is not possible)")
+		}
+
+		// errs is a list of errors when trying various manifest types. Also serves as an "upload succeeded" flag when set to nil.
+		errs := []string{fmt.Sprintf("%s(%v)", preferredManifestMIMEType, err)}
+		for _, manifestMIMEType := range otherManifestMIMETypeCandidates {
+			logrus.Debugf("Trying to use manifest type %s…", manifestMIMEType)
+			manifestUpdates.ManifestMIMEType = manifestMIMEType
+			attemptedManifest, err := ic.copyUpdatedConfigAndManifest()
+			if err != nil {
+				logrus.Debugf("Upload of manifest type %s failed: %v", manifestMIMEType, err)
+				errs = append(errs, fmt.Sprintf("%s(%v)", manifestMIMEType, err))
+				continue
+			}
+
+			// We have successfully uploaded a manifest.
+			manifest = attemptedManifest
+			errs = nil // Mark this as a success so that we don't abort below.
+			break
+		}
+		if errs != nil {
+			return fmt.Errorf("Uploading manifest failed, attempted the following formats: %s", strings.Join(errs, ", "))
+		}
 	}
 
-	if err := ic.copyConfig(pendingImage); err != nil {
-		return err
-	}
-
-	if options != nil && options.SignBy != "" {
-		mech, err := signature.NewGPGSigningMechanism()
+	if options.SignBy != "" {
+		newSig, err := createSignature(dest, manifest, options.SignBy, reportWriter)
 		if err != nil {
-			return errors.Wrap(err, "Error initializing GPG")
-		}
-		dockerReference := dest.Reference().DockerReference()
-		if dockerReference == nil {
-			return errors.Errorf("Cannot determine canonical Docker reference for destination %s", transports.ImageName(dest.Reference()))
-		}
-
-		writeReport("Signing manifest\n")
-		newSig, err := signature.SignDockerManifest(manifest, dockerReference.String(), mech, options.SignBy)
-		if err != nil {
-			return errors.Wrap(err, "Error creating signature")
+			return err
 		}
 		sigs = append(sigs, newSig)
-	}
-
-	writeReport("Writing manifest to image destination\n")
-	if err := dest.PutManifest(manifest); err != nil {
-		return errors.Wrap(err, "Error writing manifest")
 	}
 
 	writeReport("Storing signatures\n")
@@ -231,6 +278,40 @@ func Image(policyContext *signature.PolicyContext, destRef, srcRef types.ImageRe
 		return errors.Wrap(err, "Error committing the finished image")
 	}
 
+	return nil
+}
+
+func checkImageDestinationForCurrentRuntimeOS(src types.Image, dest types.ImageDestination) error {
+	if dest.MustMatchRuntimeOS() {
+		c, err := src.OCIConfig()
+		if err != nil {
+			return errors.Wrapf(err, "Error parsing image configuration")
+		}
+		osErr := fmt.Errorf("image operating system %q cannot be used on %q", c.OS, runtime.GOOS)
+		if runtime.GOOS == "windows" && c.OS == "linux" {
+			return osErr
+		} else if runtime.GOOS != "windows" && c.OS == "windows" {
+			return osErr
+		}
+	}
+	return nil
+}
+
+// updateEmbeddedDockerReference handles the Docker reference embedded in Docker schema1 manifests.
+func updateEmbeddedDockerReference(manifestUpdates *types.ManifestUpdateOptions, dest types.ImageDestination, src types.Image, canModifyManifest bool) error {
+	destRef := dest.Reference().DockerReference()
+	if destRef == nil {
+		return nil // Destination does not care about Docker references
+	}
+	if !src.EmbeddedDockerReferenceConflicts(destRef) {
+		return nil // No reference embedded in the manifest, or it matches destRef already.
+	}
+
+	if !canModifyManifest {
+		return errors.Errorf("Copying a schema1 image with an embedded Docker reference to %s (Docker reference %s) would invalidate existing signatures. Explicitly enable signature removal to proceed anyway",
+			transports.ImageName(dest.Reference()), destRef.String())
+	}
+	manifestUpdates.EmbeddedDockerReference = destRef
 	return nil
 }
 
@@ -286,6 +367,45 @@ func layerDigestsDiffer(a, b []types.BlobInfo) bool {
 	return false
 }
 
+// copyUpdatedConfigAndManifest updates the image per ic.manifestUpdates, if necessary,
+// stores the resulting config and manifest to the destination, and returns the stored manifest.
+func (ic *imageCopier) copyUpdatedConfigAndManifest() ([]byte, error) {
+	pendingImage := ic.src
+	if !reflect.DeepEqual(*ic.manifestUpdates, types.ManifestUpdateOptions{InformationOnly: ic.manifestUpdates.InformationOnly}) {
+		if !ic.canModifyManifest {
+			return nil, errors.Errorf("Internal error: copy needs an updated manifest but that was known to be forbidden")
+		}
+		if !ic.diffIDsAreNeeded && ic.src.UpdatedImageNeedsLayerDiffIDs(*ic.manifestUpdates) {
+			// We have set ic.diffIDsAreNeeded based on the preferred MIME type returned by determineManifestConversion.
+			// So, this can only happen if we are trying to upload using one of the other MIME type candidates.
+			// Because UpdatedImageNeedsLayerDiffIDs is true only when converting from s1 to s2, this case should only arise
+			// when ic.dest.SupportedManifestMIMETypes() includes both s1 and s2, the upload using s1 failed, and we are now trying s2.
+			// Supposedly s2-only registries do not exist or are extremely rare, so failing with this error message is good enough for now.
+			// If handling such registries turns out to be necessary, we could compute ic.diffIDsAreNeeded based on the full list of manifest MIME type candidates.
+			return nil, errors.Errorf("Can not convert image to %s, preparing DiffIDs for this case is not supported", ic.manifestUpdates.ManifestMIMEType)
+		}
+		pi, err := ic.src.UpdatedImage(*ic.manifestUpdates)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error creating an updated image manifest")
+		}
+		pendingImage = pi
+	}
+	manifest, _, err := pendingImage.Manifest()
+	if err != nil {
+		return nil, errors.Wrap(err, "Error reading manifest")
+	}
+
+	if err := ic.copyConfig(pendingImage); err != nil {
+		return nil, err
+	}
+
+	fmt.Fprintf(ic.reportWriter, "Writing manifest to image destination\n")
+	if err := ic.dest.PutManifest(manifest); err != nil {
+		return nil, errors.Wrap(err, "Error writing manifest")
+	}
+	return manifest, nil
+}
+
 // copyConfig copies config.json, if any, from src to dest.
 func (ic *imageCopier) copyConfig(src types.Image) error {
 	srcInfo := src.ConfigInfo()
@@ -318,7 +438,7 @@ type diffIDResult struct {
 func (ic *imageCopier) copyLayer(srcInfo types.BlobInfo) (types.BlobInfo, digest.Digest, error) {
 	// Check if we already have a blob with this digest
 	haveBlob, extantBlobSize, err := ic.dest.HasBlob(srcInfo)
-	if err != nil && err != types.ErrBlobNotFound {
+	if err != nil {
 		return types.BlobInfo{}, "", errors.Wrapf(err, "Error checking for blob %s at destination", srcInfo.Digest)
 	}
 	// If we already have a cached diffID for this blob, we don't need to compute it
@@ -370,7 +490,7 @@ func (ic *imageCopier) copyLayer(srcInfo types.BlobInfo) (types.BlobInfo, digest
 // and returns a complete blobInfo of the copied blob and perhaps a <-chan diffIDResult if diffIDIsNeeded, to be read by the caller.
 func (ic *imageCopier) copyLayerFromStream(srcStream io.Reader, srcInfo types.BlobInfo,
 	diffIDIsNeeded bool) (types.BlobInfo, <-chan diffIDResult, error) {
-	var getDiffIDRecorder func(decompressorFunc) io.Writer // = nil
+	var getDiffIDRecorder func(compression.DecompressorFunc) io.Writer // = nil
 	var diffIDChan chan diffIDResult
 
 	err := errors.New("Internal error: unexpected panic in copyLayer") // For pipeWriter.CloseWithError below
@@ -381,7 +501,7 @@ func (ic *imageCopier) copyLayerFromStream(srcStream io.Reader, srcInfo types.Bl
 			pipeWriter.CloseWithError(err) // CloseWithError(nil) is equivalent to Close()
 		}()
 
-		getDiffIDRecorder = func(decompressor decompressorFunc) io.Writer {
+		getDiffIDRecorder = func(decompressor compression.DecompressorFunc) io.Writer {
 			// If this fails, e.g. because we have exited and due to pipeWriter.CloseWithError() above further
 			// reading from the pipe has failed, we don’t really care.
 			// We only read from diffIDChan if the rest of the flow has succeeded, and when we do read from it,
@@ -399,7 +519,7 @@ func (ic *imageCopier) copyLayerFromStream(srcStream io.Reader, srcInfo types.Bl
 }
 
 // diffIDComputationGoroutine reads all input from layerStream, uncompresses using decompressor if necessary, and sends its digest, and status, if any, to dest.
-func diffIDComputationGoroutine(dest chan<- diffIDResult, layerStream io.ReadCloser, decompressor decompressorFunc) {
+func diffIDComputationGoroutine(dest chan<- diffIDResult, layerStream io.ReadCloser, decompressor compression.DecompressorFunc) {
 	result := diffIDResult{
 		digest: "",
 		err:    errors.New("Internal error: unexpected panic in diffIDComputationGoroutine"),
@@ -411,7 +531,7 @@ func diffIDComputationGoroutine(dest chan<- diffIDResult, layerStream io.ReadClo
 }
 
 // computeDiffID reads all input from layerStream, uncompresses it using decompressor if necessary, and returns its digest.
-func computeDiffID(stream io.Reader, decompressor decompressorFunc) (digest.Digest, error) {
+func computeDiffID(stream io.Reader, decompressor compression.DecompressorFunc) (digest.Digest, error) {
 	if decompressor != nil {
 		s, err := decompressor(stream)
 		if err != nil {
@@ -428,7 +548,7 @@ func computeDiffID(stream io.Reader, decompressor decompressorFunc) (digest.Dige
 // perhaps compressing it if canCompress,
 // and returns a complete blobInfo of the copied blob.
 func (ic *imageCopier) copyBlobFromStream(srcStream io.Reader, srcInfo types.BlobInfo,
-	getOriginalLayerCopyWriter func(decompressor decompressorFunc) io.Writer,
+	getOriginalLayerCopyWriter func(decompressor compression.DecompressorFunc) io.Writer,
 	canCompress bool) (types.BlobInfo, error) {
 	// The copying happens through a pipeline of connected io.Readers.
 	// === Input: srcStream
@@ -446,8 +566,8 @@ func (ic *imageCopier) copyBlobFromStream(srcStream io.Reader, srcInfo types.Blo
 	var destStream io.Reader = digestingReader
 
 	// === Detect compression of the input stream.
-	// This requires us to “peek ahead” into the stream to read the initial part, which requires us to chain through another io.Reader returned by detectCompression.
-	decompressor, destStream, err := detectCompression(destStream) // We could skip this in some cases, but let's keep the code path uniform
+	// This requires us to “peek ahead” into the stream to read the initial part, which requires us to chain through another io.Reader returned by DetectCompression.
+	decompressor, destStream, err := compression.DetectCompression(destStream) // We could skip this in some cases, but let's keep the code path uniform
 	if err != nil {
 		return types.BlobInfo{}, errors.Wrapf(err, "Error reading blob %s", srcInfo.Digest)
 	}
@@ -489,6 +609,17 @@ func (ic *imageCopier) copyBlobFromStream(srcStream io.Reader, srcInfo types.Blo
 		inputInfo.Size = -1
 	}
 
+	// === Report progress using the ic.progress channel, if required.
+	if ic.progress != nil && ic.progressInterval > 0 {
+		destStream = &progressReader{
+			source:   destStream,
+			channel:  ic.progress,
+			interval: ic.progressInterval,
+			artifact: srcInfo,
+			lastTime: time.Now(),
+		}
+	}
+
 	// === Finally, send the layer stream to dest.
 	uploadedInfo, err := ic.dest.PutBlob(destStream, inputInfo)
 	if err != nil {
@@ -527,42 +658,4 @@ func compressGoroutine(dest *io.PipeWriter, src io.Reader) {
 	defer zipper.Close()
 
 	_, err = io.Copy(zipper, src) // Sets err to nil, i.e. causes dest.Close()
-}
-
-// determineManifestConversion updates manifestUpdates to convert manifest to a supported MIME type, if necessary and canModifyManifest.
-// Note that the conversion will only happen later, through src.UpdatedImage
-func determineManifestConversion(manifestUpdates *types.ManifestUpdateOptions, src types.Image, destSupportedManifestMIMETypes []string, canModifyManifest bool) error {
-	if len(destSupportedManifestMIMETypes) == 0 {
-		return nil // Anything goes
-	}
-	supportedByDest := map[string]struct{}{}
-	for _, t := range destSupportedManifestMIMETypes {
-		supportedByDest[t] = struct{}{}
-	}
-
-	_, srcType, err := src.Manifest()
-	if err != nil { // This should have been cached?!
-		return errors.Wrap(err, "Error reading manifest")
-	}
-	if _, ok := supportedByDest[srcType]; ok {
-		logrus.Debugf("Manifest MIME type %s is declared supported by the destination", srcType)
-		return nil
-	}
-
-	// OK, we should convert the manifest.
-	if !canModifyManifest {
-		logrus.Debugf("Manifest MIME type %s is not supported by the destination, but we can't modify the manifest, hoping for the best...")
-		return nil // Take our chances - FIXME? Or should we fail without trying?
-	}
-
-	var chosenType = destSupportedManifestMIMETypes[0] // This one is known to be supported.
-	for _, t := range preferredManifestMIMETypes {
-		if _, ok := supportedByDest[t]; ok {
-			chosenType = t
-			break
-		}
-	}
-	logrus.Debugf("Will convert manifest from MIME type %s to %s", srcType, chosenType)
-	manifestUpdates.ManifestMIMEType = chosenType
-	return nil
 }

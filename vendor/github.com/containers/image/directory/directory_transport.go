@@ -10,9 +10,14 @@ import (
 	"github.com/containers/image/directory/explicitfilepath"
 	"github.com/containers/image/docker/reference"
 	"github.com/containers/image/image"
+	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
 	"github.com/opencontainers/go-digest"
 )
+
+func init() {
+	transports.Register(Transport)
+}
 
 // Transport is an ImageTransport for directory paths.
 var Transport = dirTransport{}
@@ -138,11 +143,9 @@ func (ref dirReference) NewImage(ctx *types.SystemContext) (types.Image, error) 
 	return image.FromSource(src)
 }
 
-// NewImageSource returns a types.ImageSource for this reference,
-// asking the backend to use a manifest from requestedManifestMIMETypes if possible.
-// nil requestedManifestMIMETypes means manifest.DefaultRequestedManifestMIMETypes.
+// NewImageSource returns a types.ImageSource for this reference.
 // The caller must call .Close() on the returned ImageSource.
-func (ref dirReference) NewImageSource(ctx *types.SystemContext, requestedManifestMIMETypes []string) (types.ImageSource, error) {
+func (ref dirReference) NewImageSource(ctx *types.SystemContext) (types.ImageSource, error) {
 	return newImageSource(ref), nil
 }
 

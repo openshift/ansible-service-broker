@@ -1,6 +1,8 @@
 package image
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 
 	"github.com/containers/image/types"
@@ -32,7 +34,8 @@ func (i *memoryImage) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized UnparsedImage, if any.
-func (i *memoryImage) Close() {
+func (i *memoryImage) Close() error {
+	return nil
 }
 
 // Size returns the size of the image as stored, if known, or -1 if not.
@@ -53,7 +56,7 @@ func (i *memoryImage) Manifest() ([]byte, string, error) {
 }
 
 // Signatures is like ImageSource.GetSignatures, but the result is cached; it is OK to call this however often you need.
-func (i *memoryImage) Signatures() ([][]byte, error) {
+func (i *memoryImage) Signatures(ctx context.Context) ([][]byte, error) {
 	// Modifying an image invalidates signatures; a caller asking the updated image for signatures
 	// is probably confused.
 	return nil, errors.New("Internal error: Image.Signatures() is not supported for images modified in memory")

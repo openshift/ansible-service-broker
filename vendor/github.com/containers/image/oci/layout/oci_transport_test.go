@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	_ "github.com/containers/image/internal/testing/explicitfilepath-tmpdir"
 	"github.com/containers/image/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,9 +39,9 @@ func TestTransportValidatePolicyConfigurationScope(t *testing.T) {
 		"/has/./dot",
 		"/has/dot/../dot",
 		"/trailing/slash/",
-		"/etc:invalid'tag!value@",
-		"/path:with/colons",
-		"/path:with/colons/and:tag",
+		"/etc:invalid'image!value@",
+		"/etc_no_image:",
+		"/etc:multiple_:separators",
 	} {
 		err := Transport.ValidatePolicyConfigurationScope(scope)
 		assert.Error(t, err, scope)
@@ -64,48 +65,57 @@ func testParseReference(t *testing.T, fn func(string) (types.ImageReference, err
 		"relativepath",
 		tmpDir + "/thisdoesnotexist",
 	} {
-		for _, tag := range []struct{ suffix, tag string }{
-			{":notlatest", "notlatest"},
-			{"", "latest"},
+		for _, image := range []struct{ suffix, image string }{
+			{":notlatest:image", "notlatest:image"},
+			{":latestimage", "latestimage"},
+			{":", ""},
+			{"", ""},
 		} {
-			input := path + tag.suffix
+			input := path + image.suffix
 			ref, err := fn(input)
 			require.NoError(t, err, input)
 			ociRef, ok := ref.(ociReference)
 			require.True(t, ok)
 			assert.Equal(t, path, ociRef.dir, input)
-			assert.Equal(t, tag.tag, ociRef.tag, input)
+			assert.Equal(t, image.image, ociRef.image, input)
 		}
 	}
 
-	_, err = fn(tmpDir + "/with:multiple:colons:and:tag")
-	assert.Error(t, err)
-
-	_, err = fn(tmpDir + ":invalid'tag!value@")
+	_, err = fn(tmpDir + ":invalid'image!value@")
 	assert.Error(t, err)
 }
 
 func TestNewReference(t *testing.T) {
-	const tagValue = "tagValue"
+	const (
+		imageValue   = "imageValue"
+		noImageValue = ""
+	)
 
 	tmpDir, err := ioutil.TempDir("", "oci-transport-test")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	ref, err := NewReference(tmpDir, tagValue)
+	ref, err := NewReference(tmpDir, imageValue)
 	require.NoError(t, err)
 	ociRef, ok := ref.(ociReference)
 	require.True(t, ok)
 	assert.Equal(t, tmpDir, ociRef.dir)
-	assert.Equal(t, tagValue, ociRef.tag)
+	assert.Equal(t, imageValue, ociRef.image)
 
-	_, err = NewReference(tmpDir+"/thisparentdoesnotexist/something", tagValue)
+	ref, err = NewReference(tmpDir, noImageValue)
+	require.NoError(t, err)
+	ociRef, ok = ref.(ociReference)
+	require.True(t, ok)
+	assert.Equal(t, tmpDir, ociRef.dir)
+	assert.Equal(t, noImageValue, ociRef.image)
+
+	_, err = NewReference(tmpDir+"/thisparentdoesnotexist/something", imageValue)
 	assert.Error(t, err)
 
-	_, err = NewReference(tmpDir+"/has:colon", tagValue)
+	_, err = NewReference(tmpDir, "invalid'image!value@")
 	assert.Error(t, err)
 
-	_, err = NewReference(tmpDir, "invalid'tag!value@")
+	_, err = NewReference(tmpDir+"/has:colon", imageValue)
 	assert.Error(t, err)
 }
 
@@ -115,7 +125,26 @@ func TestNewReference(t *testing.T) {
 func refToTempOCI(t *testing.T) (ref types.ImageReference, tmpDir string) {
 	tmpDir, err := ioutil.TempDir("", "oci-transport-test")
 	require.NoError(t, err)
-	ref, err = NewReference(tmpDir, "tagValue")
+	m := `{
+		"schemaVersion": 2,
+		"manifests": [
+		{
+			"mediaType": "application/vnd.oci.image.manifest.v1+json",
+			"size": 7143,
+			"digest": "sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f",
+			"platform": {
+				"architecture": "ppc64le",
+				"os": "linux"
+			},
+			"annotations": {
+				"org.opencontainers.image.ref.name": "imageValue"
+			}
+		}
+		]
+	}
+`
+	ioutil.WriteFile(filepath.Join(tmpDir, "index.json"), []byte(m), 0644)
+	ref, err = NewReference(tmpDir, "imageValue")
 	require.NoError(t, err)
 	return ref, tmpDir
 }
@@ -132,8 +161,8 @@ func TestReferenceStringWithinTransport(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	for _, c := range []struct{ input, result string }{
-		{"/dir1:notlatest", "/dir1:notlatest"}, // Explicit tag
-		{"/dir2", "/dir2:latest"},              // Default tag
+		{"/dir1:notlatest:notlatest", "/dir1:notlatest:notlatest"}, // Explicit image
+		{"/dir3:", "/dir3:"},                                       // No image
 	} {
 		ref, err := ParseReference(tmpDir + c.input)
 		require.NoError(t, err, c.input)
@@ -157,17 +186,17 @@ func TestReferencePolicyConfigurationIdentity(t *testing.T) {
 	ref, tmpDir := refToTempOCI(t)
 	defer os.RemoveAll(tmpDir)
 
-	assert.Equal(t, tmpDir+":tagValue", ref.PolicyConfigurationIdentity())
+	assert.Equal(t, tmpDir, ref.PolicyConfigurationIdentity())
 	// A non-canonical path.  Test just one, the various other cases are
 	// tested in explicitfilepath.ResolvePathToFullyExplicit.
-	ref, err := NewReference(tmpDir+"/.", "tag2")
+	ref, err := NewReference(tmpDir+"/.", "image2")
 	require.NoError(t, err)
-	assert.Equal(t, tmpDir+":tag2", ref.PolicyConfigurationIdentity())
+	assert.Equal(t, tmpDir, ref.PolicyConfigurationIdentity())
 
 	// "/" as a corner case.
-	ref, err = NewReference("/", "tag3")
+	ref, err = NewReference("/", "image3")
 	require.NoError(t, err)
-	assert.Equal(t, "/:tag3", ref.PolicyConfigurationIdentity())
+	assert.Equal(t, "/", ref.PolicyConfigurationIdentity())
 }
 
 func TestReferencePolicyConfigurationNamespaces(t *testing.T) {
@@ -186,18 +215,18 @@ func TestReferencePolicyConfigurationNamespaces(t *testing.T) {
 	// It would be nice to test a deeper hierarchy, but it is not obvious what
 	// deeper path is always available in the various distros, AND is not likely
 	// to contains a symbolic link.
-	for _, path := range []string{"/etc/skel", "/etc/skel/./."} {
+	for _, path := range []string{"/usr/share", "/usr/share/./."} {
 		_, err := os.Lstat(path)
 		require.NoError(t, err)
-		ref, err := NewReference(path, "sometag")
+		ref, err := NewReference(path, "someimage")
 		require.NoError(t, err)
 		ns := ref.PolicyConfigurationNamespaces()
 		require.NotNil(t, ns)
-		assert.Equal(t, []string{"/etc/skel", "/etc"}, ns)
+		assert.Equal(t, []string{"/usr/share", "/usr"}, ns)
 	}
 
 	// "/" as a corner case.
-	ref, err := NewReference("/", "tag3")
+	ref, err := NewReference("/", "image3")
 	require.NoError(t, err)
 	assert.Equal(t, []string{}, ref.PolicyConfigurationNamespaces())
 }
@@ -212,7 +241,7 @@ func TestReferenceNewImage(t *testing.T) {
 func TestReferenceNewImageSource(t *testing.T) {
 	ref, tmpDir := refToTempOCI(t)
 	defer os.RemoveAll(tmpDir)
-	_, err := ref.NewImageSource(nil, nil)
+	_, err := ref.NewImageSource(nil)
 	assert.NoError(t, err)
 }
 
@@ -239,6 +268,14 @@ func TestReferenceOCILayoutPath(t *testing.T) {
 	assert.Equal(t, tmpDir+"/oci-layout", ociRef.ociLayoutPath())
 }
 
+func TestReferenceIndexPath(t *testing.T) {
+	ref, tmpDir := refToTempOCI(t)
+	defer os.RemoveAll(tmpDir)
+	ociRef, ok := ref.(ociReference)
+	require.True(t, ok)
+	assert.Equal(t, tmpDir+"/index.json", ociRef.indexPath())
+}
+
 func TestReferenceBlobPath(t *testing.T) {
 	const hex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
@@ -261,12 +298,4 @@ func TestReferenceBlobPathInvalid(t *testing.T) {
 	_, err := ociRef.blobPath(hex)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected digest reference "+hex)
-}
-
-func TestReferenceDescriptorPath(t *testing.T) {
-	ref, tmpDir := refToTempOCI(t)
-	defer os.RemoveAll(tmpDir)
-	ociRef, ok := ref.(ociReference)
-	require.True(t, ok)
-	assert.Equal(t, tmpDir+"/refs/notlatest", ociRef.descriptorPath("notlatest"))
 }

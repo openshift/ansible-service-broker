@@ -1,24 +1,28 @@
 package layout
 
 import (
-	"encoding/json"
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
 
-	"github.com/containers/image/manifest"
 	"github.com/containers/image/types"
 	"github.com/opencontainers/go-digest"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type ociImageSource struct {
-	ref ociReference
+	ref        ociReference
+	descriptor imgspecv1.Descriptor
 }
 
 // newImageSource returns an ImageSource for reading from an existing directory.
-func newImageSource(ref ociReference) types.ImageSource {
-	return &ociImageSource{ref: ref}
+func newImageSource(ref ociReference) (types.ImageSource, error) {
+	descriptor, err := ref.getManifestDescriptor()
+	if err != nil {
+		return nil, err
+	}
+	return &ociImageSource{ref: ref, descriptor: descriptor}, nil
 }
 
 // Reference returns the reference used to set up this source.
@@ -27,25 +31,14 @@ func (s *ociImageSource) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized ImageSource, if any.
-func (s *ociImageSource) Close() {
+func (s *ociImageSource) Close() error {
+	return nil
 }
 
 // GetManifest returns the image's manifest along with its MIME type (which may be empty when it can't be determined but the manifest is available).
 // It may use a remote (= slow) service.
 func (s *ociImageSource) GetManifest() ([]byte, string, error) {
-	descriptorPath := s.ref.descriptorPath(s.ref.tag)
-	data, err := ioutil.ReadFile(descriptorPath)
-	if err != nil {
-		return nil, "", err
-	}
-
-	desc := imgspecv1.Descriptor{}
-	err = json.Unmarshal(data, &desc)
-	if err != nil {
-		return nil, "", err
-	}
-
-	manifestPath, err := s.ref.blobPath(digest.Digest(desc.Digest))
+	manifestPath, err := s.ref.blobPath(digest.Digest(s.descriptor.Digest))
 	if err != nil {
 		return nil, "", err
 	}
@@ -54,7 +47,7 @@ func (s *ociImageSource) GetManifest() ([]byte, string, error) {
 		return nil, "", err
 	}
 
-	return m, manifest.GuessMIMEType(m), nil
+	return m, s.descriptor.MediaType, nil
 }
 
 func (s *ociImageSource) GetTargetManifest(digest digest.Digest) ([]byte, string, error) {
@@ -68,7 +61,11 @@ func (s *ociImageSource) GetTargetManifest(digest digest.Digest) ([]byte, string
 		return nil, "", err
 	}
 
-	return m, manifest.GuessMIMEType(m), nil
+	// XXX: GetTargetManifest means that we don't have the context of what
+	//      mediaType the manifest has. In OCI this means that we don't know
+	//      what reference it came from, so we just *assume* that its
+	//      MediaTypeImageManifest.
+	return m, imgspecv1.MediaTypeImageManifest, nil
 }
 
 // GetBlob returns a stream for the specified blob, and the blob's size.
@@ -89,6 +86,6 @@ func (s *ociImageSource) GetBlob(info types.BlobInfo) (io.ReadCloser, int64, err
 	return r, fi.Size(), nil
 }
 
-func (s *ociImageSource) GetSignatures() ([][]byte, error) {
+func (s *ociImageSource) GetSignatures(context.Context) ([][]byte, error) {
 	return [][]byte{}, nil
 }

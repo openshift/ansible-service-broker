@@ -1,6 +1,7 @@
 package signature
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -57,13 +58,13 @@ type refImageMock struct{ reference.Named }
 func (ref refImageMock) Reference() types.ImageReference {
 	return refImageReferenceMock{ref.Named}
 }
-func (ref refImageMock) Close() {
+func (ref refImageMock) Close() error {
 	panic("unexpected call to a mock function")
 }
 func (ref refImageMock) Manifest() ([]byte, string, error) {
 	panic("unexpected call to a mock function")
 }
-func (ref refImageMock) Signatures() ([][]byte, error) {
+func (ref refImageMock) Signatures(context.Context) ([][]byte, error) {
 	panic("unexpected call to a mock function")
 }
 
@@ -96,7 +97,7 @@ func (ref refImageReferenceMock) PolicyConfigurationNamespaces() []string {
 func (ref refImageReferenceMock) NewImage(ctx *types.SystemContext) (types.Image, error) {
 	panic("unexpected call to a mock function")
 }
-func (ref refImageReferenceMock) NewImageSource(ctx *types.SystemContext, requestedManifestMIMETypes []string) (types.ImageSource, error) {
+func (ref refImageReferenceMock) NewImageSource(ctx *types.SystemContext) (types.ImageSource, error) {
 	panic("unexpected call to a mock function")
 }
 func (ref refImageReferenceMock) NewImageDestination(ctx *types.SystemContext) (types.ImageDestination, error) {
@@ -322,13 +323,13 @@ type forbiddenImageMock struct{}
 func (ref forbiddenImageMock) Reference() types.ImageReference {
 	panic("unexpected call to a mock function")
 }
-func (ref forbiddenImageMock) Close() {
+func (ref forbiddenImageMock) Close() error {
 	panic("unexpected call to a mock function")
 }
 func (ref forbiddenImageMock) Manifest() ([]byte, string, error) {
 	panic("unexpected call to a mock function")
 }
-func (ref forbiddenImageMock) Signatures() ([][]byte, error) {
+func (ref forbiddenImageMock) Signatures(context.Context) ([][]byte, error) {
 	panic("unexpected call to a mock function")
 }
 
