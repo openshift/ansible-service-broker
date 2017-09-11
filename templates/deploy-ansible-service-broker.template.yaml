@@ -27,6 +27,19 @@ objects:
   metadata:
     name: asb
     namespace: ansible-service-broker
+    
+- kind: ClusterRole
+  apiVersion: rbac.authorization.k8s.io/v1beta1
+  metadata:
+    # "namespace" omitted since ClusterRoles are not namespaced
+    name: project-creator
+  rules:
+  - apiGroups: ["project.openshift.io"]
+    resources: ["projects"]
+    verbs: ["create", "delete"]
+  - apiGroups: ["authorization.openshift.io"]
+    resources: ["subjectrulesreview"]
+    verbs: ["create"]
 
 - apiVersion: authorization.openshift.io/v1
   kind: ClusterRoleBinding
@@ -39,6 +52,7 @@ objects:
     name: asb
     namespace: ansible-service-broker
 
+<<<<<<< HEAD
 - apiVersion: authorization.openshift.io/v1
   kind: ClusterRole
   metadata:
@@ -56,6 +70,19 @@ objects:
   - apiGroups: ["authentication.k8s.io"]
     resources: ["tokenreviews"]
     verbs: ["create"]
+
+- kind: ClusterRoleBinding
+  apiVersion: rbac.authorization.k8s.io/v1beta1
+  metadata:
+    name: create-projects-asb
+  subjects:
+  - kind: ServiceAccount 
+    name: asb
+    namespace: ansible-service-broker
+  roleRef:
+    kind: ClusterRole
+    name: project-creator 
+    apiGroup: rbac.authorization.k8s.io
 
 - apiVersion: authorization.openshift.io/v1
   kind: ClusterRoleBinding
