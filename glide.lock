@@ -1,5 +1,5 @@
-hash: 973a3df2789e632390f729ffc8ccc6c804933760978153812f417cd81719a1e1
-updated: 2017-09-11T12:53:16.787198372-04:00
+hash: 4727be1649870d446c2d9b38db320e667a638d316f034a8d1f83a13c4cab44f4
+updated: 2017-09-11T14:01:10.510868834-04:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -243,6 +243,8 @@ imports:
   - transport
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
+- name: gopkg.in/natefinch/lumberjack.v2
+  version: 20b71e5b60d756d3d2f80def009790325acc2b23
 - name: gopkg.in/yaml.v1
   version: 9f9df34309c04878acc86042b16630b0f696e1de
 - name: gopkg.in/yaml.v2
@@ -314,6 +316,7 @@ imports:
   - pkg/apis/apiserver/install
   - pkg/apis/apiserver/v1alpha1
   - pkg/apis/audit
+  - pkg/apis/audit/install
   - pkg/apis/audit/v1alpha1
   - pkg/apis/audit/validation
   - pkg/audit
@@ -343,6 +346,7 @@ imports:
   - pkg/endpoints/request
   - pkg/features
   - pkg/registry/generic
+  - pkg/registry/generic/registry
   - pkg/registry/rest
   - pkg/server
   - pkg/server/filters
@@ -350,9 +354,12 @@ imports:
   - pkg/server/httplog
   - pkg/server/mux
   - pkg/server/openapi
+  - pkg/server/options
   - pkg/server/routes
   - pkg/server/routes/data/swagger
+  - pkg/server/storage
   - pkg/storage
+  - pkg/storage/errors
   - pkg/storage/etcd
   - pkg/storage/etcd/metrics
   - pkg/storage/etcd/util
@@ -362,12 +369,15 @@ imports:
   - pkg/storage/storagebackend/factory
   - pkg/storage/value
   - pkg/util/feature
+  - pkg/util/flag
   - pkg/util/flushwriter
   - pkg/util/proxy
   - pkg/util/trace
   - pkg/util/trie
   - pkg/util/webhook
   - pkg/util/wsstream
+  - plugin/pkg/audit/log
+  - plugin/pkg/audit/webhook
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/client-go
