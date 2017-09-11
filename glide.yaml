@@ -16,28 +16,13 @@ import:
 - package: github.com/jessevdk/go-flags
   version: ^1.1.0
 - package: github.com/lestrrat/go-jsschema
+  version: a6a42341b50d8d7e2a733db922eefaa756321021
 - package: github.com/op/go-logging
   version: ^1.0.0
 - package: github.com/pkg/errors
   version: ^0.8.0
 - package: gopkg.in/yaml.v1
 - package: gopkg.in/yaml.v2
-- package: k8s.io/apimachinery
-  subpackages:
-  - pkg/api/errors
-  - pkg/apis/meta/v1
-  - pkg/version
-- package: k8s.io/client-go
-  version: ^3.0.0-beta.0
-  subpackages:
-  - rest
-  - tools/clientcmd
-  - util/homedir
-- package: k8s.io/kubernetes
-  version: v1.6.0
-  subpackages:
-  - pkg/api/v1
-  - pkg/client/clientset_generated/clientset
 - package: github.com/pborman/uuid
   version: ^1.0.0
 - package: github.com/docker/docker
@@ -49,3 +34,22 @@ import:
   version: v0.11.4
 - package: github.com/docker/go-connections
   version: 7da10c8c50cad14494ec818dcdfb6506265c0086
+
+# copied compatible versions from service-catalog glide.yaml
+- package: k8s.io/kubernetes
+  version: ebb8d6e0fadfc95f3d64ccecc36c8ed2ac9224ef # client-go origin version
+- package: k8s.io/client-go
+  version: e356aa2e77ab4a5914c216c12ba14cce25a25ab0 # in sync with kubernetes 1.7.0
+- package: k8s.io/apimachinery
+  version: abe34e4f5b4413c282a83011892cbeea5b32223b # wanted by client-go; release-1.7 branch
+- package: k8s.io/apiserver
+  version: ab57ed5a72c3b67058f665d660e23bae18339fc2 # June 23, similar to client-go. No 1.7 branch yet BUT this version is perfectly compatible it seems
+- package: github.com/onsi/gomega
+  version: d59fa0ac68bb5dd932ee8d24eed631cdd519efc3 # wanted by k8s.io/kubernetes
+- package: github.com/onsi/ginkgo
+  version: 67b9df7f55fe1165fd9ad49aca7754cce01a42b8 # wanted by k8s.io/kubernetes
+- package: github.com/emicklei/go-restful
+  version: ff4f55a206334ef123e4f79bbf348980da81ca46 # not a direct dep, but forces the version for k8s/apiserver
+  subpackages:
+  - swagger
+
