@@ -309,10 +309,14 @@ func (a *App) Start() {
 		panic(servererr)
 	}
 
-	rules, err := retrieveClusterRoleRules(a.config.Openshift.SandboxRole, a.log.Logger)
-	if err != nil {
-		a.log.Errorf("Unable to retrieve cluster roles rules from cluster - %v", err)
-		os.Exit(1)
+	rules := []authorization.PolicyRule{}
+	if !a.config.Broker.AutoEscalate {
+		rules, err = retrieveClusterRoleRules(a.config.Openshift.SandboxRole, a.log.Logger)
+		if err != nil {
+			a.log.Errorf("Unable to retrieve cluster roles rules from cluster\n"+
+				" You must be using OpenShift 3.7 to use the User rules check.\n%v", err)
+			os.Exit(1)
+		}
 	}
 
 	var clusterURL string

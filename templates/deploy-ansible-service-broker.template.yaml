@@ -29,7 +29,7 @@ objects:
     namespace: ansible-service-broker
     
 - kind: ClusterRole
-  apiVersion: rbac.authorization.k8s.io/v1beta1
+  apiVersion: authorization.openshift.io/v1
   metadata:
     # "namespace" omitted since ClusterRoles are not namespaced
     name: project-creator
@@ -72,7 +72,7 @@ objects:
     verbs: ["create"]
 
 - kind: ClusterRoleBinding
-  apiVersion: rbac.authorization.k8s.io/v1beta1
+  apiVersion: authorization.openshift.io/v1
   metadata:
     name: create-projects-asb
   subjects:
@@ -82,7 +82,6 @@ objects:
   roleRef:
     kind: ClusterRole
     name: project-creator 
-    apiGroup: rbac.authorization.k8s.io
 
 - apiVersion: authorization.openshift.io/v1
   kind: ClusterRoleBinding
