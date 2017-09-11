@@ -24,21 +24,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"net"
 	"os"
 	"time"
 
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/wait"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/authentication/authenticatorfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 
-	//    genericoptions "k8s.io/apiserver/pkg/server/options"
-	//   authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
+	genericoptions "k8s.io/apiserver/pkg/server/options"
+	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -81,11 +83,23 @@ func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
 	return config, nil
 }
 
-func ApiServer(log *logging.Logger) (*App, error) {
+func ApiServer(log *logging.Logger) (*genericapiserver.GenericAPIServer, error) {
+	log.Debug("calling NewSecureServingOptions")
+	secureServing := genericoptions.NewSecureServingOptions()
+	log.Debug("we have a secure serving config, calling MaybeDefaultWithSelfSignedCerts")
+	if err := secureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
+		return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
+	}
+
 	serverConfig := genericapiserver.NewConfig(Codecs)
-	if err := o.SecureServing.ApplyTo(serverConfig); err != nil {
+	log.Debug("we have a serverConfig")
+	log.Debug("genericoptions.NewSecureServingOptions")
+	if err := secureServing.ApplyTo(serverConfig); err != nil {
+		log.Debug("error applying to %#v", err)
 		return nil, err
 	}
+
+	log.Debug("XXX Returned from ApplyTo")
 
 	// vvvv STOLEN FROM clients.go vvvv
 	clientConfig, err := restclient.InClusterConfig()
@@ -106,10 +120,11 @@ func ApiServer(log *logging.Logger) (*App, error) {
 		return nil, err
 	}
 
+	authn := genericoptions.NewDelegatingAuthenticationOptions()
 	authenticationConfig := authenticatorfactory.DelegatingAuthenticatorConfig{
 		Anonymous:               true,
 		TokenAccessReviewClient: client.TokenReviews(),
-		CacheTTL:                o.Authentication.CacheTTL,
+		CacheTTL:                authn.CacheTTL,
 	}
 	authenticator, _, err := authenticationConfig.New()
 	if err != nil {
@@ -117,28 +132,20 @@ func ApiServer(log *logging.Logger) (*App, error) {
 	}
 	serverConfig.Authenticator = authenticator
 
-	if err := o.Authorization.ApplyTo(serverConfig); err != nil {
+	authz := genericoptions.NewDelegatingAuthorizationOptions()
+	if err := authz.ApplyTo(serverConfig); err != nil {
 		return nil, err
 	}
 
-	/*
-	   config := &server.TemplateServiceBrokerConfig{
-	       GenericConfig: serverConfig,
-
-	       TemplateNamespaces: o.TSBConfig.TemplateNamespaces,
-	       // TODO add the code to set up the client and informers that you need here
-	   }
-	   return config, nil
-	*/
-
-	// TSB had the following, TemplateServiceBrokerConfig.GenericConfig -- serverConfig
-	// genericServer, err := c.TemplateServiceBrokerConfig.GenericConfig.SkipComplete().New("template-service-broker", delegationTarget)
 	fmt.Println("apiserver creating?")
-	genericServer, err := serverConfig.SkipComplete().New("ansible-service-broker", nil)
+	genericServer, servererr := serverConfig.SkipComplete().New("ansible-service-broker", genericapiserver.EmptyDelegate)
 
 	fmt.Println("apiserver created")
 
-	return nil, nil
+	//genericServer.Handler.NonGoRestfulMux := nil
+	//genericServer.Handler.NonGoRestfulMux
+
+	return genericServer, servererr
 }
 
 // CreateApp - Creates the application
@@ -315,24 +322,39 @@ func (a *App) Start() {
 		}()
 	}
 
-	a.log.Notice("Ansible Service Broker Started")
-	listeningAddress := "0.0.0.0:1338"
-	if a.args.Insecure {
-		a.log.Notice("Listening on http://%s", listeningAddress)
-		err = http.ListenAndServe(":1338",
-			handler.NewHandler(a.broker, a.log.Logger, a.config.Broker))
-	} else {
-		a.log.Notice("Listening on https://%s", listeningAddress)
-		err = http.ListenAndServeTLS(":1338",
-			a.config.Broker.SSLCert,
-			a.config.Broker.SSLCertKey,
-			handler.NewHandler(a.broker, a.log.Logger, a.config.Broker))
+	a.log.Notice("Create the stupid apiserver")
+	genericserver, servererr := ApiServer(a.log.Logger)
+	if servererr != nil {
+		a.log.Errorf("problem creating apiserver. %v", servererr)
 	}
-	if err != nil {
-		a.log.Error("Failed to start HTTP server")
-		a.log.Error(err.Error())
-		os.Exit(1)
-	}
+
+	a.log.Debug("handler being created")
+	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker)
+
+	genericserver.Handler.NonGoRestfulMux.Handle("/v2", daHandler)
+
+	a.log.Notice("Calling run on the apiserver")
+	genericserver.PrepareRun().Run(wait.NeverStop)
+
+	/*
+		a.log.Notice("Ansible Service Broker Started")
+		listeningAddress := "0.0.0.0:1338"
+		if a.args.Insecure {
+			a.log.Notice("Listening on http://%s", listeningAddress)
+			err = http.ListenAndServe(":1338", daHandler)
+		} else {
+			a.log.Notice("Listening on https://%s", listeningAddress)
+			err = http.ListenAndServeTLS(":1338",
+				a.config.Broker.SSLCert,
+				a.config.Broker.SSLCertKey,
+				daHandler)
+		}
+		if err != nil {
+			a.log.Error("Failed to start HTTP server")
+			a.log.Error(err.Error())
+			os.Exit(1)
+		}
+	*/
 }
 
 func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
