@@ -242,6 +242,7 @@ objects:
         recovery: ${RECOVERY}
         ssl_cert_key: /etc/tls/private/tls.key
         ssl_cert: /etc/tls/private/tls.crt
+        auto_escalate: ${AUTO_ESCALATE}
         auth:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
@@ -426,6 +427,12 @@ parameters:
 - description: Recover unfinshed jobs on restart
   displayname: Recovery
   name: RECOVERY
+  value: "true"
+
+ #TODO: NEED TO CHANGE TO FALSE AFTER THE 3.7 CUT
+- description: Auto escalate the broker. Will remove user impresonation
+  displayname: Auto Escalate 
+  name: AUTO_ESCALATE
   value: "true"
 
 - description: APB ImagePullPolicy

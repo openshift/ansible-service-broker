@@ -241,23 +241,23 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
-	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
-	if !ok {
-		h.log.Debugf("unable to retrieve user info from request context")
-		// if no user, we should error out with bad request.
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
-			Description: "Invalid user info from originating origin header.",
-		})
-		return
-	}
-
 	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
+
 		if ok, status, err := h.validateUser(userInfo.Username, req.Context.Namespace); !ok {
 			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 			return
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating %v permissions", userInfo.Username)
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 	// Ok let's provision this bad boy
 	resp, err := h.broker.Provision(instanceUUID, req, async)
@@ -320,16 +320,6 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "deprovision request missing plan_id query parameter"})
 	}
 
-	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
-	if !ok {
-		h.log.Debugf("unable to retrieve user info from request context")
-		// if no user, we should error out with bad request.
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
-			Description: "Invalid user info from originating origin header.",
-		})
-		return
-	}
-
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
 		switch err {
@@ -343,12 +333,22 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 	}
 
 	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
+
 		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
 			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 			return
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating %v permissions", userInfo.Username)
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
 	resp, err := h.broker.Deprovision(serviceInstance, planID, async)
@@ -392,16 +392,6 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		return
 	}
 
-	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
-	if !ok {
-		h.log.Debugf("unable to retrieve user info from request context")
-		// if no user, we should error out with bad request.
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
-			Description: "Invalid user info from originating origin header.",
-		})
-		return
-	}
-
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
 		switch err {
@@ -413,12 +403,22 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 	}
 
 	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
+
 		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
 			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 			return
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating %v permissions", userInfo.Username)
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
 	// process binding request
@@ -459,15 +459,6 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 	if planID == "" {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})
 	}
-	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
-	if !ok {
-		h.log.Debugf("unable to retrieve user info from request context")
-		// if no user, we should error out with bad request.
-		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
-			Description: "Invalid user info from originating origin header.",
-		})
-		return
-	}
 
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
@@ -476,12 +467,21 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 	}
 
 	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
 		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
 			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 			return
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating %v permissions", userInfo.Username)
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
 	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID)
