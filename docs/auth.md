@@ -123,6 +123,24 @@ spec:
       name: asb-auth-secret
 ```
 
+Starting wtih v0.0.17 of the service catalog the broker resource configuration changes.
+
+```yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: ServiceBroker
+metadata:
+  name: ansible-service-broker
+spec:
+  url: https://asb-1338-ansible-service-broker.172.17.0.1.nip.io
+  authInfo:
+    basic:
+      secretRef:
+        namespace: ansible-service-broker
+        name: asb-auth-secret
+```
+
+
+
 *NOTE*: this section is highly dependent on what the service catalog expects. If
 the format for the secret changes we will need to create a separate secret for
 just the service catalog today OR we need to add a new `UserServiceAdapter` that

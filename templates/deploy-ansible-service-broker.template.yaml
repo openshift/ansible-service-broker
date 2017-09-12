@@ -54,6 +54,7 @@ objects:
       targetPort: port-1338
     tls:
       termination: ${TERMINATION}
+      insecureEdgeTerminationPolicy: ${{INSECURE_EDGE}}
 
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -199,17 +200,25 @@ objects:
             enabled: ${ENABLE_BASIC_AUTH}
 
 - apiVersion: servicecatalog.k8s.io/v1alpha1
-  kind: Broker
+  kind: ${BROKER_KIND}
   metadata:
     name: ansible-service-broker
   spec:
     url: ${ASB_SCHEME}://asb-1338-ansible-service-broker.${ROUTING_SUFFIX}
     authInfo:
-      basicAuthSecret:
-        namespace: ansible-service-broker
-        name: asb-auth-secret
+      ${{BROKER_AUTH}}
 
 parameters:
+- description: Service Broker kind. Newer service-catalogs use ServiceBroker
+  displayname: Service Broker kind. Newer service-catalogs use ServiceBroker
+  name: BROKER_KIND
+  value: Broker
+
+- description: Broker Auth Info
+  displayname: Broker Auth Info
+  name: BROKER_AUTH
+  value: '{ "basicAuthSecret": { "namespace": "ansible-service-broker", "name": "asb-auth-secret" }}'
+
 - description: Scheme for ansible service broker (http/https)
   displayname: Scheme for ansible service broker (http/https)
   name: ASB_SCHEME
@@ -240,12 +249,17 @@ parameters:
   name: BROKER_CONFIG
   value: /etc/ansible-service-broker/config.yaml
 
-# SSL enabled: INSECURE="false", TERMINATION=Reencrypt
-# Insecure enabled: INSECURE="true", TERMINATION=edge
+# SSL enabled: INSECURE="false", INSECURE_EDGE="None", TERMINATION="Reencrypt", ASB_SCHEME="https"
+# Insecure enabled: INSECURE="true", INSECURE_EDGE="Allow", TERMINATION="edge", ASB_SCHEME="http"
 - description: Run in insecure mode
   displayname: Ansible Service Broker Insecure
   name: INSECURE
   value: "false"
+
+- description: Insecure Edge Termination Policy
+  displayname: Insecure Edge Termination Policy
+  name: INSECURE_EDGE
+  value: "None"
 
 - description: Secure the route with TLS
   displayname: Ansible Service Broker Termination
