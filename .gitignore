@@ -40,3 +40,6 @@ build/broker
 # ansible stuff
 main_*.yml
 ansible/main.retry
+
+# rendered templates
+templates/k8s-ansible-service-broker.yaml
