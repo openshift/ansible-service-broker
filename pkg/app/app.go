@@ -22,6 +22,7 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -31,7 +32,6 @@ import (
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/wait"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/authentication/authenticatorfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -331,10 +331,30 @@ func (a *App) Start() {
 	a.log.Debug("handler being created")
 	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker)
 
-	genericserver.Handler.NonGoRestfulMux.Handle("/v2", daHandler)
+	genericserver.Handler.NonGoRestfulMux.HandlePrefix("/v2/", daHandler)
+	genericserver.SecureServingInfo.BindAddress = "0.0.0.0:1338"
+	if a.args.Insecure {
+		a.log.Notice("Listening on http://%s", genericserver.SecureServingInfo.BindAddress)
+		genericserver.SecureServingInfo.Cert = nil
+		genericserver.SecureServingInfo.SNICerts = map[string]*tls.Certificate{}
+	} else {
+		a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
+		cert, err := tls.LoadX509KeyPair(
+			a.config.Broker.SSLCert,
+			a.config.Broker.SSLCertKey,
+		)
+		if err != nil {
+			a.log.Errorf("unable to wait on run - %v", err)
+		}
+
+		genericserver.SecureServingInfo.Cert = &cert
+	}
+	a.log.Warningf("%#v", genericserver.SecureServingInfo)
 
 	a.log.Notice("Calling run on the apiserver")
-	genericserver.PrepareRun().Run(wait.NeverStop)
+	o := make(chan struct{})
+	err = genericserver.PrepareRun().Run(o)
+	a.log.Errorf("unable to wait on run - %v", err)
 
 	/*
 		a.log.Notice("Ansible Service Broker Started")
