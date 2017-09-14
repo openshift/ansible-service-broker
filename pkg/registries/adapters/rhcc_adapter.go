@@ -83,7 +83,7 @@ func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 		if err != nil {
 			return specs, err
 		}
-		spec, err := imageToSpec(r.Log, req, r.Config.Tag)
+		spec, err := imageToSpec(r.Log, req, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
 		if err != nil {
 			return specs, err
 		}

@@ -54,8 +54,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestAddNameAndIDForSpecStripsTailingDash(t *testing.T) {
-	spec1 := apb.Spec{Image: "1234567890123456789012345678901234567890-"}
-	spec2 := apb.Spec{Image: "org/hello-world-apb"}
+	spec1 := apb.Spec{FQName: "1234567890123456789012345678901234567890-"}
+	spec2 := apb.Spec{FQName: "org/hello-world-apb"}
 	spcs := []*apb.Spec{&spec1, &spec2}
 	addNameAndIDForSpec(spcs, "h")
 	ft.AssertEqual(t, "h-1234567890123456789012345678901234567890", spcs[0].FQName)

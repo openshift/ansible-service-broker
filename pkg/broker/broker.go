@@ -268,8 +268,8 @@ func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 		// need to make / a hyphen to allow for global uniqueness
 		// but still match spec.
 
-		imageName := strings.Replace(spec.Image, ":", "-", -1)
-		spec.FQName = strings.Replace(fmt.Sprintf("%v-%v", registryName, imageName),
+		spec.FQName = strings.Replace(
+			fmt.Sprintf("%v-%v", registryName, spec.FQName),
 			"/", "-", -1)
 		spec.FQName = fmt.Sprintf("%.51v", spec.FQName)
 		if strings.HasSuffix(spec.FQName, "-") {
