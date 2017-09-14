@@ -65,11 +65,75 @@ example in [pkg/registries/adapters/dockerhub_adapter.go](../../pkg/registries/a
 
 ```diff
 -  return imageToSpec(r.Log, req, r.Config.Tag)
-+  return imageToSpec(r.Log, req, fmt.Sprintf("%s:%s", imageName, r.Config.Tag))
++  return imageToSpec(r.Log, req, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
+```
+
+### Update FQName
+
+In order for these changes to work, we will also have to update the `FQName` of
+the APB Spec. Since we know that image name must be unique to a registry
+(each entry under `registry` in the broker config is a specific registry)
+**and** each registries name must be unique, then
+`${registry_name}-${apb_name}` is a sufficiently unique name for `FQName`. We
+will update the [pkg/broker/broker.go](../../pkg/broker/broker.go):
+
+```diff
+-  imageName := strings.Replace(spec.Image, ":", "-", -1)
+-  spec.FQName = strings.Replace(fmt.Sprintf("%v-%v", registryName, imageName),
++  spec.FQName = strings.Replace(
++      fmt.Sprintf("%v-%v", registryName, spec.FQName),
+       "/", "-", -1)
+```
+
+## Examples
+
+With all of these changes and a broker configured with the following registries:
+
+```yaml
+---
+registry:
+  - type: dockerhub
+    name: dh
+    url: https://registry.hub.docker.com
+    user: changeme
+    pass: changeme
+    org: ansibleplaybookbundle
+  - type: dockerhub
+    name: dy
+    url: https://registry.hub.docker.com
+    user: changeme
+    pass: changeme
+    org: dymurray
+```
+
+These registries were chosen because there are name collisions among the 2
+registries. One such collision is on `mediawiki123-apb`.
+
+From the `dh` registry:
+
+```
+{
+    "id":"268dbc13f56297fdd3737b7d30104eb4",
+    "name":"dh-mediawiki123-apb",
+    "image":"docker.io/ansibleplaybookbundle/mediawiki123-apb:latest",
+    ...
+}
+```
+
+From the `dymurray` registry:
+
+```
+{
+    "id":"be10458618a1f1e5efe472b781586ee8","name":
+    "dy-mediawiki123-apb",
+    "image":"docker.io/dymurray/mediawiki123-apb:latest",
+    ...
+}
 ```
 
 ## Work Items
 
 - [ ] Update the Broker to fill in image field of APB Spec
+- [ ] Update the Broker to use `${registry_name}-${apb_name}` format
 - [ ] Update APB tool to remove image field
 - [ ] Update existing APB examples to remove image field
