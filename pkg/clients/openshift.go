@@ -16,11 +16,13 @@ import (
 	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
+// OpenshiftClient - Client to interact with openshift api
 type OpenshiftClient struct {
 	restClient     rest.Interface
 	restClientAuth rest.Interface
 }
 
+// Project - OpenShift project
 type Project struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
@@ -28,6 +30,7 @@ type Project struct {
 	Status            ProjectStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
+// ProjectSpec - OpenShift project spec
 type ProjectSpec struct {
 	// Finalizers is an opaque list of values that must be empty to permanently remove object from storage.
 	// More info: https://git.k8s.io/community/contributors/design-proposals/namespaces.md#finalizers
@@ -35,9 +38,12 @@ type ProjectSpec struct {
 	Finalizers []string `json:"finalizers,omitempty" protobuf:"bytes,1,rep,name=finalizers"`
 }
 
+// ProjectStatus - OpenShift project status.
 type ProjectStatus struct {
 	Phase string `json:"phase,omitempty" protobuf:"bytes,1,opt,name=phase"`
 }
+
+// OptionalScopes - OpenShift optional scope type
 type OptionalScopes []string
 
 func (t OptionalScopes) String() string {
@@ -165,6 +171,7 @@ func setConfigDefaultsAuth(config *rest.Config) error {
 	return nil
 }
 
+// CreateProject - Create an OpenShift Project
 func (o OpenshiftClient) CreateProject(name string) (result *Project, err error) {
 	body := &Project{}
 	body.Name = name
@@ -177,6 +184,7 @@ func (o OpenshiftClient) CreateProject(name string) (result *Project, err error)
 	return
 }
 
+// DeleteProject - Delete an OpenShift Project
 func (o OpenshiftClient) DeleteProject(name string) (err error) {
 	return o.restClient.Delete().
 		Resource("projects").
@@ -184,6 +192,8 @@ func (o OpenshiftClient) DeleteProject(name string) (err error) {
 		Do().
 		Error()
 }
+
+// SubjectRulesReview - create and run a OpenShift Subject Rules Review
 func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging.Logger) (result *authorization.SubjectRulesReview, err error) {
 	body := &SubjectRulesReview{
 		Spec: SubjectRulesReviewSpec{
@@ -211,7 +221,7 @@ func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging
 		},
 		Status: authorization.SubjectRulesReviewStatus{
 			EvaluationError: r.Status.EvaluationError,
-			Rules:           authorization.Convert_rbac_PolicyRules_To_authorization_PolicyRules(r.Status.Rules),
+			Rules:           authorization.ConvertRBACPolicyRulesToAuthorizationPolicyRules(r.Status.Rules),
 		},
 	}
 	result.Kind = r.Kind

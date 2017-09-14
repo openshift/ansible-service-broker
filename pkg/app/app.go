@@ -394,7 +394,7 @@ func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]author
 		return nil, err
 	}
 	cRole := &authorization.ClusterRole{}
-	err = authorization.Convert_rbac_ClusterRole_To_authorization_ClusterRole(k8sRole, cRole, nil)
+	err = authorization.ConvertRBACClusterRoleToAuthorizationClusterRole(k8sRole, cRole, nil)
 	if err != nil {
 		return nil, err
 	}
