@@ -16,9 +16,9 @@ function cluster-setup () {
 
     cat <<EOF > "catasb/config/my_vars.yml"
 ---
-dockerhub_user_name: changeme 
+dockerhub_user_name: changeme
 dockerhub_org: ansibleplaybookbundle
-dockerhub_user_password: changeme 
+dockerhub_user_password: changeme
 EOF
 
     pushd catasb/local/gate/
@@ -28,12 +28,12 @@ EOF
     env-error-check "cluster-setup"
 
     cat <<EOF > "scripts/my_local_dev_vars"
-OPENSHIFT_SERVER_HOST=172.17.0.1
-OPENSHIFT_SERVER_PORT=8443
+CLUSTER_HOST=172.17.0.1
+CLUSTER_PORT=8443
 
 # BROKER_IP_ADDR must be the IP address of where to reach broker
 #   it should not be 127.0.0.1, needs to be an address the pods will be able to reach
-BROKER_IP_ADDR=${OPENSHIFT_SERVER_HOST}
+BROKER_IP_ADDR=${CLUSTER_HOST}
 DOCKERHUB_USER="changeme"
 DOCKERHUB_PASS="changeme"
 DOCKERHUB_ORG="ansibleplaybookbundle"
