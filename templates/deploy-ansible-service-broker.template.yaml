@@ -172,6 +172,8 @@ objects:
           pass: "${DOCKERHUB_PASS}"
           org: "${DOCKERHUB_ORG}"
           tag: "${TAG}"
+          white_list:
+            - ".*-apb$"
       dao:
         etcd_host: 0.0.0.0
         etcd_port: 2379

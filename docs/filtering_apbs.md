@@ -14,6 +14,7 @@ total set of discovered APBs for a given registry, determining matches.
 | only whitelist | matches a regex in list                         | *ANY* APB that does not match        |
 | only blacklist | *ALL* APBs that do not match                    | APBs that match a regex in list      |
 |  both present  | matches regex in whitelist but NOT in blacklist | APBs that match a regex in blacklist |
+|  None | *No* APBs from the registry | *All* APBs from that registry |
 
 ### Examples
 

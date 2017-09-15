@@ -24,7 +24,7 @@ for APBs. All the registry config options are defined below
 | type          | The type of registry. The only adapters so far are mock, RHCC, openshift, and dockerhub.                                         |     Y    |
 | url           | The url that is used to retrieve image information. Used extensively for RHCC while the docker hub adapter uses hard-coded URLs. |     N    |
 | fail_on_error | Should this registry fail the bootstrap request if it fails. will stop the execution of other registries loading.                |     N    |
-| white_list    | The list of regular expressions used to define which image names should be allowed through.                                      |     N    |
+| white_list    | The list of regular expressions used to define which image names should be allowed through. Must have a white list to allow APBs to be added to the catalog. The most permissive regular expression that you can use is `.*-apb$` if you would want to retrieve all APBs in a registry.                                     |     N    |
 | black_list    | The list of regular expressions used to define which images names should never be allowed through.                               |     N    |
 | images        | The list of images to be used with OpenShift Registry.                                                                           |     N    |
 
@@ -80,6 +80,8 @@ registry:
     org: ansibleplaybookbundle
     user: user
     pass: password
+    white_list:
+      - ".*-apb$"
 ```
 
 ### Red Hat Container Catalog (RHCC) Registry
@@ -90,6 +92,8 @@ registry:
   - name: rhcc
     type: rhcc
     url: <rhcc url>
+    white_list:
+      - ".*-apb$"
 ```
 
 ### OpenShift Registry
@@ -105,6 +109,8 @@ registry:
     images:
       - <image_1>
       - <image_2>
+    white_list:
+      - ".*-apb$"
 ```
 
 There is a limitation when working with the OpenShift Registry right now. We have no capability to search the registry so we require that the user configure the broker with a list of images they would like to source from for when the broker bootstraps. The image name must be the fully qualified name without the registry URL. 
@@ -119,9 +125,13 @@ registry:
     org: ansibleplaybookbundle
     user: user
     pass: password
+    white_list:
+      - ".*-apb$"
   - name: rhcc
     type: rhcc
     url: <rhcc url>
+    white_list:
+      - ".*-apb$"
 ```
 
 ## DAO Configuration
