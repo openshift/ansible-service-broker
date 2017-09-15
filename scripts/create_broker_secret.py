@@ -1,7 +1,27 @@
 #! /usr/bin/env python
+
 import sys
 import yaml
 import subprocess
+
+try:
+    import yaml
+except Exception:
+    print("No yaml parsing modules installed, try: pip install pyyaml")
+    sys.exit(1)
+
+try:
+    import requests
+except Exception:
+    print("requests module not installed, try: pip install requests")
+    sys.exit(1)
+
+
+# Work around python2/3 input differences
+try:
+    input = raw_input
+except NameError:
+    pass
 
 USAGE = """USAGE:
   {command} NAME NAMESPACE IMAGE [KEY=VALUE]* [@FILE]*
@@ -104,17 +124,49 @@ def format_config(config):
         del config['metadata'][key]
     return yaml.dump(config)
 
+
+def broker_url():
+    return 'https://' + runcmd('oc get routes --no-headers').split()[1]
+
+
+def get_all_apbs():
+    response = requests.get(broker_url() + '/v2/catalog', verify=False)
+    return response.json()['services']
+
+
+
 def fqname(apb):
-    registries = {'docker.io': 'dh'}
-    registry, org, end = apb.split('/')
+    parts = apb.split('/')
+    if len(parts) == 3:
+        # Chop the service, we don't know what it will be translated to in the broker
+        parts = parts[1:]
+    if ':' in parts[-1]:
+        # separate tag from image
+        image, tag = parts[-1].split(':')
+        parts[-1] = image
+        parts.append(tag)
 
-    if ":" in end:
-        image, tag = end.split(":")
+    search_pattern = '-'.join(parts)
+    candidates = get_all_apbs()
+    matches = [
+        str(candidate['name']) for candidate in candidates
+        if search_pattern in candidate['name']
+    ]
+
+    if not matches:
+        msg = "This script assumes the apb you are associating has already been discovered by the broker. Please add the apb and rerun this script\n\
+apbs found: \n\t- {}".format('\n\t- '.join(map(lambda x: x['name'], candidates)))
+        raise Exception(msg)
+    elif len(matches) > 1:
+        print("Multiple apbs match...\n")
+        for i, match in enumerate(matches):
+            print('{}: {}'.format(i+1, match))
+        choice = int(input("\nWhich apb would you like to associate?: ")) - 1
+        match = matches[choice]
     else:
-        image = end
-        tag = 'latest'
-
-    return '-'.join([registries[registry], org, image, tag])
+        match = matches[0]
+        print("Associating secret with {}".format(match))
+    return match
 
 
 def get_broker_config():
