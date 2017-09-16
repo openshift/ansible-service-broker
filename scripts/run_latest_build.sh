@@ -70,6 +70,7 @@ DOCKERHUB_USER=${DOCKERHUB_USER:-"changeme"} # DockerHub login username, default
 DOCKERHUB_PASS=${DOCKERHUB_PASS:-"changeme"} # DockerHub login password, default 'changeme'
 DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where APBs can be found, default 'ansibleplaybookbundle'
 ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"false"} # Secure broker with basic authentication, default 'false'. Disabling basic auth allows "apb push" to work.
+BROKER_KIND=${BROKER_KIND:-"Broker"} # allow users to override the broker kind type to work with 3.7
 
 curl -s $TEMPLATE_URL \
   | oc process \
@@ -77,6 +78,7 @@ curl -s $TEMPLATE_URL \
   -p DOCKERHUB_USER="$DOCKERHUB_USER" \
   -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
   -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
+  -p BROKER_KIND="$BROKER_KIND" \
   -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" -f - | oc create -f -
 
 if [ "$?" -ne 0 ]; then
