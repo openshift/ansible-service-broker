@@ -157,12 +157,15 @@ class App(object):
             if namespace is not None and namespace != "":
                 break
 
+        plan_id = self._get_plan_id(service)
+
+        sel_binding = service['id']
         answers, using_some_bind = self._get_prov_answers(service, sel_binding)
 
         if using_some_bind:
             print 'Using binding credentials.'
         print 'Service configured! Requesting broker to provision...'
-        res, instance_id = self._req_provision(service['id'], answers, namespace)
+        res, instance_id = self._req_provision(service['id'], plan_id, answers, namespace)
         print 'Provision returned status code: %s' % res.status_code
         print 'service_id: %s' % service['id']
         print 'instance_id: %s' % instance_id
@@ -335,6 +338,20 @@ class App(object):
         }
         self._drop_records()
 
+    def _get_plan_id(self, service):
+        acceptable_plan = False
+        while not acceptable_plan:
+            plans = list(map(lambda x: x["name"].encode('utf-8'), service["plans"]))
+            print "Valid plans are: %s"%plans
+            default_plan = service["plans"][0]["name"]
+            plan = raw_input("Enter Plan to Provision [%s]: "%default_plan) or default_plan
+            if plan in plans:
+                acceptable_plan = True
+            else:
+                print "The plan specified is not supported by this APB. Try again."
+
+        return plan
+
     def _get_prov_answers(self, service, sel_binding):
         if not sel_binding:
             print 'Configure your service:'
@@ -345,8 +362,8 @@ class App(object):
         for param_key, param in service['plans'][0]['schemas']['service_instance']['create']['parameters']['properties'].items():
             # Accept binding value for param if its present, otherwise prompt
             param_name = param_key  # key is the new name
-            binding_match = sel_binding.get(param_name) \
-                if sel_binding else None
+            binding_match = None
+
             if binding_match:
                 answers[param_name] = binding_match
                 using_some_bind = True
@@ -523,10 +540,9 @@ class App(object):
 # 24   -v \
 # 25   http://cap.example.com:1338/v2/service_instances/$instanceUUID
 ############################################################
-    def _req_provision(self, service_id, answers, namespace):
+    def _req_provision(self, service_id, plan_id, answers, namespace):
         # Generate a uuid instance ID acting as a Service Catalog would do
         instance_id = str(uuid.uuid4())
-        plan_id = str(uuid.uuid4())  # not clear how this is used yet, req tho
         path = '/service_instances/%s?accepts_incomplete=true' % instance_id
         context = {"platform": "kubernetes", "namespace": namespace}
         req_body = {
