@@ -22,7 +22,6 @@ package app
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -83,12 +82,21 @@ func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
 	return config, nil
 }
 
-func ApiServer(log *logging.Logger) (*genericapiserver.GenericAPIServer, error) {
+func ApiServer(log *logging.Logger, config Config, args Args) (*genericapiserver.GenericAPIServer, error) {
 	log.Debug("calling NewSecureServingOptions")
 	secureServing := genericoptions.NewSecureServingOptions()
-	log.Debug("we have a secure serving config, calling MaybeDefaultWithSelfSignedCerts")
-	if err := secureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
-		return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
+	if !args.Insecure {
+		log.Notice("Listening on https:")
+		secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
+			CertFile: config.Broker.SSLCert,
+			KeyFile:  config.Broker.SSLCertKey,
+		}}
+		secureServing.BindPort = 1338
+		secureServing.BindAddress = net.ParseIP("0.0.0.0")
+		log.Debug("we have a secure serving config, calling MaybeDefaultWithSelfSignedCerts")
+		if err := secureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
+			return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
+		}
 	}
 
 	serverConfig := genericapiserver.NewConfig(Codecs)
@@ -323,7 +331,7 @@ func (a *App) Start() {
 	}
 
 	a.log.Notice("Create the stupid apiserver")
-	genericserver, servererr := ApiServer(a.log.Logger)
+	genericserver, servererr := ApiServer(a.log.Logger, a.config, a.args)
 	if servererr != nil {
 		a.log.Errorf("problem creating apiserver. %v", servererr)
 	}
@@ -332,24 +340,7 @@ func (a *App) Start() {
 	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker)
 
 	genericserver.Handler.NonGoRestfulMux.HandlePrefix("/v2/", daHandler)
-	genericserver.SecureServingInfo.BindAddress = "0.0.0.0:1338"
-	if a.args.Insecure {
-		a.log.Notice("Listening on http://%s", genericserver.SecureServingInfo.BindAddress)
-		genericserver.SecureServingInfo.Cert = nil
-		genericserver.SecureServingInfo.SNICerts = map[string]*tls.Certificate{}
-	} else {
-		a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
-		cert, err := tls.LoadX509KeyPair(
-			a.config.Broker.SSLCert,
-			a.config.Broker.SSLCertKey,
-		)
-		if err != nil {
-			a.log.Errorf("unable to wait on run - %v", err)
-		}
-
-		genericserver.SecureServingInfo.Cert = &cert
-	}
-	a.log.Warningf("%#v", genericserver.SecureServingInfo)
+	a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
 
 	a.log.Notice("Calling run on the apiserver")
 	o := make(chan struct{})
