@@ -209,12 +209,18 @@ objects:
     url: ${ASB_SCHEME}://asb-1338-ansible-service-broker.${ROUTING_SUFFIX}
     authInfo:
       ${{BROKER_AUTH}}
+    caBundle: ${BROKER_CA_CERT}
 
 parameters:
 - description: Service Broker kind. Newer service-catalogs use ServiceBroker
   displayname: Service Broker kind. Newer service-catalogs use ServiceBroker
   name: BROKER_KIND
   value: Broker
+
+- description: Service Broker CA Cert. 
+  displayname: Service Broker kind.
+  name: BROKER_CA_CERT
+  value: ""
 
 - description: Broker Auth Info
   displayname: Broker Auth Info
