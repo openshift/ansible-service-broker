@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.3
+Version: 1.0.4
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,37 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Sep 19 2017 Jason Montleon <jmontleo@redhat.com> 1.0.4-1
+- Update broker defaults for current service-catalog version (#437)
+  (jmontleo@redhat.com)
+- fix asbcli provision (#440) (jmontleo@redhat.com)
+- pass in BROKER_KIND (#436) (jmrodri@gmail.com)
+- Proposal to host static assets for APBs (#423) (cfc@chasenc.com)
+- Remove image field from APB spec (#431) (david.j.zager@gmail.com)
+- updating irc links to go to asbroker channel (#435)
+  (Shawn.Hurley21@gmail.com)
+- Default for no filter mode is to not contain a single APB. (#411)
+  (Shawn.Hurley21@gmail.com)
+- Kube template (#412) (rhallise@redhat.com)
+- update template to support newer service-catalogs (#422)
+  (jmontleo@redhat.com)
+- User Impersonation (#418) (Shawn.Hurley21@gmail.com)
+- Update updates-first-pass.md (#426) (ernelson@redhat.com)
+- updating default values for configuration values needed. (#419)
+  (Shawn.Hurley21@gmail.com)
+- Force delete the mediawiki pod (#420) (rhallise@redhat.com)
+- add docs for secrets (#421) (fabian@fabianism.us)
+- Move variable assignment for clarity in script (#416)
+  (david.j.zager@gmail.com)
+- Proposal: CI Framework (#413) (rhallise@redhat.com)
+- Add secret support to the Broker (#345) (fabian@fabianism.us)
+- Update build to also work with Fedora 27 (#414) (jmontleo@redhat.com)
+- Put the broker creation inside deploy template (#410)
+  (david.j.zager@gmail.com)
+- Proposals to make configuration easier to use. (#407)
+  (Shawn.Hurley21@gmail.com)
+- Add group titles for forms in OpenShift UI. (#409) (cfc@chasenc.com)
+
 * Tue Aug 29 2017 Jason Montleon <jmontleo@redhat.com> 1.0.3-1
 - 399 - APB Sandbox Role should be configurable (#403)
   (david.j.zager@gmail.com)
