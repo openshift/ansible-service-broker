@@ -286,6 +286,8 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	defer r.Body.Close()
 	h.printRequest(r)
 
+	h.log.Debug(params["instance_uuid"])
+
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
@@ -293,14 +295,33 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	}
 
 	var req *broker.UpdateRequest
+
 	if err := readRequest(r, &req); err != nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
 		return
 	}
 
-	resp, err := h.broker.Update(instanceUUID, req)
+	var async bool
 
-	writeDefaultResponse(w, http.StatusOK, resp, err)
+	// ignore the error, if async can't be parsed it will be false
+	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+
+	resp, err := h.broker.Update(instanceUUID, req, async)
+
+	if err != nil {
+		switch err {
+		case broker.ErrorAlreadyProvisioned:
+			writeResponse(w, http.StatusOK, resp)
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		}
+	} else if async {
+		writeDefaultResponse(w, http.StatusAccepted, resp, err)
+	} else {
+		writeDefaultResponse(w, http.StatusCreated, resp, err)
+	}
 }
 
 func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[string]string) {

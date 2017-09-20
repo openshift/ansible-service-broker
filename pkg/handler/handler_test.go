@@ -89,7 +89,7 @@ func (m MockBroker) Provision(uuid.UUID, *broker.ProvisionRequest, bool) (*broke
 	fmt.Println(m.Operation)
 	return &broker.ProvisionResponse{Operation: m.Operation}, m.Err
 }
-func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest) (*broker.UpdateResponse, error) {
+func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest, bool) (*broker.UpdateResponse, error) {
 	m.called("update", true)
 	return nil, m.Err
 }

@@ -52,6 +52,12 @@ var (
 	ErrorBindingExists = errors.New("binding exists")
 	// ErrorDeprovisionInProgress - Error for when deprovision is called on a service instance that has a deprovision job in progress
 	ErrorDeprovisionInProgress = errors.New("deprovision in progress")
+	// ErrorPlanNotFound - Error for when plan for update not found
+	ErrorPlanNotFound = errors.New("plan not found")
+	// ErrorParameterNotUpdatable - Error for when parameter in update request is not updatable
+	ErrorParameterNotUpdatable = errors.New("parameter not updatable")
+	// ErrorParameterNotFound - Error for when a parameter for update is not found
+	ErrorParameterNotFound = errors.New("parameter not found")
 )
 
 const (
@@ -68,7 +74,7 @@ type Broker interface {
 	Bootstrap() (*BootstrapResponse, error)
 	Catalog() (*CatalogResponse, error)
 	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
-	Update(uuid.UUID, *UpdateRequest) (*UpdateResponse, error)
+	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
 	Deprovision(apb.ServiceInstance, string, bool) (*DeprovisionResponse, error)
 	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest) (*BindResponse, error)
 	Unbind(apb.ServiceInstance, uuid.UUID, string) (*UnbindResponse, error)
@@ -971,10 +977,158 @@ func (a AnsibleBroker) Unbind(
 	return &UnbindResponse{}, nil
 }
 
-// Update - update a service NOTE: not implemented
-func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest,
+// Update  - will update a service
+func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async bool,
 ) (*UpdateResponse, error) {
-	return nil, notImplemented
+	////////////////////////////////////////////////////////////
+	//type UpdateRequest struct {
+
+	//-> PreviousValues
+	//  -> OrganizationID    uuid.UUID
+	//  -> SpaceID           uuid.UUID
+	//   Used for determining where this service should be provisioned. Analogous to
+	//   OCP's namespaces and projects. Re: OrganizationID, spec mentions
+	//   "Most brokers will not use this field, it could be helpful in determining
+	//   the data placement or applying custom business rules"
+	//   -> PlanID            uuid.UUID
+	//   -> ServiceID         uuid.UUID
+	// ServiceID maps directly to a Spec.Id found in etcd. Can pull Spec via
+	// Dao::GetSpec(id string)
+
+	//-> Parameters        map[string]string
+	// User provided configuration answers for the AnsibleApp
+
+	// -> AcceptsIncomplete bool
+	// true indicates both the SC and the requesting client (sc client). If param
+	// is not included in the req, and the broker can only provision an instance of
+	// the request plan asyncronously, broker should reject with a 422
+	// NOTE: Spec.Async should indicate what level of async support is available for
+	// a given ansible app
+
+	//}
+
+	// Summary:
+	// For our purposes right now, the ServiceID and the Params should be enough to
+	// Update an ansible app.
+	////////////////////////////////////////////////////////////
+	// Update Flow
+	// -> Retrieve Spec from etcd (if missing, 400, this returns err missing)
+	// -> Retrieve Instance from etcd (if missing, 400, this returns err missing)
+	// -> TODO: Check to see if the spec supports or requires async, and reconcile
+	//    need a typed error condition so the REST server knows correct response
+	//    depending on the scenario
+	//    (async requested, unsupported, 422)
+	//    (async not requested, required, ?)
+	// -> Update entry in /instance, ID'd by instance. Value should be Instance type
+	//    Purpose is to make sure everything neeed to deprovision is available
+	//    in persistence.
+	// -> Update!
+	////////////////////////////////////////////////////////////
+
+	/*
+	   dao GET returns error strings like CODE: message (entity) [#]
+	   dao SetServiceInstance returns what error?
+	   dao.SetState returns what error?
+	   Provision returns what error?
+	   SetExtractedCredentials returns what error?
+
+	   broker
+	   * normal synchronous return UpdateResponse
+	   * normal async return UpdateResponse
+
+	   handler returns the following
+	   * synchronous update return 201 created
+	   * instance already exists with IDENTICAL parameters to existing instance, 200 OK
+	   * async provision 202 Accepted
+	   * if only support async and no accepts_incomplete=true passed in, 422 Unprocessable entity
+
+	*/
+
+	var err error
+
+	si, err := a.dao.GetServiceInstance(instanceUUID.String())
+	if err != nil {
+		a.log.Debug("Error retrieving instance")
+		return nil, ErrorNotFound
+	}
+
+	// Retrieve requested spec
+	spec, err := a.dao.GetSpec(si.Spec.ID)
+	if err != nil {
+		// etcd return not found i.e. code 100
+		if client.IsKeyNotFound(err) {
+			return nil, ErrorNotFound
+		}
+		// otherwise unknown error bubble it up
+		return nil, err
+	}
+
+	params := si.Parameters
+
+	var updatePlanKey int = -1
+	for k, v := range spec.Plans {
+		if v.Name == (*params)["_apb_plan_id"] {
+			updatePlanKey = k
+		}
+	}
+
+	if updatePlanKey == -1 {
+		a.log.Error("The plan %s, specified for updating instance %s, does not exist", si.ID, si.ID)
+		return nil, ErrorPlanNotFound
+	}
+
+	updatePlan := spec.Plans[updatePlanKey]
+
+	for k, v := range req.Parameters {
+		var param_updated bool = false
+		for _, key := range updatePlan.Parameters {
+			if key.Name == k {
+				if key.Updatable == false {
+					a.log.Error("Tried to update non-updatable parameter, %s, on instance %s.", k, si.ID)
+					return nil, ErrorParameterNotUpdatable
+				}
+				(*params)[k] = v
+				param_updated = true
+			}
+		}
+		if param_updated == false {
+			a.log.Error("Parameter %s, requested for update on instance %s, does not exist.", k, si.ID)
+			return nil, ErrorParameterNotFound
+		}
+	}
+
+	var token string
+
+	if async {
+		a.log.Info("ASYNC update in progress")
+		// asyncronously provision and return the token for the lastoperation
+		pjob := NewUpdateJob(si, a.clusterConfig, a.log)
+
+		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
+		if err != nil {
+			a.log.Error("Failed to start new job for async update\n%s", err.Error())
+			return nil, err
+		}
+
+		// HACK: there might be a delay between the first time the state in etcd
+		// is set and the job was already started. But I need the token.
+		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
+	} else {
+		// TODO: do we want to do synchronous updating?
+		a.log.Info("reverting to synchronous update in progress")
+		_, extCreds, err := apb.Update(si, a.clusterConfig, a.log)
+		if extCreds != nil {
+			a.log.Debug("broker::Update, got ExtractedCredentials!")
+			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
+			if err != nil {
+				a.log.Error("Could not persist extracted credentials")
+				a.log.Error("%s", err.Error())
+				return nil, err
+			}
+		}
+	}
+
+	return &UpdateResponse{Operation: token}, nil
 }
 
 // LastOperation - gets the last operation and status

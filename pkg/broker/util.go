@@ -208,6 +208,9 @@ func parametersToSchema(plan apb.Plan) Schema {
 	bindProperties := extractProperties(plan.BindParameters)
 	bindRequired := extractRequired(plan.BindParameters)
 
+	updatableProperties := extractUpdatable(plan.Parameters)
+	updatableRequired := extractUpdatableRequired(createRequired, updatableProperties)
+
 	// builds a Schema object for the various methods.
 	s := Schema{
 		ServiceInstance: ServiceInstance{
@@ -219,7 +222,14 @@ func parametersToSchema(plan apb.Plan) Schema {
 					Required:   createRequired,
 				},
 			},
-			Update: map[string]*schema.Schema{},
+			Update: map[string]*schema.Schema{
+				"parameters": {
+					SchemaRef:  schema.SchemaURL,
+					Type:       []schema.PrimitiveType{schema.ObjectType},
+					Properties: updatableProperties,
+					Required:   updatableRequired,
+				},
+			},
 		},
 		ServiceBinding: ServiceBinding{
 			Create: map[string]*schema.Schema{
@@ -289,6 +299,33 @@ func extractRequired(params []apb.ParameterDescriptor) []string {
 		}
 	}
 	return req
+}
+
+func extractUpdatable(params []apb.ParameterDescriptor) map[string]*schema.Schema {
+	upd := make(map[string]*schema.Schema)
+	for _, v := range params {
+		if v.Updatable {
+			k := v.Name
+			upd[k] = &schema.Schema{
+				Title:       v.Title,
+				Description: v.Description,
+				Default:     v.Default,
+				Type:        getType(v.Type),
+			}
+		}
+	}
+	return upd
+}
+
+func extractUpdatableRequired(required []string, updatableProperties map[string]*schema.Schema) []string {
+	var updReq []string
+
+	for _, element := range required {
+		if _, exists := updatableProperties[element]; exists {
+			updReq = append(updReq, element)
+		}
+	}
+	return updReq
 }
 
 // StateToLastOperation converts apb State objects into LastOperationStates.
