@@ -26,17 +26,16 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/wait"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/authentication/authenticatorfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
@@ -51,12 +50,18 @@ import (
 )
 
 var (
+	// Scheme - the runtime scheme
 	Scheme = runtime.NewScheme()
+	// Codecs -k8s codecs for the scheme
 	Codecs = serializer.NewCodecFactory(Scheme)
 )
 
-// MsgBufferSize - The buffer for the message channel.
-const MsgBufferSize = 20
+const (
+	// MsgBufferSize - The buffer for the message channel.
+	MsgBufferSize = 20
+	// ClusterURLPreFix - prefix for the ansible service broker.
+	ClusterURLPreFix = "/ansible-service-broker"
+)
 
 // App - All the application pieces that are installed.
 type App struct {
@@ -69,60 +74,29 @@ type App struct {
 	engine   *broker.WorkEngine
 }
 
-func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
-	clientConfig, err := clientcmd.LoadFromFile(configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	config, err := clientcmd.NewDefaultClientConfig(*clientConfig, &clientcmd.ConfigOverrides{}).ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func ApiServer(log *logging.Logger, config Config, args Args) (*genericapiserver.GenericAPIServer, error) {
+func apiServer(log *logging.Logger, config Config, args Args) (*genericapiserver.GenericAPIServer, error) {
 	log.Debug("calling NewSecureServingOptions")
 	secureServing := genericoptions.NewSecureServingOptions()
-	if !args.Insecure {
-		log.Notice("Listening on https:")
-		secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
-			CertFile: config.Broker.SSLCert,
-			KeyFile:  config.Broker.SSLCertKey,
-		}}
-		secureServing.BindPort = 1338
-		secureServing.BindAddress = net.ParseIP("0.0.0.0")
-		log.Debug("we have a secure serving config, calling MaybeDefaultWithSelfSignedCerts")
-		if err := secureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
-			return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
-		}
+	secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
+		CertFile: config.Broker.SSLCert,
+		KeyFile:  config.Broker.SSLCertKey,
+	}}
+	secureServing.BindPort = 1338
+	secureServing.BindAddress = net.ParseIP("0.0.0.0")
+	if err := secureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
+		return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
 	}
 
 	serverConfig := genericapiserver.NewConfig(Codecs)
-	log.Debug("we have a serverConfig")
-	log.Debug("genericoptions.NewSecureServingOptions")
 	if err := secureServing.ApplyTo(serverConfig); err != nil {
 		log.Debug("error applying to %#v", err)
 		return nil, err
 	}
 
-	log.Debug("XXX Returned from ApplyTo")
-
-	// vvvv STOLEN FROM clients.go vvvv
-	clientConfig, err := restclient.InClusterConfig()
+	clientConfig, err := clients.KubernetesConfig(log)
 	if err != nil {
-		log.Warning("Failed to create a InternalClientSet: %v.", err)
-
-		log.Debug("Checking for a local Cluster Config")
-		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
-		if err != nil {
-			log.Error("Failed to create LocalClientSet")
-			return nil, err
-		}
+		return nil, err
 	}
-	// ^^^^ STOLEN FROM clients.go ^^^^
-
 	client, err := authenticationclient.NewForConfig(clientConfig)
 	if err != nil {
 		return nil, err
@@ -145,13 +119,10 @@ func ApiServer(log *logging.Logger, config Config, args Args) (*genericapiserver
 		return nil, err
 	}
 
-	fmt.Println("apiserver creating?")
+	log.Debug("Creating k8s apiserver")
 	genericServer, servererr := serverConfig.SkipComplete().New("ansible-service-broker", genericapiserver.EmptyDelegate)
 
-	fmt.Println("apiserver created")
-
-	//genericServer.Handler.NonGoRestfulMux := nil
-	//genericServer.Handler.NonGoRestfulMux
+	log.Debug("k8s apiserver created")
 
 	return genericServer, servererr
 }
@@ -330,42 +301,31 @@ func (a *App) Start() {
 		}()
 	}
 
-	a.log.Notice("Create the stupid apiserver")
-	genericserver, servererr := ApiServer(a.log.Logger, a.config, a.args)
+	genericserver, servererr := apiServer(a.log.Logger, a.config, a.args)
 	if servererr != nil {
 		a.log.Errorf("problem creating apiserver. %v", servererr)
 	}
 
-	a.log.Debug("handler being created")
-	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker)
+	var clusterURL string
+	if a.config.Broker.ClusterURL != "" {
+		if !strings.HasPrefix("/", a.config.Broker.ClusterURL) {
+			clusterURL = "/" + a.config.Broker.ClusterURL
+		} else {
+			clusterURL = a.config.Broker.ClusterURL
+		}
+	} else {
+		clusterURL = ClusterURLPreFix
+	}
+	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL)
 
-	genericserver.Handler.NonGoRestfulMux.HandlePrefix("/v2/", daHandler)
+	genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
 	a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
 
-	a.log.Notice("Calling run on the apiserver")
-	o := make(chan struct{})
-	err = genericserver.PrepareRun().Run(o)
+	a.log.Notice("Starting apiserver")
+	err = genericserver.PrepareRun().Run(wait.NeverStop)
 	a.log.Errorf("unable to wait on run - %v", err)
 
-	/*
-		a.log.Notice("Ansible Service Broker Started")
-		listeningAddress := "0.0.0.0:1338"
-		if a.args.Insecure {
-			a.log.Notice("Listening on http://%s", listeningAddress)
-			err = http.ListenAndServe(":1338", daHandler)
-		} else {
-			a.log.Notice("Listening on https://%s", listeningAddress)
-			err = http.ListenAndServeTLS(":1338",
-				a.config.Broker.SSLCert,
-				a.config.Broker.SSLCertKey,
-				daHandler)
-		}
-		if err != nil {
-			a.log.Error("Failed to start HTTP server")
-			a.log.Error(err.Error())
-			os.Exit(1)
-		}
-	*/
+	//TODO: Add Flag so we can still use the old way of doing this.
 }
 
 func initClients(log *logging.Logger, ec clients.EtcdConfig) error {

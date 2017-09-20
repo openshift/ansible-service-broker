@@ -94,33 +94,34 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string) http.Handler {
 	h := handler{
 		router:       *mux.NewRouter(),
 		broker:       b,
 		log:          log,
 		brokerConfig: brokerConfig,
 	}
+	s := h.router.PathPrefix(prefix).Subrouter()
 
 	// TODO: Reintroduce router restriction based on API version when settled upstream
 	// root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()
 
-	h.router.HandleFunc("/v2/bootstrap", createVarHandler(h.bootstrap)).Methods("POST")
-	h.router.HandleFunc("/v2/catalog", createVarHandler(h.catalog)).Methods("GET")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.provision)).Methods("PUT")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.update)).Methods("PATCH")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.deprovision)).Methods("DELETE")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
+	s.HandleFunc("/v2/bootstrap", createVarHandler(h.bootstrap)).Methods("POST")
+	s.HandleFunc("/v2/catalog", createVarHandler(h.catalog)).Methods("GET")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.provision)).Methods("PUT")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.update)).Methods("PATCH")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.deprovision)).Methods("DELETE")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
 		createVarHandler(h.bind)).Methods("PUT")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
+	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
 		createVarHandler(h.unbind)).Methods("DELETE")
-	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
+	s.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
 
 	if h.brokerConfig.DevBroker {
-		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
-		h.router.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
-		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
+		s.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
+		s.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
+		s.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
 	providers := auth.GetProviders(brokerConfig.Auth, log)
