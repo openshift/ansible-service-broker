@@ -2,6 +2,7 @@ REGISTRY         ?= docker.io
 ORG              ?= ansibleplaybookbundle
 TAG              ?= latest
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker
+VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
@@ -73,7 +74,7 @@ really-clean: clean cleanup-ci ## Really clean up the working environment
 	@rm -f $(KUBERNETES_FILES)
 
 deploy: ## Deploy a built broker docker image to a running cluster
-	@./scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG}
+	@./scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG} ${VARS}
 
 ## Continuous integration stuff
 

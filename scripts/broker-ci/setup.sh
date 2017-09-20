@@ -68,7 +68,7 @@ function make-build-image {
 }
 
 function make-deploy {
-    make deploy
+    VARS="-p BROKER_KIND=Broker -p BROKER_AUTH=\"{ \"basicAuthSecret\": { \"namespace\": \"ansible-service-broker\", \"name\": \"asb-auth-secret\" }}\"" make deploy
     NAMESPACE="ansible-service-broker" ./scripts/broker-ci/wait-for-resource.sh create pod asb >> /tmp/wait-for-pods-log 2>&1
     env-error-check "make-deploy"
 }
