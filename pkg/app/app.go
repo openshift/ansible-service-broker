@@ -36,7 +36,6 @@ import (
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/authentication/authenticatorfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
-
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 
@@ -59,8 +58,8 @@ var (
 const (
 	// MsgBufferSize - The buffer for the message channel.
 	MsgBufferSize = 20
-	// ClusterURLPreFix - prefix for the ansible service broker.
-	ClusterURLPreFix = "/ansible-service-broker"
+	// defaultClusterURLPreFix - prefix for the ansible service broker.
+	defaultClusterURLPreFix = "/ansible-service-broker"
 )
 
 // App - All the application pieces that are installed.
@@ -314,16 +313,16 @@ func (a *App) Start() {
 			clusterURL = a.config.Broker.ClusterURL
 		}
 	} else {
-		clusterURL = ClusterURLPreFix
+		clusterURL = defaultClusterURLPreFix
 	}
 	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL)
 
 	genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
 	a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
 
-	a.log.Notice("Starting apiserver")
+	a.log.Notice("Ansible Serivce Broker Starting")
 	err = genericserver.PrepareRun().Run(wait.NeverStop)
-	a.log.Errorf("unable to wait on run - %v", err)
+	a.log.Errorf("unable to start ansible service broker - %v", err)
 
 	//TODO: Add Flag so we can still use the old way of doing this.
 }

@@ -24,8 +24,8 @@ import (
 	"errors"
 
 	logging "github.com/op/go-logging"
-	"k8s.io/client-go/rest"
 
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"

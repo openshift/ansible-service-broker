@@ -170,8 +170,8 @@ func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig, "")
-	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "/test-prefix")
+	req, err := http.NewRequest(http.MethodPost, "/test-prefix/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
 	}

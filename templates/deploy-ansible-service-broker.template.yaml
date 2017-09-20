@@ -126,8 +126,6 @@ objects:
           env:
           - name: BROKER_CONFIG
             value: ${BROKER_CONFIG}
-          - name: INSECURE
-            value: ${INSECURE}
           resources: {}
           terminationMessagePath: /tmp/termination-log
 
@@ -250,13 +248,9 @@ objects:
   metadata:
     name: ansible-service-broker
   spec:
-    url: https://asb.ansible-service-broker.svc:1338/ansible-service-broker/
+    url: https://asb.ansible-service-broker.svc:1338${BROKER_URL_PREFIX}/
     authInfo:
-      bearer:
-        secretRef:
-          kind: Secret
-          name: ansibleservicebroker-client
-          namespace: ansible-service-broker
+      ${{BROKER_AUTH}}
     caBundle: ${BROKER_CA_CERT}
 
 parameters:
@@ -278,11 +272,7 @@ parameters:
 - description: Broker Auth Info
   displayname: Broker Auth Info
   name: BROKER_AUTH
-  value: '{ "basic": { "secretRef": { "namespace": "ansible-service-broker", "name": "asb-auth-secret" } } }'
-- description: Scheme for ansible service broker (http/https)
-  displayname: Scheme for ansible service broker (http/https)
-  name: ASB_SCHEME
-  value: "https"
+  value: '{ "bearer": { "secretRef": { "kind": "Secret", "namespace": "ansible-service-broker", "name": "ansibleservicebroker-client" } } }'
 
 - description: Suffix for OpenShift routes
   displayname: Suffix for OpenShift routes
@@ -308,23 +298,6 @@ parameters:
   displayname: Ansible Service Broker Configuration File
   name: BROKER_CONFIG
   value: /etc/ansible-service-broker/config.yaml
-
-# SSL enabled: INSECURE="false", INSECURE_EDGE="None", TERMINATION="Reencrypt", ASB_SCHEME="https"
-# Insecure enabled: INSECURE="true", INSECURE_EDGE="Allow", TERMINATION="edge", ASB_SCHEME="http"
-- description: Run in insecure mode
-  displayname: Ansible Service Broker Insecure
-  name: INSECURE
-  value: "false"
-
-- description: Insecure Edge Termination Policy
-  displayname: Insecure Edge Termination Policy
-  name: INSECURE_EDGE
-  value: "None"
-
-- description: Secure the route with TLS
-  displayname: Ansible Service Broker Termination
-  name: TERMINATION
-  value: Reencrypt
 
 - description: Dockerhub user password
   displayname: Dockerhub user password
