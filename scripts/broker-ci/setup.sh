@@ -17,7 +17,7 @@ function cluster-setup () {
     cat <<EOF > "catasb/config/my_vars.yml"
 ---
 dockerhub_user_name: brokerciuser
-dockerhub_org_name: ansibleplaybookbundle
+dockerhub_org: ansibleplaybookbundle
 dockerhub_user_password: brokerciuser
 EOF
 
