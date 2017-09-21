@@ -18,6 +18,7 @@ OUTPUT_REQUEST="true"
 RECOVERY="true"
 REFRESH_INTERVAL="600s"
 SANDBOX_ROLE="edit"
+VARS="${VARS:=''}"
 
 # load development variables
 asb::load_vars
