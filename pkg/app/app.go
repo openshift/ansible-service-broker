@@ -41,6 +41,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -73,7 +74,7 @@ type App struct {
 	engine   *broker.WorkEngine
 }
 
-func apiServer(log *logging.Logger, config Config, args Args) (*genericapiserver.GenericAPIServer, error) {
+func apiServer(log *logging.Logger, config Config, args Args, providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
 	log.Debug("calling NewSecureServingOptions")
 	secureServing := genericoptions.NewSecureServingOptions()
 	secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
@@ -92,38 +93,36 @@ func apiServer(log *logging.Logger, config Config, args Args) (*genericapiserver
 		return nil, err
 	}
 
-	clientConfig, err := clients.KubernetesConfig(log)
-	if err != nil {
-		return nil, err
-	}
-	client, err := authenticationclient.NewForConfig(clientConfig)
-	if err != nil {
-		return nil, err
-	}
+	if len(providers) == 0 {
+		clientConfig, err := clients.KubernetesConfig(log)
+		if err != nil {
+			return nil, err
+		}
+		client, err := authenticationclient.NewForConfig(clientConfig)
+		if err != nil {
+			return nil, err
+		}
 
-	authn := genericoptions.NewDelegatingAuthenticationOptions()
-	authenticationConfig := authenticatorfactory.DelegatingAuthenticatorConfig{
-		Anonymous:               true,
-		TokenAccessReviewClient: client.TokenReviews(),
-		CacheTTL:                authn.CacheTTL,
-	}
-	authenticator, _, err := authenticationConfig.New()
-	if err != nil {
-		return nil, err
-	}
-	serverConfig.Authenticator = authenticator
+		authn := genericoptions.NewDelegatingAuthenticationOptions()
+		authenticationConfig := authenticatorfactory.DelegatingAuthenticatorConfig{
+			Anonymous:               true,
+			TokenAccessReviewClient: client.TokenReviews(),
+			CacheTTL:                authn.CacheTTL,
+		}
+		authenticator, _, err := authenticationConfig.New()
+		if err != nil {
+			return nil, err
+		}
+		serverConfig.Authenticator = authenticator
 
-	authz := genericoptions.NewDelegatingAuthorizationOptions()
-	if err := authz.ApplyTo(serverConfig); err != nil {
-		return nil, err
+		authz := genericoptions.NewDelegatingAuthorizationOptions()
+		if err := authz.ApplyTo(serverConfig); err != nil {
+			return nil, err
+		}
 	}
 
 	log.Debug("Creating k8s apiserver")
-	genericServer, servererr := serverConfig.SkipComplete().New("ansible-service-broker", genericapiserver.EmptyDelegate)
-
-	log.Debug("k8s apiserver created")
-
-	return genericServer, servererr
+	return serverConfig.SkipComplete().New("ansible-service-broker", genericapiserver.EmptyDelegate)
 }
 
 // CreateApp - Creates the application
@@ -299,10 +298,13 @@ func (a *App) Start() {
 			}
 		}()
 	}
+	//Retrieve the auth providers if basic auth is configured.
+	providers := auth.GetProviders(a.config.Broker.Auth, a.log.Logger)
 
-	genericserver, servererr := apiServer(a.log.Logger, a.config, a.args)
+	genericserver, servererr := apiServer(a.log.Logger, a.config, a.args, providers)
 	if servererr != nil {
 		a.log.Errorf("problem creating apiserver. %v", servererr)
+		panic(servererr)
 	}
 
 	var clusterURL string
@@ -315,12 +317,12 @@ func (a *App) Start() {
 	} else {
 		clusterURL = defaultClusterURLPreFix
 	}
-	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL)
+	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers)
 
 	genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
 	a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
 
-	a.log.Notice("Ansible Serivce Broker Starting")
+	a.log.Notice("Ansible Service Broker Starting")
 	err = genericserver.PrepareRun().Run(wait.NeverStop)
 	a.log.Errorf("unable to start ansible service broker - %v", err)
 

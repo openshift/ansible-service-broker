@@ -94,7 +94,7 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string, providers []auth.Provider) http.Handler {
 	h := handler{
 		router:       *mux.NewRouter(),
 		broker:       b,
@@ -124,7 +124,6 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 		s.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	providers := auth.GetProviders(brokerConfig.Auth, log)
 	return handlers.LoggingHandler(os.Stdout, authHandler(h, providers, log))
 }
 
