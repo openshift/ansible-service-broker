@@ -32,10 +32,10 @@ objects:
   apiVersion: authorization.openshift.io/v1
   metadata:
     # "namespace" omitted since ClusterRoles are not namespaced
-    name: project-creator
+    name: asb-auth
   rules:
-  - apiGroups: ["project.openshift.io"]
-    resources: ["projects"]
+  - apiGroups: []
+    resources: ["namespaces"]
     verbs: ["create", "delete"]
   - apiGroups: ["authorization.openshift.io"]
     resources: ["subjectrulesreview"]
@@ -74,14 +74,14 @@ objects:
 - kind: ClusterRoleBinding
   apiVersion: authorization.openshift.io/v1
   metadata:
-    name: create-projects-asb
+    name: asb-auth-bind
   subjects:
   - kind: ServiceAccount 
     name: asb
     namespace: ansible-service-broker
   roleRef:
     kind: ClusterRole
-    name: project-creator 
+    name: asb-auth
 
 - apiVersion: authorization.openshift.io/v1
   kind: ClusterRoleBinding

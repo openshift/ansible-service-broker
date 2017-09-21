@@ -28,6 +28,8 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	logging "github.com/op/go-logging"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -220,23 +222,22 @@ func (s *ServiceAccountManager) createFile(handle string) (string, error) {
 }
 
 // DestroyApbSandbox - Destroys the apb sandbox
-func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext) error {
+func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext, clusterConfig ClusterConfig) error {
 	s.log.Info("Destroying APB sandbox...")
 	if executionContext.PodName == "" {
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return nil
 	}
-	s.log.Debug("Deleting namespace %s", executionContext.Namespace)
-	openshitftClient, err := clients.Openshift(s.log)
+	k8scli, err := clients.Kubernetes(s.log)
 	if err != nil {
 		return err
 	}
 
-	err = openshitftClient.DeleteProject(executionContext.Namespace)
-	if err != nil {
-		return err
-	}
+	if clusterConfig.Namespace != executionContext.Namespace {
+		s.log.Debug("Deleting namespace %s", executionContext.Namespace)
+		k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
 
+	}
 	s.log.Debugf("Deleting rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
 	output, err := runtime.RunCommand(
 		"oc", "delete", "rolebinding", executionContext.PodName, "--namespace="+executionContext.Namespace,

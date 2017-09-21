@@ -33,6 +33,8 @@ import (
 
 	yaml "gopkg.in/yaml.v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/apis/rbac"
+	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -41,7 +43,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
-	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 	"github.com/pborman/uuid"
 )
 
@@ -64,7 +65,7 @@ type handler struct {
 	broker           broker.Broker
 	log              *logging.Logger
 	brokerConfig     broker.Config
-	clusterRoleRules []authorization.PolicyRule
+	clusterRoleRules []rbac.PolicyRule
 }
 
 // authHandler - does the authentication for the routes
@@ -158,8 +159,9 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string,
-	providers []auth.Provider, clusterRoleRules []authorization.PolicyRule) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger,
+	brokerConfig broker.Config, clusterRoleRules []rbac.PolicyRule,
+) http.Handler {
 	h := handler{
 		router:           *mux.NewRouter(),
 		broker:           b,
@@ -629,11 +631,11 @@ func (h handler) validateUser(userName, namespace string) (bool, int, error) {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
 	// Retrieving the rules for the user in the namespace.
-	res, err := openshiftClient.SubjectRulesReview(userName, namespace, h.log)
+	prs, err := openshiftClient.SubjectRulesReview(userName, namespace, h.log)
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
-	if covered, _ := authorization.Covers(res.Status.Rules, h.clusterRoleRules); !covered {
+	if covered, _ := validation.Covers(prs, h.clusterRoleRules); !covered {
 		return false, http.StatusBadRequest, fmt.Errorf("User does not have sufficient permissions")
 	}
 	return true, http.StatusOK, nil

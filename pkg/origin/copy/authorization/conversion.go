@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/kubernetes/pkg/api"
-	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
+	"k8s.io/kubernetes/pkg/apis/rbac"
 
 	"github.com/openshift/ansible-service-broker/pkg/origin/copy/user/validation"
 )
@@ -36,14 +36,14 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 func ConvertAuthorizationClusterRoleToRBACClusterRole(in *ClusterRole, out *rbac.ClusterRole, _ conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	out.Annotations = convertAuthorizationAnnotationsToRBACAnnotations(in.Annotations)
-	out.Rules = convertAPIPolicyRulesToRBACPolicyRules(in.Rules)
+	out.Rules = ConvertAPIPolicyRulesToRBACPolicyRules(in.Rules)
 	return nil
 }
 
 // ConvertAuthorizationRoleToRBACRole - convert role to rbac role
 func ConvertAuthorizationRoleToRBACRole(in *Role, out *rbac.Role, _ conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
-	out.Rules = convertAPIPolicyRulesToRBACPolicyRules(in.Rules)
+	out.Rules = ConvertAPIPolicyRulesToRBACPolicyRules(in.Rules)
 	return nil
 }
 
@@ -75,7 +75,8 @@ func ConvertAuthorizationRoleBindingToRBACRoleBinding(in *RoleBinding, out *rbac
 	return nil
 }
 
-func convertAPIPolicyRulesToRBACPolicyRules(in []PolicyRule) []rbac.PolicyRule {
+//ConvertAPIPolicyRulesToRBACPolicyRules -  Convert Policy Rules.
+func ConvertAPIPolicyRulesToRBACPolicyRules(in []PolicyRule) []rbac.PolicyRule {
 	rules := make([]rbac.PolicyRule, 0, len(in))
 	for _, rule := range in {
 		// Origin's authorizer's RuleMatches func ignores rules that have AttributeRestrictions.

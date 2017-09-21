@@ -34,6 +34,10 @@ import (
 	"k8s.io/kubernetes/pkg/api/v1"
 )
 
+const (
+	transientNameSpaceKey = "apb"
+)
+
 // ExecuteApb - Runs an APB Action with a provided set of inputs
 func ExecuteApb(
 	action string,
@@ -71,13 +75,11 @@ func ExecuteApb(
 		return executionContext, err
 	}
 
-	openshitftClient, err := clients.Openshift(log)
+	secrets := GetSecrets(spec)
+	k8scli, err := clients.Kubernetes(log)
 	if err != nil {
 		return executionContext, err
 	}
-
-	secrets := GetSecrets(spec)
-
 	if len(secrets) > 0 {
 		executionContext.Namespace = clusterConfig.Namespace
 		executionContext.Targets = append(executionContext.Targets, context.Namespace)
@@ -86,17 +88,17 @@ func ExecuteApb(
 		// of uniquenes and will meet DNS name requirements.
 		executionContext.Namespace = uuid.New()
 		executionContext.Targets = append(executionContext.Targets, context.Namespace)
-		//Creating project
-		_, err := openshitftClient.CreateProject(executionContext.Namespace)
+		// Create namespace.
+		namespace := v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{transientNameSpaceKey: spec.FQName},
+				Name:   executionContext.Namespace,
+			},
+		}
+		_, err := k8scli.CoreV1().Namespaces().Create(&namespace)
 		if err != nil {
-			log.Errorf("unable to create new project %v", err)
 			return executionContext, err
 		}
-	}
-
-	k8scli, err := clients.Kubernetes(log)
-	if err != nil {
-		return executionContext, err
 	}
 	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 

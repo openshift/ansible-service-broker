@@ -39,6 +39,8 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
+	"k8s.io/kubernetes/pkg/apis/rbac"
+	v1beta1rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -47,7 +49,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
-	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 )
 
@@ -309,7 +310,7 @@ func (a *App) Start() {
 		panic(servererr)
 	}
 
-	rules := []authorization.PolicyRule{}
+	rules := []rbac.PolicyRule{}
 	if !a.config.Broker.AutoEscalate {
 		rules, err = retrieveClusterRoleRules(a.config.Openshift.SandboxRole, a.log.Logger)
 		if err != nil {
@@ -382,7 +383,7 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	return nil
 }
 
-func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]authorization.PolicyRule, error) {
+func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]rbac.PolicyRule, error) {
 	k8scli, err := clients.Kubernetes(log)
 	if err != nil {
 		return nil, err
@@ -393,10 +394,9 @@ func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]author
 	if err != nil {
 		return nil, err
 	}
-	cRole := &authorization.ClusterRole{}
-	err = authorization.ConvertRBACClusterRoleToAuthorizationClusterRole(k8sRole, cRole, nil)
-	if err != nil {
+	rbacClusterRole := rbac.ClusterRole{}
+	if v1beta1rbac.Convert_v1beta1_ClusterRole_To_rbac_ClusterRole(k8sRole, &rbacClusterRole, nil); err != nil {
 		return nil, err
 	}
-	return cRole.Rules, nil
+	return rbacClusterRole.Rules, nil
 }
