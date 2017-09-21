@@ -34,7 +34,7 @@ objects:
     # "namespace" omitted since ClusterRoles are not namespaced
     name: asb-auth
   rules:
-  - apiGroups: []
+  - apiGroups: [""]
     resources: ["namespaces"]
     verbs: ["create", "delete"]
   - apiGroups: ["authorization.openshift.io"]

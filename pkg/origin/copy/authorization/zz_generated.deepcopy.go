@@ -297,10 +297,7 @@ func DeepCopyauthorizationLocalResourceAccessReview(in interface{}, out interfac
 		in := in.(*LocalResourceAccessReview)
 		out := out.(*LocalResourceAccessReview)
 		*out = *in
-		if err := DeepCopyauthorizationAction(&in.Action, &out.Action, c); err != nil {
-			return err
-		}
-		return nil
+		return DeepCopyauthorizationAction(&in.Action, &out.Action, c)
 	}
 }
 
@@ -478,10 +475,7 @@ func DeepCopyauthorizationPolicyRuleBuilder(in interface{}, out interface{}, c *
 		in := in.(*PolicyRuleBuilder)
 		out := out.(*PolicyRuleBuilder)
 		*out = *in
-		if err := DeepCopyauthorizationPolicyRule(&in.PolicyRule, &out.PolicyRule, c); err != nil {
-			return err
-		}
-		return nil
+		return DeepCopyauthorizationPolicyRule(&in.PolicyRule, &out.PolicyRule, c)
 	}
 }
 
@@ -491,10 +485,7 @@ func DeepCopyauthorizationResourceAccessReview(in interface{}, out interface{}, 
 		in := in.(*ResourceAccessReview)
 		out := out.(*ResourceAccessReview)
 		*out = *in
-		if err := DeepCopyauthorizationAction(&in.Action, &out.Action, c); err != nil {
-			return err
-		}
-		return nil
+		return DeepCopyauthorizationAction(&in.Action, &out.Action, c)
 	}
 }
 
@@ -596,10 +587,7 @@ func DeepCopyauthorizationRoleBindingRestriction(in interface{}, out interface{}
 			return err
 		}
 		out.ObjectMeta = *newVal.(*v1.ObjectMeta)
-		if err := DeepCopyauthorizationRoleBindingRestrictionSpec(&in.Spec, &out.Spec, c); err != nil {
-			return err
-		}
-		return nil
+		return DeepCopyauthorizationRoleBindingRestrictionSpec(&in.Spec, &out.Spec, c)
 	}
 }
 
@@ -681,10 +669,7 @@ func DeepCopyauthorizationSelfSubjectRulesReview(in interface{}, out interface{}
 		if err := DeepCopyauthorizationSelfSubjectRulesReviewSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
 		}
-		if err := DeepCopyauthorizationSubjectRulesReviewStatus(&in.Status, &out.Status, c); err != nil {
-			return err
-		}
-		return nil
+		return DeepCopyauthorizationSubjectRulesReviewStatus(&in.Status, &out.Status, c)
 	}
 }
 
@@ -777,10 +762,7 @@ func DeepCopyauthorizationSubjectRulesReview(in interface{}, out interface{}, c 
 		if err := DeepCopyauthorizationSubjectRulesReviewSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
 		}
-		if err := DeepCopyauthorizationSubjectRulesReviewStatus(&in.Status, &out.Status, c); err != nil {
-			return err
-		}
-		return nil
+		return DeepCopyauthorizationSubjectRulesReviewStatus(&in.Status, &out.Status, c)
 	}
 }
 

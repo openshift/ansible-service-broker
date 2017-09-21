@@ -271,14 +271,14 @@ func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging
 	body.APIVersion = "authorization.openshift.io/v1"
 	b, _ := json.Marshal(body)
 	r := &SubjectRulesReview{}
-	res, err := o.restClient.Post().
+	err = o.restClient.Post().
 		Namespace(namespace).
 		Resource("subjectrulesreviews").
 		Body(b).
-		DoRaw()
-	err = json.Unmarshal(res, r)
+		Do().
+		Into(r)
 	if err != nil {
-		log.Errorf("error - %v\n unmarshall - %q", err, res)
+		log.Errorf("error - %v\n", err)
 		return
 	}
 	//Need to take the v1 Policy Rule and make it a Authorization Rule.
