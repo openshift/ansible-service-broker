@@ -31,7 +31,24 @@ function routes {
 
 function process {
     "${TEMPLATE_DIR}/k8s-template.py"
-    kubectl create -f "${TEMPLATE_DIR}/k8s-ansible-service-broker.yaml"
+    kubectl create -f "${TEMPLATE_DIR}/k8s-local-dev-changes.yaml"
+
+    cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Endpoints
+metadata:
+  labels:
+    app: ansible-service-broker
+    service: asb
+  name: asb-1338
+subsets:
+- addresses:
+  - ip: 10.32.1.128
+  ports:
+  - name: port-1338
+    port: 1338
+    protocol: TCP
+EOF
 }
 
 function get-ca {
