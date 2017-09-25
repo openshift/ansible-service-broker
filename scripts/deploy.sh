@@ -51,8 +51,6 @@ VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p BROKER_KIND=${BROKER_KIND} \
   -p BROKER_AUTH=${BROKER_AUTH}"
 
-echo $VARS
-
 # cleanup old deployment
 asb::delete_project ${PROJECT}
 
