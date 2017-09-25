@@ -68,9 +68,24 @@ function make-build-image {
 }
 
 function make-deploy {
-    VARS="BROKER_KIND=Broker -p BROKER_AUTH=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")" make deploy
+    local broker_ready
+    VARS=" -p BROKER_KIND=Broker -p BROKER_AUTH=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")" make deploy
     NAMESPACE="ansible-service-broker" ./scripts/broker-ci/wait-for-resource.sh create pod asb >> /tmp/wait-for-pods-log 2>&1
     env-error-check "make-deploy"
+
+    # TODO: brokers -> servicebrokers in origin 3.7
+    print-with-green "Waiting for service-catalog to mark ansible-service-broker as ready"
+    for r in $(seq 100); do
+        broker_ready=$(oc get brokers ansible-service-broker -o go-template='{{ range .status.conditions }}{{ if eq .type "Ready" }}{{ .status }}{{end}}{{end}}')
+        if [ "${broker_ready}" = "True" ]; then
+            print-with-green "ansible-service-broker ready"
+            break
+        fi
+        sleep 1
+    done
+    if [ "${broker_ready}" = "False" ]; then
+        print-with-red "ansible-service-broker not ready"
+    fi
 }
 
 function local-env() {

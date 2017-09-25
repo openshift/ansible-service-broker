@@ -38,6 +38,12 @@ function pod-logs {
     log-footer "pod logs"
 }
 
+function route-logs {
+    log-header "route logs"
+    oc get routes -o yaml
+    log-footer "route logs"
+}
+
 function secret-logs {
     log-header "secrets logs"
     oc get secrets --all-namespaces | grep mediawiki-postgresql-binding
@@ -55,6 +61,7 @@ function podpreset-logs {
 
 function broker-logs {
     log-header "broker logs"
+    oc get brokers
     oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/') -c asb -n ansible-service-broker
     log-footer "broker logs"
 }
@@ -68,6 +75,7 @@ function catalog-logs {
 }
 
 function print-all-logs {
+    route-logs
     secret-logs
     podpreset-logs
     wait-logs
