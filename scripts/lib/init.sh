@@ -24,7 +24,7 @@ ASB_ROOT="$( asb::absolute_path "${init_source}" )"
 ASB_PROJECT="ansible-service-broker"
 SCRIPT_DIR="${ASB_ROOT}/scripts"
 TEMPLATE_DIR="${ASB_ROOT}/templates"
-BROKER_TEMPLATE="${TEMPLATE_DIR}/deploy-ansible-service-broker.template.yaml"
+BROKER_TEMPLATE="${TEMPLATE_DIR}/deploy-ansible-service-broker-latest.template.yaml"
 TEMPLATE_LOCAL_DEV="${TEMPLATE_DIR}/deploy-local-dev-changes.yaml"
 GENERATED_BROKER_CONFIG="${ASB_ROOT}/etc/generated_local_development.yaml"
 
