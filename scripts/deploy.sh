@@ -18,7 +18,9 @@ OUTPUT_REQUEST="true"
 RECOVERY="true"
 REFRESH_INTERVAL="600s"
 SANDBOX_ROLE="edit"
-VARS="${VARS:=''}"
+BROKER_KIND="${BROKER_KIND:-Broker}"
+auth=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")
+BROKER_AUTH="${BROKER_AUTH:-$auth}"
 
 # load development variables
 asb::load_vars
@@ -26,12 +28,12 @@ asb::load_vars
 # check the variables that do not have defaults
 asb::validate_var "BROKER_IMAGE" $BROKER_IMAGE
 asb::validate_var "REGISTRY" $REGISTRY
-asb::validate_var "DOCKERHUB_USERNAME" $DOCKERHUB_USERNAME
-asb::validate_var "DOCKERHUB_PASSWORD" $DOCKERHUB_PASSWORD
+asb::validate_var "DOCKERHUB_USER" $DOCKERHUB_USER
+asb::validate_var "DOCKERHUB_PASS" $DOCKERHUB_PASS
 asb::validate_var "DOCKERHUB_ORG" $DOCKERHUB_ORG
 asb::validate_var "REFRESH_INTERVAL" $REFRESH_INTERVAL
 
-VARS+=" -p BROKER_IMAGE=${BROKER_IMAGE} \
+VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p ASB_SCHEME=${ASB_SCHEME} \
   -p ROUTING_SUFFIX=${ROUTING_SUFFIX} \
   -p OPENSHIFT_TARGET=${OPENSHIFT_TARGET} \
@@ -45,10 +47,17 @@ VARS+=" -p BROKER_IMAGE=${BROKER_IMAGE} \
   -p OUTPUT_REQUEST=${OUTPUT_REQUEST} \
   -p RECOVERY=${RECOVERY} \
   -p REFRESH_INTERVAL=${REFRESH_INTERVAL} \
-  -p SANDBOX_ROLE=${SANDBOX_ROLE}"
+  -p SANDBOX_ROLE=${SANDBOX_ROLE} \
+  -p BROKER_KIND=${BROKER_KIND} \
+  -p BROKER_AUTH=${BROKER_AUTH}"
+
+echo $VARS
 
 # cleanup old deployment
 asb::delete_project ${PROJECT}
+
+# delete the broker
+oc delete "${BROKER_KIND}" --ignore-not-found=true ansible-service-broker
 
 # delete the clusterrolebinding to avoid template error
 oc delete clusterrolebindings --ignore-not-found=true asb
