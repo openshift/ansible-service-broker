@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/coreos/etcd/client"
@@ -56,6 +57,8 @@ const (
 	provisionCredentialsKey = "_apb_provision_creds"
 	// bindCredentialsKey - Key used to pas bind credentials to apb.
 	bindCredentialsKey = "_apb_bind_creds"
+	// fqNameRegex - regular expression used when forming FQName.
+	fqNameRegex = "[/.:-]"
 )
 
 // Broker - A broker is used to to compelete all the tasks that a broker must be able to do.
@@ -268,9 +271,10 @@ func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 		// need to make / a hyphen to allow for global uniqueness
 		// but still match spec.
 
-		spec.FQName = strings.Replace(
+		re := regexp.MustCompile(fqNameRegex)
+		spec.FQName = re.ReplaceAllLiteralString(
 			fmt.Sprintf("%v-%v", registryName, spec.FQName),
-			"/", "-", -1)
+			"-")
 		spec.FQName = fmt.Sprintf("%.51v", spec.FQName)
 		if strings.HasSuffix(spec.FQName, "-") {
 			spec.FQName = spec.FQName[:len(spec.FQName)-1]
