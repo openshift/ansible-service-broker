@@ -27,8 +27,21 @@ objects:
   metadata:
     name: asb
     namespace: ansible-service-broker
+    
+- kind: ClusterRole
+  apiVersion: authorization.openshift.io/v1
+  metadata:
+    # "namespace" omitted since ClusterRoles are not namespaced
+    name: asb-auth
+  rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["create", "delete"]
+  - apiGroups: ["authorization.openshift.io"]
+    resources: ["subjectrulesreview"]
+    verbs: ["create"]
 
-- apiVersion: v1
+- apiVersion: authorization.openshift.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: asb
@@ -39,23 +52,6 @@ objects:
     name: asb
     namespace: ansible-service-broker
 
-- apiVersion: authorization.openshift.io/v1
-  kind: ClusterRole
-  metadata:
-    name: asb-auth
-  rules:
-  - apiGroups: ["projects.openshift.io"]
-    resources: ["projects"]
-    verbs: ["create", "delete"]
-  - apiGroups: ["authorization.openshift.io"]
-    resources: ["subjectrulesreview"]
-    verbs: ["create"]
-  - apiGroups: ["authorization.k8s.io"]
-    resources: ["subjectaccessreviews"]
-    verbs: ["create"]
-  - apiGroups: ["authentication.k8s.io"]
-    resources: ["tokenreviews"]
-    verbs: ["create"]
 
 - kind: ClusterRoleBinding
   apiVersion: authorization.openshift.io/v1
@@ -69,25 +65,22 @@ objects:
     kind: ClusterRole
     name: asb-auth
 
-- apiVersion: authorization.openshift.io/v1
-  kind: ClusterRoleBinding
+- apiVersion: v1
+  kind: Route
   metadata:
-    name: asb-auth-bind
-  subjects:
-  - kind: ServiceAccount
-    name: asb
-    namespace: ansible-service-broker
-  roleRef:
-    kind: ClusterRole
-    name: asb-auth
-
-- apiVersion: authorization.openshift.io/v1
-  kind: ClusterRole
-  metadata:
-    name: access-asb-role
-  rules:
-  - nonResourceURLs: ["${BROKER_URL_PREFIX}", "${BROKER_URL_PREFIX}/*"]
-    verbs: ["get", "post", "put", "patch", "delete"]
+    name: asb-1338
+    labels:
+      app: ansible-service-broker
+      service: asb
+  spec:
+    to:
+      kind: Service
+      name: asb
+    port:
+      targetPort: port-1338
+    tls:
+      termination: ${TERMINATION}
+      insecureEdgeTerminationPolicy: ${{INSECURE_EDGE}}
 
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -138,6 +131,8 @@ objects:
           env:
           - name: BROKER_CONFIG
             value: ${BROKER_CONFIG}
+          - name: INSECURE
+            value: ${INSECURE}
           resources: {}
           terminationMessagePath: /tmp/termination-log
 
@@ -228,58 +223,17 @@ objects:
         recovery: ${RECOVERY}
         ssl_cert_key: /etc/tls/private/tls.key
         ssl_cert: /etc/tls/private/tls.crt
+        auto_escalate: ${AUTO_ESCALATE}
         auth:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
-
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    name: ansibleservicebroker-client
-    namespace: ansible-service-broker
-
-- apiVersion: authorization.openshift.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    name: ansibleservicebroker-client
-  subjects:
-  - kind: ServiceAccount
-    name: ansibleservicebroker-client
-    namespace: ansible-service-broker
-  roleRef:
-    kind: ClusterRole
-    name: access-asb-role
-
-- apiVersion: v1
-  kind: Secret
-  metadata:
-    name: ansibleservicebroker-client
-    annotations: 
-      kubernetes.io/service-account.name: ansibleservicebroker-client
-  type: kubernetes.io/service-account-token
-
-- apiVersion: v1
-  kind: Route
-  metadata:
-    name: asb-1338
-    labels:
-      app: ansible-service-broker
-      service: asb
-  spec:
-    to:
-      kind: Service
-      name: asb
-    port:
-      targetPort: port-1338
-    tls:
-      termination: reencrypt
 
 - apiVersion: servicecatalog.k8s.io/v1alpha1
   kind: ${BROKER_KIND}
   metadata:
     name: ansible-service-broker
   spec:
-    url: https://asb.ansible-service-broker.svc:1338${BROKER_URL_PREFIX}/
+    url: ${ASB_SCHEME}://asb-1338-ansible-service-broker.${ROUTING_SUFFIX}
     authInfo:
       ${{BROKER_AUTH}}
     caBundle: ${BROKER_CA_CERT}
@@ -295,15 +249,14 @@ parameters:
   name: BROKER_CA_CERT
   value: ""
 
-- description: Service Broker url prefix for the cluster 
-  displayname: ASB Url Prefix
-  name: BROKER_URL_PREFIX
-  value: "/ansible-service-broker"
-
 - description: Broker Auth Info
   displayname: Broker Auth Info
   name: BROKER_AUTH
-  value: '{ "bearer": { "secretRef": { "kind": "Secret", "namespace": "ansible-service-broker", "name": "ansibleservicebroker-client" } } }'
+  value: '{ "basic": { "secretRef": { "namespace": "ansible-service-broker", "name": "asb-auth-secret" } } }'
+- description: Scheme for ansible service broker (http/https)
+  displayname: Scheme for ansible service broker (http/https)
+  name: ASB_SCHEME
+  value: "https"
 
 - description: Suffix for OpenShift routes
   displayname: Suffix for OpenShift routes
@@ -329,6 +282,23 @@ parameters:
   displayname: Ansible Service Broker Configuration File
   name: BROKER_CONFIG
   value: /etc/ansible-service-broker/config.yaml
+
+# SSL enabled: INSECURE="false", INSECURE_EDGE="None", TERMINATION="Reencrypt", ASB_SCHEME="https"
+# Insecure enabled: INSECURE="true", INSECURE_EDGE="Allow", TERMINATION="edge", ASB_SCHEME="http"
+- description: Run in insecure mode
+  displayname: Ansible Service Broker Insecure
+  name: INSECURE
+  value: "false"
+
+- description: Insecure Edge Termination Policy
+  displayname: Insecure Edge Termination Policy
+  name: INSECURE_EDGE
+  value: "None"
+
+- description: Secure the route with TLS
+  displayname: Ansible Service Broker Termination
+  name: TERMINATION
+  value: Reencrypt
 
 - description: Dockerhub user password
   displayname: Dockerhub user password
@@ -412,6 +382,12 @@ parameters:
 - description: Recover unfinshed jobs on restart
   displayname: Recovery
   name: RECOVERY
+  value: "true"
+
+ #TODO: NEED TO CHANGE TO FALSE AFTER THE 3.7 CUT
+- description: Auto escalate the broker. Will remove user impresonation
+  displayname: Auto Escalate 
+  name: AUTO_ESCALATE
   value: "true"
 
 - description: APB ImagePullPolicy
