@@ -72,6 +72,9 @@ DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where AP
 ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"false"} # Secure broker with basic authentication, default 'false'. Disabling basic auth allows "apb push" to work.
 BROKER_KIND=${BROKER_KIND:-"Broker"} # allow users to override the broker kind type to work with 3.7
 
+auth=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")
+BROKER_AUTH=${BROKER_AUTH:-"${auth}"}
+
 curl -s $TEMPLATE_URL \
   | oc process \
   -n ansible-service-broker \
@@ -79,6 +82,7 @@ curl -s $TEMPLATE_URL \
   -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
   -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
   -p BROKER_KIND="$BROKER_KIND" \
+  -p BROKER_AUTH="$BROKER_AUTH" \
   -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" -f - | oc create -f -
 
 if [ "$?" -ne 0 ]; then
