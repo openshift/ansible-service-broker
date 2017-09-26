@@ -26,11 +26,19 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+<<<<<<< 0ea830aefd681721fd2f7b4e997115b7a3ace3ef
 	"strconv"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/version"
+=======
+  "strconv"
+
+	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
+  "github.com/openshift/ansible-service-broker/pkg/version"
+>>>>>>> Added versioning check when adding images
 	yaml "gopkg.in/yaml.v1"
 )
 
@@ -113,15 +121,16 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skiping")
 		return nil, nil
 	}
+<<<<<<< 0ea830aefd681721fd2f7b4e997115b7a3ace3ef
 	if conf.Config.Label.Version == "" {
 		log.Infof("Didn't find encoded Version label. Assuming image is not APB and skipping")
 		return nil, nil
 	}
-	if isCompatibleVersion(conf.Config.Label.Version, version.MinAPBVersion, version.MaxAPBVersion) != true {
-		log.Infof("APB spec version was incompatible. Assuming image is incompatible and skipping")
-		return nil, nil
-	}
-
+  if isCompatibleVersion(conf.Config.Label.Version, version.MinAPBVersion, version.MaxAPBVersion) != true {
+    log.Infof("APB spec version was incompatible. Assuming image is incompatible and skipping")
+    return nil, nil
+  }
+  
 	encodedSpec := conf.Config.Label.Spec
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
