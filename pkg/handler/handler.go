@@ -159,8 +159,8 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger,
-	brokerConfig broker.Config, clusterRoleRules []rbac.PolicyRule,
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string,
+	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule,
 ) http.Handler {
 	h := handler{
 		router:           *mux.NewRouter(),

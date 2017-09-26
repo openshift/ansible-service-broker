@@ -27,8 +27,8 @@ objects:
   metadata:
     name: asb
     namespace: ansible-service-broker
-
-- apiVersion: v1
+    
+- apiVersion: authorization.openshift.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: asb
@@ -44,8 +44,8 @@ objects:
   metadata:
     name: asb-auth
   rules:
-  - apiGroups: ["projects.openshift.io"]
-    resources: ["projects"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
     verbs: ["create", "delete"]
   - apiGroups: ["authorization.openshift.io"]
     resources: ["subjectrulesreview"]
@@ -56,18 +56,6 @@ objects:
   - apiGroups: ["authentication.k8s.io"]
     resources: ["tokenreviews"]
     verbs: ["create"]
-
-- kind: ClusterRoleBinding
-  apiVersion: authorization.openshift.io/v1
-  metadata:
-    name: asb-auth-bind
-  subjects:
-  - kind: ServiceAccount 
-    name: asb
-    namespace: ansible-service-broker
-  roleRef:
-    kind: ClusterRole
-    name: asb-auth
 
 - apiVersion: authorization.openshift.io/v1
   kind: ClusterRoleBinding
@@ -228,6 +216,7 @@ objects:
         recovery: ${RECOVERY}
         ssl_cert_key: /etc/tls/private/tls.key
         ssl_cert: /etc/tls/private/tls.crt
+        auto_escalate: ${AUTO_ESCALATE}
         auth:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
@@ -412,6 +401,12 @@ parameters:
 - description: Recover unfinshed jobs on restart
   displayname: Recovery
   name: RECOVERY
+  value: "true"
+
+ #TODO: NEED TO CHANGE TO FALSE AFTER THE 3.7 CUT
+- description: Auto escalate the broker. Will remove user impresonation
+  displayname: Auto Escalate 
+  name: AUTO_ESCALATE
   value: "true"
 
 - description: APB ImagePullPolicy
