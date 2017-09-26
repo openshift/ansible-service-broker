@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.4
+Version: 1.0.5
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,22 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Sep 26 2017 Jason Montleon <jmontleo@redhat.com> 1.0.5-1
+- removing proposal that never happened (#450) (jmrodri@gmail.com)
+- Bearer Token Auth via kubernetes Apiserver (#445) (Shawn.Hurley21@gmail.com)
+- allowing the user to authenticate to retrieve private repos (#449)
+  (Shawn.Hurley21@gmail.com)
+- Some of the 3.6 & 3.7 gate changes are causing issues (#453)
+  (rhallise@redhat.com)
+- The run_latest_build script is missing an auth param (#451)
+  (rhallise@redhat.com)
+- Make the gate use 3.6 defaults (#446) (rhallise@redhat.com)
+- The docker organization name was changed in catasb (#447)
+  (rhallise@redhat.com)
+- first pass at administration documentation (#430) (Shawn.Hurley21@gmail.com)
+- adding ability to pass in the CA Bundle for ServiceBroker (#441)
+  (Shawn.Hurley21@gmail.com)
+
 * Tue Sep 19 2017 Jason Montleon <jmontleo@redhat.com> 1.0.4-1
 - Update broker defaults for current service-catalog version (#437)
   (jmontleo@redhat.com)
