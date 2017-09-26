@@ -73,6 +73,7 @@ function bind-credential-check {
 	else
 	    print-with-yellow "Pod presets not found in the MediaWiki pod"
 	    print-with-yellow "Retrying..."
+	    sleep 5
 	fi
     done
 
