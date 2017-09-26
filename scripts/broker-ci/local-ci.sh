@@ -118,14 +118,14 @@ function verify-cleanup {
 function dev-api-test {
   print-with-green "Waiting for foo apb servicename"
   BROKERURL=$(oc get -n ansible-service-broker route -o custom-columns=host:spec.host --no-headers)
-  APBID=$(curl -s -k -XPOST -u admin:admin https://$BROKERURL/apb/spec -d "apbSpec=$(base64 scripts/broker-ci/apb.yml)"| \
+  APBID=$(curl -s -k -XPOST -u admin:admin https://$BROKERURL/ansible-service-broker/apb/spec -d "apbSpec=$(base64 scripts/broker-ci/apb.yml)"| \
           python -c "import sys; import json; print json.load(sys.stdin)['services'][0]['id']")
   sleep 10
   oc delete pod -n service-catalog -l app=controller-manager
 
   ./scripts/broker-ci/wait-for-resource.sh create serviceclass apb-push-ansibleplaybookbundle-foo-apb >> /tmp/wait-for-pods-log 2>&1
 
-  if ! curl -I -s -k -XDELETE  -u admin:admin https://$BROKERURL/apb/spec/$APBID | grep -q "204 No Content" ; then 
+  if ! curl -I -s -k -XDELETE  -u admin:admin https://$BROKERURL/ansible-service-broker/apb/spec/$APBID | grep -q "204 No Content" ; then 
     DEVAPI_ERROR=true
   fi
 }
