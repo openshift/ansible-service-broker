@@ -34,8 +34,8 @@ OPENSHIFT_SERVER_PORT=8443
 # BROKER_IP_ADDR must be the IP address of where to reach broker
 #   it should not be 127.0.0.1, needs to be an address the pods will be able to reach
 BROKER_IP_ADDR=${OPENSHIFT_SERVER_HOST}
-DOCKERHUB_USERNAME="brokerciuser"
-DOCKERHUB_PASSWORD="brokerciuser"
+DOCKERHUB_USER="brokerciuser"
+DOCKERHUB_PASS="brokerciuser"
 DOCKERHUB_ORG="ansibleplaybookbundle"
 BOOTSTRAP_ON_STARTUP="true"
 BEARER_TOKEN_FILE=""
@@ -68,7 +68,7 @@ function make-build-image {
 }
 
 function make-deploy {
-    VARS="BROKER_KIND=Broker -p BROKER_AUTH=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")" make deploy
+    make deploy
     NAMESPACE="ansible-service-broker" ./scripts/broker-ci/wait-for-resource.sh create pod asb >> /tmp/wait-for-pods-log 2>&1
     env-error-check "make-deploy"
 }

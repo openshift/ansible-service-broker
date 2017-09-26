@@ -58,13 +58,16 @@ function unbind {
 
 function bind-credential-check {
     set +x
+    print-with-green "Waiting for the Bind to be created"
+    sleep 40
+
     RETRIES=10
     for x in $(seq $RETRIES); do
 	oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default  --force --grace-period=10 || BIND_ERROR=true
 	./scripts/broker-ci/wait-for-resource.sh create pod mediawiki >> /tmp/wait-for-pods-log 2>&1
 
 	# Filter for 'podpreset.admission.kubernetes.io' in the pod
-	preset_test=$(oc get pods $(oc get pods -n default | grep mediawiki | awk $'{ print $1 }') -o yaml -n default | grep podpreset | awk $'{ print $1}' | cut -f 1 -d '/')
+	preset_test=$(oc get pods $(oc get pods -n default | grep mediawiki | grep Running | awk $'{ print $1 }') -o yaml -n default | grep podpreset | awk $'{ print $1}' | cut -f 1 -d '/')
 	if [ "${preset_test}" = "podpreset.admission.kubernetes.io" ]; then
 	    print-with-green "Pod presets found in the MediaWiki pod"
 	    break
