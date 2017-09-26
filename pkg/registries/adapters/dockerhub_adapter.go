@@ -232,7 +232,7 @@ func (r DockerHubAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 	if err != nil {
 		return nil, err
 	}
-	token, err := getBearerToken(imageName)
+	token, err := r.getBearerToken(imageName)
 	if err != nil {
 		return nil, err
 	}
@@ -240,10 +240,15 @@ func (r DockerHubAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 	return imageToSpec(r.Log, req, r.Config.Tag)
 }
 
-func getBearerToken(imageName string) (string, error) {
-	response, err := http.Get(fmt.Sprintf(
-		"https://auth.docker.io/token?service=registry.docker.io&scope=repository:%v:pull",
-		imageName))
+func (r DockerHubAdapter) getBearerToken(imageName string) (string, error) {
+	req, err := http.NewRequest("GET",
+		fmt.Sprintf("https://auth.docker.io/token?grant_type=password&service=registry.docker.io&scope=repository:%v:pull", imageName),
+		nil)
+	if err != nil {
+		return "", err
+	}
+	req.SetBasicAuth(r.Config.User, r.Config.Pass)
+	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
