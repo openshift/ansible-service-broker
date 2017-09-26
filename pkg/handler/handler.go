@@ -101,7 +101,12 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 		log:          log,
 		brokerConfig: brokerConfig,
 	}
-	s := h.router.PathPrefix(prefix).Subrouter()
+	var s *mux.Router
+	if prefix == "/" {
+		s = &h.router
+	} else {
+		s = h.router.PathPrefix(prefix).Subrouter()
+	}
 
 	// TODO: Reintroduce router restriction based on API version when settled upstream
 	// root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()

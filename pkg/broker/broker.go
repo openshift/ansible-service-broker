@@ -83,7 +83,7 @@ type Config struct {
 	SSLCert            string        `yaml:"ssl_cert"`
 	RefreshInterval    string        `yaml:"refresh_interval"`
 	Auth               []auth.Config `yaml:"auth"`
-	ClusterURL         string        `yaml:"clusterURL"`
+	ClusterURL         string        `yaml:"cluster_url"`
 }
 
 // DevBroker - Interface for the development broker.

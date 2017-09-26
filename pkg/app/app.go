@@ -319,7 +319,12 @@ func (a *App) Start() {
 	}
 	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers)
 
-	genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
+	if clusterURL == "/" {
+		genericserver.Handler.NonGoRestfulMux.HandlePrefix("/", daHandler)
+	} else {
+		genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
+	}
+
 	a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
 
 	a.log.Notice("Ansible Service Broker Starting")
