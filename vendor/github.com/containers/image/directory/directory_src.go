@@ -1,6 +1,7 @@
 package directory
 
 import (
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -28,7 +29,8 @@ func (s *dirImageSource) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized ImageSource, if any.
-func (s *dirImageSource) Close() {
+func (s *dirImageSource) Close() error {
+	return nil
 }
 
 // GetManifest returns the image's manifest along with its MIME type (which may be empty when it can't be determined but the manifest is available).
@@ -58,7 +60,7 @@ func (s *dirImageSource) GetBlob(info types.BlobInfo) (io.ReadCloser, int64, err
 	return r, fi.Size(), nil
 }
 
-func (s *dirImageSource) GetSignatures() ([][]byte, error) {
+func (s *dirImageSource) GetSignatures(ctx context.Context) ([][]byte, error) {
 	signatures := [][]byte{}
 	for i := 0; ; i++ {
 		signature, err := ioutil.ReadFile(s.ref.signaturePath(i))

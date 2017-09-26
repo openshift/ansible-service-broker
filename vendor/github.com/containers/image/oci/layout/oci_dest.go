@@ -6,22 +6,33 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/pkg/errors"
 
 	"github.com/containers/image/manifest"
 	"github.com/containers/image/types"
 	"github.com/opencontainers/go-digest"
+	imgspec "github.com/opencontainers/image-spec/specs-go"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type ociImageDestination struct {
-	ref ociReference
+	ref   ociReference
+	index imgspecv1.Index
 }
 
 // newImageDestination returns an ImageDestination for writing to an existing directory.
-func newImageDestination(ref ociReference) types.ImageDestination {
-	return &ociImageDestination{ref: ref}
+func newImageDestination(ref ociReference) (types.ImageDestination, error) {
+	if ref.image == "" {
+		return nil, errors.Errorf("cannot save image with empty image.ref.name")
+	}
+	index := imgspecv1.Index{
+		Versioned: imgspec.Versioned{
+			SchemaVersion: 2,
+		},
+	}
+	return &ociImageDestination{ref: ref, index: index}, nil
 }
 
 // Reference returns the reference used to set up this destination.  Note that this should directly correspond to user's intent,
@@ -31,7 +42,8 @@ func (d *ociImageDestination) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized ImageDestination, if any.
-func (d *ociImageDestination) Close() {
+func (d *ociImageDestination) Close() error {
+	return nil
 }
 
 func (d *ociImageDestination) SupportedManifestMIMETypes() []string {
@@ -54,6 +66,11 @@ func (d *ociImageDestination) ShouldCompressLayers() bool {
 // AcceptsForeignLayerURLs returns false iff foreign layers in manifest should be actually
 // uploaded to the image destination, true otherwise.
 func (d *ociImageDestination) AcceptsForeignLayerURLs() bool {
+	return false
+}
+
+// MustMatchRuntimeOS returns true iff the destination can store only images targeted for the current runtime OS. False otherwise.
+func (d *ociImageDestination) MustMatchRuntimeOS() bool {
 	return false
 }
 
@@ -111,6 +128,10 @@ func (d *ociImageDestination) PutBlob(stream io.Reader, inputInfo types.BlobInfo
 	return types.BlobInfo{Digest: computedDigest, Size: size}, nil
 }
 
+// HasBlob returns true iff the image destination already contains a blob with the matching digest which can be reapplied using ReapplyBlob.
+// Unlike PutBlob, the digest can not be empty.  If HasBlob returns true, the size of the blob must also be returned.
+// If the destination does not contain the blob, or it is unknown, HasBlob ordinarily returns (false, -1, nil);
+// it returns a non-nil error only on an unexpected failure.
 func (d *ociImageDestination) HasBlob(info types.BlobInfo) (bool, int64, error) {
 	if info.Digest == "" {
 		return false, -1, errors.Errorf(`"Can not check for a blob with unknown digest`)
@@ -121,7 +142,7 @@ func (d *ociImageDestination) HasBlob(info types.BlobInfo) (bool, int64, error) 
 	}
 	finfo, err := os.Stat(blobPath)
 	if err != nil && os.IsNotExist(err) {
-		return false, -1, types.ErrBlobNotFound
+		return false, -1, nil
 	}
 	if err != nil {
 		return false, -1, err
@@ -133,6 +154,10 @@ func (d *ociImageDestination) ReapplyBlob(info types.BlobInfo) (types.BlobInfo, 
 	return info, nil
 }
 
+// PutManifest writes manifest to the destination.
+// FIXME? This should also receive a MIME type if known, to differentiate between schema versions.
+// If the destination is in principle available, refuses this manifest type (e.g. it does not recognize the schema),
+// but may accept a different manifest type, the returned error must be an ManifestTypeRejectedError.
 func (d *ociImageDestination) PutManifest(m []byte) error {
 	digest, err := manifest.Digest(m)
 	if err != nil {
@@ -143,10 +168,6 @@ func (d *ociImageDestination) PutManifest(m []byte) error {
 	// TODO(runcom): beaware and add support for OCI manifest list
 	desc.MediaType = imgspecv1.MediaTypeImageManifest
 	desc.Size = int64(len(m))
-	data, err := json.Marshal(desc)
-	if err != nil {
-		return err
-	}
 
 	blobPath, err := d.ref.blobPath(digest)
 	if err != nil {
@@ -158,15 +179,21 @@ func (d *ociImageDestination) PutManifest(m []byte) error {
 	if err := ioutil.WriteFile(blobPath, m, 0644); err != nil {
 		return err
 	}
-	// TODO(runcom): ugly here?
-	if err := ioutil.WriteFile(d.ref.ociLayoutPath(), []byte(`{"imageLayoutVersion": "1.0.0"}`), 0644); err != nil {
-		return err
+
+	if d.ref.image == "" {
+		return errors.Errorf("cannot save image with empyt image.ref.name")
 	}
-	descriptorPath := d.ref.descriptorPath(d.ref.tag)
-	if err := ensureParentDirectoryExists(descriptorPath); err != nil {
-		return err
+
+	annotations := make(map[string]string)
+	annotations["org.opencontainers.image.ref.name"] = d.ref.image
+	desc.Annotations = annotations
+	desc.Platform = &imgspecv1.Platform{
+		Architecture: runtime.GOARCH,
+		OS:           runtime.GOOS,
 	}
-	return ioutil.WriteFile(descriptorPath, data, 0644)
+	d.index.Manifests = append(d.index.Manifests, desc)
+
+	return nil
 }
 
 func ensureDirectoryExists(path string) error {
@@ -195,5 +222,12 @@ func (d *ociImageDestination) PutSignatures(signatures [][]byte) error {
 // - Uploaded data MAY be visible to others before Commit() is called
 // - Uploaded data MAY be removed or MAY remain around if Close() is called without Commit() (i.e. rollback is allowed but not guaranteed)
 func (d *ociImageDestination) Commit() error {
-	return nil
+	if err := ioutil.WriteFile(d.ref.ociLayoutPath(), []byte(`{"imageLayoutVersion": "1.0.0"}`), 0644); err != nil {
+		return err
+	}
+	indexJSON, err := json.Marshal(d.index)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(d.ref.indexPath(), indexJSON, 0644)
 }

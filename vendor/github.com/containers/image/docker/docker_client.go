@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -14,13 +15,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/containers/image/docker/reference"
 	"github.com/containers/image/types"
 	"github.com/containers/storage/pkg/homedir"
+	"github.com/docker/distribution/registry/client"
+	helperclient "github.com/docker/docker-credential-helpers/client"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -32,19 +36,39 @@ const (
 	dockerCfgFileName = "config.json"
 	dockerCfgObsolete = ".dockercfg"
 
-	baseURL       = "%s://%s/v2/"
-	baseURLV1     = "%s://%s/v1/_ping"
-	tagsURL       = "%s/tags/list"
-	manifestURL   = "%s/manifests/%s"
-	blobsURL      = "%s/blobs/%s"
-	blobUploadURL = "%s/blobs/uploads/"
+	systemPerHostCertDirPath = "/etc/docker/certs.d"
+
+	resolvedPingV2URL       = "%s://%s/v2/"
+	resolvedPingV1URL       = "%s://%s/v1/_ping"
+	tagsPath                = "/v2/%s/tags/list"
+	manifestPath            = "/v2/%s/manifests/%s"
+	blobsPath               = "/v2/%s/blobs/%s"
+	blobUploadPath          = "/v2/%s/blobs/uploads/"
+	extensionsSignaturePath = "/extensions/v2/%s/signatures/%s"
 
 	minimumTokenLifetimeSeconds = 60
+
+	extensionSignatureSchemaVersion = 2        // extensionSignature.Version
+	extensionSignatureTypeAtomic    = "atomic" // extensionSignature.Type
 )
 
 // ErrV1NotSupported is returned when we're trying to talk to a
 // docker V1 registry.
 var ErrV1NotSupported = errors.New("can't talk to a V1 docker registry")
+
+// extensionSignature and extensionSignatureList come from github.com/openshift/origin/pkg/dockerregistry/server/signaturedispatcher.go:
+// signature represents a Docker image signature.
+type extensionSignature struct {
+	Version int    `json:"schemaVersion"` // Version specifies the schema version
+	Name    string `json:"name"`          // Name must be in "sha256:<digest>@signatureName" format
+	Type    string `json:"type"`          // Type is optional, of not set it will be defaulted to "AtomicImageV1"
+	Content []byte `json:"content"`       // Content contains the signature
+}
+
+// signatureList represents list of Docker image signatures.
+type extensionSignatureList struct {
+	Signatures []extensionSignature `json:"signatures"`
+}
 
 type bearerToken struct {
 	Token     string    `json:"token"`
@@ -54,15 +78,20 @@ type bearerToken struct {
 
 // dockerClient is configuration for dealing with a single Docker registry.
 type dockerClient struct {
-	ctx             *types.SystemContext
-	registry        string
-	username        string
-	password        string
-	scheme          string // Cache of a value returned by a successful ping() if not empty
-	client          *http.Client
-	signatureBase   signatureStorageBase
-	challenges      []challenge
-	scope           authScope
+	// The following members are set by newDockerClient and do not change afterwards.
+	ctx           *types.SystemContext
+	registry      string
+	username      string
+	password      string
+	client        *http.Client
+	signatureBase signatureStorageBase
+	scope         authScope
+	// The following members are detected registry properties:
+	// They are set after a successful detectProperties(), and never change afterwards.
+	scheme             string // Empty value also used to indicate detectProperties() has not yet succeeded.
+	challenges         []challenge
+	supportsSignatures bool
+	// The following members are private state for setupRequestAuth, both are valid if token != nil.
 	token           *bearerToken
 	tokenExpiration time.Time
 }
@@ -104,12 +133,33 @@ func newTransport() *http.Transport {
 	return tr
 }
 
-func setupCertificates(dir string, tlsc *tls.Config) error {
-	if dir == "" {
-		return nil
+// dockerCertDir returns a path to a directory to be consumed by setupCertificates() depending on ctx and hostPort.
+func dockerCertDir(ctx *types.SystemContext, hostPort string) string {
+	if ctx != nil && ctx.DockerCertPath != "" {
+		return ctx.DockerCertPath
 	}
+	var hostCertDir string
+	if ctx != nil && ctx.DockerPerHostCertDirPath != "" {
+		hostCertDir = ctx.DockerPerHostCertDirPath
+	} else if ctx != nil && ctx.RootForImplicitAbsolutePaths != "" {
+		hostCertDir = filepath.Join(ctx.RootForImplicitAbsolutePaths, systemPerHostCertDirPath)
+	} else {
+		hostCertDir = systemPerHostCertDirPath
+	}
+	return filepath.Join(hostCertDir, hostPort)
+}
+
+func setupCertificates(dir string, tlsc *tls.Config) error {
+	logrus.Debugf("Looking for TLS certificates and private keys in %s", dir)
 	fs, err := ioutil.ReadDir(dir)
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		if os.IsPermission(err) {
+			logrus.Debugf("Skipping scan of %s due to permission error: %v", dir, err)
+			return nil
+		}
 		return err
 	}
 
@@ -121,7 +171,7 @@ func setupCertificates(dir string, tlsc *tls.Config) error {
 				return errors.Wrap(err, "unable to get system cert pool")
 			}
 			tlsc.RootCAs = systemPool
-			logrus.Debugf("crt: %s", fullPath)
+			logrus.Debugf(" crt: %s", fullPath)
 			data, err := ioutil.ReadFile(fullPath)
 			if err != nil {
 				return err
@@ -131,7 +181,7 @@ func setupCertificates(dir string, tlsc *tls.Config) error {
 		if strings.HasSuffix(f.Name(), ".cert") {
 			certName := f.Name()
 			keyName := certName[:len(certName)-5] + ".key"
-			logrus.Debugf("cert: %s", fullPath)
+			logrus.Debugf(" cert: %s", fullPath)
 			if !hasFile(fs, keyName) {
 				return errors.Errorf("missing key %s for client certificate %s. Note that CA certificates should use the extension .crt", keyName, certName)
 			}
@@ -144,7 +194,7 @@ func setupCertificates(dir string, tlsc *tls.Config) error {
 		if strings.HasSuffix(f.Name(), ".key") {
 			keyName := f.Name()
 			certName := keyName[:len(keyName)-4] + ".cert"
-			logrus.Debugf("key: %s", fullPath)
+			logrus.Debugf(" key: %s", fullPath)
 			if !hasFile(fs, certName) {
 				return errors.Errorf("missing client certificate %s for key %s", certName, keyName)
 			}
@@ -174,18 +224,18 @@ func newDockerClient(ctx *types.SystemContext, ref dockerReference, write bool, 
 		return nil, err
 	}
 	tr := newTransport()
-	if ctx != nil && (ctx.DockerCertPath != "" || ctx.DockerInsecureSkipTLSVerify) {
-		tlsc := &tls.Config{}
-
-		if err := setupCertificates(ctx.DockerCertPath, tlsc); err != nil {
-			return nil, err
-		}
-
-		tlsc.InsecureSkipVerify = ctx.DockerInsecureSkipTLSVerify
-		tr.TLSClientConfig = tlsc
+	tr.TLSClientConfig = serverDefault()
+	// It is undefined whether the host[:port] string for dockerHostname should be dockerHostname or dockerRegistry,
+	// because docker/docker does not read the certs.d subdirectory at all in that case.  We use the user-visible
+	// dockerHostname here, because it is more symmetrical to read the configuration in that case as well, and because
+	// generally the UI hides the existence of the different dockerRegistry.  But note that this behavior is
+	// undocumented and may change if docker/docker changes.
+	certDir := dockerCertDir(ctx, reference.Domain(ref.ref))
+	if err := setupCertificates(certDir, tr.TLSClientConfig); err != nil {
+		return nil, err
 	}
-	if tr.TLSClientConfig == nil {
-		tr.TLSClientConfig = serverDefault()
+	if ctx != nil && ctx.DockerInsecureSkipTLSVerify {
+		tr.TLSClientConfig.InsecureSkipVerify = true
 	}
 	client := &http.Client{Transport: tr}
 
@@ -209,27 +259,26 @@ func newDockerClient(ctx *types.SystemContext, ref dockerReference, write bool, 
 }
 
 // makeRequest creates and executes a http.Request with the specified parameters, adding authentication and TLS options for the Docker client.
-// url is NOT an absolute URL, but a path relative to the /v2/ top-level API path.  The host name and schema is taken from the client or autodetected.
-func (c *dockerClient) makeRequest(method, url string, headers map[string][]string, stream io.Reader) (*http.Response, error) {
-	if c.scheme == "" {
-		if err := c.ping(); err != nil {
-			return nil, err
-		}
+// The host name and schema is taken from the client or autodetected, and the path is relative to it, i.e. the path usually starts with /v2/.
+func (c *dockerClient) makeRequest(ctx context.Context, method, path string, headers map[string][]string, stream io.Reader) (*http.Response, error) {
+	if err := c.detectProperties(ctx); err != nil {
+		return nil, err
 	}
 
-	url = fmt.Sprintf(baseURL, c.scheme, c.registry) + url
-	return c.makeRequestToResolvedURL(method, url, headers, stream, -1, true)
+	url := fmt.Sprintf("%s://%s%s", c.scheme, c.registry, path)
+	return c.makeRequestToResolvedURL(ctx, method, url, headers, stream, -1, true)
 }
 
 // makeRequestToResolvedURL creates and executes a http.Request with the specified parameters, adding authentication and TLS options for the Docker client.
 // streamLen, if not -1, specifies the length of the data expected on stream.
 // makeRequest should generally be preferred.
 // TODO(runcom): too many arguments here, use a struct
-func (c *dockerClient) makeRequestToResolvedURL(method, url string, headers map[string][]string, stream io.Reader, streamLen int64, sendAuth bool) (*http.Response, error) {
+func (c *dockerClient) makeRequestToResolvedURL(ctx context.Context, method, url string, headers map[string][]string, stream io.Reader, streamLen int64, sendAuth bool) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, stream)
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	if streamLen != -1 { // Do not blindly overwrite if streamLen == -1, http.NewRequest above can figure out the length of bytes.Reader and similar objects without us having to compute it.
 		req.ContentLength = streamLen
 	}
@@ -266,38 +315,44 @@ func (c *dockerClient) setupRequestAuth(req *http.Request) error {
 	if len(c.challenges) == 0 {
 		return nil
 	}
-	// assume just one...
-	challenge := c.challenges[0]
-	switch challenge.Scheme {
-	case "basic":
-		req.SetBasicAuth(c.username, c.password)
-		return nil
-	case "bearer":
-		if c.token == nil || time.Now().After(c.tokenExpiration) {
-			realm, ok := challenge.Parameters["realm"]
-			if !ok {
-				return errors.Errorf("missing realm in bearer auth challenge")
+	schemeNames := make([]string, 0, len(c.challenges))
+	for _, challenge := range c.challenges {
+		schemeNames = append(schemeNames, challenge.Scheme)
+		switch challenge.Scheme {
+		case "basic":
+			req.SetBasicAuth(c.username, c.password)
+			return nil
+		case "bearer":
+			if c.token == nil || time.Now().After(c.tokenExpiration) {
+				realm, ok := challenge.Parameters["realm"]
+				if !ok {
+					return errors.Errorf("missing realm in bearer auth challenge")
+				}
+				service, _ := challenge.Parameters["service"] // Will be "" if not present
+				scope := fmt.Sprintf("repository:%s:%s", c.scope.remoteName, c.scope.actions)
+				token, err := c.getBearerToken(req.Context(), realm, service, scope)
+				if err != nil {
+					return err
+				}
+				c.token = token
+				c.tokenExpiration = token.IssuedAt.Add(time.Duration(token.ExpiresIn) * time.Second)
 			}
-			service, _ := challenge.Parameters["service"] // Will be "" if not present
-			scope := fmt.Sprintf("repository:%s:%s", c.scope.remoteName, c.scope.actions)
-			token, err := c.getBearerToken(realm, service, scope)
-			if err != nil {
-				return err
-			}
-			c.token = token
-			c.tokenExpiration = token.IssuedAt.Add(time.Duration(token.ExpiresIn) * time.Second)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.Token))
+			return nil
+		default:
+			logrus.Debugf("no handler for %s authentication", challenge.Scheme)
 		}
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.Token))
-		return nil
 	}
-	return errors.Errorf("no handler for %s authentication", challenge.Scheme)
+	logrus.Infof("None of the challenges sent by server (%s) are supported, trying an unauthenticated request anyway", strings.Join(schemeNames, ", "))
+	return nil
 }
 
-func (c *dockerClient) getBearerToken(realm, service, scope string) (*bearerToken, error) {
+func (c *dockerClient) getBearerToken(ctx context.Context, realm, service, scope string) (*bearerToken, error) {
 	authReq, err := http.NewRequest("GET", realm, nil)
 	if err != nil {
 		return nil, err
 	}
+	authReq = authReq.WithContext(ctx)
 	getParams := authReq.URL.Query()
 	if service != "" {
 		getParams.Add("service", service)
@@ -381,7 +436,12 @@ func getAuth(ctx *types.SystemContext, registry string) (string, string, error) 
 		return "", "", errors.Wrap(err, dockerCfgPath)
 	}
 
-	// I'm feeling lucky
+	// First try cred helpers. They should always be normalized.
+	if ch, exists := dockerAuth.CredHelpers[registry]; exists {
+		return getAuthFromCredHelper(ch, registry)
+	}
+
+	// I'm feeling lucky.
 	if c, exists := dockerAuth.AuthConfigs[registry]; exists {
 		return decodeDockerAuth(c.Auth)
 	}
@@ -398,21 +458,28 @@ func getAuth(ctx *types.SystemContext, registry string) (string, string, error) 
 	return "", "", nil
 }
 
-func (c *dockerClient) ping() error {
+// detectProperties detects various properties of the registry.
+// See the dockerClient documentation for members which are affected by this.
+func (c *dockerClient) detectProperties(ctx context.Context) error {
+	if c.scheme != "" {
+		return nil
+	}
+
 	ping := func(scheme string) error {
-		url := fmt.Sprintf(baseURL, scheme, c.registry)
-		resp, err := c.makeRequestToResolvedURL("GET", url, nil, nil, -1, true)
+		url := fmt.Sprintf(resolvedPingV2URL, scheme, c.registry)
+		resp, err := c.makeRequestToResolvedURL(ctx, "GET", url, nil, nil, -1, true)
 		logrus.Debugf("Ping %s err %#v", url, err)
 		if err != nil {
 			return err
 		}
 		defer resp.Body.Close()
-		logrus.Debugf("Ping %s status %d", scheme+"://"+c.registry+"/v2/", resp.StatusCode)
+		logrus.Debugf("Ping %s status %d", url, resp.StatusCode)
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusUnauthorized {
 			return errors.Errorf("error pinging repository, response code %d", resp.StatusCode)
 		}
 		c.challenges = parseAuthHeader(resp.Header)
 		c.scheme = scheme
+		c.supportsSignatures = resp.Header.Get("X-Registry-Supports-Signatures") == "1"
 		return nil
 	}
 	err := ping("https")
@@ -426,14 +493,14 @@ func (c *dockerClient) ping() error {
 		}
 		// best effort to understand if we're talking to a V1 registry
 		pingV1 := func(scheme string) bool {
-			url := fmt.Sprintf(baseURLV1, scheme, c.registry)
-			resp, err := c.makeRequestToResolvedURL("GET", url, nil, nil, -1, true)
+			url := fmt.Sprintf(resolvedPingV1URL, scheme, c.registry)
+			resp, err := c.makeRequestToResolvedURL(ctx, "GET", url, nil, nil, -1, true)
 			logrus.Debugf("Ping %s err %#v", url, err)
 			if err != nil {
 				return false
 			}
 			defer resp.Body.Close()
-			logrus.Debugf("Ping %s status %d", scheme+"://"+c.registry+"/v1/_ping", resp.StatusCode)
+			logrus.Debugf("Ping %s status %d", url, resp.StatusCode)
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusUnauthorized {
 				return false
 			}
@@ -450,6 +517,30 @@ func (c *dockerClient) ping() error {
 	return err
 }
 
+// getExtensionsSignatures returns signatures from the X-Registry-Supports-Signatures API extension,
+// using the original data structures.
+func (c *dockerClient) getExtensionsSignatures(ctx context.Context, ref dockerReference, manifestDigest digest.Digest) (*extensionSignatureList, error) {
+	path := fmt.Sprintf(extensionsSignaturePath, reference.Path(ref.ref), manifestDigest)
+	res, err := c.makeRequest(ctx, "GET", path, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return nil, client.HandleErrorResponse(res)
+	}
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var parsedBody extensionSignatureList
+	if err := json.Unmarshal(body, &parsedBody); err != nil {
+		return nil, errors.Wrapf(err, "Error decoding signature list")
+	}
+	return &parsedBody, nil
+}
+
 func getDefaultConfigDir(confPath string) string {
 	return filepath.Join(homedir.Get(), confPath)
 }
@@ -460,6 +551,18 @@ type dockerAuthConfig struct {
 
 type dockerConfigFile struct {
 	AuthConfigs map[string]dockerAuthConfig `json:"auths"`
+	CredHelpers map[string]string           `json:"credHelpers,omitempty"`
+}
+
+func getAuthFromCredHelper(credHelper, registry string) (string, string, error) {
+	helperName := fmt.Sprintf("docker-credential-%s", credHelper)
+	p := helperclient.NewShellProgramFunc(helperName)
+	creds, err := helperclient.Get(p, registry)
+	if err != nil {
+		return "", "", err
+	}
+
+	return creds.Username, creds.Secret, nil
 }
 
 func decodeDockerAuth(s string) (string, string, error) {

@@ -43,3 +43,4 @@ ansible/main.retry
 
 # rendered templates
 templates/k8s-ansible-service-broker.yaml
+apiserver.local.config*

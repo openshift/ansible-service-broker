@@ -3,9 +3,10 @@ package image
 import (
 	"time"
 
+	"github.com/containers/image/docker/reference"
 	"github.com/containers/image/manifest"
+	"github.com/containers/image/pkg/strslice"
 	"github.com/containers/image/types"
-	"github.com/docker/docker/api/types/strslice"
 	"github.com/opencontainers/go-digest"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -64,10 +65,18 @@ type genericManifest interface {
 	// ConfigBlob returns the blob described by ConfigInfo, iff ConfigInfo().Digest != ""; nil otherwise.
 	// The result is cached; it is OK to call this however often you need.
 	ConfigBlob() ([]byte, error)
+	// OCIConfig returns the image configuration as per OCI v1 image-spec. Information about
+	// layers in the resulting configuration isn't guaranteed to be returned to due how
+	// old image manifests work (docker v2s1 especially).
+	OCIConfig() (*imgspecv1.Image, error)
 	// LayerInfos returns a list of BlobInfos of layers referenced by this image, in order (the root layer first, and then successive layered layers).
 	// The Digest field is guaranteed to be provided; Size may be -1.
 	// WARNING: The list may contain duplicates, and they are semantically relevant.
 	LayerInfos() []types.BlobInfo
+	// EmbeddedDockerReferenceConflicts whether a Docker reference embedded in the manifest, if any, conflicts with destination ref.
+	// It returns false if the manifest does not embed a Docker reference.
+	// (This embedding unfortunately happens for Docker schema1, please do not add support for this in any new formats.)
+	EmbeddedDockerReferenceConflicts(ref reference.Named) bool
 	imageInspectInfo() (*types.ImageInspectInfo, error) // To be called by inspectManifest
 	// UpdatedImageNeedsLayerDiffIDs returns true iff UpdatedImage(options) needs InformationOnly.LayerDiffIDs.
 	// This is a horribly specific interface, but computing InformationOnly.LayerDiffIDs can be very expensive to compute

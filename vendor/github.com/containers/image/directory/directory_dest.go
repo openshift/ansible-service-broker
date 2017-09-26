@@ -26,7 +26,8 @@ func (d *dirImageDestination) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized ImageDestination, if any.
-func (d *dirImageDestination) Close() {
+func (d *dirImageDestination) Close() error {
+	return nil
 }
 
 func (d *dirImageDestination) SupportedManifestMIMETypes() []string {
@@ -47,6 +48,11 @@ func (d *dirImageDestination) ShouldCompressLayers() bool {
 // AcceptsForeignLayerURLs returns false iff foreign layers in manifest should be actually
 // uploaded to the image destination, true otherwise.
 func (d *dirImageDestination) AcceptsForeignLayerURLs() bool {
+	return false
+}
+
+// MustMatchRuntimeOS returns true iff the destination can store only images targeted for the current runtime OS. False otherwise.
+func (d *dirImageDestination) MustMatchRuntimeOS() bool {
 	return false
 }
 
@@ -94,6 +100,10 @@ func (d *dirImageDestination) PutBlob(stream io.Reader, inputInfo types.BlobInfo
 	return types.BlobInfo{Digest: computedDigest, Size: size}, nil
 }
 
+// HasBlob returns true iff the image destination already contains a blob with the matching digest which can be reapplied using ReapplyBlob.
+// Unlike PutBlob, the digest can not be empty.  If HasBlob returns true, the size of the blob must also be returned.
+// If the destination does not contain the blob, or it is unknown, HasBlob ordinarily returns (false, -1, nil);
+// it returns a non-nil error only on an unexpected failure.
 func (d *dirImageDestination) HasBlob(info types.BlobInfo) (bool, int64, error) {
 	if info.Digest == "" {
 		return false, -1, errors.Errorf(`"Can not check for a blob with unknown digest`)
@@ -101,7 +111,7 @@ func (d *dirImageDestination) HasBlob(info types.BlobInfo) (bool, int64, error) 
 	blobPath := d.ref.layerPath(info.Digest)
 	finfo, err := os.Stat(blobPath)
 	if err != nil && os.IsNotExist(err) {
-		return false, -1, types.ErrBlobNotFound
+		return false, -1, nil
 	}
 	if err != nil {
 		return false, -1, err
@@ -113,6 +123,10 @@ func (d *dirImageDestination) ReapplyBlob(info types.BlobInfo) (types.BlobInfo, 
 	return info, nil
 }
 
+// PutManifest writes manifest to the destination.
+// FIXME? This should also receive a MIME type if known, to differentiate between schema versions.
+// If the destination is in principle available, refuses this manifest type (e.g. it does not recognize the schema),
+// but may accept a different manifest type, the returned error must be an ManifestTypeRejectedError.
 func (d *dirImageDestination) PutManifest(manifest []byte) error {
 	return ioutil.WriteFile(d.ref.manifestPath(), manifest, 0644)
 }

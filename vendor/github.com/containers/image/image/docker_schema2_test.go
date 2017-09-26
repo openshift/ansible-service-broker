@@ -2,6 +2,7 @@ package image
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -25,7 +26,7 @@ type unusedImageSource struct{}
 func (f unusedImageSource) Reference() types.ImageReference {
 	panic("Unexpected call to a mock function")
 }
-func (f unusedImageSource) Close() {
+func (f unusedImageSource) Close() error {
 	panic("Unexpected call to a mock function")
 }
 func (f unusedImageSource) GetManifest() ([]byte, string, error) {
@@ -37,7 +38,7 @@ func (f unusedImageSource) GetTargetManifest(digest digest.Digest) ([]byte, stri
 func (f unusedImageSource) GetBlob(info types.BlobInfo) (io.ReadCloser, int64, error) {
 	panic("Unexpected call to a mock function")
 }
-func (f unusedImageSource) GetSignatures() ([][]byte, error) {
+func (f unusedImageSource) GetSignatures(context.Context) ([][]byte, error) {
 	panic("Unexpected call to a mock function")
 }
 
@@ -242,6 +243,20 @@ func TestManifestSchema2LayerInfo(t *testing.T) {
 	}
 }
 
+func TestManifestSchema2EmbeddedDockerReferenceConflicts(t *testing.T) {
+	for _, m := range []genericManifest{
+		manifestSchema2FromFixture(t, unusedImageSource{}, "schema2.json"),
+		manifestSchema2FromComponentsLikeFixture(nil),
+	} {
+		for _, name := range []string{"busybox", "example.com:5555/ns/repo:tag"} {
+			ref, err := reference.ParseNormalizedNamed(name)
+			require.NoError(t, err)
+			conflicts := m.EmbeddedDockerReferenceConflicts(ref)
+			assert.False(t, conflicts)
+		}
+	}
+}
+
 func TestManifestSchema2ImageInspectInfo(t *testing.T) {
 	configJSON, err := ioutil.ReadFile("fixtures/schema2-config.json")
 	require.NoError(t, err)
@@ -311,7 +326,7 @@ func (ref refImageReferenceMock) PolicyConfigurationNamespaces() []string {
 func (ref refImageReferenceMock) NewImage(ctx *types.SystemContext) (types.Image, error) {
 	panic("unexpected call to a mock function")
 }
-func (ref refImageReferenceMock) NewImageSource(ctx *types.SystemContext, requestedManifestMIMETypes []string) (types.ImageSource, error) {
+func (ref refImageReferenceMock) NewImageSource(ctx *types.SystemContext) (types.ImageSource, error) {
 	panic("unexpected call to a mock function")
 }
 func (ref refImageReferenceMock) NewImageDestination(ctx *types.SystemContext) (types.ImageDestination, error) {
@@ -346,7 +361,7 @@ type memoryImageDest struct {
 func (d *memoryImageDest) Reference() types.ImageReference {
 	return refImageReferenceMock{d.ref}
 }
-func (d *memoryImageDest) Close() {
+func (d *memoryImageDest) Close() error {
 	panic("Unexpected call to a mock function")
 }
 func (d *memoryImageDest) SupportedManifestMIMETypes() []string {
@@ -359,6 +374,9 @@ func (d *memoryImageDest) ShouldCompressLayers() bool {
 	panic("Unexpected call to a mock function")
 }
 func (d *memoryImageDest) AcceptsForeignLayerURLs() bool {
+	panic("Unexpected call to a mock function")
+}
+func (d *memoryImageDest) MustMatchRuntimeOS() bool {
 	panic("Unexpected call to a mock function")
 }
 func (d *memoryImageDest) PutBlob(stream io.Reader, inputInfo types.BlobInfo) (types.BlobInfo, error) {
@@ -406,6 +424,19 @@ func TestManifestSchema2UpdatedImage(t *testing.T) {
 		LayerInfos: append(layerInfos, layerInfos[0]),
 	})
 	assert.Error(t, err)
+
+	// EmbeddedDockerReference:
+	// … is ignored
+	embeddedRef, err := reference.ParseNormalizedNamed("busybox")
+	require.NoError(t, err)
+	res, err = original.UpdatedImage(types.ManifestUpdateOptions{
+		EmbeddedDockerReference: embeddedRef,
+	})
+	require.NoError(t, err)
+	nonEmbeddedRef, err := reference.ParseNormalizedNamed("notbusybox:notlatest")
+	require.NoError(t, err)
+	conflicts := res.EmbeddedDockerReferenceConflicts(nonEmbeddedRef)
+	assert.False(t, conflicts)
 
 	// ManifestMIMEType:
 	// Only smoke-test the valid conversions, detailed tests are below. (This also verifies that “original” is not affected.)

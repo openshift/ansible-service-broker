@@ -10,6 +10,7 @@ import (
 	"github.com/containers/image/manifest"
 	"github.com/containers/image/types"
 	"github.com/opencontainers/go-digest"
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
@@ -112,6 +113,17 @@ func (m *manifestSchema1) ConfigBlob() ([]byte, error) {
 	return nil, nil
 }
 
+// OCIConfig returns the image configuration as per OCI v1 image-spec. Information about
+// layers in the resulting configuration isn't guaranteed to be returned to due how
+// old image manifests work (docker v2s1 especially).
+func (m *manifestSchema1) OCIConfig() (*imgspecv1.Image, error) {
+	v2s2, err := m.convertToManifestSchema2(nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return v2s2.OCIConfig()
+}
+
 // LayerInfos returns a list of BlobInfos of layers referenced by this image, in order (the root layer first, and then successive layered layers).
 // The Digest field is guaranteed to be provided; Size may be -1.
 // WARNING: The list may contain duplicates, and they are semantically relevant.
@@ -121,6 +133,27 @@ func (m *manifestSchema1) LayerInfos() []types.BlobInfo {
 		layers[(len(m.FSLayers)-1)-i] = types.BlobInfo{Digest: layer.BlobSum, Size: -1}
 	}
 	return layers
+}
+
+// EmbeddedDockerReferenceConflicts whether a Docker reference embedded in the manifest, if any, conflicts with destination ref.
+// It returns false if the manifest does not embed a Docker reference.
+// (This embedding unfortunately happens for Docker schema1, please do not add support for this in any new formats.)
+func (m *manifestSchema1) EmbeddedDockerReferenceConflicts(ref reference.Named) bool {
+	// This is a bit convoluted: We can’t just have a "get embedded docker reference" method
+	// and have the “does it conflict” logic in the generic copy code, because the manifest does not actually
+	// embed a full docker/distribution reference, but only the repo name and tag (without the host name).
+	// So we would have to provide a “return repo without host name, and tag” getter for the generic code,
+	// which would be very awkward.  Instead, we do the matching here in schema1-specific code, and all the
+	// generic copy code needs to know about is reference.Named and that a manifest may need updating
+	// for some destinations.
+	name := reference.Path(ref)
+	var tag string
+	if tagged, isTagged := ref.(reference.NamedTagged); isTagged {
+		tag = tagged.Tag()
+	} else {
+		tag = ""
+	}
+	return m.Name != name || m.Tag != tag
 }
 
 func (m *manifestSchema1) imageInspectInfo() (*types.ImageInspectInfo, error) {
@@ -159,6 +192,14 @@ func (m *manifestSchema1) UpdatedImage(options types.ManifestUpdateOptions) (typ
 			// but (docker pull) ignores them in favor of computing DiffIDs from uncompressed data, except verifying the child->parent links and uniqueness.
 			// So, we don't bother recomputing the IDs in m.History.V1Compatibility.
 			copy.FSLayers[(len(options.LayerInfos)-1)-i].BlobSum = info.Digest
+		}
+	}
+	if options.EmbeddedDockerReference != nil {
+		copy.Name = reference.Path(options.EmbeddedDockerReference)
+		if tagged, isTagged := options.EmbeddedDockerReference.(reference.NamedTagged); isTagged {
+			copy.Tag = tagged.Tag()
+		} else {
+			copy.Tag = ""
 		}
 	}
 
@@ -243,10 +284,10 @@ func (m *manifestSchema1) convertToManifestSchema2(uploadedLayerInfos []types.Bl
 	if len(m.History) != len(m.FSLayers) {
 		return nil, errors.Errorf("Inconsistent schema 1 manifest: %d history entries, %d fsLayers entries", len(m.History), len(m.FSLayers))
 	}
-	if len(uploadedLayerInfos) != len(m.FSLayers) {
+	if uploadedLayerInfos != nil && len(uploadedLayerInfos) != len(m.FSLayers) {
 		return nil, errors.Errorf("Internal error: uploaded %d blobs, but schema1 manifest has %d fsLayers", len(uploadedLayerInfos), len(m.FSLayers))
 	}
-	if len(layerDiffIDs) != len(m.FSLayers) {
+	if layerDiffIDs != nil && len(layerDiffIDs) != len(m.FSLayers) {
 		return nil, errors.Errorf("Internal error: collected %d DiffID values, but schema1 manifest has %d fsLayers", len(layerDiffIDs), len(m.FSLayers))
 	}
 
@@ -273,12 +314,20 @@ func (m *manifestSchema1) convertToManifestSchema2(uploadedLayerInfos []types.Bl
 		}
 
 		if !v1compat.ThrowAway {
+			var size int64
+			if uploadedLayerInfos != nil {
+				size = uploadedLayerInfos[v2Index].Size
+			}
+			var d digest.Digest
+			if layerDiffIDs != nil {
+				d = layerDiffIDs[v2Index]
+			}
 			layers = append(layers, descriptor{
 				MediaType: "application/vnd.docker.image.rootfs.diff.tar.gzip",
-				Size:      uploadedLayerInfos[v2Index].Size,
+				Size:      size,
 				Digest:    m.FSLayers[v1Index].BlobSum,
 			})
-			rootFS.DiffIDs = append(rootFS.DiffIDs, layerDiffIDs[v2Index])
+			rootFS.DiffIDs = append(rootFS.DiffIDs, d)
 		}
 	}
 	configJSON, err := configJSONFromV1Config([]byte(m.History[0].V1Compatibility), rootFS, history)
