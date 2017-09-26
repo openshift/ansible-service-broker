@@ -29,6 +29,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 )
 
 const openShiftName = "registry.connect.redhat.com"
@@ -36,8 +37,11 @@ const openShiftAuthURL = "https://sso.redhat.com/auth/realms/rhc4tp/protocol/doc
 const openShiftManifestURL = "https://registry.connect.redhat.com/v2/%v/manifests/%v"
 
 // OpenShiftAdapter - Docker Hub Adapter
+// Configuration will need to take an list of images in the image field
+// user name and password
+// Will take an optional tag
 type OpenShiftAdapter struct {
-	Config Configuration
+	Config *config.Config
 	Log    *logging.Logger
 }
 
@@ -57,7 +61,7 @@ func (r OpenShiftAdapter) GetImageNames() ([]string, error) {
 	r.Log.Debug("OpenShiftAdapter::GetImageNames")
 	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 
-	images := r.Config.Images
+	images := r.Config.GetSliceOfStrings("images")
 	r.Log.Debug("HERE: %v", images)
 
 	return images, nil
@@ -86,8 +90,8 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 	type TokenResponse struct {
 		Token string `json:"token"`
 	}
-	username := r.Config.User
-	password := r.Config.Pass
+	username := r.Config.GetString("user")
+	password := r.Config.GetString("pass")
 	authString := fmt.Sprintf("%v:%v", username, password)
 
 	authString = b64.StdEncoding.EncodeToString([]byte(authString))
@@ -114,10 +118,11 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 
 func (r OpenShiftAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 	r.Log.Debug("OpenShiftAdapter::LoadSpec")
-	if r.Config.Tag == "" {
-		r.Config.Tag = "latest"
+	tag := r.Config.GetString("tag")
+	if tag == "" {
+		tag = "latest"
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, imageName, r.Config.Tag), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, imageName, tag), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -126,5 +131,5 @@ func (r OpenShiftAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-	return imageToSpec(r.Log, req, r.Config.Tag)
+	return imageToSpec(r.Log, req, tag)
 }

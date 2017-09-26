@@ -37,6 +37,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/pborman/uuid"
 )
 
@@ -46,7 +47,7 @@ type handler struct {
 	router       mux.Router
 	broker       broker.Broker
 	log          *logging.Logger
-	brokerConfig broker.Config
+	brokerConfig *config.Config
 }
 
 // authHandler - does the authentication for the routes
@@ -94,7 +95,7 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig *config.Config) http.Handler {
 	h := handler{
 		router:       *mux.NewRouter(),
 		broker:       b,
@@ -117,13 +118,13 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	h.router.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
 
-	if h.brokerConfig.DevBroker {
+	if brokerConfig.GetBool("broker.dev_broker") {
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
 		h.router.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	providers := auth.GetProviders(brokerConfig.Auth, log)
+	providers := auth.GetProviders(brokerConfig, log)
 	return handlers.LoggingHandler(os.Stdout, authHandler(h, providers, log))
 }
 
@@ -438,7 +439,7 @@ func (h handler) apbRemoveSpecs(w http.ResponseWriter, r *http.Request, params m
 
 // printRequest - will print the request with the body.
 func (h handler) printRequest(req *http.Request) {
-	if h.brokerConfig.OutputRequest {
+	if h.brokerConfig.GetBool("broker.output_request") {
 		b, err := httputil.DumpRequest(req, true)
 		if err != nil {
 			h.log.Errorf("unable to dump request to log: %v", err)

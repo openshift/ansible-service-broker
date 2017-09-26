@@ -26,15 +26,8 @@ import (
 	"os"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 )
-
-// LogConfig - The configuration for the logging.
-type LogConfig struct {
-	LogFile string
-	Stdout  bool
-	Level   string
-	Color   bool
-}
 
 // Log - Logging struct that will contain https://godoc.org/os#File and the logging object.
 type Log struct {
@@ -47,10 +40,14 @@ const MODULE = "asb"
 
 // NewLog - Creates a new logging object
 // TODO: Consider no output?
-func NewLog(config LogConfig) (*Log, error) {
+func NewLog(c *config.Config) (*Log, error) {
 	var err error
+	logFile := c.GetString("log.logfile")
+	stdOut := c.GetBool("log.stdout")
+	level := c.GetString("log.level")
+	color := c.GetBool("log.color")
 
-	if config.LogFile == "" && !config.Stdout {
+	if logFile == "" && !stdOut {
 		return nil, errors.New("Cannot have a blank logfile and not log to stdout")
 	}
 
@@ -79,32 +76,32 @@ func NewLog(config LogConfig) (*Log, error) {
 		return logging.NewBackendFormatter(backend, formatter)
 	}
 
-	if config.LogFile != "" {
-		var logFile *os.File
+	if logFile != "" {
+		var lFile *os.File
 
-		if _, err = os.Stat(config.LogFile); os.IsNotExist(err) {
-			if logFile, err = os.Create(config.LogFile); err != nil {
-				logFile.Close()
+		if _, err = os.Stat(logFile); os.IsNotExist(err) {
+			if lFile, err = os.Create(logFile); err != nil {
+				lFile.Close()
 				return nil, err
 			}
 		} else {
-			if logFile, err = os.OpenFile(config.LogFile, os.O_APPEND|os.O_WRONLY, 0666); err != nil {
-				logFile.Close()
+			if lFile, err = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY, 0666); err != nil {
+				lFile.Close()
 				return nil, err
 			}
 		}
 
-		log.file = logFile
-		backends = append(backends, formattedBackend(logFile, false))
+		log.file = lFile
+		backends = append(backends, formattedBackend(lFile, false))
 	}
 
-	if config.Stdout {
-		backends = append(backends, formattedBackend(os.Stdout, config.Color))
+	if stdOut {
+		backends = append(backends, formattedBackend(os.Stdout, color))
 	}
 
 	multiBackend := logging.MultiLogger(backends...)
 	logger.SetBackend(multiBackend)
-	logging.SetLevel(levelFromString(config.Level), MODULE)
+	logging.SetLevel(levelFromString(level), MODULE)
 	log.Logger = logger
 
 	return log, nil

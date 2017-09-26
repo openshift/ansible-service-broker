@@ -25,7 +25,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -46,17 +45,6 @@ type Adapter interface {
 // BundleSpecLabel - label on the image that we should use to pull out the abp spec.
 // TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
 const BundleSpecLabel = "com.redhat.apb.spec"
-
-// Configuration - Adapter configuration. Contains the info that the adapter
-// would need to complete its request to the images.
-type Configuration struct {
-	URL    *url.URL
-	User   string
-	Pass   string
-	Org    string
-	Images []string
-	Tag    string
-}
 
 // Retrieve the spec from a registry manifest request
 func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Spec, error) {

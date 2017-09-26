@@ -34,6 +34,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
 )
@@ -129,7 +130,6 @@ func (m MockBroker) RemoveSpecs() error {
 }
 
 var log = logging.MustGetLogger("handler")
-var brokerConfig broker.Config
 
 func init() {
 	// setup logging
@@ -140,19 +140,25 @@ func init() {
 	backendFormatter := logging.NewBackendFormatter(backend, colorFormatter)
 	logging.SetBackend(backend, backendFormatter)
 	// will default to all config values to false
-	brokerConfig = broker.Config{}
 }
 
 func TestNewHandler(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	testhandler := NewHandler(testb, log, brokerConfig)
+	c, err := config.CreateConfig("testdata/broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	testhandler := NewHandler(testb, log, c)
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
 func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig)
+	c, err := config.CreateConfig("testdata/broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	testhandler := NewHandler(testb, log, c)
 	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -169,8 +175,11 @@ func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 
 func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig)
+	c, err := config.CreateConfig("testdata/dev_broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	testhandler := NewHandler(testb, log, c)
 	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -187,8 +196,11 @@ func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 
 func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig)
+	c, err := config.CreateConfig("testdata/broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	testhandler := NewHandler(testb, log, c)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -201,8 +213,11 @@ func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
 
 func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig)
+	c, err := config.CreateConfig("testdata/dev_broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	testhandler := NewHandler(testb, log, c)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -215,8 +230,11 @@ func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
 
 func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig)
+	c, err := config.CreateConfig("testdata/broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	testhandler := NewHandler(testb, log, c)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -229,8 +247,11 @@ func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
 
 func TestDevHandlerDoesHaveAPBSpecsDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig)
+	c, err := config.CreateConfig("testdata/dev_broker.yaml")
+	if err != nil {
+		t.Fail()
+	}
+	testhandler := NewHandler(testb, log, c)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -408,9 +429,9 @@ func TestLastOperation(t *testing.T) {
 // utility functions
 
 func buildBootstrapHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
-
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	c, err := config.CreateConfig("testdata/broker.yaml")
+	testhandler := handler{*mux.NewRouter(), testb, log, c}
 
 	r := httptest.NewRequest("POST", "/v2/bootstrap", nil)
 	w := httptest.NewRecorder()
@@ -418,9 +439,9 @@ func buildBootstrapHandler(err error) (handler, *httptest.ResponseRecorder, *htt
 }
 
 func buildCatalogHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
-
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	c, err := config.CreateConfig("testdata/broker.yaml")
+	testhandler := handler{*mux.NewRouter(), testb, log, c}
 
 	r := httptest.NewRequest("GET", "/v2/catalog", nil)
 	w := httptest.NewRecorder()
@@ -430,7 +451,8 @@ func buildCatalogHandler(err error) (handler, *httptest.ResponseRecorder, *http.
 func buildProvisionHandler(testuuid string, err error, operation string) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err, Operation: operation}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	c, err := config.CreateConfig("testdata/broker.yaml")
+	testhandler := handler{*mux.NewRouter(), testb, log, c}
 
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT", fmt.Sprintf("/v2/service_instance/%s", testuuid), trr)
@@ -446,7 +468,8 @@ func buildProvisionHandler(testuuid string, err error, operation string) (handle
 func buildLastOperationHandler(testuuid string, err error) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	c, _ := config.CreateConfig("testdata/broker.yaml")
+	testhandler := handler{*mux.NewRouter(), testb, log, c}
 
 	r := httptest.NewRequest("GET",
 		fmt.Sprintf("/v2/service_instance/%s/last_operation?operation=%s", testuuid, testuuid), nil)
@@ -462,7 +485,8 @@ func buildLastOperationHandler(testuuid string, err error) (handler, *httptest.R
 func buildBindHandler(testuuid string, err error) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	c, _ := config.CreateConfig("testdata/broker.yaml")
+	testhandler := handler{*mux.NewRouter(), testb, log, c}
 
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT",

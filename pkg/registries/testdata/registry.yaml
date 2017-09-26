@@ -1,0 +1,18 @@
+---
+registry:
+  - type: rhcc
+    name: rhcc 
+    url: https://registry.hub.docker.com
+    user: shurley
+    org: shurley
+  - type: dockerhub
+    name: dh
+    url: https://registry.hub.docker.com
+    user: shurley
+    org: shurley
+  - type: mock
+    name: mock
+  - type: makes_no_sense 
+    name: makes-no-sense
+  - type: makes_no_sense 
+    name: makes_no_sense

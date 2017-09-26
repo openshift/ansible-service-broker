@@ -22,51 +22,27 @@ package registries
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 	"sync"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/registries/adapters"
 )
 
 var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*`)
 
-// Config - Configuration for the registry
-type Config struct {
-	URL    string
-	User   string
-	Pass   string
-	Org    string
-	Tag    string
-	Type   string
-	Name   string
-	Images []string
-	// Fail will tell the registry that it is ok to fail the bootstrap if
-	// just this registry has failed.
-	Fail      bool     `yaml:"fail_on_error"`
-	WhiteList []string `yaml:"white_list"`
-	BlackList []string `yaml:"black_list"`
-}
-
-// Validate - makes sure the registry config is valid.
-func (c Config) Validate() bool {
-	if c.Name == "" {
-		return false
-	}
-	m := regex.FindString(c.Name)
-	return m == c.Name
-}
-
 // Registry - manages an adapter to retrieve and manage images to specs.
 type Registry struct {
-	config  Config
-	adapter adapters.Adapter
-	log     *logging.Logger
-	filter  Filter
+	adapter     adapters.Adapter
+	log         *logging.Logger
+	filter      Filter
+	name        string
+	failOnError bool
 }
 
 // LoadSpecs - Load the specs for the registry.
@@ -74,14 +50,14 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	imageNames, err := r.adapter.GetImageNames()
 	if err != nil {
 		r.log.Errorf("unable to retrieve image names for registry %v - %v",
-			r.config.Name, err)
+			r.name, err)
 		return []*apb.Spec{}, 0, err
 	}
 	// Registry will throw out all images that do not end in -apb
 	imageNames = registryFilterImagesForAPBs(imageNames)
 	validNames, filteredNames := r.filter.Run(imageNames)
 
-	r.log.Debug("Filter applied against registry: %s", r.config.Name)
+	r.log.Debug("Filter applied against registry: %s", r.name)
 
 	if len(validNames) != 0 {
 		r.log.Debugf("APBs passing white/blacklist filter:")
@@ -105,7 +81,7 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	specs, err := r.adapter.FetchSpecs(validNames)
 	if err != nil {
 		r.log.Errorf("unable to fetch specs for registry %v - %v",
-			r.config.Name, err)
+			r.name, err)
 		return []*apb.Spec{}, 0, err
 	}
 
@@ -136,7 +112,7 @@ func registryFilterImagesForAPBs(imageNames []string) []string {
 
 // Fail - will determine if the registry should cause a failure.
 func (r Registry) Fail(err error) bool {
-	if r.config.Fail {
+	if r.failOnError {
 		return true
 	}
 	return false
@@ -144,67 +120,57 @@ func (r Registry) Fail(err error) bool {
 
 // RegistryName - retrieve the registry name to allow namespacing.
 func (r Registry) RegistryName() string {
-	return r.config.Name
+	return r.name
 }
 
 // NewRegistry - Create a new registry from the registry config.
-func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
+func NewRegistry(con *config.Config, log *logging.Logger) (Registry, error) {
 	var adapter adapters.Adapter
 
-	log.Info("== REGISTRY CX == ")
-	log.Info(fmt.Sprintf("Name: %s", config.Name))
-	log.Info(fmt.Sprintf("Type: %s", config.Type))
-	log.Info(fmt.Sprintf("Url: %s", config.URL))
-	// Validate URL
-	u, err := url.Parse(config.URL)
-	if err != nil {
-		log.Errorf("url is not valid: %v", config.URL)
-		// Default url, allow the registry to fail gracefully or un gracefully.
-		u = &url.URL{}
+	if !validName(con.GetString("name")) {
+		return Registry{}, errors.New("unable to validate registry name")
 	}
-	if u.Scheme == "" {
-		u.Scheme = "http"
-	}
-	c := adapters.Configuration{URL: u,
-		User:   config.User,
-		Pass:   config.Pass,
-		Org:    config.Org,
-		Images: config.Images,
-		Tag:    config.Tag}
 
-	switch strings.ToLower(config.Type) {
+	log.Info("== REGISTRY CX == ")
+	log.Info(fmt.Sprintf("Name: %s", con.GetString("name")))
+	log.Info(fmt.Sprintf("Type: %s", con.GetString("type")))
+	log.Info(fmt.Sprintf("Url: %s", con.GetString("url")))
+
+	switch strings.ToLower(con.GetString("type")) {
 	case "rhcc":
-		adapter = &adapters.RHCCAdapter{Config: c, Log: log}
+		adapter = &adapters.RHCCAdapter{Config: con, Log: log}
 	case "dockerhub":
-		adapter = &adapters.DockerHubAdapter{Config: c, Log: log}
+		adapter = &adapters.DockerHubAdapter{Config: con, Log: log}
 	case "mock":
-		adapter = &adapters.MockAdapter{Config: c, Log: log}
+		adapter = &adapters.MockAdapter{Config: con, Log: log}
 	case "openshift":
-		adapter = &adapters.OpenShiftAdapter{Config: c, Log: log}
+		adapter = &adapters.OpenShiftAdapter{Config: con, Log: log}
 	default:
 		panic("Unknown registry")
 	}
 
-	return Registry{config: config,
-		adapter: adapter,
-		log:     log,
-		filter:  createFilter(config, log),
+	return Registry{
+		adapter:     adapter,
+		log:         log,
+		filter:      createFilter(con, log),
+		name:        con.GetString("name"),
+		failOnError: con.GetBool("fail_on_error"),
 	}, nil
 }
 
-func createFilter(config Config, log *logging.Logger) Filter {
-	log.Debug("Creating filter for registry: %s", config.Name)
-	log.Debug("whitelist: %v", config.WhiteList)
-	log.Debug("blacklist: %v", config.BlackList)
+func createFilter(config *config.Config, log *logging.Logger) Filter {
+	log.Debug("Creating filter for registry: %s", config.GetString("name"))
+	log.Debug("whitelist: %v", config.GetSliceOfStrings("white_list"))
+	log.Debug("blacklist: %v", config.GetSliceOfStrings("black_list"))
 
 	filter := Filter{
-		whitelist: config.WhiteList,
-		blacklist: config.BlackList,
+		whitelist: config.GetSliceOfStrings("white_list"),
+		blacklist: config.GetSliceOfStrings("black_list"),
 	}
 
 	filter.Init()
 	if len(filter.failedWhiteRegexp) != 0 {
-		log.Warning("Some whitelist regex failed for registry: %s", config.Name)
+		log.Warning("Some whitelist regex failed for registry: %s", config.GetString("name"))
 		for _, failed := range filter.failedWhiteRegexp {
 			log.Warning(failed.regex)
 			log.Warning(failed.err.Error())
@@ -212,7 +178,7 @@ func createFilter(config Config, log *logging.Logger) Filter {
 	}
 
 	if len(filter.failedBlackRegexp) != 0 {
-		log.Warning("Some blacklist regex failed for registry: %s", config.Name)
+		log.Warning("Some blacklist regex failed for registry: %s", config.GetString("name"))
 		for _, failed := range filter.failedBlackRegexp {
 			log.Warning(failed.regex)
 			log.Warning(failed.err.Error())
@@ -280,4 +246,13 @@ func validateSpecPlans(spec *apb.Spec) (bool, string) {
 	}
 
 	return true, ""
+}
+
+// validateName - makes sure the registry name is valid.
+func validName(name string) bool {
+	if name == "" {
+		return false
+	}
+	m := regex.FindString(name)
+	return m == name
 }

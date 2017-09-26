@@ -25,6 +25,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -36,7 +37,7 @@ var mockRegistryName = "mock"
 
 // MockAdapter - a adapter that is for mocking data
 type MockAdapter struct {
-	Config Configuration
+	Config *config.Config
 	Log    *logging.Logger
 	specs  map[string]*apb.Spec
 }

@@ -32,7 +32,7 @@ import (
 	"github.com/coreos/etcd/client"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/auth"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
@@ -72,19 +72,6 @@ type Broker interface {
 	Recover() (string, error)
 }
 
-// Config - Configuration for the broker.
-type Config struct {
-	DevBroker          bool          `yaml:"dev_broker"`
-	LaunchApbOnBind    bool          `yaml:"launch_apb_on_bind"`
-	BootstrapOnStartup bool          `yaml:"bootstrap_on_startup"`
-	Recovery           bool          `yaml:"recovery"`
-	OutputRequest      bool          `yaml:"output_request"`
-	SSLCertKey         string        `yaml:"ssl_cert_key"`
-	SSLCert            string        `yaml:"ssl_cert"`
-	RefreshInterval    string        `yaml:"refresh_interval"`
-	Auth               []auth.Config `yaml:"auth"`
-}
-
 // DevBroker - Interface for the development broker.
 type DevBroker interface {
 	AddSpec(spec apb.Spec) (*CatalogResponse, error)
@@ -99,20 +86,27 @@ type AnsibleBroker struct {
 	clusterConfig apb.ClusterConfig
 	registry      []registries.Registry
 	engine        *WorkEngine
-	brokerConfig  Config
+	brokerConfig  *config.Config
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
-func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
-	registry []registries.Registry, engine WorkEngine, brokerConfig Config,
+func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig *config.Config,
+	registry []registries.Registry, engine WorkEngine, brokerConfig *config.Config,
 ) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
-		dao:           dao,
-		log:           log,
-		clusterConfig: clusterConfig,
-		registry:      registry,
-		engine:        &engine,
-		brokerConfig:  brokerConfig,
+		dao: dao,
+		log: log,
+		clusterConfig: apb.ClusterConfig{
+			Host:            clusterConfig.GetString("host"),
+			CAFile:          clusterConfig.GetString("ca_file"),
+			BearerTokenFile: clusterConfig.GetString("bearer_token_file"),
+			PullPolicy:      clusterConfig.GetString("image_pull_policy"),
+			SandboxRole:     clusterConfig.GetString("sandbox_role"),
+			Namespace:       clusterConfig.GetString("namespace"),
+		},
+		registry:     registry,
+		engine:       &engine,
+		brokerConfig: brokerConfig,
 	}
 
 	err := broker.Login()
@@ -499,6 +493,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if spec, err = a.dao.GetSpec(specID); err != nil {
 		// etcd return not found i.e. code 100
 		if client.IsKeyNotFound(err) {
+			a.log.Debug("broker::Could not find spec")
 			return nil, ErrorNotFound
 		}
 		// otherwise unknown error bubble it up
@@ -512,6 +507,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	}
 
 	if req.PlanID == "" {
+		a.log.Debug("broker::request did not pass along plan ID")
 		errMsg :=
 			"PlanID from provision request is blank. " +
 				"Provision requests must specify PlanIDs"
@@ -747,7 +743,7 @@ func (a AnsibleBroker) Bind(instanceUUID uuid.UUID, bindingUUID uuid.UUID, req *
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
 	// Currently, the 'launchapbonbind' is set to false in the 'config' ConfigMap
 	var bindExtCreds *apb.ExtractedCredentials
-	if a.brokerConfig.LaunchApbOnBind {
+	if a.brokerConfig.GetBool("launch_apb_on_bind") {
 		a.log.Info("Broker configured to run APB bind")
 		_, bindExtCreds, err = apb.Bind(instance, &params, a.clusterConfig, a.log)
 
@@ -821,7 +817,7 @@ func (a AnsibleBroker) Unbind(
 		params["provision_params"] = *serviceInstance.Parameters
 	}
 	// only launch apb if we are always launching the APB.
-	if a.brokerConfig.LaunchApbOnBind {
+	if a.brokerConfig.GetBool("launch_apb_on_bind") {
 		err = apb.Unbind(serviceInstance, &params, a.clusterConfig, a.log)
 		if err != nil {
 			return nil, err

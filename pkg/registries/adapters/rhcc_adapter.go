@@ -25,15 +25,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 )
 
 // RHCCAdapter - Red Hat Container Catalog Registry
+// Configuration will need an url, and optional tag
 type RHCCAdapter struct {
-	Config Configuration
+	Config *config.Config
 	Log    *logging.Logger
+	url    *url.URL
 }
 
 // RHCCImage - RHCC Registry Image that is returned from the RHCC Catalog api.
@@ -55,11 +59,27 @@ type RHCCImageResponse struct {
 
 // RegistryName - retrieve the registry prefix
 func (r RHCCAdapter) RegistryName() string {
-	return r.Config.URL.Host
+	if r.url != nil {
+		return r.url.Host
+	}
+	return ""
 }
 
 // GetImageNames - retrieve the images from the registry
 func (r RHCCAdapter) GetImageNames() ([]string, error) {
+	if r.url == nil {
+		// Validate URL
+		u, err := url.Parse(r.Config.GetString("url"))
+		if err != nil {
+			r.Log.Errorf("url is not valid: %v", r.Config.GetString("url"))
+			// Default url, allow the registry to fail gracefully or un gracefully.
+			u = &url.URL{}
+		}
+		if u.Scheme == "" {
+			u.Scheme = "http"
+		}
+		r.url = u
+	}
 	imageList, err := r.loadImages("\"*-apb\"")
 	if err != nil {
 		return nil, err
@@ -74,16 +94,17 @@ func (r RHCCAdapter) GetImageNames() ([]string, error) {
 // FetchSpecs - retrieve the spec from the image names
 func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	specs := []*apb.Spec{}
-	if r.Config.Tag == "" {
-		r.Config.Tag = "latest"
+	tag := r.Config.GetString("tag")
+	if tag == "" {
+		tag = "latest"
 	}
 	for _, imageName := range imageNames {
 		req, err := http.NewRequest("GET",
-			fmt.Sprintf("%v/v2/%v/manifests/%v", r.Config.URL.String(), imageName, r.Config.Tag), nil)
+			fmt.Sprintf("%v/v2/%v/manifests/%v", r.url.String(), imageName, tag), nil)
 		if err != nil {
 			return specs, err
 		}
-		spec, err := imageToSpec(r.Log, req, r.Config.Tag)
+		spec, err := imageToSpec(r.Log, req, tag)
 		if err != nil {
 			return specs, err
 		}
@@ -97,9 +118,9 @@ func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 // LoadImages - Get all the images for a particular query
 func (r RHCCAdapter) loadImages(Query string) (RHCCImageResponse, error) {
 	r.Log.Debug("RHCCRegistry::LoadImages")
-	r.Log.Debug("Using " + r.Config.URL.String() + " to source APB images using query:" + Query)
+	r.Log.Debug("Using " + r.url.String() + " to source APB images using query:" + Query)
 	req, err := http.NewRequest("GET",
-		fmt.Sprintf("%v/v1/search?q=%v", r.Config.URL.String(), Query), nil)
+		fmt.Sprintf("%v/v1/search?q=%v", r.url.String(), Query), nil)
 	if err != nil {
 		return RHCCImageResponse{}, err
 	}
