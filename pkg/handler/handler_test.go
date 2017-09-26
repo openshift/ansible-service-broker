@@ -145,14 +145,14 @@ func init() {
 
 func TestNewHandler(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	testhandler := NewHandler(testb, log, brokerConfig)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
 func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
 	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -170,8 +170,8 @@ func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig)
-	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "/test-prefix", nil)
+	req, err := http.NewRequest(http.MethodPost, "/test-prefix/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
 	}
@@ -188,7 +188,7 @@ func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -202,7 +202,7 @@ func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
 func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -216,7 +216,7 @@ func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
 func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -230,7 +230,7 @@ func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
 func TestDevHandlerDoesHaveAPBSpecsDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())

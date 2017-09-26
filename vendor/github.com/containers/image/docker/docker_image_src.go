@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,51 +11,33 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/containers/image/docker/reference"
 	"github.com/containers/image/manifest"
 	"github.com/containers/image/types"
 	"github.com/docker/distribution/registry/client"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type dockerImageSource struct {
-	ref                        dockerReference
-	requestedManifestMIMETypes []string
-	c                          *dockerClient
+	ref dockerReference
+	c   *dockerClient
 	// State
 	cachedManifest         []byte // nil if not loaded yet
 	cachedManifestMIMEType string // Only valid if cachedManifest != nil
 }
 
-// newImageSource creates a new ImageSource for the specified image reference,
-// asking the backend to use a manifest from requestedManifestMIMETypes if possible.
-// nil requestedManifestMIMETypes means manifest.DefaultRequestedManifestMIMETypes.
+// newImageSource creates a new ImageSource for the specified image reference.
 // The caller must call .Close() on the returned ImageSource.
-func newImageSource(ctx *types.SystemContext, ref dockerReference, requestedManifestMIMETypes []string) (*dockerImageSource, error) {
+func newImageSource(ctx *types.SystemContext, ref dockerReference) (*dockerImageSource, error) {
 	c, err := newDockerClient(ctx, ref, false, "pull")
 	if err != nil {
 		return nil, err
 	}
-	if requestedManifestMIMETypes == nil {
-		requestedManifestMIMETypes = manifest.DefaultRequestedManifestMIMETypes
-	}
-	supportedMIMEs := supportedManifestMIMETypesMap()
-	acceptableRequestedMIMEs := false
-	for _, mtrequested := range requestedManifestMIMETypes {
-		if supportedMIMEs[mtrequested] {
-			acceptableRequestedMIMEs = true
-			break
-		}
-	}
-	if !acceptableRequestedMIMEs {
-		requestedManifestMIMETypes = manifest.DefaultRequestedManifestMIMETypes
-	}
 	return &dockerImageSource{
 		ref: ref,
-		requestedManifestMIMETypes: requestedManifestMIMETypes,
-		c: c,
+		c:   c,
 	}, nil
 }
 
@@ -65,7 +48,8 @@ func (s *dockerImageSource) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized ImageSource, if any.
-func (s *dockerImageSource) Close() {
+func (s *dockerImageSource) Close() error {
+	return nil
 }
 
 // simplifyContentType drops parameters from a HTTP media type (see https://tools.ietf.org/html/rfc7231#section-3.1.1.1)
@@ -84,18 +68,18 @@ func simplifyContentType(contentType string) string {
 // GetManifest returns the image's manifest along with its MIME type (which may be empty when it can't be determined but the manifest is available).
 // It may use a remote (= slow) service.
 func (s *dockerImageSource) GetManifest() ([]byte, string, error) {
-	err := s.ensureManifestIsLoaded()
+	err := s.ensureManifestIsLoaded(context.TODO())
 	if err != nil {
 		return nil, "", err
 	}
 	return s.cachedManifest, s.cachedManifestMIMEType, nil
 }
 
-func (s *dockerImageSource) fetchManifest(tagOrDigest string) ([]byte, string, error) {
-	url := fmt.Sprintf(manifestURL, reference.Path(s.ref.ref), tagOrDigest)
+func (s *dockerImageSource) fetchManifest(ctx context.Context, tagOrDigest string) ([]byte, string, error) {
+	path := fmt.Sprintf(manifestPath, reference.Path(s.ref.ref), tagOrDigest)
 	headers := make(map[string][]string)
-	headers["Accept"] = s.requestedManifestMIMETypes
-	res, err := s.c.makeRequest("GET", url, headers, nil)
+	headers["Accept"] = manifest.DefaultRequestedManifestMIMETypes
+	res, err := s.c.makeRequest(ctx, "GET", path, headers, nil)
 	if err != nil {
 		return nil, "", err
 	}
@@ -113,7 +97,7 @@ func (s *dockerImageSource) fetchManifest(tagOrDigest string) ([]byte, string, e
 // GetTargetManifest returns an image's manifest given a digest.
 // This is mainly used to retrieve a single image's manifest out of a manifest list.
 func (s *dockerImageSource) GetTargetManifest(digest digest.Digest) ([]byte, string, error) {
-	return s.fetchManifest(digest.String())
+	return s.fetchManifest(context.TODO(), digest.String())
 }
 
 // ensureManifestIsLoaded sets s.cachedManifest and s.cachedManifestMIMEType
@@ -123,7 +107,7 @@ func (s *dockerImageSource) GetTargetManifest(digest digest.Digest) ([]byte, str
 // we need to ensure that the digest of the manifest returned by GetManifest
 // and used by GetSignatures are consistent, otherwise we would get spurious
 // signature verification failures when pulling while a tag is being updated.
-func (s *dockerImageSource) ensureManifestIsLoaded() error {
+func (s *dockerImageSource) ensureManifestIsLoaded(ctx context.Context) error {
 	if s.cachedManifest != nil {
 		return nil
 	}
@@ -133,7 +117,7 @@ func (s *dockerImageSource) ensureManifestIsLoaded() error {
 		return err
 	}
 
-	manblob, mt, err := s.fetchManifest(reference)
+	manblob, mt, err := s.fetchManifest(ctx, reference)
 	if err != nil {
 		return err
 	}
@@ -149,7 +133,7 @@ func (s *dockerImageSource) getExternalBlob(urls []string) (io.ReadCloser, int64
 		err  error
 	)
 	for _, url := range urls {
-		resp, err = s.c.makeRequestToResolvedURL("GET", url, nil, nil, -1, false)
+		resp, err = s.c.makeRequestToResolvedURL(context.TODO(), "GET", url, nil, nil, -1, false)
 		if err == nil {
 			if resp.StatusCode != http.StatusOK {
 				err = errors.Errorf("error fetching external blob from %q: %d", url, resp.StatusCode)
@@ -178,9 +162,9 @@ func (s *dockerImageSource) GetBlob(info types.BlobInfo) (io.ReadCloser, int64, 
 		return s.getExternalBlob(info.URLs)
 	}
 
-	url := fmt.Sprintf(blobsURL, reference.Path(s.ref.ref), info.Digest.String())
-	logrus.Debugf("Downloading %s", url)
-	res, err := s.c.makeRequest("GET", url, nil, nil)
+	path := fmt.Sprintf(blobsPath, reference.Path(s.ref.ref), info.Digest.String())
+	logrus.Debugf("Downloading %s", path)
+	res, err := s.c.makeRequest(context.TODO(), "GET", path, nil, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -191,26 +175,50 @@ func (s *dockerImageSource) GetBlob(info types.BlobInfo) (io.ReadCloser, int64, 
 	return res.Body, getBlobSize(res), nil
 }
 
-func (s *dockerImageSource) GetSignatures() ([][]byte, error) {
-	if s.c.signatureBase == nil { // Skip dealing with the manifest digest if not necessary.
-		return [][]byte{}, nil
-	}
-
-	if err := s.ensureManifestIsLoaded(); err != nil {
+func (s *dockerImageSource) GetSignatures(ctx context.Context) ([][]byte, error) {
+	if err := s.c.detectProperties(ctx); err != nil {
 		return nil, err
 	}
-	manifestDigest, err := manifest.Digest(s.cachedManifest)
+	switch {
+	case s.c.signatureBase != nil:
+		return s.getSignaturesFromLookaside(ctx)
+	case s.c.supportsSignatures:
+		return s.getSignaturesFromAPIExtension(ctx)
+	default:
+		return [][]byte{}, nil
+	}
+}
+
+// manifestDigest returns a digest of the manifest, either from the supplied reference or from a fetched manifest.
+func (s *dockerImageSource) manifestDigest(ctx context.Context) (digest.Digest, error) {
+	if digested, ok := s.ref.ref.(reference.Digested); ok {
+		d := digested.Digest()
+		if d.Algorithm() == digest.Canonical {
+			return d, nil
+		}
+	}
+	if err := s.ensureManifestIsLoaded(ctx); err != nil {
+		return "", err
+	}
+	return manifest.Digest(s.cachedManifest)
+}
+
+// getSignaturesFromLookaside implements GetSignatures() from the lookaside location configured in s.c.signatureBase,
+// which is not nil.
+func (s *dockerImageSource) getSignaturesFromLookaside(ctx context.Context) ([][]byte, error) {
+	manifestDigest, err := s.manifestDigest(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	// NOTE: Keep this in sync with docs/signature-protocols.md!
 	signatures := [][]byte{}
 	for i := 0; ; i++ {
 		url := signatureStorageURL(s.c.signatureBase, manifestDigest, i)
 		if url == nil {
 			return nil, errors.Errorf("Internal error: signatureStorageURL with non-nil base returned nil")
 		}
-		signature, missing, err := s.getOneSignature(url)
+		signature, missing, err := s.getOneSignature(ctx, url)
 		if err != nil {
 			return nil, err
 		}
@@ -224,7 +232,8 @@ func (s *dockerImageSource) GetSignatures() ([][]byte, error) {
 
 // getOneSignature downloads one signature from url.
 // If it successfully determines that the signature does not exist, returns with missing set to true and error set to nil.
-func (s *dockerImageSource) getOneSignature(url *url.URL) (signature []byte, missing bool, err error) {
+// NOTE: Keep this in sync with docs/signature-protocols.md!
+func (s *dockerImageSource) getOneSignature(ctx context.Context, url *url.URL) (signature []byte, missing bool, err error) {
 	switch url.Scheme {
 	case "file":
 		logrus.Debugf("Reading %s", url.Path)
@@ -239,7 +248,12 @@ func (s *dockerImageSource) getOneSignature(url *url.URL) (signature []byte, mis
 
 	case "http", "https":
 		logrus.Debugf("GET %s", url)
-		res, err := s.c.client.Get(url.String())
+		req, err := http.NewRequest("GET", url.String(), nil)
+		if err != nil {
+			return nil, false, err
+		}
+		req = req.WithContext(ctx)
+		res, err := s.c.client.Do(req)
 		if err != nil {
 			return nil, false, err
 		}
@@ -260,6 +274,27 @@ func (s *dockerImageSource) getOneSignature(url *url.URL) (signature []byte, mis
 	}
 }
 
+// getSignaturesFromAPIExtension implements GetSignatures() using the X-Registry-Supports-Signatures API extension.
+func (s *dockerImageSource) getSignaturesFromAPIExtension(ctx context.Context) ([][]byte, error) {
+	manifestDigest, err := s.manifestDigest(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedBody, err := s.c.getExtensionsSignatures(ctx, s.ref, manifestDigest)
+	if err != nil {
+		return nil, err
+	}
+
+	var sigs [][]byte
+	for _, sig := range parsedBody.Signatures {
+		if sig.Version == extensionSignatureSchemaVersion && sig.Type == extensionSignatureTypeAtomic {
+			sigs = append(sigs, sig.Content)
+		}
+	}
+	return sigs, nil
+}
+
 // deleteImage deletes the named image from the registry, if supported.
 func deleteImage(ctx *types.SystemContext, ref dockerReference) error {
 	c, err := newDockerClient(ctx, ref, true, "push")
@@ -276,8 +311,8 @@ func deleteImage(ctx *types.SystemContext, ref dockerReference) error {
 	if err != nil {
 		return err
 	}
-	getURL := fmt.Sprintf(manifestURL, reference.Path(ref.ref), refTail)
-	get, err := c.makeRequest("GET", getURL, headers, nil)
+	getPath := fmt.Sprintf(manifestPath, reference.Path(ref.ref), refTail)
+	get, err := c.makeRequest(context.TODO(), "GET", getPath, headers, nil)
 	if err != nil {
 		return err
 	}
@@ -295,11 +330,11 @@ func deleteImage(ctx *types.SystemContext, ref dockerReference) error {
 	}
 
 	digest := get.Header.Get("Docker-Content-Digest")
-	deleteURL := fmt.Sprintf(manifestURL, reference.Path(ref.ref), digest)
+	deletePath := fmt.Sprintf(manifestPath, reference.Path(ref.ref), digest)
 
 	// When retrieving the digest from a registry >= 2.3 use the following header:
 	//   "Accept": "application/vnd.docker.distribution.manifest.v2+json"
-	delete, err := c.makeRequest("DELETE", deleteURL, headers, nil)
+	delete, err := c.makeRequest(context.TODO(), "DELETE", deletePath, headers, nil)
 	if err != nil {
 		return err
 	}
@@ -310,7 +345,7 @@ func deleteImage(ctx *types.SystemContext, ref dockerReference) error {
 		return err
 	}
 	if delete.StatusCode != http.StatusAccepted {
-		return errors.Errorf("Failed to delete %v: %s (%v)", deleteURL, string(body), delete.Status)
+		return errors.Errorf("Failed to delete %v: %s (%v)", deletePath, string(body), delete.Status)
 	}
 
 	if c.signatureBase != nil {

@@ -1,6 +1,8 @@
 package image
 
 import (
+	"context"
+
 	"github.com/containers/image/docker/reference"
 	"github.com/containers/image/manifest"
 	"github.com/containers/image/types"
@@ -36,8 +38,8 @@ func (i *UnparsedImage) Reference() types.ImageReference {
 }
 
 // Close removes resources associated with an initialized UnparsedImage, if any.
-func (i *UnparsedImage) Close() {
-	i.src.Close()
+func (i *UnparsedImage) Close() error {
+	return i.src.Close()
 }
 
 // Manifest is like ImageSource.GetManifest, but the result is cached; it is OK to call this however often you need.
@@ -71,9 +73,9 @@ func (i *UnparsedImage) Manifest() ([]byte, string, error) {
 }
 
 // Signatures is like ImageSource.GetSignatures, but the result is cached; it is OK to call this however often you need.
-func (i *UnparsedImage) Signatures() ([][]byte, error) {
+func (i *UnparsedImage) Signatures(ctx context.Context) ([][]byte, error) {
 	if i.cachedSignatures == nil {
-		sigs, err := i.src.GetSignatures()
+		sigs, err := i.src.GetSignatures(ctx)
 		if err != nil {
 			return nil, err
 		}

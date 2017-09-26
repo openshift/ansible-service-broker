@@ -3,6 +3,7 @@ package storage
 import (
 	"archive/tar"
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"flag"
@@ -15,14 +16,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/containers/image/types"
+	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/archive"
 	"github.com/containers/storage/pkg/idtools"
 	"github.com/containers/storage/pkg/ioutils"
 	"github.com/containers/storage/pkg/reexec"
-	"github.com/containers/storage/storage"
 	ddigest "github.com/opencontainers/go-digest"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -57,7 +59,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func newStore(t *testing.T) storage.Store {
+func newStoreWithGraphDriverOptions(t *testing.T, options []string) storage.Store {
 	wd, err := ioutil.TempDir(topwd, "test.")
 	if err != nil {
 		t.Fatal(err)
@@ -68,29 +70,33 @@ func newStore(t *testing.T) storage.Store {
 	}
 	run := filepath.Join(wd, "run")
 	root := filepath.Join(wd, "root")
-	uidmap := []idtools.IDMap{{
+	Transport.SetDefaultUIDMap([]idtools.IDMap{{
 		ContainerID: 0,
 		HostID:      os.Getuid(),
 		Size:        1,
-	}}
-	gidmap := []idtools.IDMap{{
+	}})
+	Transport.SetDefaultGIDMap([]idtools.IDMap{{
 		ContainerID: 0,
 		HostID:      os.Getgid(),
 		Size:        1,
-	}}
+	}})
 	store, err := storage.GetStore(storage.StoreOptions{
 		RunRoot:            run,
 		GraphRoot:          root,
 		GraphDriverName:    "vfs",
-		GraphDriverOptions: []string{},
-		UIDMap:             uidmap,
-		GIDMap:             gidmap,
+		GraphDriverOptions: options,
+		UIDMap:             Transport.DefaultUIDMap(),
+		GIDMap:             Transport.DefaultGIDMap(),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	Transport.SetStore(store)
 	return store
+}
+
+func newStore(t *testing.T) storage.Store {
+	return newStoreWithGraphDriverOptions(t, []string{})
 }
 
 func TestParse(t *testing.T) {
@@ -122,7 +128,9 @@ func TestParse(t *testing.T) {
 	}
 
 	transport := storageTransport{
-		store: store,
+		store:         store,
+		defaultUIDMap: Transport.(*storageTransport).defaultUIDMap,
+		defaultGIDMap: Transport.(*storageTransport).defaultGIDMap,
 	}
 	_references := []storageReference{
 		{
@@ -157,6 +165,46 @@ func TestParse(t *testing.T) {
 		}
 		if ref.reference != reference.reference {
 			t.Fatalf("ParseReference(%q) failed to extract reference (%q!=%q)", s, ref.reference, reference.reference)
+		}
+	}
+}
+
+func TestParseWithGraphDriverOptions(t *testing.T) {
+	optionLists := [][]string{
+		{},
+		{"unused1"},
+		{"unused1", "unused2"},
+		{"unused1", "unused2", "unused3"},
+	}
+	for _, optionList := range optionLists {
+		store := newStoreWithGraphDriverOptions(t, optionList)
+		ref, err := Transport.ParseStoreReference(store, "test")
+		if err != nil {
+			t.Fatalf("ParseStoreReference(%q, graph driver options %v) returned error %v", "test", optionList, err)
+		}
+		if ref == nil {
+			t.Fatalf("ParseStoreReference returned nil reference")
+		}
+		spec := ref.StringWithinTransport()
+		ref2, err := Transport.ParseReference(spec)
+		if err != nil {
+			t.Fatalf("ParseReference(%q) returned error %v", "test", err)
+		}
+		if ref == nil {
+			t.Fatalf("ParseReference returned nil reference")
+		}
+		sref, ok := ref2.(*storageReference)
+		if !ok {
+			t.Fatalf("ParseReference returned a reference from transport %s, not one of ours", ref2.Transport().Name())
+		}
+		parsedOptions := sref.transport.store.GraphOptions()
+		if len(parsedOptions) != len(optionList) {
+			t.Fatalf("Lost options between %v and %v", optionList, parsedOptions)
+		}
+		for i := range optionList {
+			if parsedOptions[i] != optionList[i] {
+				t.Fatalf("Mismatched option %d: %v and %v", i, optionList[i], parsedOptions[i])
+			}
 		}
 	}
 }
@@ -381,7 +429,7 @@ func TestWriteRead(t *testing.T) {
 			t.Fatalf("Image %q claims to have been created at time 0", ref.StringWithinTransport())
 		}
 
-		src, err := ref.NewImageSource(systemContext(), []string{})
+		src, err := ref.NewImageSource(systemContext())
 		if err != nil {
 			t.Fatalf("NewImageSource(%q) returned error %v", ref.StringWithinTransport(), err)
 		}
@@ -407,7 +455,7 @@ func TestWriteRead(t *testing.T) {
 		if err == nil {
 			t.Fatalf("GetTargetManifest(%q) is supposed to fail", ref.StringWithinTransport())
 		}
-		sigs, err := src.GetSignatures()
+		sigs, err := src.GetSignatures(context.Background())
 		if err != nil {
 			t.Fatalf("GetSignatures(%q) returned error %v", ref.StringWithinTransport(), err)
 		}
@@ -498,6 +546,7 @@ func TestDuplicateName(t *testing.T) {
 	if dest == nil {
 		t.Fatalf("NewImageDestination(%q, second pass) returned no destination", ref.StringWithinTransport())
 	}
+	digest, _, size, blob = makeLayer(t, archive.Gzip)
 	if _, err := dest.PutBlob(bytes.NewBuffer(blob), types.BlobInfo{
 		Size:   int64(size),
 		Digest: digest,
@@ -551,17 +600,18 @@ func TestDuplicateID(t *testing.T) {
 	if dest == nil {
 		t.Fatalf("NewImageDestination(%q, second pass) returned no destination", ref.StringWithinTransport())
 	}
+	digest, _, size, blob = makeLayer(t, archive.Gzip)
 	if _, err := dest.PutBlob(bytes.NewBuffer(blob), types.BlobInfo{
 		Size:   int64(size),
 		Digest: digest,
 	}); err != nil {
 		t.Fatalf("Error saving randomly-generated layer to destination, second pass: %v", err)
 	}
-	if err := dest.Commit(); err != storage.ErrDuplicateID {
+	if err := dest.Commit(); errors.Cause(err) != storage.ErrDuplicateID {
 		if err != nil {
 			t.Fatalf("Wrong error committing changes to destination, second pass: %v", err)
 		}
-		t.Fatalf("Incorrectly succeeded committing changes to destination, second pass: %v", err)
+		t.Fatal("Incorrectly succeeded committing changes to destination, second pass: no error")
 	}
 	dest.Close()
 }
@@ -607,17 +657,18 @@ func TestDuplicateNameID(t *testing.T) {
 	if dest == nil {
 		t.Fatalf("NewImageDestination(%q, second pass) returned no destination", ref.StringWithinTransport())
 	}
+	digest, _, size, blob = makeLayer(t, archive.Gzip)
 	if _, err := dest.PutBlob(bytes.NewBuffer(blob), types.BlobInfo{
 		Size:   int64(size),
 		Digest: digest,
 	}); err != nil {
 		t.Fatalf("Error saving randomly-generated layer to destination, second pass: %v", err)
 	}
-	if err := dest.Commit(); err != storage.ErrDuplicateID {
+	if err := dest.Commit(); errors.Cause(err) != storage.ErrDuplicateID {
 		if err != nil {
 			t.Fatalf("Wrong error committing changes to destination, second pass: %v", err)
 		}
-		t.Fatalf("Incorrectly succeeded committing changes to destination, second pass: %v", err)
+		t.Fatal("Incorrectly succeeded committing changes to destination, second pass: no error")
 	}
 	dest.Close()
 }
@@ -849,7 +900,7 @@ func TestDuplicateBlob(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewImage(%q) returned error %v", ref.StringWithinTransport(), err)
 	}
-	src, err := ref.NewImageSource(systemContext(), nil)
+	src, err := ref.NewImageSource(systemContext())
 	if err != nil {
 		t.Fatalf("NewImageSource(%q) returned error %v", ref.StringWithinTransport(), err)
 	}

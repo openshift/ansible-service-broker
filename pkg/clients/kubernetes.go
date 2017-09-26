@@ -24,8 +24,8 @@ import (
 	"errors"
 
 	logging "github.com/op/go-logging"
-	restclient "k8s.io/client-go/rest"
 
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
@@ -33,26 +33,38 @@ import (
 
 // Kubernetes - Create a new kubernetes client if needed, returns reference
 func Kubernetes(log *logging.Logger) (*clientset.Clientset, error) {
-	errMsg := "Something went wrong while initializing kubernetes client!\n"
-	once.Kubernetes.Do(func() {
-		client, err := newKubernetes(log)
-		if err != nil {
-			log.Error(errMsg)
-			// NOTE: Looking to leverage panic recovery to gracefully handle this
-			// with things like retries or better intelligence, but the environment
-			// is probably in a unrecoverable state as far as the broker is concerned,
-			// and demands the attention of an operator.
-			panic(err.Error())
-		}
-		instances.Kubernetes = client
-	})
+	once.Kubernetes.Do(func() { createOnce(log) })
 	if instances.Kubernetes == nil {
 		return nil, errors.New("Kubernetes client instance is nil")
 	}
 	return instances.Kubernetes, nil
 }
 
-func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
+// KubernetesConfig - Retrieve or create a new kubernetes configuration.
+func KubernetesConfig(log *logging.Logger) (*rest.Config, error) {
+	once.Kubernetes.Do(func() { createOnce(log) })
+	if instances.KubernetesConfig == nil {
+		return nil, errors.New("Kubernetes client config instance is nil")
+	}
+	return instances.KubernetesConfig, nil
+}
+
+func createOnce(log *logging.Logger) {
+	errMsg := "Something went wrong while initializing kubernetes client!\n"
+	client, clientConfig, err := newKubernetes(log)
+	if err != nil {
+		log.Error(errMsg)
+		// NOTE: Looking to leverage panic recovery to gracefully handle this
+		// with things like retries or better intelligence, but the environment
+		// is probably in a unrecoverable state as far as the broker is concerned,
+		// and demands the attention of an operator.
+		panic(err.Error())
+	}
+	instances.Kubernetes = client
+	instances.KubernetesConfig = clientConfig
+}
+
+func createClientConfigFromFile(configPath string) (*rest.Config, error) {
 	clientConfig, err := clientcmd.LoadFromFile(configPath)
 	if err != nil {
 		return nil, err
@@ -65,11 +77,11 @@ func createClientConfigFromFile(configPath string) (*restclient.Config, error) {
 	return config, nil
 }
 
-func newKubernetes(log *logging.Logger) (*clientset.Clientset, error) {
+func newKubernetes(log *logging.Logger) (*clientset.Clientset, *rest.Config, error) {
 	// NOTE: Both the external and internal client object are using the same
 	// clientset library. Internal clientset normally uses a different
 	// library
-	clientConfig, err := restclient.InClusterConfig()
+	clientConfig, err := rest.InClusterConfig()
 	if err != nil {
 		log.Warning("Failed to create a InternalClientSet: %v.", err)
 
@@ -77,15 +89,15 @@ func newKubernetes(log *logging.Logger) (*clientset.Clientset, error) {
 		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
 		if err != nil {
 			log.Error("Failed to create LocalClientSet")
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	clientset, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
 		log.Error("Failed to create LocalClientSet")
-		return nil, err
+		return nil, nil, err
 	}
 
-	return clientset, err
+	return clientset, clientConfig, err
 }

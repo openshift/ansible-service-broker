@@ -24,15 +24,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"net"
 	"os"
+	"strings"
 	"time"
 
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/wait"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
+	"k8s.io/apiserver/pkg/authentication/authenticatorfactory"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	genericoptions "k8s.io/apiserver/pkg/server/options"
+	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -40,8 +49,19 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 )
 
-// MsgBufferSize - The buffer for the message channel.
-const MsgBufferSize = 20
+var (
+	// Scheme - the runtime scheme
+	Scheme = runtime.NewScheme()
+	// Codecs -k8s codecs for the scheme
+	Codecs = serializer.NewCodecFactory(Scheme)
+)
+
+const (
+	// MsgBufferSize - The buffer for the message channel.
+	MsgBufferSize = 20
+	// defaultClusterURLPreFix - prefix for the ansible service broker.
+	defaultClusterURLPreFix = "/ansible-service-broker"
+)
 
 // App - All the application pieces that are installed.
 type App struct {
@@ -52,6 +72,57 @@ type App struct {
 	log      *Log
 	registry []registries.Registry
 	engine   *broker.WorkEngine
+}
+
+func apiServer(log *logging.Logger, config Config, args Args, providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
+	log.Debug("calling NewSecureServingOptions")
+	secureServing := genericoptions.NewSecureServingOptions()
+	secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
+		CertFile: config.Broker.SSLCert,
+		KeyFile:  config.Broker.SSLCertKey,
+	}}
+	secureServing.BindPort = 1338
+	secureServing.BindAddress = net.ParseIP("0.0.0.0")
+	if err := secureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
+		return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
+	}
+
+	serverConfig := genericapiserver.NewConfig(Codecs)
+	if err := secureServing.ApplyTo(serverConfig); err != nil {
+		log.Debug("error applying to %#v", err)
+		return nil, err
+	}
+
+	if len(providers) == 0 {
+		clientConfig, err := clients.KubernetesConfig(log)
+		if err != nil {
+			return nil, err
+		}
+		client, err := authenticationclient.NewForConfig(clientConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		authn := genericoptions.NewDelegatingAuthenticationOptions()
+		authenticationConfig := authenticatorfactory.DelegatingAuthenticatorConfig{
+			Anonymous:               true,
+			TokenAccessReviewClient: client.TokenReviews(),
+			CacheTTL:                authn.CacheTTL,
+		}
+		authenticator, _, err := authenticationConfig.New()
+		if err != nil {
+			return nil, err
+		}
+		serverConfig.Authenticator = authenticator
+
+		authz := genericoptions.NewDelegatingAuthorizationOptions()
+		if err := authz.ApplyTo(serverConfig); err != nil {
+			return nil, err
+		}
+	}
+
+	log.Debug("Creating k8s apiserver")
+	return serverConfig.SkipComplete().New("ansible-service-broker", genericapiserver.EmptyDelegate)
 }
 
 // CreateApp - Creates the application
@@ -227,25 +298,40 @@ func (a *App) Start() {
 			}
 		}()
 	}
+	//Retrieve the auth providers if basic auth is configured.
+	providers := auth.GetProviders(a.config.Broker.Auth, a.log.Logger)
 
-	a.log.Notice("Ansible Service Broker Started")
-	listeningAddress := "0.0.0.0:1338"
-	if a.args.Insecure {
-		a.log.Notice("Listening on http://%s", listeningAddress)
-		err = http.ListenAndServe(":1338",
-			handler.NewHandler(a.broker, a.log.Logger, a.config.Broker))
+	genericserver, servererr := apiServer(a.log.Logger, a.config, a.args, providers)
+	if servererr != nil {
+		a.log.Errorf("problem creating apiserver. %v", servererr)
+		panic(servererr)
+	}
+
+	var clusterURL string
+	if a.config.Broker.ClusterURL != "" {
+		if !strings.HasPrefix("/", a.config.Broker.ClusterURL) {
+			clusterURL = "/" + a.config.Broker.ClusterURL
+		} else {
+			clusterURL = a.config.Broker.ClusterURL
+		}
 	} else {
-		a.log.Notice("Listening on https://%s", listeningAddress)
-		err = http.ListenAndServeTLS(":1338",
-			a.config.Broker.SSLCert,
-			a.config.Broker.SSLCertKey,
-			handler.NewHandler(a.broker, a.log.Logger, a.config.Broker))
+		clusterURL = defaultClusterURLPreFix
 	}
-	if err != nil {
-		a.log.Error("Failed to start HTTP server")
-		a.log.Error(err.Error())
-		os.Exit(1)
+	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers)
+
+	if clusterURL == "/" {
+		genericserver.Handler.NonGoRestfulMux.HandlePrefix("/", daHandler)
+	} else {
+		genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
 	}
+
+	a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
+
+	a.log.Notice("Ansible Service Broker Starting")
+	err = genericserver.PrepareRun().Run(wait.NeverStop)
+	a.log.Errorf("unable to start ansible service broker - %v", err)
+
+	//TODO: Add Flag so we can still use the old way of doing this.
 }
 
 func initClients(log *logging.Logger, ec clients.EtcdConfig) error {

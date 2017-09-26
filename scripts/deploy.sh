@@ -8,7 +8,6 @@ DOCKERHUB_ORG=$3
 
 # can be overridden via my_local_dev_vars
 PROJECT=${ASB_PROJECT}
-ASB_SCHEME="https"
 ROUTING_SUFFIX="172.17.0.1.nip.io"
 OPENSHIFT_TARGET="https://kubernetes.default"
 REGISTRY_TYPE="dockerhub"
@@ -21,6 +20,7 @@ SANDBOX_ROLE="edit"
 BROKER_KIND="${BROKER_KIND:-Broker}"
 auth=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")
 BROKER_AUTH="${BROKER_AUTH:-$auth}"
+ENABLE_BASIC_AUTH=true
 
 # load development variables
 asb::load_vars
@@ -34,7 +34,6 @@ asb::validate_var "DOCKERHUB_ORG" $DOCKERHUB_ORG
 asb::validate_var "REFRESH_INTERVAL" $REFRESH_INTERVAL
 
 VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
-  -p ASB_SCHEME=${ASB_SCHEME} \
   -p ROUTING_SUFFIX=${ROUTING_SUFFIX} \
   -p OPENSHIFT_TARGET=${OPENSHIFT_TARGET} \
   -p DOCKERHUB_ORG=${DOCKERHUB_ORG} \
@@ -49,7 +48,8 @@ VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p REFRESH_INTERVAL=${REFRESH_INTERVAL} \
   -p SANDBOX_ROLE=${SANDBOX_ROLE} \
   -p BROKER_KIND=${BROKER_KIND} \
-  -p BROKER_AUTH=${BROKER_AUTH}"
+  -p BROKER_AUTH=${BROKER_AUTH} \
+  -p ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH}"
 
 # cleanup old deployment
 asb::delete_project ${PROJECT}

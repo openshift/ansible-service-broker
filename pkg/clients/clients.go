@@ -24,12 +24,14 @@ import (
 	"sync"
 
 	etcd "github.com/coreos/etcd/client"
+	"k8s.io/client-go/rest"
 	k8s "k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
 
 var instances struct {
-	Etcd       etcd.Client
-	Kubernetes *k8s.Clientset
+	Etcd             etcd.Client
+	Kubernetes       *k8s.Clientset
+	KubernetesConfig *rest.Config
 }
 
 var once struct {

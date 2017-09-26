@@ -29,36 +29,46 @@ func manifestOCI1FromFixture(t *testing.T, src types.ImageSource, fixture string
 }
 
 func manifestOCI1FromComponentsLikeFixture(configBlob []byte) genericManifest {
-	return manifestOCI1FromComponents(descriptor{
-		MediaType: imgspecv1.MediaTypeImageConfig,
-		Size:      5940,
-		Digest:    "sha256:9ca4bda0a6b3727a6ffcc43e981cad0f24e2ec79d338f6ba325b4dfd0756fb8f",
-	}, nil, configBlob, []descriptor{
-		{
+	return manifestOCI1FromComponents(descriptorOCI1{
+		descriptor: descriptor{
+			MediaType: imgspecv1.MediaTypeImageConfig,
+			Size:      5940,
+			Digest:    "sha256:9ca4bda0a6b3727a6ffcc43e981cad0f24e2ec79d338f6ba325b4dfd0756fb8f",
+		},
+		Annotations: map[string]string{
+			"test-annotation-1": "one",
+		},
+	}, nil, configBlob, []descriptorOCI1{
+		{descriptor: descriptor{
 			MediaType: imgspecv1.MediaTypeImageLayerGzip,
 			Digest:    "sha256:6a5a5368e0c2d3e5909184fa28ddfd56072e7ff3ee9a945876f7eee5896ef5bb",
 			Size:      51354364,
-		},
-		{
+		}},
+		{descriptor: descriptor{
 			MediaType: imgspecv1.MediaTypeImageLayerGzip,
 			Digest:    "sha256:1bbf5d58d24c47512e234a5623474acf65ae00d4d1414272a893204f44cc680c",
 			Size:      150,
-		},
-		{
+		}},
+		{descriptor: descriptor{
 			MediaType: imgspecv1.MediaTypeImageLayerGzip,
 			Digest:    "sha256:8f5dc8a4b12c307ac84de90cdd9a7f3915d1be04c9388868ca118831099c67a9",
 			Size:      11739507,
-		},
+		}},
 		{
-			MediaType: imgspecv1.MediaTypeImageLayerGzip,
-			Digest:    "sha256:bbd6b22eb11afce63cc76f6bc41042d99f10d6024c96b655dafba930b8d25909",
-			Size:      8841833,
+			descriptor: descriptor{
+				MediaType: imgspecv1.MediaTypeImageLayerGzip,
+				Digest:    "sha256:bbd6b22eb11afce63cc76f6bc41042d99f10d6024c96b655dafba930b8d25909",
+				Size:      8841833,
+			},
+			Annotations: map[string]string{
+				"test-annotation-2": "two",
+			},
 		},
-		{
+		{descriptor: descriptor{
 			MediaType: imgspecv1.MediaTypeImageLayerGzip,
 			Digest:    "sha256:960e52ecf8200cbd84e70eb2ad8678f4367e50d14357021872c10fa3fc5935fa",
 			Size:      291,
-		},
+		}},
 	})
 }
 
@@ -118,6 +128,9 @@ func TestManifestOCI1ConfigInfo(t *testing.T) {
 		assert.Equal(t, types.BlobInfo{
 			Size:   5940,
 			Digest: "sha256:9ca4bda0a6b3727a6ffcc43e981cad0f24e2ec79d338f6ba325b4dfd0756fb8f",
+			Annotations: map[string]string{
+				"test-annotation-1": "one",
+			},
 		}, m.ConfigInfo())
 	}
 }
@@ -198,12 +211,29 @@ func TestManifestOCI1LayerInfo(t *testing.T) {
 			{
 				Digest: "sha256:bbd6b22eb11afce63cc76f6bc41042d99f10d6024c96b655dafba930b8d25909",
 				Size:   8841833,
+				Annotations: map[string]string{
+					"test-annotation-2": "two",
+				},
 			},
 			{
 				Digest: "sha256:960e52ecf8200cbd84e70eb2ad8678f4367e50d14357021872c10fa3fc5935fa",
 				Size:   291,
 			},
 		}, m.LayerInfos())
+	}
+}
+
+func TestManifestOCI1EmbeddedDockerReferenceConflicts(t *testing.T) {
+	for _, m := range []genericManifest{
+		manifestOCI1FromFixture(t, unusedImageSource{}, "oci1.json"),
+		manifestOCI1FromComponentsLikeFixture(nil),
+	} {
+		for _, name := range []string{"busybox", "example.com:5555/ns/repo:tag"} {
+			ref, err := reference.ParseNormalizedNamed(name)
+			require.NoError(t, err)
+			conflicts := m.EmbeddedDockerReferenceConflicts(ref)
+			assert.False(t, conflicts)
+		}
 	}
 }
 
@@ -287,6 +317,19 @@ func TestManifestOCI1UpdatedImage(t *testing.T) {
 		LayerInfos: append(layerInfos, layerInfos[0]),
 	})
 	assert.Error(t, err)
+
+	// EmbeddedDockerReference:
+	// … is ignored
+	embeddedRef, err := reference.ParseNormalizedNamed("busybox")
+	require.NoError(t, err)
+	res, err = original.UpdatedImage(types.ManifestUpdateOptions{
+		EmbeddedDockerReference: embeddedRef,
+	})
+	require.NoError(t, err)
+	nonEmbeddedRef, err := reference.ParseNormalizedNamed("notbusybox:notlatest")
+	require.NoError(t, err)
+	conflicts := res.EmbeddedDockerReferenceConflicts(nonEmbeddedRef)
+	assert.False(t, conflicts)
 
 	// ManifestMIMEType:
 	// Only smoke-test the valid conversions, detailed tests are below. (This also verifies that “original” is not affected.)

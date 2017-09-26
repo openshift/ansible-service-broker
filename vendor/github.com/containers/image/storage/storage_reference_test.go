@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,7 +58,12 @@ var validReferenceTestCases = []struct {
 
 func TestStorageReferenceStringWithinTransport(t *testing.T) {
 	store := newStore(t)
-	storeSpec := fmt.Sprintf("[%s@%s]", store.GetGraphDriverName(), store.GetGraphRoot())
+	optionsList := ""
+	options := store.GraphOptions()
+	if len(options) > 0 {
+		optionsList = ":" + strings.Join(options, ",")
+	}
+	storeSpec := fmt.Sprintf("[%s@%s+%s%s]", store.GraphDriverName(), store.GraphRoot(), store.RunRoot(), optionsList)
 
 	for _, c := range validReferenceTestCases {
 		ref, err := Transport.ParseReference(c.input)
@@ -68,7 +74,7 @@ func TestStorageReferenceStringWithinTransport(t *testing.T) {
 
 func TestStorageReferencePolicyConfigurationIdentity(t *testing.T) {
 	store := newStore(t)
-	storeSpec := fmt.Sprintf("[%s@%s]", store.GetGraphDriverName(), store.GetGraphRoot())
+	storeSpec := fmt.Sprintf("[%s@%s]", store.GraphDriverName(), store.GraphRoot())
 
 	for _, c := range validReferenceTestCases {
 		ref, err := Transport.ParseReference(c.input)
@@ -79,7 +85,7 @@ func TestStorageReferencePolicyConfigurationIdentity(t *testing.T) {
 
 func TestStorageReferencePolicyConfigurationNamespaces(t *testing.T) {
 	store := newStore(t)
-	storeSpec := fmt.Sprintf("[%s@%s]", store.GetGraphDriverName(), store.GetGraphRoot())
+	storeSpec := fmt.Sprintf("[%s@%s]", store.GraphDriverName(), store.GraphRoot())
 
 	for _, c := range validReferenceTestCases {
 		ref, err := Transport.ParseReference(c.input)
@@ -89,7 +95,7 @@ func TestStorageReferencePolicyConfigurationNamespaces(t *testing.T) {
 			expectedNS = append(expectedNS, storeSpec+ns)
 		}
 		expectedNS = append(expectedNS, storeSpec)
-		expectedNS = append(expectedNS, fmt.Sprintf("[%s]", store.GetGraphRoot()))
+		expectedNS = append(expectedNS, fmt.Sprintf("[%s]", store.GraphRoot()))
 		assert.Equal(t, expectedNS, ref.PolicyConfigurationNamespaces())
 	}
 }
