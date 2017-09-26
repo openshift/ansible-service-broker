@@ -38,6 +38,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
+	"github.com/openshift/ansible-service-broker/pkg/version"
 )
 
 // MsgBufferSize - The buffer for the message channel.
@@ -65,7 +66,7 @@ func CreateApp() App {
 	}
 
 	if app.args.Version {
-		fmt.Println(Version)
+		fmt.Println(version.Version)
 		os.Exit(0)
 	}
 
