@@ -144,12 +144,20 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 
 func isCompatibleVersion(specVersion string, minVersion string, maxVersion string) bool {
 	specFloat, err := strconv.ParseFloat(specVersion, 64)
-	minFloat, err := strconv.ParseFloat(minVersion, 64)
-	maxFloat, err := strconv.ParseFloat(maxVersion, 64)
-
 	if err != nil {
 		return false
 	}
+
+	minFloat, err := strconv.ParseFloat(minVersion, 64)
+	if err != nil {
+		return false
+	}
+
+	maxFloat, err := strconv.ParseFloat(maxVersion, 64)
+	if err != nil {
+		return false
+	}
+
 	if specFloat >= minFloat && specFloat <= maxFloat {
 		return true
 	}
