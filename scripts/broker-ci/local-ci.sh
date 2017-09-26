@@ -58,6 +58,9 @@ function unbind {
 
 function bind-credential-check {
     set +x
+    print-with-green "Waiting for the Bind to be created"
+    sleep 10
+
     RETRIES=10
     for x in $(seq $RETRIES); do
 	oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default  --force --grace-period=10 || BIND_ERROR=true
@@ -73,7 +76,7 @@ function bind-credential-check {
 	else
 	    print-with-yellow "Pod presets not found in the MediaWiki pod"
 	    print-with-yellow "Retrying..."
-	    sleep 5
+	    sleep 10
 	fi
     done
 
