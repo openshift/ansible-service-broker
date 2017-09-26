@@ -8,7 +8,7 @@ NAMESPACE="${NAMESPACE:-default}"
 
 if [ "${RESOURCE}" = "pod" ] && [ "${ACTION}" = "create" ]; then
     for r in $(seq 100); do
-	pod=$(oc get pods -n ${NAMESPACE} | grep ${RESOURCE_NAME} | awk $'{ print $3 }')
+	pod=$(oc get pods -n ${NAMESPACE} | grep ${RESOURCE_NAME} | awk $'{ print $3 }' | grep Running)
 	oc get pods -n default | grep ${RESOURCE_NAME}
 	if [ "${pod}" = 'Running' ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} is running"
