@@ -104,9 +104,7 @@ func updateMetadata(metadata map[string]interface{}, params []apb.ParameterDescr
 			"update": map[string]interface{}{},
 		},
 		"service_binding": map[string]interface{}{
-			"create": map[string]interface{}{
-				"openshift_form_definition": formDefinition,
-			},
+			"create": map[string]interface{}{},
 		},
 	}
 
@@ -235,7 +233,7 @@ func parametersToSchema(params []apb.ParameterDescriptor) Schema {
 				"parameters": {
 					SchemaRef:  schema.SchemaURL,
 					Type:       []schema.PrimitiveType{schema.ObjectType},
-					Properties: properties,
+					Properties: make(map[string]*schema.Schema),
 				},
 			},
 		},
