@@ -1,6 +1,5 @@
 #!/bin/bash
 source "$(dirname "${BASH_SOURCE}")/lib/init.sh"
-source "${SCRIPT_DIR}/cluster-redirect.sh"
 
 ###
 # This script is intended to allow us to run the broker locally but
@@ -23,9 +22,16 @@ BROKER_SVC_ACCT="system:serviceaccount:${ASB_PROJECT}:${BROKER_SVC_ACCT_NAME}"
 # Faking out https://github.com/kubernetes/client-go/blob/master/rest/config.go#L309
 export KUBERNETES_SERVICE_HOST=${CLUSTER_HOST}
 export KUBERNETES_SERVICE_PORT=${CLUSTER_PORT}
-if [ -n "${KUBERNETES}" ] && [ "${KUBERNETES_SERVICE_PORT}" == "8443" ]; then
-    echo "ERROR: Kubernetes uses port 6443, not ${KUBERNETES_SERVICE_PORT}"
-    exit 1
+if [ -n "${KUBERNETES}" ]; then
+    echo "Kubernetes Cluster"
+    if [ "${KUBERNETES_SERVICE_PORT}" == "8443" ]; then
+	echo "ERROR: Kubernetes uses port 6443, not ${KUBERNETES_SERVICE_PORT}"
+	exit 1
+    fi
+    source "${SCRIPT_DIR}/kubernetes/resources.sh"
+else
+    echo "OpenShift Cluster"
+    source "${SCRIPT_DIR}/openshift/resources.sh"
 fi
 
 SVC_ACCT_TOKEN_DIR=/var/run/secrets/kubernetes.io/serviceaccount
@@ -58,7 +64,7 @@ echo "Broker Service Account Token is in secret: ${BROKER_SVC_ACCT_SECRET_NAME}"
 ###
 # Fetch the service-ca.crt for the service account
 ###
-SVC_ACCT_CA_CRT_DATA="$(get-ca)"
+SVC_ACCT_CA_CRT_DATA="$(cluster::get-ca)"
 # Base64 Decode
 SVC_ACCT_CA_CRT_DATA=`echo ${SVC_ACCT_CA_CRT_DATA} | base64 --decode `
 if [ "$?" -ne 0 ]; then
@@ -136,7 +142,7 @@ fi
 echo "TLS Cert: tls.crt"
 echo -e "Wrote \n${TLS_KEY_DATA}\n to: ${TLS_KEY}\n"
 # Kill any running broker pods
-deployments scale asb --replicas 0 -n ${ASB_PROJECT}
+cluster::deployments scale asb --replicas 0 -n ${ASB_PROJECT}
 # Wait for asb pod to be destroyed
 kubectl get pods -n ${ASB_PROJECT} | grep asb
 while [ "$?" -ne 1 ]; do
@@ -159,11 +165,11 @@ TERMINATION="reencrypt"
 kubectl delete deployment etcd -n ${ASB_PROJECT}
 kubectl delete endpoints asb -n ${ASB_PROJECT}
 kubectl delete service asb  -n ${ASB_PROJECT}
-routes delete asb-etcd -n ${ASB_PROJECT}
+cluster::routes delete asb-etcd -n ${ASB_PROJECT}
 kubectl delete service etcd -n ${ASB_PROJECT}
 
 # Process required changes for local development
-process ${TEMPLATE_LOCAL_DEV} ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} -p TERMINATION=${TERMINATION}
+cluster::process ${TEMPLATE_LOCAL_DEV} ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} -p TERMINATION=${TERMINATION}
 
 echo "Sleeping for a few seconds to avoid issues with broker not being able to talk to etcd."
 echo "Appears like there is a delay of when we create the asb-etcd route and when it is available for use"
@@ -173,8 +179,8 @@ if [ "$LOCAL_ETCD" == "true" ]; then
   ETCD_ROUTE="localhost"
   ETCD_PORT=2379
 else
-  ETCD_ROUTE=`routes get asb-etcd -n ${ASB_PROJECT} -o=jsonpath=\'\{.spec.host\}\'`
-  ETCD_PORT="$(ectd-port)"
+  ETCD_ROUTE=`cluster::routes get asb-etcd -n ${ASB_PROJECT} -o=jsonpath=\'\{.spec.host\}\'`
+  ETCD_PORT="$(cluster::etcd-port)"
 fi
 
 echo "etcd route is at: ${ETCD_ROUTE}"

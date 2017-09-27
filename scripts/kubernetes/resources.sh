@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function deployments {
+function cluster::deployments {
     action="$1"
     name="$2"
     args="${@:3}"
@@ -8,7 +8,7 @@ function deployments {
     kubectl $action deployments $name $args
 }
 
-function routes {
+function cluster::routes {
     action="$1"
     name="$2"
     args="${@:3}"
@@ -29,7 +29,7 @@ function routes {
     fi
 }
 
-function process {
+function cluster::process {
     "${TEMPLATE_DIR}/k8s-template.py"
     kubectl create -f "${TEMPLATE_DIR}/k8s-local-dev-changes.yaml"
 
@@ -51,10 +51,10 @@ subsets:
 EOF
 }
 
-function get-ca {
+function cluster::get-ca {
     kubectl get secret ${BROKER_SVC_ACCT_SECRET_NAME} -n ${ASB_PROJECT} -o jsonpath='{ .data.ca\.crt }'
 }
 
-function ectd-port {
+function cluster::etcd-port {
     kubectl get endpoints | grep etcd | awk '{ print $2 }' | cut -f 2 -d ':'
 }
