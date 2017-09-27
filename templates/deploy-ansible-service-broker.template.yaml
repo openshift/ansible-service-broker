@@ -27,7 +27,7 @@ objects:
   metadata:
     name: asb
     namespace: ansible-service-broker
-    
+
 - apiVersion: authorization.openshift.io/v1
   kind: ClusterRoleBinding
   metadata:

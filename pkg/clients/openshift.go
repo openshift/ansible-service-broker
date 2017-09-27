@@ -190,7 +190,7 @@ func autoConvertV1PolicyRulesToAuthorizationPolicyRules(in []PolicyRule) ([]auth
 
 // Openshift - Create a new openshift client if needed, returns reference
 func Openshift(log *logging.Logger) (*OpenshiftClient, error) {
-	errMsg := "Something went wrong while initializing kubernetes client!\n"
+	errMsg := "Something went wrong while initializing openshift client!\n"
 	once.Openshift.Do(func() {
 		client, err := newOpenshift(log)
 		if err != nil {
@@ -204,7 +204,7 @@ func Openshift(log *logging.Logger) (*OpenshiftClient, error) {
 		instances.Openshift = client
 	})
 	if instances.Openshift == nil {
-		return nil, errors.New("Kubernetes client instance is nil")
+		return nil, errors.New("OpenShift client instance is nil")
 	}
 	return instances.Openshift, nil
 }
