@@ -29,3 +29,19 @@ import (
 func TestSpecLabel(t *testing.T) {
 	ft.AssertEqual(t, BundleSpecLabel, "com.redhat.apb.spec", "spec label does not match dockerhub")
 }
+
+func TestVersionCheck(t *testing.T) {
+	// Test equal versions
+	ft.AssertTrue(t, isCompatibleVersion("1.0", "1.0", "1.0"))
+	// Test out of range by major version
+	ft.AssertFalse(t, isCompatibleVersion("2.0", "1.0", "1.9"))
+	// Test out of range by minor version
+	ft.AssertFalse(t, isCompatibleVersion("1.10", "1.0", "1.9"))
+	// Test out of range by major and minor version
+	ft.AssertFalse(t, isCompatibleVersion("2.4", "1.0", "2.1"))
+	// Test out of range by major and minor version
+	ft.AssertFalse(t, isCompatibleVersion("0.6", "1.0", "2.1"))
+	// Test out of range by major and minor version
+	ft.AssertFalse(t, isCompatibleVersion("0.1.0", "1.0", "1.0"))
+
+}

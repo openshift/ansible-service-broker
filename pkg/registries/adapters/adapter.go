@@ -26,19 +26,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-<<<<<<< 0ea830aefd681721fd2f7b4e997115b7a3ace3ef
 	"strconv"
+	"strings"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/version"
-=======
-  "strconv"
-
-	logging "github.com/op/go-logging"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
-  "github.com/openshift/ansible-service-broker/pkg/version"
->>>>>>> Added versioning check when adding images
 	yaml "gopkg.in/yaml.v1"
 )
 
@@ -121,16 +114,15 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skiping")
 		return nil, nil
 	}
-<<<<<<< 0ea830aefd681721fd2f7b4e997115b7a3ace3ef
 	if conf.Config.Label.Version == "" {
 		log.Infof("Didn't find encoded Version label. Assuming image is not APB and skipping")
 		return nil, nil
 	}
-  if isCompatibleVersion(conf.Config.Label.Version, version.MinAPBVersion, version.MaxAPBVersion) != true {
-    log.Infof("APB spec version was incompatible. Assuming image is incompatible and skipping")
-    return nil, nil
-  }
-  
+	if isCompatibleVersion(conf.Config.Label.Version, version.MinAPBVersion, version.MaxAPBVersion) != true {
+		log.Infof("APB spec version was incompatible. Assuming image is incompatible and skipping")
+		return nil, nil
+	}
+
 	encodedSpec := conf.Config.Label.Spec
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
@@ -152,23 +144,27 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 }
 
 func isCompatibleVersion(specVersion string, minVersion string, maxVersion string) bool {
-	specFloat, err := strconv.ParseFloat(specVersion, 64)
+	specMajorVersion, err := strconv.Atoi(strings.Split(specVersion, ".")[0])
+	specMinorVersion, err := strconv.Atoi(strings.Split(specVersion, ".")[1])
+	minMajorVersion, err := strconv.Atoi(strings.Split(minVersion, ".")[0])
+	minMinorVersion, err := strconv.Atoi(strings.Split(minVersion, ".")[1])
+	maxMajorVersion, err := strconv.Atoi(strings.Split(maxVersion, ".")[0])
+	maxMinorVersion, err := strconv.Atoi(strings.Split(maxVersion, ".")[1])
 	if err != nil {
 		return false
 	}
-
-	minFloat, err := strconv.ParseFloat(minVersion, 64)
-	if err != nil {
-		return false
-	}
-
-	maxFloat, err := strconv.ParseFloat(maxVersion, 64)
-	if err != nil {
-		return false
-	}
-
-	if specFloat >= minFloat && specFloat <= maxFloat {
-		return true
+	if minMajorVersion == maxMajorVersion {
+		if specMajorVersion >= minMajorVersion && specMajorVersion <= maxMajorVersion {
+			if specMinorVersion >= minMinorVersion && specMinorVersion <= maxMinorVersion {
+				return true
+			}
+		}
+	} else if minMajorVersion < maxMajorVersion {
+		if specMajorVersion == minMajorVersion && specMinorVersion >= minMinorVersion {
+			return true
+		} else if specMajorVersion == maxMajorVersion && specMinorVersion <= maxMinorVersion {
+			return true
+		}
 	}
 	return false
 }
