@@ -34,6 +34,10 @@ import (
 	"k8s.io/kubernetes/pkg/api/v1"
 )
 
+const (
+	transientNameSpaceKey = "apb"
+)
+
 // ExecuteApb - Runs an APB Action with a provided set of inputs
 func ExecuteApb(
 	action string,
@@ -56,7 +60,6 @@ func ExecuteApb(
 	log.Debug("action:[ %s ]", action)
 	log.Debug("pullPolciy:[ %s ]", clusterConfig.PullPolicy)
 	log.Debug("role:[ %s ]", clusterConfig.SandboxRole)
-
 	// It's a critical error if a Namespace is not provided to the
 	// broker because its required to know where to execute the pods and
 	// sandbox them based on that Namespace. Should fail fast and loud,
@@ -73,25 +76,39 @@ func ExecuteApb(
 	}
 
 	secrets := GetSecrets(spec)
-
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		return executionContext, err
+	}
 	if len(secrets) > 0 {
 		executionContext.Namespace = clusterConfig.Namespace
 		executionContext.Targets = append(executionContext.Targets, context.Namespace)
 	} else {
-		executionContext.Namespace = context.Namespace
+		// Using a new UUID is sane, because it will have some gurantee
+		// of uniquenes and will meet DNS name requirements.
+		executionContext.Namespace = uuid.New()
+		executionContext.Targets = append(executionContext.Targets, context.Namespace)
+		// Create namespace.
+		namespace := v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{transientNameSpaceKey: spec.FQName},
+				Name:   executionContext.Namespace,
+			},
+		}
+		_, err := k8scli.CoreV1().Namespaces().Create(&namespace)
+		if err != nil {
+			return executionContext, err
+		}
 	}
 	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 
 	sam := NewServiceAccountManager(log)
 	executionContext.ServiceAccount, err = sam.CreateApbSandbox(executionContext, clusterConfig.SandboxRole)
-
 	if err != nil {
 		log.Error(err.Error())
 		return executionContext, err
 	}
-
 	volumes, volumeMounts := buildVolumeSpecs(secrets)
-
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: executionContext.PodName,
@@ -120,12 +137,7 @@ func ExecuteApb(
 	}
 
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
-	k8scli, err := clients.Kubernetes(log)
-	if err != nil {
-		return executionContext, err
-	}
 	_, err = k8scli.CoreV1().Pods(executionContext.Namespace).Create(pod)
-
 	return executionContext, err
 }
 

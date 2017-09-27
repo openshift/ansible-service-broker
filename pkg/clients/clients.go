@@ -32,9 +32,11 @@ var instances struct {
 	Etcd             etcd.Client
 	Kubernetes       *k8s.Clientset
 	KubernetesConfig *rest.Config
+	Openshift        *OpenshiftClient
 }
 
 var once struct {
 	Etcd       sync.Once
 	Kubernetes sync.Once
+	Openshift  sync.Once
 }

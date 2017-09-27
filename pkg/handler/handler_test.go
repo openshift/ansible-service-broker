@@ -21,6 +21,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -92,21 +93,25 @@ func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest) (*broker.UpdateResp
 	m.called("update", true)
 	return nil, m.Err
 }
-func (m MockBroker) Deprovision(uuid.UUID, string, bool) (*broker.DeprovisionResponse, error) {
+func (m MockBroker) Deprovision(apb.ServiceInstance, string, bool) (*broker.DeprovisionResponse, error) {
 	m.called("deprovision", true)
 	return nil, m.Err
 }
-func (m MockBroker) Bind(uuid.UUID, uuid.UUID, *broker.BindRequest) (*broker.BindResponse, error) {
+func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest) (*broker.BindResponse, error) {
 	m.called("bind", true)
 	return nil, m.Err
 }
-func (m MockBroker) Unbind(uuid.UUID, uuid.UUID, string) (*broker.UnbindResponse, error) {
+func (m MockBroker) Unbind(apb.ServiceInstance, uuid.UUID, string) (*broker.UnbindResponse, error) {
 	m.called("unbind", true)
 	return nil, m.Err
 }
 func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*broker.LastOperationResponse, error) {
 	state := broker.LastOperationStateInProgress
 	return &broker.LastOperationResponse{State: state, Description: ""}, m.Err
+}
+
+func (m MockBroker) GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error) {
+	return apb.ServiceInstance{}, nil
 }
 
 func (m MockBroker) Recover() (string, error) {
@@ -141,18 +146,19 @@ func init() {
 	logging.SetBackend(backend, backendFormatter)
 	// will default to all config values to false
 	brokerConfig = broker.Config{}
+	brokerConfig.AutoEscalate = true
 }
 
 func TestNewHandler(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
-	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil, nil)
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
 func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil, nil)
 	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -170,7 +176,7 @@ func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig, "/test-prefix", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "/test-prefix", nil, nil)
 	req, err := http.NewRequest(http.MethodPost, "/test-prefix/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -188,7 +194,7 @@ func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil, nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -202,7 +208,7 @@ func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
 func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil, nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -216,7 +222,7 @@ func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
 func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = false
-	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil, nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -230,7 +236,7 @@ func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
 func TestDevHandlerDoesHaveAPBSpecsDeleteRoute(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	brokerConfig.DevBroker = true
-	testhandler := NewHandler(testb, log, brokerConfig, "", nil)
+	testhandler := NewHandler(testb, log, brokerConfig, "", nil, nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -311,7 +317,6 @@ func TestProvisionAccepted(t *testing.T) {
 	ft.AssertEqual(t, w.Code, 201, "should've been 201 accepted")
 	ft.AssertOperation(t, w.Body, testuuid)
 }
-
 func TestUpdate(t *testing.T) {
 }
 
@@ -410,7 +415,7 @@ func TestLastOperation(t *testing.T) {
 func buildBootstrapHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig, nil}
 
 	r := httptest.NewRequest("POST", "/v2/bootstrap", nil)
 	w := httptest.NewRecorder()
@@ -420,7 +425,7 @@ func buildBootstrapHandler(err error) (handler, *httptest.ResponseRecorder, *htt
 func buildCatalogHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig, nil}
 
 	r := httptest.NewRequest("GET", "/v2/catalog", nil)
 	w := httptest.NewRecorder()
@@ -430,11 +435,12 @@ func buildCatalogHandler(err error) (handler, *httptest.ResponseRecorder, *http.
 func buildProvisionHandler(testuuid string, err error, operation string) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err, Operation: operation}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig, nil}
 
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT", fmt.Sprintf("/v2/service_instance/%s", testuuid), trr)
 	r.Header.Add("Content-Type", "application/json")
+	r = r.WithContext(context.WithValue(r.Context(), UserInfoContext, broker.UserInfo{Username: "admin"}))
 	w := httptest.NewRecorder()
 	params := map[string]string{
 		"instance_uuid":      testuuid,
@@ -446,7 +452,7 @@ func buildProvisionHandler(testuuid string, err error, operation string) (handle
 func buildLastOperationHandler(testuuid string, err error) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig, nil}
 
 	r := httptest.NewRequest("GET",
 		fmt.Sprintf("/v2/service_instance/%s/last_operation?operation=%s", testuuid, testuuid), nil)
@@ -462,12 +468,13 @@ func buildLastOperationHandler(testuuid string, err error) (handler, *httptest.R
 func buildBindHandler(testuuid string, err error) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
-	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig}
+	testhandler := handler{*mux.NewRouter(), testb, log, brokerConfig, nil}
 
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT",
 		fmt.Sprintf("/v2/service_instance/%s/service_bindings/%s", testuuid, testuuid), trr)
 	r.Header.Add("Content-Type", "application/json")
+	r = r.WithContext(context.WithValue(r.Context(), UserInfoContext, broker.UserInfo{Username: "admin"}))
 	w := httptest.NewRecorder()
 	params := map[string]string{
 		"instance_uuid": testuuid,

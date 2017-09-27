@@ -21,15 +21,20 @@
 package handler
 
 import (
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"os"
 	"strconv"
+	"strings"
 
 	yaml "gopkg.in/yaml.v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/apis/rbac"
+	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -37,16 +42,30 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/pborman/uuid"
+)
+
+// RequestContextKey - keys that will be used in the request context
+type RequestContextKey string
+
+const (
+	// OriginatingIdentityHeader is the header for the originating identity
+	// or the user to check/impersonate
+	OriginatingIdentityHeader = "X-Broker-API-Originating-Identity"
+	// UserInfoContext - Broker.UserInfo retrieved from the
+	// originating identity header
+	UserInfoContext RequestContextKey = "userInfo"
 )
 
 // TODO: implement asynchronous operations
 
 type handler struct {
-	router       mux.Router
-	broker       broker.Broker
-	log          *logging.Logger
-	brokerConfig broker.Config
+	router           mux.Router
+	broker           broker.Broker
+	log              *logging.Logger
+	brokerConfig     broker.Config
+	clusterRoleRules []rbac.PolicyRule
 }
 
 // authHandler - does the authentication for the routes
@@ -79,6 +98,52 @@ func authHandler(h http.Handler, providers []auth.Provider, log *logging.Logger)
 	})
 }
 
+func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//Retrieve the UserInfo from request if available.
+		userJSONStr := r.Header.Get(OriginatingIdentityHeader)
+		if userJSONStr != "" {
+			userStr := strings.Split(userJSONStr, " ")
+			if len(userStr) != 2 {
+				//If we do not understand the user, but something was sent, we should return a 404.
+				log.Debugf("Not enough values in header "+
+					"for originating origin header - %v", userJSONStr)
+				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header",
+				})
+				return
+			}
+			userInfo := broker.UserInfo{}
+			uStr, err := base64.StdEncoding.DecodeString(userStr[1])
+			if err != nil {
+				//If we do not understand the user, but something was sent, we should return a 404.
+				log.Debugf("Unable to decode base64 encoding "+
+					"for originating origin header - %v", err)
+				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header",
+				})
+				return
+			}
+			err = json.Unmarshal(uStr, &userInfo)
+			if err != nil {
+				log.Debugf("Unable to marshal into object "+
+					"for originating origin header - %v", err)
+				//If we do not understand the user, but something was sent, we should return a 404.
+				writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+					Description: "Invalid User Info in Originating Identity Header",
+				})
+				return
+			}
+			r = r.WithContext(context.WithValue(
+				r.Context(), UserInfoContext, userInfo),
+			)
+		} else {
+			log.Debugf("Unable to find originating origin header")
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 // GorillaRouteHandler - gorilla route handler
 // making the handler methods more testable by moving the reliance of mux.Vars()
 // outside of the handlers themselves
@@ -94,12 +159,15 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string, providers []auth.Provider) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string,
+	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule,
+) http.Handler {
 	h := handler{
-		router:       *mux.NewRouter(),
-		broker:       b,
-		log:          log,
-		brokerConfig: brokerConfig,
+		router:           *mux.NewRouter(),
+		broker:           b,
+		log:              log,
+		brokerConfig:     brokerConfig,
+		clusterRoleRules: clusterRoleRules,
 	}
 	var s *mux.Router
 	if prefix == "/" {
@@ -129,7 +197,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 		s.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	return handlers.LoggingHandler(os.Stdout, authHandler(h, providers, log))
+	return handlers.LoggingHandler(os.Stdout, authHandler(userInfoHandler(h, log), providers, log))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -175,8 +243,25 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
-	// Ok let's provision this bad boy
+	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
 
+		if ok, status, err := h.validateUser(userInfo.Username, req.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+	}
+	// Ok let's provision this bad boy
 	resp, err := h.broker.Provision(instanceUUID, req, async)
 
 	if err != nil {
@@ -237,7 +322,38 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "deprovision request missing plan_id query parameter"})
 	}
 
-	resp, err := h.broker.Deprovision(instanceUUID, planID, async)
+	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusGone, broker.DeprovisionResponse{})
+			return
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	}
+
+	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
+
+		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+	}
+
+	resp, err := h.broker.Deprovision(serviceInstance, planID, async)
 
 	if err != nil {
 		h.log.Debug("err for deprovision - %#v", err)
@@ -278,8 +394,37 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		return
 	}
 
+	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		}
+	}
+
+	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
+
+		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+	}
+
 	// process binding request
-	resp, err := h.broker.Bind(instanceUUID, bindingUUID, req)
+	resp, err := h.broker.Bind(serviceInstance, bindingUUID, req)
 
 	if err != nil {
 		switch err {
@@ -316,7 +461,32 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 	if planID == "" {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})
 	}
-	resp, err := h.broker.Unbind(instanceUUID, bindingUUID, planID)
+
+	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		writeResponse(w, http.StatusGone, nil)
+		return
+	}
+
+	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
+		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+	}
+
+	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID)
 
 	if errors.IsNotFound(err) {
 		writeResponse(w, http.StatusGone, resp)
@@ -450,4 +620,23 @@ func (h handler) printRequest(req *http.Request) {
 		}
 		h.log.Infof("Request: %q", b)
 	}
+}
+
+// validateUser will use the cached cluster role's rules, and retrieve
+// the rules for the user in the namespace to determine if the user's roles
+// can cover the  all of the cluster role's rules.
+func (h handler) validateUser(userName, namespace string) (bool, int, error) {
+	openshiftClient, err := clients.Openshift(h.log)
+	if err != nil {
+		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
+	}
+	// Retrieving the rules for the user in the namespace.
+	prs, err := openshiftClient.SubjectRulesReview(userName, namespace, h.log)
+	if err != nil {
+		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
+	}
+	if covered, _ := validation.Covers(prs, h.clusterRoleRules); !covered {
+		return false, http.StatusBadRequest, fmt.Errorf("User does not have sufficient permissions")
+	}
+	return true, http.StatusOK, nil
 }

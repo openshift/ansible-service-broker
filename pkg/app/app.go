@@ -30,6 +30,7 @@ import (
 	"time"
 
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -38,6 +39,8 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
+	"k8s.io/kubernetes/pkg/apis/rbac"
+	v1beta1rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -307,6 +310,16 @@ func (a *App) Start() {
 		panic(servererr)
 	}
 
+	rules := []rbac.PolicyRule{}
+	if !a.config.Broker.AutoEscalate {
+		rules, err = retrieveClusterRoleRules(a.config.Openshift.SandboxRole, a.log.Logger)
+		if err != nil {
+			a.log.Errorf("Unable to retrieve cluster roles rules from cluster\n"+
+				" You must be using OpenShift 3.7 to use the User rules check.\n%v", err)
+			os.Exit(1)
+		}
+	}
+
 	var clusterURL string
 	if a.config.Broker.ClusterURL != "" {
 		if !strings.HasPrefix("/", a.config.Broker.ClusterURL) {
@@ -317,7 +330,8 @@ func (a *App) Start() {
 	} else {
 		clusterURL = defaultClusterURLPreFix
 	}
-	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers)
+
+	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers, rules)
 
 	if clusterURL == "/" {
 		genericserver.Handler.NonGoRestfulMux.HandlePrefix("/", daHandler)
@@ -367,4 +381,22 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	}
 
 	return nil
+}
+
+func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]rbac.PolicyRule, error) {
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieve Cluster Role that has been defined.
+	k8sRole, err := k8scli.Rbac().ClusterRoles().Get(clusterRole, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	rbacClusterRole := rbac.ClusterRole{}
+	if v1beta1rbac.Convert_v1beta1_ClusterRole_To_rbac_ClusterRole(k8sRole, &rbacClusterRole, nil); err != nil {
+		return nil, err
+	}
+	return rbacClusterRole.Rules, nil
 }
