@@ -11,6 +11,7 @@ import unicodedata
 import uuid
 import yaml
 
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from subprocess import Popen, PIPE
 from distutils import spawn
 
@@ -19,8 +20,12 @@ SCRIPT_DIR = sys.path[0]
 RECORDS_FILE = '/tmp/asbcli.dat.json'
 BROKER_IMAGE = 'ansibleplaybookbundle/ansible-service-broker-apb'
 
+proc = Popen(["oc whoami -t"], stdout=PIPE, shell=True)
+(TOKEN, err) = proc.communicate()
+
 BROKER_HEADERS = {
-    'X-Broker-API-Version': '2.9'
+    'X-Broker-API-Version': '2.9',
+    'Authorization': 'Bearer ' + TOKEN.rstrip()
 }
 
 AVAILABLE_COMMANDS = {
@@ -28,6 +33,7 @@ AVAILABLE_COMMANDS = {
     'up': 'Bring up a broker in a target cluster'
 }
 
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 def req(url, **kwargs):
     # merge in broker headers if provided
@@ -39,8 +45,7 @@ def req(url, **kwargs):
 
     verb = kwargs.pop('verb', 'get')
 
-    return getattr(requests, verb)(url, **kwargs)
-
+    return getattr(requests, verb)(url, verify=False, **kwargs)
 
 def consumer_binding_key(key):
     # Need to perform a conversion from whatever binding key
@@ -612,7 +617,7 @@ class App(object):
             print '  %d | %s | %s' % (bb[0], bb[2], bb[1])
 
     def _url(self, path):
-        return 'http://%s/v2%s' % (self.broker_address, path)
+        return 'https://%s/ansible-service-broker/v2%s' % (self.broker_address, path)
 
 
 def subcmd_connect_parser(parser, subcmd):
