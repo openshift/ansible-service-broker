@@ -222,7 +222,7 @@ func (s *ServiceAccountManager) createFile(handle string) (string, error) {
 }
 
 // DestroyApbSandbox - Destroys the apb sandbox
-func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext, clusterConfig ClusterConfig) error {
+func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext, asbNamespace string) error {
 	s.log.Info("Destroying APB sandbox...")
 	if executionContext.PodName == "" {
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
@@ -233,7 +233,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		return err
 	}
 
-	if clusterConfig.Namespace != executionContext.Namespace {
+	if asbNamespace != executionContext.Namespace {
 		s.log.Debug("Deleting namespace %s", executionContext.Namespace)
 		k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
 

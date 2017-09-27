@@ -89,7 +89,7 @@ func Provision(
 	}
 
 	sm := NewServiceAccountManager(log)
-	sm.DestroyApbSandbox(executionContext, clusterConfig)
+	sm.DestroyApbSandbox(executionContext, clusterConfig.Namespace)
 	if err != nil {
 		log.Error("apb::Provision error occurred.")
 		log.Error("%s", err.Error())
