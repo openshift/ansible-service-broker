@@ -145,14 +145,30 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 
 func isCompatibleVersion(specVersion string, minVersion string, maxVersion string) bool {
 	specMajorVersion, err := strconv.Atoi(strings.Split(specVersion, ".")[0])
+	if err != nil {
+		return false
+	}
 	specMinorVersion, err := strconv.Atoi(strings.Split(specVersion, ".")[1])
+	if err != nil {
+		return false
+	}
 	minMajorVersion, err := strconv.Atoi(strings.Split(minVersion, ".")[0])
+	if err != nil {
+		return false
+	}
 	minMinorVersion, err := strconv.Atoi(strings.Split(minVersion, ".")[1])
+	if err != nil {
+		return false
+	}
 	maxMajorVersion, err := strconv.Atoi(strings.Split(maxVersion, ".")[0])
+	if err != nil {
+		return false
+	}
 	maxMinorVersion, err := strconv.Atoi(strings.Split(maxVersion, ".")[1])
 	if err != nil {
 		return false
 	}
+
 	if minMajorVersion == maxMajorVersion {
 		if specMajorVersion >= minMajorVersion && specMajorVersion <= maxMajorVersion {
 			if specMinorVersion >= minMinorVersion && specMinorVersion <= maxMinorVersion {
