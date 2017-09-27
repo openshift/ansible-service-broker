@@ -45,5 +45,10 @@ func TestVersionCheck(t *testing.T) {
 	ft.AssertFalse(t, isCompatibleVersion("0.6", "1.0", "2.1"))
 	// Test out of range by major and minor version and invalid version
 	ft.AssertFalse(t, isCompatibleVersion("0.1.0", "1.0", "1.0"))
-
+	// Test in range of long possible window
+	ft.AssertTrue(t, isCompatibleVersion("2.5", "1.0", "3.5"))
+	// Test invalid version
+	ft.AssertFalse(t, isCompatibleVersion("1", "1.0", "3.5"))
+	// Test invalid version
+	ft.AssertFalse(t, isCompatibleVersion("2.5", "3.0", "4.2"))
 }
