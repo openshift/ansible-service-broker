@@ -26,9 +26,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/version"
 	yaml "gopkg.in/yaml.v1"
 )
 
@@ -111,6 +113,15 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skiping")
 		return nil, nil
 	}
+	if conf.Config.Label.Version == "" {
+		log.Infof("Didn't find encoded Version label. Assuming image is not APB and skipping")
+		return nil, nil
+	}
+	if isCompatibleVersion(conf.Config.Label.Version, version.MinAPBVersion, version.MaxAPBVersion) != true {
+		log.Infof("APB spec version was incompatible. Assuming image is incompatible and skipping")
+		return nil, nil
+	}
+
 	encodedSpec := conf.Config.Label.Spec
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
@@ -129,4 +140,26 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 	log.Debugf("Successfully converted Image %s into Spec", spec.Image)
 
 	return spec, nil
+}
+
+func isCompatibleVersion(specVersion string, minVersion string, maxVersion string) bool {
+	specFloat, err := strconv.ParseFloat(specVersion, 64)
+	if err != nil {
+		return false
+	}
+
+	minFloat, err := strconv.ParseFloat(minVersion, 64)
+	if err != nil {
+		return false
+	}
+
+	maxFloat, err := strconv.ParseFloat(maxVersion, 64)
+	if err != nil {
+		return false
+	}
+
+	if specFloat >= minFloat && specFloat <= maxFloat {
+		return true
+	}
+	return false
 }
