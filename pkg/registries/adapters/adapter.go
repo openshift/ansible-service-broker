@@ -147,15 +147,7 @@ func isCompatibleVersion(specVersion string, minVersion string, maxVersion strin
 	if err != nil {
 		return false
 	}
-	specMinorVersion, err := strconv.Atoi(strings.Split(specVersion, ".")[1])
-	if err != nil {
-		return false
-	}
 	minMajorVersion, err := strconv.Atoi(strings.Split(minVersion, ".")[0])
-	if err != nil {
-		return false
-	}
-	minMinorVersion, err := strconv.Atoi(strings.Split(minVersion, ".")[1])
 	if err != nil {
 		return false
 	}
@@ -163,25 +155,9 @@ func isCompatibleVersion(specVersion string, minVersion string, maxVersion strin
 	if err != nil {
 		return false
 	}
-	maxMinorVersion, err := strconv.Atoi(strings.Split(maxVersion, ".")[1])
-	if err != nil {
-		return false
-	}
 
-	if minMajorVersion == maxMajorVersion {
-		if specMajorVersion >= minMajorVersion && specMajorVersion <= maxMajorVersion {
-			if specMinorVersion >= minMinorVersion && specMinorVersion <= maxMinorVersion {
-				return true
-			}
-		}
-	} else if minMajorVersion < maxMajorVersion {
-		if specMajorVersion == minMajorVersion && specMinorVersion >= minMinorVersion {
-			return true
-		} else if specMajorVersion == maxMajorVersion && specMinorVersion <= maxMinorVersion {
-			return true
-		} else if specMajorVersion > minMajorVersion && specMajorVersion < maxMajorVersion {
-			return true
-		}
+	if specMajorVersion >= minMajorVersion && specMajorVersion <= maxMajorVersion {
+		return true
 	}
 	return false
 }
