@@ -178,6 +178,7 @@ ssl_cert_key|Tells the broker where to find the tls key file. Can be ignored if 
 ssl_cert|Tells the broker where to find the tls crt file. Can be ignored if using the `--insecure` option but otherwise is required|""|N
 refresh_interval|The interval to query registries for new image specs|"600s"|N
 auto_escalate|Allows the broker to escalate the permissions of a user while running the APB|false|N
+cluster_url|Sets the prefix for the url that the broker is expecting|ansible-service-broker|N
 
 ## Secrets Configuration
 The secrets config section will create associations between secrets in the broker's namespace and apbs the broker runs. 

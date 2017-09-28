@@ -73,6 +73,7 @@ Next, we just need to tell the route to use tls. Example:
       tls:
         termination: <TERMINATION> # this where you will change how the route terminates.
 ```
+
 More info on the secured route can be found in the [OpenShift documentation](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#secured-routes).
 
 In the broker config we need to tell the broker where to look for the certificate and key.
@@ -84,54 +85,3 @@ broker:
   ssl_cert: /etc/tls/private/tls.crt
   ...
 ```
-
-## Broker Insecure Mode
-
-The service broker is able to be run in insecure mode, meaning it will not attempt to load the ```ssl_cert_key``` or ```ssl_cert```. The insecure mode will allow the broker to listen for unencrypted traffic.
-
-There are several mechanisms that can disable TLS/SSL in the broker depending on
-how they are being run. A flag can be passed to the broker executable.
-Configuration changes to catasb or using the prep_local_devel_env script.
-
-The first, when running the broker binary directly you can use the insecure option.
-```bash
-broker --insecure -c /path/to/config
-```
-
-When running the broker using catasb, you can start the broker in insecure mode by
-setting the `broker_insecure_mode` and `broker_endpoint_termination` in the `my_vars`
-configuration file.
-
-For example, to run the broker with [edge](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#edge-termination) encryption termination.
-```yaml
-broker_insecure_mode: true
-broker_endpoint_termination: edge
-```
-This will start the broker with the ```--insecure``` flag set when the broker pod starts up.
-
-Lastly, if you are running the broker locally, you can enable insecure mode by
-changing `BROKER_INSECURE` in `my_local_dev_vars` configuration. The
-`my_local_dev_vars` is located in the `scripts` directory.
-
-For example, add this to your `my_local_dev_vars`:
-```bash
- ...
- BROKER_INSECURE="true"
- ...
-```
-
-Once the configuration is changed, run `scripts/prep_local_devel_env.sh` to prepare the environment. Then run `make run` will start the broker in insecure mode, and the service catalog can connect to your local broker.
-
-### Insecure Broker and Termination Policy Matrix
-The broker and [termination](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#secured-routes) policy are tied together.  Below is a matrix of starting the broker in insecure and secure and the
-type of termination. The table also shows if a particular combination will work or not.
-
-
-| Broker Insecure | Route Termination | Valid Config       |
-|-----------------|-------------------|--------------------|
-| True            | [Edge](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#edge-termination)              | :white_check_mark: |
-| False           | [Edge](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#edge-termination)              | :no_entry_sign:    |
-| True            | [Passthrough](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#passthrough-termination)       | :no_entry_sign:    |
-| False           | [Passthrough](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#passthrough-termination)       | :white_check_mark: |
-| True            | [Re-encrypt](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#re-encryption-termination)        | :no_entry_sign:    |
-| False           | [Re-encrypt](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/routes.html#re-encryption-termination)        | :white_check_mark: |
