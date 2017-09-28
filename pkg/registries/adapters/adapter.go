@@ -110,12 +110,8 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 		log.Infof("Did not find v1 Manifest in image history. Skipping image")
 		return nil, nil
 	}
-	if conf.Config.Label.Spec == "" {
-		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skiping")
-		return nil, nil
-	}
-	if conf.Config.Label.Version == "" {
-		log.Infof("Didn't find encoded Version label. Assuming image is not APB and skipping")
+	if conf.Config.Label.Spec == "" || conf.Config.Label.Version == "" {
+		log.Infof("Didn't find encoded Spec label and version. Assuming image is not APB and skiping")
 		return nil, nil
 	}
 	if isCompatibleVersion(conf.Config.Label.Version, version.MinAPBVersion, version.MaxAPBVersion) != true {
