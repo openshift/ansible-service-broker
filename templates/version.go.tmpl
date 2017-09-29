@@ -1,4 +1,4 @@
-package app
+package version
 
 // Version contains the broker version.
 // DO NOT EDIT GENERATED FILE.

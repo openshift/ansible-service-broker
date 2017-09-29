@@ -6,4 +6,4 @@ changelog_format = %s (%ae)
 
 [version_template]
 template_file = ./templates/version.go.tmpl
-destination_file = ./pkg/app/version.go
+destination_file = ./pkg/version/version.go

@@ -26,9 +26,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/version"
 	yaml "gopkg.in/yaml.v1"
 )
 
@@ -107,10 +110,15 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 		log.Infof("Did not find v1 Manifest in image history. Skipping image")
 		return nil, nil
 	}
-	if conf.Config.Label.Spec == "" {
-		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skiping")
+	if conf.Config.Label.Spec == "" || conf.Config.Label.Version == "" {
+		log.Infof("Didn't find encoded Spec or version label. Assuming image is not APB and skiping")
 		return nil, nil
 	}
+	if isCompatibleVersion(conf.Config.Label.Version, version.MinAPBVersion, version.MaxAPBVersion) != true {
+		log.Infof("APB spec version was incompatible. Assuming image is incompatible and skipping")
+		return nil, nil
+	}
+
 	encodedSpec := conf.Config.Label.Spec
 	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
 	if err != nil {
@@ -129,4 +137,27 @@ func imageToSpec(log *logging.Logger, req *http.Request, apbtag string) (*apb.Sp
 	log.Debugf("Successfully converted Image %s into Spec", spec.Image)
 
 	return spec, nil
+}
+
+func isCompatibleVersion(specVersion string, minVersion string, maxVersion string) bool {
+	if len(strings.Split(specVersion, ".")) != 2 || len(strings.Split(minVersion, ".")) != 2 || len(strings.Split(maxVersion, ".")) != 2 {
+		return false
+	}
+	specMajorVersion, err := strconv.Atoi(strings.Split(specVersion, ".")[0])
+	if err != nil {
+		return false
+	}
+	minMajorVersion, err := strconv.Atoi(strings.Split(minVersion, ".")[0])
+	if err != nil {
+		return false
+	}
+	maxMajorVersion, err := strconv.Atoi(strings.Split(maxVersion, ".")[0])
+	if err != nil {
+		return false
+	}
+
+	if specMajorVersion >= minMajorVersion && specMajorVersion <= maxMajorVersion {
+		return true
+	}
+	return false
 }
