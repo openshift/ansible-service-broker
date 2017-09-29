@@ -69,7 +69,7 @@ TEMPLATE_URL="https://raw.githubusercontent.com/openshift/ansible-service-broker
 DOCKERHUB_USER=${DOCKERHUB_USER:-"changeme"} # DockerHub login username, default 'changeme'
 DOCKERHUB_PASS=${DOCKERHUB_PASS:-"changeme"} # DockerHub login password, default 'changeme'
 DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where APBs can be found, default 'ansibleplaybookbundle'
-ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"false"} # Secure broker with basic authentication, default 'false'. Disabling basic auth allows "apb push" to work.
+ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"true"} # Secure broker with basic authentication, default 'true'. When using a bearer token auth this should be set to false.
 BROKER_KIND=${BROKER_KIND:-"Broker"} # allow users to override the broker kind type to work with 3.7
 
 auth=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")
