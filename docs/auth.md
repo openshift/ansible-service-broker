@@ -47,7 +47,7 @@ The secret needs to be injected into the pod via a volume mount at the
 `/var/run/asb_auth` location. This is where the broker will read the username
 and password from.
 
-In the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L168-L175) a secret needs to be specified. See the example below:
+In the [deployment template](https://github.com/openshift/ansible-service-broker/blob/61a7fc80e40a7d7ddd836a2216394185094b1b0b/templates/deploy-ansible-service-broker.template.yaml#L168-L175) a secret needs to be specified. See the example below:
 
 ```yaml
 - apiVersion: v1
@@ -167,7 +167,7 @@ Example cluster role:
 ```
 
 #### Deployment template and secrets
-Here is an example of creating a secret that the service catalog can use. This example will assume that the role, `access-asb-role`, has been created already. From the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L224-L248):
+Here is an example of creating a secret that the service catalog can use. This example will assume that the role, `access-asb-role`, has been created already. From the [deployment template](https://github.com/openshift/ansible-service-broker/blob/61a7fc80e40a7d7ddd836a2216394185094b1b0b/templates/deploy-ansible-service-broker.template.yaml#L224-L248):
 ```yaml
 - apiVersion: v1
   kind: ServiceAccount
@@ -312,9 +312,9 @@ func (t TrustedUserAuth) GetPrincipal(r *http.Request) (Princpal, error) {
 
 Bearer auth is using the [kubernetes apiserver](https://github.com/kubernetes/apiserver) to do delegated authentication and authorization. Kubernetes team will keep this library up to date.
 
-The first thing that you need to do when setting up the generic api server is to tell it the cert, key, port, and address to listen on. You are going to use the [`SecureServingOptions`](https://github.com/kubernetes/apiserver/blob/master/pkg/server/options/serving.go#L38) to set these values.
+The first thing that you need to do when setting up the generic api server is to tell it the cert, key, port, and address to listen on. You are going to use the [`SecureServingOptions`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/options/serving.go#L38) to set these values.
 
-[`MaybeDefaultsWithSelfSignedCerts`](https://github.com/kubernetes/apiserver/blob/master/pkg/server/options/serving.go#L248) will set the defaults if you do not supply them. The biggest caveat here is if `SSLCert` and `SSLCertKey` are not set then the generic api server will attempt to create them. The cert that is created is also the `ca.crt`.
+[`MaybeDefaultsWithSelfSignedCerts`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/options/serving.go#L248) will set the defaults if you do not supply them. The biggest caveat here is if `SSLCert` and `SSLCertKey` are not set then the generic api server will attempt to create them. The cert that is created is also the `ca.crt`.
 
 ```golang
 secureServing := genericoptions.NewSecureServingOptions()
@@ -329,7 +329,7 @@ secureServing := genericoptions.NewSecureServingOptions()
   }
 ```
 
-You are then going to create a new [server config](https://github.com/kubernetes/apiserver/blob/master/pkg/server/config.go#L79).
+You are then going to create a new [server config](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/config.go#L79).
 ```golang
   serverConfig := genericapiserver.NewConfig(Codecs)
   if err := secureServing.ApplyTo(serverConfig); err != nil {
@@ -339,7 +339,7 @@ You are then going to create a new [server config](https://github.com/kubernetes
 ```
 
 To set up authentication and authorization, you will need to use the 
-[`DelegatingAuthenticatorConfig`](https://github.com/kubernetes/apiserver/blob/master/pkg/authentication/authenticatorfactory/delegating.go#L41) and the [`DelegatingAuthorizationOptions`](https://github.com/kubernetes/apiserver/blob/master/pkg/server/options/authorization.go#L33). The biggest thing to notice here is we are using the `go-client` interface's for the `TokenReviews` [call](https://godoc.org/k8s.io/client-go/kubernetes/typed/authentication/v1#TokenReviewInterface). 
+[`DelegatingAuthenticatorConfig`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/authentication/authenticatorfactory/delegating.go#L41) and the [`DelegatingAuthorizationOptions`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/options/authorization.go#L33). The biggest thing to notice here is we are using the `go-client` interface's for the `TokenReviews` [call](https://godoc.org/k8s.io/client-go/kubernetes/typed/authentication/v1#TokenReviewInterface). 
 
 The other thing to note here is the `xxx.ApplyTo(serverConfig)` is what is applying the configuration to the actual server configuration.
 ```golang
