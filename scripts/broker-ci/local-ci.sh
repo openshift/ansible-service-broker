@@ -44,7 +44,7 @@ function deprovision {
 
 function bind {
     print-with-green "Waiting for services to be ready"
-    sleep 10
+    sleep 30
     oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || BIND_ERROR=true
     ./scripts/broker-ci/wait-for-resource.sh create bindings.v1alpha1.servicecatalog.k8s.io mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
     error-check "bind"
@@ -59,7 +59,7 @@ function unbind {
 function bind-credential-check {
     set +x
     print-with-green "Waiting for the Bind to be created"
-    sleep 40
+    ./scripts/broker-ci/wait-for-resource.sh create secret mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
 
     RETRIES=10
     for x in $(seq $RETRIES); do
