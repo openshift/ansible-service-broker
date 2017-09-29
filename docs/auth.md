@@ -153,7 +153,7 @@ The below section will focus on the bearer token auth.
 #### Configuration
 By default, if no authentication is specified the broker will use bearer token auth. The bearer token authentication will use delegated auth from the [kubernetes apiserver](https://github.com/kubernetes/apiserver) library.
 
-The configuration is to grant access, through [kubernetes RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and role-bindings, to the url prefix. The broker has added a configuration option `cluster_url` to specify the url_prefx. This value but it will default to `ansible-service-broker`. 
+The configuration is to grant access, through [kubernetes RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and role-bindings, to the url prefix. The broker has added a configuration option `cluster_url` to specify the url_prefx. This value will default to `ansible-service-broker`. 
 
 Example cluster role:
 ```yaml
@@ -167,7 +167,7 @@ Example cluster role:
 ```
 
 #### Deployment template and secrets
-Here is an example of the using the cluster role example above. [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L224-L248):
+Here is an example of creating a secret that the service catalog can use, from the above role that will grant access. From the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L224-L248):
 ```yaml
 - apiVersion: v1
   kind: ServiceAccount
@@ -199,13 +199,13 @@ Here is an example of the using the cluster role example above. [deployment temp
 Here we are creating a service account, granting access to the `access-asb-role` and [creating a secret](https://kubernetes.io/docs/admin/service-accounts-admin/) for that service accounts token.
 
 #### Configure the service catalog to communicate with broker
-Now that we have the broker configured to use bearer token auth, we need to tell the
-service catalog how to communicate with the broker. This is accomplished by the
-`authInfo` section of the broker resource.
+Now that we have the broker configured to use bearer token auth, we need to tell the service catalog how to communicate with the broker. This is accomplished by the `authInfo` section of the broker resource.
 
 Here is an example of creating a broker resource in the service catalog. The
 `spec` tells the service catalog what URL the broker is listening at. The
 `authInfo` tells it what secret to read to get the authentication information.
+
+**NOTE: This can only be configured in OpenShift 3.7 Service Catalogs, if you are using 3.6 you must use [basic auth](#basic-auth).**
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1alpha1

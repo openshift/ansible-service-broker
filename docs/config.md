@@ -174,10 +174,10 @@ launch_apb_on_bind|Allow bind be be no op|false|N
 bootstrap_on_startup|Allow the broker attempt to bootstrap itself on start up. Will retrieve the APBs from configured registries|false|N
 recovery|Allow the broker to attempt to recover itself by dealing with pending jobs noted in etcd|false|N
 output_request|Allow the broker to output the requests to the log file as they come in for easier debugging|false|N
-ssl_cert_key|Tells the broker where to find the tls key file. Can be ignored if using `--insecure` option but otherwise is required|""|N
-ssl_cert|Tells the broker where to find the tls crt file. Can be ignored if using the `--insecure` option but otherwise is required|""|N
+ssl_cert_key|Tells the broker where to find the tls key file. If not set the [apiserver](https://github.com/kubernetes/apiserver) will attempt to create one.|""|N
+ssl_cert|Tells the broker where to find the tls crt file. If not set the [apiserver](https://github.com/kubernetes/apiserver) will attempt to create one.|""|N
 refresh_interval|The interval to query registries for new image specs|"600s"|N
-auto_escalate|Allows the broker to escalate the permissions of a user while running the APB|false|N
+auto_escalate|Allows the broker to escalate the permissions of a user while running the APB [read more](administration.md)|false|N
 cluster_url|Sets the prefix for the url that the broker is expecting|ansible-service-broker|N
 
 ## Secrets Configuration
