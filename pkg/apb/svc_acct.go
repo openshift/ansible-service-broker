@@ -21,6 +21,7 @@
 package apb
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -241,11 +242,14 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		if clusterConfig.Namespace != executionContext.Namespace {
 			s.log.Debug("Deleting namespace %s", executionContext.Namespace)
 			k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
+		} else {
+			//We should not be attempting to run pods in the ASB namespace, if we are, something is seriously wrong.
+			panic(fmt.Errorf("Broker is attempting to delete its own namespace"))
 		}
+
 	} else {
 		s.log.Debugf("Keeping namespace alive due to configuration")
 	}
-
 	s.log.Debugf("Deleting rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
 	output, err := runtime.RunCommand(
 		"oc", "delete", "rolebinding", executionContext.PodName, "--namespace="+executionContext.Namespace,

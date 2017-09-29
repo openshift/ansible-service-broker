@@ -32,6 +32,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/pborman/uuid"
 	"k8s.io/kubernetes/pkg/api/v1"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
 
 const (
@@ -80,27 +81,28 @@ func ExecuteApb(
 	if err != nil {
 		return executionContext, err
 	}
-	if len(secrets) > 0 {
-		executionContext.Namespace = clusterConfig.Namespace
-		executionContext.Targets = append(executionContext.Targets, context.Namespace)
-	} else {
-		// Using a new UUID is sane, because it will have some gurantee
-		// of uniquenes and will meet DNS name requirements.
-		executionContext.Namespace = uuid.New()
-		executionContext.Targets = append(executionContext.Targets, context.Namespace)
-		// Create namespace.
-		namespace := v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{transientNameSpaceKey: spec.FQName},
-				Name:   executionContext.Namespace,
-			},
-		}
-		_, err := k8scli.CoreV1().Namespaces().Create(&namespace)
-		if err != nil {
-			return executionContext, err
-		}
+
+	// Using a new UUID is sane, because it will have some gurantee
+	// of uniquenes and will meet DNS name requirements.
+	executionContext.Namespace = uuid.New()
+	executionContext.Targets = append(executionContext.Targets, context.Namespace)
+	// Create namespace.
+	namespace := v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{transientNameSpaceKey: spec.FQName},
+			Name:   executionContext.Namespace,
+		},
+	}
+	_, err = k8scli.CoreV1().Namespaces().Create(&namespace)
+	if err != nil {
+		return executionContext, err
 	}
 	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
+	err = copySecretsToNamespace(executionContext, clusterConfig, k8scli, secrets)
+	if err != nil {
+		log.Errorf("unable to copy secrets: %v to  new namespace", secrets)
+		return executionContext, err
+	}
 
 	sam := NewServiceAccountManager(log)
 	executionContext.ServiceAccount, err = sam.CreateApbSandbox(executionContext, clusterConfig.SandboxRole)
@@ -200,4 +202,23 @@ func checkPullPolicy(policy string) (v1.PullPolicy, error) {
 	}
 
 	return value, nil
+}
+
+func copySecretsToNamespace(executionContext ExecutionContext,
+	clusterConfig ClusterConfig,
+	k8scli *clientset.Clientset,
+	secrets []string) error {
+	for _, secrectName := range secrets {
+		secretData, err := k8scli.CoreV1().Secrets(clusterConfig.Namespace).Get(secrectName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		oldMeta := secretData.ObjectMeta
+		secretData.ObjectMeta = metav1.ObjectMeta{Name: oldMeta.Name, Namespace: executionContext.Namespace, Labels: oldMeta.Labels, Annotations: oldMeta.Annotations}
+		_, err = k8scli.CoreV1().Secrets(executionContext.Namespace).Create(secretData)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
