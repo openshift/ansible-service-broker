@@ -9,7 +9,7 @@ password combinations or the bearer token.
 **Note: When using OpenShift 3.6 the only option for authentication is Basic Auth. Basic Auth must be enabled to true.**
 
 ### Basic Auth 
-The below section will focus on the imlementation of basic auth.
+The below section will focus on the implementation of basic auth.
 
 #### Configuration
 In order to use the broker with basic auth enabled, it needs to be enabled in the broker configuration.
@@ -153,7 +153,7 @@ The below section will focus on the bearer token auth.
 #### Configuration
 By default, if no authentication is specified the broker will use bearer token auth. The bearer token authentication will use delegated auth from the [kubernetes apiserver](https://github.com/kubernetes/apiserver) library.
 
-The configuration is to grant access, through [kubernetes RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and role-bindings, to the url prefix. The broker has added a configuration option `cluster_url` to specify the url_prefx. This value will default to `ansible-service-broker`. 
+The configuration is to grant access, through [kubernetes RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and role-bindings, to the url prefix. The broker has added a configuration option `cluster_url` to specify the url_prefix. This value will default to `ansible-service-broker`. 
 
 Example cluster role:
 ```yaml
@@ -167,7 +167,7 @@ Example cluster role:
 ```
 
 #### Deployment template and secrets
-Here is an example of creating a secret that the service catalog can use, from the above role that will grant access. From the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L224-L248):
+Here is an example of creating a secret that the service catalog can use. This example will assume that the role, `access-asb-role`, has been created already. From the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L224-L248):
 ```yaml
 - apiVersion: v1
   kind: ServiceAccount
