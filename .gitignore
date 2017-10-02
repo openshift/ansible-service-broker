@@ -56,3 +56,6 @@ coverage.out
 handler.out
 registries.out
 validation.out
+
+# Vendor ci binary
+vendor/github.com/rthallisey/service-broker-ci/ci
