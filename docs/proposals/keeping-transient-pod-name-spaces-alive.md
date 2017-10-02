@@ -10,8 +10,18 @@ The [bug](https://bugzilla.redhat.com/show_bug.cgi?id=1497766) was created when 
 
 ### Configuration Values
 
-* `keep_namespace` or `BrokerConfig.KeepNamespace` - Parameter to always keep name space no matter what.
-* `keep_namespace_on_error` or `BrokerConfig.KeepNamespaceOnError` -  parameter to keep name space around if an error occurs in the play book that is running.
+* `keep_namespace` or `ClusterConfig.KeepNamespace` - Parameter to always keep name space no matter what.
+* `keep_namespace_on_error` or `ClusterConfig.KeepNamespaceOnError` -  parameter to keep name space around if an error occurs in the play book that is running.
+
+Example:
+```yaml
+...
+openshift:
+  ....
+  keep_namespace: false
+  keep_namespace_on_error: true
+...
+```
 
 **NOTE: Both will default to false in openshift-ansible, but will be set to true for keep_namespace_on_error**
 
@@ -29,7 +39,7 @@ pod, err := k8scli.CoreV1().Pods(executionContext.Namespace).Get(executionContex
 if err != nil {
         s.log.Errorf("Unable to retrieve pod - %v", err)     
 }
-if !brokerConfig.keepNamespace || ((pod.Status.Phase == apiv1.PodFailed || pod.Status.Phase == apiv1.PodUnknown || err != nil) && !brokerConfig.keepNamespaceOnError {
+if !brokerConfig.keepNamespace || !((pod.Status.Phase == apiv1.PodFailed || pod.Status.Phase == apiv1.PodUnknown || err != nil) && brokerConfig.keepNamespaceOnError) {
     ... Delete Namespace 
 }
 ...Delete role bindings.
@@ -40,4 +50,5 @@ if !brokerConfig.keepNamespace || ((pod.Status.Phase == apiv1.PodFailed || pod.S
 - Add broker config values above during creation of Service Account.
 - update the deployed template to set default  values
 - CATASB change to allow for overriding the default values.
+- doc updates for config, deployment
  
