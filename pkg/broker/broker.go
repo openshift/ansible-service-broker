@@ -1065,6 +1065,27 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	params := si.Parameters
 
+	if req.PlanID != "" {
+		if req.PlanID != (*params)["_apb_plan_id"] {
+			var updatable bool = false
+			for k, v := range spec.Plans {
+				if v.Name == (*params)["_apb_plan_id"] {
+					for _, v := range spec.Plans[k].Updates_to {
+						if v == req.PlanID {
+							updatable = true
+							(*si.Parameters)["_apb_plan_id"] = req.PlanID
+							parameters[planParameterKey] = req.PlanID
+						}
+					}
+				}
+				if updatable == false {
+					a.log.Error("The current plan cannot be updated to the requested plan.")
+				}
+			}
+
+		}
+	}
+
 	var updatePlanKey int = -1
 	for k, v := range spec.Plans {
 		if v.Name == (*params)["_apb_plan_id"] {
@@ -1073,7 +1094,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	}
 
 	if updatePlanKey == -1 {
-		a.log.Error("The plan %s, specified for updating instance %s, does not exist", si.ID, si.ID)
+		a.log.Error("The plan %s, specified for updating instance %s, does not exist.", si.ID, si.ID)
 		return nil, ErrorPlanNotFound
 	}
 
