@@ -97,12 +97,14 @@ type JobState struct {
 
 // ClusterConfig - Configuration for the cluster.
 type ClusterConfig struct {
-	Host            string `yaml:"host"`
-	CAFile          string `yaml:"ca_file"`
-	BearerTokenFile string `yaml:"bearer_token_file"`
-	PullPolicy      string `yaml:"image_pull_policy"`
-	SandboxRole     string `yaml:"sandbox_role"`
-	Namespace       string `yaml:"namespace"`
+	Host                 string `yaml:"host"`
+	CAFile               string `yaml:"ca_file"`
+	BearerTokenFile      string `yaml:"bearer_token_file"`
+	PullPolicy           string `yaml:"image_pull_policy"`
+	SandboxRole          string `yaml:"sandbox_role"`
+	Namespace            string `yaml:"namespace"`
+	KeepNamespace        bool   `yaml:"keep_namespace"`
+	KeepNamespaceOnError bool   `yaml:"keep_namespace_on_error"`
 }
 
 const (

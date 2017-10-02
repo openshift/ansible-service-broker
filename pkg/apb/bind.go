@@ -55,7 +55,7 @@ func Bind(
 	creds, err := ExtractCredentials(executionContext.PodName, executionContext.Namespace, log)
 
 	sm := NewServiceAccountManager(log)
-	err = sm.DestroyApbSandbox(executionContext, clusterConfig.Namespace)
+	err = sm.DestroyApbSandbox(executionContext, clusterConfig)
 
 	return executionContext.PodName, creds, err
 }

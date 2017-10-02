@@ -230,6 +230,8 @@ openshift:
   image_pull_policy: ${IMAGE_PULL_POLICY}
   sandbox_role: ${SANDBOX_ROLE:-edit}
   namespace: ${NAMESPACE:-ansible-service-broker}
+  keep_namespace: ${KEEP_NAMESPACE:-false}
+  keep_namespace_on_error: ${KEEP_NAMESPACE_ON_ERROR:-true}
 broker:
   dev_broker: true
   launch_apb_on_bind: false

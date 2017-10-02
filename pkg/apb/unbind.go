@@ -46,6 +46,6 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, clusterConfig Clu
 	}
 
 	sm := NewServiceAccountManager(log)
-	err = sm.DestroyApbSandbox(executionContext, clusterConfig.Namespace)
+	err = sm.DestroyApbSandbox(executionContext, clusterConfig)
 	return err
 }

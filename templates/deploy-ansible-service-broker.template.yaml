@@ -207,6 +207,8 @@ objects:
         bearer_token_file: "${BEARER_TOKEN_FILE}"
         image_pull_policy: "${IMAGE_PULL_POLICY}"
         sandbox_role: "${SANDBOX_ROLE}"
+        keep_namespace: ${KEEP_NAMESPACE}
+        keep_namespace_on_error: ${KEEP_NAMESPACE_ON_ERROR}
       broker:
         dev_broker: ${DEV_BROKER}
         bootstrap_on_startup: ${BOOTSTRAP_ON_STARTUP}
@@ -460,4 +462,13 @@ parameters:
   name: SANDBOX_ROLE
   value: "edit"
 
+- description: Always keep the namespace after an APB is executed.
+  displayname: Always keep the namespace after an APB is executed.
+  name: KEEP_NAMESPACE
+  value: "false"
+
+- description: Always keep the namespace after an APB is executed and has errored.
+  displayname: Always keep the namespace after an APB is executed and has errored.
+  name: KEEP_NAMESPACE_ON_ERROR
+  value: "true"
 ############################################################

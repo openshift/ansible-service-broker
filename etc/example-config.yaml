@@ -33,6 +33,8 @@ openshift:
   bearer_token_file: ""
   image_pull_policy: IfNotPresent
   sandbox_role: "edit"
+  keep_namespace: false
+  keep_namespace_on_error: false
 broker:
   bootstrap_on_startup: true
   dev_broker: true
