@@ -198,8 +198,8 @@ registry:
     pass: ${DOCKERHUB_PASSWORD}
     org: ${DOCKERHUB_ORG}
     white_list:
-      # will allow all the APBs to be included. You must have at least 1 white 
-      # list to retrieve APBs and this is the most permissive 
+      # will allow all the APBs to be included. You must have at least 1 white
+      # list to retrieve APBs and this is the most permissive
       - ".*-apb$"
 dao:
   etcd_host: ${ETCD_ROUTE}

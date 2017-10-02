@@ -32,7 +32,6 @@ import (
 
 ///////////////////////////////////////////////////////////////////////////////
 /*
-id: 8b1db903-f30a-4c05-bb60-ee2d73926d4c
 name: mediawiki123-apb
 image: ansibleplaybookbundle/mediawiki123-apb
 description: "Mediawiki123 apb implementation"
@@ -47,7 +46,7 @@ plans:
   - name: dev
     description: "Mediawiki123 apb implementation"
     free: true
-    bindable: false
+    bindable: true
     metadata:
       displayName: Development
       longDescription: Basic development plan
@@ -77,35 +76,51 @@ plans:
         title: Mediawiki Admin User Password
         type: string
         required: true
+    bind_parameters:
+      - name: bind_param_1
+        title: Bind Param 1
+        type: string
+        required: true
+      - name: bind_param_2
+        title: Bind Param 2
+        type: int
+        required: true
+      - name: bind_param_3
+        title: Bind Param 3
+        type: string
 */ //////////////////////////////////////////////////////////////////////////////
 
 // EncodedApb - Returns a preincoded APB for repeated test usage
 func EncodedApb() string {
-	apb := `aWQ6IDhiMWRiOTAzLWYzMGEtNGMwNS1iYjYwLWVlMmQ3MzkyNmQ0YwpuYW1lOiBtZWRpYXdpa2kx
-MjMtYXBiCmltYWdlOiBhbnNpYmxlcGxheWJvb2tidW5kbGUvbWVkaWF3aWtpMTIzLWFwYgpkZXNj
-cmlwdGlvbjogIk1lZGlhd2lraTEyMyBhcGIgaW1wbGVtZW50YXRpb24iCmJpbmRhYmxlOiBmYWxz
-ZQphc3luYzogb3B0aW9uYWwKbWV0YWRhdGE6CiAgZGlzcGxheW5hbWU6ICJSZWQgSGF0IE1lZGlh
-d2lraSIKICBsb25nRGVzY3JpcHRpb246ICJBbiBhcGIgdGhhdCBkZXBsb3lzIE1lZGlhd2lraSAx
-LjIzIgogIGltYWdlVVJMOiAiaHR0cHM6Ly91cGxvYWQud2lraW1lZGlhLm9yZy93aWtpcGVkaWEv
-Y29tbW9ucy8wLzAxL01lZGlhV2lraS1zbWFsbGVyLWxvZ28ucG5nIgogIGRvY3VtZW50YXRpb25V
-Ukw6ICJodHRwczovL3d3dy5tZWRpYXdpa2kub3JnL3dpa2kvRG9jdW1lbnRhdGlvbiIKcGxhbnM6
-CiAgLSBuYW1lOiBkZXYKICAgIGRlc2NyaXB0aW9uOiAiTWVkaWF3aWtpMTIzIGFwYiBpbXBsZW1l
-bnRhdGlvbiIKICAgIGZyZWU6IHRydWUKICAgIGJpbmRhYmxlOiBmYWxzZQogICAgbWV0YWRhdGE6
-CiAgICAgIGRpc3BsYXlOYW1lOiBEZXZlbG9wbWVudAogICAgICBsb25nRGVzY3JpcHRpb246IEJh
-c2ljIGRldmVsb3BtZW50IHBsYW4KICAgICAgY29zdDogJDAuMDAKICAgIHBhcmFtZXRlcnM6CiAg
-ICAgIC0gbmFtZTogbWVkaWF3aWtpX2RiX3NjaGVtYQogICAgICAgIHRpdGxlOiBNZWRpYXdpa2kg
-REIgU2NoZW1hCiAgICAgICAgdHlwZTogc3RyaW5nCiAgICAgICAgZGVmYXVsdDogbWVkaWF3aWtp
-CiAgICAgICAgcmVxdWlyZWQ6IHRydWUKICAgICAgLSBuYW1lOiBtZWRpYXdpa2lfc2l0ZV9uYW1l
-CiAgICAgICAgdGl0bGU6IE1lZGlhd2lraSBTaXRlIE5hbWUKICAgICAgICB0eXBlOiBzdHJpbmcK
-ICAgICAgICBkZWZhdWx0OiBNZWRpYVdpa2kKICAgICAgICByZXF1aXJlZDogdHJ1ZQogICAgICAt
-IG5hbWU6IG1lZGlhd2lraV9zaXRlX2xhbmcKICAgICAgICB0aXRsZTogTWVkaWF3aWtpIFNpdGUg
-TGFuZ3VhZ2UKICAgICAgICB0eXBlOiBzdHJpbmcKICAgICAgICBkZWZhdWx0OiBlbgogICAgICAg
-IHJlcXVpcmVkOiB0cnVlCiAgICAgIC0gbmFtZTogbWVkaWF3aWtpX2FkbWluX3VzZXIKICAgICAg
-ICB0aXRsZTogTWVkaWF3aWtpIEFkbWluIFVzZXIKICAgICAgICB0eXBlOiBzdHJpbmcKICAgICAg
-ICBkZWZhdWx0OiBhZG1pbgogICAgICAgIHJlcXVpcmVkOiB0cnVlCiAgICAgIC0gbmFtZTogbWVk
-aWF3aWtpX2FkbWluX3Bhc3MKICAgICAgICB0aXRsZTogTWVkaWF3aWtpIEFkbWluIFVzZXIgUGFz
-c3dvcmQKICAgICAgICB0eXBlOiBzdHJpbmcKICAgICAgICByZXF1aXJlZDogdHJ1ZQo=`
-
+	apb := `bmFtZTogbWVkaWF3aWtpMTIzLWFwYgppbWFnZTogYW5zaWJsZXBsYXlib29rYnVuZGxlL21lZGlh
+d2lraTEyMy1hcGIKZGVzY3JpcHRpb246ICJNZWRpYXdpa2kxMjMgYXBiIGltcGxlbWVudGF0aW9u
+IgpiaW5kYWJsZTogZmFsc2UKYXN5bmM6IG9wdGlvbmFsCm1ldGFkYXRhOgogIGRpc3BsYXluYW1l
+OiAiUmVkIEhhdCBNZWRpYXdpa2kiCiAgbG9uZ0Rlc2NyaXB0aW9uOiAiQW4gYXBiIHRoYXQgZGVw
+bG95cyBNZWRpYXdpa2kgMS4yMyIKICBpbWFnZVVSTDogImh0dHBzOi8vdXBsb2FkLndpa2ltZWRp
+YS5vcmcvd2lraXBlZGlhL2NvbW1vbnMvMC8wMS9NZWRpYVdpa2ktc21hbGxlci1sb2dvLnBuZyIK
+ICBkb2N1bWVudGF0aW9uVVJMOiAiaHR0cHM6Ly93d3cubWVkaWF3aWtpLm9yZy93aWtpL0RvY3Vt
+ZW50YXRpb24iCnBsYW5zOgogIC0gbmFtZTogZGV2CiAgICBkZXNjcmlwdGlvbjogIk1lZGlhd2lr
+aTEyMyBhcGIgaW1wbGVtZW50YXRpb24iCiAgICBmcmVlOiB0cnVlCiAgICBiaW5kYWJsZTogdHJ1
+ZQogICAgbWV0YWRhdGE6CiAgICAgIGRpc3BsYXlOYW1lOiBEZXZlbG9wbWVudAogICAgICBsb25n
+RGVzY3JpcHRpb246IEJhc2ljIGRldmVsb3BtZW50IHBsYW4KICAgICAgY29zdDogJDAuMDAKICAg
+IHBhcmFtZXRlcnM6CiAgICAgIC0gbmFtZTogbWVkaWF3aWtpX2RiX3NjaGVtYQogICAgICAgIHRp
+dGxlOiBNZWRpYXdpa2kgREIgU2NoZW1hCiAgICAgICAgdHlwZTogc3RyaW5nCiAgICAgICAgZGVm
+YXVsdDogbWVkaWF3aWtpCiAgICAgICAgcmVxdWlyZWQ6IHRydWUKICAgICAgLSBuYW1lOiBtZWRp
+YXdpa2lfc2l0ZV9uYW1lCiAgICAgICAgdGl0bGU6IE1lZGlhd2lraSBTaXRlIE5hbWUKICAgICAg
+ICB0eXBlOiBzdHJpbmcKICAgICAgICBkZWZhdWx0OiBNZWRpYVdpa2kKICAgICAgICByZXF1aXJl
+ZDogdHJ1ZQogICAgICAtIG5hbWU6IG1lZGlhd2lraV9zaXRlX2xhbmcKICAgICAgICB0aXRsZTog
+TWVkaWF3aWtpIFNpdGUgTGFuZ3VhZ2UKICAgICAgICB0eXBlOiBzdHJpbmcKICAgICAgICBkZWZh
+dWx0OiBlbgogICAgICAgIHJlcXVpcmVkOiB0cnVlCiAgICAgIC0gbmFtZTogbWVkaWF3aWtpX2Fk
+bWluX3VzZXIKICAgICAgICB0aXRsZTogTWVkaWF3aWtpIEFkbWluIFVzZXIKICAgICAgICB0eXBl
+OiBzdHJpbmcKICAgICAgICBkZWZhdWx0OiBhZG1pbgogICAgICAgIHJlcXVpcmVkOiB0cnVlCiAg
+ICAgIC0gbmFtZTogbWVkaWF3aWtpX2FkbWluX3Bhc3MKICAgICAgICB0aXRsZTogTWVkaWF3aWtp
+IEFkbWluIFVzZXIgUGFzc3dvcmQKICAgICAgICB0eXBlOiBzdHJpbmcKICAgICAgICByZXF1aXJl
+ZDogdHJ1ZQogICAgYmluZF9wYXJhbWV0ZXJzOgogICAgICAtIG5hbWU6IGJpbmRfcGFyYW1fMQog
+ICAgICAgIHRpdGxlOiBCaW5kIFBhcmFtIDEKICAgICAgICB0eXBlOiBzdHJpbmcKICAgICAgICBy
+ZXF1aXJlZDogdHJ1ZQogICAgICAtIG5hbWU6IGJpbmRfcGFyYW1fMgogICAgICAgIHRpdGxlOiBC
+aW5kIFBhcmFtIDIKICAgICAgICB0eXBlOiBpbnQKICAgICAgICByZXF1aXJlZDogdHJ1ZQogICAg
+ICAtIG5hbWU6IGJpbmRfcGFyYW1fMwogICAgICAgIHRpdGxlOiBCaW5kIFBhcmFtIDMKICAgICAg
+ICB0eXBlOiBzdHJpbmcKCg==`
 	return apb
 }
 

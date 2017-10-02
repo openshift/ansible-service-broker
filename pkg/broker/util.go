@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"encoding/json"
+
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
@@ -60,26 +62,66 @@ func toBrokerPlans(apbPlans []apb.Plan) []Plan {
 			ID:          plan.Name,
 			Name:        plan.Name,
 			Description: plan.Description,
-			Metadata:    updateMetadata(plan.Metadata, plan.Parameters),
+			Metadata:    extractBrokerPlanMetadata(plan),
 			Free:        plan.Free,
 			Bindable:    plan.Bindable,
-			Schemas:     parametersToSchema(plan.Parameters),
+			Schemas:     parametersToSchema(plan),
 		}
 		i++
 	}
 	return brokerPlans
 }
 
-func updateMetadata(metadata map[string]interface{}, params []apb.ParameterDescriptor) map[string]interface{} {
-	if params == nil || len(params) == 0 {
-		return metadata
+func extractBrokerPlanMetadata(apbPlan apb.Plan) map[string]interface{} {
+	metadata, err := initMetadataCopy(apbPlan.Metadata)
+
+	if err != nil {
+		return apbPlan.Metadata
 	}
 
-	if metadata == nil {
-		metadata = make(map[string]interface{})
+	instanceFormDefn := createFormDefinition(apbPlan.Parameters)
+	bindingFormDefn := createFormDefinition(apbPlan.BindParameters)
+
+	metadata["schemas"] = map[string]interface{}{
+		"service_instance": map[string]interface{}{
+			"create": map[string]interface{}{
+				"openshift_form_definition": instanceFormDefn,
+			},
+			"update": map[string]interface{}{},
+		},
+		"service_binding": map[string]interface{}{
+			"create": map[string]interface{}{
+				"openshift_form_definition": bindingFormDefn,
+			},
+		},
 	}
 
+	return metadata
+}
+
+func initMetadataCopy(original map[string]interface{}) (map[string]interface{}, error) {
+	dst := make(map[string]interface{})
+
+	if original == nil {
+		return dst, nil
+	}
+	bytes, err := json.Marshal(original)
+	if err != nil {
+		return dst, err
+	}
+	json.Unmarshal(bytes, &dst)
+	if err != nil {
+		return dst, err
+	}
+	return dst, nil
+}
+
+func createFormDefinition(params []apb.ParameterDescriptor) []interface{} {
 	formDefinition := make([]interface{}, 0)
+
+	if params == nil || len(params) == 0 {
+		return formDefinition
+	}
 
 	for paramIdx := 0; paramIdx < len(params); {
 		var item interface{}
@@ -95,20 +137,7 @@ func updateMetadata(metadata map[string]interface{}, params []apb.ParameterDescr
 
 		formDefinition = append(formDefinition, item)
 	}
-
-	metadata["schemas"] = map[string]interface{}{
-		"service_instance": map[string]interface{}{
-			"create": map[string]interface{}{
-				"openshift_form_definition": formDefinition,
-			},
-			"update": map[string]interface{}{},
-		},
-		"service_binding": map[string]interface{}{
-			"create": map[string]interface{}{},
-		},
-	}
-
-	return metadata
+	return formDefinition
 }
 
 func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, paramIndex int) (formItem, int) {
@@ -171,10 +200,44 @@ func getType(paramType string) schema.PrimitiveTypes {
 	return []schema.PrimitiveType{schema.UnspecifiedType}
 }
 
-func parametersToSchema(params []apb.ParameterDescriptor) Schema {
+func parametersToSchema(plan apb.Plan) Schema {
 	// parametersToSchema converts the apb parameters into a JSON Schema format.
+	createProperties := extractProperties(plan.Parameters)
+	createRequired := extractRequired(plan.Parameters)
+
+	bindProperties := extractProperties(plan.BindParameters)
+	bindRequired := extractRequired(plan.BindParameters)
+
+	// builds a Schema object for the various methods.
+	s := Schema{
+		ServiceInstance: ServiceInstance{
+			Create: map[string]*schema.Schema{
+				"parameters": {
+					SchemaRef:  schema.SchemaURL,
+					Type:       []schema.PrimitiveType{schema.ObjectType},
+					Properties: createProperties,
+					Required:   createRequired,
+				},
+			},
+			Update: map[string]*schema.Schema{},
+		},
+		ServiceBinding: ServiceBinding{
+			Create: map[string]*schema.Schema{
+				"parameters": {
+					SchemaRef:  schema.SchemaURL,
+					Type:       []schema.PrimitiveType{schema.ObjectType},
+					Properties: bindProperties,
+					Required:   bindRequired,
+				},
+			},
+		},
+	}
+
+	return s
+}
+
+func extractProperties(params []apb.ParameterDescriptor) map[string]*schema.Schema {
 	properties := make(map[string]*schema.Schema)
-	required := extractRequired(params)
 
 	var patternRegex *regexp.Regexp
 	var err error
@@ -215,31 +278,7 @@ func parametersToSchema(params []apb.ParameterDescriptor) Schema {
 		}
 	}
 
-	// builds a Schema object for the various methods.
-	s := Schema{
-		ServiceInstance: ServiceInstance{
-			Create: map[string]*schema.Schema{
-				"parameters": {
-					SchemaRef:  schema.SchemaURL,
-					Type:       []schema.PrimitiveType{schema.ObjectType},
-					Properties: properties,
-					Required:   required,
-				},
-			},
-			Update: map[string]*schema.Schema{},
-		},
-		ServiceBinding: ServiceBinding{
-			Create: map[string]*schema.Schema{
-				"parameters": {
-					SchemaRef:  schema.SchemaURL,
-					Type:       []schema.PrimitiveType{schema.ObjectType},
-					Properties: make(map[string]*schema.Schema),
-				},
-			},
-		},
-	}
-
-	return s
+	return properties
 }
 
 func extractRequired(params []apb.ParameterDescriptor) []string {

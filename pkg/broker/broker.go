@@ -677,11 +677,11 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// See if the service instance still exists, if not send back a badrequest.
 
 	// GET SERVICE get provision parameters
-	params := make(apb.Parameters)
-	if instance.Parameters != nil {
-		params["provision_params"] = *instance.Parameters
+	params := req.Parameters
+	if params == nil {
+		params = make(apb.Parameters)
 	}
-	params["bind_params"] = req.Parameters
+
 	// Inject PlanID into parameters passed to APBs
 	if req.PlanID == "" {
 		errMsg :=
