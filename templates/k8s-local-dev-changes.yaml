@@ -1,0 +1,80 @@
+#
+# Limitations With the Kubernetes template
+# ----------------------------------------
+# - ssl
+#
+apiVersion: v1
+kind: Service
+metadata:
+   name: asb
+   namespace: ansible-service-broker
+   labels:
+     app: ansible-service-broker
+     service: asb
+spec:
+  ports:
+    - name: port-1338
+      port: 1338
+      targetPort: 1338
+      protocol: TCP
+  selector:
+    app: ansible-service-broker
+    service: asb
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: etcd
+   namespace: ansible-service-broker
+spec:
+  ports:
+    - name: etcd-advertise
+      port: 2379
+  selector:
+    app: ansible-service-broker
+    service: etcd
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: etcd
+  namespace: ansible-service-broker
+  labels:
+    app: ansible-service-broker
+    service: etcd
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ansible-service-broker
+        service: etcd
+    spec:
+      restartPolicy: Always
+      containers:
+        - image: "quay.io/coreos/etcd:latest"
+          name: main
+          imagePullPolicy: IfNotPresent
+          workingDir: /etcd
+          args:
+            - /usr/local/bin/etcd
+            - --data-dir=/data
+            - --listen-client-urls=http://0.0.0.0:2379
+            - --advertise-client-urls=http://0.0.0.0:2379
+          ports:
+          - containerPort: 2379
+            protocol: TCP
+          env:
+          - name: ETCDCTL_API
+            value: "3"
+          volumeMounts:
+            - mountPath: /data
+              name: etcd
+      volumes:
+        - name: etcd
+          persistentVolumeClaim:
+            claimName: etcd

@@ -3,14 +3,18 @@
 #####
 
 # Typically the below values are:
-#  For Linux, use OPENSHIFT_SERVER_HOST=172.17.0.1
-#  For macOS, use OPENSHIFT_SERVER_HOST=192.168.37.1
-OPENSHIFT_SERVER_HOST=172.17.0.1
-OPENSHIFT_SERVER_PORT=8443
+#  For Linux, use CLUSTER_HOST=172.17.0.1
+#  For macOS, use CLUSTER_HOST=192.168.37.1
+CLUSTER_HOST=172.17.0.1
+
+# Cluster Ports
+#  OpenShift: 8443
+#  Kubernetes: 6443
+CLUSTER_PORT=8443
 
 # BROKER_IP_ADDR must be the IP address of where to reach broker
 #   it should not be 127.0.0.1, needs to be an address the pods will be able to reach
-BROKER_IP_ADDR=${OPENSHIFT_SERVER_HOST}
+BROKER_IP_ADDR=${CLUSTER_HOST}
 
 # Docker registry used for getting APBs. Uncomment, if you want
 # something other than the default shown.
