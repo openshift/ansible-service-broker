@@ -88,6 +88,7 @@ type Plan struct {
 	Free        bool                   `json:"free,omitempty"`
 	Bindable    bool                   `json:"bindable,omitempty"`
 	Schemas     Schema                 `json:"schemas,omitempty"`
+	Updates_to  []string               `json:"updatable_to,omitempty"`
 }
 
 // Schema  - Schema to be returned
