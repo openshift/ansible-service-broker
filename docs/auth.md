@@ -1,14 +1,18 @@
 ## Broker authentication
 
 The broker now supports authentication. This means that when connecting to the
-broker, the caller needs to supply the basic auth credentials for each request.
-Using curl it is as simple as supplying -u username:password. The service
+broker, the caller needs to supply the [basic auth](#basic-auth) or [bearer](#bearer-auth) auth credentials for each request.
+Using curl it is as simple as supplying -u username:password or -h "Authorization: beaer <token>". The service
 catalog will need to be configured with a secret containing the username and
-password combinations.
+password combinations or the bearer token.
 
-### Configuration
-In order to use the broker with auth enabled, it needs to be enabled in the
-broker configuration.
+**Note: When using OpenShift 3.6 the only option for authentication is Basic Auth. Basic Auth must be enabled to true.**
+
+### Basic Auth 
+The below section will focus on the implementation of basic auth.
+
+#### Configuration
+In order to use the broker with basic auth enabled, it needs to be enabled in the broker configuration.
 
 ```yaml
 broker:
@@ -18,26 +22,23 @@ broker:
        enabled: true
 ```
 
-The type field specifies the type of authentication to use. At the moment we
-only support basic auth. There is a desire to support other types like OAuth,
-bearer token, certificates, etc.
+The type field specifies the type of authentication to use.
 
 The enabled field allows you to disable a particular auth. This keeps you from
 having to delete the entire section of auth just to disable it.
 
-#### Deployment template
-Typically the broker is configured via a
-[ConfigMap](https://docs.openshift.com/container-platform/3.5/dev_guide/configmaps.html) in a deployment template.
+##### Deployment template
+Typically the broker is configured via a [ConfigMap](https://docs.openshift.com/container-platform/3.5/dev_guide/configmaps.html) in a deployment template.
 You supply the auth configuration the same way as in the file configuration.
 
-Here is an example of the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L195-L197):
+Here is an example of the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L220-L222):
 ```
 auth:
   - type: basic
     enabled: ${ENABLE_BASIC_AUTH}
 ```
 
-### Basic auth secret
+#### Basic auth secret
 There is another part to basic auth, that is the username and password used to
 authenticate against the broker. While the basic auth implementation can be
 backed by different back end services, the currently supported one is backed by a
@@ -46,7 +47,7 @@ The secret needs to be injected into the pod via a volume mount at the
 `/var/run/asb_auth` location. This is where the broker will read the username
 and password from.
 
-In the [deployment template](https://github.com/openshift/ansible-service-broker/blob/master/templates/deploy-ansible-service-broker.template.yaml#L195-L197) a secret needs to be specified. See the example below:
+In the [deployment template](https://github.com/openshift/ansible-service-broker/blob/61a7fc80e40a7d7ddd836a2216394185094b1b0b/templates/deploy-ansible-service-broker.template.yaml#L168-L175) a secret needs to be specified. See the example below:
 
 ```yaml
 - apiVersion: v1
@@ -101,7 +102,7 @@ So the above will have created a volume mount located at `/var/run/asb-auth`.
 This volume will have two files: username and password written by the
 `asb-auth-secret` secret.
 
-### Configure the service catalog to communicate with broker
+#### Configure the service catalog to communicate with broker
 Now that we have the broker configured to use basic auth, we need to tell the
 service catalog how to communicate with the broker. This is accomplished by the
 `authInfo` section of the broker resource.
@@ -123,7 +124,7 @@ spec:
       name: asb-auth-secret
 ```
 
-Starting wtih v0.0.17 of the service catalog the broker resource configuration changes.
+Starting with v0.0.17 of the service catalog the broker resource configuration changes.
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1alpha1
@@ -146,9 +147,84 @@ the format for the secret changes we will need to create a separate secret for
 just the service catalog today OR we need to add a new `UserServiceAdapter` that
 understands that secret.
 
+### Bearer Auth
+The below section will focus on the bearer token auth.
+
+#### Configuration
+By default, if no authentication is specified the broker will use bearer token auth. The bearer token authentication will use delegated auth from the [kubernetes apiserver](https://github.com/kubernetes/apiserver) library.
+
+The configuration is to grant access, through [kubernetes RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and role-bindings, to the url prefix. The broker has added a configuration option `cluster_url` to specify the url_prefix. This value will default to `ansible-service-broker`. 
+
+Example cluster role:
+```yaml
+- apiVersion: authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    name: access-asb-role
+  rules:
+  - nonResourceURLs: ["/ansible-service-broker", "/ansible-service-broker/*"]
+    verbs: ["get", "post", "put", "patch", "delete"]
+```
+
+#### Deployment template and secrets
+Here is an example of creating a secret that the service catalog can use. This example will assume that the role, `access-asb-role`, has been created already. From the [deployment template](https://github.com/openshift/ansible-service-broker/blob/61a7fc80e40a7d7ddd836a2216394185094b1b0b/templates/deploy-ansible-service-broker.template.yaml#L224-L248):
+```yaml
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: ansibleservicebroker-client
+    namespace: ansible-service-broker
+
+- apiVersion: authorization.openshift.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: ansibleservicebroker-client
+  subjects:
+  - kind: ServiceAccount
+    name: ansibleservicebroker-client
+    namespace: ansible-service-broker
+  roleRef:
+    kind: ClusterRole
+    name: access-asb-role
+
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ansibleservicebroker-client
+    annotations: 
+      kubernetes.io/service-account.name: ansibleservicebroker-client
+  type: kubernetes.io/service-account-token
+```
+
+Here we are creating a service account, granting access to the `access-asb-role` and [creating a secret](https://kubernetes.io/docs/admin/service-accounts-admin/) for that service accounts token.
+
+#### Configure the service catalog to communicate with broker
+Now that we have the broker configured to use bearer token auth, we need to tell the service catalog how to communicate with the broker. This is accomplished by the `authInfo` section of the broker resource.
+
+Here is an example of creating a broker resource in the service catalog. The
+`spec` tells the service catalog what URL the broker is listening at. The
+`authInfo` tells it what secret to read to get the authentication information.
+
+**NOTE: This can only be configured in OpenShift 3.7 Service Catalogs, if you are using 3.6 you must use [basic auth](#basic-auth).**
+
+```yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: ServiceBroker 
+metadata:
+  name: ansible-service-broker
+spec:
+  url: https://asb.ansible-service-broker.svc:1338${BROKER_URL_PREFIX}/
+  authInfo:
+    bearer: 
+      secretRef:  
+        kind: Secret
+        namespace: ansible-service-broker,
+        name: ansibleservicebroker-client
+```
+
 ## Developer section
 
-### Auth design
+### Basic Auth design
 
 The authentication system is built with a set of interfaces to allow for easily
 adding new methods of authentication. The 3 core interfaces are: Provider,
@@ -230,4 +306,67 @@ func (t TrustedUserAuth) GetPrincipal(r *http.Request) (Princpal, error) {
     // some other validation code
     return TrustedUserPrincipal{username: user.Name}, nil
 }
+```
+
+### Bearer Auth design
+
+Bearer auth is using the [kubernetes apiserver](https://github.com/kubernetes/apiserver) to do delegated authentication and authorization. Kubernetes team will keep this library up to date.
+
+The first thing that you need to do when setting up the generic api server is to tell it the cert, key, port, and address to listen on. You are going to use the [`SecureServingOptions`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/options/serving.go#L38) to set these values.
+
+[`MaybeDefaultsWithSelfSignedCerts`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/options/serving.go#L248) will set the defaults if you do not supply them. The biggest caveat here is if `SSLCert` and `SSLCertKey` are not set then the generic api server will attempt to create them. The cert that is created is also the `ca.crt`.
+
+```golang
+secureServing := genericoptions.NewSecureServingOptions()
+  secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
+    CertFile: config.Broker.SSLCert,
+    KeyFile:  config.Broker.SSLCertKey,
+  }}
+  secureServing.BindPort = 1338
+  secureServing.BindAddress = net.ParseIP("0.0.0.0")
+  if err := secureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
+    return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
+  }
+```
+
+You are then going to create a new [server config](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/config.go#L79).
+```golang
+  serverConfig := genericapiserver.NewConfig(Codecs)
+  if err := secureServing.ApplyTo(serverConfig); err != nil {
+    log.Debug("error applying to %#v", err)
+    return nil, err
+  }
+```
+
+To set up authentication and authorization, you will need to use the 
+[`DelegatingAuthenticatorConfig`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/authentication/authenticatorfactory/delegating.go#L41) and the [`DelegatingAuthorizationOptions`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/options/authorization.go#L33). The biggest thing to notice here is we are using the `go-client` interface's for the `TokenReviews` [call](https://godoc.org/k8s.io/client-go/kubernetes/typed/authentication/v1#TokenReviewInterface). 
+
+The other thing to note here is the `xxx.ApplyTo(serverConfig)` is what is applying the configuration to the actual server configuration.
+```golang
+    authn := genericoptions.NewDelegatingAuthenticationOptions()
+    authenticationConfig := authenticatorfactory.DelegatingAuthenticatorConfig{
+      Anonymous:               true,
+      TokenAccessReviewClient: client.TokenReviews(),
+      CacheTTL:                authn.CacheTTL,
+    }
+    authenticator, _, err := authenticationConfig.New()
+    if err != nil {
+      return nil, err
+    }
+    serverConfig.Authenticator = authenticator
+
+    authz := genericoptions.NewDelegatingAuthorizationOptions()
+    if err := authz.ApplyTo(serverConfig); err != nil {
+      return nil, err
+    }
+```
+
+Now you need to create the generic api server.
+```golang
+  return serverConfig.SkipComplete().New("ansible-service-broker", genericapiserver.EmptyDelegate)
+```
+
+The last thing to do is run the generic api server.
+```golang
+err = genericserver.PrepareRun().Run(wait.NeverStop)
 ```

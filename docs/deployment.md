@@ -16,6 +16,8 @@ OPENSHIFT_TARGET | https://kubernetes.default | OpenShift Target URL
 REGISTRY_TYPE | dockerhub | Registry Type 
 REGISTRY_URL | docker.io | Registry URL 
 DEV_BROKER | true | Include Broker Development Endpoint (true/false) 
+AUTO_ESCALATE | true | Auto escalate the users permissions when running an APB 
+BROKER_CA_CERT | "" | Tells the broker that the ca that has signed the SSL Cert and Key
 
 ## Template
 The following is the template used to deploy the ASB:
