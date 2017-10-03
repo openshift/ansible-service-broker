@@ -667,8 +667,6 @@ class App(object):
         }
         return req(self._url(path), verb='patch', json=req_body)
 
-
-
 ###############################################################################
 # !/bin/bash -e
 
