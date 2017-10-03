@@ -43,6 +43,8 @@ var PlanMetadata = map[string]interface{}{
 const PlanFree = true
 const PlanBindable = true
 
+var PlanUpdatesTo = []string{}
+
 var expectedPlanParameters = []ParameterDescriptor{
 	ParameterDescriptor{
 		Name:      "mediawiki_db_schema",
@@ -88,6 +90,7 @@ var p = Plan{
 	Free:        PlanFree,
 	Bindable:    PlanBindable,
 	Parameters:  expectedPlanParameters,
+	Updates_to:  PlanUpdatesTo,
 }
 
 const SpecVersion = "1.0"
@@ -109,6 +112,7 @@ const SpecPlans = `
 			"longDescription": "Basic development plan",
 			"cost": "$0.00"
 		},
+        "updates_to": [],
 		"parameters": [
 		{
 			"name": "mediawiki_db_schema",
