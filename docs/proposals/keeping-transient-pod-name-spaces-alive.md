@@ -4,7 +4,7 @@
 The goal of this proposal is to give administrators options to keep namespaces and therefore APB pods after the execution. The use cases for this feature are demos and debugging APBs.
 
 ## Problem Description
-The [bug](https://bugzilla.redhat.com/show_bug.cgi?id=1497766) was created when we moved to creating transient namespaces during execution of the APB pod. What happens  This bug creates issues for debugging APB's as well as issues with demos. 
+[Bug 1497766](https://bugzilla.redhat.com/show_bug.cgi?id=1497766) titled "APB Pods are deleted even when an error occurs" occurred when we moved to creating transient namespaces during the APB pod execution. This bug makes it difficult to debug APB development, debug issues in a production cluster using ASB, and creating demos because the pods do not live long enough to capture useful information.
 
 ## Implementation Details.
 
@@ -23,7 +23,7 @@ openshift:
 ...
 ```
 
-**NOTE: Both will default to false in openshift-ansible, but will be set to true for keep_namespace_on_error**
+**NOTE: Both configuration options will default to false in [openshift-ansible](https://github.com/openshift/openshift-ansible). When Deploying with CATASB or run_latest.sh we will set keep_namespace_on_error to true**
 
 ### Major Code Change
 
@@ -39,11 +39,27 @@ pod, err := k8scli.CoreV1().Pods(executionContext.Namespace).Get(executionContex
 if err != nil {
         s.log.Errorf("Unable to retrieve pod - %v", err)     
 }
-if !brokerConfig.keepNamespace || !((pod.Status.Phase == apiv1.PodFailed || pod.Status.Phase == apiv1.PodUnknown || err != nil) && brokerConfig.keepNamespaceOnError) {
+if shouldDeleteNamespace(clusterConfig, pod, err)  {
     ... Delete Namespace 
 }
 ...Delete role bindings.
 ```
+
+```golang
+func shouldDeleteNamespace(clusterConfig ClusterConfig, pod *apiv1.Pod, getPoderr error) bool {
+    if clusterConfig.KeepNamespaces {
+        return false
+    }
+    if clusterConfig.KeepNamespacesOnError {
+        if pod.Status.Phase == apiv1.PodFailed || pod.Status.Phase == apiv1.PodUnknown || getPoderr != nil {
+           return false
+        }
+    }
+    return true
+}
+```
+
+The outcome of keeping a namespace alive is that the RoleBindings and Service Accounts should be deleted. The only thing that should be left is the pod and the namespace.
 
 ## Work Items
 - Add Code Above
@@ -51,4 +67,3 @@ if !brokerConfig.keepNamespace || !((pod.Status.Phase == apiv1.PodFailed || pod.
 - update the deployed template to set default  values
 - CATASB change to allow for overriding the default values.
 - doc updates for config, deployment
- 
