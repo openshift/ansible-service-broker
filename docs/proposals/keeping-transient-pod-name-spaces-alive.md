@@ -1,7 +1,7 @@
 # Keeping transient pod name spaces alive
 
 ## Introduction
-The goal of this proposal is to give administrators options to keep namespaces and therefore APB pods after the execution. The use cases for this feature are demos and debugging APBs.
+The goal of this proposal is to give administrators options to keep namespaces and therefore APB pods alive after the execution. The use cases for this feature are demos and production or development debugging of APBs.
 
 ## Problem Description
 [Bug 1497766](https://bugzilla.redhat.com/show_bug.cgi?id=1497766) titled "APB Pods are deleted even when an error occurs" occurred when we moved to creating transient namespaces during the APB pod execution. This bug makes it difficult to debug APB development, debug issues in a production cluster using ASB, and creating demos because the pods do not live long enough to capture useful information.
