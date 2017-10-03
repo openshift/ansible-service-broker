@@ -97,7 +97,7 @@ cleanup-ci: ## Cleanup after ci run
 	./scripts/broker-ci/cleanup-ci.sh
 
 ci: ## Run the CI workflow locally
-	./scripts/broker-ci/local-ci.sh
+	@ci
 
 help: ## Show this help screen
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'

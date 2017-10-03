@@ -96,6 +96,7 @@ elif [[ "$action" == "ci" ]]; then
   echo "================================="
   echo "            Broker CI            "
   echo "================================="
+  go get github.com/rthallisey/service-broker-ci/cmd/ci
   ./scripts/broker-ci/setup.sh
   if [ $? -eq 0 ]; then
       make ci LOCAL_CI=false
