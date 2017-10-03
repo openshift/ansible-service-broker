@@ -33,6 +33,7 @@ import (
 var SpecTags = []string{"latest", "old-release"}
 
 const SpecID = "ab094014-b740-495e-b178-946d5aa97ebf"
+const SpecVersion = "1.0"
 const SpecName = "etherpad-apb"
 const SpecImage = "fusor/etherpad-apb"
 const SpecBindable = false
@@ -94,6 +95,7 @@ var p = apb.Plan{
 }
 
 var s = apb.Spec{
+	Version:     SpecVersion,
 	ID:          SpecID,
 	Description: SpecDescription,
 	FQName:      SpecName,
@@ -105,6 +107,7 @@ var s = apb.Spec{
 }
 
 var noPlansSpec = apb.Spec{
+	Version:     SpecVersion,
 	ID:          SpecID,
 	Description: SpecDescription,
 	FQName:      SpecName,
@@ -112,6 +115,17 @@ var noPlansSpec = apb.Spec{
 	Tags:        SpecTags,
 	Bindable:    SpecBindable,
 	Async:       SpecAsync,
+}
+
+var noVersionSpec = apb.Spec{
+	ID:          SpecID,
+	Description: SpecDescription,
+	FQName:      SpecName,
+	Image:       SpecImage,
+	Tags:        SpecTags,
+	Bindable:    SpecBindable,
+	Async:       SpecAsync,
+	Plans:       []apb.Plan{p},
 }
 
 type TestingAdapter struct {
@@ -173,6 +187,23 @@ func setUpNoPlans() Registry {
 	return r
 }
 
+func setUpNoVersion() Registry {
+	a = &TestingAdapter{
+		Name:   "testing",
+		Images: []string{"image1-apb", "image2"},
+		Specs:  []*apb.Spec{&noVersionSpec},
+		Called: map[string]bool{},
+	}
+	filter := Filter{}
+	c := Config{}
+	log := &logging.Logger{}
+	r = Registry{config: c,
+		adapter: a,
+		log:     log,
+		filter:  filter}
+	return r
+}
+
 func TestRegistryLoadSpecsNoError(t *testing.T) {
 	r := setUp()
 	specs, numImages, err := r.LoadSpecs()
@@ -188,6 +219,17 @@ func TestRegistryLoadSpecsNoError(t *testing.T) {
 
 func TestRegistryLoadSpecsNoPlans(t *testing.T) {
 	r := setUpNoPlans()
+	specs, _, err := r.LoadSpecs()
+	if err != nil {
+		ft.AssertTrue(t, false)
+	}
+	ft.AssertTrue(t, a.Called["GetImageNames"])
+	ft.AssertTrue(t, a.Called["FetchSpecs"])
+	ft.AssertEqual(t, len(specs), 0)
+}
+
+func TestRegistryLoadSpecsNoVersion(t *testing.T) {
+	r := setUpNoVersion()
 	specs, _, err := r.LoadSpecs()
 	if err != nil {
 		ft.AssertTrue(t, false)
@@ -256,4 +298,27 @@ func TestPanicOnUnknow(t *testing.T) {
 	c := Config{Type: "UnKOwn"}
 	log := &logging.Logger{}
 	NewRegistry(c, log)
+}
+
+func TestVersionCheck(t *testing.T) {
+	// Test equal versions
+	ft.AssertTrue(t, isCompatibleVersion("1.0", "1.0", "1.0"))
+	// Test out of range by major version
+	ft.AssertFalse(t, isCompatibleVersion("2.0", "1.0", "1.0"))
+	// Test out of range by minor version
+	ft.AssertTrue(t, isCompatibleVersion("1.10", "1.0", "1.0"))
+	// Test out of range by major and minor version
+	ft.AssertTrue(t, isCompatibleVersion("2.4", "1.0", "2.0"))
+	// Test in range with differing  major and minor version
+	ft.AssertTrue(t, isCompatibleVersion("1.10", "1.0", "2.0"))
+	// Test out of range by major and minor version
+	ft.AssertFalse(t, isCompatibleVersion("0.6", "1.0", "2.0"))
+	// Test out of range by major and minor version and invalid version
+	ft.AssertFalse(t, isCompatibleVersion("0.1.0", "1.0", "1.0"))
+	// Test in range of long possible window
+	ft.AssertTrue(t, isCompatibleVersion("2.5", "1.0", "3.0"))
+	// Test invalid version
+	ft.AssertFalse(t, isCompatibleVersion("1", "1.0", "3.0"))
+	// Test invalid version
+	ft.AssertFalse(t, isCompatibleVersion("2.5", "3.0", "4.0"))
 }
