@@ -100,4 +100,5 @@ elif [[ "$action" == "ci" ]]; then
   if [ $? -eq 0 ]; then
       make ci LOCAL_CI=false
   fi
+  exit $?
 fi
