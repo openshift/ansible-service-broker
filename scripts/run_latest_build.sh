@@ -38,7 +38,7 @@ PUBLIC_IP=${PUBLIC_IP:-$DOCKER_IP}
 HOSTNAME=${PUBLIC_IP}.nip.io
 ROUTING_SUFFIX="${HOSTNAME}"
 ORIGIN_IMAGE=${ORIGIN_IMAGE:-"docker.io/openshift/origin"}
-ORIGIN_VERSION=${ORIGIN_VERSION:-"latest"} # allow users to override version and set to latest
+ORIGIN_VERSION=${ORIGIN_VERSION:-"latest"} # v3.6.0 is also supported
 
 oc cluster up --image=${ORIGIN_IMAGE} \
     --version=${ORIGIN_VERSION} \
