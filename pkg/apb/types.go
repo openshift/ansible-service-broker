@@ -61,6 +61,7 @@ type Plan struct {
 // Spec - A APB spec
 type Spec struct {
 	ID          string                 `json:"id"`
+	Version     string                 `json:"version"`
 	FQName      string                 `json:"name" yaml:"name"`
 	Image       string                 `json:"image"`
 	Tags        []string               `json:"tags"`
