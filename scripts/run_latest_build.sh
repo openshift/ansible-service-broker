@@ -37,8 +37,14 @@ DOCKER_IP="$(ip addr show docker0 | grep -Po 'inet \K[\d.]+')"
 PUBLIC_IP=${PUBLIC_IP:-$DOCKER_IP}
 HOSTNAME=${PUBLIC_IP}.nip.io
 ROUTING_SUFFIX="${HOSTNAME}"
-ORIGIN_VERSION=${ORIGIN_VERSION:-"v3.6.0"} # allow users to override version and set to latest
-oc cluster up --image=openshift/origin --version=${ORIGIN_VERSION} --service-catalog=true --routing-suffix=${ROUTING_SUFFIX} --public-hostname=${HOSTNAME}
+ORIGIN_IMAGE=${ORIGIN_IMAGE:-"docker.io/openshift/origin"}
+ORIGIN_VERSION=${ORIGIN_VERSION:-"latest"} # allow users to override version and set to latest
+
+oc cluster up --image=${ORIGIN_IMAGE} \
+    --version=${ORIGIN_VERSION} \
+    --service-catalog=true \
+    --routing-suffix=${ROUTING_SUFFIX} \
+    --public-hostname=${HOSTNAME}
 
 #
 # Logging in as system:admin so we can create a clusterrolebinding and
@@ -71,10 +77,14 @@ DOCKERHUB_USER=${DOCKERHUB_USER:-"changeme"} # DockerHub login username, default
 DOCKERHUB_PASS=${DOCKERHUB_PASS:-"changeme"} # DockerHub login password, default 'changeme'
 DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where APBs can be found, default 'ansibleplaybookbundle'
 ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"true"} # Secure broker with basic authentication, default 'true'. When using a bearer token auth this should be set to false.
-BROKER_KIND=${BROKER_KIND:-"Broker"} # allow users to override the broker kind type to work with 3.7
 
-auth=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")
-BROKER_AUTH=${BROKER_AUTH:-"${auth}"}
+# Add additional parameters for 3.6 vs 3.7
+if [ "${ORIGIN_VERSION}" = "latest" ]; then
+    VARS="-p BROKER_CA_CERT=$(oc get secret -n kube-service-catalog -o go-template='{{ range .items }}{{ if eq .type "kubernetes.io/service-account-token" }}{{ index .data "service-ca.crt" }}{{end}}{{"\n"}}{{end}}' | tail -n 1)"
+else
+    VARS="-p BROKER_KIND=\"Broker\" \
+        -p BROKER_AUTH=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")"
+fi
 
 curl -s $TEMPLATE_URL \
   | oc process \
@@ -82,10 +92,8 @@ curl -s $TEMPLATE_URL \
   -p DOCKERHUB_USER="$DOCKERHUB_USER" \
   -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
   -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
-  -p BROKER_KIND="$BROKER_KIND" \
-  -p BROKER_AUTH="$BROKER_AUTH" \
-  -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" -f - | oc create -f -
-
+  -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" \
+  $VARS -f - | oc create -f -
 if [ "$?" -ne 0 ]; then
   echo "Error processing template and creating deployment"
   exit
