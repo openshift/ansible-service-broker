@@ -82,8 +82,9 @@ ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"true"} # Secure broker with basic authen
 if [ "${ORIGIN_VERSION}" = "latest" ]; then
     VARS="-p BROKER_CA_CERT=$(oc get secret -n kube-service-catalog -o go-template='{{ range .items }}{{ if eq .type "kubernetes.io/service-account-token" }}{{ index .data "service-ca.crt" }}{{end}}{{"\n"}}{{end}}' | tail -n 1)"
 else
-    VARS="-p BROKER_KIND=\"Broker\" \
-        -p BROKER_AUTH=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")"
+    BROKER_AUTH=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")
+    VARS="-p BROKER_KIND=Broker \
+        -p BROKER_AUTH=$BROKER_AUTH"
 fi
 
 curl -s $TEMPLATE_URL \
