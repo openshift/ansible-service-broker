@@ -58,6 +58,8 @@ var (
 	ErrorParameterNotUpdatable = errors.New("parameter not updatable")
 	// ErrorParameterNotFound - Error for when a parameter for update is not found
 	ErrorParameterNotFound = errors.New("parameter not found")
+	// ErrorPlanUpdateNotPossible - Error when a Plan Update request cannot be satisfied
+	ErrorPlanUpdateNotPossible = errors.New("plan update not possible")
 )
 
 const (
@@ -1053,6 +1055,11 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, ErrorNotFound
 	}
 
+	// If no plan was specified we'll continue with the current plan
+	if req.PlanID == "" {
+		req.PlanID = (*si.Parameters)["_apb_plan_id"].(string)
+	}
+
 	// Retrieve requested spec
 	spec, err := a.dao.GetSpec(si.Spec.ID)
 	if err != nil {
@@ -1064,51 +1071,57 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, err
 	}
 
-	params := si.Parameters
-
-	if req.PlanID != "" {
-		if req.PlanID != (*params)["_apb_plan_id"] {
-			var updatable bool = false
-			for k, v := range spec.Plans {
-				if v.Name == (*params)["_apb_plan_id"] {
-					for _, v := range spec.Plans[k].Updates_to {
-						if v == req.PlanID {
-							updatable = true
-							(*si.Parameters)["_apb_plan_id"] = req.PlanID
-						}
-					}
-				}
-				if updatable == false {
-					a.log.Error("The current plan cannot be updated to the requested plan.")
-				}
-			}
-
-		}
-	}
-
-	var updatePlanKey int = -1
+	// Make sure that we can find the plan we're updating from. This should probably never fail, but cover our tail.
+	var updateFromPlanKey int = -1
 	for k, v := range spec.Plans {
-		if v.Name == (*params)["_apb_plan_id"] {
-			updatePlanKey = k
+		if v.Name == (*si.Parameters)["_apb_plan_id"] {
+			updateFromPlanKey = k
 		}
 	}
-
-	if updatePlanKey == -1 {
-		a.log.Error("The plan %s, specified for updating instance %s, does not exist.", si.ID, si.ID)
+	if updateFromPlanKey == -1 {
+		a.log.Error("The plan %s, specified for updating from on instance %s, does not exist.", (*si.Parameters)["_apb_plan_id"], si.ID)
 		return nil, ErrorPlanNotFound
 	}
+	updateFromPlan := spec.Plans[updateFromPlanKey]
 
-	updatePlan := spec.Plans[updatePlanKey]
+	// Make sure we can find the plan we're updating to.
+	var updateToPlanKey int = -1
+	for k, v := range spec.Plans {
+		if v.Name == req.PlanID {
+			updateToPlanKey = k
+		}
+	}
+	if updateToPlanKey == -1 {
+		a.log.Error("The plan %s, specified for updating to on instance %s, does not exist.", req.PlanID, si.ID)
+		return nil, ErrorPlanNotFound
+	}
+	updateToPlan := spec.Plans[updateFromPlanKey]
 
+	// Make sure that the current plan supports updating to the requested plan if a plan update was requested.
+	if req.PlanID != (*si.Parameters)["_apb_plan_id"] {
+		var updatable bool = false
+		for _, v := range updateFromPlan.Updates_to {
+			if v == req.PlanID {
+				updatable = true
+				(*si.Parameters)["_apb_plan_id"] = req.PlanID
+			}
+		}
+		if updatable == false {
+			a.log.Error("The current plan, %s, cannot be updated to the requested plan, %s.", (*si.Parameters)["_apb_plan_id"], req.PlanID)
+			return nil, ErrorPlanUpdateNotPossible
+		}
+	}
+
+	// Make sure that parameters requested for update exist on the new plan and that they are updatable.
 	for k, v := range req.Parameters {
 		var param_updated bool = false
-		for _, key := range updatePlan.Parameters {
+		for _, key := range updateToPlan.Parameters {
 			if key.Name == k {
 				if key.Updatable == false {
 					a.log.Error("Tried to update non-updatable parameter, %s, on instance %s.", k, si.ID)
 					return nil, ErrorParameterNotUpdatable
 				}
-				(*params)[k] = v
+				(*si.Parameters)[k] = v
 				param_updated = true
 			}
 		}
@@ -1116,6 +1129,11 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 			a.log.Error("Parameter %s, requested for update on instance %s, does not exist.", k, si.ID)
 			return nil, ErrorParameterNotFound
 		}
+	}
+
+	// We're ready to provision so save
+	if err = a.dao.SetServiceInstance(instanceUUID.String(), si); err != nil {
+		return nil, err
 	}
 
 	var token string
