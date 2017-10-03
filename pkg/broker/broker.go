@@ -409,7 +409,8 @@ func (a AnsibleBroker) Recover() (string, error) {
 				continue
 			}
 
-			pjob := NewProvisionJob(instance, a.clusterConfig, a.log)
+			// TODO: How do we know what kind of task we're trying to recover
+			pjob := NewProvisionJob("provision", instance, a.clusterConfig, a.log)
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
@@ -650,7 +651,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if async {
 		a.log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
+		pjob := NewProvisionJob("provision", serviceInstance, a.clusterConfig, a.log)
 
 		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
 		if err != nil {
@@ -668,7 +669,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
-		_, extCreds, err := apb.Provision(serviceInstance, a.clusterConfig, a.log)
+		_, extCreds, err := apb.Provision("provision", serviceInstance, a.clusterConfig, a.log)
 		if extCreds != nil {
 			a.log.Debug("broker::Provision, got ExtractedCredentials!")
 			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
@@ -1074,7 +1075,6 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 						if v == req.PlanID {
 							updatable = true
 							(*si.Parameters)["_apb_plan_id"] = req.PlanID
-							parameters[planParameterKey] = req.PlanID
 						}
 					}
 				}
@@ -1123,7 +1123,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	if async {
 		a.log.Info("ASYNC update in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewUpdateJob(si, a.clusterConfig, a.log)
+		pjob := NewProvisionJob("update", si, a.clusterConfig, a.log)
 
 		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
 		if err != nil {
@@ -1137,7 +1137,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	} else {
 		// TODO: do we want to do synchronous updating?
 		a.log.Info("reverting to synchronous update in progress")
-		_, extCreds, err := apb.Update(si, a.clusterConfig, a.log)
+		_, extCreds, err := apb.Provision("update", si, a.clusterConfig, a.log)
 		if extCreds != nil {
 			a.log.Debug("broker::Update, got ExtractedCredentials!")
 			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
