@@ -37,7 +37,8 @@ DOCKER_IP="$(ip addr show docker0 | grep -Po 'inet \K[\d.]+')"
 PUBLIC_IP=${PUBLIC_IP:-$DOCKER_IP}
 HOSTNAME=${PUBLIC_IP}.nip.io
 ROUTING_SUFFIX="${HOSTNAME}"
-oc cluster up --image=openshift/origin --version=v3.6.0 --service-catalog=true --routing-suffix=${ROUTING_SUFFIX} --public-hostname=${HOSTNAME}
+ORIGIN_VERSION=${ORIGIN_VERSION:-"v3.6.0"} # allow users to override version and set to latest
+oc cluster up --image=openshift/origin --version=${ORIGIN_VERSION} --service-catalog=true --routing-suffix=${ROUTING_SUFFIX} --public-hostname=${HOSTNAME}
 
 #
 # Logging in as system:admin so we can create a clusterrolebinding and
