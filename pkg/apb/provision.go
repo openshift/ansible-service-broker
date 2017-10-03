@@ -36,6 +36,7 @@ import (
 // Maybe apb defines its own interface and accepts that optionally
 // Little looser, but still not great
 func Provision(
+	task string,
 	instance *ServiceInstance,
 	clusterConfig ClusterConfig, log *logging.Logger,
 ) (string, *ExtractedCredentials, error) {
@@ -68,7 +69,7 @@ func Provision(
 	}
 
 	executionContext, err := ExecuteApb(
-		"provision", clusterConfig, instance.Spec,
+		task, clusterConfig, instance.Spec,
 		instance.Context, instance.Parameters, log,
 	)
 
