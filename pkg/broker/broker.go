@@ -1072,7 +1072,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	}
 
 	// Make sure that we can find the plan we're updating from. This should probably never fail, but cover our tail.
-	var updateFromPlanKey int = -1
+	var updateFromPlanKey = -1
 	for k, v := range spec.Plans {
 		if v.Name == (*si.Parameters)["_apb_plan_id"] {
 			updateFromPlanKey = k
@@ -1085,7 +1085,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	updateFromPlan := spec.Plans[updateFromPlanKey]
 
 	// Make sure we can find the plan we're updating to.
-	var updateToPlanKey int = -1
+	var updateToPlanKey = -1
 	for k, v := range spec.Plans {
 		if v.Name == req.PlanID {
 			updateToPlanKey = k
@@ -1099,8 +1099,8 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	// Make sure that the current plan supports updating to the requested plan if a plan update was requested.
 	if req.PlanID != (*si.Parameters)["_apb_plan_id"] {
-		var updatable bool = false
-		for _, v := range updateFromPlan.Updates_to {
+		var updatable = false
+		for _, v := range updateFromPlan.UpdatesTo {
 			if v == req.PlanID {
 				updatable = true
 				(*si.Parameters)["_apb_plan_id"] = req.PlanID
@@ -1114,7 +1114,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	// Make sure that parameters requested for update exist on the new plan and that they are updatable.
 	for k, v := range req.Parameters {
-		var param_updated bool = false
+		var paramUpdated = false
 		for _, key := range updateToPlan.Parameters {
 			if key.Name == k {
 				if key.Updatable == false {
@@ -1122,10 +1122,10 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 					return nil, ErrorParameterNotUpdatable
 				}
 				(*si.Parameters)[k] = v
-				param_updated = true
+				paramUpdated = true
 			}
 		}
-		if param_updated == false {
+		if paramUpdated == false {
 			a.log.Error("Parameter %s, requested for update on instance %s, does not exist.", k, si.ID)
 			return nil, ErrorParameterNotFound
 		}

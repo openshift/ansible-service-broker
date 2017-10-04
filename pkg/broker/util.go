@@ -65,8 +65,8 @@ func toBrokerPlans(apbPlans []apb.Plan) []Plan {
 			Metadata:    extractBrokerPlanMetadata(plan),
 			Free:        plan.Free,
 			Bindable:    plan.Bindable,
-			Schemas:     parametersToSchema(plan.Parameters),
-			Updates_to:  plan.Updates_to,
+			UpdatesTo:   plan.UpdatesTo,
+			Schemas:     parametersToSchema(plan),
 		}
 		i++
 	}
