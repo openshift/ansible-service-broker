@@ -44,12 +44,12 @@ func NewProvisionWorkSubscriber(dao *dao.Dao, log *logging.Logger) *ProvisionWor
 func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 	p.msgBuffer = msgBuffer
 
-	var pmsg *ProvisionMsg
-	var extCreds *apb.ExtractedCredentials
 	go func() {
 		p.log.Info("Listening for provision messages")
 		for {
 			msg := <-msgBuffer
+			var pmsg *ProvisionMsg
+			var extCreds *apb.ExtractedCredentials
 
 			p.log.Debug("Processed provision message from buffer")
 			// HACK: this seems like a hack, there's probably a better way to
