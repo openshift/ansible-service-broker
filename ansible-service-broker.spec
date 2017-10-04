@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.6
+Version: 1.0.7
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Oct 04 2017 Jason Montleon <jmontleo@redhat.com> 1.0.7-1
+- Bug 1498185 - Adjust versioning check so that it is done in the registry
+  package (#468) (dymurray@redhat.com)
+
 * Wed Oct 04 2017 Jason Montleon <jmontleo@redhat.com> 1.0.6-1
 - Bug 1497819 - Broker should not rely on image field of APB yaml (#433)
   (david.j.zager@gmail.com)
