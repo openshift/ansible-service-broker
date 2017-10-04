@@ -59,7 +59,7 @@ type Plan struct {
 	Bindable       bool                   `json:"bindable,omitempty"`
 	Parameters     []ParameterDescriptor  `json:"parameters"`
 	BindParameters []ParameterDescriptor  `json:"bind_parameters,omitempty" yaml:"bind_parameters,omitempty"`
-	Updates_to     []string               `json:"updates_to"`
+	UpdatesTo      []string               `json:"updates_to"`
 }
 
 // Spec - A APB spec
