@@ -64,6 +64,6 @@ The outcome of keeping a namespace alive is that the RoleBindings and Service Ac
 ## Work Items
 - Add Code Above
 - Add broker config values above during creation of Service Account.
-- update the deployed template to set default  values
+- Update the deployed template to set default values
 - CATASB change to allow for overriding the default values.
-- doc updates for config, deployment
+- Doc updates for config and deployment
