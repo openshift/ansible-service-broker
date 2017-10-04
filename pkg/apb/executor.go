@@ -36,7 +36,8 @@ import (
 )
 
 const (
-	transientNameSpaceKey = "apb"
+	transientNameSpaceKey        = "apb"
+	transientNameSpaceNamePrefix = "apb-namespace-"
 )
 
 // ExecuteApb - Runs an APB Action with a provided set of inputs
@@ -82,21 +83,19 @@ func ExecuteApb(
 		return executionContext, err
 	}
 
-	// Using a new UUID is sane, because it will have some gurantee
-	// of uniquenes and will meet DNS name requirements.
-	executionContext.Namespace = uuid.New()
 	executionContext.Targets = append(executionContext.Targets, context.Namespace)
 	// Create namespace.
 	namespace := v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{transientNameSpaceKey: spec.FQName},
-			Name:   executionContext.Namespace,
+			Labels:       map[string]string{transientNameSpaceKey: spec.FQName},
+			GenerateName: transientNameSpaceNamePrefix,
 		},
 	}
-	_, err = k8scli.CoreV1().Namespaces().Create(&namespace)
+	ns, err := k8scli.CoreV1().Namespaces().Create(&namespace)
 	if err != nil {
 		return executionContext, err
 	}
+	executionContext.Namespace = ns.ObjectMeta.Name
 	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 	err = copySecretsToNamespace(executionContext, clusterConfig, k8scli, secrets)
 	if err != nil {
