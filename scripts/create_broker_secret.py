@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
 import sys
-import yaml
 import subprocess
 
+# Output some nicer errors if a user doesn't have the required packages
 try:
     import yaml
 except Exception:
@@ -39,7 +39,7 @@ EXAMPLE:
 
 """
 
-DATA_SEPARATOR="\n    "
+DATA_SEPARATOR = "\n    "
 
 SECRET_TEMPLATE = """---
 apiVersion: v1
@@ -51,11 +51,15 @@ stringData:
     {data}
 """
 
+
 def main():
     name = sys.argv[1]
     namespace = sys.argv[2]
     apb = sys.argv[3]
-    keyvalues = list(map(lambda x: x.split("=", 1), filter(lambda x: "=" in x, sys.argv[3:])))
+    keyvalues = list(map(
+        lambda x: x.split("=", 1),
+        filter(lambda x: "=" in x, sys.argv[3:])
+    ))
     files = list(filter(lambda x: x.startswith("@"), sys.argv[3:]))
     data = keyvalues + parse_files(files)
 
@@ -73,7 +77,7 @@ def main():
 
 def parse_files(files):
     params = []
-    for file  in files:
+    for file in files:
         file_name = file[1:]
         with open(file_name, 'r') as f:
             params.extend(yaml.load(f.read()).items())
@@ -103,7 +107,7 @@ def quote(string):
 
 
 def update_config(name, apb):
-    secret_entry = {"secret" : name, "apb_name": fqname(apb), "title": name}
+    secret_entry = {"secret": name, "apb_name": fqname(apb), "title": name}
     config = get_broker_config()
     if secret_entry not in config['data']['broker-config'].get('secrets', []):
         config['data']['broker-config']['secrets'] = config['data']['broker-config'].get('secrets', []) + [secret_entry]
@@ -134,19 +138,10 @@ def get_all_apbs():
     return response.json()['services']
 
 
-
 def fqname(apb):
-    parts = apb.split('/')
-    if len(parts) == 3:
-        # Chop the service, we don't know what it will be translated to in the broker
-        parts = parts[1:]
-    if ':' in parts[-1]:
-        # separate tag from image
-        image, tag = parts[-1].split(':')
-        parts[-1] = image
-        parts.append(tag)
-
-    search_pattern = '-'.join(parts)
+    if apb.count('/') >= 2:
+        apb = apb.split('/', 1)[-1]
+    search_pattern = apb.replace("/", "-").replace(":", "-")
     candidates = get_all_apbs()
     matches = [
         str(candidate['name']) for candidate in candidates
@@ -173,7 +168,6 @@ def get_broker_config():
     config = yaml.load(runcmd("oc get configmap broker-config -o yaml"))
     config['data']['broker-config'] = yaml.load(config['data']['broker-config'])
     return config
-
 
 
 def runcmd(cmd):
