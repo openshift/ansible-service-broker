@@ -76,12 +76,13 @@ TEMPLATE_URL="https://raw.githubusercontent.com/openshift/ansible-service-broker
 DOCKERHUB_USER=${DOCKERHUB_USER:-"changeme"} # DockerHub login username, default 'changeme'
 DOCKERHUB_PASS=${DOCKERHUB_PASS:-"changeme"} # DockerHub login password, default 'changeme'
 DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where APBs can be found, default 'ansibleplaybookbundle'
-ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"true"} # Secure broker with basic authentication, default 'true'. When using a bearer token auth this should be set to false.
 
 # Add additional parameters for 3.6 vs 3.7
 if [ "${ORIGIN_VERSION}" = "latest" ]; then
+    ENABLE_BASIC_AUTH="false"
     VARS="-p BROKER_CA_CERT=$(oc get secret -n kube-service-catalog -o go-template='{{ range .items }}{{ if eq .type "kubernetes.io/service-account-token" }}{{ index .data "service-ca.crt" }}{{end}}{{"\n"}}{{end}}' | tail -n 1)"
 else
+    ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH:-"true"}
     BROKER_AUTH=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")
     VARS="-p BROKER_KIND=Broker \
         -p BROKER_AUTH=$BROKER_AUTH"
