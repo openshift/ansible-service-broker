@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.5
+Version: 1.0.6
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,29 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Oct 04 2017 Jason Montleon <jmontleo@redhat.com> 1.0.6-1
+- Bug 1497819 - Broker should not rely on image field of APB yaml (#433)
+  (david.j.zager@gmail.com)
+- Bug 1498203 - Extracted Credentials were leaking into new bindings (#469)
+  (Shawn.Hurley21@gmail.com)
+- add 3.7 releaser to releasers.conf (#465) (jmrodri@gmail.com)
+- Provide an environment variable to deploy latest with run_latest_build (#466)
+  (karimboumedhel@gmail.com)
+- Pass in args to the deploy scripts (#462) (rhallise@redhat.com)
+- Make the prep_local_devel_env script work for Kubernetes & Openshift (#434)
+  (rhallise@redhat.com)
+- Bearer auth documentation (#460) (Shawn.Hurley21@gmail.com)
+- Split the deploy.sh script to work with both kube & openshift (#432)
+  (rhallise@redhat.com)
+- Bump wait times (#461) (rhallise@redhat.com)
+- changing default for 3.6 run_latest_build to function correctly (#458)
+  (Shawn.Hurley21@gmail.com)
+- Added versioning check to Broker on bootstrap (#457) (dymurray@redhat.com)
+- fix asbcli to work with bearer auth (#455) (jmontleo@redhat.com)
+- User Impersonation Implementation  (#428) (Shawn.Hurley21@gmail.com)
+- Remove provision parameters from being reused as binding parameters. (#456)
+  (cfc@chasenc.com)
+
 * Tue Sep 26 2017 Jason Montleon <jmontleo@redhat.com> 1.0.5-1
 - removing proposal that never happened (#450) (jmrodri@gmail.com)
 - Bearer Token Auth via kubernetes Apiserver (#445) (Shawn.Hurley21@gmail.com)
