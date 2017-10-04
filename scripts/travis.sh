@@ -101,7 +101,7 @@ elif [[ "$action" == "ci" ]]; then
   exit_code=$?
   if [ $exit_code -eq 0 ]; then
       make ci LOCAL_CI=false
-      exit_code=$?
+#      exit_code=$?
   fi
-  exit $exit_code
+#  exit $exit_code
 fi

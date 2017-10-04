@@ -19,6 +19,11 @@ verify: rthallisey/service-broker-ci/wait-for-resource.sh delete bindings.v1alph
 
 deprovision: rthallisey/service-broker-ci/mediawiki123
 verify: rthallisey/service-broker-ci/wait-for-resource.sh delete pod mediawiki
+verify: rthallisey/service-broker-ci/wait-for-resource.sh delete pod mediawiki
+verify: rthallisey/service-broker-ci/wait-for-resource.sh delete pod mediawiki
+verify: rthallisey/service-broker-ci/wait-for-resource.sh delete pod mediawiki
+
+verify: oc get pods -o yaml
 
 deprovision: rthallisey/service-broker-ci/postgresql
 verify: rthallisey/service-broker-ci/wait-for-resource.sh delete pod postgresql
