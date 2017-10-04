@@ -237,7 +237,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	if err != nil {
 		s.log.Errorf("Unable to retrieve pod - %v", err)
 	}
-	if shouldDeleteNamspace(clusterConfig, pod, err) {
+	if shouldDeleteNamespace(clusterConfig, pod, err) {
 		if clusterConfig.Namespace != executionContext.Namespace {
 			s.log.Debug("Deleting namespace %s", executionContext.Namespace)
 			k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
@@ -287,7 +287,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	return nil
 }
 
-func shouldDeleteNamspace(clusterConfig ClusterConfig, pod *apicorev1.Pod, getPodErr error) bool {
+func shouldDeleteNamespace(clusterConfig ClusterConfig, pod *apicorev1.Pod, getPodErr error) bool {
 	if clusterConfig.KeepNamespace {
 		return false
 	}

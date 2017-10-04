@@ -160,7 +160,7 @@ registry:
 | image_pull_policy | When to pull the image | Y |
 | sandbox_role | Role to give to apb sandbox environment | Y |
 | keep_namespace | Always keep namespace after apb execution | N |
-| Keep_namespace_on_error | Keep namespace after apb execution has an error | N |
+| keep_namespace_on_error | Keep namespace after apb execution has an error | N |
 
 ## Broker Configuration
 The broker config section will tell the broker what functionality should be enabled

@@ -19,7 +19,7 @@ DEV_BROKER | true | Include Broker Development Endpoint (true/false)
 AUTO_ESCALATE | true | Auto escalate the users permissions when running an APB 
 BROKER_CA_CERT | "" | Tells the broker that the ca that has signed the SSL Cert and Key
 KEEP_NAMESPACE | false | Always keep the APB namespace after execution.
-KEEP_NAMESPACE_ON_ERROR | true | Keeps the APB namespace after a error during execution.
+KEEP_NAMESPACE_ON_ERROR | true | Keeps the APB namespace after an error during execution.
 
 ## Template
 The following is the template used to deploy the ASB:
