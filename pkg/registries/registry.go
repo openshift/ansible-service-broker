@@ -25,12 +25,14 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/registries/adapters"
+	"github.com/openshift/ansible-service-broker/pkg/version"
 )
 
 var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*`)
@@ -236,7 +238,7 @@ func validateSpecs(log *logging.Logger, inSpecs []*apb.Spec) []*apb.Spec {
 	for _, spec := range inSpecs {
 		go func(s *apb.Spec) {
 			defer wg.Done()
-			ok, failReason := validateSpecPlans(s)
+			ok, failReason := validateSpecFormat(s)
 			out <- resultT{ok, s, failReason}
 		}(spec)
 	}
@@ -262,7 +264,12 @@ func validateSpecs(log *logging.Logger, inSpecs []*apb.Spec) []*apb.Spec {
 	return validSpecs
 }
 
-func validateSpecPlans(spec *apb.Spec) (bool, string) {
+func validateSpecFormat(spec *apb.Spec) (bool, string) {
+	// Specs must have compatible version
+	if !isCompatibleVersion(spec.Version, version.MinAPBVersion, version.MaxAPBVersion) {
+		return false, fmt.Sprintf("Specs must be at least version %s", version.MinAPBVersion)
+	}
+
 	// Specs must have at least one plan
 	if !(len(spec.Plans) > 0) {
 		return false, "Specs must have at least one plan"
@@ -280,4 +287,27 @@ func validateSpecPlans(spec *apb.Spec) (bool, string) {
 	}
 
 	return true, ""
+}
+
+func isCompatibleVersion(specVersion string, minVersion string, maxVersion string) bool {
+	if len(strings.Split(specVersion, ".")) != 2 || len(strings.Split(minVersion, ".")) != 2 || len(strings.Split(maxVersion, ".")) != 2 {
+		return false
+	}
+	specMajorVersion, err := strconv.Atoi(strings.Split(specVersion, ".")[0])
+	if err != nil {
+		return false
+	}
+	minMajorVersion, err := strconv.Atoi(strings.Split(minVersion, ".")[0])
+	if err != nil {
+		return false
+	}
+	maxMajorVersion, err := strconv.Atoi(strings.Split(maxVersion, ".")[0])
+	if err != nil {
+		return false
+	}
+
+	if specMajorVersion >= minMajorVersion && specMajorVersion <= maxMajorVersion {
+		return true
+	}
+	return false
 }
