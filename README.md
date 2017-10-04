@@ -49,11 +49,21 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 [![Watch the full asciicast](docs/images/run_latest.gif)](https://asciinema.org/a/134509)
 
 1. Download and execute our [run_latest_build.sh](https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh) script
+
+    Origin Version 3.6:
+    ```
+    wget https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh
+    chmod +x run_latest_build.sh
+    ORIGIN_VERSION=v3.6.0 ./run_latest_build.sh
+    ```
+
+    Origin Version 3.7:
     ```
     wget https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh
     chmod +x run_latest_build.sh
     ./run_latest_build.sh
     ```
+
 1. At this point you should have a running cluster with the [service-catalog](https://github.com/kubernetes-incubator/service-catalog/) and the Ansible Service Broker running.
 
 **Provision an instance of MediaWiki and PostgreSQL**
