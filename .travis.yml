@@ -18,3 +18,4 @@ script:
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh ci
+  - ./scripts/broker-ci/gather-logs.sh
