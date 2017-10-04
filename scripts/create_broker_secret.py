@@ -149,9 +149,11 @@ def fqname(apb):
     ]
 
     if not matches:
-        msg = "This script assumes the apb you are associating has already been discovered by the broker. Please add the apb and rerun this script\n\
-apbs found: \n\t- {}".format('\n\t- '.join(map(lambda x: x['name'], candidates)))
-        raise Exception(msg)
+        print("ERROR: No matches found for {}".format(apb))
+        print("apbs found: \n\t- {}".format('\n\t- '.join(
+            map(lambda x: x['name'], candidates))
+        ))
+        sys.exit(1)
     elif len(matches) > 1:
         print("Multiple apbs match...\n")
         for i, match in enumerate(matches):
