@@ -138,13 +138,13 @@ def format_config(config):
 
 
 def broker_auth(config):
-    credentials = {}
+    credentials = {'basic_auth_username': None, 'basic_auth_password': None}
     auth_settings = config['data']['broker-config']['broker'].get('auth')[0]
     if auth_settings.get('type') == 'basic' and auth_settings.get('enabled'):
         secret = yaml.load(runcmd('oc get secret asb-auth-secret -o yaml'))
         credentials = {
-            "basic_auth_username": base64.b64decode(secret['data']['username']),
-            "basic_auth_password": base64.b64decode(secret['data']['password'])
+            "basic_auth_{}".format(k): base64.b64decode(v)
+            for (k, v) in secret['data'].items()
         }
     return credentials
 
