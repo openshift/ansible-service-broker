@@ -18,4 +18,6 @@ script:
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh ci
+  - docker ps -a | grep mediawiki
+  - docker logs $(docker ps -a | grep mediawiki123_mediawiki123 | awk '{ print $1 }')
   - ./scripts/broker-ci/gather-logs.sh
