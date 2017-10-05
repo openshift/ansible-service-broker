@@ -50,12 +50,13 @@ type ParameterDescriptor struct {
 
 // Plan - Plan object describing an APB deployment plan and associated parameters
 type Plan struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	Free        bool                   `json:"free,omitempty"`
-	Bindable    bool                   `json:"bindable,omitempty"`
-	Parameters  []ParameterDescriptor  `json:"parameters"`
+	Name           string                 `json:"name"`
+	Description    string                 `json:"description"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	Free           bool                   `json:"free,omitempty"`
+	Bindable       bool                   `json:"bindable,omitempty"`
+	Parameters     []ParameterDescriptor  `json:"parameters"`
+	BindParameters []ParameterDescriptor  `json:"bind_parameters,omitempty" yaml:"bind_parameters,omitempty"`
 }
 
 // Spec - A APB spec
