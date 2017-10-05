@@ -221,9 +221,14 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	// Remove all specs that have been saved.
 	dir := "/spec"
 	specs, err = a.dao.BatchGetSpecs(dir)
+	pushedSpecs := []*apb.Spec{}
 	if err != nil {
 		a.log.Error("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
 		return nil, err
+	}
+	for _, spec := range specs {
+		a.log.Info("HERE")
+		pushedSpecs = append(pushedSpecs, spec)
 	}
 	err = a.dao.BatchDeleteSpecs(specs)
 	if err != nil {
