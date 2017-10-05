@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import sys
+import base64
 import subprocess
 
 # Output some nicer errors if a user doesn't have the required packages
@@ -14,6 +15,12 @@ try:
     import requests
 except Exception:
     print("requests module not installed, try: pip install requests")
+    sys.exit(1)
+
+try:
+    from apb.engine import broker_request
+except Exception:
+    print("apb module not installed, try: pip install apb")
     sys.exit(1)
 
 
@@ -47,7 +54,7 @@ kind: Secret
 metadata:
     name: {name}
     namespace: {namespace}
-stringData:
+data:
     {data}
 """
 
@@ -85,10 +92,11 @@ def parse_files(files):
 
 
 def create_secret(name, namespace, data):
+    encoded = [(quote(k), base64.b64encode(quote(v))) for (k, v) in data]
     secret = SECRET_TEMPLATE.format(
         name=name,
         namespace=namespace,
-        data=DATA_SEPARATOR.join(map(lambda x: ": ".join(map(quote, x)), data))
+        data=DATA_SEPARATOR.join(map(": ".join, encoded))
     )
 
     with open('/tmp/{name}-secret'.format(name=name), 'w') as f:
@@ -107,8 +115,8 @@ def quote(string):
 
 
 def update_config(name, apb):
-    secret_entry = {"secret": name, "apb_name": fqname(apb), "title": name}
     config = get_broker_config()
+    secret_entry = {"secret": name, "apb_name": fqname(apb, config), "title": name}
     if secret_entry not in config['data']['broker-config'].get('secrets', []):
         config['data']['broker-config']['secrets'] = config['data']['broker-config'].get('secrets', []) + [secret_entry]
         config_s = format_config(config)
@@ -129,20 +137,26 @@ def format_config(config):
     return yaml.dump(config)
 
 
-def broker_url():
-    return 'https://' + runcmd('oc get routes --no-headers').split()[1]
+def broker_auth(config):
+    credentials = {}
+    auth_settings = config['data']['broker-config']['broker'].get('auth')[0]
+    if auth_settings.get('type') == 'basic' and auth_settings.get('enabled'):
+        secret = yaml.load(runcmd('oc get secret asb-auth-secret -o yaml'))
+        credentials = {
+            "basic_auth_username": base64.b64decode(secret['data']['username']),
+            "basic_auth_password": base64.b64decode(secret['data']['password'])
+        }
+    return credentials
 
 
-def get_all_apbs():
-    response = requests.get(broker_url() + '/v2/catalog', verify=False)
+def get_all_apbs(config):
+    response = broker_request(None, "/v2/catalog", "get", verify=False, **broker_auth(config))
     return response.json()['services']
 
 
-def fqname(apb):
-    if apb.count('/') >= 2:
-        apb = apb.split('/', 1)[-1]
-    search_pattern = apb.replace("/", "-").replace(":", "-")
-    candidates = get_all_apbs()
+def fqname(apb, config):
+    search_pattern = apb.split('/')[-1].split(':')[0]
+    candidates = get_all_apbs(config)
     matches = [
         str(candidate['name']) for candidate in candidates
         if search_pattern in candidate['name']
