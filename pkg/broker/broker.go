@@ -218,18 +218,22 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	var specs []*apb.Spec
 	var imageCount int
 
-	// Remove all specs that have been saved.
+	// Remove all non apb-push sourced specs that have been saved.
+	pushedSpecs := []*apb.Spec{}
 	dir := "/spec"
 	specs, err = a.dao.BatchGetSpecs(dir)
-	pushedSpecs := []*apb.Spec{}
 	if err != nil {
 		a.log.Error("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
 		return nil, err
 	}
+	// Save all apb-push sourced specs
 	for _, spec := range specs {
-		a.log.Info("HERE")
-		pushedSpecs = append(pushedSpecs, spec)
+		if strings.HasPrefix(spec.FQName, "apb-push") {
+			a.log.Info("Saving apb-push sourced spec to prevent deletion: %v", spec.FQName)
+			pushedSpecs = append(pushedSpecs, spec)
+		}
 	}
+
 	err = a.dao.BatchDeleteSpecs(specs)
 	if err != nil {
 		a.log.Error("Something went real bad trying to delete batch specs... - %v", err)
@@ -253,6 +257,10 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		imageCount += count
 		addNameAndIDForSpec(s, r.RegistryName())
 		specs = append(specs, s...)
+	}
+	// Add apb-push sourced specs back to the list
+	for _, spec := range pushedSpecs {
+		specs = append(specs, spec)
 	}
 	if len(registryErrors) == len(a.registry) {
 		return nil, errors.New("all registries failed on bootstrap")
