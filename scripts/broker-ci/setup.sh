@@ -2,12 +2,6 @@
 
 BROKER_DIR="$(dirname "${BASH_SOURCE}")/../.."
 source "${BROKER_DIR}/scripts/broker-ci/error.sh"
-source "${BROKER_DIR}/scripts/broker-ci/logs.sh"
-
-BUILD_ERROR=false
-MAKE_DEPLOY_ERROR=false
-CLUSTER_SETUP_ERROR=false
-RESOURCE_ERROR=false
 
 set -ex
 
@@ -22,10 +16,12 @@ broker_kind: ClusterServiceBroker
 EOF
 
     pushd catasb/local/gate/
-    ./run_gate.sh || CLUSTER_SETUP_ERROR=true
+    ./run_gate.sh
+    if [ "$?" != "0" ]; then
+	echo "run_gate.sh failed"
+	exit 1
+    fi
     popd
-
-    env-error-check "cluster-setup"
 
     cat <<EOF > "scripts/my_local_dev_vars"
 CLUSTER_HOST=172.17.0.1
@@ -59,16 +55,15 @@ function make-build-image {
     done
     if [ "${x}" -eq "${RETRIES}" ]; then
 	print-with-red "Broker container failed to build."
-	BUILD_ERROR=true
+	exit 1
     fi
-    env-error-check "make-build-image"
+
     set -x
 }
 
 function make-deploy {
     make deploy
     NAMESPACE="ansible-service-broker" ./scripts/broker-ci/wait-for-resource.sh create pod asb >> /tmp/wait-for-pods-log 2>&1
-    env-error-check "make-deploy"
 }
 
 function local-env() {

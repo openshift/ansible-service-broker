@@ -2,7 +2,6 @@ apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
   name: postgresql
-  namespace: default
 spec:
   clusterServiceClassExternalName: dh-rhscl-postgresql-apb
   clusterServicePlanExternalName: prod

@@ -97,6 +97,7 @@ cleanup-ci: ## Cleanup after ci run
 	./scripts/broker-ci/cleanup-ci.sh
 
 ci: ## Run the CI workflow locally
+	@go get github.com/rthallisey/service-broker-ci/cmd/ci
 	@ci
 
 help: ## Show this help screen

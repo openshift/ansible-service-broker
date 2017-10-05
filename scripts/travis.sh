@@ -96,12 +96,11 @@ elif [[ "$action" == "ci" ]]; then
   echo "================================="
   echo "            Broker CI            "
   echo "================================="
-  go get github.com/rthallisey/service-broker-ci/cmd/ci
   ./scripts/broker-ci/setup.sh
   exit_code=$?
   if [ $exit_code -eq 0 ]; then
       make ci LOCAL_CI=false
-#      exit_code=$?
+      exit_code=$?
   fi
-#  exit $exit_code
+  exit $exit_code
 fi

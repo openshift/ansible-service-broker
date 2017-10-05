@@ -1,24 +1,20 @@
-provision: rthallisey/service-broker-ci/mediawiki123
+# Travis CI
+provision: mediawiki123
 verify: rthallisey/service-broker-ci/wait-for-resource.sh create pod mediawiki
 
-provision: rthallisey/service-broker-ci/postgresql
+provision: postgresql
 verify: rthallisey/service-broker-ci/wait-for-resource.sh create pod postgresql
 
-bind: rthallisey/service-broker-ci/postgresql
+bind: postgresql
 verify: rthallisey/service-broker-ci/wait-for-resource.sh create bindings.v1alpha1.servicecatalog.k8s.io binding
 
-# The verify field is run as a shell command
 verify: rthallisey/service-broker-ci/verify-bind.sh mediawiki123
 
-# The BindApp is the application that will be binded to the BindTarget.
-# Format:
-#      <BindApp> | <BindTarget>
-#
 unbind: postgresql | mediawiki123
 verify: rthallisey/service-broker-ci/wait-for-resource.sh delete bindings.v1alpha1.servicecatalog.k8s.io binding
 
-deprovision: rthallisey/service-broker-ci/mediawiki123
+deprovision: mediawiki123
 verify: rthallisey/service-broker-ci/wait-for-resource.sh delete instance mediawiki
 
-deprovision: rthallisey/service-broker-ci/postgresql
+deprovision: postgresql
 verify: rthallisey/service-broker-ci/wait-for-resource.sh delete instance postgresql
