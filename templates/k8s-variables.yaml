@@ -34,6 +34,12 @@ registry_url: https://registry.hub.docker.com
 # Include Broker Development Endpoint
 dev_broker: "true"
 
+# Sandbox Permissions
+sandbox_role: "edit"
+auto_escalate: "true"
+keep_namespace: "false"
+keep_namespace_on_error: "true"
+
 # Launch APB on bind
 launch_apb_on_bind: "false"
 

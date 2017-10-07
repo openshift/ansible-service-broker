@@ -1,9 +1,3 @@
-#
-# Limitations With the Kubernetes template
-# ----------------------------------------
-# - ssl
-#
-
 ---
 apiVersion: v1
 kind: Namespace
@@ -119,6 +113,8 @@ data:
         pass: "{{ dockerhub_user_password }}"
         org: "{{ dockerhub_org }}"
         tag: "{{ tag }}"
+        white_list:
+          - ".*-apb$"
     dao:
       etcd_host: etcd
       etcd_port: 2379
@@ -132,6 +128,9 @@ data:
       ca_file: "{{ ca_file }}"
       bearer_token_file: "{{ bearer_token_file }}"
       image_pull_policy: "{{ image_pull_policy }}"
+      sandbox_role: "{{ sandbox_role }}"
+      keep_namespace: {{ keep_namespace }}
+      keep_namespace_on_error: {{ keep_namespace_on_error }}
     broker:
       dev_broker: {{ dev_broker }}
       bootstrap_on_startup: {{ bootstrap_on_startup }}
@@ -139,8 +138,9 @@ data:
       launch_apb_on_bind: {{ launch_apb_on_bind }}
       output_request: {{ output_request }}
       recovery: {{ recovery }}
-      ssl_cert_key: ""
-      ssl_cert: ""
+      ssl_cert_key: /etc/tls/private/tls.key
+      ssl_cert: /etc/tls/private/tls.crt
+      auto_escalate: {{ auto_escalate }}
       auth:
         - type: basic
           enabled: {{ enable_basic_auth }}
@@ -217,6 +217,8 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/ansible-service-broker
+            - name: asb-tls
+              mountPath: /etc/tls/private
             - name: asb-auth-volume
               mountPath: /var/run/asb-auth
           ports:
@@ -236,6 +238,9 @@ spec:
             items:
             - key: broker-config
               path: config.yaml
+        - name: asb-tls
+          secret:
+            secretName: asb-tls
         - name: asb-auth-volume
           secret:
             secretName: asb-auth-secret
