@@ -76,6 +76,7 @@ var expectedPlanParameters = []ParameterDescriptor{
 }
 
 var p = Plan{
+	ID:          "",
 	Name:        PlanName,
 	Description: PlanDescription,
 	Metadata:    PlanMetadata,
@@ -93,6 +94,7 @@ const SpecDescription = "Mediawiki123 apb implementation"
 const SpecPlans = `
 [
 	{
+		"id": "",
 		"name": "dev",
 		"description": "Mediawiki123 apb implementation",
 		"free": true,
@@ -191,6 +193,7 @@ func TestSpecDumpJSON(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
 	json.Unmarshal([]byte(SpecJSON), &knownMap)
 	json.Unmarshal([]byte(raw), &subjectMap)
 	ft.AssertTrue(t, reflect.DeepEqual(knownMap, subjectMap))

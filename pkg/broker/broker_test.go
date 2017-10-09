@@ -61,3 +61,10 @@ func TestAddNameAndIDForSpecStripsTailingDash(t *testing.T) {
 	ft.AssertEqual(t, "h-1234567890123456789012345678901234567890", spcs[0].FQName)
 	ft.AssertEqual(t, "h-org-hello-world-apb", spcs[1].FQName)
 }
+
+func TestAddIdForPlan(t *testing.T) {
+	plan1 := apb.Plan{Name: "default"}
+	plans := []apb.Plan{plan1}
+	addIDForPlan(plans)
+	ft.AssertNotEqual(t, plans[0].ID, "", "plan id not updated")
+}

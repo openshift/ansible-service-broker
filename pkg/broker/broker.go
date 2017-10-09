@@ -255,6 +255,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 			registryErrors = append(registryErrors, err)
 		}
 		imageCount += count
+		// this will also update the plan id
 		addNameAndIDForSpec(s, r.RegistryName())
 		specs = append(specs, s...)
 	}
@@ -266,12 +267,29 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, errors.New("all registries failed on bootstrap")
 	}
 	specManifest := map[string]*apb.Spec{}
+	planNameManifest := map[string]string{}
+
 	for _, s := range specs {
 		specManifest[s.ID] = s
+
+		// each of the plans from all of the specs gets its own uuid. even
+		// though the names may be the same we want them to be globally unique.
+		for _, p := range s.Plans {
+			if p.ID == "" {
+				a.log.Errorf("We have a plan that did not get its id generated: %v", p.Name)
+			}
+			planNameManifest[p.ID] = p.Name
+		}
 	}
 	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
+
+	// save off the plan names as well
+	if err = a.dao.BatchSetPlanNames(planNameManifest); err != nil {
+		return nil, err
+	}
+
 	apb.AddSecrets(specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
@@ -297,6 +315,19 @@ func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 		hasher := md5.New()
 		hasher.Write([]byte(spec.FQName))
 		spec.ID = hex.EncodeToString(hasher.Sum(nil))
+
+		// update the id on the plans, doing it here avoids looping through the
+		// specs array again
+		addIDForPlan(spec.Plans)
+	}
+}
+
+// addIDForPlan - for each of the plans create a new ID
+func addIDForPlan(plans []apb.Plan) {
+
+	// need to use the index into the array to actually update the struct.
+	for i := range plans {
+		plans[i].ID = uuid.New()
 	}
 }
 
@@ -514,6 +545,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	*/
 	var spec *apb.Spec
 	var err error
+	var planName string
 
 	// Retrieve requested spec
 	specID := req.ServiceID
@@ -539,10 +571,20 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		return nil, errors.New(errMsg)
 	}
 
+	planName, err = a.dao.GetPlanName(req.PlanID)
+	if err != nil {
+		// etcd return not found i.e. code 100
+		if client.IsKeyNotFound(err) {
+			return nil, ErrorNotFound
+		}
+		// otherwise unknown error bubble it up
+		return nil, err
+	}
+
 	a.log.Debugf(
 		"Injecting PlanID as parameter: { %s: %s }",
-		planParameterKey, req.PlanID)
-	parameters[planParameterKey] = req.PlanID
+		planParameterKey, planName)
+	parameters[planParameterKey] = planName
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
@@ -707,10 +749,20 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		return nil, errors.New(errMsg)
 	}
 
+	planName, err := a.dao.GetPlanName(req.PlanID)
+	if err != nil {
+		// etcd return not found i.e. code 100
+		if client.IsKeyNotFound(err) {
+			return nil, ErrorNotFound
+		}
+		// otherwise unknown error bubble it up
+		return nil, err
+	}
+
 	a.log.Debugf(
 		"Injecting PlanID as parameter: { %s: %s }",
-		planParameterKey, req.PlanID)
-	params[planParameterKey] = req.PlanID
+		planParameterKey, planName)
+	params[planParameterKey] = planName
 
 	// Create a BindingInstance with a reference to the serviceinstance.
 	bindingInstance := &apb.BindInstance{
