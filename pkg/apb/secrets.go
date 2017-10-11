@@ -103,11 +103,11 @@ func InitializeSecretsCache(config []SecretsConfig, log *logging.Logger) {
 
 // FilterSecrets - Filters all parameters masked by a secret out of the given
 // specs
-func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
+func FilterSecrets(inSpecs []*Spec, config ClusterConfig) ([]*Spec, error) {
 	for _, spec := range inSpecs {
 		secrets.log.Debugf("Filtering secrets from spec %v", spec.FQName)
 		for _, secret := range GetSecrets(spec) {
-			secretKeys, err := getSecretKeys(secret)
+			secretKeys, err := getSecretKeys(secret, config.Namespace)
 			if err != nil {
 				return nil, err
 			}
@@ -150,15 +150,15 @@ func paramInSecret(param ParameterDescriptor, secretKeys []string) bool {
 	return false
 }
 
-func getSecretKeys(secretName string) ([]string, error) {
+func getSecretKeys(secretName, namespace string) ([]string, error) {
 	k8scli, err := clients.Kubernetes(secrets.log)
 	if err != nil {
 		return nil, err
 	}
 
-	secretData, err := k8scli.CoreV1().Secrets("ansible-service-broker").Get(secretName, meta_v1.GetOptions{})
+	secretData, err := k8scli.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
 	if err != nil {
-		secrets.log.Warningf("Unable to load secret '%s' from namespace 'ansible-service-broker'", secretName)
+		secrets.log.Warningf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
 		return []string{}, nil
 	}
 	secrets.log.Debugf("Found secret with name %v", secretName)

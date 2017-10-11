@@ -429,7 +429,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	}
 
 	a.log.Debugf("Filtering secret parameters out of specs...")
-	specs, err = apb.FilterSecrets(specs)
+	specs, err = apb.FilterSecrets(specs, a.clusterConfig)
 	if err != nil {
 		// TODO: Should we blow up or warn and continue?
 		a.log.Errorf("Something went real bad trying to load secrets %v", err)
