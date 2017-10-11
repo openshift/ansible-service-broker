@@ -65,6 +65,6 @@ func TestAddNameAndIDForSpecStripsTailingDash(t *testing.T) {
 func TestAddIdForPlan(t *testing.T) {
 	plan1 := apb.Plan{Name: "default"}
 	plans := []apb.Plan{plan1}
-	addIDForPlan(plans)
+	addIDForPlan(plans, "dh-sns-apb")
 	ft.AssertNotEqual(t, plans[0].ID, "", "plan id not updated")
 }

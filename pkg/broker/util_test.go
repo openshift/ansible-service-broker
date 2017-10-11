@@ -29,7 +29,6 @@ import (
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
-	"github.com/pborman/uuid"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -102,7 +101,7 @@ var PlanBindParams = []apb.ParameterDescriptor{
 }
 
 var p = apb.Plan{
-	ID:             "50eb5637-6ffe-480d-a52e-a7e603a50fca",
+	ID:             "55822a921d2c4858fe6e58f5522429c2", // md5(dh-sns-apb-dev)
 	Name:           PlanName,
 	Description:    PlanDescription,
 	Metadata:       PlanMetadata,
@@ -157,8 +156,7 @@ func TestSpecToService(t *testing.T) {
 	ft.AssertEqual(t, svc.Name, expectedsvc.Name, "name is not equal")
 	ft.AssertEqual(t, svc.Description, expectedsvc.Description, "description is not equal")
 	ft.AssertEqual(t, svc.Bindable, expectedsvc.Bindable, "bindable wrong")
-	ft.AssertEqual(t, svc.Plans[0].ID, "50eb5637-6ffe-480d-a52e-a7e603a50fca", "plan id didn't match")
-	ft.AssertNotNil(t, uuid.Parse(svc.Plans[0].ID), "plan id is a valid uuid")
+	ft.AssertEqual(t, svc.Plans[0].ID, "55822a921d2c4858fe6e58f5522429c2", "plan id didn't match")
 }
 
 func TestUpdateMetadata(t *testing.T) {

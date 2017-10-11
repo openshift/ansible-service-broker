@@ -319,16 +319,20 @@ func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 
 		// update the id on the plans, doing it here avoids looping through the
 		// specs array again
-		addIDForPlan(spec.Plans)
+		addIDForPlan(spec.Plans, spec.FQName)
 	}
 }
 
 // addIDForPlan - for each of the plans create a new ID
-func addIDForPlan(plans []apb.Plan) {
+func addIDForPlan(plans []apb.Plan, FQSpecName string) {
 
 	// need to use the index into the array to actually update the struct.
-	for i := range plans {
-		plans[i].ID = uuid.New()
+	for i, plan := range plans {
+		//plans[i].ID = uuid.New()
+		FQPlanName := fmt.Sprintf("%s-%s", FQSpecName, plan.Name)
+		hasher := md5.New()
+		hasher.Write([]byte(FQPlanName))
+		plans[i].ID = hex.EncodeToString(hasher.Sum(nil))
 	}
 }
 
