@@ -31,14 +31,15 @@ except NameError:
     pass
 
 USAGE = """USAGE:
-  {command} NAME NAMESPACE IMAGE [KEY=VALUE]* [@FILE]*
+  {command} NAME NAMESPACE IMAGE [BROKER_NAME] [KEY=VALUE]* [@FILE]*
 
-  NAME:      the name of the secret to create/replace
-  NAMESPACE: the target namespace of the secret. It should be the namespace of the broker for most usecases
-  IMAGE:     the docker image you would like to associate with the secret
-  KEY:       a key to create inside the secret. This cannot contain an "=" sign
-  VALUE:     the value for the  KEY in the secret
-  FILE:      a yaml loadable file containing key: value pairs. A file must begin with an "@" symbol to be loaded
+  NAME:         the name of the secret to create/replace
+  NAMESPACE:    the target namespace of the secret. It should be the namespace of the broker for most usecases
+  IMAGE:        the docker image you would like to associate with the secret
+  BROKER_NAME:  the name of the k8s ServiceBroker resource. Defaults to ansible-service-broker
+  KEY:          a key to create inside the secret. This cannot contain an "=" sign
+  VALUE:        the value for the  KEY in the secret
+  FILE:         a yaml loadable file containing key: value pairs. A file must begin with an "@" symbol to be loaded
 
 
 EXAMPLE:
@@ -63,11 +64,18 @@ def main():
     name = sys.argv[1]
     namespace = sys.argv[2]
     apb = sys.argv[3]
+    if '=' not in sys.argv[4] and '@' not in sys.argv[4]:
+        broker_name = sys.argv[4]
+        idx = 4
+    else:
+        broker_name = None
+        idx = 3
+
     keyvalues = list(map(
         lambda x: x.split("=", 1),
-        filter(lambda x: "=" in x, sys.argv[3:])
+        filter(lambda x: "=" in x, sys.argv[idx:])
     ))
-    files = list(filter(lambda x: x.startswith("@"), sys.argv[3:]))
+    files = list(filter(lambda x: x.startswith("@"), sys.argv[idx:]))
     data = keyvalues + parse_files(files)
 
     runcmd('oc project {}'.format(namespace))
@@ -76,7 +84,7 @@ def main():
     except Exception:
         raise Exception("Error: No broker deployment found in namespace {}".format(namespace))
     create_secret(name, namespace, data)
-    changed = update_config(name, apb)
+    changed = update_config(name, broker_name, apb)
     if changed:
         print("Rolling out a new broker...")
         runcmd('oc rollout latest asb')
@@ -114,9 +122,9 @@ def quote(string):
     return '"{}"'.format(string)
 
 
-def update_config(name, apb):
+def update_config(name, broker_name, apb):
     config = get_broker_config()
-    secret_entry = {"secret": name, "apb_name": fqname(apb, config), "title": name}
+    secret_entry = {"secret": name, "apb_name": fqname(apb, broker_name, config), "title": name}
     if secret_entry not in config['data']['broker-config'].get('secrets', []):
         config['data']['broker-config']['secrets'] = config['data']['broker-config'].get('secrets', []) + [secret_entry]
         config_s = format_config(config)
@@ -149,14 +157,14 @@ def broker_auth(config):
     return credentials
 
 
-def get_all_apbs(config):
-    response = broker_request(None, "/v2/catalog", "get", verify=False, **broker_auth(config))
+def get_all_apbs(broker_name, config):
+    response = broker_request(None, "/v2/catalog", "get", verify=False, broker_name=broker_name, **broker_auth(config))
     return response.json()['services']
 
 
-def fqname(apb, config):
+def fqname(apb, broker_name, config):
     search_pattern = apb.split('/')[-1].split(':')[0]
-    candidates = get_all_apbs(config)
+    candidates = get_all_apbs(broker_name, config)
     matches = [
         str(candidate['name']) for candidate in candidates
         if search_pattern in candidate['name']
