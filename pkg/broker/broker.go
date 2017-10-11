@@ -277,6 +277,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		for _, p := range s.Plans {
 			if p.ID == "" {
 				a.log.Errorf("We have a plan that did not get its id generated: %v", p.Name)
+				continue
 			}
 			planNameManifest[p.ID] = p.Name
 		}
