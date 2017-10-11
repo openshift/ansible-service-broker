@@ -309,6 +309,30 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 	return state, nil
 }
 
+// BatchSetPlanNames - set plannames based on PlanNameManifest in the kvp API.
+func (d *Dao) BatchSetPlanNames(planNames map[string]string) error {
+	for id, planName := range planNames {
+		err := d.SetPlanName(id, planName)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// SetPlanName - Set the Plan name in the kvp API for the given id.
+func (d *Dao) SetPlanName(id string, name string) error {
+	// it's just a string so no other work is needed
+	return d.SetRaw(planNameKey(id), name)
+}
+
+// GetPlanName - Retrieve the plan name associated with the ID
+func (d *Dao) GetPlanName(id string) (string, error) {
+	// it's just a string so no other work is needed
+	return d.GetRaw(planNameKey(id))
+}
+
 func (d *Dao) getObject(key string, data interface{}) error {
 	raw, err := d.GetRaw(key)
 	if err != nil {
@@ -354,4 +378,8 @@ func serviceInstanceKey(id string) string {
 
 func bindInstanceKey(id string) string {
 	return fmt.Sprintf("/bind_instance/%s", id)
+}
+
+func planNameKey(id string) string {
+	return fmt.Sprintf("/plan_name/%s", id)
 }

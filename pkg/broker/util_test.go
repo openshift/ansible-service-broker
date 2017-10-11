@@ -101,6 +101,7 @@ var PlanBindParams = []apb.ParameterDescriptor{
 }
 
 var p = apb.Plan{
+	ID:             "55822a921d2c4858fe6e58f5522429c2", // md5(dh-sns-apb-dev)
 	Name:           PlanName,
 	Description:    PlanDescription,
 	Metadata:       PlanMetadata,
@@ -149,10 +150,13 @@ func TestSpecToService(t *testing.T) {
 		Plans:       nil,
 		Metadata:    descriptors,
 	}
+
 	svc := SpecToService(&spec)
+
 	ft.AssertEqual(t, svc.Name, expectedsvc.Name, "name is not equal")
 	ft.AssertEqual(t, svc.Description, expectedsvc.Description, "description is not equal")
 	ft.AssertEqual(t, svc.Bindable, expectedsvc.Bindable, "bindable wrong")
+	ft.AssertEqual(t, svc.Plans[0].ID, "55822a921d2c4858fe6e58f5522429c2", "plan id didn't match")
 }
 
 func TestUpdateMetadata(t *testing.T) {

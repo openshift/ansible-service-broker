@@ -59,7 +59,7 @@ func toBrokerPlans(apbPlans []apb.Plan) []Plan {
 	i := 0
 	for _, plan := range apbPlans {
 		brokerPlans[i] = Plan{
-			ID:          plan.Name,
+			ID:          plan.ID,
 			Name:        plan.Name,
 			Description: plan.Description,
 			Metadata:    extractBrokerPlanMetadata(plan),

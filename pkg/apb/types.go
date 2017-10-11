@@ -50,6 +50,7 @@ type ParameterDescriptor struct {
 
 // Plan - Plan object describing an APB deployment plan and associated parameters
 type Plan struct {
+	ID             string                 `json:"id" yaml:"-"`
 	Name           string                 `json:"name"`
 	Description    string                 `json:"description"`
 	Metadata       map[string]interface{} `json:"metadata,omitempty"`
