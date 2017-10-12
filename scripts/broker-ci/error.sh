@@ -33,9 +33,6 @@ function convert-to-red {
     if ${PROVISION_ERROR}; then
 	PROVISION_ERROR="${color_red}true${color_norm}"
     fi
-    if ${POD_PRESET_ERROR}; then
-	POD_PRESET_ERROR="${color_red}true${color_norm}"
-    fi
     if ${VERIFY_CI_ERROR}; then
 	VERIFY_CI_ERROR="${color_red}true${color_norm}"
     fi
@@ -63,7 +60,6 @@ function error-variables {
     print-with-yellow "RESOURCE_ERROR: ${RESOURCE_ERROR}"
     print-with-yellow "BIND_ERROR: ${BIND_ERROR}"
     print-with-yellow "PROVISION_ERROR: ${PROVISION_ERROR}"
-    print-with-yellow "POD_PRESET_ERROR: ${POD_PRESET_ERROR}"
     print-with-yellow "VERIFY_CI_ERROR: ${VERIFY_CI_ERROR}"
     print-with-yellow "UNBIND_ERROR: ${UNBIND_ERROR}"
     print-with-yellow "DEPROVISION_ERROR: ${DEPROVISION_ERROR}"
@@ -81,7 +77,6 @@ function error-check {
     elif ${BIND_ERROR}; then
 	print-with-red "BIND ERROR reported from ${1}"
 	redirect-output
-	podpreset-logs
 	secret-logs
 	broker-logs
 	catalog-logs
@@ -90,12 +85,6 @@ function error-check {
 	redirect-output
 	pod-logs
 	broker-logs
-    elif ${POD_PRESET_ERROR}; then
-	print-with-red "POD PRESET ERROR reported from ${1}"
-	redirect-output
-	pod-logs
-	secret-logs
-	podpreset-logs
     elif ${VERIFY_CI_ERROR}; then
 	print-with-red "VERIFY CI ERROR reported from ${1}"
 	redirect-output
@@ -114,7 +103,7 @@ function error-check {
 	print-all-logs
     fi
 
-    if ${VERIFY_CI_ERROR} || ${POD_PRESET_ERROR} || ${PROVISION_ERROR} ||
+    if ${VERIFY_CI_ERROR} || ${PROVISION_ERROR} ||
 	${BIND_ERROR} || ${RESOURCE_ERROR} || ${UNBIND_ERROR} || 
     ${DEPROVISION_ERROR} || ${DEVAPI_ERROR} ; then
 	restore-output

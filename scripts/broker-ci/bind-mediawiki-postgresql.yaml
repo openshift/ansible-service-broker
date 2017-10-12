@@ -1,5 +1,5 @@
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Binding
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceBinding
 metadata:
   name: mediawiki-postgresql-binding
   namespace: default
@@ -7,8 +7,3 @@ spec:
   instanceRef:
     name: postgresql
   secretName: mediawiki-postgresql-binding
-  alphaPodPresetTemplate:
-    name: bind-postgresql-mediawiki
-    selector:
-      matchLabels:
-        app: mediawiki123
