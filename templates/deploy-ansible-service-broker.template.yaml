@@ -243,7 +243,7 @@ objects:
   kind: Secret
   metadata:
     name: ansibleservicebroker-client
-    annotations: 
+    annotations:
       kubernetes.io/service-account.name: ansibleservicebroker-client
   type: kubernetes.io/service-account-token
 
@@ -263,7 +263,7 @@ objects:
     tls:
       termination: reencrypt
 
-- apiVersion: servicecatalog.k8s.io/v1alpha1
+- apiVersion: ${SVC_CAT_API_VER}
   kind: ${BROKER_KIND}
   metadata:
     name: ansible-service-broker
@@ -274,17 +274,22 @@ objects:
     caBundle: ${BROKER_CA_CERT}
 
 parameters:
-- description: Service Broker kind. Newer service-catalogs use ServiceBroker
-  displayname: Service Broker kind. Newer service-catalogs use ServiceBroker
-  name: BROKER_KIND
-  value: ServiceBroker
+- description: Service Catalog API Version.  Newer service-catalogs use servicecatalog.k8s.io/v1beta1
+  displayname: Service Catalog API Version.  Newer service-catalogs use servicecatalog.k8s.io/v1beta1
+  name: SVC_CAT_API_VER
+  value: servicecatalog.k8s.io/v1beta1
 
-- description: Service Broker CA Cert. 
+- description: Service Broker kind. Newer service-catalogs use ClusterServiceBroker
+  displayname: Service Broker kind. Newer service-catalogs use ClusterServiceBroker
+  name: BROKER_KIND
+  value: ClusterServiceBroker
+
+- description: Service Broker CA Cert.
   displayname: Service Broker kind.
   name: BROKER_CA_CERT
   value: ""
 
-- description: Service Broker url prefix for the cluster 
+- description: Service Broker url prefix for the cluster
   displayname: ASB Url Prefix
   name: BROKER_URL_PREFIX
   value: "/ansible-service-broker"
@@ -405,7 +410,7 @@ parameters:
 
  #TODO: NEED TO CHANGE TO FALSE AFTER THE 3.7 CUT
 - description: Auto escalate the broker. Will remove user impresonation
-  displayname: Auto Escalate 
+  displayname: Auto Escalate
   name: AUTO_ESCALATE
   value: "true"
 
