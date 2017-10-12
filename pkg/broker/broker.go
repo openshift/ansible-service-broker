@@ -50,6 +50,8 @@ var (
 	ErrorNotFound = errors.New("not found")
 	// ErrorBindingExists - Error for when deprovision is called on a service instance with active bindings
 	ErrorBindingExists = errors.New("binding exists")
+	// ErrorDeprovisionInProgress - Error for when deprovision is called on a service instance that has a deprovision job in progress
+	ErrorDeprovisionInProgress = errors.New("deprovision in progress")
 )
 
 const (
@@ -390,7 +392,11 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// Handle bad write of service instance
 			if instance.Spec == nil || instance.Parameters == nil {
-				a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token, State: apb.StateFailed})
+				a.dao.SetState(instanceID, apb.JobState{
+					Token:  rs.State.Token,
+					State:  apb.StateFailed,
+					Method: rs.State.Method,
+				})
 				a.dao.DeleteServiceInstance(instance.ID.String())
 				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.ID))
 				// skip to the next item
@@ -408,7 +414,11 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// HACK: there might be a delay between the first time the state in etcd
 			// is set and the job was already started. But I need the token.
-			a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token, State: apb.StateInProgress})
+			a.dao.SetState(instanceID, apb.JobState{
+				Token:  rs.State.Token,
+				State:  apb.StateInProgress,
+				Method: rs.State.Method,
+			})
 		} else {
 			// YES, we have a podname
 			a.log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
@@ -430,8 +440,12 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// YES, pod finished we have creds
 			if extCreds != nil {
 				a.log.Debug("broker::Recover, got ExtractedCredentials!")
-				a.dao.SetState(instanceID, apb.JobState{Token: rs.State.Token,
-					State: apb.StateSucceeded, Podname: rs.State.Podname})
+				a.dao.SetState(instanceID, apb.JobState{
+					Token:   rs.State.Token,
+					State:   apb.StateSucceeded,
+					Podname: rs.State.Podname,
+					Method:  rs.State.Method,
+				})
 				err = a.dao.SetExtractedCredentials(instanceID, extCreds)
 				if err != nil {
 					a.log.Error("Could not persist extracted credentials")
@@ -640,7 +654,11 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
-		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
+		a.dao.SetState(instanceUUID.String(), apb.JobState{
+			Token:  token,
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodProvision,
+		})
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
@@ -688,6 +706,16 @@ func (a AnsibleBroker) Deprovision(
 		return nil, err
 	}
 
+	alreadyInProgress, err := a.isDeprovisionInProgress(&instance)
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while trying to determine if a deprovision job is already in progress for instance: %s", instance.ID)
+	}
+
+	if alreadyInProgress {
+		a.log.Infof("Deprovision requested for instance %s, but job is already in progress", instance.ID)
+		return nil, ErrorDeprovisionInProgress
+	}
+
 	var token string
 
 	if async {
@@ -703,7 +731,11 @@ func (a AnsibleBroker) Deprovision(
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
-		a.dao.SetState(instance.ID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
+		a.dao.SetState(instance.ID.String(), apb.JobState{
+			Token:  token,
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodDeprovision,
+		})
 		return &DeprovisionResponse{Operation: token}, nil
 	}
 
@@ -728,8 +760,18 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 		a.log.Debugf("Found bindings with ids: %v", instance.BindingIDs)
 		return ErrorBindingExists
 	}
-	// TODO WHAT TO DO IF ASYNC BIND/PROVISION IN PROGRESS
+
 	return nil
+}
+
+func (a AnsibleBroker) isDeprovisionInProgress(instance *apb.ServiceInstance) (bool, error) {
+	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
+	if err != nil {
+		return false, err
+	}
+
+	deproJobs := dao.MapJobStatesWithMethod(allJobs, apb.JobMethodDeprovision)
+	return len(deproJobs) > 0, nil
 }
 
 // Bind - will create a binding between a service.
