@@ -35,11 +35,6 @@ import (
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
 
-const (
-	transientNameSpaceKey        = "apb"
-	transientNameSpaceNamePrefix = "apb-namespace-"
-)
-
 // ExecuteApb - Runs an APB Action with a provided set of inputs
 func ExecuteApb(
 	action string,
@@ -83,12 +78,17 @@ func ExecuteApb(
 		return executionContext, err
 	}
 
+	labels := map[string]string{
+		"apb-fqname": spec.FQName,
+		"apb-action": action,
+	}
+
 	executionContext.Targets = append(executionContext.Targets, context.Namespace)
 	// Create namespace.
 	namespace := v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:       map[string]string{transientNameSpaceKey: spec.FQName},
-			GenerateName: transientNameSpaceNamePrefix,
+			Labels:       labels,
+			GenerateName: fmt.Sprintf("%s-%.4s-", spec.FQName, action),
 		},
 	}
 	ns, err := k8scli.CoreV1().Namespaces().Create(&namespace)
@@ -112,10 +112,8 @@ func ExecuteApb(
 	volumes, volumeMounts := buildVolumeSpecs(secrets)
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: executionContext.PodName,
-			Labels: map[string]string{
-				"apb-fqname": spec.FQName,
-			},
+			Name:   executionContext.PodName,
+			Labels: labels,
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
