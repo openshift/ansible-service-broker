@@ -24,12 +24,12 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
-// MapJobStatesWithAPBMethod - takes a slice of JobState stucts and returns a slice containing
-// only JobStates that match the specified JobStateAPBMethodType.
-func MapJobStatesWithAPBMethod(jobs []apb.JobState, method apb.JobStateAPBMethodType) []apb.JobState {
+// MapJobStatesWithMethod - takes a slice of JobState stucts and returns a slice containing
+// only JobStates that match the specified JobMethod.
+func MapJobStatesWithMethod(jobs []apb.JobState, method apb.JobMethod) []apb.JobState {
 	filteredJobStates := []apb.JobState{}
 	for _, js := range jobs {
-		if method == js.APBMethodType {
+		if method == js.Method {
 			filteredJobStates = append(filteredJobStates, js)
 		}
 	}

@@ -393,9 +393,9 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// Handle bad write of service instance
 			if instance.Spec == nil || instance.Parameters == nil {
 				a.dao.SetState(instanceID, apb.JobState{
-					Token:         rs.State.Token,
-					State:         apb.StateFailed,
-					APBMethodType: rs.State.APBMethodType,
+					Token:  rs.State.Token,
+					State:  apb.StateFailed,
+					Method: rs.State.Method,
 				})
 				a.dao.DeleteServiceInstance(instance.ID.String())
 				a.log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.ID))
@@ -415,9 +415,9 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// HACK: there might be a delay between the first time the state in etcd
 			// is set and the job was already started. But I need the token.
 			a.dao.SetState(instanceID, apb.JobState{
-				Token:         rs.State.Token,
-				State:         apb.StateInProgress,
-				APBMethodType: rs.State.APBMethodType,
+				Token:  rs.State.Token,
+				State:  apb.StateInProgress,
+				Method: rs.State.Method,
 			})
 		} else {
 			// YES, we have a podname
@@ -441,10 +441,10 @@ func (a AnsibleBroker) Recover() (string, error) {
 			if extCreds != nil {
 				a.log.Debug("broker::Recover, got ExtractedCredentials!")
 				a.dao.SetState(instanceID, apb.JobState{
-					Token:         rs.State.Token,
-					State:         apb.StateSucceeded,
-					Podname:       rs.State.Podname,
-					APBMethodType: rs.State.APBMethodType,
+					Token:   rs.State.Token,
+					State:   apb.StateSucceeded,
+					Podname: rs.State.Podname,
+					Method:  rs.State.Method,
 				})
 				err = a.dao.SetExtractedCredentials(instanceID, extCreds)
 				if err != nil {
@@ -655,9 +655,9 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
 		a.dao.SetState(instanceUUID.String(), apb.JobState{
-			Token:         token,
-			State:         apb.StateInProgress,
-			APBMethodType: apb.JobStateAPBMethodTypeProvision,
+			Token:  token,
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodProvision,
 		})
 	} else {
 		// TODO: do we want to do synchronous provisioning?
@@ -732,9 +732,9 @@ func (a AnsibleBroker) Deprovision(
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
 		a.dao.SetState(instance.ID.String(), apb.JobState{
-			Token:         token,
-			State:         apb.StateInProgress,
-			APBMethodType: apb.JobStateAPBMethodTypeDeprovision,
+			Token:  token,
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodDeprovision,
 		})
 		return &DeprovisionResponse{Operation: token}, nil
 	}
@@ -770,7 +770,7 @@ func (a AnsibleBroker) isDeprovisionInProgress(instance *apb.ServiceInstance) (b
 		return false, err
 	}
 
-	deproJobs := dao.MapJobStatesWithAPBMethod(allJobs, apb.JobStateAPBMethodTypeDeprovision)
+	deproJobs := dao.MapJobStatesWithMethod(allJobs, apb.JobMethodDeprovision)
 	return len(deproJobs) > 0, nil
 }
 
