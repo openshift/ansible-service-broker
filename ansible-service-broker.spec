@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.8
+Version: 1.0.9
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Oct 12 2017 jesus m. rodriguez <jmrodri@gmail.com> 1.0.9-1
+- Bug 1500930 - Prevent multiple deprovision pods from spawning (#488) (ernelson@redhat.com)
+- Bug 1501512 - bind issue when multiple calls to create the same binding (#486) (Shawn.Hurley21@gmail.com)
+- Update deployment template to match latest service-catalog in origin (#485) (jwmatthews@gmail.com)
+
 * Wed Oct 11 2017 jesus m. rodriguez <jmrodri@gmail.com> 1.0.8-1
 - Bug 1500934 - Dynamic broker ns for secrets (#482) (ernelson@redhat.com)
 - Bug 1500048 - make plan ids globally unique (#480) (jmrodri@gmail.com)
