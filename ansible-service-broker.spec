@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.7
+Version: 1.0.8
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,17 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Oct 11 2017 jesus m. rodriguez <jmrodri@gmail.com> 1.0.8-1
+- Bug 1500934 - Dynamic broker ns for secrets (#482) (ernelson@redhat.com)
+- Bug 1500048 - make plan ids globally unique (#480) (jmrodri@gmail.com)
+- Add troubleshooting documentation to the broker (#479) (david.j.zager@gmail.com)
+- Bug 1498954 - Broker in developer mode must support apb push (#476) (david.j.zager@gmail.com)
+- Bug 1498933 - Do not delete apb-push sourced specs when bootstrapping (#477) (dymurray@redhat.com)
+- Bug 1498992 - Ansible Service Broker template should default (#478) (david.j.zager@gmail.com)
+- Bug 1498618 - Support bind parameters. (#467) (cchase@redhat.com)
+- Update run_latest_build w/ origin latest default (#471) (david.j.zager@gmail.com)
+- Creating proposals for keeping transient namespace alive (#464) (Shawn.Hurley21@gmail.com)
+
 * Wed Oct 04 2017 Jason Montleon <jmontleo@redhat.com> 1.0.7-1
 - Bug 1498185 - Adjust versioning check so that it is done in the registry
   package (#468) (dymurray@redhat.com)
