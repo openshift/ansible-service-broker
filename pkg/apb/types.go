@@ -92,16 +92,16 @@ type State string
 type JobStateAPBMethodType string
 
 const (
-	// Provision APB Method.
+	// JobStateAPBMethodTypeProvision - Provision MethodType const.
 	JobStateAPBMethodTypeProvision JobStateAPBMethodType = "provision"
 
-	// Deprovision APB Method.
+	// JobStateAPBMethodTypeDeprovision - Deprovision MethodType const.
 	JobStateAPBMethodTypeDeprovision JobStateAPBMethodType = "deprovision"
 
-	// Bind APB Method. NOTE: Not in use until async bind is supported.
+	// JobStateAPBMethodTypeBind - Bind MethodType const.
 	JobStateAPBMethodTypeBind JobStateAPBMethodType = "bind"
 
-	// Unbind APB Method. NOTE: Not in use until async unbind is supported.
+	// JobStateAPBMethodTypeUnbind - Unbind MethodType const.
 	JobStateAPBMethodTypeUnbind JobStateAPBMethodType = "unbind"
 )
 

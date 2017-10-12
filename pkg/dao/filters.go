@@ -24,6 +24,8 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
+// MapJobStatesWithAPBMethod - takes a slice of JobState stucts and returns a slice containing
+// only JobStates that match the specified JobStateAPBMethodType.
 func MapJobStatesWithAPBMethod(jobs []apb.JobState, method apb.JobStateAPBMethodType) []apb.JobState {
 	filteredJobStates := []apb.JobState{}
 	for _, js := range jobs {

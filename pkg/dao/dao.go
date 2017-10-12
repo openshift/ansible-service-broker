@@ -235,10 +235,10 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 
 // GetSvcInstJobsByState - Lookup all jobs of a given state for a specific instance
 func (d *Dao) GetSvcInstJobsByState(
-	instanceId string, reqState apb.State,
+	instanceID string, reqState apb.State,
 ) ([]apb.JobState, error) {
 	d.log.Debug("Dao::GetSvcInstJobsByState")
-	allStates, err := d.getJobsForSvcInst(instanceId)
+	allStates, err := d.getJobsForSvcInst(instanceID)
 
 	if err != nil {
 		return nil, err
@@ -258,13 +258,13 @@ func (d *Dao) GetSvcInstJobsByState(
 	return filtStates, nil
 }
 
-func (d *Dao) getJobsForSvcInst(instanceId string) ([]apb.JobState, error) {
+func (d *Dao) getJobsForSvcInst(instanceID string) ([]apb.JobState, error) {
 	d.log.Debug("Dao::getJobsForSvcInst")
 
 	var res *client.Response
 	var err error
 
-	lookupKey := fmt.Sprintf("/state/%s/job", instanceId)
+	lookupKey := fmt.Sprintf("/state/%s/job", instanceID)
 	opts := &client.GetOptions{Recursive: true}
 	if res, err = d.kapi.Get(context.Background(), lookupKey, opts); err != nil {
 		return nil, err
