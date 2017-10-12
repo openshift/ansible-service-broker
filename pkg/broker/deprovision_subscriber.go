@@ -82,17 +82,22 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 
 			// No errors reported, deprovision action successfully performed and
 			// broker has successfully cleaned up. Mark depro success
-			d.dao.SetState(dmsg.InstanceUUID, apb.JobState{Token: dmsg.JobToken,
-				State: apb.StateSucceeded, Podname: dmsg.PodName})
+			d.dao.SetState(dmsg.InstanceUUID, apb.JobState{
+				Token:         dmsg.JobToken,
+				State:         apb.StateSucceeded,
+				Podname:       dmsg.PodName,
+				APBMethodType: apb.JobStateAPBMethodTypeDeprovision,
+			})
 		}
 	}()
 }
 
 func setFailedDeprovisionJob(dao *dao.Dao, dmsg *DeprovisionMsg) {
 	dao.SetState(dmsg.InstanceUUID, apb.JobState{
-		Token:   dmsg.JobToken,
-		State:   apb.StateFailed,
-		Podname: dmsg.PodName,
+		Token:         dmsg.JobToken,
+		State:         apb.StateFailed,
+		Podname:       dmsg.PodName,
+		APBMethodType: apb.JobStateAPBMethodTypeDeprovision,
 	})
 }
 

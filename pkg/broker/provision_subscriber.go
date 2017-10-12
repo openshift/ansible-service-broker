@@ -58,18 +58,30 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 
 			if pmsg.Error != "" {
 				p.log.Errorf("Provision job reporting error: %s", pmsg.Error)
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken,
-					State: apb.StateFailed, Podname: pmsg.PodName})
+				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{
+					Token:         pmsg.JobToken,
+					State:         apb.StateFailed,
+					Podname:       pmsg.PodName,
+					APBMethodType: apb.JobStateAPBMethodTypeProvision,
+				})
 			} else if pmsg.Msg == "" {
 				// HACK: OMG this is horrible. We should probably pass in a
 				// state. Since we'll also be using this to get more granular
 				// updates one day.
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken,
-					State: apb.StateInProgress, Podname: pmsg.PodName})
+				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{
+					Token:         pmsg.JobToken,
+					State:         apb.StateInProgress,
+					Podname:       pmsg.PodName,
+					APBMethodType: apb.JobStateAPBMethodTypeProvision,
+				})
 			} else {
 				json.Unmarshal([]byte(pmsg.Msg), &extCreds)
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{Token: pmsg.JobToken,
-					State: apb.StateSucceeded, Podname: pmsg.PodName})
+				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{
+					Token:         pmsg.JobToken,
+					State:         apb.StateSucceeded,
+					Podname:       pmsg.PodName,
+					APBMethodType: apb.JobStateAPBMethodTypeProvision,
+				})
 				p.dao.SetExtractedCredentials(pmsg.InstanceUUID, extCreds)
 			}
 		}

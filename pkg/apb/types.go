@@ -88,11 +88,29 @@ type ExtractedCredentials struct {
 // State - Job State
 type State string
 
+// JobStateAPBMethodType - APB Method Type that the job was spawned from.
+type JobStateAPBMethodType string
+
+const (
+	// Provision APB Method.
+	JobStateAPBMethodTypeProvision JobStateAPBMethodType = "provision"
+
+	// Deprovision APB Method.
+	JobStateAPBMethodTypeDeprovision JobStateAPBMethodType = "deprovision"
+
+	// Bind APB Method. NOTE: Not in use until async bind is supported.
+	JobStateAPBMethodTypeBind JobStateAPBMethodType = "bind"
+
+	// Unbind APB Method. NOTE: Not in use until async unbind is supported.
+	JobStateAPBMethodTypeUnbind JobStateAPBMethodType = "unbind"
+)
+
 // JobState - The job state
 type JobState struct {
-	Token   string `json:"token"`
-	State   State  `json:"state"`
-	Podname string `json:"podname"`
+	Token         string                `json:"token"`
+	State         State                 `json:"state"`
+	Podname       string                `json:"podname"`
+	APBMethodType JobStateAPBMethodType `json:"apb_method_type"`
 }
 
 // ClusterConfig - Configuration for the cluster.
