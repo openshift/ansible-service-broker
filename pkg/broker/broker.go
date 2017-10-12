@@ -785,16 +785,14 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// if binding instance exists, and the parameters are different return: 409.
 	//
 	// return 201 when we're done.
-	provExtCreds, provErr := a.dao.GetExtractedCredentials(instance.ID.String())
-	if provErr != nil && !client.IsKeyNotFound(provErr) {
+	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
+	if err != nil && !client.IsKeyNotFound(err) {
 		a.log.Warningf("unable to retrieve provision time credentials - %v", err)
+		return nil, err
 	}
 	if bi, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
 		if uuid.Equal(bi.ID, bindingInstance.ID) {
 			if reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
-				if provErr != nil && !client.IsKeyNotFound(provErr) {
-					return nil, err
-				}
 				bindExtCreds, err := a.dao.GetExtractedCredentials(bi.ID.String())
 				if err != nil && !client.IsKeyNotFound(err) {
 					return nil, err
