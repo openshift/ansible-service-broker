@@ -188,7 +188,7 @@ without exposing them to the catalog or users. The config section is a list wher
 | field         | description                                                                                                                 | Required |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------|----------|
 | title         | The title of the rule. This is just for display/output purposes.                                                            |     Y    |
-| apb_name      | The name of the APB to associate with the specified secret. This is the fully qualified name (registry_name-org-image-tag). |     Y    |
+| apb_name      | The name of the APB to associate with the specified secret. This is the fully qualified name (registry_name-image). |     Y    |
 | secret        | The name of the secret to pull parameters from.                                                                             |     Y    |
 
 You can use the script in scripts/create_broker_secret.py to create and format this configuration section.
@@ -198,5 +198,5 @@ You can use the script in scripts/create_broker_secret.py to create and format t
 secrets:
 - title: Database credentials
   secret: db_creds
-  apb_name: dh-fabianvf-rhscl-postgresql-apb-latest
+  apb_name: dh-rhscl-postgresql-apb
 ```
