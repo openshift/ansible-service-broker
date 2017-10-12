@@ -263,7 +263,7 @@ objects:
     tls:
       termination: reencrypt
 
-- apiVersion: servicecatalog.k8s.io/v1alpha1
+- apiVersion: servicecatalog.k8s.io/v1beta1
   kind: ${BROKER_KIND}
   metadata:
     name: ansible-service-broker
@@ -277,7 +277,7 @@ parameters:
 - description: Service Broker kind. Newer service-catalogs use ServiceBroker
   displayname: Service Broker kind. Newer service-catalogs use ServiceBroker
   name: BROKER_KIND
-  value: ServiceBroker
+  value: ClusterServiceBroker
 
 - description: Service Broker CA Cert. 
   displayname: Service Broker kind.
