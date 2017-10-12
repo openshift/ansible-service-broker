@@ -366,6 +366,9 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 	case broker.ErrorBindingExists:
 		writeResponse(w, http.StatusBadRequest, broker.DeprovisionResponse{})
 		return
+	case broker.ErrorDeprovisionInProgress:
+		writeResponse(w, http.StatusAccepted, broker.DeprovisionResponse{})
+		return
 	}
 
 	writeDefaultResponse(w, http.StatusOK, resp, err)

@@ -50,6 +50,8 @@ var (
 	ErrorNotFound = errors.New("not found")
 	// ErrorBindingExists - Error for when deprovision is called on a service instance with active bindings
 	ErrorBindingExists = errors.New("binding exists")
+	// ErrorDeprovisionInProgress - Error for when deprovision is called on a service instance that has a deprovision job in progress
+	ErrorDeprovisionInProgress = errors.New("deprovision in progress")
 )
 
 const (
@@ -704,6 +706,16 @@ func (a AnsibleBroker) Deprovision(
 		return nil, err
 	}
 
+	alreadyInProgress, err := a.isDeprovisionInProgress(&instance)
+	if err != nil {
+		return nil, fmt.Errorf("An error occurred while trying to determine if a deprovision job is already in progress for instance: %s", instance.ID)
+	}
+
+	if alreadyInProgress {
+		a.log.Infof("Deprovision requested for instance %s, but job is already in progress", instance.ID)
+		return nil, ErrorDeprovisionInProgress
+	}
+
 	var token string
 
 	if async {
@@ -748,8 +760,18 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 		a.log.Debugf("Found bindings with ids: %v", instance.BindingIDs)
 		return ErrorBindingExists
 	}
-	// TODO WHAT TO DO IF ASYNC BIND/PROVISION IN PROGRESS
+
 	return nil
+}
+
+func (a AnsibleBroker) isDeprovisionInProgress(instance *apb.ServiceInstance) (bool, error) {
+	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
+	if err != nil {
+		return false, err
+	}
+
+	deproJobs := dao.MapJobStatesWithAPBMethod(allJobs, apb.JobStateAPBMethodTypeDeprovision)
+	return len(deproJobs) > 0, nil
 }
 
 // Bind - will create a binding between a service.

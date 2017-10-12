@@ -24,7 +24,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
-func GetJobStatesForAPBMethod(jobs []apb.JobState, method apb.JobStateAPBMethodType) []apb.JobState {
+func MapJobStatesWithAPBMethod(jobs []apb.JobState, method apb.JobStateAPBMethodType) []apb.JobState {
 	filteredJobStates := []apb.JobState{}
 	for _, js := range jobs {
 		if method == js.APBMethodType {
