@@ -785,11 +785,20 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// if binding instance exists, and the parameters are different return: 409.
 	//
 	// return 201 when we're done.
+	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
+	if err != nil && !client.IsKeyNotFound(err) {
+		a.log.Warningf("unable to retrieve provision time credentials - %v", err)
+		return nil, err
+	}
 	if bi, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
 		if uuid.Equal(bi.ID, bindingInstance.ID) {
 			if reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
+				bindExtCreds, err := a.dao.GetExtractedCredentials(bi.ID.String())
+				if err != nil && !client.IsKeyNotFound(err) {
+					return nil, err
+				}
 				a.log.Debug("already have this binding instance, returning 200")
-				return &BindResponse{}, ErrorAlreadyProvisioned
+				return a.buildBindResponse(provExtCreds, bindExtCreds)
 			}
 
 			// parameters are different
@@ -800,11 +809,6 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 
 	if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
 		return nil, err
-	}
-
-	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
-	if err != nil && !client.IsKeyNotFound(err) {
-		a.log.Warningf("unable to retrieve provision time credentials - %v", err)
 	}
 
 	// Add the DB Credentials this will allow the apb to use these credentials if it so chooses.
@@ -830,19 +834,24 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	if err := a.dao.SetServiceInstance(instance.ID.String(), &instance); err != nil {
 		return nil, err
 	}
-	// Can't bind to anything if we have nothing to return to the catalog
-	if provExtCreds == nil && bindExtCreds == nil {
-		a.log.Errorf("No extracted credentials found from provision or bind instance ID: %s",
-			instance.ID.String())
-		return nil, errors.New("No credentials available")
-	}
-
 	if bindExtCreds != nil {
 		err = a.dao.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
 		if err != nil {
 			a.log.Errorf("Could not persist extracted credentials - %v", err)
 			return nil, err
 		}
+	}
+	return a.buildBindResponse(provExtCreds, bindExtCreds)
+}
+
+func (a AnsibleBroker) buildBindResponse(provExtCreds, bindExtCreds *apb.ExtractedCredentials) (*BindResponse, error) {
+	// Can't bind to anything if we have nothing to return to the catalog
+	if provExtCreds == nil && bindExtCreds == nil {
+		a.log.Errorf("No extracted credentials found from provision or bind instance ID")
+		return nil, errors.New("No credentials available")
+	}
+
+	if bindExtCreds != nil {
 		return &BindResponse{Credentials: bindExtCreds.Credentials}, nil
 	}
 	return &BindResponse{Credentials: provExtCreds.Credentials}, nil
