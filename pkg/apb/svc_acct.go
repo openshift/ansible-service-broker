@@ -27,6 +27,7 @@ import (
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
+	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -222,7 +223,7 @@ func (s *ServiceAccountManager) createFile(handle string) (string, error) {
 }
 
 // DestroyApbSandbox - Destroys the apb sandbox
-func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext, asbNamespace string) error {
+func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext, clusterConfig ClusterConfig) error {
 	s.log.Info("Destroying APB sandbox...")
 	if executionContext.PodName == "" {
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
@@ -232,12 +233,19 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	if err != nil {
 		return err
 	}
-
-	if asbNamespace != executionContext.Namespace {
-		s.log.Debug("Deleting namespace %s", executionContext.Namespace)
-		k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
-
+	pod, err := k8scli.CoreV1().Pods(executionContext.Namespace).Get(executionContext.PodName, metav1.GetOptions{})
+	if err != nil {
+		s.log.Errorf("Unable to retrieve pod - %v", err)
 	}
+	if shouldDeleteNamespace(clusterConfig, pod, err) {
+		if clusterConfig.Namespace != executionContext.Namespace {
+			s.log.Debug("Deleting namespace %s", executionContext.Namespace)
+			k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
+		}
+	} else {
+		s.log.Debugf("Keeping namespace alive due to configuration")
+	}
+
 	s.log.Debugf("Deleting rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
 	output, err := runtime.RunCommand(
 		"oc", "delete", "rolebinding", executionContext.PodName, "--namespace="+executionContext.Namespace,
@@ -277,6 +285,19 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	os.Remove(filePathFromHandle(executionContext.PodName))
 
 	return nil
+}
+
+func shouldDeleteNamespace(clusterConfig ClusterConfig, pod *apicorev1.Pod, getPodErr error) bool {
+	if clusterConfig.KeepNamespace {
+		return false
+	}
+
+	if clusterConfig.KeepNamespaceOnError {
+		if pod.Status.Phase == apicorev1.PodFailed || pod.Status.Phase == apicorev1.PodUnknown || getPodErr != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func resourceDir() string {

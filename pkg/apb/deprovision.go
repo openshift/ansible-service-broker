@@ -67,7 +67,7 @@ func Deprovision(
 	}
 
 	sm := NewServiceAccountManager(log)
-	err = sm.DestroyApbSandbox(executionContext, clusterConfig.Namespace)
+	err = sm.DestroyApbSandbox(executionContext, clusterConfig)
 
 	return executionContext.PodName, err
 }
