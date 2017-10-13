@@ -203,10 +203,12 @@ func checkPullPolicy(policy string) (v1.PullPolicy, error) {
 	return value, nil
 }
 
-func copySecretsToNamespace(executionContext ExecutionContext,
+func copySecretsToNamespace(
+	executionContext ExecutionContext,
 	clusterConfig ClusterConfig,
 	k8scli *clientset.Clientset,
-	secrets []string) error {
+	secrets []string,
+) error {
 	for _, secrectName := range secrets {
 		secretData, err := k8scli.CoreV1().Secrets(clusterConfig.Namespace).Get(secrectName, metav1.GetOptions{})
 		if err != nil {

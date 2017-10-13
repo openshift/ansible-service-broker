@@ -243,7 +243,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 			s.log.Debug("Deleting namespace %s", executionContext.Namespace)
 			k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
 		} else {
-			//We should not be attempting to run pods in the ASB namespace, if we are, something is seriously wrong.
+			// We should not be attempting to run pods in the ASB namespace, if we are, something is seriously wrong.
 			panic(fmt.Errorf("Broker is attempting to delete its own namespace"))
 		}
 
