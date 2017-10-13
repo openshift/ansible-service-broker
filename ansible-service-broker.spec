@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.9
+Version: 1.0.10
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,14 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Oct 13 2017 Jason Montleon <jmontleo@redhat.com> 1.0.10-1
+- Move the gate to 3.7 (#489) (rhallise@redhat.com)
+- Bug 1497766 - Adding ablity to specify keeping namespace alive (#474)
+  (Shawn.Hurley21@gmail.com)
+- Bug 1496572 - Clean up error message for invalid registry credentials. (#490)
+  (Shawn.Hurley21@gmail.com)
+- Update secrets docs to account for new fqname. (#487) (fabian@fabianism.us)
+
 * Thu Oct 12 2017 jesus m. rodriguez <jmrodri@gmail.com> 1.0.9-1
 - Bug 1500930 - Prevent multiple deprovision pods from spawning (#488) (ernelson@redhat.com)
 - Bug 1501512 - bind issue when multiple calls to create the same binding (#486) (Shawn.Hurley21@gmail.com)
