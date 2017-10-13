@@ -95,7 +95,7 @@ function verify-cleanup {
 function dev-api-test {
   print-with-green "Waiting for foo apb servicename"
   BROKERURL=$(oc get -n ansible-service-broker route -o custom-columns=host:spec.host --no-headers)
-  APBID=$(curl -s -k -XPOST -u admin:admin https://$BROKERURL/ansible-service-broker/apb/spec -d "apbSpec=$(base64 scripts/broker-ci/apb.yml)"| \
+  APBID=$(curl -s -k -H "Authorization: Bearer $(oc whoami -t)" -XPOST -u admin:admin https://$BROKERURL/ansible-service-broker/apb/spec -d "apbSpec=$(base64 scripts/broker-ci/apb.yml)"| \
           python -c "import sys; import json; print json.load(sys.stdin)['services'][0]['id']")
   sleep 10
   oc delete pod -n service-catalog -l app=controller-manager
