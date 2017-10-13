@@ -6,7 +6,6 @@ source "${BROKER_DIR}/scripts/broker-ci/error.sh"
 
 BIND_ERROR=false
 PROVISION_ERROR=false
-POD_PRESET_ERROR=false
 VERIFY_CI_ERROR=false
 UNBIND_ERROR=false
 DEPROVISION_ERROR=false
@@ -46,49 +45,27 @@ function bind {
     print-with-green "Waiting for services to be ready"
     sleep 30
     oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || BIND_ERROR=true
-    ./scripts/broker-ci/wait-for-resource.sh create bindings.v1alpha1.servicecatalog.k8s.io mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
-    error-check "bind"
+    ./scripts/broker-ci/wait-for-resource.sh create ServiceBinding mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
+    ./scripts/broker-ci/wait-for-resource.sh create secret mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
+
+    DB_HOST=$(oc get secret -n default mediawiki-postgresql-binding -o jsonpath='{ .data.DB_HOST }' | base64 --decode)
+    DB_NAME=$(oc get secret -n default mediawiki-postgresql-binding -o jsonpath='{ .data.DB_NAME }' | base64 --decode)
+    DB_PASSWORD=$(oc get secret -n default mediawiki-postgresql-binding -o jsonpath='{ .data.DB_PASSWORD }' | base64 --decode)
+    DB_PORT=$(oc get secret -n default mediawiki-postgresql-binding -o jsonpath='{ .data.DB_PORT }' | base64 --decode)
+    DB_TYPE=$(oc get secret -n default mediawiki-postgresql-binding -o jsonpath='{ .data.DB_TYPE }' | base64 --decode)
+    DB_USER=$(oc get secret -n default mediawiki-postgresql-binding -o jsonpath='{ .data.DB_USER }' | base64 --decode)
+
+    oc env dc mediawiki123 -n default DB_HOST=$DB_HOST DB_NAME=$DB_NAME DB_PASSWORD=$DB_PASSWORD DB_PORT=$DB_PORT DB_TYPE=$DB_TYPE DB_USER=$DB_USER
+    ./scripts/broker-ci/wait-for-resource.sh create pod mediawiki >> /tmp/wait-for-pods-log 2>&1
+
+   error-check "bind"
 }
 
 function unbind {
-    print-with-green "Waiting for podpresets to be removed"
+    print-with-green "Waiting for bind creds to be removed"
     oc delete -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || BIND_ERROR=true
-    ./scripts/broker-ci/wait-for-resource.sh delete podpresets mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
-}
-
-function bind-credential-check {
-    set +x
-    print-with-green "Waiting for the Bind to be created"
-    ./scripts/broker-ci/wait-for-resource.sh create secret mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
-
-    RETRIES=10
-    for x in $(seq $RETRIES); do
-	oc delete pods $(oc get pods -o name -l app=mediawiki123 -n default | head -1 | cut -f 2 -d '/') -n default  --force --grace-period=10 || BIND_ERROR=true
-	./scripts/broker-ci/wait-for-resource.sh create pod mediawiki >> /tmp/wait-for-pods-log 2>&1
-
-	# Filter for 'podpreset.admission.kubernetes.io' in the pod
-	preset_test=$(oc get pods $(oc get pods -n default | grep mediawiki | grep Running | awk $'{ print $1 }') -o yaml -n default | grep podpreset | awk $'{ print $1}' | cut -f 1 -d '/')
-	if [ "${preset_test}" = "podpreset.admission.kubernetes.io" ]; then
-	    print-with-green "Pod presets found in the MediaWiki pod"
-	    break
-	else
-	    print-with-yellow "Pod presets not found in the MediaWiki pod"
-	    print-with-yellow "Retrying..."
-	fi
-    done
-
-    if [ "${x}" -eq "${RETRIES}" ]; then
-	print-with-red "Pod presets aren't in the MediaWiki pod"
-	BIND_ERROR=true
-    fi
-    set -x
-}
-
-function pickup-pod-presets {
-    print-with-green "Checking if MediaWiki received bind credentials"
-    bind-credential-check
-
-    error-check "pickup-pod-presets"
+    oc delete secret mediawiki-postgresql-binding -n default
+    ./scripts/broker-ci/wait-for-resource.sh delete secret mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
 }
 
 function verify-ci-run {
@@ -108,7 +85,7 @@ function verify-ci-run {
 }
 
 function verify-cleanup {
-  if oc get -n default podpresets mediawiki-postgresql-binding ; then
+  if oc get -n default secret mediawiki-postgresql-binding ; then
     UNBIND_ERROR=true
   elif oc get -n default dc mediawiki || oc get -n default dc postgresql ; then
     DEPROVISION_ERROR=true
@@ -135,7 +112,6 @@ function dev-api-test {
 ######
 provision
 bind
-pickup-pod-presets
 verify-ci-run
 unbind
 deprovision

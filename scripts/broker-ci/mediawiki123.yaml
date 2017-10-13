@@ -1,11 +1,11 @@
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Instance
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceInstance
 metadata:
   name: mediawiki
   namespace: default
 spec:
-  serviceClassName: dh-mediawiki123-apb
-  planName: default
+  externalClusterServiceClassName: dh-mediawiki123-apb
+  externalClusterServicePlanName: default
   parameters:
     mediawiki_db_schema: "mediawiki"
     mediawiki_site_name: "Mediawiki-CI"
