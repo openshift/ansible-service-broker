@@ -85,6 +85,11 @@ func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spe
 		Config *config `json:"config"`
 	}{}
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		log.Errorf("Unable to authenticate to the registry, registry credentials could be invalid.")
+		return nil, nil
+	}
+
 	err = json.NewDecoder(resp.Body).Decode(&hist)
 	if err != nil {
 		log.Errorf("Error grabbing JSON body from response: %s", err)
