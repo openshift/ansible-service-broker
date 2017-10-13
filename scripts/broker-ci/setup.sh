@@ -12,7 +12,13 @@ RESOURCE_ERROR=false
 set -ex
 
 function cluster-setup () {
-    git clone https://github.com/fusor/catasb
+
+    git clone https://github.com/rthallisey/catasb
+    pushd catasb
+    git fetch
+    git checkout gate-debugging
+    popd
+    # git clone https://github.com/fusor/catasb
 
     cat <<EOF > "catasb/config/my_vars.yml"
 ---
@@ -24,6 +30,43 @@ EOF
     pushd catasb/local/gate/
     ./run_gate.sh || CLUSTER_SETUP_ERROR=true
     popd
+
+
+    ip a
+    oc cluster up --routing-suffix=172.17.0.1.nip.io --public-hostname=172.17.0.1 --image=docker.io/openshift/origin --version=latest  --service-catalog=true &
+    sleep 200
+    sleep 200
+    sleep 200
+    sleep 200
+    sudo docker ps -a
+    #sudo docker logs $(docker ps -a | grep origin | awk '{ print $1 }')
+
+    ls /var/lib/origin/
+    sudo cp /var/lib/origin/openshift.local.config/master/admin.kubeconfig conf
+    sudo chown $(whoami): conf
+    oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u system:admin --config conf
+
+    oc whoami
+    oc get pods --all-namespaces
+    oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
+
+    oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u admin -p admin
+    oc whoami
+    oc get pods --all-namespaces
+    oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
+
+    oc login -u system:admin
+    oc get pods --all-namespaces
+    oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
+    oc create user admin
+    oc adm policy add-cluster-role-to-user cluster-admin admin
+    oc adm policy add-scc-to-user privileged admin
+    oc adm policy add-scc-to-group anyuid system:authenticated
+    oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u admin -p admin
+    oc get pods --all-namespaces
+    oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
+    exit 1
+
 
     env-error-check "cluster-setup"
 
