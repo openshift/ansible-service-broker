@@ -4,7 +4,7 @@
 We will need to add some security settings to help administrators lock down the broker. For this, we are going to check for privilege escalation and will move the location of where the APB pod will run.
 
 ## Problem Description
-The problem is that currently privilege escalation is a concern for users who have access to the broker. We want to give the cluster admin who is setting up the service broker the ability to not allow users to have privilege escalation. 
+The problem is that currently privilege escalation is a concern for users who have access to the broker. We want to give the cluster admin who is setting up the service broker the ability to not allow users to have privilege escalation.
 
 ## Implementation Details
 We will need to do 5 things to satisfy the requirements.
@@ -25,7 +25,7 @@ We will need to do 5 things to satisfy the requirements.
 - Create pod running as the service account.
 
 
-## Of Importance To Note 
+## Of Importance To Note
 The current proposal will achieve the re-use of the conversion and cover methods from origin by copying files to the broker. This particular path will require vendor being updated. This also means that we **not** be vendoring all of origin to get the functions that we need, but will be making copies.
 
 #### Pros Of Not Vendoring Origin

@@ -39,7 +39,7 @@ proposal and implementation plan separate from the first-pass.
 
 ## Target Demos
 
-### Basic 
+### Basic
 
 * Etherpad - demonstrate an update to initial pad title, foo -> bar
 * Etherpad - demonstrate an update from non-persistent plan to persistent plan

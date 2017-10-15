@@ -6,17 +6,17 @@ The following are the configurable parameters that you can set for deploying the
 Name | Default Value | Description
 ---|---|---
 PROJECT | ansible-service-broker | Project Namespace
-BROKER_IMAGE | ansibleplaybookbundle/origin-ansible-service-broker:latest| Container Image to use for Ansible Service Broker in format of imagename:tag 
+BROKER_IMAGE | ansibleplaybookbundle/origin-ansible-service-broker:latest| Container Image to use for Ansible Service Broker in format of imagename:tag
 ETCD_IMAGE | quay.io/coreos/etcd:latest | Container Image to use for etcd in format of imagename:tag
 BROKER_CONFIG | /etc/ansible-service-broker/config.yaml | Configuration file path for Ansible Service Broker
-DOCKERHUB_ORG | ansibleplaybookbundle | Dockerhub organization 
-DOCKERHUB_USER | changeme | Dockerhub user Name 
-DOCKERHUB_PASS | changeme | Dockerhub user Password 
-OPENSHIFT_TARGET | https://kubernetes.default | OpenShift Target URL 
-REGISTRY_TYPE | dockerhub | Registry Type 
-REGISTRY_URL | docker.io | Registry URL 
-DEV_BROKER | true | Include Broker Development Endpoint (true/false) 
-AUTO_ESCALATE | true | Auto escalate the users permissions when running an APB 
+DOCKERHUB_ORG | ansibleplaybookbundle | Dockerhub organization
+DOCKERHUB_USER | changeme | Dockerhub user Name
+DOCKERHUB_PASS | changeme | Dockerhub user Password
+OPENSHIFT_TARGET | https://kubernetes.default | OpenShift Target URL
+REGISTRY_TYPE | dockerhub | Registry Type
+REGISTRY_URL | docker.io | Registry URL
+DEV_BROKER | true | Include Broker Development Endpoint (true/false)
+AUTO_ESCALATE | true | Auto escalate the users permissions when running an APB
 BROKER_CA_CERT | "" | Tells the broker that the ca that has signed the SSL Cert and Key
 KEEP_NAMESPACE | false | Always keep the APB namespace after execution.
 KEEP_NAMESPACE_ON_ERROR | true | Keeps the APB namespace after an error during execution.
