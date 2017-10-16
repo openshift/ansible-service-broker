@@ -35,17 +35,16 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, clusterConfig Clu
 	log.Notice("                       UNBINDING                              ")
 	log.Notice("============================================================")
 
-	// podName, err
+	sm := NewServiceAccountManager(log)
 	executionContext, err := ExecuteApb(
 		"unbind", clusterConfig, instance.Spec,
 		instance.Context, parameters, log,
 	)
+	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
 
 	if err != nil {
 		log.Error("Problem executing APB unbind", err)
 	}
 
-	sm := NewServiceAccountManager(log)
-	err = sm.DestroyApbSandbox(executionContext, clusterConfig)
-	return err
+	return nil
 }

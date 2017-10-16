@@ -60,6 +60,7 @@ func Provision(
 		return "", nil, errors.New("No image field found on instance.Spec")
 	}
 
+	sm := NewServiceAccountManager(log)
 	ns := instance.Context.Namespace
 	log.Info("Checking if project %s exists...", ns)
 	if !projectExists(ns) {
@@ -71,10 +72,10 @@ func Provision(
 		"provision", clusterConfig, instance.Spec,
 		instance.Context, instance.Parameters, log,
 	)
-
+	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s]", executionContext.PodName)
-		log.Error(err.Error())
+		log.Error("apb::Provision error occurred.")
+		log.Error("%s", err.Error())
 		return executionContext.PodName, nil, err
 	}
 
@@ -86,14 +87,6 @@ func Provision(
 		log.Warningf("APB %s is not bindable", instance.Spec.FQName)
 		log.Warningf("Ignoring Credentials")
 		creds = nil
-	}
-
-	sm := NewServiceAccountManager(log)
-	sm.DestroyApbSandbox(executionContext, clusterConfig)
-	if err != nil {
-		log.Error("apb::Provision error occurred.")
-		log.Error("%s", err.Error())
-		return executionContext.PodName, creds, err
 	}
 
 	return executionContext.PodName, creds, err
