@@ -50,6 +50,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
@@ -231,6 +232,8 @@ func CreateApp() App {
 	app.log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
 	apb.InitializeSecretsCache(app.config.Secrets, app.log.Logger)
+	// Initialize Metrics.
+	metrics.Init(app.log.Logger)
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
 		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker,
@@ -334,12 +337,15 @@ func (a *App) Start() {
 		clusterURL = defaultClusterURLPreFix
 	}
 
-	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers, rules)
+	daHandler := prometheus.InstrumentHandler(
+		"ansible-service-broker",
+		handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers, rules),
+	)
 
 	if clusterURL == "/" {
-		genericserver.Handler.NonGoRestfulMux.HandlePrefix("/", prometheus.InstrumentHandler("ansible-service-broker", daHandler))
+		genericserver.Handler.NonGoRestfulMux.HandlePrefix("/", daHandler)
 	} else {
-		genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), prometheus.InstrumentHandler("ansible-service-broker", daHandler))
+		genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
 	}
 
 	defaultMetrics := routes.DefaultMetrics{}
