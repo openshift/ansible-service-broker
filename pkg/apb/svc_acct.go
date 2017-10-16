@@ -56,7 +56,6 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 	executionContext ExecutionContext,
 	apbRole string,
 ) (string, error) {
-	metrics.SandboxCreated()
 	apbID := executionContext.PodName
 	svcAccountName := executionContext.PodName
 	roleBindingName := executionContext.PodName
@@ -124,6 +123,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 
 	s.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
 
+	metrics.SandboxCreated()
 	return apbID, nil
 }
 

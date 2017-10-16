@@ -50,7 +50,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 		for {
 			msg := <-msgBuffer
 			var dmsg *DeprovisionMsg
-			metrics.RemoveDeprovisionJob()
+			metrics.DeprovisionJobFinished()
 
 			d.log.Debug("Processed deprovision message from buffer")
 			json.Unmarshal([]byte(msg.Render()), &dmsg)

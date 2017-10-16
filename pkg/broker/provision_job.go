@@ -63,7 +63,7 @@ func NewProvisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.Clu
 
 // Run - run the provision job.
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
-	metrics.AddProvisionJob()
+	metrics.ProvisionJobStarted()
 	podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
 
 	if err != nil {

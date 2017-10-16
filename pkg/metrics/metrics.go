@@ -69,6 +69,9 @@ func Init(logger *logging.Logger) {
 	log = logger
 }
 
+// We will never want to panic our app because of metric saving.
+// Therefore, we will recover our panics here and error log them
+// for later diagnosis but will never fail the app.
 func recoverMetricPanic() {
 	if r := recover(); r != nil {
 		log.Errorf("Recovering from metric function - %v", r)
@@ -113,26 +116,26 @@ func SpecsReset() {
 	specsReset.Inc()
 }
 
-// AddProvisionJob - Add a provision job to the counter.
-func AddProvisionJob() {
+// ProvisionJobStarted - Add a provision job to the counter.
+func ProvisionJobStarted() {
 	defer recoverMetricPanic()
 	provisionJob.Inc()
 }
 
-// AddDeprovisionJob - Add a deprovision job to the counter.
-func AddDeprovisionJob() {
+// DeprovisionJobStarted - Add a deprovision job to the counter.
+func DeprovisionJobStarted() {
 	defer recoverMetricPanic()
 	deprovisionJob.Inc()
 }
 
-// RemoveProvisionJob - Remove a provision job to the counter.
-func RemoveProvisionJob() {
+// ProvisionJobFinished - Remove a provision job from the counter.
+func ProvisionJobFinished() {
 	defer recoverMetricPanic()
 	provisionJob.Dec()
 }
 
-// RemoveDeprovisionJob - Remove a deprovision job to the counter.
-func RemoveDeprovisionJob() {
+// DeprovisionJobFinished - Remove a deprovision job from the counter.
+func DeprovisionJobFinished() {
 	defer recoverMetricPanic()
 	deprovisionJob.Dec()
 }

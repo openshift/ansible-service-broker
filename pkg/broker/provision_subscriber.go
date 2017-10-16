@@ -51,7 +51,7 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 			msg := <-msgBuffer
 			var pmsg *ProvisionMsg
 			var extCreds *apb.ExtractedCredentials
-			metrics.RemoveProvisionJob()
+			metrics.ProvisionJobFinished()
 
 			p.log.Debug("Processed provision message from buffer")
 			// HACK: this seems like a hack, there's probably a better way to

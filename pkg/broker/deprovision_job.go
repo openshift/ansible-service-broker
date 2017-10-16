@@ -65,7 +65,7 @@ func NewDeprovisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.C
 
 // Run - will run the deprovision job.
 func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
-	metrics.AddDeprovisionJob()
+	metrics.DeprovisionJobStarted()
 	podName, err := apb.Deprovision(p.serviceInstance, p.clusterConfig, p.log)
 	if err != nil {
 		p.log.Error("broker::Deprovision error occurred.")
