@@ -58,7 +58,7 @@ func Deprovision(
 	)
 	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
 	if err != nil {
-		log.Error("Problem executing apb %s", err)
+		log.Errorf("Problem executing apb [%s] deprovision:", executionContext.PodName)
 		return executionContext.PodName, err
 	}
 

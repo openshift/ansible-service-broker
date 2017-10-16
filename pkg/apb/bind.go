@@ -50,7 +50,7 @@ func Bind(
 	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
 
 	if err != nil {
-		log.Error("Problem executing apb [%s]:", executionContext.PodName)
+		log.Errorf("Problem executing apb [%s] bind:", executionContext.PodName)
 		return executionContext.PodName, nil, err
 	}
 
