@@ -26,6 +26,7 @@ import (
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
 // DeprovisionJob - Job to deprovision.
@@ -64,6 +65,7 @@ func NewDeprovisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.C
 
 // Run - will run the deprovision job.
 func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
+	metrics.AddDeprovisionJob()
 	podName, err := apb.Deprovision(p.serviceInstance, p.clusterConfig, p.log)
 	if err != nil {
 		p.log.Error("broker::Deprovision error occurred.")

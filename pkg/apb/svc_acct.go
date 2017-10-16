@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
 
@@ -55,6 +56,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 	executionContext ExecutionContext,
 	apbRole string,
 ) (string, error) {
+	metrics.SandboxCreated()
 	apbID := executionContext.PodName
 	svcAccountName := executionContext.PodName
 	roleBindingName := executionContext.PodName
@@ -288,6 +290,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	// "If there is an error, it will be of type *PathError"
 	// We don't care, because it's gone
 	os.Remove(filePathFromHandle(executionContext.PodName))
+	metrics.SandboxDeleted()
 
 	return
 }

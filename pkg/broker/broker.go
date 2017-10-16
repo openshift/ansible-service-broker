@@ -35,6 +35,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pborman/uuid"
@@ -244,6 +245,11 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, err
 	}
 	specs = []*apb.Spec{}
+	//Metrics calls.
+	metrics.SpecsLoadedReset()
+	metrics.SpecsReset()
+	//re-add the apb-push metrics.
+	metrics.SpecsLoaded(apbPushRegName, len(pushedSpecs))
 
 	// Load Specs for each registry
 	registryErrors := []error{}
@@ -1032,6 +1038,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	}
 	apb.AddSecretsFor(&spec)
 	service := SpecToService(&spec)
+	metrics.SpecsLoaded(apbPushRegName, 1)
 	return &CatalogResponse{Services: []Service{service}}, nil
 }
 
@@ -1050,6 +1057,7 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 		a.log.Error("Something went real bad trying to delete spec... - %v", err)
 		return err
 	}
+	metrics.SpecsUnloaded(apbPushRegName, 1)
 	return nil
 }
 
@@ -1066,6 +1074,7 @@ func (a AnsibleBroker) RemoveSpecs() error {
 		a.log.Error("Something went real bad trying to delete batch specs... - %v", err)
 		return err
 	}
+	metrics.SpecsLoadedReset()
 	return nil
 }
 

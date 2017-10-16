@@ -26,6 +26,7 @@ import (
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
 // ProvisionWorkSubscriber - Lissten for provision messages
@@ -50,6 +51,7 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 			msg := <-msgBuffer
 			var pmsg *ProvisionMsg
 			var extCreds *apb.ExtractedCredentials
+			metrics.RemoveProvisionJob()
 
 			p.log.Debug("Processed provision message from buffer")
 			// HACK: this seems like a hack, there's probably a better way to

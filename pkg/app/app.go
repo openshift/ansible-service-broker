@@ -38,6 +38,7 @@ import (
 	"k8s.io/apiserver/pkg/authentication/authenticatorfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
+	"k8s.io/apiserver/pkg/server/routes"
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	v1beta1rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
@@ -51,6 +52,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/openshift/ansible-service-broker/pkg/version"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -335,10 +337,13 @@ func (a *App) Start() {
 	daHandler := handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers, rules)
 
 	if clusterURL == "/" {
-		genericserver.Handler.NonGoRestfulMux.HandlePrefix("/", daHandler)
+		genericserver.Handler.NonGoRestfulMux.HandlePrefix("/", prometheus.InstrumentHandler("ansible-service-broker", daHandler))
 	} else {
-		genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
+		genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), prometheus.InstrumentHandler("ansible-service-broker", daHandler))
 	}
+
+	defaultMetrics := routes.DefaultMetrics{}
+	defaultMetrics.Install(genericserver.Handler.NonGoRestfulMux)
 
 	a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
 
