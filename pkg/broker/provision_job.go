@@ -64,7 +64,7 @@ func NewProvisionJob(task string, serviceInstance *apb.ServiceInstance, clusterC
 
 // Run - run the provision job.
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
-	podName, extCreds, err := apb.Provision(p.task, p.serviceInstance, p.clusterConfig, p.log)
+	podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
 
 	if err != nil {
 		p.log.Error("broker::Provision error occurred.")

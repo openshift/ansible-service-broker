@@ -671,7 +671,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
-		_, extCreds, err := apb.Provision("provision", serviceInstance, a.clusterConfig, a.log)
+		_, extCreds, err := apb.Provision(serviceInstance, a.clusterConfig, a.log)
 		if extCreds != nil {
 			a.log.Debug("broker::Provision, got ExtractedCredentials!")
 			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
@@ -1048,16 +1048,13 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	*/
 
 	var err error
+	var fromPlanName, toPlanName string
+	var fromPlan, toPlan *apb.Plan
 
 	si, err := a.dao.GetServiceInstance(instanceUUID.String())
 	if err != nil {
 		a.log.Debug("Error retrieving instance")
 		return nil, ErrorNotFound
-	}
-
-	// If no plan was specified we'll continue with the current plan
-	if req.PlanID == "" {
-		req.PlanID = (*si.Parameters)["_apb_plan_id"].(string)
 	}
 
 	// Retrieve requested spec
@@ -1071,64 +1068,57 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, err
 	}
 
-	// Make sure that we can find the plan we're updating from. This should probably never fail, but cover our tail.
-	var updateFromPlanKey = -1
-	for k, v := range spec.Plans {
-		if v.Name == (*si.Parameters)["_apb_plan_id"] {
-			updateFromPlanKey = k
-		}
+	// NOTE: It might be better to actually pull this value from the *request*
+	// sent from the catalog for the update, not the ServiceInstance parameters?
+	fromPlanName, ok := (*si.Parameters)[planParameterKey].(string)
+	if !ok {
+		emsg := "Could not retrieve current plan name from parameters for update"
+		a.log.Error(emsg)
+		return nil, errors.New(emsg)
 	}
-	if updateFromPlanKey == -1 {
-		a.log.Error("The plan %s, specified for updating from on instance %s, does not exist.", (*si.Parameters)["_apb_plan_id"], si.ID)
+
+	if req.PlanID == "" {
+		toPlanName = fromPlanName // Lock to currentPlan if no plan passed in request
+	} else {
+		toPlanName = req.PlanID
+	}
+
+	// Retrieve from/to plans by name, else respond with appropriate error
+	if fromPlan = spec.GetPlan(fromPlanName); fromPlan == nil {
+		a.log.Error("The plan %s, specified for updating from on instance %s, does not exist.", fromPlanName, si.ID)
 		return nil, ErrorPlanNotFound
 	}
-	updateFromPlan := spec.Plans[updateFromPlanKey]
-
-	// Make sure we can find the plan we're updating to.
-	var updateToPlanKey = -1
-	for k, v := range spec.Plans {
-		if v.Name == req.PlanID {
-			updateToPlanKey = k
-		}
-	}
-	if updateToPlanKey == -1 {
-		a.log.Error("The plan %s, specified for updating to on instance %s, does not exist.", req.PlanID, si.ID)
+	if toPlan = spec.GetPlan(toPlanName); toPlan == nil {
+		a.log.Error("The plan %s, specified for updating to on instance %s, does not exist.", toPlanName, si.ID)
 		return nil, ErrorPlanNotFound
 	}
-	updateToPlan := spec.Plans[updateFromPlanKey]
 
-	// Make sure that the current plan supports updating to the requested plan if a plan update was requested.
-	if req.PlanID != (*si.Parameters)["_apb_plan_id"] {
-		var updatable = false
-		for _, v := range updateFromPlan.UpdatesTo {
-			if v == req.PlanID {
-				updatable = true
-				(*si.Parameters)["_apb_plan_id"] = req.PlanID
-			}
-		}
-		if updatable == false {
-			a.log.Error("The current plan, %s, cannot be updated to the requested plan, %s.", (*si.Parameters)["_apb_plan_id"], req.PlanID)
+	// If a plan transition has been requested, validate it is possible and then
+	// update the service instance with the desired next plan
+	if fromPlanName != toPlanName {
+		a.log.Debug("Validating plan transition from: %s, to: %s", fromPlanName, toPlanName)
+		if ok := a.isValidPlanTransition(fromPlan, toPlanName); !ok {
+			a.log.Error("The current plan, %s, cannot be updated to the requested plan, %s.", fromPlanName, toPlanName)
 			return nil, ErrorPlanUpdateNotPossible
 		}
+
+		a.log.Debug("Plan transition valid!")
+		// Set new plan value
+		// TODO: Is this where the new plan name is set?
+		// TODO: I think this needs to get transformed from globalPlanID -> PlanName
+		// TODO: Is PlanID the ID, or the Name? Need to make sure it's not the hash.
+		(*si.Parameters)[planParameterKey] = req.PlanID
+	} else {
+		a.log.Debug("Plan transition NOT requested as part of update")
 	}
 
-	// Make sure that parameters requested for update exist on the new plan and that they are updatable.
-	for k, v := range req.Parameters {
-		var paramUpdated = false
-		for _, key := range updateToPlan.Parameters {
-			if key.Name == k {
-				if key.Updatable == false {
-					a.log.Error("Tried to update non-updatable parameter, %s, on instance %s.", k, si.ID)
-					return nil, ErrorParameterNotUpdatable
-				}
-				(*si.Parameters)[k] = v
-				paramUpdated = true
-			}
-		}
-		if paramUpdated == false {
-			a.log.Error("Parameter %s, requested for update on instance %s, does not exist.", k, si.ID)
-			return nil, ErrorParameterNotFound
-		}
+	if err = a.validateRequestedUpdateParams(req.Parameters, toPlan, si); err != nil {
+		return nil, err
+	}
+
+	// Parameters look good, update the ServiceInstance values
+	for newParamKey, newParamVal := range req.Parameters {
+		(*si.Parameters)[newParamKey] = newParamVal
 	}
 
 	// We're ready to provision so save
@@ -1155,7 +1145,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	} else {
 		// TODO: do we want to do synchronous updating?
 		a.log.Info("reverting to synchronous update in progress")
-		_, extCreds, err := apb.Provision("update", si, a.clusterConfig, a.log)
+		_, extCreds, err := apb.Update(si, a.clusterConfig, a.log)
 		if extCreds != nil {
 			a.log.Debug("broker::Update, got ExtractedCredentials!")
 			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
@@ -1168,6 +1158,39 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	}
 
 	return &UpdateResponse{Operation: token}, nil
+}
+
+func (a AnsibleBroker) isValidPlanTransition(fromPlan *apb.Plan, toPlanName string) bool {
+	// Make sure that we can find the plan we're updating from.
+	// This should probably never fail, but cover our tail.
+	for _, validToPlanName := range fromPlan.UpdatesTo {
+		if validToPlanName == toPlanName {
+			return true
+		}
+	}
+	return false
+}
+
+func (a AnsibleBroker) validateRequestedUpdateParams(
+	reqParams map[string]string,
+	toPlan *apb.Plan,
+	si *apb.ServiceInstance,
+) error {
+	for requestedParamKey, _ := range reqParams {
+		var pd *apb.ParameterDescriptor
+
+		// Confirm the parameter actually exists on the plan
+		if pd = toPlan.GetParameter(requestedParamKey); pd == nil {
+			a.log.Error("Parameter %s, requested for update on instance %s, does not exist.", requestedParamKey, si.ID)
+			return ErrorParameterNotFound
+		}
+
+		if !pd.Updatable {
+			a.log.Error("Tried to update non-updatable parameter, %s, on instance %s.", requestedParamKey, si.ID)
+			return ErrorParameterNotUpdatable
+		}
+	}
+	return nil
 }
 
 // LastOperation - gets the last operation and status
@@ -1202,9 +1225,6 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	spec.Image = spec.FQName
 	addNameAndIDForSpec([]*apb.Spec{&spec}, apbPushRegName)
 	a.log.Debugf("Generated name for pushed APB: [%s], ID: [%s]", spec.FQName, spec.ID)
-	for _, p := range spec.Plans {
-		a.dao.SetPlanName(p.ID, p.Name)
-	}
 
 	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err

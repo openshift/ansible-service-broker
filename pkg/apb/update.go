@@ -24,14 +24,14 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-// Provision - will run the abp with the provision action.
-func Provision(
+// Update - will run the abp with the provision action.
+func Update(
 	instance *ServiceInstance,
 	clusterConfig ClusterConfig,
 	log *logging.Logger,
 ) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
-	log.Notice("                       PROVISIONING                         ")
+	log.Notice("                       UPDATING                             ")
 	log.Notice("============================================================")
 	log.Noticef("Spec.ID: %s", instance.Spec.ID)
 	log.Noticef("Spec.Name: %s", instance.Spec.FQName)
@@ -40,10 +40,10 @@ func Provision(
 	log.Notice("============================================================")
 
 	// Nearly all of the logic for provisioning or updating is shared between
-	// provision and update, save for passing through the method type. Provision
+	// provision and update, save for passing through the method type. Update
 	// provides a nice public interface, but the bulk of the work is passed to
 	// provision_or_update as an implementation detail.
 	return provision_or_update(
-		executionMethodProvision, instance, clusterConfig, log,
+		executionMethodUpdate, instance, clusterConfig, log,
 	)
 }
