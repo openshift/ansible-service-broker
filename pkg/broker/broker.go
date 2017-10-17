@@ -626,7 +626,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// away from []byte it can still be evaluated.
 		if uuid.Equal(si.ID, serviceInstance.ID) {
 			if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
-				alreadyInProgress, jobToken, err := a.isProvisionInProgress(serviceInstance)
+				alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance, apb.JobMethodProvision)
 				if err != nil {
 					return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
 				}
@@ -716,7 +716,7 @@ func (a AnsibleBroker) Deprovision(
 		return nil, err
 	}
 
-	alreadyInProgress, jobToken, err := a.isDeprovisionInProgress(&instance)
+	alreadyInProgress, jobToken, err := a.isJobInProgress(&instance, apb.JobMethodDeprovision)
 	if err != nil {
 		return nil, fmt.Errorf("An error occurred while trying to determine if a deprovision job is already in progress for instance: %s", instance.ID)
 	}
@@ -774,32 +774,18 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 	return nil
 }
 
-func (a AnsibleBroker) isProvisionInProgress(instance *apb.ServiceInstance) (bool, string, error) {
+func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance, method apb.JobMethod) (bool, string, error) {
 	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
 	if err != nil {
 		return false, "", err
 	}
 
 	var token string
-	proJobs := dao.MapJobStatesWithMethod(allJobs, apb.JobMethodProvision)
-	if len(proJobs) > 0 {
-		token = proJobs[0].Token
+	methodJobs := dao.MapJobStatesWithMethod(allJobs, method)
+	if len(methodJobs) > 0 {
+		token = methodJobs[0].Token
 	}
-	return len(proJobs) > 0, token, nil
-}
-
-func (a AnsibleBroker) isDeprovisionInProgress(instance *apb.ServiceInstance) (bool, string, error) {
-	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
-	if err != nil {
-		return false, "", err
-	}
-
-	var token string
-	deproJobs := dao.MapJobStatesWithMethod(allJobs, apb.JobMethodDeprovision)
-	if len(deproJobs) > 0 {
-		token = deproJobs[0].Token
-	}
-	return len(deproJobs) > 0, token, nil
+	return len(methodJobs) > 0, token, nil
 }
 
 // Bind - will create a binding between a service.
