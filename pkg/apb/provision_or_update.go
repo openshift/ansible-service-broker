@@ -34,7 +34,7 @@ const (
 	executionMethodUpdate    executionMethod = "update"
 )
 
-func provision_or_update(
+func provisionOrUpdate(
 	method executionMethod,
 	instance *ServiceInstance,
 	clusterConfig ClusterConfig,

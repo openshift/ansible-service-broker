@@ -286,8 +286,6 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	defer r.Body.Close()
 	h.printRequest(r)
 
-	h.log.Debug(params["instance_uuid"])
-
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
