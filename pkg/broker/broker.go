@@ -1118,7 +1118,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		// TODO: Is this where the new plan name is set?
 		// TODO: I think this needs to get transformed from globalPlanID -> PlanName
 		// TODO: Is PlanID the ID, or the Name? Need to make sure it's not the hash.
-		(*si.Parameters)[planParameterKey] = req.PlanID
+		(*si.Parameters)[planParameterKey] = toPlanName
 	} else {
 		a.log.Debug("Plan transition NOT requested as part of update")
 	}

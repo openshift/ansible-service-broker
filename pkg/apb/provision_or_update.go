@@ -31,7 +31,7 @@ type executionMethod string
 
 const (
 	executionMethodProvision executionMethod = "provision"
-	executionMethodUpdate    executionMethod = "provision"
+	executionMethodUpdate    executionMethod = "update"
 )
 
 func provision_or_update(
