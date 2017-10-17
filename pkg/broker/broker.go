@@ -625,15 +625,15 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// This will use the package to make sure that if the type is changed
 		// away from []byte it can still be evaluated.
 		if uuid.Equal(si.ID, serviceInstance.ID) {
-			alreadyInProgress, jobToken, err := a.isProvisionInProgress(serviceInstance)
-			if err != nil {
-				return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
-			}
-			if alreadyInProgress {
-				a.log.Infof("Provision requested for instance %s, but job is already in progress", serviceInstance.ID)
-				return &ProvisionResponse{Operation: jobToken}, ErrorProvisionInProgress
-			}
 			if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
+				alreadyInProgress, jobToken, err := a.isProvisionInProgress(serviceInstance)
+				if err != nil {
+					return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
+				}
+				if alreadyInProgress {
+					a.log.Infof("Provision requested for instance %s, but job is already in progress", serviceInstance.ID)
+					return &ProvisionResponse{Operation: jobToken}, ErrorProvisionInProgress
+				}
 				a.log.Debug("already have this instance returning 200")
 				return &ProvisionResponse{}, ErrorAlreadyProvisioned
 			}
@@ -780,7 +780,7 @@ func (a AnsibleBroker) isProvisionInProgress(instance *apb.ServiceInstance) (boo
 		return false, "", err
 	}
 
-	var token string = ""
+	var token string
 	proJobs := dao.MapJobStatesWithMethod(allJobs, apb.JobMethodProvision)
 	if len(proJobs) > 0 {
 		token = proJobs[0].Token
@@ -794,7 +794,7 @@ func (a AnsibleBroker) isDeprovisionInProgress(instance *apb.ServiceInstance) (b
 		return false, "", err
 	}
 
-	var token string = ""
+	var token string
 	deproJobs := dao.MapJobStatesWithMethod(allJobs, apb.JobMethodDeprovision)
 	if len(deproJobs) > 0 {
 		token = deproJobs[0].Token
