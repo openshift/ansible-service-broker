@@ -59,7 +59,7 @@ recovery: "true"
 image_pull_policy: "IfNotPresent"
 
 # Will enable basic authentication
-enable_basic_auth: "true"
+enable_basic_auth: "false"
 
 ############################################################
 # NOTE: These values MUST be base64 encoded.

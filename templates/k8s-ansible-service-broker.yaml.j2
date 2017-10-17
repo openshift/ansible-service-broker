@@ -146,6 +146,36 @@ data:
           enabled: {{ enable_basic_auth }}
 
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ansibleservicebroker-client
+  namespace: ansible-service-broker
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: ansibleservicebroker-client
+subjects:
+- kind: ServiceAccount
+  name: ansibleservicebroker-client
+  namespace: ansible-service-broker
+roleRef:
+  kind: ClusterRole
+  name: access-asb-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ansibleservicebroker-client
+  annotations:
+    kubernetes.io/service-account.name: ansibleservicebroker-client
+type: kubernetes.io/service-account-token
+
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
