@@ -21,6 +21,8 @@
 package apb
 
 import (
+	"fmt"
+
 	logging "github.com/op/go-logging"
 )
 
@@ -34,18 +36,23 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, clusterConfig Clu
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                              ")
 	log.Notice("============================================================")
+	log.Notice(fmt.Sprintf("ServiceInstance.ID: %s", instance.Spec.ID))
+	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.FQName))
+	log.Notice(fmt.Sprintf("ServiceInstance.Image: %s", instance.Spec.Image))
+	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
+	log.Notice("============================================================")
 
-	// podName, err
+	sm := NewServiceAccountManager(log)
 	executionContext, err := ExecuteApb(
 		"unbind", clusterConfig, instance.Spec,
 		instance.Context, parameters, log,
 	)
+	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
 
 	if err != nil {
-		log.Error("Problem executing APB unbind", err)
+		log.Errorf("Problem executing apb [%s] unbind:", executionContext.PodName)
+		return err
 	}
 
-	sm := NewServiceAccountManager(log)
-	err = sm.DestroyApbSandbox(executionContext, clusterConfig)
-	return err
+	return nil
 }

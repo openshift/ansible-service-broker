@@ -224,15 +224,17 @@ func (s *ServiceAccountManager) createFile(handle string) (string, error) {
 }
 
 // DestroyApbSandbox - Destroys the apb sandbox
-func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext, clusterConfig ClusterConfig) error {
+func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext, clusterConfig ClusterConfig) {
 	s.log.Info("Destroying APB sandbox...")
 	if executionContext.PodName == "" {
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
-		return nil
+		return
 	}
 	k8scli, err := clients.Kubernetes(s.log)
 	if err != nil {
-		return err
+		s.log.Error("Soemthing went wrong getting kubernetes client")
+		s.log.Errorf("%s", err.Error())
+		return
 	}
 	pod, err := k8scli.CoreV1().Pods(executionContext.Namespace).Get(executionContext.PodName, metav1.GetOptions{})
 	if err != nil {
@@ -256,10 +258,10 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	)
 	if err != nil {
 		s.log.Error("Something went wrong trying to destroy the rolebinding!")
-		s.log.Error(err.Error())
+		s.log.Errorf("%s", err.Error())
 		s.log.Error("oc delete output:")
-		s.log.Error(string(output))
-		return err
+		s.log.Errorf("%s", string(output))
+		return
 	}
 	s.log.Debug("Successfully deleted rolebinding %s, namespace %s", executionContext.PodName, executionContext.Namespace)
 	s.log.Debug("oc delete output:")
@@ -272,15 +274,14 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		)
 		if err != nil {
 			s.log.Error("Something went wrong trying to destroy the rolebinding!")
-			s.log.Error(err.Error())
+			s.log.Errorf("%s", err.Error())
 			s.log.Error("oc delete output:")
 			s.log.Error(string(output))
-			return err
+			return
 		}
 		s.log.Debug("Successfully deleted rolebinding %s, namespace %s", executionContext.PodName, target)
 		s.log.Debug("oc delete output:")
-		s.log.Debug(string(output))
-
+		s.log.Debugf("%s", string(output))
 	}
 
 	// If file doesn't exist, ignore
@@ -288,7 +289,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	// We don't care, because it's gone
 	os.Remove(filePathFromHandle(executionContext.PodName))
 
-	return nil
+	return
 }
 
 func shouldDeleteNamespace(clusterConfig ClusterConfig, pod *apicorev1.Pod, getPodErr error) bool {

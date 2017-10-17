@@ -42,20 +42,18 @@ func Bind(
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
+	sm := NewServiceAccountManager(log)
 	executionContext, err := ExecuteApb(
 		"bind", clusterConfig, instance.Spec,
 		instance.Context, parameters, log,
 	)
+	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
 
 	if err != nil {
-		log.Error("Problem executing apb [%s]:", executionContext.PodName)
+		log.Errorf("Problem executing apb [%s] bind:", executionContext.PodName)
 		return executionContext.PodName, nil, err
 	}
 
 	creds, err := ExtractCredentials(executionContext.PodName, executionContext.Namespace, log)
-
-	sm := NewServiceAccountManager(log)
-	err = sm.DestroyApbSandbox(executionContext, clusterConfig)
-
 	return executionContext.PodName, creds, err
 }
