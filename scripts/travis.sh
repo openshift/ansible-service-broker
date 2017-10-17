@@ -34,7 +34,7 @@ elif [[ "$action" == "install" ]]; then
   sudo make install_device-mapper
   cd ..
 
-  #  build btrfs from scratch
+   build btrfs from scratch
   git clone https://github.com/kdave/btrfs-progs.git
   cd btrfs-progs
   ./autogen.sh

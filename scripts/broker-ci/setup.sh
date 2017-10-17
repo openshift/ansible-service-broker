@@ -9,7 +9,8 @@ MAKE_DEPLOY_ERROR=false
 CLUSTER_SETUP_ERROR=false
 RESOURCE_ERROR=false
 
-set -ex
+#set -ex
+set -x
 
 function cluster-setup () {
 
@@ -33,38 +34,38 @@ EOF
 
 
     ip a
-    oc cluster up --routing-suffix=172.17.0.1.nip.io --public-hostname=172.17.0.1 --image=docker.io/openshift/origin --version=latest  --service-catalog=true &
+    nsenter findmnt -o target,fstype --noheadings --first-only --target /var/lib/origin/openshift.local.volumes/pods/
+
+    sudo findmnt
+    oc cluster up --routing-suffix=172.17.0.1.nip.io --public-hostname=172.17.0.1 --image=docker.io/openshift/origin --version=latest  --service-catalog=true --server-loglevel=4 &
     sleep 200
     sleep 200
     sleep 200
     sleep 200
     sudo docker ps -a
-    #sudo docker logs $(docker ps -a | grep origin | awk '{ print $1 }')
 
     ls /var/lib/origin/
-    sudo cp /var/lib/origin/openshift.local.config/master/admin.kubeconfig conf
-    sudo chown $(whoami): conf
-    oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u system:admin --config conf
+    sudo mkdir -p ~/.kube
+    sudo cp /var/lib/origin/openshift.local.config/master/admin.kubeconfig ~/.kube/config
+    sudo chown $(whoami): ~/.kube/config
+    oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u system:admin
 
-    oc whoami
     oc get pods --all-namespaces
-    oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
 
-    oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u admin -p admin
-    oc whoami
-    oc get pods --all-namespaces
-    oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
+    pod_uid=$(sudo ls /var/lib/origin/openshift.local.volumes/pods/ | head -1)
+    vol_path="volumes/kubernetes.io~secret/apiserver-ssl"
+    nsenter findmnt -o target,fstype --noheadings --first-only --target /var/lib/origin/openshift.local.volumes/pods/$pod_uid/$vol_path
 
-    oc login -u system:admin
-    oc get pods --all-namespaces
-    oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
-    oc create user admin
-    oc adm policy add-cluster-role-to-user cluster-admin admin
-    oc adm policy add-scc-to-user privileged admin
-    oc adm policy add-scc-to-group anyuid system:authenticated
-    oc login --insecure-skip-tls-verify 172.17.0.1:8443 -u admin -p admin
-    oc get pods --all-namespaces
-    oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
+    # oc describe pods $(oc get pods -n kube-service-catalog | grep controller-manager | awk '{ print $1 }') -n kube-service-catalog
+    # oc describe pods $(oc get pods -n kube-service-catalog | grep apiserver | awk '{ print $1 }') -n kube-service-catalog
+
+    # ls -la /data-dir
+    # ls -la /etc/service-catalog-ssl
+    # ls -la /var/run/secrets/kubernetes.io/serviceaccount
+
+    # sudo docker logs $(docker ps -a | grep origin | awk '{ print $1 }')
+    # df -h
+
     exit 1
 
 
