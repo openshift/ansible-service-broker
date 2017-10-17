@@ -1078,9 +1078,20 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	}
 
 	if req.PlanID == "" {
-		toPlanName = fromPlanName // Lock to currentPlan if no plan passed in request
+		// Lock to currentPlan if no plan passed in request
+		// No need to decode from FQPlanID -> ServiceClass scoped plan name, since
+		// `fromPlanName` in this case is already decoded. Ex: "prod" instead of the md5 hash
+		toPlanName = fromPlanName
 	} else {
-		toPlanName = req.PlanID
+		// The catalog only identifies plans via their md5(FQPlanID), and will request
+		// and update using that hash. If a PlanID is submitted, we'll need to look up
+		// the ServiceClass scoped plan name via the passed in hash so the APB
+		// will understand what to do with it, since APBs do not understand plan hashes.
+		toPlanName, err = a.dao.GetPlanName(req.PlanID)
+		if err != nil {
+			a.log.Error("Could not find requested PlanID %s in plan name lookup table", req.PlanID)
+			return nil, ErrorPlanNotFound
+		}
 	}
 
 	// Retrieve from/to plans by name, else respond with appropriate error
