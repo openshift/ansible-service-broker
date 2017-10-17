@@ -50,6 +50,8 @@ var (
 	ErrorNotFound = errors.New("not found")
 	// ErrorBindingExists - Error for when deprovision is called on a service instance with active bindings
 	ErrorBindingExists = errors.New("binding exists")
+	// ErrorProvisionInProgress - Error for when provision is called on a service instance that has a provision job in progress
+	ErrorProvisionInProgress = errors.New("provision in progress")
 	// ErrorDeprovisionInProgress - Error for when deprovision is called on a service instance that has a deprovision job in progress
 	ErrorDeprovisionInProgress = errors.New("deprovision in progress")
 )
@@ -624,6 +626,14 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// away from []byte it can still be evaluated.
 		if uuid.Equal(si.ID, serviceInstance.ID) {
 			if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
+				alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance, apb.JobMethodProvision)
+				if err != nil {
+					return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
+				}
+				if alreadyInProgress {
+					a.log.Infof("Provision requested for instance %s, but job is already in progress", serviceInstance.ID)
+					return &ProvisionResponse{Operation: jobToken}, ErrorProvisionInProgress
+				}
 				a.log.Debug("already have this instance returning 200")
 				return &ProvisionResponse{}, ErrorAlreadyProvisioned
 			}
@@ -706,14 +716,14 @@ func (a AnsibleBroker) Deprovision(
 		return nil, err
 	}
 
-	alreadyInProgress, err := a.isDeprovisionInProgress(&instance)
+	alreadyInProgress, jobToken, err := a.isJobInProgress(&instance, apb.JobMethodDeprovision)
 	if err != nil {
 		return nil, fmt.Errorf("An error occurred while trying to determine if a deprovision job is already in progress for instance: %s", instance.ID)
 	}
 
 	if alreadyInProgress {
 		a.log.Infof("Deprovision requested for instance %s, but job is already in progress", instance.ID)
-		return nil, ErrorDeprovisionInProgress
+		return &DeprovisionResponse{Operation: jobToken}, ErrorDeprovisionInProgress
 	}
 
 	var token string
@@ -764,14 +774,18 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 	return nil
 }
 
-func (a AnsibleBroker) isDeprovisionInProgress(instance *apb.ServiceInstance) (bool, error) {
+func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance, method apb.JobMethod) (bool, string, error) {
 	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
-	deproJobs := dao.MapJobStatesWithMethod(allJobs, apb.JobMethodDeprovision)
-	return len(deproJobs) > 0, nil
+	var token string
+	methodJobs := dao.MapJobStatesWithMethod(allJobs, method)
+	if len(methodJobs) > 0 {
+		token = methodJobs[0].Token
+	}
+	return len(methodJobs) > 0, token, nil
 }
 
 // Bind - will create a binding between a service.
