@@ -25,6 +25,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
 // ProvisionJob - Job to provision
@@ -64,6 +65,7 @@ func NewProvisionJob(task string, serviceInstance *apb.ServiceInstance, clusterC
 
 // Run - run the provision job.
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
+	metrics.ProvisionJobStarted()
 	podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
 
 	if err != nil {

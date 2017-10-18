@@ -26,6 +26,7 @@ import (
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
 // DeprovisionWorkSubscriber - Lissten for provision messages
@@ -43,12 +44,13 @@ func NewDeprovisionWorkSubscriber(dao *dao.Dao, log *logging.Logger) *Deprovisio
 // Subscribe - will start the work subscriber listenning on the message buffer for deprovision messages.
 func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 	d.msgBuffer = msgBuffer
-	var dmsg *DeprovisionMsg
 
 	go func() {
 		d.log.Info("Listening for deprovision messages")
 		for {
 			msg := <-msgBuffer
+			var dmsg *DeprovisionMsg
+			metrics.DeprovisionJobFinished()
 
 			d.log.Debug("Processed deprovision message from buffer")
 			json.Unmarshal([]byte(msg.Render()), &dmsg)

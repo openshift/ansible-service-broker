@@ -268,6 +268,8 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		switch err {
 		case broker.ErrorDuplicate:
 			writeResponse(w, http.StatusConflict, broker.ProvisionResponse{})
+		case broker.ErrorProvisionInProgress:
+			writeResponse(w, http.StatusAccepted, resp)
 		case broker.ErrorAlreadyProvisioned:
 			writeResponse(w, http.StatusOK, resp)
 		case broker.ErrorNotFound:

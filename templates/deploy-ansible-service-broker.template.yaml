@@ -128,6 +128,20 @@ objects:
             value: ${BROKER_CONFIG}
           resources: {}
           terminationMessagePath: /tmp/termination-log
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 1338
+              scheme: HTTPS
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+          livenessProbe:
+            httpGet:
+              port: 1338
+              path: /healthz
+              scheme: HTTPS
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
 
         - image: ${ETCD_IMAGE}
           name: etcd
