@@ -21,6 +21,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -35,17 +36,27 @@ import (
 
 // Config - The base config for the pieces of the applcation
 type Config struct {
-	Registry   []registries.Config
-	Dao        dao.Config
-	Log        LogConfig
-	Openshift  apb.ClusterConfig
-	ConfigFile string
-	Broker     broker.Config
-	Secrets    []apb.SecretsConfig
+	Registry         []registries.Config
+	Dao              dao.Config
+	Log              LogConfig
+	Openshift        apb.ClusterConfig
+	ConfigFile       string
+	RegistryAuthFile string
+	Broker           broker.Config
+	Secrets          []apb.SecretsConfig
+}
+
+type RegistryAuth struct {
+	Credentials []regCreds
+}
+type regCreds struct {
+	Type string
+	User string
+	Pass string
 }
 
 // CreateConfig - Read config file and create the Config struct
-func CreateConfig(configFile string) (Config, error) {
+func CreateConfig(configFile string, registryAuthFile string) (Config, error) {
 	var err error
 
 	// Confirm file is valid
@@ -53,17 +64,31 @@ func CreateConfig(configFile string) (Config, error) {
 		return Config{}, err
 	}
 
+	// Confirm registry auth file is valid
+	if _, err := os.Stat(registryAuthFile); err != nil {
+		return Config{}, err
+	}
+
 	config := Config{
-		ConfigFile: configFile,
+		ConfigFile:       configFile,
+		RegistryAuthFile: registryAuthFile,
 	}
 
 	// Load struct
 	var dat []byte
+	regAuth := RegistryAuth{}
+
 	if dat, err = ioutil.ReadFile(configFile); err != nil {
 		return Config{}, err
 	}
-
 	if err = yaml.Unmarshal(dat, &config); err != nil {
+		return Config{}, err
+	}
+
+	if dat, err = ioutil.ReadFile(registryAuthFile); err != nil {
+		return Config{}, err
+	}
+	if err = yaml.Unmarshal(dat, &regAuth.Credentials); err != nil {
 		return Config{}, err
 	}
 
@@ -72,6 +97,19 @@ func CreateConfig(configFile string) (Config, error) {
 			return Config{}, err
 		}
 		config.Openshift.Namespace = string(dat)
+	}
+
+	if regAuth.Credentials[0].User == "" {
+		return Config{}, errors.New("Failed to find registry credentials")
+	} else {
+		for regCount, reg := range config.Registry {
+			for _, creds := range regAuth.Credentials {
+				if reg.Type == creds.Type {
+					config.Registry[regCount].User = creds.User
+					config.Registry[regCount].Pass = creds.Pass
+				}
+			}
+		}
 	}
 
 	if err = validateConfig(config); err != nil {

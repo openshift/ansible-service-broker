@@ -208,8 +208,6 @@ registry:
 # the broker was originally brought up
     name: dh
     url: https://registry.hub.docker.com
-    user: ${DOCKERHUB_USERNAME}
-    pass: ${DOCKERHUB_PASSWORD}
     org: ${DOCKERHUB_ORG}
     white_list:
       # will allow all the APBs to be included. You must have at least 1 white
@@ -243,4 +241,11 @@ broker:
   refresh_interval: "600s"
   # TODO: default to false once we move to 3.7
   auto_escalate: ${AUTO_ESCALATE:-true}
+EOF
+
+cat << EOF  > ${GENERATED_REGISTRY_AUTH}
+---
+- type: dockerhub
+  user: ${DOCKERHUB_USERNAME}
+  pass: ${DOCKERHUB_PASSWORD}
 EOF

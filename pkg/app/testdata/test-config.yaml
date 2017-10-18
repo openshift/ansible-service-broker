@@ -3,8 +3,6 @@ registry:
   - type: dockerhub
     name: docker
     url: https://registry.hub.docker.com
-    user: DOCKERHUB_USER
-    pass: DOCKERHUB_PASS
     org: DOCKERHUB_ORG
     fail_on_error: false
   - type: rhcc

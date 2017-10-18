@@ -126,6 +126,16 @@ objects:
           env:
           - name: BROKER_CONFIG
             value: ${BROKER_CONFIG}
+          - name: DOCKERHUB_USER
+            valueFrom:
+              secretKeyRef:
+                name: registry-auth-secret
+                key: username
+          - name: DOCKERHUB_PASS
+            valueFrom:
+              secretKeyRef:
+                name: registry-auth-secret
+                key: password
           resources: {}
           terminationMessagePath: /tmp/termination-log
           readinessProbe:
@@ -189,6 +199,15 @@ objects:
     password: ${BROKER_PASS}
 
 - apiVersion: v1
+  kind: Secret
+  metadata:
+    name: registry-auth-secret
+    namespace: ansible-service-broker
+  data:
+    username: ${DOCKERHUB_USER}
+    password: ${DOCKERHUB_PASS}
+
+- apiVersion: v1
   kind: ConfigMap
   metadata:
     name: broker-config
@@ -201,8 +220,6 @@ objects:
         - type: "${REGISTRY_TYPE}"
           name: "${REGISTRY_NAME}"
           url: "${REGISTRY_URL}"
-          user: "${DOCKERHUB_USER}"
-          pass: "${DOCKERHUB_PASS}"
           org: "${DOCKERHUB_ORG}"
           tag: "${TAG}"
           white_list:

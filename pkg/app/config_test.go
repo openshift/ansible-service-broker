@@ -27,7 +27,7 @@ import (
 )
 
 func TestCreateConfig(t *testing.T) {
-	config, err := CreateConfig("testdata/test-config.yaml")
+	config, err := CreateConfig("testdata/test-config.yaml", "testdata/test-registry-auth.yaml")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -74,7 +74,7 @@ func TestCreateConfig(t *testing.T) {
 }
 
 func TestAdminRole(t *testing.T) {
-	config, err := CreateConfig("testdata/test-config-admin.yaml")
+	config, err := CreateConfig("testdata/test-config-admin.yaml", "testdata/test-registry-auth.yaml")
 	if err != nil {
 		t.Fatal(err.Error())
 	}

@@ -1,0 +1,4 @@
+---
+- type: dockerhub
+  user: DOCKERHUB_USER
+  pass: DOCKERHUB_PASS

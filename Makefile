@@ -6,6 +6,7 @@ VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
+REGISTRY_AUTH    ?= $(PWD)/etc/generated_registry_auth.yaml
 SOURCE_DIRS      = cmd pkg
 SOURCES          := $(shell find . -name '*.go' -not -path "*/vendor/*")
 SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
