@@ -177,7 +177,8 @@ type UpdateRequest struct {
 		OrganizationID uuid.UUID `json:"organization_id,omitempty"`
 		SpaceID        uuid.UUID `json:"space_id,omitempty"`
 	} `json:"previous_values,omitempty"`
-	AcceptsIncomplete bool `json:"accepts_incomplete,omitempty"`
+	Context           apb.Context `json:"context"`
+	AcceptsIncomplete bool        `json:"accepts_incomplete,omitempty"`
 }
 
 // UpdateResponse - Response for an update for a service instance.

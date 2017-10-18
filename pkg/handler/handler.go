@@ -304,6 +304,25 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	// ignore the error, if async can't be parsed it will be false
 	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
+	if !h.brokerConfig.AutoEscalate {
+		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
+		if !ok {
+			h.log.Debugf("unable to retrieve user info from request context")
+			// if no user, we should error out with bad request.
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
+				Description: "Invalid user info from originating origin header.",
+			})
+			return
+		}
+
+		if ok, status, err := h.validateUser(userInfo.Username, req.Context.Namespace); !ok {
+			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	} else {
+		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+	}
+
 	resp, err := h.broker.Update(instanceUUID, req, async)
 
 	if err != nil {
