@@ -241,6 +241,5 @@ broker:
   ssl_cert_key: ${TLS_KEY}
   ssl_cert: ${TLS_CRT}
   refresh_interval: "600s"
-  # TODO: default to false once we move to 3.7
-  auto_escalate: ${AUTO_ESCALATE:-true}
+  auto_escalate: ${AUTO_ESCALATE:-false}
 EOF
