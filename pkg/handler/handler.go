@@ -339,7 +339,7 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	} else if async {
 		writeDefaultResponse(w, http.StatusAccepted, resp, err)
 	} else {
-		writeDefaultResponse(w, http.StatusCreated, resp, err)
+		writeDefaultResponse(w, http.StatusOK, resp, err)
 	}
 }
 
