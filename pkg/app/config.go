@@ -46,7 +46,7 @@ type Config struct {
 	Secrets          []apb.SecretsConfig
 }
 
-type RegistryAuth struct {
+type registryAuth struct {
 	Credentials []regCreds
 }
 type regCreds struct {
@@ -76,7 +76,7 @@ func CreateConfig(configFile string, registryAuthFile string) (Config, error) {
 
 	// Load struct
 	var dat []byte
-	regAuth := RegistryAuth{}
+	regAuth := registryAuth{}
 
 	if dat, err = ioutil.ReadFile(configFile); err != nil {
 		return Config{}, err
@@ -101,13 +101,12 @@ func CreateConfig(configFile string, registryAuthFile string) (Config, error) {
 
 	if regAuth.Credentials[0].User == "" {
 		return Config{}, errors.New("Failed to find registry credentials")
-	} else {
-		for regCount, reg := range config.Registry {
-			for _, creds := range regAuth.Credentials {
-				if reg.Type == creds.Type {
-					config.Registry[regCount].User = creds.User
-					config.Registry[regCount].Pass = creds.Pass
-				}
+	}
+	for regCount, reg := range config.Registry {
+		for _, creds := range regAuth.Credentials {
+			if reg.Type == creds.Type {
+				config.Registry[regCount].User = creds.User
+				config.Registry[regCount].Pass = creds.Pass
 			}
 		}
 	}
