@@ -59,6 +59,7 @@ func provisionOrUpdate(
 		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}
 
+	metrics.ActionStarted(string(method))
 	executionContext, err := ExecuteApb(
 		string(method), clusterConfig, instance.Spec,
 		instance.Context, instance.Parameters, log,
