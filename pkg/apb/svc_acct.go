@@ -123,7 +123,6 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 
 	s.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
 
-	metrics.SandboxCreated()
 	return apbID, nil
 }
 
@@ -246,6 +245,8 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		if clusterConfig.Namespace != executionContext.Namespace {
 			s.log.Debug("Deleting namespace %s", executionContext.Namespace)
 			k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
+			// This is keeping track of namespaces.
+			metrics.SandboxDeleted()
 		} else {
 			// We should not be attempting to run pods in the ASB namespace, if we are, something is seriously wrong.
 			panic(fmt.Errorf("Broker is attempting to delete its own namespace"))
@@ -290,7 +291,6 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	// "If there is an error, it will be of type *PathError"
 	// We don't care, because it's gone
 	os.Remove(filePathFromHandle(executionContext.PodName))
-	metrics.SandboxDeleted()
 
 	return
 }

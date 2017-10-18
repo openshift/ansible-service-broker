@@ -10,18 +10,11 @@ const (
 )
 
 var (
-	sandboxCreated = prometheus.NewCounter(
-		prometheus.CounterOpts{
+	sandbox = prometheus.NewGauge(
+		prometheus.GaugeOpts{
 			Subsystem: subsystem,
-			Name:      "sandbox_created",
-			Help:      "Counter of all sandbox namespaces that are created.",
-		})
-
-	sandboxDeleted = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Subsystem: subsystem,
-			Name:      "sandbox_deleted",
-			Help:      "Counter of all sandbox namespaces that are deleted.",
+			Name:      "sandbox",
+			Help:      "Gauge of all sandbox namespaces that are active.",
 		})
 
 	specsLoaded = prometheus.NewGaugeVec(
@@ -52,16 +45,23 @@ var (
 			Help:      "How many deprovision jobs are actively in the buffer.",
 		})
 
+	requests = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Subsystem: subsystem,
+			Name:      "requests",
+			Help:      "How many actions have been made.",
+		}, []string{"action"})
+
 	log = logging.MustGetLogger("metrics")
 )
 
 func init() {
-	prometheus.MustRegister(sandboxCreated)
-	prometheus.MustRegister(sandboxDeleted)
+	prometheus.MustRegister(sandbox)
 	prometheus.MustRegister(specsLoaded)
 	prometheus.MustRegister(specsReset)
 	prometheus.MustRegister(provisionJob)
 	prometheus.MustRegister(deprovisionJob)
+	prometheus.MustRegister(requests)
 }
 
 // Init - Initialize the metrics package.
@@ -81,13 +81,13 @@ func recoverMetricPanic() {
 // SandboxCreated - Counter for how many sandbox created.
 func SandboxCreated() {
 	defer recoverMetricPanic()
-	sandboxCreated.Inc()
+	sandbox.Inc()
 }
 
 // SandboxDeleted - Counter for how many sandbox deleted.
 func SandboxDeleted() {
 	defer recoverMetricPanic()
-	sandboxDeleted.Inc()
+	sandbox.Dec()
 }
 
 // SpecsLoaded - Will add the count of specs. (The value can be negative,
@@ -138,4 +138,10 @@ func ProvisionJobFinished() {
 func DeprovisionJobFinished() {
 	defer recoverMetricPanic()
 	deprovisionJob.Dec()
+}
+
+// ActionStarted - Registers that an action has been started.
+func ActionStarted(action string) {
+	defer recoverMetricPanic()
+	requests.WithLabelValues(action).Inc()
 }

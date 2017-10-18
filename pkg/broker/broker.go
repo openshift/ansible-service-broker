@@ -882,6 +882,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
 	// Currently, the 'launchapbonbind' is set to false in the 'config' ConfigMap
 	var bindExtCreds *apb.ExtractedCredentials
+	metrics.ActionStarted("bind")
 	if a.brokerConfig.LaunchApbOnBind {
 		a.log.Info("Broker configured to run APB bind")
 		_, bindExtCreds, err = apb.Bind(&instance, &params, a.clusterConfig, a.log)
@@ -960,6 +961,7 @@ func (a AnsibleBroker) Unbind(
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
 	}
+	metrics.ActionStarted("bind")
 	// only launch apb if we are always launching the APB.
 	if a.brokerConfig.LaunchApbOnBind {
 		err = apb.Unbind(&serviceInstance, &params, a.clusterConfig, a.log)
