@@ -31,6 +31,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries/adapters"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 )
@@ -122,6 +123,7 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	} else {
 		r.log.Notice("All specs passed validation!")
 	}
+	metrics.SpecsLoaded(r.RegistryName(), len(validatedSpecs))
 
 	return validatedSpecs, len(imageNames), nil
 }

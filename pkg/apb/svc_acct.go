@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
 
@@ -244,6 +245,8 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		if clusterConfig.Namespace != executionContext.Namespace {
 			s.log.Debug("Deleting namespace %s", executionContext.Namespace)
 			k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
+			// This is keeping track of namespaces.
+			metrics.SandboxDeleted()
 		} else {
 			// We should not be attempting to run pods in the ASB namespace, if we are, something is seriously wrong.
 			panic(fmt.Errorf("Broker is attempting to delete its own namespace"))

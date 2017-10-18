@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 
 	logging "github.com/op/go-logging"
@@ -68,6 +69,7 @@ func Provision(
 		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}
 
+	metrics.ActionStarted("provision")
 	executionContext, err := ExecuteApb(
 		"provision", clusterConfig, instance.Spec,
 		instance.Context, instance.Parameters, log,

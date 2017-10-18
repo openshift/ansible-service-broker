@@ -30,6 +30,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/pborman/uuid"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
@@ -95,6 +96,8 @@ func ExecuteApb(
 	if err != nil {
 		return executionContext, err
 	}
+	//Sandbox (i.e Namespace) was created.
+	metrics.SandboxCreated()
 	executionContext.Namespace = ns.ObjectMeta.Name
 	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 	err = copySecretsToNamespace(executionContext, clusterConfig, k8scli, secrets)

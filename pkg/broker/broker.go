@@ -35,6 +35,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pborman/uuid"
@@ -244,6 +245,11 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, err
 	}
 	specs = []*apb.Spec{}
+	//Metrics calls.
+	metrics.SpecsLoadedReset()
+	metrics.SpecsReset()
+	//re-add the apb-push metrics.
+	metrics.SpecsLoaded(apbPushRegName, len(pushedSpecs))
 
 	// Load Specs for each registry
 	registryErrors := []error{}
@@ -876,6 +882,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// of the broker config, due to lack of async support of bind in Open Service Broker API
 	// Currently, the 'launchapbonbind' is set to false in the 'config' ConfigMap
 	var bindExtCreds *apb.ExtractedCredentials
+	metrics.ActionStarted("bind")
 	if a.brokerConfig.LaunchApbOnBind {
 		a.log.Info("Broker configured to run APB bind")
 		_, bindExtCreds, err = apb.Bind(&instance, &params, a.clusterConfig, a.log)
@@ -954,6 +961,7 @@ func (a AnsibleBroker) Unbind(
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
 	}
+	metrics.ActionStarted("unbind")
 	// only launch apb if we are always launching the APB.
 	if a.brokerConfig.LaunchApbOnBind {
 		err = apb.Unbind(&serviceInstance, &params, a.clusterConfig, a.log)
@@ -1032,6 +1040,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	}
 	apb.AddSecretsFor(&spec)
 	service := SpecToService(&spec)
+	metrics.SpecsLoaded(apbPushRegName, 1)
 	return &CatalogResponse{Services: []Service{service}}, nil
 }
 
@@ -1050,6 +1059,7 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 		a.log.Error("Something went real bad trying to delete spec... - %v", err)
 		return err
 	}
+	metrics.SpecsUnloaded(apbPushRegName, 1)
 	return nil
 }
 
@@ -1066,6 +1076,7 @@ func (a AnsibleBroker) RemoveSpecs() error {
 		a.log.Error("Something went real bad trying to delete batch specs... - %v", err)
 		return err
 	}
+	metrics.SpecsLoadedReset()
 	return nil
 }
 
