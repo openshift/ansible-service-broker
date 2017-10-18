@@ -48,7 +48,7 @@ var (
 	requests = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Subsystem: subsystem,
-			Name:      "requests",
+			Name:      "actions_requested",
 			Help:      "How many actions have been made.",
 		}, []string{"action"})
 

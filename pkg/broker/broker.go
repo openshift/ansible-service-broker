@@ -961,7 +961,7 @@ func (a AnsibleBroker) Unbind(
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
 	}
-	metrics.ActionStarted("bind")
+	metrics.ActionStarted("unbind")
 	// only launch apb if we are always launching the APB.
 	if a.brokerConfig.LaunchApbOnBind {
 		err = apb.Unbind(&serviceInstance, &params, a.clusterConfig, a.log)
