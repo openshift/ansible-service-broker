@@ -188,3 +188,27 @@ Redeploy the broker using origin clients `rollout latest` command.
 $ oc rollout latest asb
 deploymentconfig "asb" rolled out
 ```
+
+### Metrics
+
+The broker will expose [Prometheus](https://prometheus.io/) style metrics that you can use to troubleshoot the broker if none of the steps above work. You can access the published metrics by calling:
+
+```
+curl -H "Authorization: `oc whoami -t`" <broker_url>/metrics
+```
+**Requirements for the above call to work**:
+
+1. The user that you are logged in as will need to have access to `cluster-debugger-role`.
+2. The broker url will need to be exposed and reachable.
+
+#### Current ASB Metrics Exposed
+
+1. asb_sandbox - Keeps track of the active sandboxes
+2. asb_specs_loaded - will keep track of the number of specs currently loaded, will be reset on bootstrap. Labels can be used to determine the registry that has X number loaded.
+3. asb_spec_reset - will keep track of how many times the specs have been reset.
+4. asb_provision_jobs - will keep track of how many jobs are currently in the provision buffer?
+5. asb_deprovision_jobs - will keep track of how many jobs are currently in the deprovision buffer
+6. asb_update_jobs - will keep track of how many jobs are currently in the update buffer?
+5. asb_actions_requested - keeps track of the number of actions requested correctly (broken down by action = bind,unbind,update,provision,deprovision)
+
+The metrics that are exposed are currently a work in a progress and we would love feedback if you think a new metric would be valuable.
