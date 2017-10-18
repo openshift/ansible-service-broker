@@ -25,6 +25,7 @@ import (
 	"fmt"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
 type executionMethod string
