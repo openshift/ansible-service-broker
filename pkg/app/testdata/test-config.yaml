@@ -30,7 +30,7 @@ openshift:
   bearer_token_file: ""
   image_pull_policy: IfNotPresent
   sandbox_role: "edit"
-  namespace: ansible-service-broker
+  namespace: openshift-ansible-service-broker
 broker:
   bootstrap_on_startup: true
   dev_broker: true

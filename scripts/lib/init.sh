@@ -27,7 +27,6 @@ TEMPLATE_DIR="${ASB_ROOT}/templates"
 BROKER_TEMPLATE="${TEMPLATE_DIR}/deploy-ansible-service-broker.template.yaml"
 TEMPLATE_LOCAL_DEV="${TEMPLATE_DIR}/deploy-local-dev-changes.yaml"
 GENERATED_BROKER_CONFIG="${ASB_ROOT}/etc/generated_local_development.yaml"
-GENERATED_REGISTRY_AUTH="${ASB_ROOT}/etc/generated_registry_auth.yaml"
 
 for library_file in $( find "${ASB_ROOT}/scripts/lib" -type f -name '*.sh' -not -path '*/scripts/lib/init.sh' ); do
   source "${library_file}"

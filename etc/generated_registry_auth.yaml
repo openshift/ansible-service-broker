@@ -1,0 +1,4 @@
+---
+- type: dockerhub
+  user: dymurray
+  pass: qci-test

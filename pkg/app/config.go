@@ -117,7 +117,6 @@ func CreateConfig(configFile string) (Config, error) {
 			// ERROR
 		}
 	}
-	fmt.Printf("USERNAME: %v, PASSWORD: %v", config.Registry[0].User, config.Registry[0].Pass)
 
 	if err = validateConfig(config); err != nil {
 		return Config{}, err
