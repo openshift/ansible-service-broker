@@ -40,14 +40,16 @@ var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-
 
 // Config - Configuration for the registry
 type Config struct {
-	URL    string
-	User   string
-	Pass   string
-	Org    string
-	Tag    string
-	Type   string
-	Name   string
-	Images []string
+	URL      string
+	AuthType string `yaml:"auth_type"`
+	AuthName string `yaml:"auth_name"`
+	User     string
+	Pass     string
+	Org      string
+	Tag      string
+	Type     string
+	Name     string
+	Images   []string
 	// Fail will tell the registry that it is ok to fail the bootstrap if
 	// just this registry has failed.
 	Fail      bool     `yaml:"fail_on_error"`

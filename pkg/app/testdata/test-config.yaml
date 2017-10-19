@@ -3,6 +3,8 @@ registry:
   - type: dockerhub
     name: docker
     url: https://registry.hub.docker.com
+    auth_type: file
+    auth_name: testdata/test-registry-auth.yaml
     org: DOCKERHUB_ORG
     fail_on_error: false
   - type: rhcc
@@ -28,7 +30,7 @@ openshift:
   bearer_token_file: ""
   image_pull_policy: IfNotPresent
   sandbox_role: "edit"
-  namespace: openshift-ansible-service-broker
+  namespace: ansible-service-broker
 broker:
   bootstrap_on_startup: true
   dev_broker: true

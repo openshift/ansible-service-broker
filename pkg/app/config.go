@@ -21,42 +21,39 @@
 package app
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-
+	logging "github.com/op/go-logging"
 	yaml "gopkg.in/yaml.v2"
+	"io/ioutil"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
+	"strings"
 
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 )
 
 // Config - The base config for the pieces of the applcation
 type Config struct {
-	Registry         []registries.Config
-	Dao              dao.Config
-	Log              LogConfig
-	Openshift        apb.ClusterConfig
-	ConfigFile       string
-	RegistryAuthFile string
-	Broker           broker.Config
-	Secrets          []apb.SecretsConfig
+	Registry   []registries.Config
+	Dao        dao.Config
+	Log        LogConfig
+	Openshift  apb.ClusterConfig
+	ConfigFile string
+	Broker     broker.Config
+	Secrets    []apb.SecretsConfig
 }
 
-type registryAuth struct {
-	Credentials []regCreds
-}
-type regCreds struct {
-	Type string
-	User string
-	Pass string
+type RegCreds struct {
+	Username string
+	Password string
 }
 
 // CreateConfig - Read config file and create the Config struct
-func CreateConfig(configFile string, registryAuthFile string) (Config, error) {
+func CreateConfig(configFile string) (Config, error) {
 	var err error
 
 	// Confirm file is valid
@@ -64,31 +61,19 @@ func CreateConfig(configFile string, registryAuthFile string) (Config, error) {
 		return Config{}, err
 	}
 
-	// Confirm registry auth file is valid
-	if _, err := os.Stat(registryAuthFile); err != nil {
-		return Config{}, err
-	}
-
 	config := Config{
-		ConfigFile:       configFile,
-		RegistryAuthFile: registryAuthFile,
+		ConfigFile: configFile,
 	}
 
 	// Load struct
 	var dat []byte
-	regAuth := registryAuth{}
+	var data map[string][]byte
+	regCreds := RegCreds{}
 
 	if dat, err = ioutil.ReadFile(configFile); err != nil {
 		return Config{}, err
 	}
 	if err = yaml.Unmarshal(dat, &config); err != nil {
-		return Config{}, err
-	}
-
-	if dat, err = ioutil.ReadFile(registryAuthFile); err != nil {
-		return Config{}, err
-	}
-	if err = yaml.Unmarshal(dat, &regAuth.Credentials); err != nil {
 		return Config{}, err
 	}
 
@@ -99,17 +84,40 @@ func CreateConfig(configFile string, registryAuthFile string) (Config, error) {
 		config.Openshift.Namespace = string(dat)
 	}
 
-	if regAuth.Credentials[0].User == "" {
-		return Config{}, errors.New("Failed to find registry credentials")
-	}
 	for regCount, reg := range config.Registry {
-		for _, creds := range regAuth.Credentials {
-			if reg.Type == creds.Type {
-				config.Registry[regCount].User = creds.User
-				config.Registry[regCount].Pass = creds.Pass
+		if reg.AuthType == "secret" {
+			data, err = getSecretData(reg.AuthName, config.Openshift.Namespace)
+			if err != nil {
+				fmt.Println("Unable to get secret data")
+				// NEW ERROR
+				return Config{}, err
 			}
+			var username = strings.TrimSpace(string(data["username"]))
+			var password = strings.TrimSpace(string(data["password"]))
+
+			if username == "" || password == "" {
+				fmt.Printf("Unable to find credentials in secret: %s\n", reg.AuthName)
+				return Config{}, err
+			}
+
+			config.Registry[regCount].User = username
+			config.Registry[regCount].Pass = password
+
+		} else if reg.AuthType == "file" {
+			if dat, err = ioutil.ReadFile(reg.AuthName); err != nil {
+				return Config{}, err
+			}
+			if err = yaml.Unmarshal(dat, &regCreds); err != nil {
+				return Config{}, err
+			}
+			config.Registry[regCount].User = regCreds.Username
+			config.Registry[regCount].Pass = regCreds.Password
+
+		} else {
+			// ERROR
 		}
 	}
+	fmt.Printf("USERNAME: %v, PASSWORD: %v", config.Registry[0].User, config.Registry[0].Pass)
 
 	if err = validateConfig(config); err != nil {
 		return Config{}, err
@@ -139,4 +147,25 @@ func validateConfig(c Config) error {
 
 	}
 	return nil
+}
+
+// Returns the data inside of a given secret
+func getSecretData(secretName, namespace string) (map[string][]byte, error) {
+	var log logging.Logger
+	k8scli, err := clients.Kubernetes(&log)
+	if err != nil {
+		return nil, err
+	}
+	var ret = make(map[string][]byte)
+
+	secretData, err := k8scli.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
+	if err != nil {
+		fmt.Printf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
+		return ret, nil
+	}
+	fmt.Printf("Found secret with name %v\n", secretName)
+
+	ret = secretData.Data
+
+	return ret, nil
 }

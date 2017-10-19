@@ -12,7 +12,6 @@ export KUBERNETES_SERVICE_HOST=${CLUSTER_HOST}
 export KUBERNETES_SERVICE_PORT=${CLUSTER_PORT}
 
 BROKER_CONFIG=$GENERATED_BROKER_CONFIG
-REGISTRY_AUTH=$GENERATED_REGISTRY_AUTH
 if [ ! -z "$1" ]; then
   BROKER_CONFIG="$1"
 fi
@@ -22,5 +21,5 @@ if [ -z "${BROKER_CONFIG}" ]; then
   exit 1
 fi
 
-echo "Running ${BROKER_CMD} --config ${BROKER_CONFIG} --registryauth ${REGISTRY_AUTH}"
-${BROKER_CMD} --config ${BROKER_CONFIG} --registryauth ${REGISTRY_AUTH}
+echo "Running ${BROKER_CMD} --config ${BROKER_CONFIG}"
+${BROKER_CMD} --config ${BROKER_CONFIG}

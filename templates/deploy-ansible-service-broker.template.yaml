@@ -126,16 +126,6 @@ objects:
           env:
           - name: BROKER_CONFIG
             value: ${BROKER_CONFIG}
-          - name: DOCKERHUB_USER
-            valueFrom:
-              secretKeyRef:
-                name: registry-auth-secret
-                key: username
-          - name: DOCKERHUB_PASS
-            valueFrom:
-              secretKeyRef:
-                name: registry-auth-secret
-                key: password
           resources: {}
           terminationMessagePath: /tmp/termination-log
           readinessProbe:
@@ -201,7 +191,7 @@ objects:
 - apiVersion: v1
   kind: Secret
   metadata:
-    name: registry-auth-secret
+    name: ${REGISTRY_SECRET_NAME}
     namespace: ansible-service-broker
   data:
     username: ${DOCKERHUB_USER}
@@ -220,6 +210,8 @@ objects:
         - type: "${REGISTRY_TYPE}"
           name: "${REGISTRY_NAME}"
           url: "${REGISTRY_URL}"
+          auth_type: "${REGISTRY_AUTH_TYPE}"
+          auth_name: "${REGISTRY_SECRET_NAME}"
           org: "${DOCKERHUB_ORG}"
           tag: "${TAG}"
           white_list:
@@ -357,16 +349,6 @@ parameters:
   name: BROKER_CONFIG
   value: /etc/ansible-service-broker/config.yaml
 
-- description: Dockerhub user password
-  displayname: Dockerhub user password
-  name: DOCKERHUB_PASS
-  value: changeme
-
-- description: Dockerhub user name
-  displayname: Dockerhub user name
-  name: DOCKERHUB_USER
-  value: changeme
-
 - description: Dockerhub organization
   displayname: Dockerhub organization
   name: DOCKERHUB_ORG
@@ -396,6 +378,16 @@ parameters:
   displayname: Registry Type
   name: REGISTRY_TYPE
   value: dockerhub
+
+- description: Registry Secret Name
+  displayname: Registry Secret Name
+  name: REGISTRY_SECRET_NAME
+  value: registry-auth-secret
+
+- description: Registry Auth Type
+  displayname: Registry Auth Type
+  name: REGISTRY_AUTH_TYPE
+  value: secret
 
 # Intentionally shortening the registry name to lessen impact of
 # PodPreset name has a requirement of being less than 63 chars
@@ -471,6 +463,16 @@ parameters:
   displayname: Broker user name
   name: BROKER_USER
   value: YWRtaW4=
+
+- description: Dockerhub user password
+  displayname: Dockerhub user password
+  name: DOCKERHUB_PASS
+  value: Y2hhbmdlbWUK
+
+- description: Dockerhub user name
+  displayname: Dockerhub user name
+  name: DOCKERHUB_USER
+  value: Y2hhbmdlbWUK
 
 ############################################################
 # NOTE: Default behavior for these are going to use the kubernetes

@@ -28,9 +28,8 @@ import (
 
 // Args - Command line arguments for the ansbile service broker.
 type Args struct {
-	ConfigFile       string `short:"c" long:"config" description:"Config File" default:"/etc/ansible-service-broker/config.yaml"`
-	RegistryAuthFile string `short:"r" long:"registryauth" description:"Registry Auth File" default:"/etc/ansible-service-broker/registry-auth.yaml"`
-	Version          bool   `short:"v" long:"version" description:"Print version information"`
+	ConfigFile string `short:"c" long:"config" description:"Config File" default:"/etc/ansible-service-broker/config.yaml"`
+	Version    bool   `short:"v" long:"version" description:"Print version information"`
 }
 
 // CreateArgs - Will return the arguments that were passed in to the application

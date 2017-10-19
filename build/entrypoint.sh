@@ -16,11 +16,4 @@ if [ ! -f "$BROKER_CONFIG" ] ; then
 fi
 echo "Using config file mounted to $BROKER_CONFIG"
 
-cat << EOF  > "${REGISTRY_AUTH}"
----
-- type: dockerhub
-  user: ${DOCKERHUB_USER}
-  pass: ${DOCKERHUB_PASS}
-EOF
-
-asbd -c $BROKER_CONFIG --registryauth=$REGISTRY_AUTH $FLAGS
+asbd -c $BROKER_CONFIG $FLAGS
