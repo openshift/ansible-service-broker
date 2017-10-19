@@ -1099,6 +1099,8 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, errors.New(emsg)
 	}
 
+	a.log.Debugf("Update received the following Request.PlanID: [%s]", req.PlanID)
+
 	if req.PlanID == "" {
 		// Lock to currentPlan if no plan passed in request
 		// No need to decode from FQPlanID -> ServiceClass scoped plan name, since
@@ -1136,10 +1138,6 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		}
 
 		a.log.Debug("Plan transition valid!")
-		// Set new plan value
-		// TODO: Is this where the new plan name is set?
-		// TODO: I think this needs to get transformed from globalPlanID -> PlanName
-		// TODO: Is PlanID the ID, or the Name? Need to make sure it's not the hash.
 		(*si.Parameters)[planParameterKey] = toPlanName
 	} else {
 		a.log.Debug("Plan transition NOT requested as part of update")
@@ -1160,6 +1158,12 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	}
 
 	var token string
+
+	a.log.Debug("Initiating update with the inputs:")
+	a.log.Debugf("fromPlanName: [%s]", fromPlanName)
+	a.log.Debugf("toPlanName: [%s]", toPlanName)
+	a.log.Debugf("PreviousValues: [ %+v ]", req.PreviousValues)
+	a.log.Debugf("ServiceInstance Parameters: [%v]", *si.Parameters)
 
 	if async {
 		a.log.Info("ASYNC update in progress")
