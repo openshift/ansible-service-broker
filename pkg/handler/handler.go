@@ -329,8 +329,8 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 
 	if err != nil {
 		switch err {
-		case broker.ErrorAlreadyProvisioned:
-			writeResponse(w, http.StatusOK, resp)
+		case broker.ErrorUpdateInProgress:
+			writeResponse(w, http.StatusAccepted, resp)
 		case broker.ErrorNotFound:
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
 		default:

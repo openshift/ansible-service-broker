@@ -55,6 +55,8 @@ var (
 	ErrorProvisionInProgress = errors.New("provision in progress")
 	// ErrorDeprovisionInProgress - Error for when deprovision is called on a service instance that has a deprovision job in progress
 	ErrorDeprovisionInProgress = errors.New("deprovision in progress")
+	// ErrorUpdateInProgress - Error for when update is called on a service instance that has an update job in progress
+	ErrorUpdateInProgress = errors.New("update in progress")
 	// ErrorPlanNotFound - Error for when plan for update not found
 	ErrorPlanNotFound = errors.New("plan not found")
 	// ErrorParameterNotUpdatable - Error for when parameter in update request is not updatable
@@ -1091,6 +1093,30 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		a.log.Debug("Error retrieving instance")
 		return nil, ErrorNotFound
 	}
+
+	////////////////////////////////////////////////////////////
+	// TODO -- HACK!: Update will report a 202 if it finds any jobs
+	// in_progress for a particular instance, *even if the requests are different*.
+	// This means an update must be completed before a user is able to further
+	// request additional, possibly different updates. This should be considered
+	// a known issue with our update implementation.
+	//
+	// The right way to do this is probably to setup an update request queue.
+	// When a request comes in, hash it, check to see if there are any jobs in
+	// the queue or currently in progress that match the hash. If so, $DO_SENSIBLE_THING,
+	// else, add onto the back of the queue. Ensures update operations are not
+	// trying to execute concurrently.
+	////////////////////////////////////////////////////////////
+	alreadyInProgress, jobToken, err := a.isJobInProgress(si, apb.JobMethodUpdate)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"An error occurred while trying to determine if an update job is already in progress for instance: %s", si.ID)
+	}
+	if alreadyInProgress {
+		a.log.Infof("Update requested for instance %s, but job is already in progress", si.ID)
+		return &UpdateResponse{Operation: jobToken}, ErrorUpdateInProgress
+	}
+	////////////////////////////////////////////////////////////
 
 	// Retrieve requested spec
 	spec, err := a.dao.GetSpec(si.Spec.ID)
