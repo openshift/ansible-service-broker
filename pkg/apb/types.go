@@ -127,6 +127,9 @@ const (
 
 	// JobMethodUnbind - Unbind MethodType const.
 	JobMethodUnbind JobMethod = "unbind"
+
+	// JobMethodUpdate - Update MethodType const.
+	JobMethodUpdate JobMethod = "update"
 )
 
 // JobState - The job state

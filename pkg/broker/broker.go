@@ -55,6 +55,8 @@ var (
 	ErrorProvisionInProgress = errors.New("provision in progress")
 	// ErrorDeprovisionInProgress - Error for when deprovision is called on a service instance that has a deprovision job in progress
 	ErrorDeprovisionInProgress = errors.New("deprovision in progress")
+	// ErrorUpdateInProgress - Error for when update is called on a service instance that has an update job in progress
+	ErrorUpdateInProgress = errors.New("update in progress")
 	// ErrorPlanNotFound - Error for when plan for update not found
 	ErrorPlanNotFound = errors.New("plan not found")
 	// ErrorParameterNotUpdatable - Error for when parameter in update request is not updatable
@@ -419,12 +421,25 @@ func (a AnsibleBroker) Recover() (string, error) {
 				continue
 			}
 
-			// TODO: How do we know what kind of task we're trying to recover
-			pjob := NewProvisionJob("provision", instance, a.clusterConfig, a.log)
+			var job Work
+			var topic WorkTopic
+			if rs.State.Method == apb.JobMethodProvision {
+				job = NewProvisionJob(instance, a.clusterConfig, a.log)
+				topic = ProvisionTopic
+			} else if rs.State.Method == apb.JobMethodUpdate {
+				job = NewUpdateJob(instance, a.clusterConfig, a.log)
+				topic = UpdateTopic
+			} else {
+				a.log.Warningf(
+					"Attempted to recover job %s, but found an unrecognized "+
+						"MethodType: %s, skipping...",
+					rs.State.Token, rs.State.Method,
+				)
+			}
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
-			_, err := a.engine.StartNewJob(rs.State.Token, pjob, ProvisionTopic)
+			_, err := a.engine.StartNewJob(rs.State.Token, job, topic)
 			if err != nil {
 				return "", err
 			}
@@ -669,7 +684,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if async {
 		a.log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob("provision", serviceInstance, a.clusterConfig, a.log)
+		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
 
 		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
 		if err != nil {
@@ -1079,6 +1094,30 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, ErrorNotFound
 	}
 
+	////////////////////////////////////////////////////////////
+	// TODO -- HACK!: Update will report a 202 if it finds any jobs
+	// in_progress for a particular instance, *even if the requests are different*.
+	// This means an update must be completed before a user is able to further
+	// request additional, possibly different updates. This should be considered
+	// a known issue with our update implementation.
+	//
+	// The right way to do this is probably to setup an update request queue.
+	// When a request comes in, hash it, check to see if there are any jobs in
+	// the queue or currently in progress that match the hash. If so, $DO_SENSIBLE_THING,
+	// else, add onto the back of the queue. Ensures update operations are not
+	// trying to execute concurrently.
+	////////////////////////////////////////////////////////////
+	alreadyInProgress, jobToken, err := a.isJobInProgress(si, apb.JobMethodUpdate)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"An error occurred while trying to determine if an update job is already in progress for instance: %s", si.ID)
+	}
+	if alreadyInProgress {
+		a.log.Infof("Update requested for instance %s, but job is already in progress", si.ID)
+		return &UpdateResponse{Operation: jobToken}, ErrorUpdateInProgress
+	}
+	////////////////////////////////////////////////////////////
+
 	// Retrieve requested spec
 	spec, err := a.dao.GetSpec(si.Spec.ID)
 	if err != nil {
@@ -1098,6 +1137,8 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		a.log.Error(emsg)
 		return nil, errors.New(emsg)
 	}
+
+	a.log.Debugf("Update received the following Request.PlanID: [%s]", req.PlanID)
 
 	if req.PlanID == "" {
 		// Lock to currentPlan if no plan passed in request
@@ -1136,10 +1177,6 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		}
 
 		a.log.Debug("Plan transition valid!")
-		// Set new plan value
-		// TODO: Is this where the new plan name is set?
-		// TODO: I think this needs to get transformed from globalPlanID -> PlanName
-		// TODO: Is PlanID the ID, or the Name? Need to make sure it's not the hash.
 		(*si.Parameters)[planParameterKey] = toPlanName
 	} else {
 		a.log.Debug("Plan transition NOT requested as part of update")
@@ -1161,12 +1198,18 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	var token string
 
+	a.log.Debug("Initiating update with the inputs:")
+	a.log.Debugf("fromPlanName: [%s]", fromPlanName)
+	a.log.Debugf("toPlanName: [%s]", toPlanName)
+	a.log.Debugf("PreviousValues: [ %+v ]", req.PreviousValues)
+	a.log.Debugf("ServiceInstance Parameters: [%v]", *si.Parameters)
+
 	if async {
 		a.log.Info("ASYNC update in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob("update", si, a.clusterConfig, a.log)
+		ujob := NewUpdateJob(si, a.clusterConfig, a.log)
 
-		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
+		token, err = a.engine.StartNewJob("", ujob, UpdateTopic)
 		if err != nil {
 			a.log.Error("Failed to start new job for async update\n%s", err.Error())
 			return nil, err
