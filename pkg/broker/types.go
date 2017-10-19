@@ -42,11 +42,13 @@ type WorkTopic string
 const (
 	ProvisionTopic   WorkTopic = "provision_topic"
 	DeprovisionTopic WorkTopic = "deprovision_topic"
+	UpdateTopic      WorkTopic = "update_topic"
 )
 
 var workTopicSet = map[WorkTopic]bool{
 	ProvisionTopic:   true,
 	DeprovisionTopic: true,
+	UpdateTopic:      true,
 }
 
 // IsValidWorkTopic - Check if WorkTopic is part of acceptable set

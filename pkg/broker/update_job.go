@@ -28,15 +28,15 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
-// ProvisionJob - Job to provision
-type ProvisionJob struct {
+// UpdateJob - Job to update
+type UpdateJob struct {
 	serviceInstance *apb.ServiceInstance
 	clusterConfig   apb.ClusterConfig
 	log             *logging.Logger
 }
 
-// ProvisionMsg - Message to be returned from the provision job
-type ProvisionMsg struct {
+// UpdateMsg - Message to be returned from the update job
+type UpdateMsg struct {
 	InstanceUUID string `json:"instance_uuid"`
 	JobToken     string `json:"job_token"`
 	SpecID       string `json:"spec_id"`
@@ -45,48 +45,48 @@ type ProvisionMsg struct {
 	Error        string `json:"error"`
 }
 
-// Render - Display the provision message.
-func (m ProvisionMsg) Render() string {
+// Render - Display the update message.
+func (m UpdateMsg) Render() string {
 	render, _ := json.Marshal(m)
 	return string(render)
 }
 
-// NewProvisionJob - Create a new provision job.
-func NewProvisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
+// NewUpdateJob - Create a new update job.
+func NewUpdateJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
 	log *logging.Logger,
-) *ProvisionJob {
-	return &ProvisionJob{
+) *UpdateJob {
+	return &UpdateJob{
 		serviceInstance: serviceInstance,
 		clusterConfig:   clusterConfig,
 		log:             log,
 	}
 }
 
-// Run - run the provision job.
-func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
-	metrics.ProvisionJobStarted()
-	podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
+// Run - run the update job.
+func (u *UpdateJob) Run(token string, msgBuffer chan<- WorkMsg) {
+	metrics.UpdateJobStarted()
+	podName, extCreds, err := apb.Update(u.serviceInstance, u.clusterConfig, u.log)
 
 	if err != nil {
-		p.log.Error("broker::Provision error occurred.")
-		p.log.Errorf("%s", err.Error())
+		u.log.Error("broker::Update error occurred.")
+		u.log.Errorf("%s", err.Error())
 
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
+		msgBuffer <- UpdateMsg{InstanceUUID: u.serviceInstance.ID.String(),
+			JobToken: token, SpecID: u.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
 	// send creds
 	jsonmsg, err := json.Marshal(extCreds)
 	if err != nil {
-		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
+		msgBuffer <- UpdateMsg{InstanceUUID: u.serviceInstance.ID.String(),
+			JobToken: token, SpecID: u.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
-	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
-		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
+	msgBuffer <- UpdateMsg{InstanceUUID: u.serviceInstance.ID.String(),
+		JobToken: token, SpecID: u.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
 }

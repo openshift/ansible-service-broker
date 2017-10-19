@@ -419,12 +419,25 @@ func (a AnsibleBroker) Recover() (string, error) {
 				continue
 			}
 
-			// TODO: How do we know what kind of task we're trying to recover
-			pjob := NewProvisionJob("provision", instance, a.clusterConfig, a.log)
+			var job Work
+			var topic WorkTopic
+			if rs.State.Method == apb.JobMethodProvision {
+				job = NewProvisionJob(instance, a.clusterConfig, a.log)
+				topic = ProvisionTopic
+			} else if rs.State.Method == apb.JobMethodUpdate {
+				job = NewUpdateJob(instance, a.clusterConfig, a.log)
+				topic = UpdateTopic
+			} else {
+				a.log.Warningf(
+					"Attempted to recover job %s, but found an unrecognized "+
+						"MethodType: %s, skipping...",
+					rs.State.Token, rs.State.Method,
+				)
+			}
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
-			_, err := a.engine.StartNewJob(rs.State.Token, pjob, ProvisionTopic)
+			_, err := a.engine.StartNewJob(rs.State.Token, job, topic)
 			if err != nil {
 				return "", err
 			}
@@ -669,7 +682,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if async {
 		a.log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob("provision", serviceInstance, a.clusterConfig, a.log)
+		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
 
 		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
 		if err != nil {
@@ -1168,9 +1181,9 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	if async {
 		a.log.Info("ASYNC update in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob("update", si, a.clusterConfig, a.log)
+		ujob := NewUpdateJob(si, a.clusterConfig, a.log)
 
-		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
+		token, err = a.engine.StartNewJob("", ujob, UpdateTopic)
 		if err != nil {
 			a.log.Error("Failed to start new job for async update\n%s", err.Error())
 			return nil, err

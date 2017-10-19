@@ -229,6 +229,13 @@ func CreateApp() App {
 		app.log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
+	err = app.engine.AttachSubscriber(
+		broker.NewUpdateWorkSubscriber(app.dao, app.log.Logger),
+		broker.UpdateTopic)
+	if err != nil {
+		app.log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
+		os.Exit(1)
+	}
 	app.log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
 	apb.InitializeSecretsCache(app.config.Secrets, app.log.Logger)
