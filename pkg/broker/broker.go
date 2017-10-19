@@ -1012,7 +1012,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	*/
 	a.log.Debugf("service_id: %s", req.ServiceID)
 	a.log.Debugf("plan_id: %s", req.PlanID)
-	a.log.Debugf("operation:  %s", req.Operation) // this is provided with the provision. task id from the work_engine
+	a.log.Debugf("operation:  %s", req.Operation) // Operation is the job token id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
 	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)
