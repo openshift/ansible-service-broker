@@ -58,7 +58,7 @@ fi
 
 
 # Determine the name of the secret which has the 'asb' service account info
-BROKER_SVC_ACCT_SECRET_NAME=`kubectl get serviceaccount asb -n ansible-service-broker -o yaml | grep -Po asb-token-[a-z0-9]*`
+BROKER_SVC_ACCT_SECRET_NAME=`kubectl get serviceaccount asb -n ansible-service-broker -o jsonpath='{.secrets[0].name}'`
 REGISTRY_SECRET_NAME="registry-auth-secret"
 echo "Broker Service Account Token is in secret: ${BROKER_SVC_ACCT_SECRET_NAME}"
 

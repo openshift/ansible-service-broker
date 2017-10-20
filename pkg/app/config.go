@@ -47,7 +47,7 @@ type Config struct {
 	Secrets    []apb.SecretsConfig
 }
 
-type RegCreds struct {
+type regCreds struct {
 	Username string
 	Password string
 }
@@ -68,7 +68,7 @@ func CreateConfig(configFile string) (Config, error) {
 	// Load struct
 	var dat []byte
 	var data map[string][]byte
-	regCreds := RegCreds{}
+	regCred := regCreds{}
 
 	if dat, err = ioutil.ReadFile(configFile); err != nil {
 		return Config{}, err
@@ -107,11 +107,11 @@ func CreateConfig(configFile string) (Config, error) {
 			if dat, err = ioutil.ReadFile(reg.AuthName); err != nil {
 				return Config{}, err
 			}
-			if err = yaml.Unmarshal(dat, &regCreds); err != nil {
+			if err = yaml.Unmarshal(dat, &regCred); err != nil {
 				return Config{}, err
 			}
-			config.Registry[regCount].User = regCreds.Username
-			config.Registry[regCount].Pass = regCreds.Password
+			config.Registry[regCount].User = regCred.Username
+			config.Registry[regCount].Pass = regCred.Password
 
 		} else {
 			// ERROR
