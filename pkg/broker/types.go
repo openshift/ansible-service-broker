@@ -42,11 +42,13 @@ type WorkTopic string
 const (
 	ProvisionTopic   WorkTopic = "provision_topic"
 	DeprovisionTopic WorkTopic = "deprovision_topic"
+	UpdateTopic      WorkTopic = "update_topic"
 )
 
 var workTopicSet = map[WorkTopic]bool{
 	ProvisionTopic:   true,
 	DeprovisionTopic: true,
+	UpdateTopic:      true,
 }
 
 // IsValidWorkTopic - Check if WorkTopic is part of acceptable set
@@ -88,6 +90,7 @@ type Plan struct {
 	Free        bool                   `json:"free,omitempty"`
 	Bindable    bool                   `json:"bindable,omitempty"`
 	Schemas     Schema                 `json:"schemas,omitempty"`
+	UpdatesTo   []string               `json:"updates_to,omitempty"`
 }
 
 // Schema  - Schema to be returned
@@ -176,7 +179,8 @@ type UpdateRequest struct {
 		OrganizationID uuid.UUID `json:"organization_id,omitempty"`
 		SpaceID        uuid.UUID `json:"space_id,omitempty"`
 	} `json:"previous_values,omitempty"`
-	AcceptsIncomplete bool `json:"accepts_incomplete,omitempty"`
+	Context           apb.Context `json:"context"`
+	AcceptsIncomplete bool        `json:"accepts_incomplete,omitempty"`
 }
 
 // UpdateResponse - Response for an update for a service instance.

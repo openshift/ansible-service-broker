@@ -84,6 +84,7 @@ class App(object):
                 'l': ('list services', self._cmd_list_services),
                 'p': ('provision service', self._cmd_provision),
                 'b': ('bind service', self._cmd_bind),
+                'u': ('update service', self._cmd_update),
                 'd': ('drop records', self._cmd_drop_records),
                 '?': ('show menu', self._cmd_show_menu)
         }
@@ -194,6 +195,50 @@ class App(object):
         else:
             print 'ERROR: Got a non-2xx code back from the broker... %d' % res.status_code
             return True
+
+    def _cmd_update(self):
+        svc_instances = self._records['service']
+
+        updatable_opts = [(idx+1, key, svc_instances[key]['name'])
+                         for idx, key in
+                         enumerate(self._records['service'].keys())]
+
+        updatable_ids = [key for a, key in
+                         enumerate(self._records['service'].keys())]
+
+        if len(updatable_opts) == 0:
+            print ('No services have been provisioned;'
+                   ' nothing available for bind!')
+            return False
+
+        valid_choices = [b[0] for b in updatable_opts]
+        while True:
+            print 'Select a service instance to update:'
+            self._print_binding_menu(updatable_opts)
+            opt = int(raw_input('# '))  # TODO: Do this better.
+
+            answer = updatable_opts[opt - 1][1]
+            if answer not in updatable_ids:
+                print 'ERROR: Invalid choice!'
+            else:
+                break
+
+        sel_binding = self._records['service'][answer]['service_id']
+        if self.catalog is None:
+            self._req_catalog()
+
+        for k in self.catalog:
+            if k['service']['id'] == sel_binding:
+                service = k['service']
+
+        plan_id = self._get_plan_id(service)
+        answers = self._get_update_answers(service, sel_binding)
+        record_answers = self._records['service'][answer]['answers']
+        update_answers = record_answers.copy()
+        update_answers.update(answers)
+
+        res = self._req_update(answer, plan_id, answers)
+        print res.content
 
     def _cmd_bind(self):
         svc_instances = self._records['service']
@@ -409,6 +454,61 @@ class App(object):
 
         return (_answers, using_some_bind)
 
+    def _get_update_answers(self, service, sel_binding):
+        if not sel_binding:
+            print 'Configure your service:'
+
+        using_some_bind = False
+        answers = {}
+        try:
+            required = service['plans'][0]['schemas']['service_instance']['update']['parameters']['required']
+            for param_key, param in service['plans'][0]['schemas']['service_instance']['update']['parameters']['properties'].items():
+                # Accept binding value for param if its present, otherwise prompt
+                param_name = param_key  # key is the new name
+                binding_match = None
+
+                if binding_match:
+                    answers[param_name] = binding_match
+                    using_some_bind = True
+                    continue  # skip prompt if we're accepting val from binding
+
+                answer = None
+                while True:
+                    supports_default = param.get('default') is not None
+
+                    if param_name not in required and not supports_default:
+                        query = '%s (generated if blank) # ' % param_name
+                    elif supports_default:
+                        query = '%s (default: %s) # ' % \
+                            (param_name, param['default'])
+                    else:
+                        query = '%s # ' % param_name
+                    answer = raw_input(query)
+
+                    # TODO: This is fugly. Fix it.
+                    should_pass = answer == '' and param_name not in required \
+                        and not supports_default
+
+                    if should_pass:
+                        pass
+                    elif answer == '' and not supports_default:
+                        print 'ERROR: Must provide an answer for this parameter'
+                        continue
+                    elif answer == '' and supports_default:
+                        answer = param['default']
+
+                    answers[param_name] = answer
+                    break
+        except:
+            answers = {}
+
+        _answers = answers.copy()
+        for k, v in answers.iteritems():
+            if v == '':
+                del _answers[k]
+
+        return (_answers)
+
     def _get_bind_answers(self):
         ############################################################
         # TODO: HACK:
@@ -557,6 +657,15 @@ class App(object):
             'parameters': answers
         }
         return (req(self._url(path), verb='put', json=req_body), instance_id)
+
+    def _req_update(self, instance_uuid, plan_id, answers):
+        path = '/service_instances/%s?accepts_incomplete=true' % instance_uuid
+        req_body = {
+            'instance_uuid': instance_uuid,
+            'plan_id': plan_id,
+            'parameters': answers
+        }
+        return req(self._url(path), verb='patch', json=req_body)
 
 ###############################################################################
 # !/bin/bash -e

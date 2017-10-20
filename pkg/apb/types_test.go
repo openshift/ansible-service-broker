@@ -43,36 +43,43 @@ var PlanMetadata = map[string]interface{}{
 const PlanFree = true
 const PlanBindable = true
 
+var PlanUpdatesTo = []string{"foo"}
+
 var expectedPlanParameters = []ParameterDescriptor{
 	ParameterDescriptor{
-		Name:     "mediawiki_db_schema",
-		Title:    "Mediawiki DB Schema",
-		Type:     "string",
-		Default:  "mediawiki",
-		Required: true},
+		Name:      "mediawiki_db_schema",
+		Title:     "Mediawiki DB Schema",
+		Type:      "string",
+		Default:   "mediawiki",
+		Updatable: false,
+		Required:  true},
 	ParameterDescriptor{
-		Name:     "mediawiki_site_name",
-		Title:    "Mediawiki Site Name",
-		Type:     "string",
-		Default:  "MediaWiki",
-		Required: true},
+		Name:      "mediawiki_site_name",
+		Title:     "Mediawiki Site Name",
+		Type:      "string",
+		Default:   "MediaWiki",
+		Updatable: true,
+		Required:  true},
 	ParameterDescriptor{
-		Name:     "mediawiki_site_lang",
-		Title:    "Mediawiki Site Language",
-		Type:     "string",
-		Default:  "en",
-		Required: true},
+		Name:      "mediawiki_site_lang",
+		Title:     "Mediawiki Site Language",
+		Type:      "string",
+		Default:   "en",
+		Updatable: false,
+		Required:  true},
 	ParameterDescriptor{
-		Name:     "mediawiki_admin_user",
-		Title:    "Mediawiki Admin User",
-		Type:     "string",
-		Default:  "admin",
-		Required: true},
+		Name:      "mediawiki_admin_user",
+		Title:     "Mediawiki Admin User",
+		Type:      "string",
+		Default:   "admin",
+		Updatable: false,
+		Required:  true},
 	ParameterDescriptor{
-		Name:     "mediawiki_admin_pass",
-		Title:    "Mediawiki Admin User Password",
-		Type:     "string",
-		Required: true},
+		Name:      "mediawiki_admin_pass",
+		Title:     "Mediawiki Admin User Password",
+		Type:      "string",
+		Updatable: false,
+		Required:  true},
 }
 
 var p = Plan{
@@ -83,6 +90,7 @@ var p = Plan{
 	Free:        PlanFree,
 	Bindable:    PlanBindable,
 	Parameters:  expectedPlanParameters,
+	UpdatesTo:   PlanUpdatesTo,
 }
 
 const SpecVersion = "1.0"
@@ -104,12 +112,14 @@ const SpecPlans = `
 			"longDescription": "Basic development plan",
 			"cost": "$0.00"
 		},
+        "updates_to": ["foo"],
 		"parameters": [
 		{
 			"name": "mediawiki_db_schema",
 			"title": "Mediawiki DB Schema",
 			"type": "string",
 			"default": "mediawiki",
+            "updatable": false,
 			"required": true
 		},
 		{
@@ -117,6 +127,7 @@ const SpecPlans = `
 			"title": "Mediawiki Site Name",
 			"type": "string",
 			"default": "MediaWiki",
+            "updatable": true,
 			"required": true
 		},
 		{
@@ -124,6 +135,7 @@ const SpecPlans = `
 			"title": "Mediawiki Site Language",
 			"type": "string",
 			"default": "en",
+            "updatable": false,
 			"required": true
 		},
 		{
@@ -131,12 +143,14 @@ const SpecPlans = `
 			"title": "Mediawiki Admin User",
 			"type": "string",
 			"default": "admin",
+            "updatable": false,
 			"required": true
 		},
 		{
 			"name": "mediawiki_admin_pass",
 			"title": "Mediawiki Admin User Password",
 			"type": "string",
+            "updatable": false,
 			"required": true
 		}
 		]

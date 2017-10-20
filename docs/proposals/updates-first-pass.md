@@ -201,6 +201,64 @@ or not. If an APB determines it's okay to allow a destructive downgrade from
 "gold" to "dev" and declares it as such, the broker will trust the APB and
 will allow that transition.
 
+**parameter updates**
+Parameters can be marked as updatable by specifying `updatable: true` on the parameter in the APB Spec.
+
+Parameters will default to `updatable: false` if not specified by the user
+
+An example would look like this:
+```yaml
+  - name: default
+    description: An APB that deploys MediaWiki
+    free: True
+    metadata:
+      displayName: Default
+      longDescription: This plan deploys a single mediawiki instance without a DB
+      cost: $0.00
+    parameters:
+      - name: mediawiki_db_schema
+        default: mediawiki
+        type: string
+        title: Mediawiki DB Schema
+        required: True
+      - name: mediawiki_site_name
+        default: MediaWiki
+        type: string
+        title: Mediawiki Site Name
+        required: True
+        updatable: True
+```
+
+The schema output at /v2/catalog is also updated. Whereas up to this point we have only had parameters returned under create in the schema, parameters that can be updated are now populated under update.
+
+```json
+          "free": true,
+          "schemas": {
+            "service_instance": {
+              "create": {
+...
+             },
+              "update": {
+                "parameters": {
+                  "$schema": "http://json-schema.org/draft-04/schema",
+                  "additionalProperties": false,
+                  "properties": {
+                    "mediawiki_site_name": {
+                      "default": "MediaWiki",
+                      "title": "Mediawiki Site Name",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mediawiki_site_name"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+...
+```
+
 ## Next steps
 * Updating instances with outstanding bindings, consider both binding consumers
 and producers.

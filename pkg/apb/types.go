@@ -44,6 +44,7 @@ type ParameterDescriptor struct {
 	Pattern      string      `json:"pattern,omitempty"`
 	Enum         []string    `json:"enum,omitempty"`
 	Required     bool        `json:"required"`
+	Updatable    bool        `json:"updatable"`
 	DisplayType  string      `json:"display_type,omitempty" yaml:"display_type,omitempty"`
 	DisplayGroup string      `json:"display_group,omitempty" yaml:"display_group,omitempty"`
 }
@@ -58,6 +59,18 @@ type Plan struct {
 	Bindable       bool                   `json:"bindable,omitempty"`
 	Parameters     []ParameterDescriptor  `json:"parameters"`
 	BindParameters []ParameterDescriptor  `json:"bind_parameters,omitempty" yaml:"bind_parameters,omitempty"`
+	UpdatesTo      []string               `json:"updates_to,omitempty" yaml:"updates_to,omitempty"`
+}
+
+// GetParameter - retrieves a reference to a ParameterDescriptor from a plan by name. Will return
+// nil if the requested ParameterDescriptor does not exist.
+func (p *Plan) GetParameter(name string) *ParameterDescriptor {
+	for i, pd := range p.Parameters {
+		if pd.Name == name {
+			return &p.Parameters[i]
+		}
+	}
+	return nil
 }
 
 // Spec - A APB spec
@@ -72,6 +85,17 @@ type Spec struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	Async       string                 `json:"async"`
 	Plans       []Plan                 `json:"plans"`
+}
+
+// GetPlan - retrieves a reference to a plan from a spec by name. Will return
+// nil if the requested plan does not exist.
+func (s *Spec) GetPlan(name string) *Plan {
+	for i, plan := range s.Plans {
+		if plan.Name == name {
+			return &s.Plans[i]
+		}
+	}
+	return nil
 }
 
 // Context - Determines the context in which the service is running
@@ -103,6 +127,9 @@ const (
 
 	// JobMethodUnbind - Unbind MethodType const.
 	JobMethodUnbind JobMethod = "unbind"
+
+	// JobMethodUpdate - Update MethodType const.
+	JobMethodUpdate JobMethod = "update"
 )
 
 // JobState - The job state
