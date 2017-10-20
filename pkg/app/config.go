@@ -22,10 +22,8 @@ package app
 
 import (
 	"fmt"
-	logging "github.com/op/go-logging"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"strings"
 
@@ -86,7 +84,7 @@ func CreateConfig(configFile string) (Config, error) {
 
 	for regCount, reg := range config.Registry {
 		if reg.AuthType == "secret" {
-			data, err = getSecretData(reg.AuthName, config.Openshift.Namespace)
+			data, err = clients.GetSecretData(reg.AuthName, config.Openshift.Namespace)
 			if err != nil {
 				fmt.Println("Unable to get secret data")
 				// NEW ERROR
@@ -146,25 +144,4 @@ func validateConfig(c Config) error {
 
 	}
 	return nil
-}
-
-// Returns the data inside of a given secret
-func getSecretData(secretName, namespace string) (map[string][]byte, error) {
-	var log logging.Logger
-	k8scli, err := clients.Kubernetes(&log)
-	if err != nil {
-		return nil, err
-	}
-	var ret = make(map[string][]byte)
-
-	secretData, err := k8scli.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
-	if err != nil {
-		fmt.Printf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
-		return ret, nil
-	}
-	fmt.Printf("Found secret with name %v\n", secretName)
-
-	ret = secretData.Data
-
-	return ret, nil
 }

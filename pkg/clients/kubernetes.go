@@ -24,6 +24,7 @@ import (
 	"errors"
 
 	logging "github.com/op/go-logging"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -47,6 +48,27 @@ func KubernetesConfig(log *logging.Logger) (*rest.Config, error) {
 		return nil, errors.New("Kubernetes client config instance is nil")
 	}
 	return instances.KubernetesConfig, nil
+}
+
+// Returns the data inside of a given secret
+func GetSecretData(secretName, namespace string) (map[string][]byte, error) {
+	var log logging.Logger
+	k8scli, err := Kubernetes(&log)
+	if err != nil {
+		return nil, err
+	}
+	var ret = make(map[string][]byte)
+
+	secretData, err := k8scli.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
+	if err != nil {
+		log.Error("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
+		return ret, nil
+	}
+	log.Debug("Found secret with name %v\n", secretName)
+
+	ret = secretData.Data
+
+	return ret, nil
 }
 
 func createOnce(log *logging.Logger) {
