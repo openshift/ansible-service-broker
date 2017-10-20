@@ -191,7 +191,7 @@ deploymentconfig "asb" rolled out
 
 ### Metrics
 
-The broker will expose [Prometheus](https://prometheus.io/) style metrics that you can use to troubleshoot the broker if none of the steps above work. You can access the published metrics by calling:
+The broker exposes [Prometheus](https://prometheus.io/) style metrics for monitoring and troubleshooting purposes. You can access these metrics via the `/metrics` endpoint by calling:
 
 ```
 curl -H "Authorization: `oc whoami -t`" <broker_url>/metrics
