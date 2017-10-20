@@ -29,7 +29,7 @@ openshift:
 
 We will use the [DestroySandbox](https://github.com/openshift/ansible-service-broker/blob/34f643eec5349f58300e4e802581a65f4120976c/pkg/apb/svc_acct.go#L225) method to determine if we should delete the sandbox. This method is used already used by all methods that run the APB.
 
-Here we can [get the pod](https://godoc.org/k8s.io/client-go/kubernetes/typed/core/v1#PodInterface). Then we can use the [PodPhase](https://godoc.org/k8s.io/api/core/v1#PodStatus) from the [PodSatus](https://godoc.org/k8s.io/api/core/v1#Pod). The [PodPhase](https://godoc.org/k8s.io/api/core/v1#PodPhase) will be in error if it is `PodFailed` or `PodUnknown`. 
+Here we can [get the pod](https://godoc.org/k8s.io/client-go/kubernetes/typed/core/v1#PodInterface). Then we can use the [PodPhase](https://godoc.org/k8s.io/api/core/v1#PodStatus) from the [PodSatus](https://godoc.org/k8s.io/api/core/v1#Pod). The [PodPhase](https://godoc.org/k8s.io/api/core/v1#PodPhase) will be in error if it is `PodFailed` or `PodUnknown`.
 
 
 The logic will be in the `pkg/apb/svc_account.go` file in the `DestroySandbox` method:
@@ -37,10 +37,10 @@ The logic will be in the `pkg/apb/svc_account.go` file in the `DestroySandbox` m
 ....
 pod, err := k8scli.CoreV1().Pods(executionContext.Namespace).Get(executionContext.PodName, metav1.GetOptions{})
 if err != nil {
-        s.log.Errorf("Unable to retrieve pod - %v", err)     
+        s.log.Errorf("Unable to retrieve pod - %v", err)
 }
 if shouldDeleteNamespace(clusterConfig, pod, err)  {
-    ... Delete Namespace 
+    ... Delete Namespace
 }
 ...Delete role bindings.
 ```

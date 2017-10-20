@@ -113,7 +113,7 @@ registry:
       - ".*-apb$"
 ```
 
-There is a limitation when working with the OpenShift Registry right now. We have no capability to search the registry so we require that the user configure the broker with a list of images they would like to source from for when the broker bootstraps. The image name must be the fully qualified name without the registry URL. 
+There is a limitation when working with the OpenShift Registry right now. We have no capability to search the registry so we require that the user configure the broker with a list of images they would like to source from for when the broker bootstraps. The image name must be the fully qualified name without the registry URL.
 
 ### Multiple Registries Example
 You can use more then one registry to separate APBs into logical organizations and be able to manage them from the same broker. The main thing here is that the registries must have a unique non-empty name. If there is no unique name the service broker will fail to start with an error message alerting you to the problem.
@@ -183,7 +183,7 @@ auto_escalate|Allows the broker to escalate the permissions of a user while runn
 cluster_url|Sets the prefix for the url that the broker is expecting|ansible-service-broker|N
 
 ## Secrets Configuration
-The secrets config section will create associations between secrets in the broker's namespace and apbs the broker runs. 
+The secrets config section will create associations between secrets in the broker's namespace and apbs the broker runs.
 The broker will use these rules to mount secrets into running apbs, allowing the user to use secrets to pass parameters
 without exposing them to the catalog or users. The config section is a list where each entry has the following structure:
 

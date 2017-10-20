@@ -4,7 +4,7 @@
 Support better provision user experience for APBs by giving additional metadata about APB parameters.
 
 ## Problem Description
-Currently, APB parameters are shown in random order and without any kind of grouping.  the OpenServiceBroker API utilizes json-schema data format and does not include any UI metadata.  As such, the UI cannot customize the experience and users are confronted with a bad experience which gets worse as the number of parameters increases. 
+Currently, APB parameters are shown in random order and without any kind of grouping.  the OpenServiceBroker API utilizes json-schema data format and does not include any UI metadata.  As such, the UI cannot customize the experience and users are confronted with a bad experience which gets worse as the number of parameters increases.
 
 ## Implementation Details
 
@@ -31,7 +31,7 @@ plans:
         type: string
         required: True
         default: admin
-        display_group: User Information   # same group as password       
+        display_group: User Information   # same group as password
       - name: postgresql_password         # third parameter
         title: PostgreSQL Password
         type: string

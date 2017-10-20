@@ -46,7 +46,7 @@ mkdir -p <www-docroot>/assets/apbs/dh-ansibleplaybookbundle-hello-world-apb-late
 docker create docker.io/ansibleplaybookbundle/hello-world-apb:_assets_latest
 docker cp $DOWNLOADED_IMAGE_ID:/assets/. <www-docroot>/assets/apbs/dh-ansibleplaybookbundle-hello-world-apb-latest
 ```
-To avoid using the docker daemon, we will attempt to use [buildah](https://github.com/projectatomic/buildah) to perform those commands. 
+To avoid using the docker daemon, we will attempt to use [buildah](https://github.com/projectatomic/buildah) to perform those commands.
 
 ## Serving Assets
 ASB will serve files from a document root.  This folder would be specified by the broker config and defaulted to `/var/www`. This folder should be available without authentication.

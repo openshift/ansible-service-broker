@@ -104,7 +104,7 @@ function error-check {
     fi
 
     if ${VERIFY_CI_ERROR} || ${PROVISION_ERROR} ||
-	${BIND_ERROR} || ${RESOURCE_ERROR} || ${UNBIND_ERROR} || 
+	${BIND_ERROR} || ${RESOURCE_ERROR} || ${UNBIND_ERROR} ||
     ${DEPROVISION_ERROR} || ${DEVAPI_ERROR} ; then
 	restore-output
 	convert-to-red

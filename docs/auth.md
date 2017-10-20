@@ -8,7 +8,7 @@ password combinations or the bearer token.
 
 **Note: When using OpenShift 3.6 the only option for authentication is Basic Auth. Basic Auth must be enabled to true.**
 
-### Basic Auth 
+### Basic Auth
 The below section will focus on the implementation of basic auth.
 
 #### Configuration
@@ -153,7 +153,7 @@ The below section will focus on the bearer token auth.
 #### Configuration
 By default, if no authentication is specified the broker will use bearer token auth. The bearer token authentication will use delegated auth from the [kubernetes apiserver](https://github.com/kubernetes/apiserver) library.
 
-The configuration is to grant access, through [kubernetes RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and role-bindings, to the url prefix. The broker has added a configuration option `cluster_url` to specify the url_prefix. This value will default to `ansible-service-broker`. 
+The configuration is to grant access, through [kubernetes RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and role-bindings, to the url prefix. The broker has added a configuration option `cluster_url` to specify the url_prefix. This value will default to `ansible-service-broker`.
 
 Example cluster role:
 ```yaml
@@ -191,7 +191,7 @@ Here is an example of creating a secret that the service catalog can use. This e
   kind: Secret
   metadata:
     name: ansibleservicebroker-client
-    annotations: 
+    annotations:
       kubernetes.io/service-account.name: ansibleservicebroker-client
   type: kubernetes.io/service-account-token
 ```
@@ -209,14 +209,14 @@ Here is an example of creating a broker resource in the service catalog. The
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: ServiceBroker 
+kind: ServiceBroker
 metadata:
   name: ansible-service-broker
 spec:
   url: https://asb.ansible-service-broker.svc:1338${BROKER_URL_PREFIX}/
   authInfo:
-    bearer: 
-      secretRef:  
+    bearer:
+      secretRef:
         kind: Secret
         namespace: ansible-service-broker,
         name: ansibleservicebroker-client
@@ -338,8 +338,8 @@ You are then going to create a new [server config](https://github.com/kubernetes
   }
 ```
 
-To set up authentication and authorization, you will need to use the 
-[`DelegatingAuthenticatorConfig`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/authentication/authenticatorfactory/delegating.go#L41) and the [`DelegatingAuthorizationOptions`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/options/authorization.go#L33). The biggest thing to notice here is we are using the `go-client` interface's for the `TokenReviews` [call](https://godoc.org/k8s.io/client-go/kubernetes/typed/authentication/v1#TokenReviewInterface). 
+To set up authentication and authorization, you will need to use the
+[`DelegatingAuthenticatorConfig`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/authentication/authenticatorfactory/delegating.go#L41) and the [`DelegatingAuthorizationOptions`](https://github.com/kubernetes/apiserver/blob/c1e53d745d0fe45bf7d5d44697e6eface25fceca/pkg/server/options/authorization.go#L33). The biggest thing to notice here is we are using the `go-client` interface's for the `TokenReviews` [call](https://godoc.org/k8s.io/client-go/kubernetes/typed/authentication/v1#TokenReviewInterface).
 
 The other thing to note here is the `xxx.ApplyTo(serverConfig)` is what is applying the configuration to the actual server configuration.
 ```golang

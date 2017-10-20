@@ -128,7 +128,7 @@ objects:
     name: asb
   spec:
     ports:
-    - 
+    -
       name: port-${BROKER_PORT}
       port: ${BROKER_PORT}
       protocol: TCP

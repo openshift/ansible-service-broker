@@ -1,8 +1,8 @@
 # Administration Examples
 
-The Ansible service broker has three main use cases from an administration perspective. Below we will describe the main use cases and discuss the configurations for the broker that would make sense of each one. 
+The Ansible service broker has three main use cases from an administration perspective. Below we will describe the main use cases and discuss the configurations for the broker that would make sense of each one.
 
-**Note: If you are running on a OpenShift 3.6 Cluster you can only use `auto_escalate: true`** 
+**Note: If you are running on a OpenShift 3.6 Cluster you can only use `auto_escalate: true`**
 
 More information about the broker configuration can be found [here](#config.md)
 
@@ -15,10 +15,10 @@ The three main use cases are:
 
 ## Deployments
 
-### Heavy Multi-Tenant 
+### Heavy Multi-Tenant
 The heavy multi-tenant deployment is defined by the having many users with many different permission sets. This environments canonical example is [OpenShift Online](https://manage.openshift.com/). This deployment requires that the broker will enforce the user's permissions when attempting to run APBs for a target name space or project. The configuration values that matter are `openshift.sandbox_role` and `broker.auto_escalate`. The `sandbox_role` will be used to determine what permissions the user will need to run. The `auto_escalate` will tell the broker whether or not to run with out checking the user's permissions. **Note: `auto_escalate` being set to false is the default configuration for the broker**
 
-#### Example Configuration  
+#### Example Configuration
 ```yaml
 ...
 openshift:

@@ -102,7 +102,7 @@ function dev-api-test {
 
   ./scripts/broker-ci/wait-for-resource.sh create serviceclass apb-push-ansibleplaybookbundle-foo-apb >> /tmp/wait-for-pods-log 2>&1
 
-  if ! curl -I -s -k -XDELETE  -u admin:admin https://$BROKERURL/ansible-service-broker/apb/spec/$APBID | grep -q "204 No Content" ; then 
+  if ! curl -I -s -k -XDELETE  -u admin:admin https://$BROKERURL/ansible-service-broker/apb/spec/$APBID | grep -q "204 No Content" ; then
     DEVAPI_ERROR=true
   fi
 }
