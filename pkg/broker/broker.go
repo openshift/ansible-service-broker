@@ -1252,7 +1252,7 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 	toPlan *apb.Plan,
 	si *apb.ServiceInstance,
 ) error {
-	for requestedParamKey, _ := range reqParams {
+	for requestedParamKey := range reqParams {
 		var pd *apb.ParameterDescriptor
 
 		// Confirm the parameter actually exists on the plan

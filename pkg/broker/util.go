@@ -41,13 +41,14 @@ type formItem struct {
 // catalog.
 func SpecToService(spec *apb.Spec) Service {
 	retSvc := Service{
-		ID:          spec.ID,
-		Name:        spec.FQName,
-		Description: spec.Description,
-		Tags:        make([]string, len(spec.Tags)),
-		Bindable:    spec.Bindable,
-		Plans:       toBrokerPlans(spec.Plans),
-		Metadata:    spec.Metadata,
+		ID:            spec.ID,
+		Name:          spec.FQName,
+		Description:   spec.Description,
+		Tags:          make([]string, len(spec.Tags)),
+		Bindable:      spec.Bindable,
+		PlanUpdatable: planUpdatable(spec.Plans),
+		Plans:         toBrokerPlans(spec.Plans),
+		Metadata:      spec.Metadata,
 	}
 
 	copy(retSvc.Tags, spec.Tags)
@@ -71,6 +72,15 @@ func toBrokerPlans(apbPlans []apb.Plan) []Plan {
 		i++
 	}
 	return brokerPlans
+}
+
+func planUpdatable(apbPlans []apb.Plan) bool {
+	for _, plan := range apbPlans {
+		if len(plan.UpdatesTo) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func extractBrokerPlanMetadata(apbPlan apb.Plan) map[string]interface{} {

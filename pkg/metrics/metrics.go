@@ -148,7 +148,7 @@ func DeprovisionJobFinished() {
 	deprovisionJob.Dec()
 }
 
-// UpdaetJobStarted- Add an update job to the counter.
+// UpdateJobStarted- Add an update job to the counter.
 func UpdateJobStarted() {
 	defer recoverMetricPanic()
 	updateJob.Inc()
