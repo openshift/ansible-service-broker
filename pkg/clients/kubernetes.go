@@ -50,7 +50,7 @@ func KubernetesConfig(log *logging.Logger) (*rest.Config, error) {
 	return instances.KubernetesConfig, nil
 }
 
-// Returns the data inside of a given secret
+// GetSecretData - Returns the data inside of a given secret
 func GetSecretData(secretName, namespace string) (map[string][]byte, error) {
 	var log logging.Logger
 	k8scli, err := Kubernetes(&log)
