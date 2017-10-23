@@ -98,11 +98,11 @@ function dev-api-test {
   APBID=$(curl -s -k -H "Authorization: Bearer $(oc whoami -t)" -XPOST -u admin:admin https://$BROKERURL/ansible-service-broker/apb/spec -d "apbSpec=$(base64 scripts/broker-ci/apb.yml)"| \
           python -c "import sys; import json; print json.load(sys.stdin)['services'][0]['id']")
   sleep 10
-  oc delete pod -n service-catalog -l app=controller-manager
+  oc delete pod -n kube-service-catalog -l app=controller-manager
 
   ./scripts/broker-ci/wait-for-resource.sh create serviceclass apb-push-ansibleplaybookbundle-foo-apb >> /tmp/wait-for-pods-log 2>&1
 
-  if ! curl -I -s -k -XDELETE  -u admin:admin https://$BROKERURL/ansible-service-broker/apb/spec/$APBID | grep -q "204 No Content" ; then
+  if ! curl -f -k -XDELETE -H "Authorization: Bearer $(oc whoami -t)" https://$BROKERURL/ansible-service-broker/apb/spec/$APBID; then
     DEVAPI_ERROR=true
   fi
 }
