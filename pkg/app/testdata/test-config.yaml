@@ -9,6 +9,7 @@ registry:
     fail_on_error: false
   - type: rhcc
     name: rhcc
+    auth_type: config
     url: registry.access.stage.redhat.com
     fail_on_error: true
     white_list:
