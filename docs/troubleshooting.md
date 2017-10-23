@@ -203,12 +203,12 @@ curl -H "Authorization: `oc whoami -t`" <broker_url>/metrics
 
 #### Current ASB Metrics Exposed
 
-1. asb_sandbox - Keeps track of the active sandboxes
+1. asb_sandbox - Keeps track of the active sandboxes.
 2. asb_specs_loaded - will keep track of the number of specs currently loaded, will be reset on bootstrap. Labels can be used to determine the registry that has X number loaded.
 3. asb_spec_reset - will keep track of how many times the specs have been reset.
-4. asb_provision_jobs - will keep track of how many jobs are currently in the provision buffer
-5. asb_deprovision_jobs - will keep track of how many jobs are currently in the deprovision buffer
-6. asb_update_jobs - will keep track of how many jobs are currently in the update buffer?
-5. asb_actions_requested - keeps track of the number of actions requested correctly (broken down by action = bind,unbind,update,provision,deprovision)
+4. asb_provision_jobs - will keep track of how many jobs are currently in the provision buffer.
+5. asb_deprovision_jobs - will keep track of how many jobs are currently in the deprovision buffer.
+6. asb_update_jobs - will keep track of how many jobs are currently in the update buffer.
+5. asb_actions_requested - keeps track of the number of actions requested that passed initial validation (broken down by action = bind,unbind,update,provision,deprovision).
 
 The metrics that are exposed are currently a work in a progress and we would love feedback if you think a new metric would be valuable.
