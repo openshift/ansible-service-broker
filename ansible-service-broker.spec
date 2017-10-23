@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.10
+Version: 1.0.11
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,23 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Oct 23 2017 Jason Montleon <jmontleo@redhat.com> 1.0.11-1
+- Update schema for instance-update (#444) (jmontleo@redhat.com)
+- remove trailing spaces from supporting files (#493) (jmrodri@gmail.com)
+- Look at the apbs in the catalog for a matching name when creating a secret
+  (#438) (fabian@fabianism.us)
+- Adding prometheus metrics for ASB (#497) (Shawn.Hurley21@gmail.com)
+- Bug 1499622 - Return 202 if provisioning job is in progress (#498)
+  (dymurray@redhat.com)
+- Bug 1503233 - Add liveness and readiness checks to ASB dc (#500)
+  (dymurray@redhat.com)
+- Bug 1502044 - deprovision fixes (#494) (david.j.zager@gmail.com)
+- Bug 1501523 - Set plan name for APB push sourced specs (#495)
+  (dymurray@redhat.com)
+- Bug 1497839 - copy secrets to transient namespace and always run (#473)
+  (Shawn.Hurley21@gmail.com)
+- Fix api auth for ci test (#492) (jmontleo@redhat.com)
+
 * Fri Oct 13 2017 Jason Montleon <jmontleo@redhat.com> 1.0.10-1
 - Move the gate to 3.7 (#489) (rhallise@redhat.com)
 - Bug 1497766 - Adding ablity to specify keeping namespace alive (#474)
