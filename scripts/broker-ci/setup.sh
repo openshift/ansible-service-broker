@@ -19,6 +19,8 @@ function cluster-setup () {
 dockerhub_user_name: changeme
 dockerhub_org: ansibleplaybookbundle
 dockerhub_user_password: changeme
+broker_tag: latest
+broker_kind: ClusterServiceBroker
 EOF
 
     pushd catasb/local/gate/

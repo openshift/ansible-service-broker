@@ -17,10 +17,9 @@ OUTPUT_REQUEST="true"
 RECOVERY="true"
 REFRESH_INTERVAL="600s"
 SANDBOX_ROLE="edit"
-BROKER_KIND="${BROKER_KIND:-Broker}"
-auth=$(echo -e "{\"basicAuthSecret\":{\"namespace\":\"ansible-service-broker\",\"name\":\"asb-auth-secret\"}}")
-BROKER_AUTH="${BROKER_AUTH:-$auth}"
-ENABLE_BASIC_AUTH=true
+BROKER_KIND="${BROKER_KIND:-ClusterServiceBroker}"
+ENABLE_BASIC_AUTH=false
+BROKER_CA_CERT=$(oc get secret --no-headers=true -n kube-service-catalog | grep -m 1 service-catalog-apiserver-token | oc get secret $(awk '{ print $1 }') -n kube-service-catalog -o yaml | grep service-ca.crt | awk '{ print $2 }' | cat)
 
 # load development variables
 asb::load_vars
@@ -48,8 +47,8 @@ VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p REFRESH_INTERVAL=${REFRESH_INTERVAL} \
   -p SANDBOX_ROLE=${SANDBOX_ROLE} \
   -p BROKER_KIND=${BROKER_KIND} \
-  -p BROKER_AUTH=${BROKER_AUTH} \
-  -p ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH}"
+  -p ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH} \
+  -p BROKER_CA_CERT=${BROKER_CA_CERT}"
 
 # cleanup old deployment
 asb::delete_project ${PROJECT}
