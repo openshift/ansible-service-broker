@@ -86,16 +86,13 @@ func CreateConfig(configFile string) (Config, error) {
 		if reg.AuthType == "secret" {
 			data, err = clients.GetSecretData(reg.AuthName, config.Openshift.Namespace)
 			if err != nil {
-				fmt.Println("Unable to get secret data")
-				// NEW ERROR
-				return Config{}, err
+				return Config{}, fmt.Errorf("Failed to find Dockerhub credentials in secret: %s", reg.AuthName)
 			}
 			var username = strings.TrimSpace(string(data["username"]))
 			var password = strings.TrimSpace(string(data["password"]))
 
 			if username == "" || password == "" {
-				fmt.Printf("Unable to find credentials in secret: %s\n", reg.AuthName)
-				return Config{}, err
+				return Config{}, fmt.Errorf("Secret: %s did not contain username/password credentials", reg.AuthName)
 			}
 
 			config.Registry[regCount].User = username
@@ -110,9 +107,6 @@ func CreateConfig(configFile string) (Config, error) {
 			}
 			config.Registry[regCount].User = regCred.Username
 			config.Registry[regCount].Pass = regCred.Password
-
-		} else {
-			// ERROR
 		}
 	}
 
