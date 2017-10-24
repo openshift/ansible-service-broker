@@ -1182,9 +1182,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		a.log.Debug("Plan transition NOT requested as part of update")
 	}
 
-	if err = a.validateRequestedUpdateParams(req.Parameters, toPlan, si); err != nil {
-		return nil, err
-	}
+	req.Parameters = a.validateRequestedUpdateParams(req.Parameters, toPlan, si)
 
 	// Parameters look good, update the ServiceInstance values
 	for newParamKey, newParamVal := range req.Parameters {
@@ -1251,22 +1249,20 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 	reqParams map[string]string,
 	toPlan *apb.Plan,
 	si *apb.ServiceInstance,
-) error {
+) map[string]string {
 	for requestedParamKey := range reqParams {
 		var pd *apb.ParameterDescriptor
 
 		// Confirm the parameter actually exists on the plan
 		if pd = toPlan.GetParameter(requestedParamKey); pd == nil {
-			a.log.Error("Parameter %s, requested for update on instance %s, does not exist.", requestedParamKey, si.ID)
-			return ErrorParameterNotFound
-		}
-
-		if !pd.Updatable {
-			a.log.Error("Tried to update non-updatable parameter, %s, on instance %s.", requestedParamKey, si.ID)
-			return ErrorParameterNotUpdatable
+			a.log.Warningf("Removing non-existent parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
+			delete(reqParams, requestedParamKey)
+		} else if !pd.Updatable {
+			a.log.Warningf("Removing non-updatable parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
+			delete(reqParams, requestedParamKey)
 		}
 	}
-	return nil
+	return reqParams
 }
 
 // LastOperation - gets the last operation and status
