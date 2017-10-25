@@ -244,7 +244,6 @@ func (r DockerHubAdapter) getBearerToken(imageName string) (string, error) {
 	var err error
 	var req *http.Request
 	if r.Config.User == "" {
-		r.Log.Debugf("hereeee")
 		req, err = http.NewRequest("GET",
 			fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%v:pull", imageName), nil)
 		if err != nil {

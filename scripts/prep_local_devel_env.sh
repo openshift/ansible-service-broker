@@ -208,8 +208,6 @@ registry:
 # NOTE: Careful with registry.name; it *must* match the name that was used when
 # the broker was originally brought up
     name: dh
-    auth_type: secret
-    auth_name: ${REGISTRY_SECRET_NAME}
     url: https://registry.hub.docker.com
     org: ${DOCKERHUB_ORG}
     white_list:
