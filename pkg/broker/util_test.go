@@ -52,6 +52,7 @@ var PlanParams = []apb.ParameterDescriptor{
 		Description: "example enum parameter",
 		Enum:        []string{"google@gmail.com", "redhat@redhat.com"},
 		Default:     float64(9001),
+		Updatable:   true,
 	},
 	{
 		Name:        "password",
@@ -116,6 +117,17 @@ func TestEnumIsCopied(t *testing.T) {
 	schemaObj := parametersToSchema(p)
 
 	emailParam := schemaObj.ServiceInstance.Create["parameters"].Properties["email_address"]
+	ft.AssertEqual(t, len(emailParam.Enum), 2, "enum mismatch")
+	ft.AssertEqual(t, emailParam.Enum[0], "google@gmail.com")
+	ft.AssertEqual(t, emailParam.Enum[1], "redhat@redhat.com")
+
+}
+
+func TestEnumIsCopiedForUpdate(t *testing.T) {
+
+	schemaObj := parametersToSchema(p)
+
+	emailParam := schemaObj.ServiceInstance.Update["parameters"].Properties["email_address"]
 	ft.AssertEqual(t, len(emailParam.Enum), 2, "enum mismatch")
 	ft.AssertEqual(t, emailParam.Enum[0], "google@gmail.com")
 	ft.AssertEqual(t, emailParam.Enum[1], "redhat@redhat.com")
@@ -270,6 +282,37 @@ func TestParametersToSchema(t *testing.T) {
 			ft.AssertTrue(t, p.Type.Contains(schema.StringType), "type mismatch")
 			ft.AssertEqual(t, p.Description, "", "description mismatch")
 			ft.AssertEqual(t, p.Default, "en", "default mismatch")
+			ft.AssertEqual(t, p.MaxLength.Val, 0, "maxlength mismatch")
+			ft.AssertFalse(t, p.MaxLength.Initialized, "maxlength initialized")
+			ft.AssertEqual(t, len(p.Enum), 0, "enum mismatch")
+		}
+	}
+	ft.AssertTrue(t, found, "no mediawiki_site_lang property found")
+
+	verifyBindParameters(t, schemaObj)
+}
+
+func TestUpdateParametersToSchema(t *testing.T) {
+	decodedyaml, err := base64.StdEncoding.DecodeString(ft.EncodedApb())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spec := &apb.Spec{}
+	if err = yaml.Unmarshal(decodedyaml, spec); err != nil {
+		t.Fatal(err)
+	}
+	schemaObj := parametersToSchema(spec.Plans[0])
+
+	found := false
+	for k, p := range schemaObj.ServiceInstance.Create["parameters"].Properties {
+		// let's verify the site language
+		if k == "mediawiki_site_name" {
+			found = true
+			ft.AssertEqual(t, p.Title, "Mediawiki Site Name", "title mismatch")
+			ft.AssertTrue(t, p.Type.Contains(schema.StringType), "type mismatch")
+			ft.AssertEqual(t, p.Description, "", "description mismatch")
+			ft.AssertEqual(t, p.Default, "MediaWiki", "default mismatch")
 			ft.AssertEqual(t, p.MaxLength.Val, 0, "maxlength mismatch")
 			ft.AssertFalse(t, p.MaxLength.Initialized, "maxlength initialized")
 			ft.AssertEqual(t, len(p.Enum), 0, "enum mismatch")

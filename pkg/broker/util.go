@@ -313,6 +313,9 @@ func extractRequired(params []apb.ParameterDescriptor) []string {
 }
 
 func extractUpdatable(params []apb.ParameterDescriptor) map[string]*schema.Schema {
+	var patternRegex *regexp.Regexp
+	var err error
+
 	upd := make(map[string]*schema.Schema)
 	for _, v := range params {
 		if v.Updatable {
@@ -322,6 +325,31 @@ func extractUpdatable(params []apb.ParameterDescriptor) map[string]*schema.Schem
 				Description: v.Description,
 				Default:     v.Default,
 				Type:        getType(v.Type),
+			}
+
+			// we can NOT set values on the Schema object if we want to be
+			// omitempty. Setting maxlength to 0 is NOT the same as omitting it.
+			// 0 is a worthless value for Maxlength so we will not set it
+			if v.Maxlength > 0 {
+				upd[k].MaxLength = schema.Integer{Val: v.Maxlength, Initialized: true}
+			}
+
+			// do not set the regexp if it does not compile
+			if v.Pattern != "" {
+				patternRegex, err = regexp.Compile(v.Pattern)
+				upd[k].Pattern = patternRegex
+
+				if err != nil {
+					fmt.Printf("Invalid pattern: %s", err.Error())
+				}
+			}
+
+			// setup enums
+			if len(v.Enum) > 0 {
+				upd[k].Enum = make([]interface{}, len(v.Enum))
+				for i, v := range v.Enum {
+					upd[k].Enum[i] = v
+				}
 			}
 		}
 	}
