@@ -9,7 +9,6 @@ registry:
     fail_on_error: false
   - type: rhcc
     name: rhcc
-    auth_type: config
     url: registry.access.stage.redhat.com
     fail_on_error: true
     white_list:
@@ -17,6 +16,11 @@ registry:
     black_list:
       - "malicious.*-apb$"
       - "^specific-blacklist-apb$"
+  - type: dockerhub
+    name: docker2
+    url: https://registry.hub.docker.com
+    org: DOCKERHUB_ORG
+    fail_on_error: false
 dao:
   etcd_host: localhost
   etcd_port: 2379
