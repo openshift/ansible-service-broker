@@ -4,8 +4,8 @@ metadata:
   name: postgresql
   namespace: default
 spec:
-  externalClusterServiceClassName: dh-rhscl-postgresql-apb
-  externalClusterServicePlanName: prod
+  clusterServiceClassExternalName: dh-rhscl-postgresql-apb
+  clusterServicePlanExternalName: prod
   parameters:
     postgresql_database: "admin"
     postgresql_password: "admin"

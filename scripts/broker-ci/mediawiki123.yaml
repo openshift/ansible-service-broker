@@ -4,8 +4,8 @@ metadata:
   name: mediawiki
   namespace: default
 spec:
-  externalClusterServiceClassName: dh-mediawiki123-apb
-  externalClusterServicePlanName: default
+  clusterServiceClassExternalName: dh-mediawiki123-apb
+  clusterServicePlanExternalName: default
   parameters:
     mediawiki_db_schema: "mediawiki"
     mediawiki_site_name: "Mediawiki-CI"
