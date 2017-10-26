@@ -101,7 +101,7 @@ objects:
     selector:
       app: ansible-service-broker
     strategy:
-      type: Rolling
+      type: Recreate
     template:
       metadata:
         labels:
