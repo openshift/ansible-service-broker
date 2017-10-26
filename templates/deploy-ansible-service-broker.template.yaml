@@ -210,8 +210,6 @@ objects:
         - type: "${REGISTRY_TYPE}"
           name: "${REGISTRY_NAME}"
           url: "${REGISTRY_URL}"
-          auth_type: "${REGISTRY_AUTH_TYPE}"
-          auth_name: "${REGISTRY_SECRET_NAME}"
           org: "${DOCKERHUB_ORG}"
           tag: "${TAG}"
           white_list:

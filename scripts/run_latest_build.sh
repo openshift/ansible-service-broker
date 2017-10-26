@@ -73,8 +73,6 @@ oc new-project ansible-service-broker
 # parameter DOCKERHUB_ORG being passed into the template.
 #
 TEMPLATE_URL="https://raw.githubusercontent.com/openshift/ansible-service-broker/master/templates/deploy-ansible-service-broker.template.yaml"
-DOCKERHUB_USER=${DOCKERHUB_USER:-"changeme"} # DockerHub login username, default 'changeme'
-DOCKERHUB_PASS=${DOCKERHUB_PASS:-"changeme"} # DockerHub login password, default 'changeme'
 DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where APBs can be found, default 'ansibleplaybookbundle'
 
 # Add additional parameters for 3.6 vs 3.7
@@ -91,8 +89,6 @@ fi
 curl -s $TEMPLATE_URL \
   | oc process \
   -n ansible-service-broker \
-  -p DOCKERHUB_USER="$DOCKERHUB_USER" \
-  -p DOCKERHUB_PASS="$DOCKERHUB_PASS" \
   -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
   -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" \
   $VARS -f - | oc create -f -
