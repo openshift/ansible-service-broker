@@ -57,8 +57,9 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 
 			if dmsg.Error != "" {
 				// Job failed, mark failure
+				d.log.Errorf("Deprovision job reporting error: %s", dmsg.Error)
 				setFailedDeprovisionJob(d.dao, dmsg)
-				return
+				continue
 			}
 
 			instance, err := d.dao.GetServiceInstance(dmsg.InstanceUUID)
@@ -69,7 +70,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 				)
 				d.log.Errorf("%s", err.Error())
 				setFailedDeprovisionJob(d.dao, dmsg)
-				return
+				continue
 			}
 
 			// Job is not reporting error, cleanup after deprovision
@@ -79,7 +80,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 				// Cleanup is reporting something has gone wrong. Deprovision overall
 				// has not completed. Mark the job as failed.
 				setFailedDeprovisionJob(d.dao, dmsg)
-				return
+				continue
 			}
 
 			// No errors reported, deprovision action successfully performed and
