@@ -81,6 +81,35 @@ objects:
     verbs: ["get", "post", "put", "patch", "delete"]
 
 - apiVersion: v1
+  kind: ClusterRole
+  metadata:
+    creationTimestamp: null
+    name: image-access
+  rules:
+  - apiGroups:
+    - image.openshift.io
+    - ""
+    attributeRestrictions: null
+    resources:
+    - images
+    verbs:
+    - get
+    - list
+
+- apiVersion: v1
+  groupNames: null
+  kind: ClusterRoleBinding
+  metadata:
+    creationTimestamp: null
+    name: add-access-images
+  roleRef:
+    name: image-access
+  subjects:
+  - kind: ServiceAccount
+    name: asb
+    namespace: ansible-service-broker
+
+- apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
     name: etcd
