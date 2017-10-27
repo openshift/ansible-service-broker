@@ -25,9 +25,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 
+	"github.com/coreos/etcd/pkg/transport"
 	"github.com/coreos/etcd/version"
 
 	logging "github.com/op/go-logging"
@@ -37,8 +39,11 @@ import (
 
 // EtcdConfig - Etcd configuration
 type EtcdConfig struct {
-	EtcdHost string `yaml:"etcd_host"`
-	EtcdPort string `yaml:"etcd_port"`
+	EtcdHost       string `yaml:"etcd_host"`
+	EtcdCaFile     string `yaml:"etcd_ca_file"`
+	EtcdClientCert string `yaml:"etcd_client_cert"`
+	EtcdClientKey  string `yaml:"etcd_client_key"`
+	EtcdPort       string `yaml:"etcd_port"`
 }
 
 // GetEtcdVersion - Connects to ETCD cluster and retrieves server/version info
@@ -97,6 +102,8 @@ func newEtcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 	// TODO: Config validation
 	endpoints := []string{etcdEndpoint(config.EtcdHost, config.EtcdPort)}
 
+	transport, err := newTransport(config)
+
 	log.Info("== ETCD CX ==")
 	log.Infof("EtcdHost: %s", config.EtcdHost)
 	log.Infof("EtcdPort: %s", config.EtcdPort)
@@ -104,7 +111,7 @@ func newEtcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 
 	etcdClient, err := etcd.New(etcd.Config{
 		Endpoints:               endpoints,
-		Transport:               etcd.DefaultTransport,
+		Transport:               transport,
 		HeaderTimeoutPerRequest: time.Second,
 	})
 	if err != nil {
@@ -114,6 +121,31 @@ func newEtcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 	return etcdClient, err
 }
 
+func newTransport(config EtcdConfig) (*http.Transport, error) {
+	info := transport.TLSInfo{
+		CertFile: config.EtcdClientCert,
+		KeyFile:  config.EtcdClientKey,
+		CAFile:   config.EtcdCaFile,
+	}
+	cfg, err := info.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	// Copied from etcd.DefaultTransport declaration.
+	// TODO: Determine if transport needs optimization
+	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		Dial: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+		MaxIdleConnsPerHost: 500,
+		TLSClientConfig:     cfg,
+	}
+	return tr, nil
+}
+
 func etcdEndpoint(host string, port string) string {
-	return fmt.Sprintf("http://%s:%s", host, port)
+	return fmt.Sprintf("https://%s:%s", host, port)
 }

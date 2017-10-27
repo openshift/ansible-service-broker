@@ -34,13 +34,20 @@ import (
 
 // Config - contains dao configuration
 type Config struct {
-	EtcdHost string `yaml:"etcd_host"`
-	EtcdPort string `yaml:"etcd_port"`
+	EtcdHost       string `yaml:"etcd_host"`
+	EtcdPort       string `yaml:"etcd_port"`
+	EtcdCaFile     string `yaml:"etcd_ca_file"`
+	EtcdClientCert string `yaml:"etcd_client_cert"`
+	EtcdClientKey  string `yaml:"etcd_client_key"`
 }
 
 // GetEtcdConfig - Simple EtcdConfig getter
 func (c Config) GetEtcdConfig() clients.EtcdConfig {
-	return clients.EtcdConfig{EtcdHost: c.EtcdHost, EtcdPort: c.EtcdPort}
+	return clients.EtcdConfig{EtcdHost: c.EtcdHost,
+		EtcdPort:       c.EtcdPort,
+		EtcdClientCert: c.EtcdClientCert,
+		EtcdCaFile:     c.EtcdCaFile,
+		EtcdClientKey:  c.EtcdClientKey}
 }
 
 // Dao - object to interface with the data store.
