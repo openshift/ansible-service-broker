@@ -92,15 +92,22 @@ elif [[ "$action" == "test" ]]; then
   echo "              Test               "
   echo "================================="
   make ci-test-coverage
+elif [[ "$action" == "setup-cluster" ]]; then
+  echo "================================="
+  echo "          Setup Cluster          "
+  echo "================================="
+  ./scripts/broker-ci/setup-cluster.sh
+  exit $?
+elif [[ "$action" == "setup-broker" ]]; then
+  echo "================================="
+  echo "           Setup Broker          "
+  echo "================================="
+  ./scripts/broker-ci/setup-broker.sh
+  exit $?
 elif [[ "$action" == "ci" ]]; then
   echo "================================="
   echo "            Broker CI            "
   echo "================================="
-  ./scripts/broker-ci/setup.sh
-  exit_code=$?
-  if [ $exit_code -eq 0 ]; then
-      make ci LOCAL_CI=false
-      exit_code=$?
-  fi
-  exit $exit_code
+  make ci LOCAL_CI=false
+  exit $?
 fi
