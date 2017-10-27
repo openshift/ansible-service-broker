@@ -40,7 +40,11 @@ var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-
 
 // Config - Configuration for the registry
 type Config struct {
-	URL      string
+	URL string
+	// AuthType is an optional way to declare where credentials for the registry are stored.
+	//   Valid options: `secret`, `file`
+	// AuthName is used to define the location of the credentials
+	//   Valid options: `<secret-name>`, `<file_location>`
 	AuthType string `yaml:"auth_type"`
 	AuthName string `yaml:"auth_name"`
 	User     string

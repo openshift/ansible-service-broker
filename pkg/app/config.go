@@ -100,10 +100,10 @@ func CreateConfig(configFile string) (Config, error) {
 
 		} else if reg.AuthType == "file" {
 			if dat, err = ioutil.ReadFile(reg.AuthName); err != nil {
-				return Config{}, err
+				return Config{}, fmt.Errorf("Failed to read registry credentials from file: %s", reg.AuthName)
 			}
 			if err = yaml.Unmarshal(dat, &regCred); err != nil {
-				return Config{}, err
+				return Config{}, fmt.Errorf("Failed to unmarshal registry credentials from file: %s", reg.AuthName)
 			}
 			config.Registry[regCount].User = regCred.Username
 			config.Registry[regCount].Pass = regCred.Password
