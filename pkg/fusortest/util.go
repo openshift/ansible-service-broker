@@ -62,6 +62,7 @@ plans:
         type: string
         default: MediaWiki
         required: true
+        updatable: true
       - name: mediawiki_site_lang
         title: Mediawiki Site Language
         type: string
