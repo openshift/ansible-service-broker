@@ -1,7 +1,7 @@
 package broker
 
 import (
-	"fmt"
+	"sync"
 	"testing"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
@@ -33,12 +33,13 @@ func (mm mockMsg) Render() string {
 
 type mockWorker struct {
 	called bool
+	wg     *sync.WaitGroup
 }
 
-func (mw mockWorker) Run(token string, buffer chan<- WorkMsg) {
-	fmt.Println("xxxxxxxxxxxxxxxxxxxxx run called")
+func (mw *mockWorker) Run(token string, buffer chan<- WorkMsg) {
 	mw.called = true
 	buffer <- mockMsg{msg: "hello"}
+	mw.wg.Done()
 }
 
 func TestNewWorkEngine(t *testing.T) {
@@ -84,23 +85,21 @@ func TestInvalidWorkTopic(t *testing.T) {
 }
 
 func TestStartNewJob(t *testing.T) {
-	//var wg sync.WaitGroup
-	//wg.Add(1)
+	var wg sync.WaitGroup
+	wg.Add(1) // we're launching 1 goroutine
 
-	/*
-		work := mockWorker{}
-		token, err := engine.StartNewJob("testtoken", work, ProvisionTopic)
-		ft.AssertNil(t, err)
-		ft.AssertEqual(t, "testtoken", token, "token doesn't match")
-		t.Log(work.called)
-		ft.AssertTrue(t, work.called, "run not called")
-		fmt.Println("sleeping 20")
-		time.Sleep(time.Second * 20)
-		fmt.Println("sleept 20")
-	*/
+	// work around to get pointer receivers to update the worker
+	var work Work
+	worker := &mockWorker{wg: &wg}
+	work = worker
 
-	/*
-		_, err = engine.StartNewJob("testtoken1", work, "faketopic")
-		ft.AssertEqual(t, "invalid work topic", err.Error(), "invalid error")
-	*/
+	token, err := engine.StartNewJob("testtoken", work, ProvisionTopic)
+	ft.AssertNil(t, err)
+	ft.AssertEqual(t, "testtoken", token, "token doesn't match")
+
+	// let's wait until it's done
+	wg.Wait()
+
+	// verify we actually called the run method
+	ft.AssertTrue(t, worker.called, "run not called")
 }
