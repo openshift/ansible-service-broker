@@ -22,8 +22,11 @@ package apb
 
 import (
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/kubernetes/pkg/api/v1"
 )
 
 // Deprovision - runs the abp with the deprovision action.
@@ -51,6 +54,18 @@ func Deprovision(
 		return "", errors.New("No image field found on instance.Spec")
 	}
 
+	nsDeleted, err := isNamespaceDeleted(instance.Context.Namespace, log)
+	if err != nil {
+		return "", err
+	}
+
+	// If the namespace is gone or terminating, assume that we don't need to deprovision
+	// because everything is going to be deleted.  We may need to revisit this and perform
+	// the deprovision inside a terminating namespace.
+	if nsDeleted {
+		return "", nil
+	}
+
 	// Might need to change up this interface to feed in instance ids
 	sm := NewServiceAccountManager(log)
 	metrics.ActionStarted("deprovision")
@@ -72,4 +87,18 @@ func Deprovision(
 	}
 
 	return executionContext.PodName, err
+}
+
+func isNamespaceDeleted(name string, log *logging.Logger) (bool, error) {
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		return false, err
+	}
+
+	namespace, err := k8scli.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	return namespace == nil || namespace.Status.Phase == v1.NamespaceTerminating, nil
 }
