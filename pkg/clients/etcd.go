@@ -100,7 +100,7 @@ func Etcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 
 func newEtcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 	// TODO: Config validation
-	endpoints := []string{etcdEndpoint(config.EtcdHost, config.EtcdPort)}
+	endpoints := []string{etcdEndpoint(config)}
 
 	transport, err := newTransport(config)
 
@@ -121,12 +121,19 @@ func newEtcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 	return etcdClient, err
 }
 
-func newTransport(config EtcdConfig) (*http.Transport, error) {
+func newTransport(config EtcdConfig) (etcd.CancelableTransport, error) {
+	if config.EtcdClientCert == "" && config.EtcdClientKey == "" {
+		return etcd.DefaultTransport, nil
+	}
 	info := transport.TLSInfo{
 		CertFile: config.EtcdClientCert,
 		KeyFile:  config.EtcdClientKey,
-		CAFile:   config.EtcdCaFile,
 	}
+
+	if config.EtcdCaFile != "" {
+		info.CAFile = config.EtcdCaFile
+	}
+
 	cfg, err := info.ClientConfig()
 	if err != nil {
 		return nil, err
@@ -146,6 +153,9 @@ func newTransport(config EtcdConfig) (*http.Transport, error) {
 	return tr, nil
 }
 
-func etcdEndpoint(host string, port string) string {
-	return fmt.Sprintf("https://%s:%s", host, port)
+func etcdEndpoint(config EtcdConfig) string {
+	if config.EtcdCaFile != "" {
+		return fmt.Sprintf("https://%s:%s", config.EtcdHost, config.EtcdPort)
+	}
+	return fmt.Sprintf("http://%s:%s", config.EtcdHost, config.EtcdPort)
 }
