@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.11
+Version: 1.0.12
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,23 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Oct 30 2017 Jason Montleon <jmontleo@redhat.com> 1.0.12-1
+- Bug 1476173 - Skip deprovision if the namespace is being deleted since we
+  (#520) (cchase@redhat.com)
+- Bug 1506713 - handle updatable enum parameters properly in schema output
+  (#517) (jmontleo@redhat.com)
+- Bug 1504250 - Keep listening for deprovision messages (#508)
+  (david.j.zager@gmail.com)
+- Bug 1504957 - Broker should use recreate strategy (#511)
+  (david.j.zager@gmail.com)
+- Bug 1504729 - Log job state when getting last op (#505)
+  (david.j.zager@gmail.com)
+- update resource field names (#519) (jmontleo@redhat.com)
+- Adding docs for prometheus. (#507) (Shawn.Hurley21@gmail.com)
+- accept update with bad params and log warnings instead of erroring (#516)
+  (jmontleo@redhat.com)
+- Fix gate for Openshift 3.7 (#513) (jmontleo@redhat.com)
+
 * Mon Oct 23 2017 Jason Montleon <jmontleo@redhat.com> 1.0.11-1
 - Update schema for instance-update (#444) (jmontleo@redhat.com)
 - remove trailing spaces from supporting files (#493) (jmrodri@gmail.com)
