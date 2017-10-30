@@ -266,7 +266,7 @@ objects:
     name: etcd-auth-secret
     namespace: ansible-service-broker
   data:
-    ca.crt: ${ETCD_TRUESTED_CA}
+    ca.crt: ${ETCD_TRUSTED_CA}
 
 - apiVersion: v1
   kind: Secret
@@ -455,9 +455,10 @@ parameters:
   displayname: etcd trusted ca file path
   name: BROKER_ETCD_TRUSTED_CA
   value: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+
 - description: Value of the etcd server ca file
   displayname: etcd trusted ca
-  name: ETCD_TRUESTED_CA
+  name: ETCD_TRUSTED_CA
   value: "YWRtaW4="
 
 - description: Value of the broker client cert for etcd

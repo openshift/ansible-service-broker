@@ -96,7 +96,7 @@ curl -s $TEMPLATE_URL \
   -p ETCD_TRUSTED_CA_FILE=/var/run/etcd-auth-secret/ca.crt \
   -p BROKER_CLIENT_CERT_PATH=/var/run/asb-etcd-auth/client.crt \
   -p BROKER_CLIENT_KEY_PATH=/var/run/asb-etcd-auth/client.key \
-  -p ETCD_TRUESTED_CA="$ETCD_CA_CERT" \
+  -p ETCD_TRUSTED_CA="$ETCD_CA_CERT" \
   -p BROKER_CLIENT_CERT="$BROKER_CLIENT_CERT" \
   -p BROKER_CLIENT_KEY="$BROKER_CLIENT_KEY" \
   -p NAMESPACE=ansible-service-broker \
