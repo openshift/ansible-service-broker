@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.12
+Version: 1.0.13
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Oct 30 2017 Jason Montleon <jmontleo@redhat.com> 1.0.13-1
+- Bug 1503289 - Move registry credentials to a secret (#502)
+  (dymurray@redhat.com)
+
 * Mon Oct 30 2017 Jason Montleon <jmontleo@redhat.com> 1.0.12-1
 - Bug 1476173 - Skip deprovision if the namespace is being deleted since we
   (#520) (cchase@redhat.com)
