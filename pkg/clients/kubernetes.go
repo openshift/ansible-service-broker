@@ -57,18 +57,15 @@ func GetSecretData(secretName, namespace string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ret = make(map[string][]byte)
 
 	secretData, err := k8scli.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
 	if err != nil {
-		log.Error("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
-		return ret, nil
+		log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
+		return make(map[string][]byte), nil
 	}
-	log.Debug("Found secret with name %v\n", secretName)
+	log.Debugf("Found secret with name %v\n", secretName)
 
-	ret = secretData.Data
-
-	return ret, nil
+	return secretData.Data, nil
 }
 
 func createOnce(log *logging.Logger) {

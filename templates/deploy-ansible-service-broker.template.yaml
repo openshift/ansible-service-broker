@@ -465,12 +465,12 @@ parameters:
 - description: Dockerhub user password
   displayname: Dockerhub user password
   name: DOCKERHUB_PASS
-  value: Y2hhbmdlbWUK
+  value: ""
 
 - description: Dockerhub user name
   displayname: Dockerhub user name
   name: DOCKERHUB_USER
-  value: Y2hhbmdlbWUK
+  value: ""
 
 ############################################################
 # NOTE: Default behavior for these are going to use the kubernetes

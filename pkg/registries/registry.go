@@ -66,11 +66,27 @@ func (c Config) Validate() bool {
 	if c.Name == "" {
 		return false
 	}
-	if c.AuthType == "file" || c.AuthType == "secret" {
+	switch c.AuthType {
+	case "file":
 		if c.AuthName == "" {
 			return false
 		}
+	case "secret":
+		if c.AuthName == "" {
+			return false
+		}
+	case "config":
+		if c.User == "" || c.Pass == "" {
+			return false
+		}
+	case "":
+		if c.AuthName != "" {
+			return false
+		}
+	default:
+		return false
 	}
+
 	m := regex.FindString(c.Name)
 	return m == c.Name
 }

@@ -22,7 +22,6 @@ package app
 
 import (
 	"fmt"
-	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -32,6 +31,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // Config - The base config for the pieces of the applcation
@@ -65,8 +65,6 @@ func CreateConfig(configFile string) (Config, error) {
 
 	// Load struct
 	var dat []byte
-	var data map[string][]byte
-	regCred := regCreds{}
 
 	if dat, err = ioutil.ReadFile(configFile); err != nil {
 		return Config{}, err
@@ -83,31 +81,33 @@ func CreateConfig(configFile string) (Config, error) {
 	}
 
 	for regCount, reg := range config.Registry {
-		if reg.AuthType == "secret" {
-			data, err = clients.GetSecretData(reg.AuthName, config.Openshift.Namespace)
+		var username, password string
+		switch reg.AuthType {
+		case "secret":
+			username, password, err = readSecret(reg.AuthName, config.Openshift.Namespace)
 			if err != nil {
-				return Config{}, fmt.Errorf("Failed to find Dockerhub credentials in secret: %s", reg.AuthName)
+				return Config{}, err
 			}
-			var username = strings.TrimSpace(string(data["username"]))
-			var password = strings.TrimSpace(string(data["password"]))
-
-			if username == "" || password == "" {
-				return Config{}, fmt.Errorf("Secret: %s did not contain username/password credentials", reg.AuthName)
+		case "file":
+			username, password, err = readFile(reg.AuthName)
+			if err != nil {
+				return Config{}, err
 			}
-
-			config.Registry[regCount].User = username
-			config.Registry[regCount].Pass = password
-
-		} else if reg.AuthType == "file" {
-			if dat, err = ioutil.ReadFile(reg.AuthName); err != nil {
-				return Config{}, fmt.Errorf("Failed to read registry credentials from file: %s", reg.AuthName)
+		case "config":
+			if config.Registry[regCount].User == "" || config.Registry[regCount].Pass == "" {
+				return Config{}, fmt.Errorf("Failed to find registry credentials in config")
 			}
-			if err = yaml.Unmarshal(dat, &regCred); err != nil {
-				return Config{}, fmt.Errorf("Failed to unmarshal registry credentials from file: %s", reg.AuthName)
-			}
-			config.Registry[regCount].User = regCred.Username
-			config.Registry[regCount].Pass = regCred.Password
+			username = config.Registry[regCount].User
+			password = config.Registry[regCount].Pass
+		case "":
+			username = ""
+			password = ""
+		default:
+			return Config{}, fmt.Errorf("Unrecognized registry AuthType: %s", reg.AuthType)
 		}
+
+		config.Registry[regCount].User = username
+		config.Registry[regCount].Pass = password
 	}
 
 	if err = validateConfig(config); err != nil {
@@ -115,6 +115,35 @@ func CreateConfig(configFile string) (Config, error) {
 	}
 
 	return config, nil
+}
+
+func readFile(fileName string) (string, string, error) {
+	regCred := regCreds{}
+
+	dat, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return "", "", fmt.Errorf("Failed to read registry credentials from file: %s", fileName)
+	}
+	err = yaml.Unmarshal(dat, &regCred)
+	if err != nil {
+		return "", "", fmt.Errorf("Failed to unmarshal registry credentials from file: %s", fileName)
+	}
+	return regCred.Username, regCred.Password, nil
+}
+
+func readSecret(secretName string, namespace string) (string, string, error) {
+	data, err := clients.GetSecretData(secretName, namespace)
+	if err != nil {
+		return "", "", fmt.Errorf("Failed to find Dockerhub credentials in secret: %s", secretName)
+	}
+	var username = strings.TrimSpace(string(data["username"]))
+	var password = strings.TrimSpace(string(data["password"]))
+
+	if username == "" || password == "" {
+		return username, password, fmt.Errorf("Secret: %s did not contain username/password credentials", secretName)
+	}
+
+	return username, password, nil
 }
 
 func validateConfig(c Config) error {
