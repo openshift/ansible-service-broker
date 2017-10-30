@@ -295,7 +295,7 @@ objects:
           white_list:
             - ".*-apb$"
       dao:
-        etcd_host: asb-etcd.ansible-service-broker.svc
+        etcd_host: asb-etcd.${NAMESPACE}.svc
         etcd_port: 2379
         etcd_ca_file: ${BROKER_ETCD_TRUSTED_CA}
         etcd_client_cert: ${BROKER_CLIENT_CERT_PATH}
@@ -469,6 +469,11 @@ parameters:
   displayname: broker client cert key
   name: BROKER_CLIENT_KEY
   value: "YWRtaW4="
+
+- description: Namespace of the project that is being deploy
+  displayname: broker client cert key
+  name: NAMESPACE
+  value: "ansible-service-broker"
 
 - description: Configuration filepath for Ansible Service Broker
   displayname: Ansible Service Broker Configuration File
