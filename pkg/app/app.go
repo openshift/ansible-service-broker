@@ -166,7 +166,7 @@ func CreateApp() App {
 	}
 
 	// Initializing clients as soon as we have deps ready.
-	err = initClients(app.log.Logger, app.config.Dao.GetEtcdConfig(), app.config.Broker.SSLCert, app.config.Broker.SSLCertKey)
+	err = initClients(app.log.Logger, app.config.Dao.GetEtcdConfig())
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
@@ -367,7 +367,7 @@ func (a *App) Start() {
 	//TODO: Add Flag so we can still use the old way of doing this.
 }
 
-func initClients(log *logging.Logger, ec clients.EtcdConfig, brokerClientCert, brokerClientKey string) error {
+func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	// Designed to panic early if we cannot construct required clients.
 	// this likely means we're in an unrecoverable configuration or environment.
 	// Best we can do is alert the operator as early as possible.
