@@ -3,8 +3,8 @@ registry:
   - type: dockerhub
     name: docker
     url: https://registry.hub.docker.com
-    user: DOCKERHUB_USER
-    pass: DOCKERHUB_PASS
+    auth_type: file
+    auth_name: testdata/test-registry-auth.yaml
     org: DOCKERHUB_ORG
     fail_on_error: false
   - type: rhcc
@@ -16,6 +16,20 @@ registry:
     black_list:
       - "malicious.*-apb$"
       - "^specific-blacklist-apb$"
+  - type: dockerhub
+    name: docker-public-registry
+    url: https://registry.hub.docker.com
+    org: DOCKERHUB_ORG
+    fail_on_error: false
+  - type: dockerhub
+    name: docker-private-registry
+    auth_type: config
+    user: DOCKERHUB_USER
+    pass: DOCKERHUB_PASS
+    url: https://registry.hub.docker.com
+    org: DOCKERHUB_ORG
+    fail_on_error: false
+
 dao:
   etcd_host: localhost
   etcd_port: 2379

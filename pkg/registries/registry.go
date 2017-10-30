@@ -40,14 +40,20 @@ var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-
 
 // Config - Configuration for the registry
 type Config struct {
-	URL    string
-	User   string
-	Pass   string
-	Org    string
-	Tag    string
-	Type   string
-	Name   string
-	Images []string
+	URL string
+	// AuthType is an optional way to declare where credentials for the registry are stored.
+	//   Valid options: `secret`, `file`
+	// AuthName is used to define the location of the credentials
+	//   Valid options: `<secret-name>`, `<file_location>`
+	AuthType string `yaml:"auth_type"`
+	AuthName string `yaml:"auth_name"`
+	User     string
+	Pass     string
+	Org      string
+	Tag      string
+	Type     string
+	Name     string
+	Images   []string
 	// Fail will tell the registry that it is ok to fail the bootstrap if
 	// just this registry has failed.
 	Fail      bool     `yaml:"fail_on_error"`
@@ -60,6 +66,27 @@ func (c Config) Validate() bool {
 	if c.Name == "" {
 		return false
 	}
+	switch c.AuthType {
+	case "file":
+		if c.AuthName == "" {
+			return false
+		}
+	case "secret":
+		if c.AuthName == "" {
+			return false
+		}
+	case "config":
+		if c.User == "" || c.Pass == "" {
+			return false
+		}
+	case "":
+		if c.AuthName != "" {
+			return false
+		}
+	default:
+		return false
+	}
+
 	m := regex.FindString(c.Name)
 	return m == c.Name
 }

@@ -3,6 +3,7 @@ registry:
   - type: dockerhub
     name: docker
     url: https://registry.hub.docker.com
+    auth_type: config
     user: DOCKERHUB_USER
     pass: DOCKERHUB_PASS
     org: DOCKERHUB_ORG

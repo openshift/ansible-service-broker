@@ -59,6 +59,7 @@ fi
 
 # Determine the name of the secret which has the 'asb' service account info
 BROKER_SVC_ACCT_SECRET_NAME=`kubectl get serviceaccount asb -n ansible-service-broker -o jsonpath='{.secrets[0].name}'`
+REGISTRY_SECRET_NAME="registry-auth-secret"
 echo "Broker Service Account Token is in secret: ${BROKER_SVC_ACCT_SECRET_NAME}"
 
 ###
@@ -208,8 +209,6 @@ registry:
 # the broker was originally brought up
     name: dh
     url: https://registry.hub.docker.com
-    user: ${DOCKERHUB_USERNAME}
-    pass: ${DOCKERHUB_PASSWORD}
     org: ${DOCKERHUB_ORG}
     white_list:
       # will allow all the APBs to be included. You must have at least 1 white
@@ -244,3 +243,4 @@ broker:
   # TODO: default to false once we move to 3.7
   auto_escalate: ${AUTO_ESCALATE:-true}
 EOF
+

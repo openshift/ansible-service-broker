@@ -44,6 +44,12 @@ func TestCreateConfig(t *testing.T) {
 		"mismatch whitelist entry")
 	ft.AssertEqual(t, config.Registry[1].BlackList[1], "^specific-blacklist-apb$",
 		"mismatch blacklist entry")
+	ft.AssertEqual(t, config.Registry[2].AuthType, "", "registry auth_type not empty")
+	ft.AssertEqual(t, config.Registry[2].User, "", "registry user not empty")
+	ft.AssertEqual(t, config.Registry[2].Pass, "", "registry pass not empty")
+	ft.AssertEqual(t, config.Registry[3].AuthType, "config", "registry auth_type not set to config")
+	ft.AssertEqual(t, config.Registry[3].User, "DOCKERHUB_USER", "mismatch registry user")
+	ft.AssertEqual(t, config.Registry[3].Pass, "DOCKERHUB_PASS", "mismatch registry pass")
 
 	ft.AssertEqual(t, config.Dao.EtcdHost, "localhost", "")
 	ft.AssertEqual(t, config.Dao.EtcdPort, "2379", "")

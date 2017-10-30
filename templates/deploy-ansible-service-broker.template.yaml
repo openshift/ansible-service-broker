@@ -189,6 +189,15 @@ objects:
     password: ${BROKER_PASS}
 
 - apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${REGISTRY_SECRET_NAME}
+    namespace: ansible-service-broker
+  data:
+    username: ${DOCKERHUB_USER}
+    password: ${DOCKERHUB_PASS}
+
+- apiVersion: v1
   kind: ConfigMap
   metadata:
     name: broker-config
@@ -201,8 +210,6 @@ objects:
         - type: "${REGISTRY_TYPE}"
           name: "${REGISTRY_NAME}"
           url: "${REGISTRY_URL}"
-          user: "${DOCKERHUB_USER}"
-          pass: "${DOCKERHUB_PASS}"
           org: "${DOCKERHUB_ORG}"
           tag: "${TAG}"
           white_list:
@@ -340,16 +347,6 @@ parameters:
   name: BROKER_CONFIG
   value: /etc/ansible-service-broker/config.yaml
 
-- description: Dockerhub user password
-  displayname: Dockerhub user password
-  name: DOCKERHUB_PASS
-  value: changeme
-
-- description: Dockerhub user name
-  displayname: Dockerhub user name
-  name: DOCKERHUB_USER
-  value: changeme
-
 - description: Dockerhub organization
   displayname: Dockerhub organization
   name: DOCKERHUB_ORG
@@ -379,6 +376,16 @@ parameters:
   displayname: Registry Type
   name: REGISTRY_TYPE
   value: dockerhub
+
+- description: Registry Secret Name
+  displayname: Registry Secret Name
+  name: REGISTRY_SECRET_NAME
+  value: registry-auth-secret
+
+- description: Registry Auth Type
+  displayname: Registry Auth Type
+  name: REGISTRY_AUTH_TYPE
+  value: secret
 
 # Intentionally shortening the registry name to lessen impact of
 # PodPreset name has a requirement of being less than 63 chars
@@ -454,6 +461,16 @@ parameters:
   displayname: Broker user name
   name: BROKER_USER
   value: YWRtaW4=
+
+- description: Dockerhub user password
+  displayname: Dockerhub user password
+  name: DOCKERHUB_PASS
+  value: ""
+
+- description: Dockerhub user name
+  displayname: Dockerhub user name
+  name: DOCKERHUB_USER
+  value: ""
 
 ############################################################
 # NOTE: Default behavior for these are going to use the kubernetes

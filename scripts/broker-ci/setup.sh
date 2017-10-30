@@ -16,9 +16,7 @@ function cluster-setup () {
 
     cat <<EOF > "catasb/config/my_vars.yml"
 ---
-dockerhub_user_name: changeme
 dockerhub_org: ansibleplaybookbundle
-dockerhub_user_password: changeme
 broker_tag: latest
 broker_kind: ClusterServiceBroker
 EOF
@@ -36,8 +34,6 @@ CLUSTER_PORT=8443
 # BROKER_IP_ADDR must be the IP address of where to reach broker
 #   it should not be 127.0.0.1, needs to be an address the pods will be able to reach
 BROKER_IP_ADDR=${CLUSTER_HOST}
-DOCKERHUB_USER="changeme"
-DOCKERHUB_PASS="changeme"
 DOCKERHUB_ORG="ansibleplaybookbundle"
 BOOTSTRAP_ON_STARTUP="true"
 BEARER_TOKEN_FILE=""
