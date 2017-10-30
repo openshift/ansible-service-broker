@@ -1,20 +1,10 @@
 # Travis CI
 provision: mediawiki123
-verify: rthallisey/service-broker-ci/wait-for-resource.sh create pod mediawiki
-
 provision: postgresql
-verify: rthallisey/service-broker-ci/wait-for-resource.sh create pod postgresql
 
 bind: postgresql
-verify: rthallisey/service-broker-ci/wait-for-resource.sh create servicebinding binding
-
-verify: rthallisey/service-broker-ci/verify-bind.sh mediawiki123
-
+verify: rthallisey/service-broker-ci/verify-mediawiki-postgresql.sh
 unbind: postgresql | mediawiki123
-verify: rthallisey/service-broker-ci/wait-for-resource.sh delete servicebinding binding
 
 deprovision: mediawiki123
-verify: rthallisey/service-broker-ci/wait-for-resource.sh delete instance mediawiki
-
 deprovision: postgresql
-verify: rthallisey/service-broker-ci/wait-for-resource.sh delete instance postgresql
