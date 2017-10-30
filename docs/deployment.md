@@ -10,8 +10,8 @@ BROKER_IMAGE | ansibleplaybookbundle/origin-ansible-service-broker:latest| Conta
 ETCD_IMAGE | quay.io/coreos/etcd:latest | Container Image to use for etcd in format of imagename:tag
 BROKER_CONFIG | /etc/ansible-service-broker/config.yaml | Configuration file path for Ansible Service Broker
 DOCKERHUB_ORG | ansibleplaybookbundle | Dockerhub organization
-DOCKERHUB_USER | changeme | Dockerhub user Name
-DOCKERHUB_PASS | changeme | Dockerhub user Password
+DOCKERHUB_USER | "" | Dockerhub user Name
+DOCKERHUB_PASS | "" | Dockerhub user Password
 OPENSHIFT_TARGET | https://kubernetes.default | OpenShift Target URL
 REGISTRY_TYPE | dockerhub | Registry Type
 REGISTRY_URL | docker.io | Registry URL

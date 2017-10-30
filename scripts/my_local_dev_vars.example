@@ -18,8 +18,6 @@ BROKER_IP_ADDR=${CLUSTER_HOST}
 
 # Docker registry used for getting APBs. Uncomment, if you want
 # something other than the default shown.
-# DOCKERHUB_USER="changeme"
-# DOCKERHUB_PASS="changeme"
 # DOCKERHUB_ORG="ansibleplaybookbundle"
 
 BOOTSTRAP_ON_STARTUP="true"
