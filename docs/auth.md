@@ -2,7 +2,7 @@
 
 The broker now supports authentication. This means that when connecting to the
 broker, the caller needs to supply the [basic auth](#basic-auth) or [bearer](#bearer-auth) auth credentials for each request.
-Using curl it is as simple as supplying -u username:password or -h "Authorization: beaer <token>". The service
+Using curl it is as simple as supplying -u username:password or -h "Authorization: bearer <token>". The service
 catalog will need to be configured with a secret containing the username and
 password combinations or the bearer token.
 
@@ -296,7 +296,7 @@ type TrustedUserAuth struct {
    usa UserServiceAdapter
 }
 
-func (t TrustedUserAuth) GetPrincipal(r *http.Request) (Princpal, error) {
+func (t TrustedUserAuth) GetPrincipal(r *http.Request) (Principal, error) {
     userHeader := r.getHeader("cp-user")
     user, err := t.usa.FindByLogin(userHeader)
     if err != nil {
