@@ -96,11 +96,13 @@ elif [[ "$action" == "setup-cluster" ]]; then
   echo "================================="
   echo "          Setup Cluster          "
   echo "================================="
-  ./scripts/broker-ci/setup-cluster.sh
+  # Add an arguemnt only when running Travis for the broker
+  ./scripts/broker-ci/setup-cluster.sh broker
   exit $?
 elif [[ "$action" == "setup-broker" ]]; then
   echo "================================="
-  echo "           Setup Broker          "
+  echo "          Setup Broker           "
+  echo "   (Only for Broker Travis job)  "
   echo "================================="
   ./scripts/broker-ci/setup-broker.sh
   exit $?
