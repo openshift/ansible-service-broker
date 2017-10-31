@@ -36,12 +36,6 @@ function secret-logs {
     log-footer "secrets-logs"
 }
 
-function podpreset-logs {
-    log-header "podpreset- logs"
-    oc get podpresets --all-namespaces
-    log-footer "podpreset-logs"
-}
-
 function broker-logs {
     log-header "broker-logs"
     oc logs $(oc get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/') -c asb -n ansible-service-broker
@@ -49,23 +43,22 @@ function broker-logs {
 }
 
 function catalog-data-logs {
-    log-header "catlog-data-logs"
+    log-header "catalog-data-logs"
     oc get clusterserviceclasses --all-namespaces
     oc get serviceinstances --all-namespaces
-    log-footer "catlog-data-logs"
+    log-footer "catalog-data-logs"
 }
 
 function catalog-logs {
-    log-header "catlog-logs"
+    log-header "catalog-logs"
     oc logs $(oc get pods -o name -l app=controller-manager --all-namespaces | cut -f 2 -d '/') -n service-catalog
-    log-footer "catlog-logs"
+    log-footer "catalog-logs"
 }
 
 function print-all-logs {
     wait-logs
     pod-logs
     secret-logs
-    podpreset-logs
     broker-logs
     catalog-data-logs
     catalog-logs
