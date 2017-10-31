@@ -55,7 +55,7 @@ function catalog-logs {
     log-header "catlog logs"
     oc get clusterserviceclasses --all-namespaces
     oc get serviceinstances --all-namespaces
-    oc logs $(oc get pods -o name -l app=controller-manager --all-namespaces | cut -f 2 -d '/') -n service-catalog
+    oc logs $(oc get pods -o name -l app=controller-manager --all-namespaces | cut -f 2 -d '/') -n kube-service-catalog
     log-footer "catlog logs"
 }
 
