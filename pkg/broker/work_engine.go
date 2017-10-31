@@ -34,11 +34,12 @@ type Work interface {
 // WorkEngine - a new engine for doing work.
 type WorkEngine struct {
 	topics map[WorkTopic]chan WorkMsg
+	bufsz  int
 }
 
 // NewWorkEngine - creates a new work engine
 func NewWorkEngine(bufferSize int) *WorkEngine {
-	return &WorkEngine{topics: make(map[WorkTopic]chan WorkMsg)}
+	return &WorkEngine{topics: make(map[WorkTopic]chan WorkMsg), bufsz: bufferSize}
 }
 
 // StartNewJob - Starts a job in an new goroutine, reporting to a specific topic.
@@ -60,7 +61,7 @@ func (engine *WorkEngine) StartNewJob(
 
 	msgBuffer, topicExists := engine.topics[topic]
 	if !topicExists {
-		msgBuffer = make(chan WorkMsg)
+		msgBuffer = make(chan WorkMsg, engine.bufsz)
 		engine.topics[topic] = msgBuffer
 	}
 
@@ -79,7 +80,7 @@ func (engine *WorkEngine) AttachSubscriber(
 
 	msgBuffer, topicExists := engine.topics[topic]
 	if !topicExists {
-		msgBuffer = make(chan WorkMsg)
+		msgBuffer = make(chan WorkMsg, engine.bufsz)
 		engine.topics[topic] = msgBuffer
 	}
 
