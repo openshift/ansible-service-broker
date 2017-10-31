@@ -47,8 +47,8 @@ $(KUBERNETES_FILES):
 prepare-local-env: $(KUBERNETES_FILES) ## Prepare the local environment for running the broker locally
 	@echo > /dev/null
 
-build-image: broker ## Build a docker image with the broker binary
-	cp broker build/broker
+build-image: ## Build a docker image with the broker binary
+	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/broker ./cmd/broker
 	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
