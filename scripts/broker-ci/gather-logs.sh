@@ -25,6 +25,8 @@ function wait-logs {
 function pod-logs {
     log-header "pod-logs"
     oc get pods --all-namespaces
+    oc get dc --all-namespaces
+    oc get rc --all-namespaces
     log-footer "pod-logs"
 }
 
@@ -48,8 +50,8 @@ function broker-logs {
 
 function catalog-data-logs {
     log-header "catlog-data-logs"
-    oc get serviceclasses --all-namespaces
-    oc get instances --all-namespaces
+    oc get clusterserviceclasses --all-namespaces
+    oc get serviceinstances --all-namespaces
     log-footer "catlog-data-logs"
 }
 
