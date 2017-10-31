@@ -241,5 +241,5 @@ broker:
   ssl_cert_key: ${TLS_KEY}
   ssl_cert: ${TLS_CRT}
   refresh_interval: "600s"
-  auto_escalate: ${AUTO_ESCALATE:-false}
+  auto_escalate: ${AUTO_ESCALATE:-true}
 EOF

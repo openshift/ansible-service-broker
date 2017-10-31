@@ -431,7 +431,7 @@ parameters:
 - description: Auto escalate the broker. Will remove user impresonation
   displayname: Auto Escalate
   name: AUTO_ESCALATE
-  value: "false"
+  value: "true"
 
 - description: APB ImagePullPolicy
   displayname: APB ImagePullPolicy
