@@ -188,14 +188,6 @@ fi
 echo "etcd route is at: ${ETCD_ROUTE}"
 echo "etcd port is: ${ETCD_PORT}"
 
-if [ -z "$DOCKERHUB_USERNAME" ]; then
-  echo "Please set the environment variable DOCKERHUB_USERNAME and re-run"
-  exit 1
-fi
-if [ -z "$DOCKERHUB_PASSWORD" ]; then
-  echo "Please set the environment variable DOCKERHUB_PASSWORD and re-run"
-  exit 1
-fi
 if [ -z "$DOCKERHUB_ORG" ]; then
   echo "Please set the environment variable DOCKERHUB_ORG and re-run"
   exit 1

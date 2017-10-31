@@ -27,8 +27,6 @@ asb::load_vars
 # check the variables that do not have defaults
 asb::validate_var "BROKER_IMAGE" $BROKER_IMAGE
 asb::validate_var "REGISTRY" $REGISTRY
-asb::validate_var "DOCKERHUB_USER" $DOCKERHUB_USER
-asb::validate_var "DOCKERHUB_PASS" $DOCKERHUB_PASS
 asb::validate_var "DOCKERHUB_ORG" $DOCKERHUB_ORG
 asb::validate_var "REFRESH_INTERVAL" $REFRESH_INTERVAL
 
@@ -36,8 +34,6 @@ VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p ROUTING_SUFFIX=${ROUTING_SUFFIX} \
   -p OPENSHIFT_TARGET=${OPENSHIFT_TARGET} \
   -p DOCKERHUB_ORG=${DOCKERHUB_ORG} \
-  -p DOCKERHUB_PASS=${DOCKERHUB_PASS} \
-  -p DOCKERHUB_USER=${DOCKERHUB_USER} \
   -p REGISTRY_TYPE=${REGISTRY_TYPE} \
   -p REGISTRY_URL=${REGISTRY} \
   -p DEV_BROKER=${DEV_BROKER} \
