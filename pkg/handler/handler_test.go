@@ -93,7 +93,7 @@ func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest, bool) (*broker.Upda
 	m.called("update", true)
 	return nil, m.Err
 }
-func (m MockBroker) Deprovision(apb.ServiceInstance, string, bool) (*broker.DeprovisionResponse, error) {
+func (m MockBroker) Deprovision(apb.ServiceInstance, string, bool, bool) (*broker.DeprovisionResponse, error) {
 	m.called("deprovision", true)
 	return nil, m.Err
 }

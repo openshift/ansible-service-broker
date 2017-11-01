@@ -44,6 +44,8 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/pborman/uuid"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/kubernetes/pkg/api/v1"
 )
 
 // RequestContextKey - keys that will be used in the request context
@@ -374,6 +376,12 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		}
 	}
 
+	nsDeleted, err := isNamespaceDeleted(serviceInstance.Context.Namespace, h.log)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		return
+	}
+
 	if !h.brokerConfig.AutoEscalate {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
@@ -385,15 +393,18 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 			return
 		}
 
-		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
-			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
-			return
+		if !nsDeleted {
+			ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace)
+			if !ok {
+				writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+				return
+			}
 		}
 	} else {
 		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, err := h.broker.Deprovision(serviceInstance, planID, async)
+	resp, err := h.broker.Deprovision(serviceInstance, planID, nsDeleted, async)
 
 	if err != nil {
 		switch err {
@@ -511,6 +522,12 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
+	nsDeleted, err := isNamespaceDeleted(serviceInstance.Context.Namespace, h.log)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		return
+	}
+
 	if !h.brokerConfig.AutoEscalate {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
@@ -521,9 +538,11 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 			})
 			return
 		}
-		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
-			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
-			return
+		if !nsDeleted {
+			if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+				writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
+				return
+			}
 		}
 	} else {
 		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
@@ -537,6 +556,20 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		writeDefaultResponse(w, http.StatusOK, resp, err)
 	}
 	return
+}
+
+func isNamespaceDeleted(name string, log *logging.Logger) (bool, error) {
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		return false, err
+	}
+
+	namespace, err := k8scli.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	return namespace == nil || namespace.Status.Phase == v1.NamespaceTerminating, nil
 }
 
 func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params map[string]string) {

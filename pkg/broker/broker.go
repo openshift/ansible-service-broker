@@ -82,7 +82,7 @@ type Broker interface {
 	Catalog() (*CatalogResponse, error)
 	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
-	Deprovision(apb.ServiceInstance, string, bool) (*DeprovisionResponse, error)
+	Deprovision(apb.ServiceInstance, string, bool, bool) (*DeprovisionResponse, error)
 	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest) (*BindResponse, error)
 	Unbind(apb.ServiceInstance, uuid.UUID, string) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
@@ -728,7 +728,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 // Deprovision - will deprovision a service.
 func (a AnsibleBroker) Deprovision(
-	instance apb.ServiceInstance, planID string, async bool,
+	instance apb.ServiceInstance, planID string, skipApbExecution bool, async bool,
 ) (*DeprovisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	// Deprovision flow
@@ -767,7 +767,7 @@ func (a AnsibleBroker) Deprovision(
 	if async {
 		a.log.Info("ASYNC deprovision in progress")
 		// asynchronously provision and return the token for the lastoperation
-		dpjob := NewDeprovisionJob(&instance, a.clusterConfig, a.dao, a.log)
+		dpjob := NewDeprovisionJob(&instance, a.clusterConfig, skipApbExecution, a.dao, a.log)
 
 		token, err = a.engine.StartNewJob("", dpjob, DeprovisionTopic)
 		if err != nil {
@@ -786,13 +786,15 @@ func (a AnsibleBroker) Deprovision(
 	}
 
 	// TODO: do we want to do synchronous deprovisioning?
-	a.log.Info("Synchronous deprovision in progress")
-	podName, err := apb.Deprovision(&instance, a.clusterConfig, a.log)
-	if err != nil {
-		return nil, err
+	if !skipApbExecution {
+		a.log.Info("Synchronous deprovision in progress")
+		_, err = apb.Deprovision(&instance, a.clusterConfig, a.log)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	err = cleanupDeprovision(podName, &instance, a.dao, a.log)
+	err = cleanupDeprovision(&instance, a.dao, a.log)
 	if err != nil {
 		return nil, err
 	}

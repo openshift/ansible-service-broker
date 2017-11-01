@@ -74,7 +74,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 			}
 
 			// Job is not reporting error, cleanup after deprovision
-			err = cleanupDeprovision(dmsg.PodName, instance, d.dao, d.log)
+			err = cleanupDeprovision(instance, d.dao, d.log)
 			if err != nil {
 				d.log.Error("Failed cleaning up deprovision after job, error: %s", err.Error())
 				// Cleanup is reporting something has gone wrong. Deprovision overall
@@ -105,7 +105,7 @@ func setFailedDeprovisionJob(dao *dao.Dao, dmsg *DeprovisionMsg) {
 }
 
 func cleanupDeprovision(
-	podName string, instance *apb.ServiceInstance, dao *dao.Dao, log *logging.Logger,
+	instance *apb.ServiceInstance, dao *dao.Dao, log *logging.Logger,
 ) error {
 	var err error
 	id := instance.ID.String()
