@@ -21,6 +21,19 @@ BROKER_KIND="${BROKER_KIND:-ClusterServiceBroker}"
 ENABLE_BASIC_AUTH=false
 BROKER_CA_CERT=$(oc get secret --no-headers=true -n kube-service-catalog | grep -m 1 service-catalog-apiserver-token | oc get secret $(awk '{ print $1 }') -n kube-service-catalog -o yaml | grep service-ca.crt | awk '{ print $2 }' | cat)
 
+#Create Certs for etcd
+mkdir -p /tmp/etcd-cert
+openssl req -nodes -x509 -newkey rsa:4096 -keyout /tmp/etcd-cert/key.pem -out /tmp/etcd-cert/cert.pem -days 365 -subj "/CN=asb-etcd.ansible-service-broker.svc"
+openssl genrsa -out /tmp/etcd-cert/MyClient1.key 2048 \
+&& openssl req -new -key /tmp/etcd-cert/MyClient1.key -out /tmp/etcd-cert/MyClient1.csr -subj "/CN=client" \
+&& openssl x509 -req -in /tmp/etcd-cert/MyClient1.csr -CA /tmp/etcd-cert/cert.pem -CAkey /tmp/etcd-cert/key.pem -CAcreateserial -out /tmp/etcd-cert/MyClient1.pem -days 1024
+
+ETCD_CA_CERT=$(cat /tmp/etcd-cert/cert.pem | base64)
+ETCD_BROKER_CLIENT_CERT=$(cat /tmp/etcd-cert/MyClient1.pem | base64)
+ETCD_BROKER_CLIENT_KEY=$(cat /tmp/etcd-cert/MyClient1.key | base64)
+
+
+
 # load development variables
 asb::load_vars
 
@@ -44,7 +57,13 @@ VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p SANDBOX_ROLE=${SANDBOX_ROLE} \
   -p BROKER_KIND=${BROKER_KIND} \
   -p ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH} \
-  -p BROKER_CA_CERT=${BROKER_CA_CERT}"
+  -p BROKER_CA_CERT=${BROKER_CA_CERT} \
+  -p ETCD_TRUSTED_CA_FILE=/var/run/etcd-auth-secret/ca.crt \
+  -p BROKER_CLIENT_CERT_PATH=/var/run/asb-etcd-auth/client.crt \
+  -p BROKER_CLIENT_KEY_PATH=/var/run/asb-etcd-auth/client.key \
+  -p ETCD_TRUSTED_CA=${ETCD_TRUSTED_CA} \
+  -p BROKER_CLIENT_CERT=${ETCD_BROKER_CLIENT_CERT} \
+  -p BROKER_CLIENT_KEY=${ETCD_BROKER_CLIENT_KEY}"
 
 # cleanup old deployment
 asb::delete_project ${PROJECT}
