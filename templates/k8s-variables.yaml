@@ -2,8 +2,6 @@
 # Local Template defaults
 #
 
-dockerhub_user_name: changeme
-dockerhub_user_password: changeme
 dockerhub_org: ansibleplaybookbundle
 
 broker_image: "ansibleplaybookbundle/ansible-service-broker:latest"
@@ -25,6 +23,8 @@ tag: latest
 openshift_pass: admin
 openshift_user: admin
 openshift_target: kubernetes.default
+
+broker_url_prefix: "/ansible-service-broker"
 
 # Registry Info
 registry_type: dockerhub
