@@ -18,6 +18,9 @@ RECOVERY="true"
 REFRESH_INTERVAL="600s"
 SANDBOX_ROLE="edit"
 BROKER_KIND="${BROKER_KIND:-ClusterServiceBroker}"
+ETCD_TRUSTED_CA_FILE="/var/run/etcd-auth-secret/ca.crt"
+BROKER_CLIENT_CERT_PATH="/var/run/asb-etcd-auth/client.crt"
+BROKER_CLIENT_KEY_PATH="/var/run/asb-etcd-auth/client.key"
 ENABLE_BASIC_AUTH=false
 BROKER_CA_CERT=$(oc get secret --no-headers=true -n kube-service-catalog | grep -m 1 service-catalog-apiserver-token | oc get secret $(awk '{ print $1 }') -n kube-service-catalog -o yaml | grep service-ca.crt | awk '{ print $2 }' | cat)
 
@@ -58,9 +61,9 @@ VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p BROKER_KIND=${BROKER_KIND} \
   -p ENABLE_BASIC_AUTH=${ENABLE_BASIC_AUTH} \
   -p BROKER_CA_CERT=${BROKER_CA_CERT} \
-  -p ETCD_TRUSTED_CA_FILE=/var/run/etcd-auth-secret/ca.crt \
-  -p BROKER_CLIENT_CERT_PATH=/var/run/asb-etcd-auth/client.crt \
-  -p BROKER_CLIENT_KEY_PATH=/var/run/asb-etcd-auth/client.key \
+  -p ETCD_TRUSTED_CA_FILE=${ETCD_TRUSTED_CA_FILE} \
+  -p BROKER_CLIENT_CERT_PATH=${BROKER_CLIENT_CERT_PATH} \
+  -p BROKER_CLIENT_KEY_PATH=${BROKER_CLIENT_KEY_PATH} \
   -p ETCD_TRUSTED_CA=${ETCD_TRUSTED_CA} \
   -p BROKER_CLIENT_CERT=${ETCD_BROKER_CLIENT_CERT} \
   -p BROKER_CLIENT_KEY=${ETCD_BROKER_CLIENT_KEY}"
