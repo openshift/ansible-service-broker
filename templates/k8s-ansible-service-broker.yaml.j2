@@ -109,8 +109,6 @@ data:
       - type: "{{ registry_type }}"
         name: "{{ registry_name }}"
         url: "{{ registry_url }}"
-        user: "{{ dockerhub_user_name }}"
-        pass: "{{ dockerhub_user_password }}"
         org: "{{ dockerhub_org }}"
         tag: "{{ tag }}"
         white_list:
@@ -144,36 +142,6 @@ data:
       auth:
         - type: basic
           enabled: {{ enable_basic_auth }}
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: ansibleservicebroker-client
-  namespace: ansible-service-broker
-
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: ansibleservicebroker-client
-subjects:
-- kind: ServiceAccount
-  name: ansibleservicebroker-client
-  namespace: ansible-service-broker
-roleRef:
-  kind: ClusterRole
-  name: access-asb-role
-  apiGroup: rbac.authorization.k8s.io
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ansibleservicebroker-client
-  annotations:
-    kubernetes.io/service-account.name: ansibleservicebroker-client
-type: kubernetes.io/service-account-token
 
 ---
 apiVersion: extensions/v1beta1
@@ -274,3 +242,33 @@ spec:
         - name: asb-auth-volume
           secret:
             secretName: asb-auth-secret
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ansibleservicebroker-client
+  namespace: ansible-service-broker
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: ansibleservicebroker-client
+subjects:
+- kind: ServiceAccount
+  name: ansibleservicebroker-client
+  namespace: ansible-service-broker
+roleRef:
+  kind: ClusterRole
+  name: access-asb-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ansibleservicebroker-client
+  annotations:
+    kubernetes.io/service-account.name: ansibleservicebroker-client
+type: kubernetes.io/service-account-token
