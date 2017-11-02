@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.13
+Version: 1.0.14
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,21 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Nov 02 2017 Shawn Hurley <shurley@redhat.com> 1.0.14-1
+- Bug 1507617 - Adding SSL and Authentication to etcd (#522)
+  (Shawn.Hurley21@gmail.com)
+- grep for correct asb-token for local dev. (#526) (cchase@redhat.com)
+- Changing the default for auto escalate to false (#503)
+  (Shawn.Hurley21@gmail.com)
+- Bug 1502044 - add buffer size and work_engine test (#510) (jmrodri@gmail.com)
+- add ServiceClassID and ServiceInstanceID parameters during provision and bind
+  (#515) (maleck13@users.noreply.github.com)
+- when building the broker for image also build for linux OS. (#525)
+  (Shawn.Hurley21@gmail.com)
+- Call the correct service-catalog namespace (#524) (rhallise@redhat.com)
+- Remove checks for DOCKER_USER and DOCKER_PASSWORD (#523)
+  (rhallise@redhat.com)
+
 * Mon Oct 30 2017 Jason Montleon <jmontleo@redhat.com> 1.0.13-1
 - Bug 1503289 - Move registry credentials to a secret (#502)
   (dymurray@redhat.com)
