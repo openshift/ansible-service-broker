@@ -35,11 +35,6 @@ ETCD_CA_CERT=$(cat /tmp/etcd-cert/cert.pem | base64 | tr -d " \t\n\r")
 ETCD_BROKER_CLIENT_CERT=$(cat /tmp/etcd-cert/MyClient1.pem | base64 | tr -d " \t\n\r")
 ETCD_BROKER_CLIENT_KEY=$(cat /tmp/etcd-cert/MyClient1.key | base64 | tr -d " \t\n\r")
 
-echo $ETCD_CA_CERT
-echo $ETCD_BROKER_CLIENT_CERT
-echo $ETCD_BROKER_CLIENT_KEY
-
-
 # load development variables
 asb::load_vars
 
@@ -80,9 +75,6 @@ oc delete "${BROKER_KIND}" --ignore-not-found=true ansible-service-broker
 # delete the clusterrolebinding to avoid template error
 oc delete clusterrolebindings --ignore-not-found=true asb
 
-printf '%s' "oc process -f ${BROKER_TEMPLATE} \
-  -n ${PROJECT} \
-  ${VARS} | oc create -f -"
 # deploy
 oc new-project ${PROJECT}
 oc process -f ${BROKER_TEMPLATE} \
