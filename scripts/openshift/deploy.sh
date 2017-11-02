@@ -31,9 +31,9 @@ openssl genrsa -out /tmp/etcd-cert/MyClient1.key 2048 \
 && openssl req -new -key /tmp/etcd-cert/MyClient1.key -out /tmp/etcd-cert/MyClient1.csr -subj "/CN=client" \
 && openssl x509 -req -in /tmp/etcd-cert/MyClient1.csr -CA /tmp/etcd-cert/cert.pem -CAkey /tmp/etcd-cert/key.pem -CAcreateserial -out /tmp/etcd-cert/MyClient1.pem -days 1024
 
-ETCD_CA_CERT=$(cat /tmp/etcd-cert/cert.pem | base64 | tr '\n' ' ')
-ETCD_BROKER_CLIENT_CERT=$(cat /tmp/etcd-cert/MyClient1.pem | base64 | tr '\n' ' ')
-ETCD_BROKER_CLIENT_KEY=$(cat /tmp/etcd-cert/MyClient1.key | base64 | tr '\n' ' ')
+ETCD_CA_CERT=$(cat /tmp/etcd-cert/cert.pem | base64 | tr -d " \t\n\r")
+ETCD_BROKER_CLIENT_CERT=$(cat /tmp/etcd-cert/MyClient1.pem | base64 | tr -d " \t\n\r")
+ETCD_BROKER_CLIENT_KEY=$(cat /tmp/etcd-cert/MyClient1.key | base64 | tr -d " \t\n\r")
 
 echo $ETCD_CA_CERT
 echo $ETCD_BROKER_CLIENT_CERT
