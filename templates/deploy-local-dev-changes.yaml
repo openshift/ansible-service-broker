@@ -79,8 +79,8 @@ objects:
   metadata:
     name: asb-etcd
     labels:
-      app: ansible-service-broker
-      service: etcd
+      app: etcd
+      service: asb-etcd
   spec:
     to:
       kind: Service

@@ -142,17 +142,8 @@ if [ "$?" -ne "0" ]; then
 fi
 echo "TLS Cert: tls.crt"
 echo -e "Wrote \n${TLS_KEY_DATA}\n to: ${TLS_KEY}\n"
-# Kill any running broker pods
-cluster::deployments scale asb --replicas 0 -n ${ASB_PROJECT}
-# Wait for asb pod to be destroyed
-kubectl get pods -n ${ASB_PROJECT} | grep asb
-while [ "$?" -ne 1 ]; do
-  echo "Waiting for asb deployment to scale down"
-  sleep 5
-  kubectl get pods -n ${ASB_PROJECT} | grep asb
-done
 
-kubectl scale deployment etcd --replicas 0 -n ${ASB_PROJECT}
+cluster::deployments scale asb-etcd --replicas 0 -n ${ASB_PROJECT}
 # Wait for asb pod to be destroyed
 kubectl get pods -n ${ASB_PROJECT} | grep etcd
 while [ "$?" -ne 1 ]; do
@@ -161,14 +152,27 @@ while [ "$?" -ne 1 ]; do
   kubectl get pods -n ${ASB_PROJECT} | grep etcd
 done
 
+# Kill any running broker pods
+cluster::deployments scale asb --replicas 0 -n ${ASB_PROJECT}
+
+# Wait for asb pod to be destroyed
+kubectl get pods -n ${ASB_PROJECT} | grep asb
+while [ "$?" -ne 1 ]; do
+  echo "Waiting for asb deployment to scale down"
+  sleep 5
+  kubectl get pods -n ${ASB_PROJECT} | grep asb
+done
+
+
 TERMINATION="reencrypt"
 
-kubectl delete deployment etcd -n ${ASB_PROJECT}
+kubectl delete deployment asb -n ${ASB_PROJECT}
+kubectl delete deployment asb-etcd -n ${ASB_PROJECT}
 kubectl delete endpoints asb -n ${ASB_PROJECT}
 kubectl delete endpoints asb-1338 -n ${ASB_PROJECT} --ignore-not-found
 kubectl delete service asb  -n ${ASB_PROJECT}
 cluster::routes delete asb-etcd -n ${ASB_PROJECT}
-kubectl delete service etcd -n ${ASB_PROJECT}
+kubectl delete service asb-etcd -n ${ASB_PROJECT}
 
 # Process required changes for local development
 cluster::process ${TEMPLATE_LOCAL_DEV} ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} -p TERMINATION=${TERMINATION}
