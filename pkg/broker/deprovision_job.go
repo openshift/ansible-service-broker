@@ -31,10 +31,11 @@ import (
 
 // DeprovisionJob - Job to deprovision.
 type DeprovisionJob struct {
-	serviceInstance *apb.ServiceInstance
-	clusterConfig   apb.ClusterConfig
-	dao             *dao.Dao
-	log             *logging.Logger
+	serviceInstance  *apb.ServiceInstance
+	clusterConfig    apb.ClusterConfig
+	skipApbExecution bool
+	dao              *dao.Dao
+	log              *logging.Logger
 }
 
 // DeprovisionMsg - Message returned for a deprovison job.
@@ -54,18 +55,27 @@ func (m DeprovisionMsg) Render() string {
 
 // NewDeprovisionJob - Create a deprovision job.
 func NewDeprovisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
-	dao *dao.Dao, log *logging.Logger,
+	skipApbExecution bool, dao *dao.Dao, log *logging.Logger,
 ) *DeprovisionJob {
 	return &DeprovisionJob{
-		serviceInstance: serviceInstance,
-		clusterConfig:   clusterConfig,
-		dao:             dao,
-		log:             log}
+		serviceInstance:  serviceInstance,
+		clusterConfig:    clusterConfig,
+		skipApbExecution: skipApbExecution,
+		dao:              dao,
+		log:              log}
 }
 
 // Run - will run the deprovision job.
 func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	metrics.DeprovisionJobStarted()
+
+	if p.skipApbExecution {
+		p.log.Debug("skipping deprovision and sending complete msg to channel")
+		msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(), PodName: "",
+			JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: ""}
+		return
+	}
+
 	podName, err := apb.Deprovision(p.serviceInstance, p.clusterConfig, p.log)
 	if err != nil {
 		p.log.Error("broker::Deprovision error occurred.")
