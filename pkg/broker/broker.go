@@ -1310,6 +1310,9 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	spec.Image = spec.FQName
 	addNameAndIDForSpec([]*apb.Spec{&spec}, apbPushRegName)
 	a.log.Debugf("Generated name for pushed APB: [%s], ID: [%s]", spec.FQName, spec.ID)
+	for _, p := range spec.Plans {
+		a.dao.SetPlanName(p.ID, p.Name)
+	}
 
 	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err
