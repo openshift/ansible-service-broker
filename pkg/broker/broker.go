@@ -84,7 +84,7 @@ type Broker interface {
 	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
 	Deprovision(apb.ServiceInstance, string, bool, bool) (*DeprovisionResponse, error)
 	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest) (*BindResponse, error)
-	Unbind(apb.ServiceInstance, uuid.UUID, string) (*UnbindResponse, error)
+	Unbind(apb.ServiceInstance, uuid.UUID, string, bool) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	// TODO: consider returning a struct + error
 	Recover() (string, error)
@@ -960,7 +960,7 @@ func (a AnsibleBroker) buildBindResponse(provExtCreds, bindExtCreds *apb.Extract
 
 // Unbind - unbind a services previous binding
 func (a AnsibleBroker) Unbind(
-	instance apb.ServiceInstance, bindingUUID uuid.UUID, planID string,
+	instance apb.ServiceInstance, bindingUUID uuid.UUID, planID string, skipApbExecution bool,
 ) (*UnbindResponse, error) {
 	if planID == "" {
 		errMsg :=
@@ -1002,7 +1002,12 @@ func (a AnsibleBroker) Unbind(
 	metrics.ActionStarted("unbind")
 	// only launch apb if we are always launching the APB.
 	if a.brokerConfig.LaunchApbOnBind {
-		err = apb.Unbind(&serviceInstance, &params, a.clusterConfig, a.log)
+		if skipApbExecution {
+			a.log.Debug("Skipping unbind apb execution")
+			err = nil
+		} else {
+			err = apb.Unbind(&serviceInstance, &params, a.clusterConfig, a.log)
+		}
 		if err != nil {
 			return nil, err
 		}

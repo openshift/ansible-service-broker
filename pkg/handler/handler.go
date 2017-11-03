@@ -548,7 +548,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID)
+	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID, nsDeleted)
 
 	if errors.IsNotFound(err) {
 		writeResponse(w, http.StatusGone, resp)
