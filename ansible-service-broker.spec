@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.14
+Version: 1.0.15
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,15 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Nov 03 2017 jesus m. rodriguez <jesusr@redhat.com> 1.0.15-1
+- Bug 1504927 - if apbs fail, mark them as failed. (#534) (jmrodri@gmail.com)
+- Bug 1507111 - Add support for a local OpenShift Registry adapter (#527) (dymurray@redhat.com)
+- Bug 1476173 - Cleanup deleting namespaces (#529) (cchase@redhat.com)
+- Bug 1501523 - Add spec plan to image during apb push (#533) (dymurray@redhat.com)
+- Look for the url in the proper place (#535) (rhallise@redhat.com)
+- Setting generated local dev template to autoescalate: false (#532) (cchase@redhat.com)
+- setting default value for the deployment template. (#528) (Shawn.Hurley21@gmail.com)
+
 * Thu Nov 02 2017 Shawn Hurley <shurley@redhat.com> 1.0.14-1
 - Bug 1507617 - Adding SSL and Authentication to etcd (#522)
   (Shawn.Hurley21@gmail.com)
