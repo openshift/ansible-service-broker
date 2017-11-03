@@ -1,9 +1,11 @@
 package clients
 
 import (
+	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"unsafe"
 
 	logging "github.com/op/go-logging"
@@ -29,7 +31,38 @@ var oldAllowAllPolicyRule = PolicyRule{APIGroups: nil, Verbs: []string{"*"}, Res
 
 // OpenshiftClient - Client to interact with openshift api
 type OpenshiftClient struct {
-	restClient rest.Interface
+	authRestClient  rest.Interface
+	imageRestClient rest.Interface
+}
+
+type imageLabel struct {
+	Spec string `json:"com.redhat.apb.spec"`
+}
+
+type containerConfig struct {
+	Labels imageLabel `json:"Labels"`
+}
+
+type imageMetadata struct {
+	ContainerConfig containerConfig `json:"ContainerConfig"`
+}
+
+type image struct {
+	DockerImage string        `json:"dockerImageReference"`
+	Metadata    imageMetadata `json:"dockerImageMetadata"`
+}
+
+// ImageList is a resource you can create to determine which actions another user can perform in a namespace
+type ImageList struct {
+	metav1.TypeMeta `json:",inline"`
+	// Items holds the image data
+	Items []image `json:"items"`
+}
+
+// FQImage is a struct to map FQNames to Imagestreams
+type FQImage struct {
+	Name        string
+	DecodedSpec []byte
 }
 
 // SubjectRulesReview is a resource you can create to determine which actions another user can perform in a namespace
@@ -235,22 +268,31 @@ func newOpenshift(log *logging.Logger) (*OpenshiftClient, error) {
 }
 
 func newForConfig(c *rest.Config) (*OpenshiftClient, error) {
-	config := *c
-	if err := setConfigDefaults(&config); err != nil {
+	authConfig := *c
+	imageConfig := *c
+	if err := setConfigDefaults(&authConfig, "/apis/authorization.openshift.io"); err != nil {
 		return nil, err
 	}
-	client, err := rest.RESTClientFor(&config)
+	authClient, err := rest.RESTClientFor(&authConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return &OpenshiftClient{restClient: client}, nil
+	if err := setConfigDefaults(&imageConfig, "/apis/image.openshift.io"); err != nil {
+		return nil, err
+	}
+	imageClient, err := rest.RESTClientFor(&imageConfig)
+	if err != nil {
+		return nil, err
+	}
+	return &OpenshiftClient{authRestClient: authClient, imageRestClient: imageClient}, nil
 }
 
-func setConfigDefaults(config *rest.Config) error {
+func setConfigDefaults(config *rest.Config, APIPath string) error {
 	gv := v1.SchemeGroupVersion
 	config.GroupVersion = &gv
-	config.APIPath = "/apis/authorization.openshift.io"
+	config.APIPath = APIPath
+	//	config.APIPath = "/apis/authorization.openshift.io"
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
 	if config.UserAgent == "" {
@@ -271,7 +313,7 @@ func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging
 	body.APIVersion = "authorization.openshift.io/v1"
 	b, _ := json.Marshal(body)
 	r := &SubjectRulesReview{}
-	err = o.restClient.Post().
+	err = o.authRestClient.Post().
 		Namespace(namespace).
 		Resource("subjectrulesreviews").
 		Body(b).
@@ -287,4 +329,60 @@ func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging
 		return nil, err
 	}
 	return authorization.ConvertAPIPolicyRulesToRBACPolicyRules(pr), nil
+}
+
+// ConvertRegistryImagesToSpecs - Return APB specs from internal OCP registry
+func (o OpenshiftClient) ConvertRegistryImagesToSpecs(log *logging.Logger, imageList []string) ([]FQImage, error) {
+	var fqList []FQImage
+	fqImage := FQImage{}
+	var err error
+	r := &ImageList{}
+	err = o.imageRestClient.Get().
+		Resource("images").
+		Do().
+		Into(r)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, image := range r.Items {
+		var imageName = strings.Split(image.DockerImage, "@")[0]
+		for _, providedImage := range imageList {
+			if providedImage == imageName {
+				encodedSpec := image.Metadata.ContainerConfig.Labels.Spec
+				decodedSpec, err := b64.StdEncoding.DecodeString(encodedSpec)
+				if err != nil {
+					return nil, fmt.Errorf("Failed to grab encoded spec label")
+				}
+				fqImage.Name = imageName
+				fqImage.DecodedSpec = decodedSpec
+				fqList = append(fqList, fqImage)
+			}
+		}
+	}
+	if err != nil {
+		log.Errorf("error - %v\n", err)
+		return nil, err
+	}
+
+	return fqList, nil
+}
+
+// ListRegistryImages - List images in internal OpenShift registry
+func (o OpenshiftClient) ListRegistryImages(log *logging.Logger) (images []string, err error) {
+	var imageList []string
+	r := &ImageList{}
+	err = o.imageRestClient.Get().
+		Resource("images").
+		Do().
+		Into(r)
+	if err != nil {
+		log.Errorf("error - %v\n", err)
+		return
+	}
+
+	for _, image := range r.Items {
+		imageList = append(imageList, strings.Split(image.DockerImage, "@")[0])
+	}
+	return imageList, nil
 }

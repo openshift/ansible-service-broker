@@ -45,15 +45,16 @@ type Config struct {
 	//   Valid options: `secret`, `file`
 	// AuthName is used to define the location of the credentials
 	//   Valid options: `<secret-name>`, `<file_location>`
-	AuthType string `yaml:"auth_type"`
-	AuthName string `yaml:"auth_name"`
-	User     string
-	Pass     string
-	Org      string
-	Tag      string
-	Type     string
-	Name     string
-	Images   []string
+	AuthType   string `yaml:"auth_type"`
+	AuthName   string `yaml:"auth_name"`
+	User       string
+	Pass       string
+	Org        string
+	Tag        string
+	Type       string
+	Name       string
+	Images     []string
+	Namespaces []string
 	// Fail will tell the registry that it is ok to fail the bootstrap if
 	// just this registry has failed.
 	Fail      bool     `yaml:"fail_on_error"`
@@ -197,11 +198,12 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		u.Scheme = "http"
 	}
 	c := adapters.Configuration{URL: u,
-		User:   config.User,
-		Pass:   config.Pass,
-		Org:    config.Org,
-		Images: config.Images,
-		Tag:    config.Tag}
+		User:       config.User,
+		Pass:       config.Pass,
+		Org:        config.Org,
+		Images:     config.Images,
+		Namespaces: config.Namespaces,
+		Tag:        config.Tag}
 
 	switch strings.ToLower(config.Type) {
 	case "rhcc":
@@ -212,6 +214,8 @@ func NewRegistry(config Config, log *logging.Logger) (Registry, error) {
 		adapter = &adapters.MockAdapter{Config: c, Log: log}
 	case "openshift":
 		adapter = &adapters.OpenShiftAdapter{Config: c, Log: log}
+	case "local_openshift":
+		adapter = &adapters.LocalOpenShiftAdapter{Config: c, Log: log}
 	default:
 		panic("Unknown registry")
 	}
