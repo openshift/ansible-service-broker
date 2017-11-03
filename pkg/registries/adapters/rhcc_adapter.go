@@ -55,7 +55,7 @@ type RHCCImageResponse struct {
 
 // RegistryName - retrieve the registry prefix
 func (r RHCCAdapter) RegistryName() string {
-	return r.Config.URL.Host
+	return r.Config.URL.String()
 }
 
 // GetImageNames - retrieve the images from the registry
