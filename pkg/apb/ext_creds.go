@@ -76,7 +76,7 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 			log.Notice("[%s] APB failed", podname)
 			return nil, errors.New("APB failed")
 		} else if podCompleted && err.Error() == failedToExec.Error() {
-			log.Notice("[%s] APB completed", podname)
+			log.Error("[%s] APB completed", podname)
 			return nil, nil
 		} else if err.Error() == failedToExec.Error() {
 			log.Info(string(output))
