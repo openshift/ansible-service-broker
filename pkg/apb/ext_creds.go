@@ -39,11 +39,12 @@ func ExtractCredentials(
 ) (*ExtractedCredentials, error) {
 	log.Debug("Calling monitorOutput on " + podname)
 	bindOutput, err := monitorOutput(namespace, podname, log)
-	if bindOutput == nil {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
+	}
+
+	if bindOutput == nil {
+		return nil, nil
 	}
 
 	return buildExtractedCredentials(bindOutput)
@@ -61,14 +62,21 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 		credsNotAvailable := errors.New("exit status 2")
 
 		output, err := runtime.RunCommand("kubectl", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
+
+		// cannot exec container, pod is done
+		podFailed := strings.Contains(string(output), "current phase is Failed")
 		podCompleted := strings.Contains(string(output), "current phase is Succeeded") ||
 			strings.Contains(string(output), "cannot exec into a container in a completed pod")
 
 		if err == nil {
 			log.Notice("[%s] Bind credentials found", podname)
 			return output, nil
+		} else if podFailed {
+			// pod has completed but is in failed state
+			log.Notice("[%s] APB failed", podname)
+			return nil, errors.New("APB failed")
 		} else if podCompleted && err.Error() == failedToExec.Error() {
-			log.Notice("[%s] APB completed", podname)
+			log.Error("[%s] APB completed", podname)
 			return nil, nil
 		} else if err.Error() == failedToExec.Error() {
 			log.Info(string(output))
