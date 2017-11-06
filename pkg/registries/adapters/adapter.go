@@ -21,8 +21,10 @@
 package adapters
 
 import (
+	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -91,7 +93,18 @@ func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spe
 		return nil, nil
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&hist)
+	// resp.Body is an io.Reader, which are a one time use.  Save the
+	// contents to a byte[] for debugging, then remake the io.Reader for the
+	// JSON decoder.
+	debug, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		log.Errorf("Image '%s' may not exist in registry.", image)
+		log.Error(string(debug))
+		return nil, nil
+	}
+
+	r := bytes.NewReader(debug)
+	err = json.NewDecoder(r).Decode(&hist)
 	if err != nil {
 		log.Errorf("Error grabbing JSON body from response: %s", err)
 		return nil, err
