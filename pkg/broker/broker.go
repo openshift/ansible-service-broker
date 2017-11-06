@@ -77,7 +77,7 @@ type Broker interface {
 	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
 	Deprovision(apb.ServiceInstance, string, bool, bool) (*DeprovisionResponse, error)
-	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest) (*BindResponse, error)
+	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool) (*BindResponse, error)
 	Unbind(apb.ServiceInstance, uuid.UUID, string, bool) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	// TODO: consider returning a struct + error
@@ -770,7 +770,7 @@ func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance,
 }
 
 // Bind - will create a binding between a service.
-func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID, req *BindRequest,
+func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID, req *BindRequest, async bool,
 ) (*BindResponse, error) {
 	// binding_id is the id of the binding.
 	// the instanceUUID is the previously provisioned service id.
@@ -804,12 +804,15 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	log.Debugf(
 		"Injecting PlanID as parameter: { %s: %s }",
 		planParameterKey, planName)
+
 	params[planParameterKey] = planName
 	log.Debugf("Injecting ServiceClassID as parameter: { %s: %s }",
 		serviceClassIDKey, req.ServiceID)
+
 	params[serviceClassIDKey] = req.ServiceID
 	log.Debugf("Injecting ServiceInstanceID as parameter: { %s: %s }",
 		serviceInstIDKey, instance.ID.String())
+
 	params[serviceInstIDKey] = instance.ID.String()
 
 	// Create a BindingInstance with a reference to the serviceinstance.
@@ -854,16 +857,37 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		return nil, err
 	}
 
-	// Add the DB Credentials this will allow the apb to use these credentials if it so chooses.
+	// Add the DB Credentials this will allow the apb to use these credentials
+	// if it so chooses.
 	if provExtCreds != nil {
 		params[provisionCredentialsKey] = provExtCreds.Credentials
 	}
 
-	// NOTE: We are currently disabling running an APB on bind via 'LaunchApbOnBind'
-	// of the broker config, due to lack of async support of bind in Open Service Broker API
-	// Currently, the 'launchapbonbind' is set to false in the 'config' ConfigMap
+	// NOTE: We are currently disabling running an APB on bind via
+	// 'LaunchApbOnBind' of the broker config, due to lack of async support of
+	// bind in Open Service Broker API Currently, the 'launchapbonbind' is set
+	// to false in the 'config' ConfigMap
 	var bindExtCreds *apb.ExtractedCredentials
 	metrics.ActionStarted("bind")
+	var token string
+	if async {
+		a.log.Info("ASYNC binding in progress")
+
+		bjob := NewBindingJob(serviceInstance, a.clusterConfig, a.log)
+
+		token, err = a.engine.StartNewJob("", bjob, BindingTopic)
+		if err != nil {
+			a.log.Error("Failed to start new job for async binding\n%s", err.Error())
+			return nil, err
+		}
+
+		a.dao.SetState(instanceUUID.String(), apb.JobState{
+			Token:  token,
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodBind,
+		})
+	}
+
 	if a.brokerConfig.LaunchApbOnBind {
 		log.Info("Broker configured to run APB bind")
 		_, bindExtCreds, err = apb.Bind(&instance, &params)
@@ -874,6 +898,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	} else {
 		log.Warning("Broker configured to *NOT* launch and run APB bind")
 	}
+
 	instance.AddBinding(bindingUUID)
 	if err := a.dao.SetServiceInstance(instance.ID.String(), &instance); err != nil {
 		return nil, err

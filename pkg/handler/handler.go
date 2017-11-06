@@ -439,6 +439,11 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		return
 	}
 
+	var async bool
+
+	// ignore the error, if async can't be parsed it will be false
+	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+
 	var req *broker.BindRequest
 	if err := readRequest(r, &req); err != nil {
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
@@ -475,7 +480,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 	}
 
 	// process binding request
-	resp, err := h.broker.Bind(serviceInstance, bindingUUID, req)
+	resp, err := h.broker.Bind(serviceInstance, bindingUUID, req, async)
 
 	if err != nil {
 		switch err {
