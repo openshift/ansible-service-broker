@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.17
+Version: 1.0.18
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Nov 06 2017 jesus m. rodriguez <jesusr@redhat.com> 1.0.18-1
+- Bug 1507111 - Update docs and example configs for local openshift adapter (#538) (dymurray@redhat.com)
+- Improve logging for missing tags (#536) (rhallise@redhat.com)
+
 * Mon Nov 06 2017 Jason Montleon <jmontleo@redhat.com> 1.0.17-1
 - Attempting fix for image name. (#539) (Shawn.Hurley21@gmail.com)
 
