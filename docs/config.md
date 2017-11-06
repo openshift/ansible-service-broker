@@ -21,7 +21,8 @@ for APBs. All the registry config options are defined below
 | user          | The username for authenticating to the registry                                                                                  |     N    |
 | pass          | The password for authenticating to the registry                                                                                  |     N    |
 | org           | The namespace/organization that the image is contained in                                                                        |     N    |
-| type          | The type of registry. The only adapters so far are mock, RHCC, openshift, and dockerhub.                                         |     Y    |
+| type          | The type of registry. The only adapters so far are mock, RHCC, openshift, dockerhub, and local_openshift.                        |     Y    |
+| namespaces    | The list of namespaces to configure the local_openshift registry adapter with. By default a user should use `openshift`          |     N    |
 | url           | The url that is used to retrieve image information. Used extensively for RHCC while the docker hub adapter uses hard-coded URLs. |     N    |
 | fail_on_error | Should this registry fail the bootstrap request if it fails. will stop the execution of other registries loading.                |     N    |
 | white_list    | The list of regular expressions used to define which image names should be allowed through. Must have a white list to allow APBs to be added to the catalog. The most permissive regular expression that you can use is `.*-apb$` if you would want to retrieve all APBs in a registry.                                     |     N    |
@@ -38,9 +39,14 @@ container distribution registry.
 ```
 registry:
   - name: rhcc
+    type: rhcc
     url: http://rhcc.redhat.com/api
     user: USER
     pass: PASS
+  - type: local_openshift
+    name: lo
+    namespaces:
+      - openshift
 ```
 
 ### Development
@@ -80,6 +86,18 @@ registry:
     org: ansibleplaybookbundle
     user: user
     pass: password
+    white_list:
+      - ".*-apb$"
+```
+
+## Local OpenShift Registry
+Using the local openshift registry will allow you to load APBs from the internal registry. The administrator can configure which namespaces they want to look for published APBs.
+```yaml
+registry:
+  - type: local_openshift
+    name: lo
+    namespaces:
+      - openshift
     white_list:
       - ".*-apb$"
 ```
