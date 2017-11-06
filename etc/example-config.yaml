@@ -17,6 +17,12 @@ registry:
     black_list:
       - "malicious.*-apb$"
       - "^specific-blacklist-apb$"
+  - type: local_openshift
+    name: lo
+    namespaces:
+      - openshift
+    white_list:
+      - ".*-apb$"
 dao:
   etcd_host: localhost
   etcd_port: 2379
