@@ -8,6 +8,8 @@ PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
 SOURCE_DIRS      = cmd pkg
 SOURCES          := $(shell find . -name '*.go' -not -path "*/vendor/*")
+#PACKAGES         := $(shell find ./pkg/ -type d -not -path '*/\.*')
+PACKAGES         := $(shell go list ./pkg/...)
 SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
 KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token tls.crt tls.key)
 .DEFAULT_GOAL    := build
@@ -31,7 +33,14 @@ fmtcheck: ## Check go formatting
 	@gofmt -l $(SOURCES) | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
 
 test: ## Run unit tests
-	@go test ./pkg/...
+	@go test -cover ./pkg/...
+
+test-cover-html:
+	@echo "mode: count" > coverage-all.out
+	@$(foreach pkg,$(PACKAGES),\
+		go test -coverprofile=coverage.out -covermode=count $(pkg);\
+		tail -n +2 coverage.out >> coverage-all.out;)
+	@go tool cover -html=coverage-all.out -o coverage.html
 
 vet: ## Run go vet
 	@go tool vet ./cmd ./pkg
@@ -92,4 +101,4 @@ help: ## Show this help screen
 	@grep -E '^[ a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help
+.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html
