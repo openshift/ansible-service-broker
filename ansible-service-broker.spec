@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.15
+Version: 1.0.17
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,12 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Nov 06 2017 Jason Montleon <jmontleo@redhat.com> 1.0.17-1
+- Attempting fix for image name. (#539) (Shawn.Hurley21@gmail.com)
+
+* Mon Nov 06 2017 Jason Montleon <jmontleo@redhat.com>
+- Attempting fix for image name. (#539) (Shawn.Hurley21@gmail.com)
+
 * Fri Nov 03 2017 jesus m. rodriguez <jesusr@redhat.com> 1.0.15-1
 - Bug 1504927 - if apbs fail, mark them as failed. (#534) (jmrodri@gmail.com)
 - Bug 1507111 - Add support for a local OpenShift Registry adapter (#527) (dymurray@redhat.com)
