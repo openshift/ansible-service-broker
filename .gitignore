@@ -44,3 +44,16 @@ ansible/main.retry
 # rendered templates
 templates/k8s-ansible-service-broker.yaml
 apiserver.local.config*
+
+# test artifacts
+adapters.out
+apb.out
+app.out
+auth.out
+broker.out
+coverage-all.out
+coverage.out
+handler.out
+registries.out
+validation.out
+coverage.html
