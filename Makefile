@@ -78,6 +78,7 @@ push:
 clean: ## Clean up your working environment
 	@rm -f broker
 	@rm -f build/broker
+	@rm -f adapters.out apb.out app.out auth.out broker.out coverage-all.out coverage.out handler.out registries.out validation.out coverage.html
 
 really-clean: clean cleanup-ci ## Really clean up the working environment
 	@rm -f $(KUBERNETES_FILES)
