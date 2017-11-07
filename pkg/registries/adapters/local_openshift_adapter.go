@@ -91,7 +91,7 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 			continue
 		}
 		if strings.HasPrefix(image.Name, registryIP) == false {
-			r.Log.Debugf("Image does not have a registry IP as prefix. Assuming it is using hostname.")
+			r.Log.Debugf("Image does not have a registry IP as prefix. This might cause problems but not erroring out.")
 		}
 		if r.Config.Namespaces == nil {
 			r.Log.Debugf("Namespace not set. Assuming `openshift`")
