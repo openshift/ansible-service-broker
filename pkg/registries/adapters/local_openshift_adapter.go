@@ -98,18 +98,18 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 			r.Config.Namespaces = append(r.Config.Namespaces, "openshift")
 		}
 		spec.Image = image.Name
-		ns_list := strings.Split(image.Name, "/")
+		nsList := strings.Split(image.Name, "/")
 		var namespace string
-		if len(ns_list) == 0 {
+		if len(nsList) == 0 {
 			r.Log.Errorf("Image [%v] is not in the proper format. Erroring.", image.Name)
 			continue
-		} else if len(ns_list) < 3 {
+		} else if len(nsList) < 3 {
 			// Image does not have any registry prefix. May be a product of S2I
 			// Expecting openshift/foo-apb
-			namespace = ns_list[0]
+			namespace = nsList[0]
 		} else {
 			// Expecting format: 172.30.1.1:5000/openshift/foo-apb
-			namespace = ns_list[1]
+			namespace = nsList[1]
 		}
 		for _, ns := range r.Config.Namespaces {
 			if ns == namespace {
