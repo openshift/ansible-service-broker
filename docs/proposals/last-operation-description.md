@@ -55,4 +55,14 @@ each time we collected it.
 ### APB changes
 Add a module that would handle putting the content from a last operation description into the right place on disk. 
 
+Likely something very similar to the encode binding module:
+https://github.com/ansibleplaybookbundle/ansible-asb-modules/blob/master/library/asb_encode_binding.py
+
+Something like the following may make sense:
+
+```
+ asb_last_operation_description:
+   description:"10%: creating deployment and routes"
+```   
+
 ***Note not very familiar with how the ansible apb works under the hood so would need some guidance here***
