@@ -90,18 +90,20 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 			r.Log.Errorf("Failed to load image spec")
 			continue
 		}
-		if strings.HasPrefix(image.Name, registryIP) {
-			// Image has proper registry IP prefix
-			spec.Image = image.Name
-			namespace := strings.Split(image.Name, "/")[1]
-			for _, ns := range r.Config.Namespaces {
-				if ns == namespace {
-					r.Log.Debugf("Image [%v] is in configured namespace [%v]. Adding to SpecList.", image.Name, ns)
-					specList = append(specList, spec)
-				}
+		if strings.HasPrefix(image.Name, registryIP) == false {
+			r.Log.Debugf("Image does not have a registry IP as prefix. Assuming it is using hostname.")
+		}
+		if r.Config.Namespaces == nil {
+			r.Log.Debugf("Namespace not set. Assuming `openshift`")
+			r.Config.Namespaces = append(r.Config.Namespaces, "openshift")
+		}
+		spec.Image = image.Name
+		namespace := strings.Split(image.Name, "/")[1]
+		for _, ns := range r.Config.Namespaces {
+			if ns == namespace {
+				r.Log.Debugf("Image [%v] is in configured namespace [%v]. Adding to SpecList.", image.Name, ns)
+				specList = append(specList, spec)
 			}
-		} else {
-			r.Log.Debugf("Image does not have proper registry IP prefix. Something went wrong.")
 		}
 	}
 
