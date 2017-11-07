@@ -101,7 +101,7 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 		ns_list := strings.Split(image.Name, "/")
 		var namespace string
 		if len(ns_list) == 0 {
-			r.Log.Errorf("Image [%v] is not in the proper format. Erroring.")
+			r.Log.Errorf("Image [%v] is not in the proper format. Erroring.", image.Name)
 			continue
 		} else if len(ns_list) < 3 {
 			// Image does not have any registry prefix. May be a product of S2I
