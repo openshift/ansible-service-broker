@@ -239,9 +239,15 @@ func CreateApp() App {
 	metrics.Init(app.log.Logger)
 	app.log.Debug("Creating AnsibleBroker")
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker,
+		app.dao, app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker,
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
+
+	if err := app.broker.Login(); err != nil {
+		app.log.Error("Failed to login to OpenShift with oc \n")
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}

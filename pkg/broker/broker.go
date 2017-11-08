@@ -112,6 +112,7 @@ type DevBroker interface {
 // AnsibleBroker - Broker using ansible and images to interact with oc/kubernetes/etcd
 type AnsibleBroker struct {
 	dao           *dao.Dao
+	jobStateDAO   JobStateDAO
 	log           *logging.Logger
 	clusterConfig apb.ClusterConfig
 	registry      []registries.Registry
@@ -120,11 +121,12 @@ type AnsibleBroker struct {
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
-func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
+func NewAnsibleBroker(dao *dao.Dao, jobStateDAO JobStateDAO, log *logging.Logger, clusterConfig apb.ClusterConfig,
 	registry []registries.Registry, engine WorkEngine, brokerConfig Config,
 ) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
 		dao:           dao,
+		jobStateDAO:   jobStateDAO,
 		log:           log,
 		clusterConfig: clusterConfig,
 		registry:      registry,
@@ -132,10 +134,10 @@ func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.Clust
 		brokerConfig:  brokerConfig,
 	}
 
-	err := broker.Login()
-	if err != nil {
-		return broker, err
-	}
+	//err := broker.Login()
+	//if err != nil {
+	//	return broker, err
+	//}
 
 	return broker, nil
 }
@@ -1296,7 +1298,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	a.log.Debugf("operation:  %s", req.Operation) // Operation is the job token id from the work_engine
 
 	// TODO:validate the format to avoid some sort of injection hack
-	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)
+	jobstate, err := a.jobStateDAO.GetState(instanceUUID.String(), req.Operation)
 	if err != nil {
 		// not sure what we do with the error if we can't find the state
 		a.log.Error(fmt.Sprintf("problem reading job state: [%s]. error: [%v]", instanceUUID, err.Error()))
