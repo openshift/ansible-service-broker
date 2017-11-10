@@ -8,10 +8,10 @@ PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
 SOURCE_DIRS      = cmd pkg
 SOURCES          := $(shell find . -name '*.go' -not -path "*/vendor/*")
-#PACKAGES         := $(shell find ./pkg/ -type d -not -path '*/\.*')
 PACKAGES         := $(shell go list ./pkg/...)
 SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
 KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token tls.crt tls.key)
+COVERAGE_SVC     := travis-ci
 .DEFAULT_GOAL    := build
 
 vendor: ## Install or update project dependencies
@@ -35,12 +35,19 @@ fmtcheck: ## Check go formatting
 test: ## Run unit tests
 	@go test -cover ./pkg/...
 
-test-cover-html:
+test-coverage-html: ## checkout the coverage locally of your tests
 	@echo "mode: count" > coverage-all.out
 	@$(foreach pkg,$(PACKAGES),\
 		go test -coverprofile=coverage.out -covermode=count $(pkg);\
 		tail -n +2 coverage.out >> coverage-all.out;)
-	@go tool cover -html=coverage-all.out -o coverage.html
+	@go tool cover -html=coverage-all.out # -o coverage.html
+
+ci-test-coverage: ## CI test coverage, upload to coveralls
+	@echo "mode: count" > coverage-all.out
+	@$(foreach pkg,$(PACKAGES),\
+		go test -coverprofile=coverage.out -covermode=count $(pkg);\
+		tail -n +2 coverage.out >> coverage-all.out;)
+	@goveralls -coverprofile=coverage-all.out -service $(COVERAGE_SVC)
 
 vet: ## Run go vet
 	@go tool vet ./cmd ./pkg

@@ -91,7 +91,7 @@ elif [[ "$action" == "test" ]]; then
   echo "================================="
   echo "              Test               "
   echo "================================="
-  make test
+  make ci-test-coverage
 elif [[ "$action" == "ci" ]]; then
   echo "================================="
   echo "            Broker CI            "
