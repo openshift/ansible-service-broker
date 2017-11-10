@@ -40,7 +40,7 @@ test-coverage-html: ## checkout the coverage locally of your tests
 	@$(foreach pkg,$(PACKAGES),\
 		go test -coverprofile=coverage.out -covermode=count $(pkg);\
 		tail -n +2 coverage.out >> coverage-all.out;)
-	@go tool cover -html=coverage-all.out # -o coverage.html
+	@go tool cover -html=coverage-all.out
 
 ci-test-coverage: ## CI test coverage, upload to coveralls
 	@echo "mode: count" > coverage-all.out
@@ -85,7 +85,7 @@ push:
 clean: ## Clean up your working environment
 	@rm -f broker
 	@rm -f build/broker
-	@rm -f adapters.out apb.out app.out auth.out broker.out coverage-all.out coverage.out handler.out registries.out validation.out coverage.html
+	@rm -f adapters.out apb.out app.out auth.out broker.out coverage-all.out coverage.out handler.out registries.out validation.out
 
 really-clean: clean cleanup-ci ## Really clean up the working environment
 	@rm -f $(KUBERNETES_FILES)
