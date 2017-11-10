@@ -35,18 +35,16 @@ fmtcheck: ## Check go formatting
 test: ## Run unit tests
 	@go test -cover ./pkg/...
 
-test-coverage-html: ## checkout the coverage locally of your tests
+coverage-all.out: $(SOURCES)
 	@echo "mode: count" > coverage-all.out
 	@$(foreach pkg,$(PACKAGES),\
 		go test -coverprofile=coverage.out -covermode=count $(pkg);\
 		tail -n +2 coverage.out >> coverage-all.out;)
+
+test-coverage-html: coverage-all.out ## checkout the coverage locally of your tests
 	@go tool cover -html=coverage-all.out
 
-ci-test-coverage: ## CI test coverage, upload to coveralls
-	@echo "mode: count" > coverage-all.out
-	@$(foreach pkg,$(PACKAGES),\
-		go test -coverprofile=coverage.out -covermode=count $(pkg);\
-		tail -n +2 coverage.out >> coverage-all.out;)
+ci-test-coverage: coverage-all.out ## CI test coverage, upload to coveralls
 	@goveralls -coverprofile=coverage-all.out -service $(COVERAGE_SVC)
 
 vet: ## Run go vet
