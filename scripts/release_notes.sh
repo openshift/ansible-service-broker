@@ -1,19 +1,5 @@
 #!/bin/env bash
 
-if [ ! -n "$GH_USER" ] || [ ! -n "$GH_TOKEN" ]; then
-    echo "You must export GH_USER - your github user id"
-    echo "You must export GH_TOKEN - your github access token"
-    exit 1
-fi
-
-if [ ! -n "$1" ]; then
-    echo "Must provide arg"
-    exit 1
-fi
-
-GH_CURL="curl -u $GH_USER:$GH_TOKEN"
-GIST_API="https://api.github.com/gists"
-
 create_gist () {
     local date=$1
     local notes_file=$2
@@ -88,6 +74,22 @@ EOF
     rm $notes_file
 }
 
+##############################
+# Main
+##############################
+if [ ! -n "$GH_USER" ] || [ ! -n "$GH_TOKEN" ]; then
+    echo "You must export GH_USER - your github user id"
+    echo "You must export GH_TOKEN - your github access token"
+    exit 1
+fi
+
+if [ ! -n "$1" ]; then
+    echo "Must provide start tag/branch/sha to compare against"
+    exit 1
+fi
+
+GH_CURL="curl -u $GH_USER:$GH_TOKEN"
+GIST_API="https://api.github.com/gists"
 generate_notes $1
 
 
