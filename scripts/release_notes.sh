@@ -56,7 +56,7 @@ EOF
         pr_number=$(echo $commit | sed -n 's/.*(#\([[:digit:]]\+\))$/\1/p')
         bug_number=$(echo $commit| sed -n 's/Bug\s\+\([[:digit:]]\+\).*/\1/p')
         if [ -n "$pr_number" ]; then
-            detailed_commit=$(echo $commit | sed -n 's,\(.*\)(#\([[:digit:]]\+\))$,\1[(#\2)](https://github.com/openshift/ansible-service-broker/pulls/\2),p')
+            detailed_commit=$(echo $commit | sed -n 's,\(.*\)(#\([[:digit:]]\+\))$,\1[(#\2)](https://github.com/openshift/ansible-service-broker/pull/\2),p')
             if [ ! -z "$bug_number" ]; then
                 echo "* $detailed_commit" | sed -n 's,Bug\s\+\([[:digit:]]\+\)\(.*\),[Bug \1](https://bugzilla.redhat.com/show_bug.cgi?id=\1)\2,p' >> $bug_file
             else
