@@ -51,6 +51,10 @@ elif [[ "$action" == "install" ]]; then
 
   # install golint
   go get -u github.com/golang/lint/golint
+
+  # install goveralls for coveralls integration
+  go get github.com/mattn/goveralls
+
 elif [[ "$action" == "before_script" ]]; then
   echo "================================="
   echo "          Before Script          "
@@ -87,7 +91,7 @@ elif [[ "$action" == "test" ]]; then
   echo "================================="
   echo "              Test               "
   echo "================================="
-  make test
+  make ci-test-coverage
 elif [[ "$action" == "ci" ]]; then
   echo "================================="
   echo "            Broker CI            "

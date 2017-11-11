@@ -8,8 +8,10 @@ PREFIX           ?= /usr/local
 BROKER_CONFIG    ?= $(PWD)/etc/generated_local_development.yaml
 SOURCE_DIRS      = cmd pkg
 SOURCES          := $(shell find . -name '*.go' -not -path "*/vendor/*")
+PACKAGES         := $(shell go list ./pkg/...)
 SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
 KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token tls.crt tls.key)
+COVERAGE_SVC     := travis-ci
 .DEFAULT_GOAL    := build
 
 vendor: ## Install or update project dependencies
@@ -31,7 +33,19 @@ fmtcheck: ## Check go formatting
 	@gofmt -l $(SOURCES) | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
 
 test: ## Run unit tests
-	@go test ./pkg/...
+	@go test -cover ./pkg/...
+
+coverage-all.out: $(SOURCES)
+	@echo "mode: count" > coverage-all.out
+	@$(foreach pkg,$(PACKAGES),\
+		go test -coverprofile=coverage.out -covermode=count $(pkg);\
+		tail -n +2 coverage.out >> coverage-all.out;)
+
+test-coverage-html: coverage-all.out ## checkout the coverage locally of your tests
+	@go tool cover -html=coverage-all.out
+
+ci-test-coverage: coverage-all.out ## CI test coverage, upload to coveralls
+	@goveralls -coverprofile=coverage-all.out -service $(COVERAGE_SVC)
 
 vet: ## Run go vet
 	@go tool vet ./cmd ./pkg
@@ -69,6 +83,7 @@ push:
 clean: ## Clean up your working environment
 	@rm -f broker
 	@rm -f build/broker
+	@rm -f adapters.out apb.out app.out auth.out broker.out coverage-all.out coverage.out handler.out registries.out validation.out
 
 really-clean: clean cleanup-ci ## Really clean up the working environment
 	@rm -f $(KUBERNETES_FILES)
@@ -92,4 +107,4 @@ help: ## Show this help screen
 	@grep -E '^[ a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help
+.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html
