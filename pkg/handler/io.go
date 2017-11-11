@@ -13,10 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Red Hat trademarks are not licensed under Apache License, Version 2.
-// No permission is granted to use or replicate Red Hat trademarks that
-// are incorporated in this software or its documentation.
-//
 
 package handler
 
