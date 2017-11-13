@@ -17,8 +17,9 @@ information whenever possible instead of relying on `kubectl exec`. Now that
 the broker supplies pod name and namespace information to running APBs via the
 [Kubernetes Downward
 API](https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/),
-APBs have all they need to generate secrets inside the APB sandbox namespace to
-be retrieved later by the broker.
+APBs have all they need to generate secrets inside the APB sandbox namespace.
+These secrets will be retrieved by the broker after the pod completes
+successfully.
 
 ## Implementation Details
 
