@@ -1,8 +1,3 @@
-#
-# Limitations With the Kubernetes template
-# ----------------------------------------
-# - ssl
-#
 apiVersion: v1
 kind: Service
 metadata:
@@ -17,9 +12,7 @@ spec:
       port: 1338
       targetPort: 1338
       protocol: TCP
-  selector:
-    app: ansible-service-broker
-    service: asb
+  selector: {}
 
 ---
 apiVersion: v1
