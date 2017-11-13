@@ -124,6 +124,24 @@ func ExecuteApb(
 						"--extra-vars",
 						extraVars,
 					},
+					Env: []v1.EnvVar{
+						v1.EnvVar{
+							Name: "POD_NAME",
+							ValueFrom: &v1.EnvVarSource{
+								FieldRef: &v1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						v1.EnvVar{
+							Name: "POD_NAMESPACE",
+							ValueFrom: &v1.EnvVarSource{
+								FieldRef: &v1.ObjectFieldSelector{
+									FieldPath: "metadata.namespace",
+								},
+							},
+						},
+					},
 					ImagePullPolicy: pullPolicy,
 					VolumeMounts:    volumeMounts,
 				},
