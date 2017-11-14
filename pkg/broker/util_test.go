@@ -18,6 +18,9 @@ package broker
 
 import (
 	"encoding/base64"
+	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 
 	"strings"
@@ -366,24 +369,100 @@ func verifyParameter(t *testing.T, property *schema.Schema, paramTitle string, p
 }
 
 func TestGetType(t *testing.T) {
-	ft.AssertTrue(t, getType("string").Contains(schema.StringType), "no string type")
-	ft.AssertTrue(t, getType("enum").Contains(schema.StringType), "no enum type")
-	ft.AssertTrue(t, getType("int").Contains(schema.IntegerType), "no int type")
-	ft.AssertTrue(t, getType("object").Contains(schema.ObjectType), "no object type")
-	ft.AssertTrue(t, getType("array").Contains(schema.ArrayType), "no array type")
-	ft.AssertTrue(t, getType("bool").Contains(schema.BooleanType), "no bool type")
-	ft.AssertTrue(t, getType("boolean").Contains(schema.BooleanType), "no boolean type")
-	ft.AssertTrue(t, getType("number").Contains(schema.NumberType), "no number type")
-	ft.AssertTrue(t, getType("nil").Contains(schema.NullType), "no nil type")
-	ft.AssertTrue(t, getType("null").Contains(schema.NullType), "no null type")
-	ft.AssertTrue(t, getType("biteme").Contains(schema.UnspecifiedType), "biteme type returned a known type")
+	// table of testcases
+	testCases := []struct {
+		jsonType string
+		want     schema.PrimitiveType
+	}{
+		{"string", schema.StringType},
+		{"enum", schema.StringType},
+		{"int", schema.IntegerType},
+		{"object", schema.ObjectType},
+		{"array", schema.ArrayType},
+		{"bool", schema.BooleanType},
+		{"boolean", schema.BooleanType},
+		{"number", schema.NumberType},
+		{"nil", schema.NullType},
+		{"null", schema.NullType},
+		{"biteme", schema.UnspecifiedType},
+	}
+
+	// test
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%s in type %s", tc.want, tc.jsonType), func(t *testing.T) {
+			ft.AssertTrue(t, getType(tc.jsonType).Contains(tc.want), "test failed")
+		})
+	}
 }
 
 func TestState(t *testing.T) {
-	state := StateToLastOperation(apb.StateInProgress)
-	ft.AssertEqual(t, state, LastOperationStateInProgress, "should be in progress")
-	state = StateToLastOperation(apb.StateSucceeded)
-	ft.AssertEqual(t, state, LastOperationStateSucceeded, "should be succeeded")
-	state = StateToLastOperation(apb.StateFailed)
-	ft.AssertEqual(t, state, LastOperationStateFailed, "should be failed")
+	// table of testcases
+	testCases := []struct {
+		curState apb.State
+		expState LastOperationState
+	}{
+		{apb.StateInProgress, LastOperationStateInProgress},
+		{apb.StateSucceeded, LastOperationStateSucceeded},
+		{apb.StateFailed, LastOperationStateFailed},
+		{"", LastOperationStateFailed},
+	}
+
+	// test
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%s", tc.curState), func(t *testing.T) {
+			state := StateToLastOperation(tc.curState)
+			ft.AssertEqual(t, state, tc.expState, fmt.Sprintf("should be %v", tc.expState))
+		})
+	}
+}
+
+func TestPlanUpdatable(t *testing.T) {
+
+	p1 := p
+	p1.UpdatesTo = []string{"dev"}
+
+	// table of testcases
+	testCases := []struct {
+		plan apb.Plan
+		want bool
+	}{
+		{p, false},
+		{p1, true},
+	}
+
+	// test
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("planupdatable %v", tc.want), func(t *testing.T) {
+			ft.AssertEqual(t, planUpdatable([]apb.Plan{tc.plan}), tc.want, "")
+		})
+	}
+	//	p.UpdatesTo = []string{"dev"}
+}
+
+func TestInitMetadataCopy(t *testing.T) {
+	// table of testcases
+	testCases := []struct {
+		name     string
+		original map[string]interface{}
+		want     map[string]interface{}
+		err      error
+	}{
+		{"nil original", nil, make(map[string]interface{}), nil},
+		{"original", map[string]interface{}{"name": "value"}, map[string]interface{}{"name": "value"}, nil},
+		{"marshal fail", map[string]interface{}{"name": make(chan int)}, make(map[string]interface{}), errors.New("json: unsupported type: chan int")},
+	}
+
+	// test
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("initmetadatacopy %v", tc.name), func(t *testing.T) {
+			output, err := initMetadataCopy(tc.original)
+			if err != nil {
+				ft.AssertEqual(t, err.Error(), tc.err.Error(), fmt.Sprintf("unexpected error: [%v] vs [%v]", err, tc.err))
+			} else {
+				ft.AssertEqual(t, err, tc.err, fmt.Sprintf("unexpected error: [%v] vs [%v]", err, tc.err))
+			}
+			eq := reflect.DeepEqual(output, tc.want)
+			ft.AssertTrue(t, eq, "maps do not match")
+		})
+	}
 }
