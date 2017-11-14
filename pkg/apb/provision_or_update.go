@@ -18,8 +18,13 @@ package apb
 
 import (
 	"errors"
+	"fmt"
+
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type executionMethod string
@@ -45,6 +50,19 @@ func provisionOrUpdate(
 		log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
 		log.Error("Are you trying to run a legacy ansibleapp without an image field?")
 		return "", nil, errors.New("No image field found on instance.Spec")
+	}
+
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		log.Error("Something went wrong getting kubernetes client")
+		return "", nil, err
+	}
+
+	ns := instance.Context.Namespace
+	log.Info("Checking if namespace %s exists.", ns)
+	_, err = k8scli.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+	if err != nil {
+		return "", nil, errors.New(fmt.Sprintf("Project %s does NOT exist!", ns))
 	}
 
 	metrics.ActionStarted(string(method))
