@@ -18,7 +18,9 @@ package broker
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"strings"
@@ -410,6 +412,57 @@ func TestState(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", tc.curState), func(t *testing.T) {
 			state := StateToLastOperation(tc.curState)
 			ft.AssertEqual(t, state, tc.expState, fmt.Sprintf("should be %v", tc.expState))
+		})
+	}
+}
+
+func TestPlanUpdatable(t *testing.T) {
+
+	p1 := p
+	p1.UpdatesTo = []string{"dev"}
+
+	// table of testcases
+	testCases := []struct {
+		plan apb.Plan
+		want bool
+	}{
+		{p, false},
+		{p1, true},
+	}
+
+	// test
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("planupdatable %v", tc.want), func(t *testing.T) {
+			ft.AssertEqual(t, planUpdatable([]apb.Plan{tc.plan}), tc.want, "")
+		})
+	}
+	//	p.UpdatesTo = []string{"dev"}
+}
+
+func TestInitMetadataCopy(t *testing.T) {
+	// table of testcases
+	testCases := []struct {
+		name     string
+		original map[string]interface{}
+		want     map[string]interface{}
+		err      error
+	}{
+		{"nil original", nil, make(map[string]interface{}), nil},
+		{"original", map[string]interface{}{"name": "value"}, map[string]interface{}{"name": "value"}, nil},
+		{"marshal fail", map[string]interface{}{"name": make(chan int)}, make(map[string]interface{}), errors.New("json: unsupported type: chan int")},
+	}
+
+	// test
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("initmetadatacopy %v", tc.name), func(t *testing.T) {
+			output, err := initMetadataCopy(tc.original)
+			if err != nil {
+				ft.AssertEqual(t, err.Error(), tc.err.Error(), fmt.Sprintf("unexpected error: [%v] vs [%v]", err, tc.err))
+			} else {
+				ft.AssertEqual(t, err, tc.err, fmt.Sprintf("unexpected error: [%v] vs [%v]", err, tc.err))
+			}
+			eq := reflect.DeepEqual(output, tc.want)
+			ft.AssertTrue(t, eq, "maps do not match")
 		})
 	}
 }
