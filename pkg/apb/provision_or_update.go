@@ -18,10 +18,8 @@ package apb
 
 import (
 	"errors"
-	"fmt"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
-	"github.com/openshift/ansible-service-broker/pkg/runtime"
 )
 
 type executionMethod string
@@ -47,13 +45,6 @@ func provisionOrUpdate(
 		log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
 		log.Error("Are you trying to run a legacy ansibleapp without an image field?")
 		return "", nil, errors.New("No image field found on instance.Spec")
-	}
-
-	ns := instance.Context.Namespace
-	log.Info("Checking if project %s exists...", ns)
-	if !projectExists(ns) {
-		log.Errorf("Project %s does NOT exist! Cannot provision requested %s", ns, instance.Spec.FQName)
-		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}
 
 	metrics.ActionStarted(string(method))
@@ -86,9 +77,4 @@ func provisionOrUpdate(
 	}
 
 	return executionContext.PodName, creds, err
-}
-
-func projectExists(project string) bool {
-	_, _, code := runtime.RunCommandWithExitCode("kubectl", "get", "project", project)
-	return code == 0
 }
