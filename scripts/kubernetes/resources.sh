@@ -30,9 +30,6 @@ function cluster::routes {
 }
 
 function cluster::process {
-    "${TEMPLATE_DIR}/k8s-template.py"
-    kubectl create -f "${TEMPLATE_DIR}/k8s-local-dev-changes.yaml"
-
     cat <<EOF | kubectl create -f -
 apiVersion: v1
 kind: Endpoints
@@ -40,15 +37,17 @@ metadata:
   labels:
     app: ansible-service-broker
     service: asb
-  name: asb-1338
+  name: asb
 subsets:
 - addresses:
-  - ip: 10.32.1.128
+  - ip: ${BROKER_IP_ADDR}
   ports:
   - name: port-1338
     port: 1338
     protocol: TCP
 EOF
+
+    kubectl create -f "${TEMPLATE_DIR}/k8s-local-dev-changes.yaml"
 }
 
 function cluster::get-ca {

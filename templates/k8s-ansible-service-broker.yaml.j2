@@ -1,21 +1,46 @@
-#
-# Limitations With the Kubernetes template
-# ----------------------------------------
-# - ssl
-#
-
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ansible-service-broker
-
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: asb
   namespace: ansible-service-broker
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: asb-auth
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["create", "delete"]
+- apiGroups: ["authorization.openshift.io"]
+  resources: ["subjectrulesreview"]
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["subjectaccessreviews"]
+  verbs: ["create"]
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: ["image.openshift.io", ""]
+  attributeRestrictions: null
+  resources: ["images"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: asb-auth-bind
+subjects:
+- kind: ServiceAccount
+  name: asb
+  namespace: ansible-service-broker
+roleRef:
+  kind: ClusterRole
+  name: asb-auth
+  apiGroup: rbac.authorization.k8s.io
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -30,6 +55,15 @@ roleRef:
   kind: ClusterRole
   name: admin
   apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: access-asb-role
+rules:
+- nonResourceURLs: ["{{ broker_url_prefix }}", "{{ broker_url_prefix }}/*"]
+  verbs: ["get", "post", "put", "patch", "delete"]
 
 ---
 apiVersion: v1
@@ -115,10 +149,10 @@ data:
       - type: "{{ registry_type }}"
         name: "{{ registry_name }}"
         url: "{{ registry_url }}"
-        user: "{{ dockerhub_user_name }}"
-        pass: "{{ dockerhub_user_password }}"
         org: "{{ dockerhub_org }}"
         tag: "{{ tag }}"
+        white_list:
+          - ".*-apb$"
     dao:
       etcd_host: etcd
       etcd_port: 2379
@@ -132,6 +166,9 @@ data:
       ca_file: "{{ ca_file }}"
       bearer_token_file: "{{ bearer_token_file }}"
       image_pull_policy: "{{ image_pull_policy }}"
+      sandbox_role: "{{ sandbox_role }}"
+      keep_namespace: {{ keep_namespace }}
+      keep_namespace_on_error: {{ keep_namespace_on_error }}
     broker:
       dev_broker: {{ dev_broker }}
       bootstrap_on_startup: {{ bootstrap_on_startup }}
@@ -139,8 +176,9 @@ data:
       launch_apb_on_bind: {{ launch_apb_on_bind }}
       output_request: {{ output_request }}
       recovery: {{ recovery }}
-      ssl_cert_key: ""
-      ssl_cert: ""
+      ssl_cert_key: /etc/tls/private/tls.key
+      ssl_cert: /etc/tls/private/tls.crt
+      auto_escalate: {{ auto_escalate }}
       auth:
         - type: basic
           enabled: {{ enable_basic_auth }}
@@ -217,6 +255,8 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/ansible-service-broker
+            - name: asb-tls
+              mountPath: /etc/tls/private
             - name: asb-auth-volume
               mountPath: /var/run/asb-auth
           ports:
@@ -236,6 +276,39 @@ spec:
             items:
             - key: broker-config
               path: config.yaml
+        - name: asb-tls
+          secret:
+            secretName: asb-tls
         - name: asb-auth-volume
           secret:
             secretName: asb-auth-secret
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ansibleservicebroker-client
+  namespace: ansible-service-broker
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: ansibleservicebroker-client
+subjects:
+- kind: ServiceAccount
+  name: ansibleservicebroker-client
+  namespace: ansible-service-broker
+roleRef:
+  kind: ClusterRole
+  name: access-asb-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ansibleservicebroker-client
+  annotations:
+    kubernetes.io/service-account.name: ansibleservicebroker-client
+type: kubernetes.io/service-account-token

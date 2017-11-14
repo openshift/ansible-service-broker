@@ -2,8 +2,6 @@
 # Local Template defaults
 #
 
-dockerhub_user_name: changeme
-dockerhub_user_password: changeme
 dockerhub_org: ansibleplaybookbundle
 
 broker_image: "ansibleplaybookbundle/ansible-service-broker:latest"
@@ -26,6 +24,8 @@ openshift_pass: admin
 openshift_user: admin
 openshift_target: kubernetes.default
 
+broker_url_prefix: "/ansible-service-broker"
+
 # Registry Info
 registry_type: dockerhub
 registry_name: dh
@@ -33,6 +33,12 @@ registry_url: https://registry.hub.docker.com
 
 # Include Broker Development Endpoint
 dev_broker: "true"
+
+# Sandbox Permissions
+sandbox_role: "edit"
+auto_escalate: "true"
+keep_namespace: "false"
+keep_namespace_on_error: "true"
 
 # Launch APB on bind
 launch_apb_on_bind: "false"
@@ -53,7 +59,7 @@ recovery: "true"
 image_pull_policy: "IfNotPresent"
 
 # Will enable basic authentication
-enable_basic_auth: "true"
+enable_basic_auth: "false"
 
 ############################################################
 # NOTE: These values MUST be base64 encoded.
