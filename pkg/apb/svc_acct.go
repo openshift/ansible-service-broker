@@ -17,6 +17,7 @@
 package apb
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,9 +29,9 @@ import (
 	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 
 	logging "github.com/op/go-logging"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // ServiceAccountManager - managers the service account methods
@@ -56,168 +57,74 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 	svcAccountName := executionContext.PodName
 	roleBindingName := executionContext.PodName
 
-	svcAcctM := map[string]interface{}{
-		"apiVersion": "v1",
-		"kind":       "ServiceAccount",
-		"metadata": map[string]string{
-			"name":      svcAccountName,
-			"namespace": executionContext.Namespace,
+	k8scli, err := clients.Kubernetes(s.log)
+	if err != nil {
+		s.log.Error("Soemthing went wrong getting kubernetes client")
+		return "", errors.New(err.Error())
+	}
+	serviceAccount := &apicorev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: svcAccountName,
 		},
 	}
-
-	roleBindingM := map[string]interface{}{
-		"apiVersion": "v1",
-		"kind":       "RoleBinding",
-		"metadata": map[string]string{
-			"name":      roleBindingName,
-			"namespace": executionContext.Namespace,
-		},
-		"subjects": []map[string]string{
-			map[string]string{
-				"kind":      "ServiceAccount",
-				"name":      svcAccountName,
-				"namespace": executionContext.Namespace,
-			},
-		},
-		"roleRef": map[string]string{
-			"name": strings.ToLower(apbRole),
-		},
-	}
-	targetRoleBindingsM := []map[string]interface{}{}
-	for _, target := range executionContext.Targets {
-		targetRoleBindingsM = append(targetRoleBindingsM,
-			map[string]interface{}{
-				"apiVersion": "v1",
-				"kind":       "RoleBinding",
-				"metadata": map[string]string{
-					"name":      roleBindingName,
-					"namespace": target,
-				},
-				"subjects": []map[string]string{
-					map[string]string{
-						"kind":      "ServiceAccount",
-						"name":      svcAccountName,
-						"namespace": executionContext.Namespace,
-					},
-				},
-				"roleRef": map[string]string{
-					"name": apbRole,
-				},
-			},
-		)
-	}
-
-	s.createResourceDir()
-	rFilePath, err := s.writeResourceFile(apbID, &svcAcctM, &roleBindingM, &targetRoleBindingsM)
+	_, err = k8scli.CoreV1().ServiceAccounts(executionContext.Namespace).Create(serviceAccount)
 	if err != nil {
 		return "", err
 	}
 
-	s.log.Debug("Trying to create apb sandbox: [ %s ], with  %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
-	// Create resources in cluster
-	s.createResources(rFilePath, executionContext.Namespace)
+	s.log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
+	roleBinding := &rbac.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: roleBindingName,
+		},
+		Subjects: []rbac.Subject{
+			rbac.Subject{
+				Kind:      "ServiceAccount",
+				Name:      svcAccountName,
+				Namespace: executionContext.Namespace,
+			},
+		},
+		RoleRef: rbac.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     strings.ToLower(apbRole),
+		},
+	}
+	_, err = k8scli.RbacV1beta1().RoleBindings(executionContext.Namespace).Create(roleBinding)
+	if err != nil {
+		return "", err
+	}
+
+	targetRoleBinding := &rbac.RoleBinding{}
+	for _, target := range executionContext.Targets {
+		targetRoleBinding = &rbac.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      roleBindingName,
+				Namespace: target,
+			},
+			Subjects: []rbac.Subject{
+				rbac.Subject{
+					Kind:      "ServiceAccount",
+					Name:      svcAccountName,
+					Namespace: executionContext.Namespace,
+				},
+			},
+			RoleRef: rbac.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     apbRole,
+			},
+		}
+		_, err = k8scli.RbacV1beta1().RoleBindings(target).Create(targetRoleBinding)
+		if err != nil {
+			return "", err
+		}
+
+	}
 
 	s.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
 
 	return apbID, nil
-}
-
-func (s *ServiceAccountManager) createResources(rFilePath string, namespace string) error {
-	s.log.Debug("Creating resources from file at path: %s", rFilePath)
-	output, err := runtime.RunCommand("oc", "create", "-f", rFilePath)
-	// TODO: Parse output somehow to validate things got created?
-	if err != nil {
-		s.log.Error("Something went wrong trying to create resources in cluster")
-		s.log.Error("Returned error:")
-		s.log.Error(err.Error())
-		s.log.Error("oc create -f output:")
-		s.log.Error(string(output))
-		return err
-	}
-	s.log.Debug("Successfully created resources, oc create -f output:")
-	s.log.Debug("\n" + string(output))
-	return nil
-}
-
-func (s *ServiceAccountManager) writeResourceFile(handle string,
-	svcAcctM *map[string]interface{}, roleBindingM *map[string]interface{}, targetRoleBindingsM *[]map[string]interface{},
-) (string, error) {
-	// Create file if doesn't already exist
-	filePath, err := s.createFile(handle)
-	if err != nil {
-		return "", err // Bubble, error logged in createFile
-	}
-
-	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
-	defer file.Close()
-
-	if err != nil {
-		s.log.Error("Something went wrong writing resources to file!")
-		s.log.Error(err.Error())
-		return "", err
-	}
-
-	file.WriteString("---\n")
-	svcAcctY, err := yaml.Marshal(svcAcctM)
-	if err != nil {
-		s.log.Error("Something went wrong marshalling svc acct to yaml")
-		s.log.Error(err.Error())
-		return "", err
-	}
-	file.WriteString(string(svcAcctY))
-
-	file.WriteString("---\n")
-	roleBindingY, err := yaml.Marshal(roleBindingM)
-	if err != nil {
-		s.log.Error("Something went wrong marshalling role binding to yaml")
-		s.log.Error(err.Error())
-		return "", err
-	}
-	file.WriteString(string(roleBindingY))
-
-	for _, bindingM := range *targetRoleBindingsM {
-		targetRoleBindingY, err := yaml.Marshal(bindingM)
-		if err != nil {
-			s.log.Error("Something went wrong marshalling role binding to yaml")
-			s.log.Error(err.Error())
-			return "", err
-		}
-		file.WriteString("---\n")
-		file.WriteString(string(targetRoleBindingY))
-	}
-
-	s.log.Info("Successfully wrote resources to %s", filePath)
-	return filePath, nil
-}
-
-func (s *ServiceAccountManager) createResourceDir() {
-	dir := resourceDir()
-	s.log.Debug("Creating resource file dir: %s", dir)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		os.Mkdir(dir, os.ModePerm)
-	}
-}
-
-func (s *ServiceAccountManager) createFile(handle string) (string, error) {
-	rFilePath := filePathFromHandle(handle)
-	s.log.Debug("Creating resource file %s", rFilePath)
-
-	if _, err := os.Stat(rFilePath); os.IsNotExist(err) {
-		// Valid behavior if the file does not exist, create
-		file, err := os.Create(rFilePath)
-		// Handle file creation error
-		if err != nil {
-			s.log.Error("Something went wrong touching new resource file!")
-			s.log.Error(err.Error())
-			return "", err
-		}
-		defer file.Close()
-	} else if err != nil {
-		// Bubble any non-expected errors
-		return "", err
-	}
-
-	return rFilePath, nil
 }
 
 // DestroyApbSandbox - Destroys the apb sandbox
