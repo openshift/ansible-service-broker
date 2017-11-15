@@ -67,31 +67,40 @@ func provisionOrUpdate(
 	}
 
 	metrics.ActionStarted(string(method))
+	sm := NewServiceAccountManager(log)
 	executionContext, err := ExecuteApb(
-		string(method), clusterConfig, instance.Spec,
-		instance.Context, instance.Parameters, log,
+		string(method),
+		clusterConfig,
+		instance.Spec,
+		instance.Context,
+		instance.Parameters,
+		log,
 	)
-
+	defer runtime.Provider.DestroySandbox(
+		executionContext.PodName,
+		executionContext.Namespace,
+		executionContext.Targets,
+		clusterConfig.Namespace,
+		clusterConfig.KeepNamespace,
+		clusterConfig.KeepNamespaceOnError,
+	)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s]", executionContext.PodName)
-		log.Error(err.Error())
+		log.Errorf("Problem executing apb [%s] provision", executionContext.PodName)
 		return executionContext.PodName, nil, err
 	}
 
 	creds, err := ExtractCredentials(executionContext.PodName, executionContext.Namespace, log)
+	if err != nil {
+		log.Errorf("apb::%s error occurred", string(method))
+		log.Error("%s", err.Error())
+		return executionContext.PodName, creds, err
+	}
 
 	// We should not save credentials from an app that finds them and isn't bindable
 	if creds != nil && !instance.Spec.Bindable {
 		log.Warningf("APB %s is not bindable", instance.Spec.FQName)
 		log.Warning("Ignoring Credentials")
 		creds = nil
-	}
-
-	runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
-	if err != nil {
-		log.Errorf("apb::%s error occurred", string(method))
-		log.Error("%s", err.Error())
-		return executionContext.PodName, creds, err
 	}
 
 	return executionContext.PodName, creds, err

@@ -19,78 +19,31 @@ package apb
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"strings"
-	"time"
 
-	"github.com/openshift/ansible-service-broker/pkg/runtime"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 
 	logging "github.com/op/go-logging"
 )
 
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
 func ExtractCredentials(
-	podname string, namespace string, log *logging.Logger,
+	podname string,
+	namespace string,
+	log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	log.Debug("Calling monitorOutput on " + podname)
-	bindOutput, err := monitorOutput(namespace, podname, log)
+
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Unable to retrive kubernetes client - %v", err)
 	}
 
-	if bindOutput == nil {
-		return nil, nil
+	secretData, err := k8scli.GetSecretData(podname, namespace)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to retrieve secret [ %v ] - %v", podname, err)
 	}
 
-	return buildExtractedCredentials(bindOutput)
-}
-
-func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byte, error) {
-	// TODO: Error handling here
-	// It would also be nice to gather the script output that exec runs
-	// instead of only getting the credentials
-
-	for r := 1; r <= apbWatchRetries; r++ {
-		// err will be the return code from the exec command
-		// Use the error code to determine the state
-		failedToExec := errors.New("exit status 1")
-		credsNotAvailable := errors.New("exit status 2")
-
-		output, err := runtime.RunCommand("kubectl", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
-
-		// cannot exec container, pod is done
-		podFailed := strings.Contains(string(output), "current phase is Failed")
-		podCompleted := strings.Contains(string(output), "current phase is Succeeded") ||
-			strings.Contains(string(output), "cannot exec into a container in a completed pod")
-
-		if err == nil {
-			log.Notice("[%s] Bind credentials found", podname)
-			return output, nil
-		} else if podFailed {
-			// pod has completed but is in failed state
-			log.Notice("[%s] APB failed", podname)
-			return nil, errors.New("APB failed")
-		} else if podCompleted && err.Error() == failedToExec.Error() {
-			log.Error("[%s] APB completed", podname)
-			return nil, nil
-		} else if err.Error() == failedToExec.Error() {
-			log.Info(string(output))
-			log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
-		} else if err.Error() == credsNotAvailable.Error() {
-			log.Info(string(output))
-			log.Warning("[%s] Retry attempt %d: Bind credentials not available yet", podname, r)
-		} else {
-			log.Info(string(output))
-			log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
-		}
-
-		log.Warning("[%s] Retry attempt %d: exec into %s failed", podname, r, podname)
-		time.Sleep(time.Duration(apbWatchInterval) * time.Second)
-	}
-
-	timeout := fmt.Sprintf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, apbWatchRetries)
-	return nil, errors.New(timeout)
+	return buildExtractedCredentials(secretData["fields"])
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {

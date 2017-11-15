@@ -31,7 +31,7 @@ import (
 // Little looser, but still not great
 func Unbind(instance *ServiceInstance, parameters *Parameters, clusterConfig ClusterConfig, log *logging.Logger) error {
 	log.Notice("============================================================")
-	log.Notice("                       UNBINDING                              ")
+	log.Notice("                       UNBINDING                            ")
 	log.Notice("============================================================")
 	log.Notice(fmt.Sprintf("ServiceInstance.ID: %s", instance.Spec.ID))
 	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.FQName))
@@ -40,12 +40,16 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, clusterConfig Clu
 	log.Notice("============================================================")
 
 	executionContext, err := ExecuteApb(
-		"unbind", clusterConfig, instance.Spec,
-		instance.Context, parameters, log,
+		"unbind",
+		clusterConfig,
+		instance.Spec,
+		instance.Context,
+		parameters,
+		log,
 	)
 	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s] unbind:", executionContext.PodName)
+		log.Errorf("Problem executing apb [%s] unbind", executionContext.PodName)
 		return err
 	}
 

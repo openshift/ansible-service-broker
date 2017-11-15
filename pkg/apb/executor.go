@@ -153,6 +153,17 @@ func ExecuteApb(
 
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
 	_, err = k8scli.Client.CoreV1().Pods(executionContext.Namespace).Create(pod)
+	if err != nil {
+		log.Errorf("Failed to create pod - %v", err)
+		return executionContext, err
+	}
+
+	err = watchPod(executionContext.PodName, executionContext.Namespace, log)
+	if err != nil {
+		log.Errorf("APB Execution failed - %v", err)
+		return executionContext, err
+	}
+
 	return executionContext, err
 }
 

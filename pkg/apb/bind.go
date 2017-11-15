@@ -40,12 +40,16 @@ func Bind(
 	log.Notice("============================================================")
 
 	executionContext, err := ExecuteApb(
-		"bind", clusterConfig, instance.Spec,
-		instance.Context, parameters, log,
+		"bind",
+		clusterConfig,
+		instance.Spec,
+		instance.Context,
+		parameters,
+		log,
 	)
 	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s] bind:", executionContext.PodName)
+		log.Errorf("Problem executing apb [%s] bind", executionContext.PodName)
 		return executionContext.PodName, nil, err
 	}
 

@@ -21,7 +21,7 @@ package version
 // acceptible APBs.
 
 // MinAPBVersion constant to describe minimum supported spec version
-const MinAPBVersion = "1.0"
+const MinAPBVersion = "2.0"
 
 // MaxAPBVersion contant to describe maximum supported spec version
-const MaxAPBVersion = "1.0"
+const MaxAPBVersion = "2.0"
