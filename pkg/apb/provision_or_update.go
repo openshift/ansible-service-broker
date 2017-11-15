@@ -62,7 +62,7 @@ func provisionOrUpdate(
 	log.Info("Checking if namespace %s exists.", ns)
 	_, err = k8scli.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 	if err != nil {
-		return "", nil, errors.New(fmt.Sprintf("Project %s does NOT exist!", ns))
+		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}
 
 	metrics.ActionStarted(string(method))
