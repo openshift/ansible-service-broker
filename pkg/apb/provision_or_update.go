@@ -19,9 +19,12 @@ package apb
 import (
 	"errors"
 	"fmt"
+
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
-	"github.com/openshift/ansible-service-broker/pkg/runtime"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type executionMethod string
@@ -49,10 +52,16 @@ func provisionOrUpdate(
 		return "", nil, errors.New("No image field found on instance.Spec")
 	}
 
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		log.Error("Something went wrong getting kubernetes client")
+		return "", nil, err
+	}
+
 	ns := instance.Context.Namespace
-	log.Info("Checking if project %s exists...", ns)
-	if !projectExists(ns) {
-		log.Errorf("Project %s does NOT exist! Cannot provision requested %s", ns, instance.Spec.FQName)
+	log.Info("Checking if namespace %s exists.", ns)
+	_, err = k8scli.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+	if err != nil {
 		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}
 
@@ -86,9 +95,4 @@ func provisionOrUpdate(
 	}
 
 	return executionContext.PodName, creds, err
-}
-
-func projectExists(project string) bool {
-	_, _, code := runtime.RunCommandWithExitCode("kubectl", "get", "project", project)
-	return code == 0
 }

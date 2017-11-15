@@ -229,7 +229,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 	}
 	k8scli, err := clients.Kubernetes(s.log)
 	if err != nil {
-		s.log.Error("Soemthing went wrong getting kubernetes client")
+		s.log.Error("Something went wrong getting kubernetes client")
 		s.log.Errorf("%s", err.Error())
 		return
 	}
