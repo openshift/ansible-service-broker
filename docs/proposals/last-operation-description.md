@@ -2,10 +2,10 @@
 
 ## Introduction
 As per the OpenService Broker API spec, the last operation response can contain
-a description as well as a status [last operation response](https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#body).
+a description as well as a status: [last operation response](https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#body).
 This can provide useful information about what is happening during a broker action along with details of the overall progress.
-UI implementors could make valuable use of this information
-to provide a progress bar or just simply a log of actions to show progress.
+UI implementors could make valuable use of this information to provide an indicator of progress and provide feedback while long running
+actions are in progress. An example of a possible description is shown below:
 ```
 60%: succesfully created realm in keycloak
 ```
@@ -14,55 +14,84 @@ to provide a progress bar or just simply a log of actions to show progress.
 Currently we are only making use of the status field: 
 [last operation in broker.go](https://github.com/openshift/ansible-service-broker/blob/master/pkg/broker/broker.go#L1311)
 The difficulty is around how we get that detail back from the pod.
-Without the description, we limit the feedback that can be provided to the user.
+Without the description, we limit the feedback that can be provided to the user for actions performed against the service catalog.
+
+## Expectations
+- The last_operation demonstrates APB progress.
+- No restrictions or requirements for user to demonstrate APB progress.
+- No guarantee that last_operation shows every operation.
+- The final_operation is the last_operation gathered before the APB is deleted.
 
 
-## Proposed Implementation
-Create an append only log file in a specified location ```/var/log/last_operation```, which is collected periodically and also a final time after
-the apb has completed but before the pod is deleted. 
-In the bind workflow, we already do something similar by execing into the container in order to collect
-the bind credentials using  [monitor output in ext_cred.go](https://github.com/openshift/ansible-service-broker/blob/master/pkg/apb/ext_creds.go#L53). 
-A similar workflow could be used to gather and store the last operation description.
+## Terms
 
-### Description Format
-If we use an append only log, then we can do something like this:
+**Last Operation:**  the most recent operation an apb performed 
+
+**Final operation:** the operation that indicates the apb is 100% complete
+                     
+
+## Proposed Solution
+
+Using a new apb module, allow for a description to be added by the apb developer for the last operation the apb took along with the final operation the apb took. This module would take advantage of env vars,  provided to it via the downward api, that reference the pod name and namespace the apb is executing within. 
+A PR is already in place to expose this information: https://github.com/openshift/ansible-service-broker/pull/546
+When called this apb module would update known annotations on the pod ie: ```apb_last_operation``` and ``` apb_final_operation```
+with the description provided by the apb developer. This would be part of the 
+[ansible playbook modules](https://github.com/ansibleplaybookbundle/ansible-asb-modules).
+
+In order to collect this information we would use a watch via the Kubernetes client on the pod resource within the temporary namespace [Pod Rest API](https://docs.openshift.com/container-platform/3.5/rest_api/kubernetes_v1.html#list-or-watch-objects-of-kind-pod).
+This would allow us to react to changes made (i.e to the annotations) on Pod Object. Whenever a change occurred, an update to the JobStatus would happen. If the ```apb_final_operation``` annotation is present this would take precedence over the last_operation annotation. 
+Once the pod was deleted we would stop the watch on the pod and update the JobStatus ```final_operation``` annotation value.
+
+Sudo code example
+
+```go
+
+wi, err := k8client.CoreV1().Pods(ns).Watch(meta_v1.ListOptions{})
+changes := wi.ResultChan()
+    for ch := range changes{
+		if ch.Type == watch.Modified{
+			...
+		}
+		if ch.Type == watch.Deleted{
+			close(ch)
+			...
+		}
+	}
+
 ```
-10%: creating deployment and routes,30%: waiting for service to become available, 50%: retrieved token from API,60%: Unexpected error creating realm in keycloak
-```
-This could then easily be consumed by a polling client.
+
+As this would block, it would need to be done in a background go routine. Using a watch in a background routine should allow us to update the JobState independent of the actual execution of the apb.    
+
 
 ### Broker changes
-Below are a set of changes that I believe are in line with the current design. The exact implementation would likely differ but the gist would 
-be the same.
+Below are a set of changes that I believe are in line with the current design. The exact implementation would likely differ but the gist would be the same.
 
-- A new field would be added to the JobState type and also to the different message types, ProvisionMsg for example:
+- A new field would be added to the JobState type:
 ```Description string ``` 
-The string value gathered from the file in the apb container would be stored here.
+The string value , added by the apb module and gathered from the pod annotation would be stored here.
 
-- Modify ExecuteApb in to add the new volume mount ```/var/log/last_operation```.
+- Modify the existing provision and deprovision subscribers along with the corresponding work messages.
+A namespace field would be added to these messages as the pod name is already present. 
+Inside the subscriber, the go routine to watch the pod and update the JobStatus would start when a new work msg was recieved.
+This routine would stop once the a deleted change was received in the watch.
 
-- Modify or add a new method similar to monitor output that would gather the information in the background as the apb pod was running
-
-- Add a new method or refactor ExtractCredentials to extract the last operation log. Likely a new method as we would want to send this information back
-each time we collected it.
-
-- Pass the log in the msg buffer worker chanel or add a new channel specifically for the last operation log (this channel would need to be passed into the different action such as provision)
-
-- In the subscribers where the state is updated, pull out the description and add it to the stored jobState.
+- Add a new subscriber for bind
+async bind will be part of the service catalog, so having a Status and Description for an async binding will also be needed.
+Adding a new subscriber and workmsg for binding operations will allow us to update the JobStatus once async binding arrives.
 
 - Modify last operation handler to pull the description out of the Job state and send it back as part of the response.
 
 ### APB changes
 Add a module that would handle putting the content from a last operation description into the right place on disk. 
 
-Likely something very similar to the encode binding module:
-https://github.com/ansibleplaybookbundle/ansible-asb-modules/blob/master/library/asb_encode_binding.py
-
 Something like the following may make sense:
 
 ```
  asb_last_operation_description:
    description:"10%: creating deployment and routes"
+
+asb_final_operation_description:
+   description:"100%: keycloak succesfully provisioned"   
 ```   
 
 ***Note not very familiar with how the ansible apb works under the hood so would need some guidance here***
