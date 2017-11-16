@@ -1,13 +1,17 @@
 package clients
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
 	"testing"
 
+	"github.com/coreos/etcd/version"
 	logging "github.com/op/go-logging"
 )
 
@@ -186,6 +190,69 @@ func TestNewTransport(t *testing.T) {
 				if len(transport.TLSClientConfig.Certificates) != 0 {
 					t.Fatal("Should not have created a certificate")
 				}
+			}
+		})
+	}
+}
+
+func TestEtcdVersion(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		ServerVersion  string
+		ClusterVersion string
+		ShouldError    bool
+		ServerFunc     func(http.ResponseWriter, *http.Request)
+	}{
+		{
+			ServerVersion:  "3.2.1",
+			ClusterVersion: "3.2.1",
+			Name:           "Happy Path Status OK and body is valid",
+			ServerFunc: func(w http.ResponseWriter, r *http.Request) {
+				b, _ := json.Marshal(version.Versions{Server: "3.2.1", Cluster: "4.1.2"})
+				w.WriteHeader(http.StatusOK)
+				w.Write(b)
+			},
+		},
+		{
+			Name: "Error Path Status OK and body is not valid",
+			ServerFunc: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			},
+			ShouldError: true,
+		},
+		{
+			Name: "Error Path Status Not OK",
+			ServerFunc: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+			ShouldError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%s", tc.Name), func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(tc.ServerFunc))
+			defer ts.Close()
+			u, _ := url.Parse(ts.URL)
+			con := EtcdConfig{
+				EtcdHost: u.Hostname(),
+				EtcdPort: u.Port(),
+			}
+
+			serverVer, clusterVersion, err := GetEtcdVersion(con)
+			if err != nil && !tc.ShouldError {
+				t.Fatalf("unable to get version - %v", err)
+			} else if err != nil && tc.ShouldError {
+				return
+			} else if tc.ShouldError && err == nil {
+				t.Fatalf("Getting etcd version should return error - %v", tc.Name)
+			}
+			if serverVer != tc.ServerVersion && clusterVersion != tc.ClusterVersion {
+				t.Fatalf("server version expected: %v but got %v \n cluster version expected: %v but got %v",
+					tc.ServerVersion,
+					serverVer,
+					tc.ClusterVersion,
+					clusterVersion)
 			}
 		})
 	}
