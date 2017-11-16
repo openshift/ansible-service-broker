@@ -28,6 +28,7 @@ import (
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
 
+// KubernetesClient - Client to interact with Kubernetes API
 type KubernetesClient struct {
 	Client       *clientset.Clientset
 	ClientConfig *rest.Config
