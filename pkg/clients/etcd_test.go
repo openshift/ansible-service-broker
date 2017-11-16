@@ -124,8 +124,9 @@ func TestNewTransport(t *testing.T) {
 	filePath := strings.Join([]string{gopath, "src", "github.com", "openshift", "ansible-service-broker", "pkg", "clients", "testdata"}, "/")
 
 	testCases := []struct {
-		Config EtcdConfig
-		Name   string
+		Config      EtcdConfig
+		Name        string
+		ShouldError bool
 	}{
 		{
 			Name: "only CA Cert",
@@ -152,6 +153,15 @@ func TestNewTransport(t *testing.T) {
 				EtcdClientKey:  fmt.Sprintf("%s/%s", filePath, "client.key"),
 			},
 		},
+		{
+			Name: "invalid options",
+			Config: EtcdConfig{
+				EtcdCaFile:     fmt.Sprintf("%s/%s", filePath, "ca.crt"),
+				EtcdClientCert: fmt.Sprintf("%s/%s", filePath, "client-unknown.crt"),
+				EtcdClientKey:  fmt.Sprintf("%s/%s", filePath, "client.key"),
+			},
+			ShouldError: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -162,8 +172,12 @@ func TestNewTransport(t *testing.T) {
 				}
 			}()
 			tr, err := newTransport(tc.Config)
-			if err != nil {
+			if err != nil && !tc.ShouldError {
 				t.Fatalf("Test failed to get a new transport - %v", err)
+			} else if err != nil && tc.ShouldError {
+				return
+			} else if err == nil && tc.ShouldError {
+				t.Fatalf("Should have errored - %v", tc.Name)
 			}
 			transport, ok := tr.(*http.Transport)
 			if !ok || transport == nil {
