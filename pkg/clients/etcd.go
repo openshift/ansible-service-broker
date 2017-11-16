@@ -122,12 +122,13 @@ func newEtcd(config EtcdConfig, log *logging.Logger) (etcd.Client, error) {
 }
 
 func newTransport(config EtcdConfig) (etcd.CancelableTransport, error) {
-	if config.EtcdClientCert == "" && config.EtcdClientKey == "" {
+	if config.EtcdClientCert == "" && config.EtcdClientKey == "" && config.EtcdCaFile == "" {
 		return etcd.DefaultTransport, nil
 	}
-	info := transport.TLSInfo{
-		CertFile: config.EtcdClientCert,
-		KeyFile:  config.EtcdClientKey,
+	info := transport.TLSInfo{}
+	if config.EtcdClientCert != "" && config.EtcdClientKey != "" {
+		info.CertFile = config.EtcdClientCert
+		info.KeyFile = config.EtcdClientKey
 	}
 
 	if config.EtcdCaFile != "" {
