@@ -1,8 +1,7 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
-  name: mediawiki
-  namespace: default
+  name: mediawiki123
 spec:
   clusterServiceClassExternalName: dh-mediawiki123-apb
   clusterServicePlanExternalName: default

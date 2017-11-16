@@ -1,0 +1,10 @@
+# Travis CI
+provision: mediawiki123
+provision: postgresql
+
+bind: postgresql
+verify: rthallisey/service-broker-ci/verify-mediawiki-postgresql.sh
+unbind: postgresql | mediawiki123
+
+deprovision: mediawiki123
+deprovision: postgresql

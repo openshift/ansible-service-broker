@@ -92,12 +92,24 @@ elif [[ "$action" == "test" ]]; then
   echo "              Test               "
   echo "================================="
   make ci-test-coverage
+elif [[ "$action" == "setup-cluster" ]]; then
+  echo "================================="
+  echo "          Setup Cluster          "
+  echo "================================="
+  # Add an arguemnt only when running Travis for the broker
+  ./scripts/broker-ci/setup-cluster.sh broker
+  exit $?
+elif [[ "$action" == "setup-broker" ]]; then
+  echo "================================="
+  echo "          Setup Broker           "
+  echo "   (Only for Broker Travis job)  "
+  echo "================================="
+  ./scripts/broker-ci/setup-broker.sh
+  exit $?
 elif [[ "$action" == "ci" ]]; then
   echo "================================="
   echo "            Broker CI            "
   echo "================================="
-  ./scripts/broker-ci/setup.sh
-  if [ $? -eq 0 ]; then
-      make ci LOCAL_CI=false
-  fi
+  make ci LOCAL_CI=false
+  exit $?
 fi
