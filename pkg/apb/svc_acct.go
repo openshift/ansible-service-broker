@@ -227,20 +227,20 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return
 	}
-	k8scli, err := clients.Kubernetes(s.log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		s.log.Error("Something went wrong getting kubernetes client")
 		s.log.Errorf("%s", err.Error())
 		return
 	}
-	pod, err := k8scli.CoreV1().Pods(executionContext.Namespace).Get(executionContext.PodName, metav1.GetOptions{})
+	pod, err := k8scli.Client.CoreV1().Pods(executionContext.Namespace).Get(executionContext.PodName, metav1.GetOptions{})
 	if err != nil {
 		s.log.Errorf("Unable to retrieve pod - %v", err)
 	}
 	if shouldDeleteNamespace(clusterConfig, pod, err) {
 		if clusterConfig.Namespace != executionContext.Namespace {
 			s.log.Debug("Deleting namespace %s", executionContext.Namespace)
-			k8scli.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
+			k8scli.Client.CoreV1().Namespaces().Delete(executionContext.Namespace, &metav1.DeleteOptions{})
 			// This is keeping track of namespaces.
 			metrics.SandboxDeleted()
 		} else {

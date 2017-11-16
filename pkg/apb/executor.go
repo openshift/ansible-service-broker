@@ -29,7 +29,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/pborman/uuid"
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
 
 // ExecuteApb - Runs an APB Action with a provided set of inputs
@@ -70,7 +69,7 @@ func ExecuteApb(
 	}
 
 	secrets := GetSecrets(spec)
-	k8scli, err := clients.Kubernetes(log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return executionContext, err
 	}
@@ -88,7 +87,7 @@ func ExecuteApb(
 			GenerateName: fmt.Sprintf("%s-%.4s-", spec.FQName, action),
 		},
 	}
-	ns, err := k8scli.CoreV1().Namespaces().Create(&namespace)
+	ns, err := k8scli.Client.CoreV1().Namespaces().Create(&namespace)
 	if err != nil {
 		return executionContext, err
 	}
@@ -153,7 +152,7 @@ func ExecuteApb(
 	}
 
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
-	_, err = k8scli.CoreV1().Pods(executionContext.Namespace).Create(pod)
+	_, err = k8scli.Client.CoreV1().Pods(executionContext.Namespace).Create(pod)
 	return executionContext, err
 }
 
@@ -221,17 +220,17 @@ func checkPullPolicy(policy string) (v1.PullPolicy, error) {
 func copySecretsToNamespace(
 	executionContext ExecutionContext,
 	clusterConfig ClusterConfig,
-	k8scli *clientset.Clientset,
+	k8scli *clients.KubernetesClient,
 	secrets []string,
 ) error {
 	for _, secrectName := range secrets {
-		secretData, err := k8scli.CoreV1().Secrets(clusterConfig.Namespace).Get(secrectName, metav1.GetOptions{})
+		secretData, err := k8scli.Client.CoreV1().Secrets(clusterConfig.Namespace).Get(secrectName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		oldMeta := secretData.ObjectMeta
 		secretData.ObjectMeta = metav1.ObjectMeta{Name: oldMeta.Name, Namespace: executionContext.Namespace, Labels: oldMeta.Labels, Annotations: oldMeta.Annotations}
-		_, err = k8scli.CoreV1().Secrets(executionContext.Namespace).Create(secretData)
+		_, err = k8scli.Client.CoreV1().Secrets(executionContext.Namespace).Create(secretData)
 		if err != nil {
 			return err
 		}

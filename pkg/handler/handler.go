@@ -555,12 +555,12 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 }
 
 func isNamespaceDeleted(name string, log *logging.Logger) (bool, error) {
-	k8scli, err := clients.Kubernetes(log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return false, err
 	}
 
-	namespace, err := k8scli.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	namespace, err := k8scli.Client.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}

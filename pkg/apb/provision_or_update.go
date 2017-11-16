@@ -52,7 +52,7 @@ func provisionOrUpdate(
 		return "", nil, errors.New("No image field found on instance.Spec")
 	}
 
-	k8scli, err := clients.Kubernetes(log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		log.Error("Something went wrong getting kubernetes client")
 		return "", nil, err
@@ -60,7 +60,7 @@ func provisionOrUpdate(
 
 	ns := instance.Context.Namespace
 	log.Info("Checking if namespace %s exists.", ns)
-	_, err = k8scli.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+	_, err = k8scli.Client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 	if err != nil {
 		return "", nil, fmt.Errorf("Project %s does not exist", ns)
 	}

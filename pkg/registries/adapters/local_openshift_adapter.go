@@ -131,12 +131,12 @@ func (r LocalOpenShiftAdapter) loadSpec(yamlSpec []byte) (*apb.Spec, error) {
 }
 
 func (r LocalOpenShiftAdapter) getServiceIP(service string, namespace string) (string, error) {
-	k8scli, err := clients.Kubernetes(r.Log)
+	k8s, err := clients.Kubernetes()
 	if err != nil {
 		return "", err
 	}
 
-	serviceData, err := k8scli.CoreV1().Services(namespace).Get(service, meta_v1.GetOptions{})
+	serviceData, err := k8s.Client.CoreV1().Services(namespace).Get(service, meta_v1.GetOptions{})
 	if err != nil {
 		r.Log.Warningf("Unable to load service '%s' from namespace '%s'", service, namespace)
 		return "", err
