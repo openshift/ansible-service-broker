@@ -12,9 +12,6 @@ install:
 before_script:
   - ./scripts/travis.sh before_script
 script:
-  - ./scripts/travis.sh format
-  - ./scripts/travis.sh vet
-  - ./scripts/travis.sh lint
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh setup-cluster
