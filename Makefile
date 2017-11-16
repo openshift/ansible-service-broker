@@ -74,7 +74,7 @@ release-image:
 	@echo "Remember you need to push your image before calling make deploy"
 	@echo "    make push"
 
-# https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker/
+# https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker-latest/
 release: release-image ## Builds docker container using latest rpm from Copr
 
 push:
