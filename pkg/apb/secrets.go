@@ -167,12 +167,12 @@ func paramInSecret(param ParameterDescriptor, secretKeys []string) bool {
 }
 
 func getSecretKeys(secretName, namespace string) ([]string, error) {
-	k8scli, err := clients.Kubernetes(secrets.log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return nil, err
 	}
 
-	secretData, err := k8scli.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
+	secretData, err := k8scli.Client.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
 	if err != nil {
 		secrets.log.Warningf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
 		return []string{}, nil

@@ -128,7 +128,12 @@ func readFile(fileName string) (string, string, error) {
 }
 
 func readSecret(secretName string, namespace string) (string, string, error) {
-	data, err := clients.GetSecretData(secretName, namespace)
+	k8s, err := clients.Kubernetes()
+	if err != nil {
+		return "", "", err
+	}
+
+	data, err := k8s.GetSecretData(secretName, namespace)
 	if err != nil {
 		return "", "", fmt.Errorf("Failed to find Dockerhub credentials in secret: %s", secretName)
 	}

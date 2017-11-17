@@ -28,45 +28,45 @@ import (
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 )
 
+// KubernetesClient - Client to interact with Kubernetes API
+type KubernetesClient struct {
+	Client       *clientset.Clientset
+	ClientConfig *rest.Config
+	log          *logging.Logger
+}
+
 // Kubernetes - Create a new kubernetes client if needed, returns reference
-func Kubernetes(log *logging.Logger) (*clientset.Clientset, error) {
-	once.Kubernetes.Do(func() { createOnce(log) })
+func Kubernetes() (*KubernetesClient, error) {
+	once.Kubernetes.Do(func() {
+		var log *logging.Logger
+		client, err := newKubernetes(log)
+		if err != nil {
+			log.Error(err.Error())
+			panic(err.Error())
+		}
+		instances.Kubernetes = client
+	})
 	if instances.Kubernetes == nil {
 		return nil, errors.New("Kubernetes client instance is nil")
 	}
 	return instances.Kubernetes, nil
 }
 
-// KubernetesConfig - Retrieve or create a new kubernetes configuration.
-func KubernetesConfig(log *logging.Logger) (*rest.Config, error) {
-	once.Kubernetes.Do(func() { createOnce(log) })
-	if instances.KubernetesConfig == nil {
-		return nil, errors.New("Kubernetes client config instance is nil")
-	}
-	return instances.KubernetesConfig, nil
-}
-
 // GetSecretData - Returns the data inside of a given secret
-func GetSecretData(secretName, namespace string) (map[string][]byte, error) {
-	var log logging.Logger
-	k8scli, err := Kubernetes(&log)
+func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[string][]byte, error) {
+	secretData, err := k.Client.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
 	if err != nil {
-		return nil, err
-	}
-
-	secretData, err := k8scli.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
-	if err != nil {
-		log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
+		k.log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
 		return make(map[string][]byte), nil
 	}
-	log.Debugf("Found secret with name %v\n", secretName)
+	k.log.Debugf("Found secret with name %v\n", secretName)
 
 	return secretData.Data, nil
 }
 
 func createOnce(log *logging.Logger) {
 	errMsg := "Something went wrong while initializing kubernetes client!\n"
-	client, clientConfig, err := newKubernetes(log)
+	k8s, err := newKubernetes(log)
 	if err != nil {
 		log.Error(errMsg)
 		// NOTE: Looking to leverage panic recovery to gracefully handle this
@@ -75,8 +75,8 @@ func createOnce(log *logging.Logger) {
 		// and demands the attention of an operator.
 		panic(err.Error())
 	}
-	instances.Kubernetes = client
-	instances.KubernetesConfig = clientConfig
+
+	instances.Kubernetes = k8s
 }
 
 func createClientConfigFromFile(configPath string) (*rest.Config, error) {
@@ -92,7 +92,7 @@ func createClientConfigFromFile(configPath string) (*rest.Config, error) {
 	return config, nil
 }
 
-func newKubernetes(log *logging.Logger) (*clientset.Clientset, *rest.Config, error) {
+func newKubernetes(log *logging.Logger) (*KubernetesClient, error) {
 	// NOTE: Both the external and internal client object are using the same
 	// clientset library. Internal clientset normally uses a different
 	// library
@@ -104,15 +104,20 @@ func newKubernetes(log *logging.Logger) (*clientset.Clientset, *rest.Config, err
 		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
 		if err != nil {
 			log.Error("Failed to create LocalClientSet")
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
 	clientset, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
 		log.Error("Failed to create LocalClientSet")
-		return nil, nil, err
+		return nil, err
 	}
 
-	return clientset, clientConfig, err
+	k := &KubernetesClient{
+		Client:       clientset,
+		ClientConfig: clientConfig,
+		log:          log,
+	}
+	return k, err
 }
