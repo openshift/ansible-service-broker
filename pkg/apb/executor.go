@@ -69,10 +69,7 @@ func ExecuteApb(
 	}
 
 	secrets := GetSecrets(spec)
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		return executionContext, err
-	}
+	k8scli := clients.Kubernetes()
 
 	labels := map[string]string{
 		"apb-fqname": spec.FQName,

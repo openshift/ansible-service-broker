@@ -43,11 +43,7 @@ func (r LocalOpenShiftAdapter) GetImageNames() ([]string, error) {
 	r.Log.Debug("LocalOpenShiftAdapter::GetImageNames")
 	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 
-	openshiftClient, err := clients.Openshift(r.Log)
-	if err != nil {
-		r.Log.Errorf("Failed to instantiate OpenShift client")
-		return nil, err
-	}
+	openshiftClient := clients.Openshift()
 
 	images, err := openshiftClient.ListRegistryImages(r.Log)
 	if err != nil {
@@ -68,11 +64,7 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 		return nil, err
 	}
 
-	openshiftClient, err := clients.Openshift(r.Log)
-	if err != nil {
-		r.Log.Errorf("Failed to instantiate OpenShift client.")
-		return nil, err
-	}
+	openshiftClient := clients.Openshift()
 
 	fqImages, err := openshiftClient.ConvertRegistryImagesToSpecs(r.Log, imageNames)
 	if err != nil {
@@ -131,10 +123,7 @@ func (r LocalOpenShiftAdapter) loadSpec(yamlSpec []byte) (*apb.Spec, error) {
 }
 
 func (r LocalOpenShiftAdapter) getServiceIP(service string, namespace string) (string, error) {
-	k8s, err := clients.Kubernetes()
-	if err != nil {
-		return "", err
-	}
+	k8s := clients.Kubernetes()
 
 	serviceData, err := k8s.Client.CoreV1().Services(namespace).Get(service, meta_v1.GetOptions{})
 	if err != nil {

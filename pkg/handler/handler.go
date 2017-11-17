@@ -555,10 +555,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 }
 
 func isNamespaceDeleted(name string, log *logging.Logger) (bool, error) {
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		return false, err
-	}
+	k8scli := clients.Kubernetes()
 
 	namespace, err := k8scli.Client.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -698,10 +695,8 @@ func (h handler) printRequest(req *http.Request) {
 // the rules for the user in the namespace to determine if the user's roles
 // can cover the  all of the cluster role's rules.
 func (h handler) validateUser(userName, namespace string) (bool, int, error) {
-	openshiftClient, err := clients.Openshift(h.log)
-	if err != nil {
-		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
-	}
+	openshiftClient := clients.Openshift()
+
 	// Retrieving the rules for the user in the namespace.
 	prs, err := openshiftClient.SubjectRulesReview(userName, namespace, h.log)
 	if err != nil {

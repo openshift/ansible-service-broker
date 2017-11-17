@@ -17,8 +17,6 @@
 package clients
 
 import (
-	"sync"
-
 	etcd "github.com/coreos/etcd/client"
 )
 
@@ -26,10 +24,4 @@ var instances struct {
 	Etcd       etcd.Client
 	Kubernetes *KubernetesClient
 	Openshift  *OpenshiftClient
-}
-
-var once struct {
-	Etcd       sync.Once
-	Kubernetes sync.Once
-	Openshift  sync.Once
 }

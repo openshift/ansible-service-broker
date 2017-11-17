@@ -128,10 +128,7 @@ func readFile(fileName string) (string, string, error) {
 }
 
 func readSecret(secretName string, namespace string) (string, string, error) {
-	k8s, err := clients.Kubernetes()
-	if err != nil {
-		return "", "", err
-	}
+	k8s := clients.Kubernetes()
 
 	data, err := k8s.GetSecretData(secretName, namespace)
 	if err != nil {

@@ -19,7 +19,6 @@ package clients
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"unsafe"
@@ -237,28 +236,13 @@ func autoConvertV1PolicyRulesToAuthorizationPolicyRules(in []PolicyRule) ([]auth
 
 /* End of v1 openshift rest calls that are need. */
 
-// Openshift - Create a new openshift client if needed, returns reference
-func Openshift(log *logging.Logger) (*OpenshiftClient, error) {
-	errMsg := "Something went wrong while initializing openshift client!\n"
-	once.Openshift.Do(func() {
-		client, err := newOpenshift(log)
-		if err != nil {
-			log.Error(errMsg)
-			// NOTE: Looking to leverage panic recovery to gracefully handle this
-			// with things like retries or better intelligence, but the environment
-			// is probably in a unrecoverable state as far as the broker is concerned,
-			// and demands the attention of an operator.
-			panic(err.Error())
-		}
-		instances.Openshift = client
-	})
-	if instances.Openshift == nil {
-		return nil, errors.New("OpenShift client instance is nil")
-	}
-	return instances.Openshift, nil
+// Openshift - Get an openshift client
+func Openshift() *OpenshiftClient {
+	return instances.Openshift
 }
 
-func newOpenshift(log *logging.Logger) (*OpenshiftClient, error) {
+// NewOpenshift - Create an openshift client
+func NewOpenshift(log *logging.Logger) (*OpenshiftClient, error) {
 	// NOTE: Both the external and internal client object are using the same
 	// clientset library. Internal clientset normally uses a different
 	// library
@@ -280,6 +264,7 @@ func newOpenshift(log *logging.Logger) (*OpenshiftClient, error) {
 		return nil, err
 	}
 
+	instances.Openshift = clientset
 	return clientset, err
 }
 

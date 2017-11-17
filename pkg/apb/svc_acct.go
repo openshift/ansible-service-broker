@@ -227,12 +227,8 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return
 	}
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		s.log.Error("Something went wrong getting kubernetes client")
-		s.log.Errorf("%s", err.Error())
-		return
-	}
+	k8scli := clients.Kubernetes()
+
 	pod, err := k8scli.Client.CoreV1().Pods(executionContext.Namespace).Get(executionContext.PodName, metav1.GetOptions{})
 	if err != nil {
 		s.log.Errorf("Unable to retrieve pod - %v", err)
