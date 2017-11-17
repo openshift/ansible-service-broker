@@ -26,6 +26,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
 // KubernetesClient - Client to interact with Kubernetes API
@@ -76,6 +79,29 @@ func createOnce(log *logging.Logger) {
 	}
 
 	instances.Kubernetes = k8s
+}
+
+// CreateRoleBinding - Create a Role Binding
+func (k KubernetesClient) CreateRoleBinding(
+	roleBindingName string,
+	rbacSubjects []rbac.Subject,
+	namespace string,
+	roleRef rbac.RoleRef) error {
+
+	k.log.Error("Inside CreateRoleBinding")
+	k.log.Noticef("Creating RoleBinding %s", roleBindingName)
+	roleBinding := &rbac.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: roleBindingName,
+		},
+		Subjects: rbacSubjects,
+		RoleRef:  roleRef,
+	}
+	_, err := k.Client.RbacV1beta1().RoleBindings(namespace).Create(roleBinding)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func createClientConfigFromFile(configPath string) (*rest.Config, error) {

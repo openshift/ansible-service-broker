@@ -17,7 +17,6 @@
 package apb
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -57,40 +56,34 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 	svcAccountName := executionContext.PodName
 	roleBindingName := executionContext.PodName
 
-	k8scli, err := clients.Kubernetes(s.log)
-	if err != nil {
-		s.log.Error("Soemthing went wrong getting kubernetes client")
-		return "", errors.New(err.Error())
-	}
+	k8scli := clients.Kubernetes()
 	serviceAccount := &apicorev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: svcAccountName,
 		},
 	}
-	_, err = k8scli.CoreV1().ServiceAccounts(executionContext.Namespace).Create(serviceAccount)
+	_, err := k8scli.Client.CoreV1().ServiceAccounts(executionContext.Namespace).Create(serviceAccount)
 	if err != nil {
 		return "", err
 	}
 
 	s.log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
-	roleBinding := &rbac.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: roleBindingName,
-		},
-		Subjects: []rbac.Subject{
-			rbac.Subject{
-				Kind:      "ServiceAccount",
-				Name:      svcAccountName,
-				Namespace: executionContext.Namespace,
-			},
-		},
-		RoleRef: rbac.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     strings.ToLower(apbRole),
+
+	subjects := []rbac.Subject{
+		rbac.Subject{
+			Kind:      "ServiceAccount",
+			Name:      svcAccountName,
+			Namespace: executionContext.Namespace,
 		},
 	}
-	_, err = k8scli.RbacV1beta1().RoleBindings(executionContext.Namespace).Create(roleBinding)
+
+	roleRef := rbac.RoleRef{
+		APIGroup: "rbac.authorization.k8s.io",
+		Kind:     "ClusterRole",
+		Name:     strings.ToLower(apbRole),
+	}
+
+	err = k8scli.CreateRoleBinding(roleBindingName, subjects, executionContext.Namespace, roleRef)
 	if err != nil {
 		return "", err
 	}
@@ -115,7 +108,7 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 				Name:     apbRole,
 			},
 		}
-		_, err = k8scli.RbacV1beta1().RoleBindings(target).Create(targetRoleBinding)
+		_, err = k8scli.Client.RbacV1beta1().RoleBindings(target).Create(targetRoleBinding)
 		if err != nil {
 			return "", err
 		}
