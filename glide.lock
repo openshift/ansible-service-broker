@@ -1,5 +1,5 @@
-hash: 4727be1649870d446c2d9b38db320e667a638d316f034a8d1f83a13c4cab44f4
-updated: 2017-09-11T14:01:10.510868834-04:00
+hash: f2acb4a4961bc773a16da81a4063907651f189d33a7f5c04b271f60aba93697e
+updated: 2017-11-14T19:07:37.811514335-05:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -7,15 +7,8 @@ imports:
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
-- name: github.com/containers/image
-  version: 9d8632df37317401eae8cefff1f6d90198413a9f
-  subpackages:
-  - transports
-  - types
-- name: github.com/exponent-io/jsonpath
-  version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/coreos/etcd
-  version: 9d43462d174c664f5edf313dec0de31e1ef4ed47
+  version: f1d7dd87da3e8feab4aaf675b8e29c6a5ed5f58b
   subpackages:
   - auth/authpb
   - client
@@ -68,6 +61,8 @@ imports:
   version: dcef7f55730566d41eae5db10e7d6981829720f6
 - name: github.com/evanphx/json-patch
   version: ba18e35c5c1b36ef6334cad706eb681153d2d379
+- name: github.com/exponent-io/jsonpath
+  version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/analysis
@@ -159,7 +154,6 @@ imports:
   version: e7e903064f5e9eb5da98208bae10b475d4db0f8c
   subpackages:
   - prometheus
-  - prometheus/promhttp
 - name: github.com/prometheus/client_model
   version: fa8ad6fec33561be4280a8f0514318c79d7f6cb6
   subpackages:
@@ -178,6 +172,8 @@ imports:
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
+- name: github.com/Sirupsen/logrus
+  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/ugorji/go
@@ -513,7 +509,9 @@ imports:
   - pkg/api/service
   - pkg/api/util
   - pkg/api/v1
+  - pkg/api/v1/helper
   - pkg/api/v1/ref
+  - pkg/api/validation
   - pkg/apis/admissionregistration
   - pkg/apis/admissionregistration/v1alpha1
   - pkg/apis/apps
@@ -581,6 +579,7 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/storage/v1
   - pkg/client/clientset_generated/clientset/typed/storage/v1beta1
   - pkg/features
+  - pkg/registry/rbac/validation
   - pkg/security/apparmor
   - pkg/util
   - pkg/util/net/sets
