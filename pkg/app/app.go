@@ -97,7 +97,7 @@ func apiServer(log *logging.Logger, config Config, args Args, providers []auth.P
 	}
 
 	if len(providers) == 0 {
-		k8s, err := clients.Kubernetes()
+		k8s, err := clients.Kubernetes(log)
 		if err != nil {
 			return nil, err
 		}
@@ -171,7 +171,7 @@ func CreateApp() App {
 	app.log.Debug("Connecting Dao")
 	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
 
-	k8scli, err := clients.Kubernetes()
+	k8scli, err := clients.Kubernetes(app.log.Logger)
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
@@ -390,7 +390,7 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	log.Info("Etcd Version [Server: %s, Cluster: %s]", version.Server, version.Cluster)
 
 	log.Debug("Connecting to Cluster")
-	_, err = clients.Kubernetes()
+	_, err = clients.Kubernetes(log)
 	if err != nil {
 		return err
 	}
@@ -399,7 +399,7 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 }
 
 func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]rbac.PolicyRule, error) {
-	k8scli, err := clients.Kubernetes()
+	k8scli, err := clients.Kubernetes(log)
 	if err != nil {
 		return nil, err
 	}

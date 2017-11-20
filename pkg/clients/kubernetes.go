@@ -36,9 +36,8 @@ type KubernetesClient struct {
 }
 
 // Kubernetes - Create a new kubernetes client if needed, returns reference
-func Kubernetes() (*KubernetesClient, error) {
+func Kubernetes(log *logging.Logger) (*KubernetesClient, error) {
 	once.Kubernetes.Do(func() {
-		var log *logging.Logger
 		client, err := newKubernetes(log)
 		if err != nil {
 			log.Error(err.Error())

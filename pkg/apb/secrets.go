@@ -167,7 +167,7 @@ func paramInSecret(param ParameterDescriptor, secretKeys []string) bool {
 }
 
 func getSecretKeys(secretName, namespace string) ([]string, error) {
-	k8scli, err := clients.Kubernetes()
+	k8scli, err := clients.Kubernetes(secrets.log)
 	if err != nil {
 		return nil, err
 	}

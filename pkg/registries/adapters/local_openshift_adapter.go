@@ -131,7 +131,7 @@ func (r LocalOpenShiftAdapter) loadSpec(yamlSpec []byte) (*apb.Spec, error) {
 }
 
 func (r LocalOpenShiftAdapter) getServiceIP(service string, namespace string) (string, error) {
-	k8s, err := clients.Kubernetes()
+	k8s, err := clients.Kubernetes(r.Log)
 	if err != nil {
 		return "", err
 	}

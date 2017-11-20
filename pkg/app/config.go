@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
@@ -128,7 +129,8 @@ func readFile(fileName string) (string, string, error) {
 }
 
 func readSecret(secretName string, namespace string) (string, string, error) {
-	k8s, err := clients.Kubernetes()
+	var log *logging.Logger
+	k8s, err := clients.Kubernetes(log)
 	if err != nil {
 		return "", "", err
 	}
