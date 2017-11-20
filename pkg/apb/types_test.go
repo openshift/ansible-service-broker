@@ -90,6 +90,7 @@ var p = Plan{
 }
 
 const SpecVersion = "1.0"
+const SpecRuntime = 1
 const SpecName = "mediawiki123-apb"
 const SpecImage = "ansibleplaybookbundle/mediawiki123-apb"
 const SpecBindable = false
@@ -160,13 +161,14 @@ var SpecJSON = fmt.Sprintf(`
 	"tags": null,
 	"description": "%s",
 	"version": "%s",
+	"runtime": %d,
 	"name": "%s",
 	"image": "%s",
 	"bindable": %t,
 	"async": "%s",
 	"plans": %s
 }
-`, SpecDescription, SpecVersion, SpecName, SpecImage, SpecBindable, SpecAsync, SpecPlans)
+`, SpecDescription, SpecVersion, SpecRuntime, SpecName, SpecImage, SpecBindable, SpecAsync, SpecPlans)
 
 func TestSpecLoadJSON(t *testing.T) {
 
@@ -179,6 +181,7 @@ func TestSpecLoadJSON(t *testing.T) {
 	ft.AssertEqual(t, s.Description, SpecDescription)
 	ft.AssertEqual(t, s.FQName, SpecName)
 	ft.AssertEqual(t, s.Version, SpecVersion)
+	ft.AssertEqual(t, s.Runtime, SpecRuntime)
 	ft.AssertEqual(t, s.Image, SpecImage)
 	ft.AssertEqual(t, s.Bindable, SpecBindable)
 	ft.AssertEqual(t, s.Async, SpecAsync)
@@ -188,6 +191,7 @@ func TestSpecLoadJSON(t *testing.T) {
 func TestSpecDumpJSON(t *testing.T) {
 	s := Spec{
 		Description: SpecDescription,
+		Runtime:     SpecRuntime,
 		Version:     SpecVersion,
 		FQName:      SpecName,
 		Image:       SpecImage,

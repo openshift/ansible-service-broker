@@ -29,8 +29,10 @@ import (
 var SpecTags = []string{"latest", "old-release"}
 
 const SpecID = "ab094014-b740-495e-b178-946d5aa97ebf"
-const SpecBadVersion = "1.0"
-const SpecVersion = "2.0"
+const SpecBadVersion = "2.0"
+const SpecVersion = "1.0"
+const SpecRuntime = 1
+const SpecBadRuntime = 0
 const SpecName = "etherpad-apb"
 const SpecImage = "fusor/etherpad-apb"
 const SpecBindable = false
@@ -93,6 +95,7 @@ var p = apb.Plan{
 
 var s = apb.Spec{
 	Version:     SpecVersion,
+	Runtime:     SpecRuntime,
 	ID:          SpecID,
 	Description: SpecDescription,
 	FQName:      SpecName,
@@ -105,6 +108,7 @@ var s = apb.Spec{
 
 var noPlansSpec = apb.Spec{
 	Version:     SpecVersion,
+	Runtime:     SpecRuntime,
 	ID:          SpecID,
 	Description: SpecDescription,
 	FQName:      SpecName,
@@ -115,6 +119,7 @@ var noPlansSpec = apb.Spec{
 }
 
 var noVersionSpec = apb.Spec{
+	Runtime:     SpecRuntime,
 	ID:          SpecID,
 	Description: SpecDescription,
 	FQName:      SpecName,
@@ -127,6 +132,20 @@ var noVersionSpec = apb.Spec{
 
 var badVersionSpec = apb.Spec{
 	Version:     SpecBadVersion,
+	Runtime:     SpecRuntime,
+	ID:          SpecID,
+	Description: SpecDescription,
+	FQName:      SpecName,
+	Image:       SpecImage,
+	Tags:        SpecTags,
+	Bindable:    SpecBindable,
+	Async:       SpecAsync,
+	Plans:       []apb.Plan{p},
+}
+
+var badRuntimeSpec = apb.Spec{
+	Version:     SpecVersion,
+	Runtime:     SpecBadRuntime,
 	ID:          SpecID,
 	Description: SpecDescription,
 	FQName:      SpecName,
@@ -217,7 +236,24 @@ func setUpBadVersion() Registry {
 	a = &TestingAdapter{
 		Name:   "testing",
 		Images: []string{"image1-apb", "image2"},
-		Specs:  []*apb.Spec{&noVersionSpec},
+		Specs:  []*apb.Spec{&badVersionSpec},
+		Called: map[string]bool{},
+	}
+	filter := Filter{}
+	c := Config{}
+	log := &logging.Logger{}
+	r = Registry{config: c,
+		adapter: a,
+		log:     log,
+		filter:  filter}
+	return r
+}
+
+func setUpBadRuntime() Registry {
+	a = &TestingAdapter{
+		Name:   "testing",
+		Images: []string{"image1-apb", "image2"},
+		Specs:  []*apb.Spec{&badRuntimeSpec},
 		Called: map[string]bool{},
 	}
 	filter := Filter{}
@@ -267,6 +303,17 @@ func TestRegistryLoadSpecsNoVersion(t *testing.T) {
 
 func TestRegistryLoadSpecsBadVersion(t *testing.T) {
 	r := setUpBadVersion()
+	specs, _, err := r.LoadSpecs()
+	if err != nil {
+		ft.AssertTrue(t, false)
+	}
+	ft.AssertTrue(t, a.Called["GetImageNames"])
+	ft.AssertTrue(t, a.Called["FetchSpecs"])
+	ft.AssertEqual(t, len(specs), 0)
+}
+
+func TestRegistryLoadSpecsBadRuntime(t *testing.T) {
+	r := setUpBadRuntime()
 	specs, _, err := r.LoadSpecs()
 	if err != nil {
 		ft.AssertTrue(t, false)

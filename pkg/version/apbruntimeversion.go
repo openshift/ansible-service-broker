@@ -17,11 +17,11 @@
 package version
 
 // These constants describe the minimum and maximum
-// accepted APB spec versions. They are used to filter
+// accepted APB runtime versions. They are used to filter
 // acceptible APBs.
 
-// MinAPBVersion constant to describe minimum supported spec version
-const MinAPBVersion = "1.0"
+// MinRuntimeVersion constant to describe minimum supported runtime version
+const MinRuntimeVersion = 1
 
-// MaxAPBVersion contant to describe maximum supported spec version
-const MaxAPBVersion = "1.0"
+// MaxRuntimeVersion contant to describe maximum supported runtime version
+const MaxRuntimeVersion = 2
