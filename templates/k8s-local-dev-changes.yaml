@@ -18,25 +18,25 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-   name: etcd
+   name: asb-etcd
    namespace: ansible-service-broker
 spec:
   ports:
     - name: etcd-advertise
       port: 2379
   selector:
-    app: ansible-service-broker
-    service: etcd
+    app: etcd
+    service: asb-etcd
 
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: etcd
+  name: asb-etcd
   namespace: ansible-service-broker
   labels:
-    app: ansible-service-broker
-    service: etcd
+    app: etcd
+    service: asb-etcd
 spec:
   strategy:
     type: Recreate
@@ -44,8 +44,8 @@ spec:
   template:
     metadata:
       labels:
-        app: ansible-service-broker
-        service: etcd
+        app: etcd
+        service: asb-etcd
     spec:
       restartPolicy: Always
       containers:
