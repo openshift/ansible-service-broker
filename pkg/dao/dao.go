@@ -61,10 +61,8 @@ func NewDao(config Config, log *logging.Logger) (*Dao, error) {
 		log:    log,
 	}
 
-	etcdClient, err := clients.Etcd(config.GetEtcdConfig(), log)
-	if err != nil {
-		return nil, err
-	}
+	etcdClient := clients.Etcd()
+
 	dao.client = etcdClient
 	dao.kapi = client.NewKeysAPI(dao.client)
 	return &dao, nil

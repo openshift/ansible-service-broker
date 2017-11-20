@@ -8,9 +8,9 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 
+	etcd "github.com/coreos/etcd/client"
 	"github.com/coreos/etcd/version"
 	logging "github.com/op/go-logging"
 )
@@ -82,20 +82,23 @@ func TestEtcd(t *testing.T) {
 			}()
 
 			log := logging.MustGetLogger("test")
+			var err error
+			var cl etcd.Client
 			if tc.ResetRun {
-				once.Etcd = sync.Once{}
+				cl, err = NewEtcd(tc.Config, log)
 			}
+			cl = Etcd()
 			if tc.NilOutExistingClient {
 				instances.Etcd = nil
 			}
-			cl, err := Etcd(tc.Config, log)
+
 			if !tc.ShouldError && err != nil {
 				t.Fatalf("failed to get etcd client - %v client - %v", err, cl)
 			} else if tc.ShouldError && err != nil {
 				t.Logf("Should error and retrieved error - %v", err)
 				return
 			} else if tc.ShouldError && err == nil {
-				t.Fatalf("failed to get error - %v", err)
+				t.Fatalf("failed to get error - %v", err.Error())
 			}
 			t.Logf("client - %v", cl.Endpoints())
 			if tc.Config.EtcdCaFile != "" {

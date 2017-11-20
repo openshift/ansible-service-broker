@@ -97,10 +97,8 @@ func apiServer(log *logging.Logger, config Config, args Args, providers []auth.P
 	}
 
 	if len(providers) == 0 {
-		k8s, err := clients.Kubernetes()
-		if err != nil {
-			return nil, err
-		}
+		k8s := clients.Kubernetes()
+
 		client, err := authenticationclient.NewForConfig(k8s.ClientConfig)
 		if err != nil {
 			return nil, err
@@ -171,11 +169,7 @@ func CreateApp() App {
 	app.log.Debug("Connecting Dao")
 	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
 
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
+	k8scli := clients.Kubernetes()
 
 	restcli := k8scli.Client.CoreV1().RESTClient()
 	body, err := restcli.Get().AbsPath("/version").Do().Raw()
@@ -374,7 +368,7 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	log.Notice("Initializing clients...")
 	log.Debug("Trying to connect to etcd")
 
-	etcdClient, err := clients.Etcd(ec, log)
+	etcdClient, err := clients.NewEtcd(ec, log)
 	if err != nil {
 		return err
 	}
@@ -390,7 +384,12 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	log.Info("Etcd Version [Server: %s, Cluster: %s]", version.Server, version.Cluster)
 
 	log.Debug("Connecting to Cluster")
-	_, err = clients.Kubernetes()
+	_, err = clients.NewKubernetes(log)
+	if err != nil {
+		return err
+	}
+
+	_, err = clients.NewOpenshift(log)
 	if err != nil {
 		return err
 	}
@@ -399,10 +398,7 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 }
 
 func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]rbac.PolicyRule, error) {
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		return nil, err
-	}
+	k8scli := clients.Kubernetes()
 
 	// Retrieve Cluster Role that has been defined.
 	k8sRole, err := k8scli.Client.Rbac().ClusterRoles().Get(clusterRole, metav1.GetOptions{})
