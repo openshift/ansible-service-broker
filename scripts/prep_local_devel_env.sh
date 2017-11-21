@@ -167,10 +167,9 @@ done
 
 TERMINATION="reencrypt"
 
-kubectl delete deployment asb -n ${ASB_PROJECT}
-kubectl delete deployment asb-etcd -n ${ASB_PROJECT}
+cluster::deployments delete asb -n ${ASB_PROJECT}
+cluster::deployments delete asb-etcd -n ${ASB_PROJECT}
 kubectl delete endpoints asb -n ${ASB_PROJECT}
-kubectl delete service asb  -n ${ASB_PROJECT}
 cluster::routes delete asb-etcd -n ${ASB_PROJECT}
 kubectl delete service asb-etcd -n ${ASB_PROJECT}
 

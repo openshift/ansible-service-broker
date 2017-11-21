@@ -13,62 +13,54 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: etcd
-    labels:
-      app: ansible-service-broker
-      service: etcd
+    name: asb-etcd
+    namespace: ansible-service-broker
   spec:
     ports:
       - name: etcd-advertise
         port: 2379
     selector:
-      app: ansible-service-broker
-      service: etcd
+      app: etcd
+      service: asb-etcd
 
-- apiVersion: extensions/v1beta1
-  kind: Deployment
+- apiVersion: v1
+  kind: DeploymentConfig
   metadata:
-    name: etcd
+    name: asb-etcd
+    namespace: ansible-service-broker
     labels:
-      app: ansible-service-broker
-      service: etcd
+      app: etcd
+      service: asb-etcd
   spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: ansible-service-broker
-        service: etcd
     strategy:
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
-      type: RollingUpdate
+      type: Recreate
+    replicas: 1
     template:
       metadata:
         labels:
-          app: ansible-service-broker
-          service: etcd
+          app: etcd
+          service: asb-etcd
       spec:
+        restartPolicy: Always
         containers:
-        - image: ${ETCD_IMAGE}
-          name: etcd
-          imagePullPolicy: IfNotPresent
-          terminationMessagePath: /tmp/termination-log
-          workingDir: /etcd
-          args:
-            - ${ETCD_PATH}
-            - --data-dir=/data
-            - --listen-client-urls=http://0.0.0.0:2379
-            - --advertise-client-urls=http://0.0.0.0:2379
-          ports:
-          - containerPort: 2379
-            protocol: TCP
-          env:
-          - name: ETCDCTL_API
-            value: "3"
-          volumeMounts:
-            - mountPath: /data
-              name: etcd
+          - image: "quay.io/coreos/etcd:latest"
+            name: main
+            imagePullPolicy: IfNotPresent
+            workingDir: /etcd
+            args:
+              - /usr/local/bin/etcd
+              - --data-dir=/data
+              - --listen-client-urls=http://0.0.0.0:2379
+              - --advertise-client-urls=http://0.0.0.0:2379
+            ports:
+            - containerPort: 2379
+              protocol: TCP
+            env:
+            - name: ETCDCTL_API
+              value: "3"
+            volumeMounts:
+              - mountPath: /data
+                name: etcd
         volumes:
           - name: etcd
             persistentVolumeClaim:
@@ -84,7 +76,7 @@ objects:
   spec:
     to:
       kind: Service
-      name: etcd
+      name: asb-etcd
     port:
       targetPort: ${ETCD_TARGET_PORT}
 
@@ -108,44 +100,22 @@ objects:
   kind: Endpoints
   metadata:
     labels:
-      app: ansible-service-broker
-      service: asb
+      app: etcd
+      service: asb-etcd
     name: asb
   subsets:
   - addresses:
     - ip: ${BROKER_IP_ADDR}
     ports:
-    - name: port-${BROKER_PORT}
-      port: ${BROKER_PORT}
+    - name: port-1338
+      port: 1338
       protocol: TCP
-
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app: ansible-service-broker
-      service: asb
-    name: asb
-  spec:
-    ports:
-    -
-      name: port-${BROKER_PORT}
-      port: ${BROKER_PORT}
-      protocol: TCP
-      #targetPort: ${BROKER_PORT}
-      nodePort: 0
-  selector: {}
 
 parameters:
 - description: Name of the etcd target port to connect to
   displayname: ETCD_TARGET_PORT
   name: ETCD_TARGET_PORT
   value: etcd-advertise
-
-- description: Brokers port
-  displayname: BROKER_PORT
-  name: BROKER_PORT
-  value: "1338"
 
 - description: Brokers IP Address
   displayname: BROKER_IP_ADDR
