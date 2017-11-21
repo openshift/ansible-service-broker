@@ -88,7 +88,8 @@ func TestEtcd(t *testing.T) {
 			if tc.NilOutExistingClient {
 				instances.Etcd = nil
 			}
-			cl, err := Etcd(tc.Config, log)
+			etcdConfig = tc.Config
+			cl, err := Etcd(log)
 			if !tc.ShouldError && err != nil {
 				t.Fatalf("failed to get etcd client - %v client - %v", err, cl)
 			} else if tc.ShouldError && err != nil {
@@ -171,7 +172,8 @@ func TestNewTransport(t *testing.T) {
 					t.Fatalf("panic if test - %v", tc.Name)
 				}
 			}()
-			tr, err := newTransport(tc.Config)
+			etcdConfig = tc.Config
+			tr, err := newTransport()
 			if err != nil && !tc.ShouldError {
 				t.Fatalf("Test failed to get a new transport - %v", err)
 			} else if err != nil && tc.ShouldError {

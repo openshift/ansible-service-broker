@@ -27,7 +27,6 @@ import (
 // ProvisionJob - Job to provision
 type ProvisionJob struct {
 	serviceInstance *apb.ServiceInstance
-	clusterConfig   apb.ClusterConfig
 	log             *logging.Logger
 }
 
@@ -48,12 +47,10 @@ func (m ProvisionMsg) Render() string {
 }
 
 // NewProvisionJob - Create a new provision job.
-func NewProvisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
-	log *logging.Logger,
+func NewProvisionJob(serviceInstance *apb.ServiceInstance, log *logging.Logger,
 ) *ProvisionJob {
 	return &ProvisionJob{
 		serviceInstance: serviceInstance,
-		clusterConfig:   clusterConfig,
 		log:             log,
 	}
 }
@@ -61,7 +58,7 @@ func NewProvisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.Clu
 // Run - run the provision job.
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	metrics.ProvisionJobStarted()
-	podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
+	podName, extCreds, err := apb.Provision(p.serviceInstance, p.log)
 
 	if err != nil {
 		p.log.Error("broker::Provision error occurred.")

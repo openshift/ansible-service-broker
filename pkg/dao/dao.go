@@ -25,27 +25,8 @@ import (
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
-	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/pborman/uuid"
 )
-
-// Config - contains dao configuration
-type Config struct {
-	EtcdHost       string `yaml:"etcd_host"`
-	EtcdPort       string `yaml:"etcd_port"`
-	EtcdCaFile     string `yaml:"etcd_ca_file"`
-	EtcdClientCert string `yaml:"etcd_client_cert"`
-	EtcdClientKey  string `yaml:"etcd_client_key"`
-}
-
-// GetEtcdConfig - Simple EtcdConfig getter
-func (c Config) GetEtcdConfig() clients.EtcdConfig {
-	return clients.EtcdConfig{EtcdHost: c.EtcdHost,
-		EtcdPort:       c.EtcdPort,
-		EtcdClientCert: c.EtcdClientCert,
-		EtcdCaFile:     c.EtcdCaFile,
-		EtcdClientKey:  c.EtcdClientKey}
-}
 
 // Dao - object to interface with the data store.
 type Dao struct {
@@ -55,12 +36,12 @@ type Dao struct {
 }
 
 // NewDao - Create a new Dao object
-func NewDao(config *config.Config, log *logging.Logger) (*Dao, error) {
+func NewDao(log *logging.Logger) (*Dao, error) {
 	dao := Dao{
 		log: log,
 	}
 
-	etcdClient, err := clients.Etcd(config, log)
+	etcdClient, err := clients.Etcd(log)
 	if err != nil {
 		return nil, err
 	}

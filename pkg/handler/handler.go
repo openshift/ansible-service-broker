@@ -38,11 +38,8 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
-<<<<<<< HEAD
 	"github.com/openshift/ansible-service-broker/pkg/clients"
-=======
 	"github.com/openshift/ansible-service-broker/pkg/config"
->>>>>>> changing everyting for configuration changes
 	"github.com/pborman/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/kubernetes/pkg/api/v1"
@@ -63,18 +60,11 @@ const (
 // TODO: implement asynchronous operations
 
 type handler struct {
-<<<<<<< HEAD
 	router           mux.Router
 	broker           broker.Broker
 	log              *logging.Logger
-	brokerConfig     broker.Config
+	brokerConfig     *config.Config
 	clusterRoleRules []rbac.PolicyRule
-=======
-	router       mux.Router
-	broker       broker.Broker
-	log          *logging.Logger
-	brokerConfig *config.Config
->>>>>>> changing everyting for configuration changes
 }
 
 // authHandler - does the authentication for the routes
@@ -112,6 +102,7 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 		//Retrieve the UserInfo from request if available.
 		userJSONStr := r.Header.Get(OriginatingIdentityHeader)
 		if userJSONStr != "" {
+			log.Debugf("here")
 			userStr := strings.Split(userJSONStr, " ")
 			if len(userStr) != 2 {
 				//If we do not understand the user, but something was sent, we should return a 404.
@@ -122,6 +113,7 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 				})
 				return
 			}
+			log.Debugf("here")
 			userInfo := broker.UserInfo{}
 			uStr, err := base64.StdEncoding.DecodeString(userStr[1])
 			if err != nil {
@@ -133,6 +125,7 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 				})
 				return
 			}
+			log.Debugf("here")
 			err = json.Unmarshal(uStr, &userInfo)
 			if err != nil {
 				log.Debugf("Unable to marshal into object "+
@@ -143,6 +136,7 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 				})
 				return
 			}
+			log.Debugf("%#v", userInfo)
 			r = r.WithContext(context.WithValue(
 				r.Context(), UserInfoContext, userInfo),
 			)
@@ -168,13 +162,8 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-<<<<<<< HEAD
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string,
-	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule,
-) http.Handler {
-=======
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig *config.Config) http.Handler {
->>>>>>> changing everyting for configuration changes
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig *config.Config, prefix string,
+	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule) http.Handler {
 	h := handler{
 		router:           *mux.NewRouter(),
 		broker:           b,
@@ -204,24 +193,13 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig *config.Confi
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
 
-<<<<<<< HEAD
-	if h.brokerConfig.DevBroker {
-		s.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
-		s.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
-		s.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
-	}
-
-	return handlers.LoggingHandler(os.Stdout, authHandler(userInfoHandler(h, log), providers, log))
-=======
 	if brokerConfig.GetBool("broker.dev_broker") {
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
 		h.router.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	providers := auth.GetProviders(brokerConfig, log)
-	return handlers.LoggingHandler(os.Stdout, authHandler(h, providers, log))
->>>>>>> changing everyting for configuration changes
+	return handlers.LoggingHandler(os.Stdout, userInfoHandler(authHandler(h, providers, log), log))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -267,7 +245,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -330,7 +308,7 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	// ignore the error, if async can't be parsed it will be false
 	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -404,7 +382,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		return
 	}
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -480,7 +458,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		}
 	}
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -550,7 +528,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")

@@ -40,7 +40,20 @@ type EtcdConfig struct {
 	EtcdCaFile     string `yaml:"etcd_ca_file"`
 	EtcdClientCert string `yaml:"etcd_client_cert"`
 	EtcdClientKey  string `yaml:"etcd_client_key"`
-	EtcdPort       string `yaml:"etcd_port"`
+	EtcdPort       int    `yaml:"etcd_port"`
+}
+
+var etcdConfig EtcdConfig
+
+// InitEtcdConfig - Initialize the configuration for etcd.
+func InitEtcdConfig(config *config.Config) {
+	etcdConfig = EtcdConfig{
+		EtcdHost:       config.GetString("dao.etcd_host"),
+		EtcdPort:       config.GetInt("dao.etcd_port"),
+		EtcdCaFile:     config.GetString("dao.etcd_ca_file"),
+		EtcdClientKey:  config.GetString("dao.etcd_client_key"),
+		EtcdClientCert: config.GetString("dao.etcd_client_cert"),
+	}
 }
 
 // GetEtcdVersion - Connects to ETCD cluster and retrieves server/version info
@@ -73,10 +86,10 @@ func GetEtcdVersion(ec EtcdConfig) (string, string, error) {
 }
 
 // Etcd - Create a new etcd client if needed, returns reference
-func Etcd(config *config.Config, log *logging.Logger) (etcd.Client, error) {
+func Etcd(log *logging.Logger) (etcd.Client, error) {
 	errMsg := "Something went wrong intializing etcd client!"
 	once.Etcd.Do(func() {
-		client, err := newEtcd(config, log)
+		client, err := newEtcd(log)
 		if err != nil {
 			log.Error(errMsg)
 			// NOTE: Looking to leverage panic recovery to gracefully handle this
@@ -95,21 +108,13 @@ func Etcd(config *config.Config, log *logging.Logger) (etcd.Client, error) {
 	return instances.Etcd, nil
 }
 
-func newEtcd(config *config.Config, log *logging.Logger) (etcd.Client, error) {
+func newEtcd(log *logging.Logger) (etcd.Client, error) {
 	// TODO: Config validation
-<<<<<<< HEAD
-	endpoints := []string{etcdEndpoint(config)}
-
-	transport, err := newTransport(config)
-=======
-	host := config.GetString("dao.etcd_host")
-	port := config.GetString("dao.etcd_port")
-	endpoints := []string{etcdEndpoint(host, port)}
->>>>>>> changing everyting for configuration changes
-
+	endpoints := []string{etcdEndpoint()}
+	transport, err := newTransport()
 	log.Info("== ETCD CX ==")
-	log.Infof("EtcdHost: %s", host)
-	log.Infof("EtcdPort: %s", port)
+	log.Infof("EtcdHost: %s", etcdConfig.EtcdHost)
+	log.Infof("EtcdPort: %v", etcdConfig.EtcdPort)
 	log.Infof("Endpoints: %v", endpoints)
 
 	etcdClient, err := etcd.New(etcd.Config{
@@ -124,18 +129,18 @@ func newEtcd(config *config.Config, log *logging.Logger) (etcd.Client, error) {
 	return etcdClient, err
 }
 
-func newTransport(config EtcdConfig) (etcd.CancelableTransport, error) {
-	if config.EtcdClientCert == "" && config.EtcdClientKey == "" && config.EtcdCaFile == "" {
+func newTransport() (etcd.CancelableTransport, error) {
+	if etcdConfig.EtcdClientCert == "" && etcdConfig.EtcdClientKey == "" && etcdConfig.EtcdCaFile == "" {
 		return etcd.DefaultTransport, nil
 	}
 	info := transport.TLSInfo{}
-	if config.EtcdClientCert != "" && config.EtcdClientKey != "" {
-		info.CertFile = config.EtcdClientCert
-		info.KeyFile = config.EtcdClientKey
+	if etcdConfig.EtcdClientCert != "" && etcdConfig.EtcdClientKey != "" {
+		info.CertFile = etcdConfig.EtcdClientCert
+		info.KeyFile = etcdConfig.EtcdClientKey
 	}
 
-	if config.EtcdCaFile != "" {
-		info.CAFile = config.EtcdCaFile
+	if etcdConfig.EtcdCaFile != "" {
+		info.CAFile = etcdConfig.EtcdCaFile
 	}
 
 	cfg, err := info.ClientConfig()
@@ -157,9 +162,9 @@ func newTransport(config EtcdConfig) (etcd.CancelableTransport, error) {
 	return tr, nil
 }
 
-func etcdEndpoint(config EtcdConfig) string {
-	if config.EtcdCaFile != "" {
-		return fmt.Sprintf("https://%s:%s", config.EtcdHost, config.EtcdPort)
+func etcdEndpoint() string {
+	if etcdConfig.EtcdCaFile != "" {
+		return fmt.Sprintf("https://%s:%v", etcdConfig.EtcdHost, etcdConfig.EtcdPort)
 	}
-	return fmt.Sprintf("http://%s:%s", config.EtcdHost, config.EtcdPort)
+	return fmt.Sprintf("http://%s:%v", etcdConfig.EtcdHost, etcdConfig.EtcdPort)
 }

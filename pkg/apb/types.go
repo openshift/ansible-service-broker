@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/pborman/uuid"
 )
 
@@ -147,6 +148,23 @@ type ClusterConfig struct {
 	Namespace            string `yaml:"namespace"`
 	KeepNamespace        bool   `yaml:"keep_namespace"`
 	KeepNamespaceOnError bool   `yaml:"keep_namespace_on_error"`
+}
+
+// ClusterConfiguration that should be used by the abp package.
+var clusterConfig ClusterConfig
+
+// InitializeClusterConfig - initialize the cluster config.
+func InitializeClusterConfig(config *config.Config) {
+	clusterConfig = ClusterConfig{
+		Host:                 config.GetString("host"),
+		CAFile:               config.GetString("ca_file"),
+		BearerTokenFile:      config.GetString("bearer_token_file"),
+		PullPolicy:           config.GetString("image_pull_policy"),
+		SandboxRole:          config.GetString("sandbox_role"),
+		Namespace:            config.GetString("namespace"),
+		KeepNamespace:        config.GetBool("keep_namespace"),
+		KeepNamespaceOnError: config.GetBool("keep_namespace_on_error"),
+	}
 }
 
 const (

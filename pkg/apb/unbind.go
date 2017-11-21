@@ -29,12 +29,7 @@ import (
 // github.com/op/go-logging, which is used all over the broker
 // Maybe apb defines its own interface and accepts that optionally
 // Little looser, but still not great
-func Unbind(
-	instance *ServiceInstance,
-	parameters *Parameters,
-	clusterConfig ClusterConfig,
-	log *logging.Logger,
-) error {
+func Unbind(instance *ServiceInstance, parameters *Parameters, log *logging.Logger) error {
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                            ")
 	log.Notice("============================================================")
@@ -44,14 +39,7 @@ func Unbind(
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
-	executionContext, err := ExecuteApb(
-		"unbind",
-		clusterConfig,
-		instance.Spec,
-		instance.Context,
-		parameters,
-		log,
-	)
+	executionContext, err := ExecuteApb("unbind", instance.Spec, instance.Context, parameters, log)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,

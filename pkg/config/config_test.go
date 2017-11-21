@@ -140,12 +140,18 @@ func TestConfigGetString(t *testing.T) {
 
 func TestConfigGetSliceString(t *testing.T) {
 	testString := config.GetSliceOfStrings("registry.dh.black_list")
-	testInvalidString := config.GetString("makes.no.sense")
+	whiteList := config.GetSliceOfStrings("registry.dh.white_list")
 	value := []string{"malicious.*-apb$", "^specific-blacklist-apb$"}
+	whiteListValue := []string{"*-apb$"}
+	if len(testString) == 0 || len(whiteList) == 0 {
+		t.Fail()
+	}
 	for i, str := range testString {
 		ft.AssertEqual(t, value[i], str)
 	}
-	ft.AssertEqual(t, "", testInvalidString)
+	for i, str := range whiteList {
+		ft.AssertEqual(t, whiteListValue[i], str)
+	}
 }
 
 func TestConfigGetFloat32(t *testing.T) {
@@ -173,6 +179,7 @@ func TestConfigGetBool(t *testing.T) {
 
 func TestConfigGetSubMap(t *testing.T) {
 	testInvalidSubMap := config.GetSubConfig("makes.no.sense")
+	testNoNameArray := config.GetSubConfig("dh_no_names")
 	testSubMap := config.GetSubConfig("registry")
 	ft.AssertEqual(t, testSubMap.GetString("dh.name"), "dh")
 	ft.AssertEqual(t, testSubMap.GetString("play.user"), "shurley")
@@ -183,4 +190,5 @@ func TestConfigGetSubMap(t *testing.T) {
 	ft.AssertEqual(t, testSubMap.GetString("dh.type"), "dockerhub")
 	ft.AssertEqual(t, testSubMap.GetString("play.type"), "dockerhub")
 	ft.AssertTrue(t, testInvalidSubMap.Empty())
+	ft.AssertTrue(t, testNoNameArray.Empty())
 }

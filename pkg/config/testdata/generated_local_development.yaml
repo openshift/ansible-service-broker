@@ -6,6 +6,8 @@ registry:
     user: shurley
     pass: testingboom
     org: shurley
+    white_list:
+    - "*-apb$"
     black_list:
       - "malicious.*-apb$"
       - "^specific-blacklist-apb$"

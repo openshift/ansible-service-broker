@@ -122,11 +122,11 @@ func InitializeSecretsCache(con *config.Config, log *logging.Logger) {
 
 // FilterSecrets - Filters all parameters masked by a secret out of the given
 // specs
-func FilterSecrets(inSpecs []*Spec, config ClusterConfig) ([]*Spec, error) {
+func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 	for _, spec := range inSpecs {
 		secrets.log.Debugf("Filtering secrets from spec %v", spec.FQName)
 		for _, secret := range GetSecrets(spec) {
-			secretKeys, err := getSecretKeys(secret, config.Namespace)
+			secretKeys, err := getSecretKeys(secret, clusterConfig.Namespace)
 			if err != nil {
 				return nil, err
 			}

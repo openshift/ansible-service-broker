@@ -28,11 +28,8 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-<<<<<<< HEAD
-	"github.com/openshift/ansible-service-broker/pkg/metrics"
-=======
 	"github.com/openshift/ansible-service-broker/pkg/config"
->>>>>>> changing everyting for configuration changes
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries/adapters"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 )
@@ -182,19 +179,23 @@ func (r Registry) RegistryName() string {
 
 // NewRegistry - Create a new registry from the registry config.
 func NewRegistry(con *config.Config, log *logging.Logger) (Registry, error) {
+	log.Debugf("configu - %#v", con)
 	var adapter adapters.Adapter
 	configuration := Config{
-		URL:       con.GetString("url"),
-		User:      con.GetString("user"),
-		Pass:      con.GetString("pass"),
-		Org:       con.GetString("org"),
-		Tag:       con.GetString("tag"),
-		Type:      con.GetString("type"),
-		Name:      con.GetString("name"),
-		Images:    con.GetSliceOfStrings("images"),
-		Fail:      con.GetBool("fail_on_error"),
-		WhiteList: con.GetSliceOfStrings("white_list"),
-		BlackList: con.GetSliceOfStrings("black_list"),
+		URL:        con.GetString("url"),
+		User:       con.GetString("user"),
+		Pass:       con.GetString("pass"),
+		Org:        con.GetString("org"),
+		Tag:        con.GetString("tag"),
+		Type:       con.GetString("type"),
+		Name:       con.GetString("name"),
+		Images:     con.GetSliceOfStrings("images"),
+		Namespaces: con.GetSliceOfStrings("namespaces"),
+		Fail:       con.GetBool("fail_on_error"),
+		WhiteList:  con.GetSliceOfStrings("white_list"),
+		BlackList:  con.GetSliceOfStrings("black_list"),
+		AuthType:   con.GetString("auth_type"),
+		AuthName:   con.GetString("auth_name"),
 	}
 	if !configuration.Validate() {
 		return Registry{}, errors.New("unable to validate registry name")
@@ -215,20 +216,12 @@ func NewRegistry(con *config.Config, log *logging.Logger) (Registry, error) {
 		u.Scheme = "http"
 	}
 	c := adapters.Configuration{URL: u,
-<<<<<<< HEAD
-		User:       config.User,
-		Pass:       config.Pass,
-		Org:        config.Org,
-		Images:     config.Images,
-		Namespaces: config.Namespaces,
-		Tag:        config.Tag}
-=======
-		User:   configuration.User,
-		Pass:   configuration.Pass,
-		Org:    configuration.Org,
-		Images: configuration.Images,
-		Tag:    configuration.Tag}
->>>>>>> changing everyting for configuration changes
+		User:       configuration.User,
+		Pass:       configuration.Pass,
+		Org:        configuration.Org,
+		Images:     configuration.Images,
+		Namespaces: configuration.Namespaces,
+		Tag:        configuration.Tag}
 
 	switch strings.ToLower(configuration.Type) {
 	case "rhcc":

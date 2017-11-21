@@ -76,12 +76,12 @@ type App struct {
 	engine   *broker.WorkEngine
 }
 
-func apiServer(log *logging.Logger, config Config, args Args, providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
+func apiServer(log *logging.Logger, config *config.Config, args Args, providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
 	log.Debug("calling NewSecureServingOptions")
 	secureServing := genericoptions.NewSecureServingOptions()
 	secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
-		CertFile: config.Broker.SSLCert,
-		KeyFile:  config.Broker.SSLCertKey,
+		CertFile: config.GetString("broker.ssl_cert"),
+		KeyFile:  config.GetString("broker.ssl_cert_key"),
 	}}
 	secureServing.BindPort = 1338
 	secureServing.BindAddress = net.ParseIP("0.0.0.0")
@@ -224,8 +224,10 @@ func CreateApp() App {
 	// Initialize Metrics.
 	metrics.Init(app.log.Logger)
 	app.log.Debug("Creating AnsibleBroker")
+	// Intiialize the cluster config.
+	apb.InitializeClusterConfig(app.config.GetSubConfig("openshift"))
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.config.GetSubConfig("openshift"), app.registry, *app.engine, app.config.GetSubConfig("broker"),
+		app.dao, app.log.Logger, app.registry, *app.engine, app.config.GetSubConfig("broker"),
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
 		app.log.Error(err.Error())
@@ -297,7 +299,7 @@ func (a *App) Start() {
 		}()
 	}
 	//Retrieve the auth providers if basic auth is configured.
-	providers := auth.GetProviders(a.config.Broker.Auth, a.log.Logger)
+	providers := auth.GetProviders(a.config, a.log.Logger)
 
 	genericserver, servererr := apiServer(a.log.Logger, a.config, a.args, providers)
 	if servererr != nil {
@@ -306,8 +308,8 @@ func (a *App) Start() {
 	}
 
 	rules := []rbac.PolicyRule{}
-	if !a.config.Broker.AutoEscalate {
-		rules, err = retrieveClusterRoleRules(a.config.Openshift.SandboxRole, a.log.Logger)
+	if !a.config.GetBool("broker.auto_escalate") {
+		rules, err = retrieveClusterRoleRules(a.config.GetString("openshift.sandbox_role"), a.log.Logger)
 		if err != nil {
 			a.log.Errorf("Unable to retrieve cluster roles rules from cluster\n"+
 				" You must be using OpenShift 3.7 to use the User rules check.\n%v", err)
@@ -316,11 +318,11 @@ func (a *App) Start() {
 	}
 
 	var clusterURL string
-	if a.config.Broker.ClusterURL != "" {
-		if !strings.HasPrefix("/", a.config.Broker.ClusterURL) {
-			clusterURL = "/" + a.config.Broker.ClusterURL
+	if a.config.GetString("broker.cluster_url") != "" {
+		if !strings.HasPrefix("/", a.config.GetString("broker.cluster_url")) {
+			clusterURL = "/" + a.config.GetString("broker.cluster_url")
 		} else {
-			clusterURL = a.config.Broker.ClusterURL
+			clusterURL = a.config.GetString("broker.cluster_url")
 		}
 	} else {
 		clusterURL = defaultClusterURLPreFix
@@ -328,7 +330,7 @@ func (a *App) Start() {
 
 	daHandler := prometheus.InstrumentHandler(
 		"ansible-service-broker",
-		handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers, rules),
+		handler.NewHandler(a.broker, a.log.Logger, a.config, clusterURL, providers, rules),
 	)
 
 	if clusterURL == "/" {
@@ -360,7 +362,9 @@ func initClients(log *logging.Logger, c *config.Config) error {
 	log.Notice("Initializing clients...")
 	log.Debug("Trying to connect to etcd")
 
-	etcdClient, err := clients.Etcd(c, log)
+	// Intialize the etcd configuration
+	clients.InitEtcdConfig(c)
+	etcdClient, err := clients.Etcd(log)
 	if err != nil {
 		return err
 	}

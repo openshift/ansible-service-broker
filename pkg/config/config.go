@@ -26,7 +26,12 @@ import (
 	"strings"
 	"sync"
 
+	logging "github.com/op/go-logging"
 	yaml "gopkg.in/yaml.v1"
+)
+
+var (
+	log = logging.MustGetLogger("config")
 )
 
 // Config - The base config for the pieces of the applcation
@@ -49,21 +54,6 @@ func CreateConfig(configFile string) (*Config, error) {
 		return &Config{config: map[string]interface{}{}, mutex: sync.RWMutex{}}, err
 	}
 	return &Config{config: c, mutex: sync.RWMutex{}}, nil
-	/*
-		        TODO: Move to the client usage to default the value.
-			if config.Openshift.Namespace == "" {
-				if dat, err = ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err != nil {
-					return Config{}, err
-				}
-				config.Openshift.Namespace = string(dat)
-			}
-	*/
-	/*
-		        TODO: Move to either app.go or to each  individual config init.
-			if err = validateConfig(config); err != nil {
-				return Config{}, err
-			}
-	*/
 }
 
 // Empty - Determines if the configuration is empty
@@ -82,6 +72,7 @@ func (c *Config) GetString(key string) string {
 	if v, ok := val.(string); ok {
 		return v
 	}
+	log.Debugf("Unable to get %v from config", key)
 	return ""
 }
 
@@ -102,7 +93,9 @@ func (c *Config) GetSliceOfStrings(key string) []string {
 				return nil
 			}
 		}
+		return s
 	}
+	log.Debugf("Unable to get %v from config", key)
 	return nil
 }
 
@@ -117,6 +110,7 @@ func (c *Config) GetInt(key string) int {
 	if v, ok := val.(int); ok {
 		return v
 	}
+	log.Debugf("Unable to get %v from config", key)
 	return 0
 }
 
@@ -131,6 +125,7 @@ func (c *Config) GetBool(key string) bool {
 	if v, ok := val.(bool); ok {
 		return v
 	}
+	log.Debugf("Unable to get %v from config", key)
 	return false
 }
 
@@ -145,6 +140,7 @@ func (c *Config) GetFloat64(key string) float64 {
 	if v, ok := val.(float64); ok {
 		return v
 	}
+	log.Debugf("Unable to get %v from config", key)
 	return float64(0)
 }
 
@@ -159,6 +155,7 @@ func (c *Config) GetFloat32(key string) float32 {
 	if v, ok := val.(float64); ok {
 		return float32(v)
 	}
+	log.Debugf("Unable to get %v from config", key)
 	return float32(0)
 }
 
@@ -174,6 +171,7 @@ func (c *Config) GetSubConfig(key string) *Config {
 	case *Config:
 		return val.(*Config)
 	default:
+		log.Debugf("Unable to get %v from config", key)
 		return &Config{config: map[string]interface{}{}, mutex: sync.RWMutex{}}
 	}
 }
