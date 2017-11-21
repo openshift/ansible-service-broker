@@ -227,7 +227,7 @@ func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionCont
 		s.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return
 	}
-	k8scli, err := clients.Kubernetes()
+	k8scli, err := clients.Kubernetes(s.log)
 	if err != nil {
 		s.log.Error("Something went wrong getting kubernetes client")
 		s.log.Errorf("%s", err.Error())

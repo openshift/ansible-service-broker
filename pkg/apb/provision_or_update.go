@@ -52,7 +52,7 @@ func provisionOrUpdate(
 		return "", nil, errors.New("No image field found on instance.Spec")
 	}
 
-	k8scli, err := clients.Kubernetes()
+	k8scli, err := clients.Kubernetes(log)
 	if err != nil {
 		log.Error("Something went wrong getting kubernetes client")
 		return "", nil, err
