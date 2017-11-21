@@ -60,7 +60,7 @@ func InitEtcdConfig(config *config.Config) {
 func GetEtcdVersion(ec EtcdConfig) (string, string, error) {
 	// The next etcd release (1.4) will have client.GetVersion()
 	// We'll use this to test our etcd connection for now
-	etcdURL := fmt.Sprintf("http://%s:%s/version", ec.EtcdHost, ec.EtcdPort)
+	etcdURL := fmt.Sprintf("http://%s:%v/version", ec.EtcdHost, ec.EtcdPort)
 	resp, err := http.Get(etcdURL)
 	if err != nil {
 		return "", "", err

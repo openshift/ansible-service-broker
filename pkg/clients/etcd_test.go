@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -34,7 +35,7 @@ func TestEtcd(t *testing.T) {
 			Name: "only CA Cert",
 			Config: EtcdConfig{
 				EtcdHost:   "testing-etcd.svc",
-				EtcdPort:   "2379",
+				EtcdPort:   2379,
 				EtcdCaFile: fmt.Sprintf("%s/%s", filePath, "ca.crt"),
 			},
 			ResetRun:             true,
@@ -44,7 +45,7 @@ func TestEtcd(t *testing.T) {
 			Name: "only CA Cert",
 			Config: EtcdConfig{
 				EtcdHost:   "testing-etcd.svc",
-				EtcdPort:   "2379",
+				EtcdPort:   2379,
 				EtcdCaFile: fmt.Sprintf("%s/%s", filePath, "ca.crt"),
 			},
 			ResetRun:             true,
@@ -54,7 +55,7 @@ func TestEtcd(t *testing.T) {
 			Name: "Invalid state",
 			Config: EtcdConfig{
 				EtcdHost: "testing-etcd.svc",
-				EtcdPort: "2379",
+				EtcdPort: 2379,
 			},
 			NilOutExistingClient: true,
 			ShouldError:          true,
@@ -63,7 +64,7 @@ func TestEtcd(t *testing.T) {
 			Name: "Invalid configuration",
 			Config: EtcdConfig{
 				EtcdHost: "aklsjdfalskdfj   alskdfjaslkdfj",
-				EtcdPort: "2379",
+				EtcdPort: 2379,
 			},
 			NilOutExistingClient: true,
 			ResetRun:             true,
@@ -250,9 +251,10 @@ func TestEtcdVersion(t *testing.T) {
 			ts := httptest.NewServer(http.HandlerFunc(tc.ServerFunc))
 			defer ts.Close()
 			u, _ := url.Parse(ts.URL)
+			port, _ := strconv.Atoi(u.Port())
 			con := EtcdConfig{
 				EtcdHost: u.Hostname(),
-				EtcdPort: u.Port(),
+				EtcdPort: port,
 			}
 
 			serverVer, clusterVersion, err := GetEtcdVersion(con)
