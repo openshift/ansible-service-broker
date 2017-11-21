@@ -35,7 +35,11 @@ type formItem struct {
 
 // SpecToService converts an apb Spec into a Service usable by the service
 // catalog.
-func SpecToService(spec *apb.Spec) Service {
+func SpecToService(spec *apb.Spec) (Service, error) {
+	plans, err := toBrokerPlans(spec.Plans)
+	if err != nil {
+		return Service{}, err
+	}
 	retSvc := Service{
 		ID:            spec.ID,
 		Name:          spec.FQName,
@@ -43,18 +47,22 @@ func SpecToService(spec *apb.Spec) Service {
 		Tags:          make([]string, len(spec.Tags)),
 		Bindable:      spec.Bindable,
 		PlanUpdatable: planUpdatable(spec.Plans),
-		Plans:         toBrokerPlans(spec.Plans),
+		Plans:         plans,
 		Metadata:      spec.Metadata,
 	}
 
 	copy(retSvc.Tags, spec.Tags)
-	return retSvc
+	return retSvc, nil
 }
 
-func toBrokerPlans(apbPlans []apb.Plan) []Plan {
+func toBrokerPlans(apbPlans []apb.Plan) ([]Plan, error) {
 	brokerPlans := make([]Plan, len(apbPlans))
 	i := 0
 	for _, plan := range apbPlans {
+		schemas, err := parametersToSchema(plan)
+		if err != nil {
+			return nil, err
+		}
 		brokerPlans[i] = Plan{
 			ID:          plan.ID,
 			Name:        plan.Name,
@@ -63,11 +71,11 @@ func toBrokerPlans(apbPlans []apb.Plan) []Plan {
 			Free:        plan.Free,
 			Bindable:    plan.Bindable,
 			UpdatesTo:   plan.UpdatesTo,
-			Schemas:     parametersToSchema(plan),
+			Schemas:     schemas,
 		}
 		i++
 	}
-	return brokerPlans
+	return brokerPlans, nil
 }
 
 func planUpdatable(apbPlans []apb.Plan) bool {
@@ -187,35 +195,44 @@ func createUIFormItem(pd apb.ParameterDescriptor, paramIndex int) (interface{}, 
 }
 
 // getType transforms an apb parameter type to a JSON Schema type
-func getType(paramType string) schema.PrimitiveTypes {
+func getType(paramType string) (schema.PrimitiveTypes, error) {
 	switch paramType {
 	case "string", "enum":
-		return []schema.PrimitiveType{schema.StringType}
+		return []schema.PrimitiveType{schema.StringType}, nil
 	case "int":
-		return []schema.PrimitiveType{schema.IntegerType}
+		return []schema.PrimitiveType{schema.IntegerType}, nil
 	case "object":
-		return []schema.PrimitiveType{schema.ObjectType}
+		return []schema.PrimitiveType{schema.ObjectType}, nil
 	case "array":
-		return []schema.PrimitiveType{schema.ArrayType}
+		return []schema.PrimitiveType{schema.ArrayType}, nil
 	case "bool", "boolean":
-		return []schema.PrimitiveType{schema.BooleanType}
+		return []schema.PrimitiveType{schema.BooleanType}, nil
 	case "number":
-		return []schema.PrimitiveType{schema.NumberType}
+		return []schema.PrimitiveType{schema.NumberType}, nil
 	case "nil", "null":
-		return []schema.PrimitiveType{schema.NullType}
+		return []schema.PrimitiveType{schema.NullType}, nil
 	}
-	return []schema.PrimitiveType{schema.UnspecifiedType}
+	return nil, fmt.Errorf("Could not find the parameter type for: %v", paramType)
 }
 
-func parametersToSchema(plan apb.Plan) Schema {
+func parametersToSchema(plan apb.Plan) (Schema, error) {
 	// parametersToSchema converts the apb parameters into a JSON Schema format.
-	createProperties := extractProperties(plan.Parameters)
+	createProperties, err := extractProperties(plan.Parameters)
+	if err != nil {
+		return Schema{}, err
+	}
 	createRequired := extractRequired(plan.Parameters)
 
-	bindProperties := extractProperties(plan.BindParameters)
+	bindProperties, err := extractProperties(plan.BindParameters)
+	if err != nil {
+		return Schema{}, err
+	}
 	bindRequired := extractRequired(plan.BindParameters)
 
-	updatableProperties := extractUpdatable(plan.Parameters)
+	updatableProperties, err := extractUpdatable(plan.Parameters)
+	if err != nil {
+		return Schema{}, err
+	}
 	updatableRequired := extractUpdatableRequired(createRequired, updatableProperties)
 
 	// builds a Schema object for the various methods.
@@ -250,23 +267,26 @@ func parametersToSchema(plan apb.Plan) Schema {
 		},
 	}
 
-	return s
+	return s, nil
 }
 
-func extractProperties(params []apb.ParameterDescriptor) map[string]*schema.Schema {
+func extractProperties(params []apb.ParameterDescriptor) (map[string]*schema.Schema, error) {
 	properties := make(map[string]*schema.Schema)
 
 	var patternRegex *regexp.Regexp
-	var err error
-
 	for _, pd := range params {
 		k := pd.Name
+
+		t, err := getType(pd.Type)
+		if err != nil {
+			return properties, err
+		}
 
 		properties[k] = &schema.Schema{
 			Title:       pd.Title,
 			Description: pd.Description,
 			Default:     pd.Default,
-			Type:        getType(pd.Type),
+			Type:        t,
 		}
 
 		// we can NOT set values on the Schema object if we want to be
@@ -295,7 +315,7 @@ func extractProperties(params []apb.ParameterDescriptor) map[string]*schema.Sche
 		}
 	}
 
-	return properties
+	return properties, nil
 }
 
 func extractRequired(params []apb.ParameterDescriptor) []string {
@@ -308,19 +328,21 @@ func extractRequired(params []apb.ParameterDescriptor) []string {
 	return req
 }
 
-func extractUpdatable(params []apb.ParameterDescriptor) map[string]*schema.Schema {
+func extractUpdatable(params []apb.ParameterDescriptor) (map[string]*schema.Schema, error) {
 	var patternRegex *regexp.Regexp
-	var err error
-
 	upd := make(map[string]*schema.Schema)
 	for _, v := range params {
+		t, err := getType(v.Type)
+		if err != nil {
+			return upd, err
+		}
 		if v.Updatable {
 			k := v.Name
 			upd[k] = &schema.Schema{
 				Title:       v.Title,
 				Description: v.Description,
 				Default:     v.Default,
-				Type:        getType(v.Type),
+				Type:        t,
 			}
 
 			// we can NOT set values on the Schema object if we want to be
@@ -349,7 +371,7 @@ func extractUpdatable(params []apb.ParameterDescriptor) map[string]*schema.Schem
 			}
 		}
 	}
-	return upd
+	return upd, nil
 }
 
 func extractUpdatableRequired(required []string, updatableProperties map[string]*schema.Schema) []string {

@@ -516,7 +516,12 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 
 	services = make([]Service, len(specs))
 	for i, spec := range specs {
-		services[i] = SpecToService(spec)
+		ser, err := SpecToService(spec)
+		if err != nil {
+			a.log.Debugf("no adding spec to list of services due to error transforming to service - %v", err)
+		} else {
+			services[i] = ser
+		}
 	}
 
 	return &CatalogResponse{services}, nil
@@ -1321,7 +1326,11 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 		return nil, err
 	}
 	apb.AddSecretsFor(&spec)
-	service := SpecToService(&spec)
+	service, err := SpecToService(&spec)
+	if err != nil {
+		a.log.Debugf("spec was not added due to issue with transformation to serivce - %v", err)
+		return nil, err
+	}
 	metrics.SpecsLoaded(apbPushRegName, 1)
 	return &CatalogResponse{Services: []Service{service}}, nil
 }
