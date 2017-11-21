@@ -25,7 +25,9 @@ import (
 
 // Deprovision - runs the abp with the deprovision action.
 func Deprovision(
-	instance *ServiceInstance, clusterConfig ClusterConfig, log *logging.Logger,
+	instance *ServiceInstance,
+	clusterConfig ClusterConfig,
+	log *logging.Logger,
 ) (string, error) {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
@@ -58,9 +60,22 @@ func Deprovision(
 		instance.Parameters,
 		log,
 	)
-	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
+	defer runtime.Provider.DestroySandbox(
+		executionContext.PodName,
+		executionContext.Namespace,
+		executionContext.Targets,
+		clusterConfig.Namespace,
+		clusterConfig.KeepNamespace,
+		clusterConfig.KeepNamespaceOnError,
+	)
 	if err != nil {
 		log.Errorf("Problem executing apb [%s] deprovision", executionContext.PodName)
+		return executionContext.PodName, err
+	}
+
+	err = watchPod(executionContext.PodName, executionContext.Namespace, log)
+	if err != nil {
+		log.Errorf("APB Execution failed - %v", err)
 		return executionContext.PodName, err
 	}
 

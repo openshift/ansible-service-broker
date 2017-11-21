@@ -455,7 +455,12 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// be and it needs to be broken up.
 
 			// did the pod finish?
-			extCreds, extErr := apb.ExtractCredentials(rs.State.Podname, instance.Context.Namespace, a.log)
+			extCreds, extErr := apb.ExtractCredentials(
+				rs.State.Podname,
+				instance.Context.Namespace,
+				instance.Spec.Runtime,
+				a.log,
+			)
 
 			// NO, pod failed.
 			// TODO: do we restart the job or mark it as failed?

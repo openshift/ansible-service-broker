@@ -158,9 +158,14 @@ const (
 	StateFailed State = "failed"
 
 	// 5s x 7200 retries, 2 hours
-	apbWatchInterval     = 5
-	apbWatchRetries      = 7200
-	gatherCredentialsCMD = "broker-bind-creds"
+	apbWatchInterval = 5
+	apbWatchRetries  = 7200
+
+	// GatherCredentialsCommand - Command used when execing for bind credentials
+	GatherCredentialsCommand = "broker-bind-creds"
+
+	// ApbContainerName - The name of the apb container
+	ApbContainerName = "apb"
 )
 
 // SpecLogDump - log spec for debug

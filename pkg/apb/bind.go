@@ -47,12 +47,36 @@ func Bind(
 		parameters,
 		log,
 	)
-	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
+	defer runtime.Provider.DestroySandbox(
+		executionContext.PodName,
+		executionContext.Namespace,
+		executionContext.Targets,
+		clusterConfig.Namespace,
+		clusterConfig.KeepNamespace,
+		clusterConfig.KeepNamespaceOnError,
+	)
 	if err != nil {
 		log.Errorf("Problem executing apb [%s] bind", executionContext.PodName)
 		return executionContext.PodName, nil, err
 	}
 
-	creds, err := ExtractCredentials(executionContext.PodName, executionContext.Namespace, log)
+	if instance.Spec.Runtime >= 2 {
+		err := watchPod(executionContext.PodName, executionContext.Namespace, log)
+		if err != nil {
+			log.Errorf("APB Execution failed - %v", err)
+			return executionContext.PodName, nil, err
+		}
+	}
+
+	creds, err := ExtractCredentials(
+		executionContext.PodName,
+		executionContext.Namespace,
+		instance.Spec.Runtime,
+		log,
+	)
+	if err != nil {
+		log.Errorf("apb::bind error occurred - %v", err)
+		return executionContext.PodName, creds, err
+	}
 	return executionContext.PodName, creds, err
 }

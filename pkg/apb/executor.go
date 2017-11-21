@@ -116,7 +116,7 @@ func ExecuteApb(
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
 				{
-					Name:  "apb",
+					Name:  ApbContainerName,
 					Image: spec.Image,
 					Args: []string{
 						action,
@@ -155,12 +155,6 @@ func ExecuteApb(
 	_, err = k8scli.Client.CoreV1().Pods(executionContext.Namespace).Create(pod)
 	if err != nil {
 		log.Errorf("Failed to create pod - %v", err)
-		return executionContext, err
-	}
-
-	err = watchPod(executionContext.PodName, executionContext.Namespace, log)
-	if err != nil {
-		log.Errorf("APB Execution failed - %v", err)
 		return executionContext, err
 	}
 

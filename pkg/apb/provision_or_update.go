@@ -89,18 +89,23 @@ func provisionOrUpdate(
 		return executionContext.PodName, nil, err
 	}
 
-	creds, err := ExtractCredentials(executionContext.PodName, executionContext.Namespace, log)
-	if err != nil {
-		log.Errorf("apb::%s error occurred", string(method))
-		log.Error("%s", err.Error())
-		return executionContext.PodName, creds, err
+	if instance.Spec.Runtime >= 2 || !instance.Spec.Bindable {
+		err := watchPod(executionContext.PodName, executionContext.Namespace, log)
+		if err != nil {
+			log.Errorf("APB Execution failed - %v", err)
+			return executionContext.PodName, nil, err
+		}
 	}
 
-	// We should not save credentials from an app that finds them and isn't bindable
-	if creds != nil && !instance.Spec.Bindable {
-		log.Warningf("APB %s is not bindable", instance.Spec.FQName)
-		log.Warning("Ignoring Credentials")
-		creds = nil
+	creds, err := ExtractCredentials(
+		executionContext.PodName,
+		executionContext.Namespace,
+		instance.Spec.Runtime,
+		log,
+	)
+	if err != nil {
+		log.Errorf("apb::%v error occurred - %v", method, err)
+		return executionContext.PodName, creds, err
 	}
 
 	return executionContext.PodName, creds, err
