@@ -54,7 +54,7 @@ func watchPod(podName string, namespace string, log *logging.Logger) error {
 			log.Debugf("Pod [ %s ] completed", podName)
 			return nil
 		default:
-			log.Debugf("Pod [ %s ] %s", pod.Status.Phase)
+			log.Debugf("Pod [ %s ] %s", podName, pod.Status.Phase)
 		}
 
 		time.Sleep(time.Duration(apbWatchInterval) * time.Second)

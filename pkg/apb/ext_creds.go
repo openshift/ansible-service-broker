@@ -98,7 +98,7 @@ func ExtractCredentialsAsFile(
 			// pod has completed but is in failed state
 			return nil, fmt.Errorf("[%s] APB failed", podname)
 		} else if podCompleted && err.Error() == failedToExec.Error() {
-			log.Error("[%s] APB completed", podname)
+			log.Notice("[%s] APB completed", podname)
 			return nil, nil
 		} else if err.Error() == failedToExec.Error() {
 			log.Info(string(output))
