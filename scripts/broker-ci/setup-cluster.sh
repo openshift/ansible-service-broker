@@ -6,7 +6,10 @@ set -ex
 broker_travis_job=$1
 
 function cluster-setup () {
-    git clone https://github.com/fusor/catasb
+    git clone https://github.com/shawn-hurley/catasb
+    pushd catasb
+    git checkout fix-mac-cgroup
+    popd
 
     cat <<EOF > "catasb/config/my_vars.yml"
 ---
