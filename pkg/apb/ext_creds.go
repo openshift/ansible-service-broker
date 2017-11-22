@@ -37,7 +37,7 @@ func ExtractCredentials(
 	runtimeVersion int,
 	log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	k8scli, err := clients.Kubernetes()
+	k8scli, err := clients.Kubernetes(log)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrive kubernetes client - %v", err)
 	}
@@ -93,7 +93,11 @@ func ExtractCredentialsAsFile(
 
 		if err == nil {
 			log.Notice("[%s] Bind credentials found", podname)
-			return buildExtractedCredentials(output)
+			decodedOutput, err := decodeOutput(output)
+			if err != nil {
+				return nil, err
+			}
+			return buildExtractedCredentials(decodedOutput)
 		} else if podFailed {
 			// pod has completed but is in failed state
 			return nil, fmt.Errorf("[%s] APB failed", podname)
@@ -126,29 +130,23 @@ func ExtractCredentialsAsSecret(
 	k8scli *clients.KubernetesClient,
 ) (*ExtractedCredentials, error) {
 
-	secretData, err := k8scli.GetSecretData(podname, namespace)
+	secret, err := k8scli.GetSecretData(podname, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrieve secret [ %v ] - %v", podname, err)
 	}
 
-	return buildExtractedCredentials(secretData["fields"])
+	return buildExtractedCredentials(secret["fields"])
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
-	result, err := decodeOutput(output)
-	if err != nil {
-		return nil, err
-	}
 
 	creds := make(map[string]interface{})
-	for k, v := range result {
-		creds[k] = v
-	}
+	json.Unmarshal(output, &creds)
 
 	return &ExtractedCredentials{Credentials: creds}, nil
 }
 
-func decodeOutput(output []byte) (map[string]interface{}, error) {
+func decodeOutput(output []byte) ([]byte, error) {
 	str := string(output)
 
 	decodedjson, err := base64.StdEncoding.DecodeString(str)
@@ -156,7 +154,5 @@ func decodeOutput(output []byte) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	decoded := make(map[string]interface{})
-	json.Unmarshal(decodedjson, &decoded)
-	return decoded, nil
+	return decodedjson, nil
 }

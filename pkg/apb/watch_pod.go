@@ -34,7 +34,7 @@ func watchPod(podName string, namespace string, log *logging.Logger) error {
 		namespace,
 	)
 
-	k8scli, err := clients.Kubernetes()
+	k8scli, err := clients.Kubernetes(log)
 	if err != nil {
 		return fmt.Errorf("Unable to retrive kubernetes client - %v", err)
 	}
