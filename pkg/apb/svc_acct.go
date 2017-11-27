@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
@@ -28,7 +27,6 @@ import (
 	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 
 	logging "github.com/op/go-logging"
 )
@@ -52,72 +50,8 @@ func (s *ServiceAccountManager) CreateApbSandbox(
 	executionContext ExecutionContext,
 	apbRole string,
 ) (string, error) {
-	apbID := executionContext.PodName
-	svcAccountName := executionContext.PodName
-	roleBindingName := executionContext.PodName
-
-	k8scli := clients.Kubernetes()
-	serviceAccount := &apicorev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: svcAccountName,
-		},
-	}
-	_, err := k8scli.Client.CoreV1().ServiceAccounts(executionContext.Namespace).Create(serviceAccount)
-	if err != nil {
-		return "", err
-	}
-
-	s.log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
-
-	subjects := []rbac.Subject{
-		rbac.Subject{
-			Kind:      "ServiceAccount",
-			Name:      svcAccountName,
-			Namespace: executionContext.Namespace,
-		},
-	}
-
-	roleRef := rbac.RoleRef{
-		APIGroup: "rbac.authorization.k8s.io",
-		Kind:     "ClusterRole",
-		Name:     strings.ToLower(apbRole),
-	}
-
-	err = k8scli.CreateRoleBinding(roleBindingName, subjects, executionContext.Namespace, roleRef)
-	if err != nil {
-		return "", err
-	}
-
-	targetRoleBinding := &rbac.RoleBinding{}
-	for _, target := range executionContext.Targets {
-		targetRoleBinding = &rbac.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      roleBindingName,
-				Namespace: target,
-			},
-			Subjects: []rbac.Subject{
-				rbac.Subject{
-					Kind:      "ServiceAccount",
-					Name:      svcAccountName,
-					Namespace: executionContext.Namespace,
-				},
-			},
-			RoleRef: rbac.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     apbRole,
-			},
-		}
-		_, err = k8scli.Client.RbacV1beta1().RoleBindings(target).Create(targetRoleBinding)
-		if err != nil {
-			return "", err
-		}
-
-	}
-
-	s.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", apbID, apbRole, executionContext.Namespace)
-
-	return apbID, nil
+	p := runtime.Provider{Log: s.log}
+	return p.CreateSandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, apbRole)
 }
 
 // DestroyApbSandbox - Destroys the apb sandbox
