@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
 )
 
 // Bind - Will run the APB with the bind action.
@@ -38,13 +39,11 @@ func Bind(
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
-	sm := NewServiceAccountManager(log)
 	executionContext, err := ExecuteApb(
 		"bind", clusterConfig, instance.Spec,
 		instance.Context, parameters, log,
 	)
-	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
-
+	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
 	if err != nil {
 		log.Errorf("Problem executing apb [%s] bind:", executionContext.PodName)
 		return executionContext.PodName, nil, err

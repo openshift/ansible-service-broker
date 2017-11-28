@@ -28,6 +28,7 @@ import (
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
 	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
@@ -81,30 +82,6 @@ func createOnce(log *logging.Logger) {
 	instances.Kubernetes = k8s
 }
 
-// CreateRoleBinding - Create a Role Binding
-func (k KubernetesClient) CreateRoleBinding(
-	roleBindingName string,
-	rbacSubjects []rbac.Subject,
-	namespace string,
-	targetNamespace string,
-	roleRef rbac.RoleRef) error {
-
-	k.log.Noticef("Creating RoleBinding %s", roleBindingName)
-	roleBinding := &rbac.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      roleBindingName,
-			Namespace: targetNamespace,
-		},
-		Subjects: rbacSubjects,
-		RoleRef:  roleRef,
-	}
-	_, err := k.Client.RbacV1beta1().RoleBindings(targetNamespace).Create(roleBinding)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func createClientConfigFromFile(configPath string) (*rest.Config, error) {
 	clientConfig, err := clientcmd.LoadFromFile(configPath)
 	if err != nil {
@@ -146,4 +123,51 @@ func newKubernetes(log *logging.Logger) (*KubernetesClient, error) {
 		log:          log,
 	}
 	return k, err
+}
+
+// CreateServiceAccount - Create a service account
+func (k KubernetesClient) CreateServiceAccount(podName string, namespace string) error {
+	serviceAccount := &apicorev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: podName,
+		},
+	}
+	_, err := k.Client.CoreV1().ServiceAccounts(namespace).Create(serviceAccount)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CreateRoleBinding - Create a Role Binding
+func (k KubernetesClient) CreateRoleBinding(
+	roleBindingName string,
+	rbacSubjects []rbac.Subject,
+	namespace string,
+	targetNamespace string,
+	roleRef rbac.RoleRef) error {
+
+	k.log.Noticef("Creating RoleBinding %s", roleBindingName)
+	roleBinding := &rbac.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      roleBindingName,
+			Namespace: targetNamespace,
+		},
+		Subjects: rbacSubjects,
+		RoleRef:  roleRef,
+	}
+	_, err := k.Client.RbacV1beta1().RoleBindings(targetNamespace).Create(roleBinding)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteRoleBinding - Delete a Role Binding
+func (k KubernetesClient) DeleteRoleBinding(roleBindingName string, namespace string) error {
+	err := k.Client.RbacV1beta1().RoleBindings(namespace).Delete(roleBindingName, &meta_v1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }

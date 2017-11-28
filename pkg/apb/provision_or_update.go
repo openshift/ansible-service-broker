@@ -23,6 +23,7 @@ import (
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -86,8 +87,7 @@ func provisionOrUpdate(
 		creds = nil
 	}
 
-	sm := NewServiceAccountManager(log)
-	sm.DestroyApbSandbox(executionContext, clusterConfig)
+	runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
 	if err != nil {
 		log.Errorf("apb::%s error occurred", string(method))
 		log.Error("%s", err.Error())
