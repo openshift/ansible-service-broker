@@ -9,15 +9,17 @@ import (
 	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
+// Provider - Variable for accessing provider functions
+var Provider *provider
+
 // Runtime - Abstraction for broker actions
 type Runtime interface {
 	CreateSandbox(string, string, []string, string)
 }
 
-// Provider - Variables for interacting with runtimes
-type Provider struct {
-	Log *logging.Logger
-
+// Variables for interacting with runtimes
+type provider struct {
+	log *logging.Logger
 	coe
 }
 
@@ -28,9 +30,14 @@ type coe interface{}
 type openshift struct{}
 type kubernetes struct{}
 
+// NewRuntime - Initialize provider variable
+func NewRuntime(log *logging.Logger) {
+	Provider = &provider{log: log}
+}
+
 // CreateSandbox - Translate the broker CreateSandbox call into cluster resource calls
-func (p Provider) CreateSandbox(podName string, namespace string, targets []string, apbRole string) (string, error) {
-	k8scli, err := clients.Kubernetes(p.Log)
+func (p provider) CreateSandbox(podName string, namespace string, targets []string, apbRole string) (string, error) {
+	k8scli, err := clients.Kubernetes(p.log)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +52,7 @@ func (p Provider) CreateSandbox(podName string, namespace string, targets []stri
 		return "", err
 	}
 
-	p.Log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	p.log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
 
 	subjects := []rbac.Subject{
 		rbac.Subject{
@@ -74,7 +81,7 @@ func (p Provider) CreateSandbox(podName string, namespace string, targets []stri
 		}
 	}
 
-	p.Log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	p.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
 
 	return podName, nil
 }

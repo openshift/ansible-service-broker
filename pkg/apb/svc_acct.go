@@ -43,17 +43,6 @@ func NewServiceAccountManager(log *logging.Logger) ServiceAccountManager {
 	}
 }
 
-// CreateApbSandbox - Sets up ServiceAccount based apb sandbox
-// Returns service account name to be used as a handle for destroying
-// the sandbox at the conclusion of running the apb
-func (s *ServiceAccountManager) CreateApbSandbox(
-	executionContext ExecutionContext,
-	apbRole string,
-) (string, error) {
-	p := runtime.Provider{Log: s.log}
-	return p.CreateSandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, apbRole)
-}
-
 // DestroyApbSandbox - Destroys the apb sandbox
 func (s *ServiceAccountManager) DestroyApbSandbox(executionContext ExecutionContext, clusterConfig ClusterConfig) {
 	s.log.Info("Destroying APB sandbox...")

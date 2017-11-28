@@ -48,6 +48,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
+	agnosticruntime "github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -167,6 +168,9 @@ func CreateApp() App {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
+
+	// Initialize Runtime
+	agnosticruntime.NewRuntime(app.log.Logger)
 
 	app.log.Debug("Connecting Dao")
 	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
