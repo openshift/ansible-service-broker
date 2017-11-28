@@ -104,12 +104,12 @@ func match(spec *Spec, rule AssociationRule) bool {
 
 // InitializeSecretsCache - Generates AssociationRules from config and
 // initializes the global secrets cache
-func InitializeSecretsCache(con *config.Config, log *logging.Logger) {
+func InitializeSecretsCache(conf *config.Config, log *logging.Logger) {
 	rules := []AssociationRule{}
-	for name := range con.ToMap() {
+	for name := range conf.ToMap() {
 		rules = append(rules, AssociationRule{
-			apbName: con.GetString(fmt.Sprintf("%v.%v", name, "apb_name")),
-			secret:  con.GetString(fmt.Sprintf("%v.%v", name, "secret")),
+			apbName: conf.GetString(fmt.Sprintf("%v.%v", name, "apb_name")),
+			secret:  conf.GetString(fmt.Sprintf("%v.%v", name, "secret")),
 		})
 	}
 	secrets = secretsCache{
