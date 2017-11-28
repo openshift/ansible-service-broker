@@ -9,29 +9,26 @@ import (
 	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
-type openshift struct{}
-type kubernetes struct{}
-
-// Abstraction for actions that are different between runtimes
-type coe interface{}
-
-// Abstraction for broker actions
+// Runtime - Abstraction for broker actions
 type Runtime interface {
 	CreateSandbox(string, string, []string, string)
 }
 
+// Provider - Variables for interacting with runtimes
 type Provider struct {
 	Log *logging.Logger
 
-	// Local abstraction for openshift.go and kubernetes.go
 	coe
 }
 
-// Translate the broker CreateSandbox call into cluster resource calls
-//
-// CreateSandbox - Sets up ServiceAccount based apb sandbox
-// Returns service account name to be used as a handle for destroying
-// the sandbox at the conclusion of running the apb
+// Abstraction for actions that are different between runtimes
+type coe interface{}
+
+// Different runtimes
+type openshift struct{}
+type kubernetes struct{}
+
+// CreateSandbox - Translate the broker CreateSandbox call into cluster resource calls
 func (p Provider) CreateSandbox(podName string, namespace string, targets []string, apbRole string) (string, error) {
 	k8scli, err := clients.Kubernetes(p.Log)
 	if err != nil {
