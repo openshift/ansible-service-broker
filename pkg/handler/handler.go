@@ -102,7 +102,6 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 		//Retrieve the UserInfo from request if available.
 		userJSONStr := r.Header.Get(OriginatingIdentityHeader)
 		if userJSONStr != "" {
-			log.Debugf("here")
 			userStr := strings.Split(userJSONStr, " ")
 			if len(userStr) != 2 {
 				//If we do not understand the user, but something was sent, we should return a 404.
@@ -113,7 +112,6 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 				})
 				return
 			}
-			log.Debugf("here")
 			userInfo := broker.UserInfo{}
 			uStr, err := base64.StdEncoding.DecodeString(userStr[1])
 			if err != nil {
@@ -125,7 +123,6 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 				})
 				return
 			}
-			log.Debugf("here")
 			err = json.Unmarshal(uStr, &userInfo)
 			if err != nil {
 				log.Debugf("Unable to marshal into object "+
@@ -136,7 +133,6 @@ func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
 				})
 				return
 			}
-			log.Debugf("%#v", userInfo)
 			r = r.WithContext(context.WithValue(
 				r.Context(), UserInfoContext, userInfo),
 			)
