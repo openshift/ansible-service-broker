@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
 )
 
 // Unbind - runs the abp with the unbind action.
@@ -38,13 +39,11 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, clusterConfig Clu
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
-	sm := NewServiceAccountManager(log)
 	executionContext, err := ExecuteApb(
 		"unbind", clusterConfig, instance.Spec,
 		instance.Context, parameters, log,
 	)
-	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
-
+	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
 	if err != nil {
 		log.Errorf("Problem executing apb [%s] unbind:", executionContext.PodName)
 		return err

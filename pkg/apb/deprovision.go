@@ -19,6 +19,7 @@ package apb
 import (
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pkg/errors"
 )
 
@@ -48,13 +49,12 @@ func Deprovision(
 	}
 
 	// Might need to change up this interface to feed in instance ids
-	sm := NewServiceAccountManager(log)
 	metrics.ActionStarted("deprovision")
 	executionContext, err := ExecuteApb(
 		"deprovision", clusterConfig, instance.Spec,
 		instance.Context, instance.Parameters, log,
 	)
-	defer sm.DestroyApbSandbox(executionContext, clusterConfig)
+	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
 	if err != nil {
 		log.Errorf("Problem executing apb [%s] deprovision:", executionContext.PodName)
 		return executionContext.PodName, err

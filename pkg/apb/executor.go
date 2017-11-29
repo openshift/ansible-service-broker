@@ -27,6 +27,7 @@ import (
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pborman/uuid"
 	"k8s.io/kubernetes/pkg/api/v1"
 )
@@ -101,8 +102,7 @@ func ExecuteApb(
 		return executionContext, err
 	}
 
-	sam := NewServiceAccountManager(log)
-	executionContext.ServiceAccount, err = sam.CreateApbSandbox(executionContext, clusterConfig.SandboxRole)
+	executionContext.ServiceAccount, err = runtime.Provider.CreateSandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.SandboxRole)
 	if err != nil {
 		log.Error(err.Error())
 		return executionContext, err
