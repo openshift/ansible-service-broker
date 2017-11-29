@@ -18,9 +18,11 @@ package clients
 
 import (
 	"errors"
+	"fmt"
 
 	logging "github.com/op/go-logging"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "k8s.io/kubernetes/pkg/api/v1"
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -57,7 +59,7 @@ func Kubernetes(log *logging.Logger) (*KubernetesClient, error) {
 
 // GetSecretData - Returns the data inside of a given secret
 func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[string][]byte, error) {
-	secretData, err := k.Client.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
+	secretData, err := k.Client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		k.log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
 		return make(map[string][]byte), nil
@@ -65,6 +67,16 @@ func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[strin
 	k.log.Debugf("Found secret with name %v\n", secretName)
 
 	return secretData.Data, nil
+}
+
+// GetPodStatus - Returns the current status of a pod in a specified namespace
+func (k KubernetesClient) GetPodStatus(podName, namespace string) (*apiv1.PodStatus, error) {
+	pod, err := k.Client.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to retrive pod [ %s ] in namespace [ %s ]", podName, namespace)
+	}
+
+	return &pod.Status, nil
 }
 
 func createOnce(log *logging.Logger) {

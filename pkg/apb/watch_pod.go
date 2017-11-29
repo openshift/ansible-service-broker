@@ -23,8 +23,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 
 	logging "github.com/op/go-logging"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
+	apiv1 "k8s.io/kubernetes/pkg/api/v1"
 )
 
 func watchPod(podName string, namespace string, log *logging.Logger) error {
@@ -41,20 +40,20 @@ func watchPod(podName string, namespace string, log *logging.Logger) error {
 
 	for r := 1; r <= apbWatchRetries; r++ {
 		log.Info("Watch pod [ %s ] tick %d", podName, r)
-		pod, err := k8scli.Client.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+
+		podStatus, err := k8scli.GetPodStatus(podName, namespace)
 		if err != nil {
-			return fmt.Errorf("Failed to retrive pod [ %s ] in namespace [ %s ]", podName, namespace)
+			return err
 		}
 
-		//if pod.Status.Phase == apicorev1.PodFailed || pod.Status.Phase == apicorev1.PodUnknown || getPodErr != nil {
-		switch pod.Status.Phase {
-		case apicorev1.PodFailed:
-			return fmt.Errorf("Pod [ %s ] failed - %v", podName, pod.Status.Message)
-		case apicorev1.PodSucceeded:
+		switch podStatus.Phase {
+		case apiv1.PodFailed:
+			return fmt.Errorf("Pod [ %s ] failed - %v", podName, podStatus.Message)
+		case apiv1.PodSucceeded:
 			log.Debugf("Pod [ %s ] completed", podName)
 			return nil
 		default:
-			log.Debugf("Pod [ %s ] %s", podName, pod.Status.Phase)
+			log.Debugf("Pod [ %s ] %s", podName, podStatus.Phase)
 		}
 
 		time.Sleep(time.Duration(apbWatchInterval) * time.Second)
