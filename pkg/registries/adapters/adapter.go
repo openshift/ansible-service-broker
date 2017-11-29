@@ -141,7 +141,7 @@ func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spe
 
 	runtime := conf.Config.Label.Runtime
 	if runtime == "" {
-		log.Infof("No runtime label found, assuming 1")
+		log.Infof("No runtime label found. Set runtime=1. Will use 'exec' to gather bind credentials")
 		spec.Runtime = 1
 	} else {
 		spec.Runtime, err = strconv.Atoi(runtime)
