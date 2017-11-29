@@ -26,9 +26,17 @@ import (
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
+	"github.com/openshift/ansible-service-broker/pkg/version"
 
 	logging "github.com/op/go-logging"
 )
+
+type extractCreds func(
+	string,
+	string,
+	*logging.Logger,
+	*clients.KubernetesClient,
+) (*ExtractedCredentials, error)
 
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
 func ExtractCredentials(
@@ -37,28 +45,16 @@ func ExtractCredentials(
 	runtimeVersion int,
 	log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	k8scli, err := clients.Kubernetes(log)
+	k8s, err := clients.Kubernetes(log)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrive kubernetes client - %v", err)
 	}
 
-	if runtimeVersion == 1 {
-		return ExtractCredentialsAsFile(
-			podname,
-			namespace,
-			log,
-			k8scli,
-		)
-	} else if runtimeVersion >= 2 {
-		return ExtractCredentialsAsSecret(
-			podname,
-			namespace,
-			log,
-			k8scli,
-		)
-	} else {
-		panic(fmt.Errorf("Unexpected runtime version"))
+	extractCredsFunc, err := getExtractCreds(runtimeVersion)
+	if err != nil {
+		return nil, err
 	}
+	return extractCredsFunc(podname, namespace, log, k8s)
 }
 
 // ExtractCredentialsAsFile - Extract credentials from running APB using exec
@@ -66,7 +62,7 @@ func ExtractCredentialsAsFile(
 	podname string,
 	namespace string,
 	log *logging.Logger,
-	k8scli *clients.KubernetesClient,
+	k8s *clients.KubernetesClient,
 ) (*ExtractedCredentials, error) {
 	// TODO: Error handling here
 	// It would also be nice to gather the script output that exec runs
@@ -127,15 +123,29 @@ func ExtractCredentialsAsSecret(
 	podname string,
 	namespace string,
 	log *logging.Logger,
-	k8scli *clients.KubernetesClient,
+	k8s *clients.KubernetesClient,
 ) (*ExtractedCredentials, error) {
-
-	secret, err := k8scli.GetSecretData(podname, namespace)
+	secret, err := k8s.GetSecretData(podname, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrieve secret [ %v ] - %v", podname, err)
 	}
 
 	return buildExtractedCredentials(secret["fields"])
+}
+
+func getExtractCreds(runtimeVersion int) (extractCreds, error) {
+	if runtimeVersion == 1 {
+		return ExtractCredentialsAsFile, nil
+	} else if runtimeVersion >= 2 {
+		return ExtractCredentialsAsSecret, nil
+	} else {
+		return nil, fmt.Errorf(
+			"Unexpected runtime version [%v], support %v <= runtimeVersion <= %v",
+			runtimeVersion,
+			version.MinRuntimeVersion,
+			version.MaxRuntimeVersion,
+		)
+	}
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
