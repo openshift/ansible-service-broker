@@ -67,7 +67,6 @@ func provisionOrUpdate(
 	}
 
 	metrics.ActionStarted(string(method))
-	sm := NewServiceAccountManager(log)
 	executionContext, err := ExecuteApb(
 		string(method),
 		clusterConfig,
