@@ -31,12 +31,7 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-type extractCreds func(
-	string,
-	string,
-	*logging.Logger,
-	*clients.KubernetesClient,
-) (*ExtractedCredentials, error)
+type extractCreds func(string, string, *logging.Logger) (*ExtractedCredentials, error)
 
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
 func ExtractCredentials(
@@ -45,16 +40,11 @@ func ExtractCredentials(
 	runtimeVersion int,
 	log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	k8s, err := clients.Kubernetes(log)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to retrive kubernetes client - %v", err)
-	}
-
 	extractCredsFunc, err := getExtractCreds(runtimeVersion)
 	if err != nil {
 		return nil, err
 	}
-	return extractCredsFunc(podname, namespace, log, k8s)
+	return extractCredsFunc(podname, namespace, log)
 }
 
 // ExtractCredentialsAsFile - Extract credentials from running APB using exec
@@ -62,7 +52,6 @@ func ExtractCredentialsAsFile(
 	podname string,
 	namespace string,
 	log *logging.Logger,
-	k8s *clients.KubernetesClient,
 ) (*ExtractedCredentials, error) {
 	// TODO: Error handling here
 	// It would also be nice to gather the script output that exec runs
@@ -123,8 +112,12 @@ func ExtractCredentialsAsSecret(
 	podname string,
 	namespace string,
 	log *logging.Logger,
-	k8s *clients.KubernetesClient,
 ) (*ExtractedCredentials, error) {
+	k8s, err := clients.Kubernetes(log)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to retrive kubernetes client - %v", err)
+	}
+
 	secret, err := k8s.GetSecretData(podname, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrieve secret [ %v ] - %v", podname, err)
