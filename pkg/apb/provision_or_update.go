@@ -96,6 +96,10 @@ func provisionOrUpdate(
 		}
 	}
 
+	if !instance.Spec.Bindable {
+		return executionContext.PodName, nil, nil
+	}
+
 	creds, err := ExtractCredentials(
 		executionContext.PodName,
 		executionContext.Namespace,
