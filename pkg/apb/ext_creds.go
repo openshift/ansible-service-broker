@@ -24,29 +24,35 @@ import (
 	"strings"
 	"time"
 
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
+	"github.com/openshift/ansible-service-broker/pkg/version"
 
 	logging "github.com/op/go-logging"
 )
 
+type extractCreds func(string, string, *logging.Logger) (*ExtractedCredentials, error)
+
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
 func ExtractCredentials(
-	podname string, namespace string, log *logging.Logger,
+	podname string,
+	namespace string,
+	runtimeVersion int,
+	log *logging.Logger,
 ) (*ExtractedCredentials, error) {
-	log.Debug("Calling monitorOutput on " + podname)
-	bindOutput, err := monitorOutput(namespace, podname, log)
+	extractCredsFunc, err := getExtractCreds(runtimeVersion)
 	if err != nil {
 		return nil, err
 	}
-
-	if bindOutput == nil {
-		return nil, nil
-	}
-
-	return buildExtractedCredentials(bindOutput)
+	return extractCredsFunc(podname, namespace, log)
 }
 
-func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byte, error) {
+// ExtractCredentialsAsFile - Extract credentials from running APB using exec
+func ExtractCredentialsAsFile(
+	podname string,
+	namespace string,
+	log *logging.Logger,
+) (*ExtractedCredentials, error) {
 	// TODO: Error handling here
 	// It would also be nice to gather the script output that exec runs
 	// instead of only getting the credentials
@@ -57,7 +63,13 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 		failedToExec := errors.New("exit status 1")
 		credsNotAvailable := errors.New("exit status 2")
 
-		output, err := runtime.RunCommand("kubectl", "exec", podname, gatherCredentialsCMD, "--namespace="+namespace)
+		output, err := runtime.RunCommand(
+			"kubectl",
+			"exec",
+			podname,
+			GatherCredentialsCommand,
+			"--namespace="+namespace,
+		)
 
 		// cannot exec container, pod is done
 		podFailed := strings.Contains(string(output), "current phase is Failed")
@@ -66,13 +78,16 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 
 		if err == nil {
 			log.Notice("[%s] Bind credentials found", podname)
-			return output, nil
+			decodedOutput, err := decodeOutput(output)
+			if err != nil {
+				return nil, err
+			}
+			return buildExtractedCredentials(decodedOutput)
 		} else if podFailed {
 			// pod has completed but is in failed state
-			log.Notice("[%s] APB failed", podname)
-			return nil, errors.New("APB failed")
+			return nil, fmt.Errorf("[%s] APB failed", podname)
 		} else if podCompleted && err.Error() == failedToExec.Error() {
-			log.Error("[%s] APB completed", podname)
+			log.Notice("[%s] APB completed", podname)
 			return nil, nil
 		} else if err.Error() == failedToExec.Error() {
 			log.Info(string(output))
@@ -89,25 +104,52 @@ func monitorOutput(namespace string, podname string, log *logging.Logger) ([]byt
 		time.Sleep(time.Duration(apbWatchInterval) * time.Second)
 	}
 
-	timeout := fmt.Sprintf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, apbWatchRetries)
-	return nil, errors.New(timeout)
+	return nil, fmt.Errorf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, apbWatchRetries)
+}
+
+// ExtractCredentialsAsSecret - Extract credentials from APB as secret in namespace.
+func ExtractCredentialsAsSecret(
+	podname string,
+	namespace string,
+	log *logging.Logger,
+) (*ExtractedCredentials, error) {
+	k8s, err := clients.Kubernetes(log)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to retrive kubernetes client - %v", err)
+	}
+
+	secret, err := k8s.GetSecretData(podname, namespace)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to retrieve secret [ %v ] - %v", podname, err)
+	}
+
+	return buildExtractedCredentials(secret["fields"])
+}
+
+func getExtractCreds(runtimeVersion int) (extractCreds, error) {
+	if runtimeVersion == 1 {
+		return ExtractCredentialsAsFile, nil
+	} else if runtimeVersion >= 2 {
+		return ExtractCredentialsAsSecret, nil
+	} else {
+		return nil, fmt.Errorf(
+			"Unexpected runtime version [%v], support %v <= runtimeVersion <= %v",
+			runtimeVersion,
+			version.MinRuntimeVersion,
+			version.MaxRuntimeVersion,
+		)
+	}
 }
 
 func buildExtractedCredentials(output []byte) (*ExtractedCredentials, error) {
-	result, err := decodeOutput(output)
-	if err != nil {
-		return nil, err
-	}
 
 	creds := make(map[string]interface{})
-	for k, v := range result {
-		creds[k] = v
-	}
+	json.Unmarshal(output, &creds)
 
 	return &ExtractedCredentials{Credentials: creds}, nil
 }
 
-func decodeOutput(output []byte) (map[string]interface{}, error) {
+func decodeOutput(output []byte) ([]byte, error) {
 	str := string(output)
 
 	decodedjson, err := base64.StdEncoding.DecodeString(str)
@@ -115,7 +157,5 @@ func decodeOutput(output []byte) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	decoded := make(map[string]interface{})
-	json.Unmarshal(decodedjson, &decoded)
-	return decoded, nil
+	return decodedjson, nil
 }

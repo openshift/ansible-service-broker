@@ -116,7 +116,7 @@ func ExecuteApb(
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
 				{
-					Name:  "apb",
+					Name:  ApbContainerName,
 					Image: spec.Image,
 					Args: []string{
 						action,
@@ -153,6 +153,7 @@ func ExecuteApb(
 
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
 	_, err = k8scli.Client.CoreV1().Pods(executionContext.Namespace).Create(pod)
+
 	return executionContext, err
 }
 

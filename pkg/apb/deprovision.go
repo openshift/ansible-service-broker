@@ -25,7 +25,9 @@ import (
 
 // Deprovision - runs the abp with the deprovision action.
 func Deprovision(
-	instance *ServiceInstance, clusterConfig ClusterConfig, log *logging.Logger,
+	instance *ServiceInstance,
+	clusterConfig ClusterConfig,
+	log *logging.Logger,
 ) (string, error) {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
@@ -51,19 +53,29 @@ func Deprovision(
 	// Might need to change up this interface to feed in instance ids
 	metrics.ActionStarted("deprovision")
 	executionContext, err := ExecuteApb(
-		"deprovision", clusterConfig, instance.Spec,
-		instance.Context, instance.Parameters, log,
+		"deprovision",
+		clusterConfig,
+		instance.Spec,
+		instance.Context,
+		instance.Parameters,
+		log,
 	)
-	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
+	defer runtime.Provider.DestroySandbox(
+		executionContext.PodName,
+		executionContext.Namespace,
+		executionContext.Targets,
+		clusterConfig.Namespace,
+		clusterConfig.KeepNamespace,
+		clusterConfig.KeepNamespaceOnError,
+	)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s] deprovision:", executionContext.PodName)
+		log.Errorf("Problem executing apb [%s] deprovision", executionContext.PodName)
 		return executionContext.PodName, err
 	}
 
-	podOutput, err := watchPod(executionContext.PodName, executionContext.Namespace, log)
+	err = watchPod(executionContext.PodName, executionContext.Namespace, log)
 	if err != nil {
-		log.Errorf("Error returned from watching pod\nerror: %s", err.Error())
-		log.Errorf("output: %s", podOutput)
+		log.Errorf("APB Execution failed - %v", err)
 		return executionContext.PodName, err
 	}
 

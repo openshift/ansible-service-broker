@@ -17,6 +17,7 @@
 package apb
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -25,8 +26,12 @@ import (
 
 func TestBuildExtractedCredentials(t *testing.T) {
 	output := []byte("eyJkYiI6ICJmdXNvcl9ndWVzdGJvb2tfZGIiLCAidXNlciI6ICJkdWRlcl90d28iLCAicGFzcyI6ICJkb2c4dHdvIn0=")
+	decoded, err := decodeOutput(output)
+	if err != nil {
+		t.Log(err.Error())
+	}
 
-	bd, _ := buildExtractedCredentials(output)
+	bd, _ := buildExtractedCredentials(decoded)
 	ft.AssertNotNil(t, bd, "credential is nil")
 	ft.AssertEqual(t, bd.Credentials["db"], "fusor_guestbook_db", "db is not fusor_guestbook_db")
 	ft.AssertEqual(t, bd.Credentials["user"], "duder_two", "user is not duder_two")
@@ -43,10 +48,13 @@ func TestExitGracefully(t *testing.T) {
 func TestInt(t *testing.T) {
 	output := []byte("eyJEQl9OQU1FIjogImZvb2JhciIsICJEQl9QQVNTV09SRCI6ICJzdXBlcnNlY3JldCIsICJEQl9UWVBFIjogIm15c3FsIiwgIkRCX1BPUlQiOiAzMzA2LCAiREJfVVNFUiI6ICJkdWRlciIsICJEQl9IT1NUIjogIm15aW5zdGFuY2UuMTIzNDU2Nzg5MDEyLnVzLWVhc3QtMS5yZHMuYW1hem9uYXdzLmNvbSJ9")
 
-	do, err := decodeOutput(output)
+	decoded, err := decodeOutput(output)
 	if err != nil {
 		t.Log(err.Error())
 	}
+
+	do := make(map[string]interface{})
+	json.Unmarshal(decoded, &do)
 	ft.AssertEqual(t, do["DB_NAME"], "foobar", "name does not match")
 	ft.AssertEqual(t, do["DB_PASSWORD"], "supersecret", "password does not match")
 	ft.AssertEqual(t, do["DB_TYPE"], "mysql", "type does not match")

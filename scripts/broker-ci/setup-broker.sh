@@ -44,6 +44,8 @@ BOOTSTRAP_ON_STARTUP="true"
 BEARER_TOKEN_FILE=""
 CA_FILE=""
 
+TAG="canary"
+
 # Always, IfNotPresent, Never
 IMAGE_PULL_POLICY="Always"
 EOF

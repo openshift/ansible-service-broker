@@ -256,7 +256,7 @@ func (d *Dao) GetSvcInstJobsByState(
 		}
 	}
 
-	d.log.Debugf("Filtered on state: [ %s ], returning %d jobs", len(filtStates))
+	d.log.Debugf("Filtered on state: [ %v ], returning %d jobs", reqState, len(filtStates))
 
 	return filtStates, nil
 }

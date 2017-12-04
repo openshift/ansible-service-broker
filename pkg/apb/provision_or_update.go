@@ -68,29 +68,46 @@ func provisionOrUpdate(
 
 	metrics.ActionStarted(string(method))
 	executionContext, err := ExecuteApb(
-		string(method), clusterConfig, instance.Spec,
-		instance.Context, instance.Parameters, log,
+		string(method),
+		clusterConfig,
+		instance.Spec,
+		instance.Context,
+		instance.Parameters,
+		log,
 	)
-
+	defer runtime.Provider.DestroySandbox(
+		executionContext.PodName,
+		executionContext.Namespace,
+		executionContext.Targets,
+		clusterConfig.Namespace,
+		clusterConfig.KeepNamespace,
+		clusterConfig.KeepNamespaceOnError,
+	)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s]", executionContext.PodName)
-		log.Error(err.Error())
+		log.Errorf("Problem executing apb [%s] provision", executionContext.PodName)
 		return executionContext.PodName, nil, err
 	}
 
-	creds, err := ExtractCredentials(executionContext.PodName, executionContext.Namespace, log)
-
-	// We should not save credentials from an app that finds them and isn't bindable
-	if creds != nil && !instance.Spec.Bindable {
-		log.Warningf("APB %s is not bindable", instance.Spec.FQName)
-		log.Warning("Ignoring Credentials")
-		creds = nil
+	if instance.Spec.Runtime >= 2 || !instance.Spec.Bindable {
+		err := watchPod(executionContext.PodName, executionContext.Namespace, log)
+		if err != nil {
+			log.Errorf("APB Execution failed - %v", err)
+			return executionContext.PodName, nil, err
+		}
 	}
 
-	runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
+	if !instance.Spec.Bindable {
+		return executionContext.PodName, nil, nil
+	}
+
+	creds, err := ExtractCredentials(
+		executionContext.PodName,
+		executionContext.Namespace,
+		instance.Spec.Runtime,
+		log,
+	)
 	if err != nil {
-		log.Errorf("apb::%s error occurred", string(method))
-		log.Error("%s", err.Error())
+		log.Errorf("apb::%v error occurred - %v", method, err)
 		return executionContext.PodName, creds, err
 	}
 

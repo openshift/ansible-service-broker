@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -69,7 +70,8 @@ func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spe
 	defer resp.Body.Close()
 
 	type label struct {
-		Spec string `json:"com.redhat.apb.spec"`
+		Spec    string `json:"com.redhat.apb.spec"`
+		Runtime string `json:"com.redhat.apb.runtime"`
 	}
 
 	type config struct {
@@ -135,6 +137,18 @@ func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spe
 	if err = yaml.Unmarshal(decodedSpecYaml, spec); err != nil {
 		log.Errorf("Something went wrong loading decoded spec yaml, %s", err)
 		return nil, err
+	}
+
+	runtime := conf.Config.Label.Runtime
+	if runtime == "" {
+		log.Infof("No runtime label found. Set runtime=1. Will use 'exec' to gather bind credentials")
+		spec.Runtime = 1
+	} else {
+		spec.Runtime, err = strconv.Atoi(runtime)
+		if err != nil {
+			log.Errorf("Unable to parse APB runtime version - %v", err)
+			return nil, err
+		}
 	}
 
 	spec.Image = image

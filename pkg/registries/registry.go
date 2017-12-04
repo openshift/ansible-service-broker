@@ -296,7 +296,22 @@ func validateSpecs(log *logging.Logger, inSpecs []*apb.Spec) []*apb.Spec {
 func validateSpecFormat(spec *apb.Spec) (bool, string) {
 	// Specs must have compatible version
 	if !isCompatibleVersion(spec.Version, version.MinAPBVersion, version.MaxAPBVersion) {
-		return false, fmt.Sprintf("Specs must be at least version %s", version.MinAPBVersion)
+		return false, fmt.Sprintf(
+			"APB Spec version [%v] out of bounds %v <= %v",
+			spec.Version,
+			version.MinAPBVersion,
+			version.MaxAPBVersion,
+		)
+	}
+
+	// Specs must have compatible runtime version
+	if !isCompatibleRuntime(spec.Runtime, version.MinRuntimeVersion, version.MaxRuntimeVersion) {
+		return false, fmt.Sprintf(
+			"APB Runtime version [%v] out of bounds %v <= %v",
+			spec.Runtime,
+			version.MinRuntimeVersion,
+			version.MaxRuntimeVersion,
+		)
 	}
 
 	// Specs must have at least one plan
@@ -339,4 +354,8 @@ func isCompatibleVersion(specVersion string, minVersion string, maxVersion strin
 		return true
 	}
 	return false
+}
+
+func isCompatibleRuntime(specRuntime int, minVersion int, maxVersion int) bool {
+	return specRuntime >= minVersion && specRuntime <= maxVersion
 }

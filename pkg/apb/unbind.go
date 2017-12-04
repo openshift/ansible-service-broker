@@ -29,9 +29,14 @@ import (
 // github.com/op/go-logging, which is used all over the broker
 // Maybe apb defines its own interface and accepts that optionally
 // Little looser, but still not great
-func Unbind(instance *ServiceInstance, parameters *Parameters, clusterConfig ClusterConfig, log *logging.Logger) error {
+func Unbind(
+	instance *ServiceInstance,
+	parameters *Parameters,
+	clusterConfig ClusterConfig,
+	log *logging.Logger,
+) error {
 	log.Notice("============================================================")
-	log.Notice("                       UNBINDING                              ")
+	log.Notice("                       UNBINDING                            ")
 	log.Notice("============================================================")
 	log.Notice(fmt.Sprintf("ServiceInstance.ID: %s", instance.Spec.ID))
 	log.Notice(fmt.Sprintf("ServiceInstance.Name: %v", instance.Spec.FQName))
@@ -40,12 +45,29 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, clusterConfig Clu
 	log.Notice("============================================================")
 
 	executionContext, err := ExecuteApb(
-		"unbind", clusterConfig, instance.Spec,
-		instance.Context, parameters, log,
+		"unbind",
+		clusterConfig,
+		instance.Spec,
+		instance.Context,
+		parameters,
+		log,
 	)
-	defer runtime.Provider.DestroySandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.Namespace, clusterConfig.KeepNamespace, clusterConfig.KeepNamespaceOnError)
+	defer runtime.Provider.DestroySandbox(
+		executionContext.PodName,
+		executionContext.Namespace,
+		executionContext.Targets,
+		clusterConfig.Namespace,
+		clusterConfig.KeepNamespace,
+		clusterConfig.KeepNamespaceOnError,
+	)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s] unbind:", executionContext.PodName)
+		log.Errorf("Problem executing apb [%s] unbind", executionContext.PodName)
+		return err
+	}
+
+	err = watchPod(executionContext.PodName, executionContext.Namespace, log)
+	if err != nil {
+		log.Errorf("APB Execution failed - %v", err)
 		return err
 	}
 

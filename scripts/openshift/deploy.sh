@@ -23,6 +23,7 @@ BROKER_CLIENT_CERT_PATH="/var/run/asb-etcd-auth/client.crt"
 BROKER_CLIENT_KEY_PATH="/var/run/asb-etcd-auth/client.key"
 ENABLE_BASIC_AUTH=false
 BROKER_CA_CERT=$(oc get secret --no-headers=true -n kube-service-catalog | grep -m 1 service-catalog-apiserver-token | oc get secret $(awk '{ print $1 }') -n kube-service-catalog -o yaml | grep service-ca.crt | awk '{ print $2 }' | cat)
+TAG="${TAG:-latest}"
 
 #Create Certs for etcd
 mkdir -p /tmp/etcd-cert
@@ -64,7 +65,8 @@ VARS="-p BROKER_IMAGE=${BROKER_IMAGE} \
   -p BROKER_CLIENT_KEY_PATH=${BROKER_CLIENT_KEY_PATH} \
   -p ETCD_TRUSTED_CA=${ETCD_CA_CERT} \
   -p BROKER_CLIENT_CERT=${ETCD_BROKER_CLIENT_CERT} \
-  -p BROKER_CLIENT_KEY=${ETCD_BROKER_CLIENT_KEY}"
+  -p BROKER_CLIENT_KEY=${ETCD_BROKER_CLIENT_KEY} \
+  -p TAG=${TAG}"
 
 # cleanup old deployment
 asb::delete_project ${PROJECT}

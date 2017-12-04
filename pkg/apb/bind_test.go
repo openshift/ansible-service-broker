@@ -17,6 +17,7 @@
 package apb
 
 import (
+	"encoding/json"
 	"testing"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
@@ -43,10 +44,13 @@ ok: [localhost] => {
 PLAY RECAP *********************************************************************
 localhost                  : ok=3    changed=1    unreachable=0    failed=0
 `)
-	result, err := decodeOutput(output)
+	decoded, err := decodeOutput(output)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	result := make(map[string]interface{})
+	json.Unmarshal(decoded, &result)
 
 	ft.AssertNotNil(t, result, "result")
 	ft.AssertEqual(t, result["db"], "fusor_guestbook_db", "db is not fusor_guestbook_db")

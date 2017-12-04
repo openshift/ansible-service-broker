@@ -18,17 +18,16 @@ package clients
 
 import (
 	"errors"
-
-	logging "github.com/op/go-logging"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"fmt"
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 
+	logging "github.com/op/go-logging"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
+	apiv1 "k8s.io/kubernetes/pkg/api/v1"
 	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
@@ -57,7 +56,7 @@ func Kubernetes(log *logging.Logger) (*KubernetesClient, error) {
 
 // GetSecretData - Returns the data inside of a given secret
 func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[string][]byte, error) {
-	secretData, err := k.Client.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
+	secretData, err := k.Client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		k.log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
 		return make(map[string][]byte), nil
@@ -65,6 +64,16 @@ func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[strin
 	k.log.Debugf("Found secret with name %v\n", secretName)
 
 	return secretData.Data, nil
+}
+
+// GetPodStatus - Returns the current status of a pod in a specified namespace
+func (k KubernetesClient) GetPodStatus(podName, namespace string) (*apiv1.PodStatus, error) {
+	pod, err := k.Client.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to retrive pod [ %s ] in namespace [ %s ]", podName, namespace)
+	}
+
+	return &pod.Status, nil
 }
 
 func createOnce(log *logging.Logger) {
@@ -127,7 +136,7 @@ func newKubernetes(log *logging.Logger) (*KubernetesClient, error) {
 
 // CreateServiceAccount - Create a service account
 func (k KubernetesClient) CreateServiceAccount(podName string, namespace string) error {
-	serviceAccount := &apicorev1.ServiceAccount{
+	serviceAccount := &apiv1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: podName,
 		},
@@ -165,7 +174,7 @@ func (k KubernetesClient) CreateRoleBinding(
 
 // DeleteRoleBinding - Delete a Role Binding
 func (k KubernetesClient) DeleteRoleBinding(roleBindingName string, namespace string) error {
-	err := k.Client.RbacV1beta1().RoleBindings(namespace).Delete(roleBindingName, &meta_v1.DeleteOptions{})
+	err := k.Client.RbacV1beta1().RoleBindings(namespace).Delete(roleBindingName, &metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
