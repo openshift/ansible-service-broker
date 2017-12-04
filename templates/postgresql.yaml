@@ -3,7 +3,7 @@ kind: ServiceInstance
 metadata:
   name: postgresql
 spec:
-  clusterServiceClassExternalName: dh-rhscl-postgresql-apb
+  clusterServiceClassExternalName: dh-postgresql-apb
   clusterServicePlanExternalName: prod
   parameters:
     postgresql_database: "admin"

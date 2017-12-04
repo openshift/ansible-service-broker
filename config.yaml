@@ -1,10 +1,10 @@
 # Travis CI
-provision: ansibleplaybookbundle/mediawiki123-apb
-provision: ansibleplaybookbundle/rhscl-postgresql-apb
+provision: ansibleplaybookbundle/mediawiki-apb
+provision: ansibleplaybookbundle/postgresql-apb
 
-bind: ansibleplaybookbundle/rhscl-postgresql-apb
+bind: ansibleplaybookbundle/postgresql-apb
 verify: rthallisey/service-broker-ci/verify-mediawiki-postgresql.sh
-unbind: rhscl-postgresql-apb | mediawiki123-apb
+unbind: postgresql-apb | mediawiki-apb
 
-deprovision: ansibleplaybookbundle/mediawiki123-apb
-deprovision: ansibleplaybookbundle/rhscl-postgresql-apb
+deprovision: ansibleplaybookbundle/mediawiki-apb
+deprovision: ansibleplaybookbundle/postgresql-apb

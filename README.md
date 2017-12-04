@@ -18,7 +18,7 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 **Features**
 
 - Easily define, distribute, and provision microservice(s), like [RocketChat](https://github.com/fusor/apb-examples/tree/master/rocketchat-apb)
-  and [PostgreSQL](https://github.com/fusor/apb-examples/tree/master/rhscl-postgresql-apb), via ansible playbooks packaged in
+  and [PostgreSQL](https://github.com/ansibleplaybookbundle/postgresql-apb), via ansible playbooks packaged in
   [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle).
 - Easily bind microservice(s) provisioned through [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle),
   for example: [Using the Service Catalog to Bind a PostgreSQL APB to a Python Web App](https://www.youtube.com/watch?v=xmd52NhEjCk).
@@ -70,11 +70,11 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 **Provision an instance of MediaWiki and PostgreSQL**
 1. Log into OpenShift Web Console
 1. Create a new project 'apb-demo'
-1. Provision [MediaWiki APB](https://github.com/fusor/apb-examples/tree/master/mediawiki123-apb)
+1. Provision [MediaWiki APB](https://github.com/ansibleplaybookbundle/mediawiki-apb)
     * Select the 'apb-demo' project
     * Enter a 'MediaWiki Admin User Password': 's3curepw'
     * Select 'Create'
-1. Provision [PostgreSQL APB](https://github.com/fusor/apb-examples/tree/master/rhscl-postgresql-apb)
+1. Provision [PostgreSQL APB](https://github.com/ansibleplaybookbundle/postgresql-apb)
     * Select the 'apb-demo' project
     * Leave 'PostgreSQL Password' blank, a random password will be generated
     * Chose a 'PostgreSQL Version', either version will work.
