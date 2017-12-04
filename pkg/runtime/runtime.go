@@ -17,13 +17,16 @@
 package runtime
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 
 	logging "github.com/op/go-logging"
+	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
 	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
@@ -52,7 +55,35 @@ type kubernetes struct{}
 
 // NewRuntime - Initialize provider variable
 func NewRuntime(log *logging.Logger) {
-	Provider = &provider{log: log}
+	k8scli, err := clients.Kubernetes(log)
+	if err != nil {
+		log.Error(err.Error())
+		panic(err.Error())
+	}
+
+	// Identify which cluster we're using
+	restclient := k8scli.Client.CoreV1().RESTClient()
+	body, err := restclient.Get().AbsPath("/version/openshift").Do().Raw()
+
+	var cluster coe
+	switch {
+	case err == nil:
+		var kubeServerInfo kubeversiontypes.Info
+		err = json.Unmarshal(body, &kubeServerInfo)
+		if err != nil && len(body) > 0 {
+			log.Error(err.Error())
+			panic(err.Error())
+		}
+		log.Info("OpenShift version: %v", kubeServerInfo)
+		cluster = openshift{}
+	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
+		cluster = kubernetes{}
+	default:
+		log.Error(err.Error())
+		panic(err.Error())
+	}
+
+	Provider = &provider{log: log, coe: cluster}
 }
 
 // CreateSandbox - Translate the broker CreateSandbox call into cluster resource calls

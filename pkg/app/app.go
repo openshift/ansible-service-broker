@@ -172,21 +172,15 @@ func CreateApp() App {
 	// Initialize Runtime
 	agnosticruntime.NewRuntime(app.log.Logger)
 
-	app.log.Debug("Connecting Dao")
-	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
-
 	k8scli, err := clients.Kubernetes(app.log.Logger)
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
 
-	restcli := k8scli.Client.CoreV1().RESTClient()
-	body, err := restcli.Get().AbsPath("/version").Do().Raw()
-	if err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
+	restclient := k8scli.Client.CoreV1().RESTClient()
+	body, err := restclient.Get().AbsPath("/version").Do().Raw()
+
 	switch {
 	case err == nil:
 		var kubeServerInfo kubeversiontypes.Info
@@ -197,10 +191,16 @@ func CreateApp() App {
 		}
 		app.log.Info("Kubernetes version: %v", kubeServerInfo)
 	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
+		app.log.Error("the server could not find the requested resource")
+		app.log.Error(err.Error())
+		os.Exit(1)
 	default:
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
+
+	app.log.Debug("Connecting Dao")
+	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
 
 	app.log.Debug("Connecting Registry")
 	for _, r := range app.config.Registry {
