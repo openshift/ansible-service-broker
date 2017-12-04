@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.1
+Version: 1.1.2
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Dec 04 2017 Jason Montleon <jmontleo@redhat.com> 1.1.2-1
+- Broker should extract credentials from secret (#555)
+  (david.j.zager@gmail.com)
+
 * Mon Dec 04 2017 Jason Montleon <jmontleo@redhat.com> 1.1.1-1
 - docs and ci template updates for apb name changes (#573)
   (jmontleo@redhat.com)
