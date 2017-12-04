@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.0
+Version: 1.1.1
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,35 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Dec 04 2017 Jason Montleon <jmontleo@redhat.com> 1.1.1-1
+- docs and ci template updates for apb name changes (#573)
+  (jmontleo@redhat.com)
+- Use the rbac API when creating and deleting policy (#556)
+  (rhallise@redhat.com)
+- Few fixes to the local deploy templates (#568) (rhallise@redhat.com)
+- Give cluster client the log object (#565) (rhallise@redhat.com)
+- Rebase k8s templates to pickup etcd name change (#563) (rhallise@redhat.com)
+- Create a Kubernetes Client struct (#561) (rhallise@redhat.com)
+- Update vendor directory (#562) (rhallise@redhat.com)
+- First pass at last_operation description proposal (#537)
+  (maleck13@users.noreply.github.com)
+- Pull apb templates from their respective git repos (#560)
+  (rhallise@redhat.com)
+- adding ability to connnect over SSL w/o authentication. (#558)
+  (Shawn.Hurley21@gmail.com)
+- Update copr link in Makefile comments (#559) (jmontleo@redhat.com)
+- Integrate a new ci framework for travis (#463) (rhallise@redhat.com)
+- Use the Kubernetes API for namespaces check (#552) (rhallise@redhat.com)
+- using table driven testing (#551) (jmrodri@gmail.com)
+- Setup tls support for k8s deployments (#496) (rhallise@redhat.com)
+- Proposal to improve bind credential extraction (#550)
+  (david.j.zager@gmail.com)
+- Expose the pod name/namespace to APB (#546) (david.j.zager@gmail.com)
+- remove unneeded paragraph from license header (#549) (jmrodri@gmail.com)
+- Integrate with coveralls for code coverage (#548) (jmrodri@gmail.com)
+- Create release notes script to grab changes (#545) (david.j.zager@gmail.com)
+- bump version for next release (#547) (jmrodri@gmail.com)
+
 * Tue Nov 07 2017 David Zager <david.j.zager@gmail.com> 1.0.19-1
 - Bug 1507111 - Do not force image tag to be IP + Port (#540)
   (dymurray@redhat.com)
