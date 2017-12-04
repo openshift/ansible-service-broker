@@ -140,9 +140,6 @@ type JobState struct {
 
 // ClusterConfig - Configuration for the cluster.
 type ClusterConfig struct {
-	Host                 string `yaml:"host"`
-	CAFile               string `yaml:"ca_file"`
-	BearerTokenFile      string `yaml:"bearer_token_file"`
 	PullPolicy           string `yaml:"image_pull_policy"`
 	SandboxRole          string `yaml:"sandbox_role"`
 	Namespace            string `yaml:"namespace"`
@@ -156,9 +153,6 @@ var clusterConfig ClusterConfig
 // InitializeClusterConfig - initialize the cluster config.
 func InitializeClusterConfig(config *config.Config) {
 	clusterConfig = ClusterConfig{
-		Host:                 config.GetString("host"),
-		CAFile:               config.GetString("ca_file"),
-		BearerTokenFile:      config.GetString("bearer_token_file"),
 		PullPolicy:           config.GetString("image_pull_policy"),
 		SandboxRole:          config.GetString("sandbox_role"),
 		Namespace:            config.GetString("namespace"),
