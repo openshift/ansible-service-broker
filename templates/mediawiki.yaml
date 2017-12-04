@@ -3,7 +3,7 @@ kind: ServiceInstance
 metadata:
   name: mediawiki123
 spec:
-  clusterServiceClassExternalName: dh-mediawiki123-apb
+  clusterServiceClassExternalName: dh-mediawiki-apb
   clusterServicePlanExternalName: default
   parameters:
     mediawiki_db_schema: "mediawiki"
