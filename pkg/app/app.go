@@ -178,7 +178,7 @@ func CreateApp() App {
 	}
 
 	app.log.Debug("Connecting Dao")
-	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
+	app.dao, err = dao.NewDao(app.log.Logger)
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
