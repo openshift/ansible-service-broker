@@ -201,6 +201,10 @@ func CreateApp() App {
 
 	app.log.Debug("Connecting Dao")
 	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
+	if err != nil {
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
 
 	app.log.Debug("Connecting Registry")
 	for _, r := range app.config.Registry {
