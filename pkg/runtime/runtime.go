@@ -36,6 +36,7 @@ var Provider *provider
 
 // Runtime - Abstraction for broker actions
 type Runtime interface {
+	ValidateRuntime()
 	CreateSandbox(string, string, []string, string)
 	DestroySandbox(string, string, []string, string, bool, bool)
 }
@@ -92,6 +93,33 @@ func newOpenshift() coe {
 
 func newKubernetes() coe {
 	return kubernetes{}
+}
+
+// ValidateRuntime - Translate the broker cluster validation check into specfici runtime checks
+func (p provider) ValidateRuntime() error {
+	k8scli, err := clients.Kubernetes(p.log)
+	if err != nil {
+		return err
+	}
+
+	restclient := k8scli.Client.CoreV1().RESTClient()
+	body, err := restclient.Get().AbsPath("/version").Do().Raw()
+
+	switch {
+	case err == nil:
+		var kubeServerInfo kubeversiontypes.Info
+		err = json.Unmarshal(body, &kubeServerInfo)
+		if err != nil && len(body) > 0 {
+			return err
+		}
+		p.log.Info("Kubernetes version: %v", kubeServerInfo)
+	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
+		p.log.Error("the server could not find the requested resource")
+		return err
+	default:
+		return err
+	}
+	return nil
 }
 
 // CreateSandbox - Translate the broker CreateSandbox call into cluster resource calls
