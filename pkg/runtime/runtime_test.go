@@ -16,3 +16,8 @@ func (f fakeProvider) DestroySandbox(podName string, namespace string, targets [
 	//TODO: Write tests for DestroySandbox using the fake kubernetes client
 	return
 }
+
+func (f fakeProvider) GetRuntime() string {
+	//TODO: Write tests for GetRuntime
+	return ""
+}
