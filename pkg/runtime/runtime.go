@@ -75,15 +75,23 @@ func NewRuntime(log *logging.Logger) {
 			panic(err.Error())
 		}
 		log.Info("OpenShift version: %v", kubeServerInfo)
-		cluster = openshift{}
+		cluster = newOpenshift()
 	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
-		cluster = kubernetes{}
+		cluster = newKubernetes()
 	default:
 		log.Error(err.Error())
 		panic(err.Error())
 	}
 
 	Provider = &provider{log: log, coe: cluster}
+}
+
+func newOpenshift() coe {
+	return openshift{}
+}
+
+func newKubernetes() coe {
+	return kubernetes{}
 }
 
 // CreateSandbox - Translate the broker CreateSandbox call into cluster resource calls
