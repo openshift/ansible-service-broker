@@ -18,19 +18,16 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
 	"strings"
 	"time"
 
-	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/wait"
-	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/authentication/authenticatorfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
@@ -170,34 +167,17 @@ func CreateApp() App {
 	}
 
 	// Initialize Runtime
+	app.log.Debug("Connecting to Cluster")
 	agnosticruntime.NewRuntime(app.log.Logger)
+	agnosticruntime.Provider.ValidateRuntime()
+	if err != nil {
+		app.log.Error(err.Error())
+		os.Exit(1)
+	}
 
 	app.log.Debug("Connecting Dao")
 	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
-
-	k8scli, err := clients.Kubernetes(app.log.Logger)
 	if err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
-
-	restcli := k8scli.Client.CoreV1().RESTClient()
-	body, err := restcli.Get().AbsPath("/version").Do().Raw()
-	if err != nil {
-		app.log.Error(err.Error())
-		os.Exit(1)
-	}
-	switch {
-	case err == nil:
-		var kubeServerInfo kubeversiontypes.Info
-		err = json.Unmarshal(body, &kubeServerInfo)
-		if err != nil && len(body) > 0 {
-			app.log.Error(err.Error())
-			os.Exit(1)
-		}
-		app.log.Info("Kubernetes version: %v", kubeServerInfo)
-	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
-	default:
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
@@ -393,7 +373,6 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 
 	log.Info("Etcd Version [Server: %s, Cluster: %s]", version.Server, version.Cluster)
 
-	log.Debug("Connecting to Cluster")
 	_, err = clients.Kubernetes(log)
 	if err != nil {
 		return err
