@@ -24,11 +24,7 @@ import (
 )
 
 // Deprovision - runs the abp with the deprovision action.
-func Deprovision(
-	instance *ServiceInstance,
-	clusterConfig ClusterConfig,
-	log *logging.Logger,
-) (string, error) {
+func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error) {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
@@ -52,14 +48,7 @@ func Deprovision(
 
 	// Might need to change up this interface to feed in instance ids
 	metrics.ActionStarted("deprovision")
-	executionContext, err := ExecuteApb(
-		"deprovision",
-		clusterConfig,
-		instance.Spec,
-		instance.Context,
-		instance.Parameters,
-		log,
-	)
+	executionContext, err := ExecuteApb("deprovision", instance.Spec, instance.Context, instance.Parameters, log)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,

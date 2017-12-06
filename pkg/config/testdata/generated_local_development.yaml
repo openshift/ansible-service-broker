@@ -1,0 +1,44 @@
+---
+registry:
+  - type: dockerhub
+    name: dh
+    url: https://registry.hub.docker.com
+    user: shurley
+    pass: testingboom
+    org: shurley
+    white_list:
+    - "*-apb$"
+    black_list:
+      - "malicious.*-apb$"
+      - "^specific-blacklist-apb$"
+  - type: dockerhub
+    name: play
+    user: shurley
+    pass: testingboom
+    org: ansibleplaybookbundle
+    url: https://registry.hub.docker.com
+dao:
+  etcd_host: 'localhost'
+  etcd_port: 2379
+log:
+  logfile: /tmp/ansible-service-broker-asb.log
+  stdout: true
+  level: debug
+  color: true
+openshift:
+  host: 192.168.37.1
+  bearer_token_file:
+  ca_file:
+  image_pull_policy: Always
+broker:
+  dev_broker: true
+  launch_apb_on_bind: false
+  bootstrap_on_startup: true
+  recovery: true
+  output_request: true
+  ssl_cert_key: /var/run/secrets/kubernetes.io/serviceaccount/tls.key
+  ssl_cert: /var/run/secrets/kubernetes.io/serviceaccount/tls.crt
+  refresh_interval: 600s
+  testInt: 100
+  testFloat32: 32.87
+  testFloat64: 45677.0799485958595

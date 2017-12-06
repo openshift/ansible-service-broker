@@ -23,7 +23,6 @@ import (
 // Update - will run the abp with the provision action.
 func Update(
 	instance *ServiceInstance,
-	clusterConfig ClusterConfig,
 	log *logging.Logger,
 ) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
@@ -40,6 +39,6 @@ func Update(
 	// provides a nice public interface, but the bulk of the work is passed to
 	// provisionOrUpdate as an implementation detail.
 	return provisionOrUpdate(
-		executionMethodUpdate, instance, clusterConfig, log,
+		executionMethodUpdate, instance, log,
 	)
 }

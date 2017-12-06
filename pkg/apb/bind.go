@@ -27,7 +27,6 @@ import (
 func Bind(
 	instance *ServiceInstance,
 	parameters *Parameters,
-	clusterConfig ClusterConfig,
 	log *logging.Logger,
 ) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
@@ -39,14 +38,7 @@ func Bind(
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
-	executionContext, err := ExecuteApb(
-		"bind",
-		clusterConfig,
-		instance.Spec,
-		instance.Context,
-		parameters,
-		log,
-	)
+	executionContext, err := ExecuteApb("bind", instance.Spec, instance.Context, parameters, log)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,

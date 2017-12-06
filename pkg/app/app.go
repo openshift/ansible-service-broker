@@ -41,6 +41,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
@@ -68,19 +69,19 @@ const (
 type App struct {
 	broker   *broker.AnsibleBroker
 	args     Args
-	config   Config
+	config   *config.Config
 	dao      *dao.Dao
 	log      *Log
 	registry []registries.Registry
 	engine   *broker.WorkEngine
 }
 
-func apiServer(log *logging.Logger, config Config, args Args, providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
+func apiServer(log *logging.Logger, config *config.Config, args Args, providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
 	log.Debug("calling NewSecureServingOptions")
 	secureServing := genericoptions.NewSecureServingOptions()
 	secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
-		CertFile: config.Broker.SSLCert,
-		KeyFile:  config.Broker.SSLCertKey,
+		CertFile: config.GetString("broker.ssl_cert"),
+		KeyFile:  config.GetString("broker.ssl_cert_key"),
 	}}
 	secureServing.BindPort = 1338
 	secureServing.BindAddress = net.ParseIP("0.0.0.0")
@@ -147,20 +148,21 @@ func CreateApp() App {
 
 	// TODO: Let's take all these validations and delegate them to the client
 	// pkg.
-	if app.config, err = CreateConfig(app.args.ConfigFile); err != nil {
+	if app.config, err = config.CreateConfig(app.args.ConfigFile); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to read config file\n")
 		os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
+	fmt.Printf("%#v", app.config)
 
-	if app.log, err = NewLog(app.config.Log); err != nil {
+	if app.log, err = NewLog(app.config); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to initialize logger\n")
 		os.Stderr.WriteString(err.Error())
 		os.Exit(1)
 	}
 
 	// Initializing clients as soon as we have deps ready.
-	err = initClients(app.log.Logger, app.config.Dao.GetEtcdConfig())
+	err = initClients(app.log.Logger, app.config)
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
@@ -176,18 +178,18 @@ func CreateApp() App {
 	}
 
 	app.log.Debug("Connecting Dao")
-	app.dao, err = dao.NewDao(app.config.Dao, app.log.Logger)
+	app.dao, err = dao.NewDao(app.log.Logger)
 	if err != nil {
 		app.log.Error(err.Error())
 		os.Exit(1)
 	}
 
 	app.log.Debug("Connecting Registry")
-	for _, r := range app.config.Registry {
-		reg, err := registries.NewRegistry(r, app.log.Logger)
+	for name := range app.config.GetSubConfig("registry").ToMap() {
+		reg, err := registries.NewRegistry(app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)), app.log.Logger)
 		if err != nil {
 			app.log.Errorf(
-				"Failed to initialize %v Registry err - %v \n", r.Name, err)
+				"Failed to initialize %v Registry err - %v \n", name, err)
 			os.Exit(1)
 		}
 		app.registry = append(app.registry, reg)
@@ -218,12 +220,14 @@ func CreateApp() App {
 	}
 	app.log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
-	apb.InitializeSecretsCache(app.config.Secrets, app.log.Logger)
+	apb.InitializeSecretsCache(app.config.GetSubConfig("secrets"), app.log.Logger)
 	// Initialize Metrics.
 	metrics.Init(app.log.Logger)
 	app.log.Debug("Creating AnsibleBroker")
+	// Intiialize the cluster config.
+	apb.InitializeClusterConfig(app.config.GetSubConfig("openshift"))
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.config.Openshift, app.registry, *app.engine, app.config.Broker,
+		app.dao, app.log.Logger, app.registry, *app.engine, app.config.GetSubConfig("broker"),
 	); err != nil {
 		app.log.Error("Failed to create AnsibleBroker\n")
 		app.log.Error(err.Error())
@@ -251,12 +255,12 @@ func (a *App) Start() {
 	// TODO: probably return an error or some sort of message such that we can
 	// see if we need to go any further.
 
-	if a.config.Broker.Recovery {
+	if a.config.GetBool("broker.recovery") {
 		a.log.Info("Initiating Recovery Process")
 		a.Recover()
 	}
 
-	if a.config.Broker.BootstrapOnStartup {
+	if a.config.GetBool("broker.bootstrap_on_startup") {
 		a.log.Info("Broker configured to bootstrap on startup")
 		a.log.Info("Attempting bootstrap...")
 		if _, err := a.broker.Bootstrap(); err != nil {
@@ -267,7 +271,7 @@ func (a *App) Start() {
 		a.log.Notice("Broker successfully bootstrapped on startup")
 	}
 
-	interval, err := time.ParseDuration(a.config.Broker.RefreshInterval)
+	interval, err := time.ParseDuration(a.config.GetString("broker.refresh_interval"))
 	a.log.Debug("RefreshInterval: %v", interval.String())
 	if err != nil {
 		a.log.Error(err.Error())
@@ -295,7 +299,7 @@ func (a *App) Start() {
 		}()
 	}
 	//Retrieve the auth providers if basic auth is configured.
-	providers := auth.GetProviders(a.config.Broker.Auth, a.log.Logger)
+	providers := auth.GetProviders(a.config, a.log.Logger)
 
 	genericserver, servererr := apiServer(a.log.Logger, a.config, a.args, providers)
 	if servererr != nil {
@@ -304,8 +308,8 @@ func (a *App) Start() {
 	}
 
 	rules := []rbac.PolicyRule{}
-	if !a.config.Broker.AutoEscalate {
-		rules, err = retrieveClusterRoleRules(a.config.Openshift.SandboxRole, a.log.Logger)
+	if !a.config.GetBool("broker.auto_escalate") {
+		rules, err = retrieveClusterRoleRules(a.config.GetString("openshift.sandbox_role"), a.log.Logger)
 		if err != nil {
 			a.log.Errorf("Unable to retrieve cluster roles rules from cluster\n"+
 				" You must be using OpenShift 3.7 to use the User rules check.\n%v", err)
@@ -314,11 +318,11 @@ func (a *App) Start() {
 	}
 
 	var clusterURL string
-	if a.config.Broker.ClusterURL != "" {
-		if !strings.HasPrefix("/", a.config.Broker.ClusterURL) {
-			clusterURL = "/" + a.config.Broker.ClusterURL
+	if a.config.GetString("broker.cluster_url") != "" {
+		if !strings.HasPrefix("/", a.config.GetString("broker.cluster_url")) {
+			clusterURL = "/" + a.config.GetString("broker.cluster_url")
 		} else {
-			clusterURL = a.config.Broker.ClusterURL
+			clusterURL = a.config.GetString("broker.cluster_url")
 		}
 	} else {
 		clusterURL = defaultClusterURLPreFix
@@ -326,7 +330,7 @@ func (a *App) Start() {
 
 	daHandler := prometheus.InstrumentHandler(
 		"ansible-service-broker",
-		handler.NewHandler(a.broker, a.log.Logger, a.config.Broker, clusterURL, providers, rules),
+		handler.NewHandler(a.broker, a.log.Logger, a.config, clusterURL, providers, rules),
 	)
 
 	if clusterURL == "/" {
@@ -347,7 +351,7 @@ func (a *App) Start() {
 	//TODO: Add Flag so we can still use the old way of doing this.
 }
 
-func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
+func initClients(log *logging.Logger, c *config.Config) error {
 	// Designed to panic early if we cannot construct required clients.
 	// this likely means we're in an unrecoverable configuration or environment.
 	// Best we can do is alert the operator as early as possible.
@@ -358,7 +362,9 @@ func initClients(log *logging.Logger, ec clients.EtcdConfig) error {
 	log.Notice("Initializing clients...")
 	log.Debug("Trying to connect to etcd")
 
-	etcdClient, err := clients.Etcd(ec, log)
+	// Intialize the etcd configuration
+	clients.InitEtcdConfig(c)
+	etcdClient, err := clients.Etcd(log)
 	if err != nil {
 		return err
 	}

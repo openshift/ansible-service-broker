@@ -35,12 +35,8 @@ const (
 	executionMethodUpdate    executionMethod = "update"
 )
 
-func provisionOrUpdate(
-	method executionMethod,
-	instance *ServiceInstance,
-	clusterConfig ClusterConfig,
-	log *logging.Logger,
-) (string /*podName*/, *ExtractedCredentials, error) {
+// returns PodName, ExtractedCredentials, error
+func provisionOrUpdate(method executionMethod, instance *ServiceInstance, log *logging.Logger) (string, *ExtractedCredentials, error) {
 	// Explicitly error out if image field is missing from instance.Spec
 	// was introduced as a change to the apb instance.Spec to support integration
 	// with the broker and still allow for providing an img path
@@ -67,14 +63,7 @@ func provisionOrUpdate(
 	}
 
 	metrics.ActionStarted(string(method))
-	executionContext, err := ExecuteApb(
-		string(method),
-		clusterConfig,
-		instance.Spec,
-		instance.Context,
-		instance.Parameters,
-		log,
-	)
+	executionContext, err := ExecuteApb(string(method), instance.Spec, instance.Context, instance.Parameters, log)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,

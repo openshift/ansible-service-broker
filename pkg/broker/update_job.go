@@ -27,7 +27,6 @@ import (
 // UpdateJob - Job to update
 type UpdateJob struct {
 	serviceInstance *apb.ServiceInstance
-	clusterConfig   apb.ClusterConfig
 	log             *logging.Logger
 }
 
@@ -48,12 +47,9 @@ func (m UpdateMsg) Render() string {
 }
 
 // NewUpdateJob - Create a new update job.
-func NewUpdateJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
-	log *logging.Logger,
-) *UpdateJob {
+func NewUpdateJob(serviceInstance *apb.ServiceInstance, log *logging.Logger) *UpdateJob {
 	return &UpdateJob{
 		serviceInstance: serviceInstance,
-		clusterConfig:   clusterConfig,
 		log:             log,
 	}
 }
@@ -61,7 +57,7 @@ func NewUpdateJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.Cluste
 // Run - run the update job.
 func (u *UpdateJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	metrics.UpdateJobStarted()
-	podName, extCreds, err := apb.Update(u.serviceInstance, u.clusterConfig, u.log)
+	podName, extCreds, err := apb.Update(u.serviceInstance, u.log)
 
 	if err != nil {
 		u.log.Error("broker::Update error occurred.")

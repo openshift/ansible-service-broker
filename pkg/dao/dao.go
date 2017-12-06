@@ -28,40 +28,20 @@ import (
 	"github.com/pborman/uuid"
 )
 
-// Config - contains dao configuration
-type Config struct {
-	EtcdHost       string `yaml:"etcd_host"`
-	EtcdPort       string `yaml:"etcd_port"`
-	EtcdCaFile     string `yaml:"etcd_ca_file"`
-	EtcdClientCert string `yaml:"etcd_client_cert"`
-	EtcdClientKey  string `yaml:"etcd_client_key"`
-}
-
-// GetEtcdConfig - Simple EtcdConfig getter
-func (c Config) GetEtcdConfig() clients.EtcdConfig {
-	return clients.EtcdConfig{EtcdHost: c.EtcdHost,
-		EtcdPort:       c.EtcdPort,
-		EtcdClientCert: c.EtcdClientCert,
-		EtcdCaFile:     c.EtcdCaFile,
-		EtcdClientKey:  c.EtcdClientKey}
-}
-
 // Dao - object to interface with the data store.
 type Dao struct {
-	config Config
 	log    *logging.Logger
 	client client.Client
 	kapi   client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
 // NewDao - Create a new Dao object
-func NewDao(config Config, log *logging.Logger) (*Dao, error) {
+func NewDao(log *logging.Logger) (*Dao, error) {
 	dao := Dao{
-		config: config,
-		log:    log,
+		log: log,
 	}
 
-	etcdClient, err := clients.Etcd(config.GetEtcdConfig(), log)
+	etcdClient, err := clients.Etcd(log)
 	if err != nil {
 		return nil, err
 	}

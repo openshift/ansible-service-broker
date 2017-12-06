@@ -39,6 +39,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/pborman/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/kubernetes/pkg/api/v1"
@@ -62,7 +63,7 @@ type handler struct {
 	router           mux.Router
 	broker           broker.Broker
 	log              *logging.Logger
-	brokerConfig     broker.Config
+	brokerConfig     *config.Config
 	clusterRoleRules []rbac.PolicyRule
 }
 
@@ -157,9 +158,8 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config, prefix string,
-	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule,
-) http.Handler {
+func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig *config.Config, prefix string,
+	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule) http.Handler {
 	h := handler{
 		router:           *mux.NewRouter(),
 		broker:           b,
@@ -189,13 +189,13 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig broker.Config
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
 
-	if h.brokerConfig.DevBroker {
-		s.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
-		s.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
-		s.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
+	if brokerConfig.GetBool("broker.dev_broker") {
+		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
+		h.router.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
+		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	return handlers.LoggingHandler(os.Stdout, authHandler(userInfoHandler(h, log), providers, log))
+	return handlers.LoggingHandler(os.Stdout, userInfoHandler(authHandler(h, providers, log), log))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -241,7 +241,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -304,7 +304,7 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	// ignore the error, if async can't be parsed it will be false
 	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -378,7 +378,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		return
 	}
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -454,7 +454,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		}
 	}
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -524,7 +524,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
-	if !h.brokerConfig.AutoEscalate {
+	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			h.log.Debugf("unable to retrieve user info from request context")
@@ -685,7 +685,7 @@ func (h handler) apbRemoveSpecs(w http.ResponseWriter, r *http.Request, params m
 
 // printRequest - will print the request with the body.
 func (h handler) printRequest(req *http.Request) {
-	if h.brokerConfig.OutputRequest {
+	if h.brokerConfig.GetBool("broker.output_request") {
 		b, err := httputil.DumpRequest(req, true)
 		if err != nil {
 			h.log.Errorf("unable to dump request to log: %v", err)

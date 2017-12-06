@@ -1,0 +1,8 @@
+broker:
+  dev_broker: true
+  launch_apb_on_bind: false
+  bootstrap_on_startup: true
+  recovery: true
+  output_request: true
+  ssl_cert_key: /var/run/secrets/kubernetes.io/serviceaccount/tls.key
+  ssl_cert: /var/run/secrets/kubernetes.io/serviceaccount/tls.crt

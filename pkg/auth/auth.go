@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 )
 
 // Config - Configuration for authentication
@@ -149,14 +150,14 @@ func NewFileUserServiceAdapter(dir string, log *logging.Logger) (*FileUserServic
 }
 
 // GetProviders - returns the list of configured providers
-func GetProviders(entries []Config, log *logging.Logger) []Provider {
-	providers := make([]Provider, 0, len(entries))
+func GetProviders(authConfig *config.Config, log *logging.Logger) []Provider {
+	providers := make([]Provider, 0, len(authConfig.GetSubConfig("broker.auth").ToMap()))
 
-	for _, cfg := range entries {
-		if cfg.Enabled {
-			provider, err := createProvider(cfg.Type, log)
+	for t := range authConfig.GetSubConfig("broker.auth").ToMap() {
+		if authConfig.GetBool(fmt.Sprintf("broker.auth.%v.enabled", t)) {
+			provider, err := createProvider(t, log)
 			if err != nil {
-				log.Warning("Unable to create provider for %v. %v", cfg.Type, err)
+				log.Warning("Unable to create provider for %v. %v", t, err)
 				continue
 			}
 			providers = append(providers, provider)

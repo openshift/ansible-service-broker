@@ -17,17 +17,19 @@
 package apb
 
 import (
+	"fmt"
 	"sync"
 
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 )
 
 // SecretsConfig - Entry for a secret config block in broker config
 type SecretsConfig struct {
-	Title   string `yaml:"title"`
+	Name    string `yaml:"name"`
 	ApbName string `yaml:"apb_name"`
 	Secret  string `yaml:"secret"`
 }
@@ -35,7 +37,7 @@ type SecretsConfig struct {
 // Validate - Ensures that the secrets config is valid (ie, all strings are
 // non-empty
 func (c SecretsConfig) Validate() bool {
-	for _, str := range []string{c.Title, c.ApbName, c.Secret} {
+	for _, str := range []string{c.Name, c.ApbName, c.Secret} {
 		if str == "" {
 			return false
 		}
@@ -53,7 +55,6 @@ type secretsCache struct {
 	mapping map[string]map[string]bool
 	rwSync  sync.RWMutex
 	rules   []AssociationRule
-	config  []SecretsConfig
 	log     *logging.Logger
 }
 
@@ -103,27 +104,29 @@ func match(spec *Spec, rule AssociationRule) bool {
 
 // InitializeSecretsCache - Generates AssociationRules from config and
 // initializes the global secrets cache
-func InitializeSecretsCache(config []SecretsConfig, log *logging.Logger) {
+func InitializeSecretsCache(conf *config.Config, log *logging.Logger) {
 	rules := []AssociationRule{}
-	for _, cfg := range config {
-		rules = append(rules, AssociationRule{cfg.ApbName, cfg.Secret})
+	for name := range conf.ToMap() {
+		rules = append(rules, AssociationRule{
+			apbName: conf.GetString(fmt.Sprintf("%v.%v", name, "apb_name")),
+			secret:  conf.GetString(fmt.Sprintf("%v.%v", name, "secret")),
+		})
 	}
 	secrets = secretsCache{
 		mapping: make(map[string]map[string]bool),
 		rwSync:  sync.RWMutex{},
 		log:     log,
 		rules:   rules,
-		config:  config,
 	}
 }
 
 // FilterSecrets - Filters all parameters masked by a secret out of the given
 // specs
-func FilterSecrets(inSpecs []*Spec, config ClusterConfig) ([]*Spec, error) {
+func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 	for _, spec := range inSpecs {
 		secrets.log.Debugf("Filtering secrets from spec %v", spec.FQName)
 		for _, secret := range GetSecrets(spec) {
-			secretKeys, err := getSecretKeys(secret, config.Namespace)
+			secretKeys, err := getSecretKeys(secret, clusterConfig.Namespace)
 			if err != nil {
 				return nil, err
 			}

@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"reflect"
 	"regexp"
 	"strings"
@@ -29,13 +28,12 @@ import (
 	"github.com/coreos/etcd/client"
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/auth"
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pborman/uuid"
-	k8srestclient "k8s.io/client-go/rest"
 )
 
 var (
@@ -89,17 +87,16 @@ type Broker interface {
 
 // Config - Configuration for the broker.
 type Config struct {
-	DevBroker          bool          `yaml:"dev_broker"`
-	LaunchApbOnBind    bool          `yaml:"launch_apb_on_bind"`
-	BootstrapOnStartup bool          `yaml:"bootstrap_on_startup"`
-	Recovery           bool          `yaml:"recovery"`
-	OutputRequest      bool          `yaml:"output_request"`
-	SSLCertKey         string        `yaml:"ssl_cert_key"`
-	SSLCert            string        `yaml:"ssl_cert"`
-	RefreshInterval    string        `yaml:"refresh_interval"`
-	AutoEscalate       bool          `yaml:"auto_escalate"`
-	Auth               []auth.Config `yaml:"auth"`
-	ClusterURL         string        `yaml:"cluster_url"`
+	DevBroker          bool   `yaml:"dev_broker"`
+	LaunchApbOnBind    bool   `yaml:"launch_apb_on_bind"`
+	BootstrapOnStartup bool   `yaml:"bootstrap_on_startup"`
+	Recovery           bool   `yaml:"recovery"`
+	OutputRequest      bool   `yaml:"output_request"`
+	SSLCertKey         string `yaml:"ssl_cert_key"`
+	SSLCert            string `yaml:"ssl_cert"`
+	RefreshInterval    string `yaml:"refresh_interval"`
+	AutoEscalate       bool   `yaml:"auto_escalate"`
+	ClusterURL         string `yaml:"cluster_url"`
 }
 
 // DevBroker - Interface for the development broker.
@@ -111,32 +108,35 @@ type DevBroker interface {
 
 // AnsibleBroker - Broker using ansible and images to interact with oc/kubernetes/etcd
 type AnsibleBroker struct {
-	dao           *dao.Dao
-	log           *logging.Logger
-	clusterConfig apb.ClusterConfig
-	registry      []registries.Registry
-	engine        *WorkEngine
-	brokerConfig  Config
+	dao          *dao.Dao
+	log          *logging.Logger
+	registry     []registries.Registry
+	engine       *WorkEngine
+	brokerConfig Config
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
-func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger, clusterConfig apb.ClusterConfig,
-	registry []registries.Registry, engine WorkEngine, brokerConfig Config,
+func NewAnsibleBroker(dao *dao.Dao, log *logging.Logger,
+	registry []registries.Registry, engine WorkEngine, brokerConfig *config.Config,
 ) (*AnsibleBroker, error) {
 	broker := &AnsibleBroker{
-		dao:           dao,
-		log:           log,
-		clusterConfig: clusterConfig,
-		registry:      registry,
-		engine:        &engine,
-		brokerConfig:  brokerConfig,
+		dao:      dao,
+		log:      log,
+		registry: registry,
+		engine:   &engine,
+		brokerConfig: Config{
+			DevBroker:          brokerConfig.GetBool("dev_broker"),
+			LaunchApbOnBind:    brokerConfig.GetBool("launch_apb_on_bind"),
+			BootstrapOnStartup: brokerConfig.GetBool("bootstrap_on_startup"),
+			Recovery:           brokerConfig.GetBool("recovery"),
+			OutputRequest:      brokerConfig.GetBool("output_request"),
+			SSLCertKey:         brokerConfig.GetString("ssl_cert_key"),
+			SSLCert:            brokerConfig.GetString("ssl_cert"),
+			RefreshInterval:    brokerConfig.GetString("refresh_interval"),
+			AutoEscalate:       brokerConfig.GetBool("auto_escalate"),
+			ClusterURL:         brokerConfig.GetString("cluster_url"),
+		},
 	}
-
-	err := broker.Login()
-	if err != nil {
-		return broker, err
-	}
-
 	return broker, nil
 }
 
@@ -153,70 +153,6 @@ func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceIn
 	}
 	return *instance, nil
 
-}
-
-// Login - Will login the openshift user.
-func (a AnsibleBroker) Login() error {
-	config, err := a.getLoginDetails()
-	if err != nil {
-		return err
-	}
-
-	if config.CAFile != "" {
-		err = ocLogin(a.log, config.Host,
-			"--token", config.BearerToken,
-			"--certificate-authority", config.CAFile,
-		)
-	} else {
-		err = ocLogin(a.log, config.Host,
-			"--token", config.BearerToken,
-			"--insecure-skip-tls-verify=false",
-		)
-	}
-
-	return err
-}
-
-type loginDetails struct {
-	Host        string
-	CAFile      string
-	BearerToken string
-}
-
-func (a AnsibleBroker) getLoginDetails() (loginDetails, error) {
-	config := loginDetails{}
-
-	// If overrides are passed into the config map, Host and BearerTokenFile
-	// values *must* be provided, else we'll default to the k8srestclient details
-	if a.clusterConfig.Host != "" && a.clusterConfig.BearerTokenFile != "" {
-		a.log.Info("ClusterConfig Host and BearerToken provided, preferring configurable overrides")
-		a.log.Info("Host: [ %s ]", a.clusterConfig.Host)
-		a.log.Info("BearerTokenFile: [ %s ]", a.clusterConfig.BearerTokenFile)
-
-		token, err := ioutil.ReadFile(a.clusterConfig.BearerTokenFile)
-		if err != nil {
-			return config, err
-		}
-
-		config.Host = a.clusterConfig.Host
-		config.BearerToken = string(token)
-		config.CAFile = a.clusterConfig.CAFile
-	} else {
-		a.log.Info("No cluster credential overrides provided, using k8s InClusterConfig")
-		k8sConfig, err := k8srestclient.InClusterConfig()
-		if err != nil {
-			a.log.Error("Cluster host & bearer_token_file missing from config, and failed to retrieve InClusterConfig")
-			a.log.Error("Be sure you have configured a cluster host and service account credentials if" +
-				" you are running the broker outside of a cluster Pod")
-			return config, err
-		}
-
-		config.Host = k8sConfig.Host
-		config.CAFile = k8sConfig.CAFile
-		config.BearerToken = k8sConfig.BearerToken
-	}
-
-	return config, nil
 }
 
 // Bootstrap - Loads all known specs from a registry into local storage for reference
@@ -420,10 +356,10 @@ func (a AnsibleBroker) Recover() (string, error) {
 			var job Work
 			var topic WorkTopic
 			if rs.State.Method == apb.JobMethodProvision {
-				job = NewProvisionJob(instance, a.clusterConfig, a.log)
+				job = NewProvisionJob(instance, a.log)
 				topic = ProvisionTopic
 			} else if rs.State.Method == apb.JobMethodUpdate {
-				job = NewUpdateJob(instance, a.clusterConfig, a.log)
+				job = NewUpdateJob(instance, a.log)
 				topic = UpdateTopic
 			} else {
 				a.log.Warningf(
@@ -512,7 +448,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	}
 
 	a.log.Debugf("Filtering secret parameters out of specs...")
-	specs, err = apb.FilterSecrets(specs, a.clusterConfig)
+	specs, err = apb.FilterSecrets(specs)
 	if err != nil {
 		// TODO: Should we blow up or warn and continue?
 		a.log.Errorf("Something went real bad trying to load secrets %v", err)
@@ -691,7 +627,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if async {
 		a.log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob(serviceInstance, a.clusterConfig, a.log)
+		pjob := NewProvisionJob(serviceInstance, a.log)
 
 		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
 		if err != nil {
@@ -709,7 +645,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	} else {
 		// TODO: do we want to do synchronous provisioning?
 		a.log.Info("reverting to synchronous provisioning in progress")
-		_, extCreds, err := apb.Provision(serviceInstance, a.clusterConfig, a.log)
+		_, extCreds, err := apb.Provision(serviceInstance, a.log)
 		if extCreds != nil {
 			a.log.Debug("broker::Provision, got ExtractedCredentials!")
 			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
@@ -768,7 +704,7 @@ func (a AnsibleBroker) Deprovision(
 	if async {
 		a.log.Info("ASYNC deprovision in progress")
 		// asynchronously provision and return the token for the lastoperation
-		dpjob := NewDeprovisionJob(&instance, a.clusterConfig, skipApbExecution, a.dao, a.log)
+		dpjob := NewDeprovisionJob(&instance, skipApbExecution, a.dao, a.log)
 
 		token, err = a.engine.StartNewJob("", dpjob, DeprovisionTopic)
 		if err != nil {
@@ -789,7 +725,7 @@ func (a AnsibleBroker) Deprovision(
 	// TODO: do we want to do synchronous deprovisioning?
 	if !skipApbExecution {
 		a.log.Info("Synchronous deprovision in progress")
-		_, err = apb.Deprovision(&instance, a.clusterConfig, a.log)
+		_, err = apb.Deprovision(&instance, a.log)
 		if err != nil {
 			return nil, err
 		}
@@ -924,7 +860,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	metrics.ActionStarted("bind")
 	if a.brokerConfig.LaunchApbOnBind {
 		a.log.Info("Broker configured to run APB bind")
-		_, bindExtCreds, err = apb.Bind(&instance, &params, a.clusterConfig, a.log)
+		_, bindExtCreds, err = apb.Bind(&instance, &params, a.log)
 
 		if err != nil {
 			return nil, err
@@ -1007,7 +943,7 @@ func (a AnsibleBroker) Unbind(
 			a.log.Debug("Skipping unbind apb execution")
 			err = nil
 		} else {
-			err = apb.Unbind(&serviceInstance, &params, a.clusterConfig, a.log)
+			err = apb.Unbind(&serviceInstance, &params, a.log)
 		}
 		if err != nil {
 			return nil, err
@@ -1225,7 +1161,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	if async {
 		a.log.Info("ASYNC update in progress")
 		// asyncronously provision and return the token for the lastoperation
-		ujob := NewUpdateJob(si, a.clusterConfig, a.log)
+		ujob := NewUpdateJob(si, a.log)
 
 		token, err = a.engine.StartNewJob("", ujob, UpdateTopic)
 		if err != nil {
@@ -1239,7 +1175,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	} else {
 		// TODO: do we want to do synchronous updating?
 		a.log.Info("reverting to synchronous update in progress")
-		_, extCreds, err := apb.Update(si, a.clusterConfig, a.log)
+		_, extCreds, err := apb.Update(si, a.log)
 		if extCreds != nil {
 			a.log.Debug("broker::Update, got ExtractedCredentials!")
 			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)

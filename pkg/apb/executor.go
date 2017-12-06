@@ -35,7 +35,6 @@ import (
 // ExecuteApb - Runs an APB Action with a provided set of inputs
 func ExecuteApb(
 	action string,
-	clusterConfig ClusterConfig,
 	spec *Spec,
 	context *Context,
 	p *Parameters,

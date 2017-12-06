@@ -28,7 +28,6 @@ import (
 // DeprovisionJob - Job to deprovision.
 type DeprovisionJob struct {
 	serviceInstance  *apb.ServiceInstance
-	clusterConfig    apb.ClusterConfig
 	skipApbExecution bool
 	dao              *dao.Dao
 	log              *logging.Logger
@@ -50,12 +49,11 @@ func (m DeprovisionMsg) Render() string {
 }
 
 // NewDeprovisionJob - Create a deprovision job.
-func NewDeprovisionJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
+func NewDeprovisionJob(serviceInstance *apb.ServiceInstance,
 	skipApbExecution bool, dao *dao.Dao, log *logging.Logger,
 ) *DeprovisionJob {
 	return &DeprovisionJob{
 		serviceInstance:  serviceInstance,
-		clusterConfig:    clusterConfig,
 		skipApbExecution: skipApbExecution,
 		dao:              dao,
 		log:              log}
@@ -72,7 +70,7 @@ func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		return
 	}
 
-	podName, err := apb.Deprovision(p.serviceInstance, p.clusterConfig, p.log)
+	podName, err := apb.Deprovision(p.serviceInstance, p.log)
 	if err != nil {
 		p.log.Error("broker::Deprovision error occurred.")
 		p.log.Errorf("%s", err.Error())
