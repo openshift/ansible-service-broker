@@ -86,6 +86,11 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 			r.Log.Errorf("Failed to load image spec")
 			continue
 		}
+		spec.Runtime, err = getAPBRuntimeVersion(r.Log, image.Runtime)
+		if err != nil {
+			r.Log.Errorf("Failed to parse image runtime version")
+			continue
+		}
 		if strings.HasPrefix(image.Name, registryIP) == false {
 			r.Log.Debugf("Image does not have a registry IP as prefix. This might cause problems but not erroring out.")
 		}

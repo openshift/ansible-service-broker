@@ -139,16 +139,9 @@ func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spe
 		return nil, err
 	}
 
-	runtime := conf.Config.Label.Runtime
-	if runtime == "" {
-		log.Infof("No runtime label found. Set runtime=1. Will use 'exec' to gather bind credentials")
-		spec.Runtime = 1
-	} else {
-		spec.Runtime, err = strconv.Atoi(runtime)
-		if err != nil {
-			log.Errorf("Unable to parse APB runtime version - %v", err)
-			return nil, err
-		}
+	spec.Runtime, err = getAPBRuntimeVersion(log, conf.Config.Label.Runtime)
+	if err != nil {
+		return nil, err
 	}
 
 	spec.Image = image
@@ -157,4 +150,19 @@ func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spe
 	log.Debugf("Successfully converted Image %s into Spec", spec.Image)
 
 	return spec, nil
+}
+
+func getAPBRuntimeVersion(log *logging.Logger, version string) (int, error) {
+
+	if version == "" {
+		log.Infof("No runtime label found. Set runtime=1. Will use 'exec' to gather bind credentials")
+		return 1, nil
+	}
+
+	runtime, err := strconv.Atoi(version)
+	if err != nil {
+		log.Errorf("Unable to parse APB runtime version - %v", err)
+		return 0, err
+	}
+	return runtime, nil
 }
