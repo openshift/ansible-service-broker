@@ -644,6 +644,12 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		serviceInstIDKey, instanceUUID.String())
 	parameters[serviceInstIDKey] = instanceUUID.String()
 
+	// If image the image parameter is being passed in try to fully qualify it
+	if imageName, ok := parameters["image"]; ok {
+		parameters["image"] = qualifyImageName(imageName.(string), spec)
+		a.log.Debugf("Image name is set to %s", parameters["image"])
+	}
+
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
 		ID:         instanceUUID,
@@ -1202,6 +1208,12 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		a.log.Debug("Plan transition NOT requested as part of update")
 	}
 
+	// If image the image parameter is being passed in try to fully qualify it
+	if imageName, ok := req.Parameters["image"]; ok {
+		req.Parameters["image"] = qualifyImageName(imageName, spec)
+		a.log.Debugf("Image name is set to %s", req.Parameters["image"])
+	}
+
 	req.Parameters = a.validateRequestedUpdateParams(req.Parameters, toPlan, si)
 
 	// Parameters look good, update the ServiceInstance values
@@ -1381,4 +1393,13 @@ func ocLogin(log *logging.Logger, args ...string) error {
 		return err
 	}
 	return nil
+}
+
+func qualifyImageName(imageName string, spec *apb.Spec) string {
+	imageSegments := strings.Split(imageName, "/")
+	segmentCount := len(imageSegments)
+	if (segmentCount == 2 && !strings.ContainsAny(imageSegments[0], ".")) || segmentCount == 1 {
+		imageName = strings.Split(spec.Image, "/")[0] + "/" + imageName
+	}
+	return imageName
 }
