@@ -43,20 +43,13 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 
 ## Prerequisites
 1. You will need a system setup for local [OpenShift Origin Cluster Management](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md)
-    * Your OpenShift Client binary (`oc`) must be `>=` [v3.6.0-rc.0](https://github.com/openshift/origin/releases/tag/v3.6.0-rc.0)
+    * Your OpenShift Client binary (`oc`) must be `>=` [v3.7.0-rc.0](https://github.com/openshift/origin/releases/tag/v3.7.0-rc.0)
 
 ## Deploy an OpenShift Origin Cluster with the Ansible Service Broker
 
 [![Watch the full asciicast](docs/images/run_latest.gif)](https://asciinema.org/a/134509)
 
 1. Download and execute our [run_latest_build.sh](https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh) script
-
-    Origin Version 3.6:
-    ```
-    wget https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh
-    chmod +x run_latest_build.sh
-    ORIGIN_VERSION=v3.6.0 ./run_latest_build.sh
-    ```
 
     Origin Version 3.7:
     ```
@@ -73,23 +66,25 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 1. Provision [MediaWiki APB](https://github.com/ansibleplaybookbundle/mediawiki-apb)
     * Select the 'apb-demo' project
     * Enter a 'MediaWiki Admin User Password': 's3curepw'
-    * Select 'Create'
+    * Click 'Create'
 1. Provision [PostgreSQL APB](https://github.com/ansibleplaybookbundle/postgresql-apb)
     * Select the 'apb-demo' project
     * Leave 'PostgreSQL Password' blank, a random password will be generated
-    * Chose a 'PostgreSQL Version', either version will work.
-    * Select 'Create'
-1. Wait till both APBs have finished deploying and you see pods running for MediaWiki and PostgreSQL
+    * Choose a 'PostgreSQL Version'; either version will work.
+    * Click 'Next'
+    * Select 'Do not bind at this time' and then 'Create'
+1. Wait until both APBs have finished deploying, and you see pods running for MediaWiki and PostgreSQL
 
 **Bind MediaWiki to PostgreSQL**
 1. Bind MediaWiki to PostgreSQL
-    * Right click on kebab menu for MediaWiki
-    * Select 'Create Binding'
-    * Select the PostgreSQL service to create the Binding
-1. Redeploy MediaWiki so the pod is able to consume the credentials for the database.
-    * Click on the kebab menu for MediaWiki
-    * Select 'Deploy'
+    * Click on kebab menu for PostgreSQL
+    * Select 'Create Binding' and then 'Bind'
+    * Click on the link to the created secret
+    * Click 'Add to Application'
+    * Select 'mediawiki123' and 'Environment variables'
+    * Click 'Save'
 1. View the route for MediaWiki and verify the wiki is up and running.
+    * Observe that mediawiki123 is on deployment '#2', having been automatically redeployed
 
 # Contributing
 
