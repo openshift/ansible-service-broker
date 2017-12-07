@@ -113,7 +113,7 @@ var p = apb.Plan{
 
 func TestEnumIsCopied(t *testing.T) {
 
-	schemaObj := parametersToSchema(p)
+	schemaObj, _ := parametersToSchema(p)
 
 	emailParam := schemaObj.ServiceInstance.Create["parameters"].Properties["email_address"]
 	ft.AssertEqual(t, len(emailParam.Enum), 2, "enum mismatch")
@@ -124,7 +124,7 @@ func TestEnumIsCopied(t *testing.T) {
 
 func TestEnumIsCopiedForUpdate(t *testing.T) {
 
-	schemaObj := parametersToSchema(p)
+	schemaObj, _ := parametersToSchema(p)
 
 	emailParam := schemaObj.ServiceInstance.Update["parameters"].Properties["email_address"]
 	ft.AssertEqual(t, len(emailParam.Enum), 2, "enum mismatch")
@@ -162,7 +162,7 @@ func TestSpecToService(t *testing.T) {
 		Metadata:    descriptors,
 	}
 
-	svc := SpecToService(&spec)
+	svc, _ := SpecToService(&spec)
 
 	ft.AssertEqual(t, svc.Name, expectedsvc.Name, "name is not equal")
 	ft.AssertEqual(t, svc.Description, expectedsvc.Description, "description is not equal")
@@ -270,7 +270,7 @@ func TestParametersToSchema(t *testing.T) {
 	if err = yaml.Unmarshal(decodedyaml, spec); err != nil {
 		t.Fatal(err)
 	}
-	schemaObj := parametersToSchema(spec.Plans[0])
+	schemaObj, _ := parametersToSchema(spec.Plans[0])
 
 	found := false
 	for k, p := range schemaObj.ServiceInstance.Create["parameters"].Properties {
@@ -301,7 +301,7 @@ func TestUpdateParametersToSchema(t *testing.T) {
 	if err = yaml.Unmarshal(decodedyaml, spec); err != nil {
 		t.Fatal(err)
 	}
-	schemaObj := parametersToSchema(spec.Plans[0])
+	schemaObj, _ := parametersToSchema(spec.Plans[0])
 
 	found := false
 	for k, p := range schemaObj.ServiceInstance.Create["parameters"].Properties {
@@ -390,7 +390,13 @@ func TestGetType(t *testing.T) {
 	// test
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%s in type %s", tc.want, tc.jsonType), func(t *testing.T) {
-			ft.AssertTrue(t, getType(tc.jsonType).Contains(tc.want), "test failed")
+			ty, err := getType(tc.jsonType)
+			if tc.jsonType == "biteme" && err == nil {
+				t.Fatalf("unknown schema types should return an error")
+			} else if tc.jsonType == "biteme" && err != nil {
+				return
+			}
+			ft.AssertTrue(t, ty.Contains(tc.want), "test failed")
 		})
 	}
 }
