@@ -150,8 +150,8 @@ tabs on what the broker is doing, running the broker locally is an excellent ide
 
 Before attempting to run the broker locally, you will need to have deployed an
 [OpenShift Origin Cluster with the Ansible Service Broker](#deploy_an_openshift_origin_cluster_with_the_ansible_service_broker).
-You can verify this by running `oc get all --all-namespaces` and looking for the `ansible-service-broker`
-`service-catalog` running in the cluster.
+You can verify this by running `oc get all --all-namespaces` and looking for the `ansible-service-broker` and
+`kube-service-catalog` running in the cluster.
 
 **Configuration**
 
