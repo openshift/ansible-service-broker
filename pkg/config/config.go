@@ -26,12 +26,12 @@ import (
 	"strings"
 	"sync"
 
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	yaml "gopkg.in/yaml.v1"
 )
 
 var (
-	log = utillogging.NewLog()
+	log = logutil.NewLog()
 )
 
 // Config - The base config for the pieces of the applcation

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-package app
+package logger
 
 import (
 	"errors"
@@ -35,8 +35,8 @@ type LogConfig struct {
 var backends []logging.Backend
 var logLevel logging.Level
 
-//InitilizeLog - initilize the logging utility
-func InitilizeLog(config LogConfig) error {
+//InitializeLog - initilize the logging utility
+func InitializeLog(config LogConfig) error {
 	if config.LogFile == "" && !config.Stdout {
 		return errors.New("Cannot have a blank logfile and not log to stdout")
 	}

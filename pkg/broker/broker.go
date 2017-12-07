@@ -31,7 +31,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 )
 
@@ -58,7 +58,7 @@ var (
 	ErrorParameterNotFound = errors.New("parameter not found")
 	// ErrorPlanUpdateNotPossible - Error when a Plan Update request cannot be satisfied
 	ErrorPlanUpdateNotPossible = errors.New("plan update not possible")
-	log                        = utillogging.NewLog()
+	log                        = logutil.NewLog()
 )
 
 const (

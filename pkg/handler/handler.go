@@ -39,14 +39,14 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/config"
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/pborman/uuid"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var log = utillogging.NewLog()
+var log = logutil.NewLog()
 
 // RequestContextKey - keys that will be used in the request context
 type RequestContextKey string

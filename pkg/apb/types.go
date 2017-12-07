@@ -20,11 +20,11 @@ import (
 	"encoding/json"
 
 	"github.com/openshift/ansible-service-broker/pkg/config"
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 )
 
-var log = utillogging.NewLog()
+var log = logutil.NewLog()
 
 // Parameters - generic string to object or value parameter
 type Parameters map[string]interface{}

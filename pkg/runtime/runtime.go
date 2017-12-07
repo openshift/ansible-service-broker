@@ -23,7 +23,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	apicorev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1beta1"
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +31,7 @@ import (
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 )
 
-var log = utillogging.NewLog()
+var log = logutil.NewLog()
 
 // Provider - Variable for accessing provider functions
 var Provider *provider

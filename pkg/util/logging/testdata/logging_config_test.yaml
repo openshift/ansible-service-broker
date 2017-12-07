@@ -1,0 +1,15 @@
+---
+logDoesNotExist:
+  logfile: /tmp/ansible-service-broker-asb.log
+  stdout: true
+  level: debug
+  color: true
+logDoesExist:
+  logfile: testdata/testing.log
+  stdout: false
+  level: debug
+  color: false
+logShouldFail:
+  stdout: false
+  level: debug
+  color: false

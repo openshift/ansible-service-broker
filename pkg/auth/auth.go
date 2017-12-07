@@ -25,10 +25,10 @@ import (
 	"strings"
 
 	"github.com/openshift/ansible-service-broker/pkg/config"
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 )
 
-var log = utillogging.NewLog()
+var log = logutil.NewLog()
 
 // Config - Configuration for authentication
 type Config struct {

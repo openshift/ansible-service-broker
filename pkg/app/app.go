@@ -46,7 +46,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	agnosticruntime "github.com/openshift/ansible-service-broker/pkg/runtime"
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -57,7 +57,7 @@ var (
 	// Codecs -k8s codecs for the scheme
 	Codecs = serializer.NewCodecFactory(Scheme)
 	// log - logging object
-	log = utillogging.NewLog()
+	log = logutil.NewLog()
 )
 
 const (
@@ -155,13 +155,13 @@ func CreateApp() App {
 		os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
-	c := utillogging.LogConfig{
+	c := logutil.LogConfig{
 		LogFile: app.config.GetString("log.logfile"),
 		Stdout:  app.config.GetBool("log.stdout"),
 		Level:   app.config.GetString("log.level"),
 		Color:   app.config.GetBool("log.color"),
 	}
-	if err = utillogging.InitilizeLog(c); err != nil {
+	if err = logutil.InitializeLog(c); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to initialize logger\n")
 		os.Stderr.WriteString(err.Error())
 		os.Exit(1)

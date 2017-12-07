@@ -24,11 +24,11 @@ import (
 	"github.com/coreos/etcd/client"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 )
 
-var log = utillogging.NewLog()
+var log = logutil.NewLog()
 
 // Dao - object to interface with the data store.
 type Dao struct {

@@ -30,13 +30,13 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries/adapters"
-	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 )
 
 var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*`)
 
-var log = utillogging.NewLog()
+var log = logutil.NewLog()
 
 // Config - Configuration for the registry
 type Config struct {
