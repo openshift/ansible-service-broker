@@ -19,7 +19,6 @@ package apb
 import (
 	"fmt"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 )
 
@@ -29,7 +28,7 @@ import (
 // github.com/op/go-logging, which is used all over the broker
 // Maybe apb defines its own interface and accepts that optionally
 // Little looser, but still not great
-func Unbind(instance *ServiceInstance, parameters *Parameters, log *logging.Logger) error {
+func Unbind(instance *ServiceInstance, parameters *Parameters) error {
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                            ")
 	log.Notice("============================================================")
@@ -39,7 +38,7 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, log *logging.Logg
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
-	executionContext, err := ExecuteApb("unbind", instance.Spec, instance.Context, parameters, log)
+	executionContext, err := ExecuteApb("unbind", instance.Spec, instance.Context, parameters)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,
@@ -53,7 +52,7 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, log *logging.Logg
 		return err
 	}
 
-	err = watchPod(executionContext.PodName, executionContext.Namespace, log)
+	err = watchPod(executionContext.PodName, executionContext.Namespace)
 	if err != nil {
 		log.Errorf("APB Execution failed - %v", err)
 		return err

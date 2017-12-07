@@ -29,8 +29,6 @@ import (
 	"github.com/coreos/etcd/version"
 	"github.com/openshift/ansible-service-broker/pkg/config"
 
-	logging "github.com/op/go-logging"
-
 	etcd "github.com/coreos/etcd/client"
 )
 
@@ -86,10 +84,10 @@ func GetEtcdVersion(ec EtcdConfig) (string, string, error) {
 }
 
 // Etcd - Create a new etcd client if needed, returns reference
-func Etcd(log *logging.Logger) (etcd.Client, error) {
+func Etcd() (etcd.Client, error) {
 	errMsg := "Something went wrong intializing etcd client!"
 	once.Etcd.Do(func() {
-		client, err := newEtcd(log)
+		client, err := newEtcd()
 		if err != nil {
 			log.Error(errMsg)
 			// NOTE: Looking to leverage panic recovery to gracefully handle this
@@ -108,7 +106,7 @@ func Etcd(log *logging.Logger) (etcd.Client, error) {
 	return instances.Etcd, nil
 }
 
-func newEtcd(log *logging.Logger) (etcd.Client, error) {
+func newEtcd() (etcd.Client, error) {
 	// TODO: Config validation
 	endpoints := []string{etcdEndpoint()}
 	transport, err := newTransport()

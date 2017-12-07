@@ -22,18 +22,17 @@ import (
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 
-	logging "github.com/op/go-logging"
 	apiv1 "k8s.io/api/core/v1"
 )
 
-func watchPod(podName string, namespace string, log *logging.Logger) error {
+func watchPod(podName string, namespace string) error {
 	log.Debugf(
 		"Watching pod [ %s ] in namespace [ %s ] for completion",
 		podName,
 		namespace,
 	)
 
-	k8scli, err := clients.Kubernetes(log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return fmt.Errorf("Unable to retrive kubernetes client - %v", err)
 	}

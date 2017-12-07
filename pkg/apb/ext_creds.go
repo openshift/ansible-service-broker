@@ -27,32 +27,21 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/openshift/ansible-service-broker/pkg/version"
-
-	logging "github.com/op/go-logging"
 )
 
-type extractCreds func(string, string, *logging.Logger) (*ExtractedCredentials, error)
+type extractCreds func(string, string) (*ExtractedCredentials, error)
 
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
-func ExtractCredentials(
-	podname string,
-	namespace string,
-	runtimeVersion int,
-	log *logging.Logger,
-) (*ExtractedCredentials, error) {
+func ExtractCredentials(podname string, namespace string, runtimeVersion int) (*ExtractedCredentials, error) {
 	extractCredsFunc, err := getExtractCreds(runtimeVersion)
 	if err != nil {
 		return nil, err
 	}
-	return extractCredsFunc(podname, namespace, log)
+	return extractCredsFunc(podname, namespace)
 }
 
 // ExtractCredentialsAsFile - Extract credentials from running APB using exec
-func ExtractCredentialsAsFile(
-	podname string,
-	namespace string,
-	log *logging.Logger,
-) (*ExtractedCredentials, error) {
+func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCredentials, error) {
 	// TODO: Error handling here
 	// It would also be nice to gather the script output that exec runs
 	// instead of only getting the credentials
@@ -108,12 +97,8 @@ func ExtractCredentialsAsFile(
 }
 
 // ExtractCredentialsAsSecret - Extract credentials from APB as secret in namespace.
-func ExtractCredentialsAsSecret(
-	podname string,
-	namespace string,
-	log *logging.Logger,
-) (*ExtractedCredentials, error) {
-	k8s, err := clients.Kubernetes(log)
+func ExtractCredentialsAsSecret(podname string, namespace string) (*ExtractedCredentials, error) {
+	k8s, err := clients.Kubernetes()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrive kubernetes client - %v", err)
 	}

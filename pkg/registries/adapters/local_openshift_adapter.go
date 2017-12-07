@@ -17,12 +17,13 @@
 package adapters
 
 import (
+	"strings"
+
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	yaml "gopkg.in/yaml.v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
 )
 
 const localOpenShiftName = "openshift-registry"
@@ -43,13 +44,13 @@ func (r LocalOpenShiftAdapter) GetImageNames() ([]string, error) {
 	r.Log.Debug("LocalOpenShiftAdapter::GetImageNames")
 	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 
-	openshiftClient, err := clients.Openshift(r.Log)
+	openshiftClient, err := clients.Openshift()
 	if err != nil {
 		r.Log.Errorf("Failed to instantiate OpenShift client")
 		return nil, err
 	}
 
-	images, err := openshiftClient.ListRegistryImages(r.Log)
+	images, err := openshiftClient.ListRegistryImages()
 	if err != nil {
 		r.Log.Errorf("Failed to load registry images")
 		return nil, err
@@ -68,13 +69,13 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 		return nil, err
 	}
 
-	openshiftClient, err := clients.Openshift(r.Log)
+	openshiftClient, err := clients.Openshift()
 	if err != nil {
 		r.Log.Errorf("Failed to instantiate OpenShift client.")
 		return nil, err
 	}
 
-	fqImages, err := openshiftClient.ConvertRegistryImagesToSpecs(r.Log, imageNames)
+	fqImages, err := openshiftClient.ConvertRegistryImagesToSpecs(imageNames)
 	if err != nil {
 		r.Log.Errorf("Failed to load registry images")
 		return nil, err
@@ -136,7 +137,7 @@ func (r LocalOpenShiftAdapter) loadSpec(yamlSpec []byte) (*apb.Spec, error) {
 }
 
 func (r LocalOpenShiftAdapter) getServiceIP(service string, namespace string) (string, error) {
-	k8s, err := clients.Kubernetes(r.Log)
+	k8s, err := clients.Kubernetes()
 	if err != nil {
 		return "", err
 	}

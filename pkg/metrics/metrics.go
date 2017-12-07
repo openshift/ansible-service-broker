@@ -88,11 +88,6 @@ func init() {
 	prometheus.MustRegister(requests)
 }
 
-// Init - Initialize the metrics package.
-func Init(logger *logging.Logger) {
-	log = logger
-}
-
 // We will never want to panic our app because of metric saving.
 // Therefore, we will recover our panics here and error log them
 // for later diagnosis but will never fail the app.

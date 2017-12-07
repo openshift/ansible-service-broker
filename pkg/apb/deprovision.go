@@ -17,14 +17,13 @@
 package apb
 
 import (
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pkg/errors"
 )
 
 // Deprovision - runs the abp with the deprovision action.
-func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error) {
+func Deprovision(instance *ServiceInstance) (string, error) {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
@@ -48,7 +47,7 @@ func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error)
 
 	// Might need to change up this interface to feed in instance ids
 	metrics.ActionStarted("deprovision")
-	executionContext, err := ExecuteApb("deprovision", instance.Spec, instance.Context, instance.Parameters, log)
+	executionContext, err := ExecuteApb("deprovision", instance.Spec, instance.Context, instance.Parameters)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,
@@ -62,7 +61,7 @@ func Deprovision(instance *ServiceInstance, log *logging.Logger) (string, error)
 		return executionContext.PodName, err
 	}
 
-	err = watchPod(executionContext.PodName, executionContext.Namespace, log)
+	err = watchPod(executionContext.PodName, executionContext.Namespace)
 	if err != nil {
 		log.Errorf("APB Execution failed - %v", err)
 		return executionContext.PodName, err

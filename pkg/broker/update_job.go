@@ -19,7 +19,6 @@ package broker
 import (
 	"encoding/json"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -27,7 +26,6 @@ import (
 // UpdateJob - Job to update
 type UpdateJob struct {
 	serviceInstance *apb.ServiceInstance
-	log             *logging.Logger
 }
 
 // UpdateMsg - Message to be returned from the update job
@@ -47,21 +45,20 @@ func (m UpdateMsg) Render() string {
 }
 
 // NewUpdateJob - Create a new update job.
-func NewUpdateJob(serviceInstance *apb.ServiceInstance, log *logging.Logger) *UpdateJob {
+func NewUpdateJob(serviceInstance *apb.ServiceInstance) *UpdateJob {
 	return &UpdateJob{
 		serviceInstance: serviceInstance,
-		log:             log,
 	}
 }
 
 // Run - run the update job.
 func (u *UpdateJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	metrics.UpdateJobStarted()
-	podName, extCreds, err := apb.Update(u.serviceInstance, u.log)
+	podName, extCreds, err := apb.Update(u.serviceInstance)
 
 	if err != nil {
-		u.log.Error("broker::Update error occurred.")
-		u.log.Errorf("%s", err.Error())
+		log.Error("broker::Update error occurred.")
+		log.Errorf("%s", err.Error())
 
 		// send error message
 		// can't have an error type in a struct you want marshalled

@@ -23,13 +23,15 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 
-	logging "github.com/op/go-logging"
+	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	apicorev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1beta1"
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
 )
+
+var log = utillogging.NewLog()
 
 // Provider - Variable for accessing provider functions
 var Provider *provider
@@ -44,7 +46,6 @@ type Runtime interface {
 
 // Variables for interacting with runtimes
 type provider struct {
-	log *logging.Logger
 	coe
 }
 
@@ -58,8 +59,8 @@ type openshift struct{}
 type kubernetes struct{}
 
 // NewRuntime - Initialize provider variable
-func NewRuntime(log *logging.Logger) {
-	k8scli, err := clients.Kubernetes(log)
+func NewRuntime() {
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		log.Error(err.Error())
 		panic(err.Error())
@@ -87,7 +88,7 @@ func NewRuntime(log *logging.Logger) {
 		panic(err.Error())
 	}
 
-	Provider = &provider{log: log, coe: cluster}
+	Provider = &provider{coe: cluster}
 }
 
 func newOpenshift() coe {
@@ -100,7 +101,7 @@ func newKubernetes() coe {
 
 // ValidateRuntime - Translate the broker cluster validation check into specfici runtime checks
 func (p provider) ValidateRuntime() error {
-	k8scli, err := clients.Kubernetes(p.log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return err
 	}
@@ -115,9 +116,9 @@ func (p provider) ValidateRuntime() error {
 		if err != nil && len(body) > 0 {
 			return err
 		}
-		p.log.Info("Kubernetes version: %v", kubeServerInfo)
+		log.Info("Kubernetes version: %v", kubeServerInfo)
 	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
-		p.log.Error("the server could not find the requested resource")
+		log.Error("the server could not find the requested resource")
 		return err
 	default:
 		return err
@@ -127,7 +128,7 @@ func (p provider) ValidateRuntime() error {
 
 // CreateSandbox - Translate the broker CreateSandbox call into cluster resource calls
 func (p provider) CreateSandbox(podName string, namespace string, targets []string, apbRole string) (string, error) {
-	k8scli, err := clients.Kubernetes(p.log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return "", err
 	}
@@ -137,7 +138,7 @@ func (p provider) CreateSandbox(podName string, namespace string, targets []stri
 		return "", err
 	}
 
-	p.log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
 
 	subjects := []rbac.Subject{
 		rbac.Subject{
@@ -166,31 +167,31 @@ func (p provider) CreateSandbox(podName string, namespace string, targets []stri
 		}
 	}
 
-	p.log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
 
 	return podName, nil
 }
 
 // DestroySandbox - Translate the broker DestorySandbox call into cluster resource calls
 func (p provider) DestroySandbox(podName string, namespace string, targets []string, configNamespace string, keepNamespace bool, keepNamespaceOnError bool) {
-	p.log.Info("Destroying APB sandbox...")
+	log.Info("Destroying APB sandbox...")
 	if podName == "" {
-		p.log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
+		log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return
 	}
-	k8scli, err := clients.Kubernetes(p.log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
-		p.log.Error("Something went wrong getting kubernetes client")
-		p.log.Errorf("%s", err.Error())
+		log.Error("Something went wrong getting kubernetes client")
+		log.Errorf("%s", err.Error())
 		return
 	}
 	pod, err := k8scli.Client.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
 	if err != nil {
-		p.log.Errorf("Unable to retrieve pod - %v", err)
+		log.Errorf("Unable to retrieve pod - %v", err)
 	}
 	if shouldDeleteNamespace(keepNamespace, keepNamespaceOnError, pod, err) {
 		if configNamespace != namespace {
-			p.log.Debug("Deleting namespace %s", namespace)
+			log.Debug("Deleting namespace %s", namespace)
 			k8scli.Client.CoreV1().Namespaces().Delete(namespace, &metav1.DeleteOptions{})
 			// This is keeping track of namespaces.
 			metrics.SandboxDeleted()
@@ -200,25 +201,25 @@ func (p provider) DestroySandbox(podName string, namespace string, targets []str
 		}
 
 	} else {
-		p.log.Debugf("Keeping namespace alive due to configuration")
+		log.Debugf("Keeping namespace alive due to configuration")
 	}
-	p.log.Debugf("Deleting rolebinding %s, namespace %s", podName, namespace)
+	log.Debugf("Deleting rolebinding %s, namespace %s", podName, namespace)
 
 	err = k8scli.DeleteRoleBinding(podName, namespace)
 	if err != nil {
-		p.log.Error("Something went wrong trying to destroy the rolebinding! - %v", err)
+		log.Error("Something went wrong trying to destroy the rolebinding! - %v", err)
 		return
 	}
-	p.log.Notice("Successfully deleted rolebinding %s, namespace %s", podName, namespace)
+	log.Notice("Successfully deleted rolebinding %s, namespace %s", podName, namespace)
 
 	for _, target := range targets {
-		p.log.Debugf("Deleting rolebinding %s, namespace %s", podName, target)
+		log.Debugf("Deleting rolebinding %s, namespace %s", podName, target)
 		err = k8scli.DeleteRoleBinding(podName, target)
 		if err != nil {
-			p.log.Error("Something went wrong trying to destroy the rolebinding!")
+			log.Error("Something went wrong trying to destroy the rolebinding!")
 			return
 		}
-		p.log.Notice("Successfully deleted rolebinding %s, namespace %s", podName, target)
+		log.Notice("Successfully deleted rolebinding %s, namespace %s", podName, target)
 	}
 	return
 }

@@ -24,7 +24,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
@@ -33,13 +32,7 @@ import (
 )
 
 // ExecuteApb - Runs an APB Action with a provided set of inputs
-func ExecuteApb(
-	action string,
-	spec *Spec,
-	context *Context,
-	p *Parameters,
-	log *logging.Logger,
-) (ExecutionContext, error) {
+func ExecuteApb(action string, spec *Spec, context *Context, p *Parameters) (ExecutionContext, error) {
 	executionContext := ExecutionContext{}
 	extraVars, err := createExtraVars(context, p)
 
@@ -69,7 +62,7 @@ func ExecuteApb(
 	}
 
 	secrets := GetSecrets(spec)
-	k8scli, err := clients.Kubernetes(log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return executionContext, err
 	}

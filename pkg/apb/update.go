@@ -16,15 +16,8 @@
 
 package apb
 
-import (
-	logging "github.com/op/go-logging"
-)
-
 // Update - will run the abp with the provision action.
-func Update(
-	instance *ServiceInstance,
-	log *logging.Logger,
-) (string, *ExtractedCredentials, error) {
+func Update(instance *ServiceInstance) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
 	log.Notice("                       UPDATING                             ")
 	log.Notice("============================================================")
@@ -38,7 +31,5 @@ func Update(
 	// provision and update, save for passing through the method type. Update
 	// provides a nice public interface, but the bulk of the work is passed to
 	// provisionOrUpdate as an implementation detail.
-	return provisionOrUpdate(
-		executionMethodUpdate, instance, log,
-	)
+	return provisionOrUpdate(executionMethodUpdate, instance)
 }

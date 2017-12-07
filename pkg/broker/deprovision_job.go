@@ -19,7 +19,6 @@ package broker
 import (
 	"encoding/json"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
@@ -30,7 +29,6 @@ type DeprovisionJob struct {
 	serviceInstance  *apb.ServiceInstance
 	skipApbExecution bool
 	dao              *dao.Dao
-	log              *logging.Logger
 }
 
 // DeprovisionMsg - Message returned for a deprovison job.
@@ -50,13 +48,13 @@ func (m DeprovisionMsg) Render() string {
 
 // NewDeprovisionJob - Create a deprovision job.
 func NewDeprovisionJob(serviceInstance *apb.ServiceInstance,
-	skipApbExecution bool, dao *dao.Dao, log *logging.Logger,
+	skipApbExecution bool, dao *dao.Dao,
 ) *DeprovisionJob {
 	return &DeprovisionJob{
 		serviceInstance:  serviceInstance,
 		skipApbExecution: skipApbExecution,
 		dao:              dao,
-		log:              log}
+	}
 }
 
 // Run - will run the deprovision job.
@@ -64,22 +62,22 @@ func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	metrics.DeprovisionJobStarted()
 
 	if p.skipApbExecution {
-		p.log.Debug("skipping deprovision and sending complete msg to channel")
+		log.Debug("skipping deprovision and sending complete msg to channel")
 		msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(), PodName: "",
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: ""}
 		return
 	}
 
-	podName, err := apb.Deprovision(p.serviceInstance, p.log)
+	podName, err := apb.Deprovision(p.serviceInstance)
 	if err != nil {
-		p.log.Error("broker::Deprovision error occurred.")
-		p.log.Errorf("%s", err.Error())
+		log.Error("broker::Deprovision error occurred.")
+		log.Errorf("%s", err.Error())
 		msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(), PodName: podName,
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: err.Error()}
 		return
 	}
 
-	p.log.Debug("sending deprovision complete msg to channel")
+	log.Debug("sending deprovision complete msg to channel")
 	msgBuffer <- DeprovisionMsg{InstanceUUID: p.serviceInstance.ID.String(), PodName: podName,
 		JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: ""}
 }

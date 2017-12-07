@@ -22,26 +22,25 @@ import (
 	"strings"
 
 	"github.com/coreos/etcd/client"
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	utillogging "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 )
 
+var log = utillogging.NewLog()
+
 // Dao - object to interface with the data store.
 type Dao struct {
-	log    *logging.Logger
 	client client.Client
 	kapi   client.KeysAPI // Used to interact with kvp API over HTTP
 }
 
 // NewDao - Create a new Dao object
-func NewDao(log *logging.Logger) (*Dao, error) {
-	dao := Dao{
-		log: log,
-	}
+func NewDao() (*Dao, error) {
+	dao := Dao{}
 
-	etcdClient, err := clients.Etcd(log)
+	etcdClient, err := clients.Etcd()
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +75,7 @@ func (d *Dao) GetRaw(key string) (string, error) {
 // GET /spec/manifest [/*ordered ids*/]
 // BatchGet(offset, count)?
 func (d *Dao) BatchGetRaw(dir string) (*[]string, error) {
-	d.log.Debug("Dao::BatchGetRaw")
+	log.Debug("Dao::BatchGetRaw")
 
 	var res *client.Response
 	var err error
@@ -89,7 +88,7 @@ func (d *Dao) BatchGetRaw(dir string) (*[]string, error) {
 	specNodes := res.Node.Nodes
 	specCount := len(specNodes)
 
-	d.log.Debug("Successfully loaded [ %d ] objects from etcd dir [ %s ]", specCount, dir)
+	log.Debug("Successfully loaded [ %d ] objects from etcd dir [ %s ]", specCount, dir)
 
 	payloads := make([]string, specCount)
 	for i, node := range specNodes {
@@ -115,7 +114,7 @@ func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
 
 // DeleteSpec - Delete the spec for a given spec id.
 func (d *Dao) DeleteSpec(specID string) error {
-	d.log.Debug(fmt.Sprintf("Dao::DeleteSpec-> [ %s ]", specID))
+	log.Debug(fmt.Sprintf("Dao::DeleteSpec-> [ %s ]", specID))
 	_, err := d.kapi.Delete(context.Background(), specKey(specID), nil)
 	return err
 }
@@ -148,7 +147,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 		spec := &apb.Spec{}
 		apb.LoadJSON(payload, spec)
 		specs[i] = spec
-		d.log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.ID)
+		log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.ID)
 	}
 
 	return specs, nil
@@ -168,7 +167,7 @@ func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
 
 // FindJobStateByState - Retrieve all the jobs that match the specified state
 func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
-	d.log.Debug("Dao::FindByState")
+	log.Debug("Dao::FindByState")
 
 	var res *client.Response
 	var err error
@@ -181,7 +180,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	stateNodes := res.Node.Nodes
 	stateCount := len(stateNodes)
 
-	d.log.Debug("Successfully loaded [ %d ] jobstate objects from etcd dir [ /state/ ]", stateCount)
+	log.Debug("Successfully loaded [ %d ] jobstate objects from etcd dir [ /state/ ]", stateCount)
 
 	var recoverstatus []apb.RecoverStatus
 	for _, node := range stateNodes {
@@ -192,7 +191,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 		nodes, e := d.kapi.Get(context.Background(), k, opts)
 		if e != nil {
 			// if key is invalid do we keep it?
-			d.log.Warning(
+			log.Warning(
 				fmt.Sprintf("Error processing jobstate record, moving on to next. %v", e.Error()))
 			continue
 		}
@@ -200,14 +199,14 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 		for _, n := range nodes.Node.Nodes {
 			apb.LoadJSON(n.Value, &jobstate)
 			if jobstate.State == state {
-				d.log.Debug(fmt.Sprintf(
+				log.Debug(fmt.Sprintf(
 					"Found! jobstate [%v] matched given state: [%v].", jobstate, state))
 				status.State = jobstate
 				recoverstatus = append(recoverstatus, status)
 			} else {
 				// we could probably remove this once we're happy with how this
 				// works.
-				d.log.Debug(fmt.Sprintf(
+				log.Debug(fmt.Sprintf(
 					"Skipping, jobstate [%v] did not match given state: [%v].", jobstate, state))
 			}
 		}
@@ -220,7 +219,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 func (d *Dao) GetSvcInstJobsByState(
 	instanceID string, reqState apb.State,
 ) ([]apb.JobState, error) {
-	d.log.Debug("Dao::GetSvcInstJobsByState")
+	log.Debug("Dao::GetSvcInstJobsByState")
 	allStates, err := d.getJobsForSvcInst(instanceID)
 
 	if err != nil {
@@ -236,13 +235,13 @@ func (d *Dao) GetSvcInstJobsByState(
 		}
 	}
 
-	d.log.Debugf("Filtered on state: [ %v ], returning %d jobs", reqState, len(filtStates))
+	log.Debugf("Filtered on state: [ %v ], returning %d jobs", reqState, len(filtStates))
 
 	return filtStates, nil
 }
 
 func (d *Dao) getJobsForSvcInst(instanceID string) ([]apb.JobState, error) {
-	d.log.Debug("Dao::getJobsForSvcInst")
+	log.Debug("Dao::getJobsForSvcInst")
 
 	var res *client.Response
 	var err error
@@ -259,7 +258,7 @@ func (d *Dao) getJobsForSvcInst(instanceID string) ([]apb.JobState, error) {
 		return []apb.JobState{}, nil
 	}
 
-	d.log.Debug("Successfully loaded [ %d ] jobs objects from [ %s ]",
+	log.Debug("Successfully loaded [ %d ] jobs objects from [ %s ]",
 		jobsCount, lookupKey)
 
 	retJobs := []apb.JobState{}
@@ -290,7 +289,7 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 
 // DeleteServiceInstance - Delete the service instance for an service instance id.
 func (d *Dao) DeleteServiceInstance(id string) error {
-	d.log.Debug(fmt.Sprintf("Dao::DeleteServiceInstance -> [ %s ]", id))
+	log.Debug(fmt.Sprintf("Dao::DeleteServiceInstance -> [ %s ]", id))
 	_, err := d.kapi.Delete(context.Background(), serviceInstanceKey(id), nil)
 	return err
 }
@@ -311,7 +310,7 @@ func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 
 // DeleteBindInstance - Delete the binding instance for an id in the kvp API.
 func (d *Dao) DeleteBindInstance(id string) error {
-	d.log.Debug(fmt.Sprintf("Dao::DeleteBindInstance -> [ %s ]", id))
+	log.Debug(fmt.Sprintf("Dao::DeleteBindInstance -> [ %s ]", id))
 	_, err := d.kapi.Delete(context.Background(), bindInstanceKey(id), nil)
 	return err
 }

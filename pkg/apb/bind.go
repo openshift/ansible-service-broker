@@ -19,16 +19,11 @@ package apb
 import (
 	"fmt"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 )
 
 // Bind - Will run the APB with the bind action.
-func Bind(
-	instance *ServiceInstance,
-	parameters *Parameters,
-	log *logging.Logger,
-) (string, *ExtractedCredentials, error) {
+func Bind(instance *ServiceInstance, parameters *Parameters) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")
@@ -38,7 +33,7 @@ func Bind(
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
-	executionContext, err := ExecuteApb("bind", instance.Spec, instance.Context, parameters, log)
+	executionContext, err := ExecuteApb("bind", instance.Spec, instance.Context, parameters)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,
@@ -53,7 +48,7 @@ func Bind(
 	}
 
 	if instance.Spec.Runtime >= 2 {
-		err := watchPod(executionContext.PodName, executionContext.Namespace, log)
+		err := watchPod(executionContext.PodName, executionContext.Namespace)
 		if err != nil {
 			log.Errorf("APB Execution failed - %v", err)
 			return executionContext.PodName, nil, err
@@ -64,7 +59,6 @@ func Bind(
 		executionContext.PodName,
 		executionContext.Namespace,
 		instance.Spec.Runtime,
-		log,
 	)
 	if err != nil {
 		log.Errorf("apb::bind error occurred - %v", err)

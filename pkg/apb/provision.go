@@ -16,14 +16,9 @@
 
 package apb
 
-import (
-	logging "github.com/op/go-logging"
-)
-
 // Provision - will run the abp with the provision action.
 func Provision(
 	instance *ServiceInstance,
-	log *logging.Logger,
 ) (string, *ExtractedCredentials, error) {
 	log.Notice("============================================================")
 	log.Notice("                       PROVISIONING                         ")
@@ -38,5 +33,5 @@ func Provision(
 	// provision and update, save for passing through the method type. Provision
 	// provides a nice public interface, but the bulk of the work is passed to
 	// provisionOrUpdate as an implementation detail.
-	return provisionOrUpdate(executionMethodProvision, instance, log)
+	return provisionOrUpdate(executionMethodProvision, instance)
 }
