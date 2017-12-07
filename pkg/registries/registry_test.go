@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"testing"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/config"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
@@ -191,10 +190,8 @@ func setUp() Registry {
 	}
 	filter := Filter{}
 	c := Config{}
-	log := &logging.Logger{}
 	r = Registry{config: c,
 		adapter: a,
-		log:     log,
 		filter:  filter}
 	return r
 }
@@ -208,10 +205,8 @@ func setUpNoPlans() Registry {
 	}
 	filter := Filter{}
 	c := Config{}
-	log := &logging.Logger{}
 	r = Registry{config: c,
 		adapter: a,
-		log:     log,
 		filter:  filter}
 	return r
 }
@@ -225,10 +220,8 @@ func setUpNoVersion() Registry {
 	}
 	filter := Filter{}
 	c := Config{}
-	log := &logging.Logger{}
 	r = Registry{config: c,
 		adapter: a,
-		log:     log,
 		filter:  filter}
 	return r
 }
@@ -242,10 +235,8 @@ func setUpBadVersion() Registry {
 	}
 	filter := Filter{}
 	c := Config{}
-	log := &logging.Logger{}
 	r = Registry{config: c,
 		adapter: a,
-		log:     log,
 		filter:  filter}
 	return r
 }
@@ -259,10 +250,8 @@ func setUpBadRuntime() Registry {
 	}
 	filter := Filter{}
 	c := Config{}
-	log := &logging.Logger{}
 	r = Registry{config: c,
 		adapter: a,
-		log:     log,
 		filter:  filter}
 	return r
 }
@@ -345,8 +334,7 @@ func TestNewRegistryRHCC(t *testing.T) {
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
-	log := &logging.Logger{}
-	reg, err := NewRegistry(c.GetSubConfig("registry.rhcc"), log)
+	reg, err := NewRegistry(c.GetSubConfig("registry.rhcc"))
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
@@ -359,8 +347,7 @@ func TestNewRegistryDockerHub(t *testing.T) {
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
-	log := &logging.Logger{}
-	reg, err := NewRegistry(c.GetSubConfig("registry.dh"), log)
+	reg, err := NewRegistry(c.GetSubConfig("registry.dh"))
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
@@ -373,8 +360,7 @@ func TestNewRegistryMock(t *testing.T) {
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
-	log := &logging.Logger{}
-	reg, err := NewRegistry(c.GetSubConfig("registry.mock"), log)
+	reg, err := NewRegistry(c.GetSubConfig("registry.mock"))
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
@@ -391,15 +377,13 @@ func TestPanicOnUnknow(t *testing.T) {
 		}
 	}()
 	c, _ := config.CreateConfig("testdata/registry.yaml")
-	log := &logging.Logger{}
-	r, err := NewRegistry(c.GetSubConfig("registry.makes-no-sense"), log)
+	r, err := NewRegistry(c.GetSubConfig("registry.makes-no-sense"))
 	fmt.Printf("%#v\n\n %v\n", r, err)
 }
 
 func TestValidateName(t *testing.T) {
 	c, _ := config.CreateConfig("testdata/registry.yaml")
-	log := &logging.Logger{}
-	_, err := NewRegistry(c.GetSubConfig("registry.makes_no_sense"), log)
+	_, err := NewRegistry(c.GetSubConfig("registry.makes_no_sense"))
 	if err == nil {
 		ft.AssertTrue(t, false)
 	}
