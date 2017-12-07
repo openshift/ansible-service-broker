@@ -32,7 +32,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
-	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pborman/uuid"
 )
 
@@ -1300,21 +1299,5 @@ func (a AnsibleBroker) RemoveSpecs() error {
 		return err
 	}
 	metrics.SpecsLoadedReset()
-	return nil
-}
-
-func ocLogin(log *logging.Logger, args ...string) error {
-	log.Debug("Logging into openshift...")
-
-	fullArgs := append([]string{"login"}, args...)
-
-	output, err := runtime.RunCommand("oc", fullArgs...)
-	log.Debug("Login output:")
-	log.Debug(string(output))
-
-	if err != nil {
-		log.Debug(string(output))
-		return err
-	}
 	return nil
 }
