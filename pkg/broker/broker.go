@@ -454,7 +454,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	for i, spec := range specs {
 		ser, err := SpecToService(spec)
 		if err != nil {
-			a.log.Errorf("not adding spec to list of services due to error transforming to service - %v", err)
+			log.Errorf("not adding spec to list of services due to error transforming to service - %v", err)
 		} else {
 			services[i] = ser
 		}
@@ -1264,7 +1264,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	apb.AddSecretsFor(&spec)
 	service, err := SpecToService(&spec)
 	if err != nil {
-		a.log.Debugf("spec was not added due to issue with transformation to serivce - %v", err)
+		log.Debugf("spec was not added due to issue with transformation to serivce - %v", err)
 		return nil, err
 	}
 	metrics.SpecsLoaded(apbPushRegName, 1)
