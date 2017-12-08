@@ -52,7 +52,8 @@ type OpenshiftClient struct {
 }
 
 type imageLabel struct {
-	Spec string `json:"com.redhat.apb.spec"`
+	Spec    string `json:"com.redhat.apb.spec"`
+	Runtime string `json:"com.redhat.apb.runtime"`
 }
 
 type containerConfig struct {
@@ -79,6 +80,7 @@ type ImageList struct {
 type FQImage struct {
 	Name        string
 	DecodedSpec []byte
+	Runtime     string
 }
 
 // SubjectRulesReview is a resource you can create to determine which actions another user can perform in a namespace
@@ -372,6 +374,7 @@ func (o OpenshiftClient) ConvertRegistryImagesToSpecs(log *logging.Logger, image
 				}
 				fqImage.Name = imageName
 				fqImage.DecodedSpec = decodedSpec
+				fqImage.Runtime = image.Metadata.ContainerConfig.Labels.Runtime
 				fqList = append(fqList, fqImage)
 			}
 		}

@@ -40,6 +40,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/config"
+	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/pborman/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/kubernetes/pkg/api/v1"
@@ -636,6 +637,8 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter yaml"})
 		return
 	}
+	h.log.Infof("Assuming pushed APB runtime version [%v]", version.MaxRuntimeVersion)
+	spec.Runtime = version.MaxRuntimeVersion
 
 	h.log.Debug("Unmarshalled into apb.Spec:")
 	h.log.Debugf("%+v", spec)
