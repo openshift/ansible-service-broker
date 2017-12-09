@@ -637,7 +637,7 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter yaml"})
 		return
 	}
-	h.log.Infof("Assuming pushed APB runtime version [%v]", version.MaxRuntimeVersion)
+	log.Infof("Assuming pushed APB runtime version [%v]", version.MaxRuntimeVersion)
 	spec.Runtime = version.MaxRuntimeVersion
 
 	log.Debug("Unmarshalled into apb.Spec:")
