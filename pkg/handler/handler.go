@@ -711,7 +711,7 @@ func (h handler) validateUser(userName, namespace string) (bool, int, error) {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
 	if covered, _ := validation.Covers(prs, h.clusterRoleRules); !covered {
-		return false, http.StatusBadRequest, fmt.Errorf("User does not have sufficient permissions")
+		return false, http.StatusForbidden, fmt.Errorf("User does not have sufficient permissions")
 	}
 	return true, http.StatusOK, nil
 }
