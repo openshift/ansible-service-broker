@@ -60,7 +60,7 @@ run: broker
 # /var/run/secrets/kubernetes.io/serviceaccount
 # Resetting a catasb cluster WILL generate new certs, so you will have to
 # run prep-local again to export the new certs.
-prep-local:
+prep-local: ## Prepares the local dev environment
 	@./scripts/prep_local_devel_env.sh
 
 build-image: ## Build a docker image with the broker binary
@@ -110,4 +110,4 @@ help: ## Show this help screen
 	@grep -E '^[ a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html
+.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local

@@ -162,7 +162,7 @@ Now you can modify `scripts/my_local_dev_vars` with things like your `DOCKERHUB_
 or use an insecure broker with `BROKER_INSECURE="true"`.
 
 It is possible to use an etcd instance running locally on your host instead
-of in-cluster. Simply set LOCAL_ETCD="true" in the my_local_dev_vars file,
+of in-cluster. Simply set `LOCAL_ETCD="true"` in the my_local_dev_vars file,
 and the broker will point to an etcd at `localhost:2379`.
 
 **Prepare Local Environment**
@@ -209,8 +209,8 @@ registry:
 ```
 
 **NOTE**: It is important to explicitly run `make prep-local` every time a new
-cluster has been setup, like reseting a catasb cluster, for example. The reason
-is that the cluster's token/certs will have changed, so you will meed to `prep-local`
+cluster has been setup, like resetting a catasb cluster, for example. The reason
+is that the cluster's token/certs will have changed, so you will need to `prep-local`
 again to extract them to your local filesystem.
 
 **Start the Broker**
