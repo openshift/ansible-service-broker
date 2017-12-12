@@ -52,14 +52,16 @@ vet: ## Run go vet
 
 check: fmtcheck vet lint build test ## Pre-flight checks before creating PR
 
-run: broker | $(KUBERNETES_FILES) ## Run the broker locally, configure via etc/generated_local_development.yaml
+run: broker
 	@./scripts/run_local.sh ${BROKER_CONFIG}
 
-$(KUBERNETES_FILES):
+# NOTE: Must be explicitly run if you expect to be doing local development
+# Basically brings down the broker pod and extracts token/cert files to
+# /var/run/secrets/kubernetes.io/serviceaccount
+# Resetting a catasb cluster WILL generate new certs, so you will have to
+# run prep-local again to export the new certs.
+prep-local: ## Prepares the local dev environment
 	@./scripts/prep_local_devel_env.sh
-
-prepare-local-env: $(KUBERNETES_FILES) ## Prepare the local environment for running the broker locally
-	@echo > /dev/null
 
 build-image: ## Build a docker image with the broker binary
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/broker ./cmd/broker
@@ -108,4 +110,4 @@ help: ## Show this help screen
 	@grep -E '^[ a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html
+.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local

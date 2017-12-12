@@ -103,9 +103,6 @@ cd $GOPATH/src/github.com/openshift/ansible-service-broker
 make build
 ```
 
-Now you can [run your broker locally](#run-your-broker-locally) with `make run` or
-[package your broker using docker](#package-your-broker-using-docker) with `make build-image`.
-
 ## Package Your Broker Using Docker
 
 As stated above, you can also package your built Ansible Service Broker binary
@@ -164,9 +161,13 @@ cp scripts/my_local_dev_vars.example scripts/my_local_dev_vars
 Now you can modify `scripts/my_local_dev_vars` with things like your `DOCKERHUB_USERNAME`
 or use an insecure broker with `BROKER_INSECURE="true"`.
 
+It is possible to use an etcd instance running locally on your host instead
+of in-cluster. Simply set `LOCAL_ETCD="true"` in the my_local_dev_vars file,
+and the broker will point to an etcd at `localhost:2379`.
+
 **Prepare Local Environment**
 
-Running `make prepare-local-env` will do several things on your behalf:
+Running `make prep-local` will do several things on your behalf:
 
 * Remove the running `ansible-service-broker` from the cluster, leaving only
   `etcd` running in the namespace.
@@ -206,6 +207,11 @@ registry:
     pass: changeme
     org: example
 ```
+
+**NOTE**: It is important to explicitly run `make prep-local` every time a new
+cluster has been setup, like resetting a catasb cluster, for example. The reason
+is that the cluster's token/certs will have changed, so you will need to `prep-local`
+again to extract them to your local filesystem.
 
 **Start the Broker**
 
