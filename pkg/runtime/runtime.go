@@ -37,6 +37,7 @@ var Provider *provider
 // Runtime - Abstraction for broker actions
 type Runtime interface {
 	ValidateRuntime()
+	GetRuntime() string
 	CreateSandbox(string, string, []string, string)
 	DestroySandbox(string, string, []string, string, bool, bool)
 }
@@ -48,7 +49,9 @@ type provider struct {
 }
 
 // Abstraction for actions that are different between runtimes
-type coe interface{}
+type coe interface {
+	getRuntime() string
+}
 
 // Different runtimes
 type openshift struct{}
@@ -231,4 +234,9 @@ func shouldDeleteNamespace(keepNamespace bool, keepNamespaceOnError bool, pod *a
 		}
 	}
 	return true
+}
+
+// GetRuntime - Return a string value of the runtime
+func (p provider) GetRuntime() string {
+	return p.coe.getRuntime()
 }

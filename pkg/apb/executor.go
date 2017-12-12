@@ -197,6 +197,8 @@ func createExtraVars(context *Context, parameters *Parameters) (string, error) {
 	if context != nil {
 		paramsCopy["namespace"] = context.Namespace
 	}
+
+	paramsCopy["cluster"] = runtime.Provider.GetRuntime()
 	extraVars, err := json.Marshal(paramsCopy)
 	return string(extraVars), err
 }
