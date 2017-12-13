@@ -1,0 +1,23 @@
+# Proposal for [Bug 1512042](https://bugzilla.redhat.com/show_bug.cgi?id=1512042)
+
+## Introduction
+The issue is that when a custom namespace (not openshift) is used for holding the images the broker does not currently give access to that namespace when creating the service account for the sandbox. This cause's the resulting transient namespace to get stuck in an error pulling the image. 
+
+# Problem Description
+The problem is that we want to be able to control how the privileges get escalated into that namespace to see/pull the images. This means that we will need a robust solution, that is not a simple bug fix.
+
+## Implementation Details
+The proposed changes are adding a configuration option to the local_registry. This configuration option will be similar to the auto_escalate feature we already have. The option will allow for checking if the originating user has access to the customer namespace to pull images. This will be the default, and you can specify to auto grant access to the namespace. 
+
+To grant access to sandbox's service account we will grant access to pull images from the custom namespace. 
+
+There is also a third option that we should document, which is to allow everyone to access your images in that custom namespace. This option will work even with the default because the user will always have access then.
+
+### Open Questions
+1. I think this check should be in the handler. This is an authorization check in my mind and should be treated as such.
+2. The runtime package should be used to determine the check, something like `CheckAccessToImage`.
+3. We need to figure out how to handle if the adapter is any other adapter then local_openshift. 
+    1. Add a field on the spec to state the registry/adapter that it is using?
+    2. We will also need to track the namespace that it should check.
+    3. Need to be able to not run this check if the not available.
+    4. Need this to be usable by other adapters if they want (ecr adapter could use this to look at IAM access of the originating origin user) 
