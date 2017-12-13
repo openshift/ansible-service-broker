@@ -23,7 +23,9 @@ import (
 )
 
 // Bind - Will run the APB with the bind action.
-func Bind(instance *ServiceInstance, parameters *Parameters) (string, *ExtractedCredentials, error) {
+func Bind(instance *ServiceInstance,
+	parameters *Parameters) (string, *ExtractedCredentials, error) {
+
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")

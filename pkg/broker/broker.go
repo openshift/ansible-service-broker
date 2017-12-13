@@ -115,7 +115,11 @@ type AnsibleBroker struct {
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
-func NewAnsibleBroker(dao *dao.Dao, registry []registries.Registry, engine WorkEngine, brokerConfig *config.Config) (*AnsibleBroker, error) {
+func NewAnsibleBroker(dao *dao.Dao,
+	registry []registries.Registry,
+	engine WorkEngine,
+	brokerConfig *config.Config) (*AnsibleBroker, error) {
+
 	broker := &AnsibleBroker{
 		dao:      dao,
 		registry: registry,
@@ -749,7 +753,9 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 	return nil
 }
 
-func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance, method apb.JobMethod) (bool, string, error) {
+func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance,
+	method apb.JobMethod) (bool, string, error) {
+
 	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
 	if err != nil {
 		return false, "", err
@@ -882,17 +888,17 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	return a.buildBindResponse(provExtCreds, bindExtCreds)
 }
 
-func (a AnsibleBroker) buildBindResponse(provExtCreds, bindExtCreds *apb.ExtractedCredentials) (*BindResponse, error) {
+func (a AnsibleBroker) buildBindResponse(pCreds, bCreds *apb.ExtractedCredentials) (*BindResponse, error) {
 	// Can't bind to anything if we have nothing to return to the catalog
-	if provExtCreds == nil && bindExtCreds == nil {
+	if pCreds == nil && bCreds == nil {
 		log.Errorf("No extracted credentials found from provision or bind instance ID")
 		return nil, errors.New("No credentials available")
 	}
 
-	if bindExtCreds != nil {
-		return &BindResponse{Credentials: bindExtCreds.Credentials}, nil
+	if bCreds != nil {
+		return &BindResponse{Credentials: bCreds.Credentials}, nil
 	}
-	return &BindResponse{Credentials: provExtCreds.Credentials}, nil
+	return &BindResponse{Credentials: pCreds.Credentials}, nil
 }
 
 // Unbind - unbind a services previous binding

@@ -77,7 +77,10 @@ type App struct {
 	engine   *broker.WorkEngine
 }
 
-func apiServer(config *config.Config, args Args, providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
+func apiServer(config *config.Config,
+	args Args,
+	providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
+
 	log.Debug("calling NewSecureServingOptions")
 	secureServing := genericoptions.NewSecureServingOptions()
 	secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{

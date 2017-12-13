@@ -32,7 +32,11 @@ import (
 )
 
 // ExecuteApb - Runs an APB Action with a provided set of inputs
-func ExecuteApb(action string, spec *Spec, context *Context, p *Parameters) (ExecutionContext, error) {
+func ExecuteApb(action string,
+	spec *Spec,
+	context *Context,
+	p *Parameters) (ExecutionContext, error) {
+
 	executionContext := ExecutionContext{}
 	extraVars, err := createExtraVars(context, p)
 

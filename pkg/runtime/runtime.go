@@ -127,7 +127,11 @@ func (p provider) ValidateRuntime() error {
 }
 
 // CreateSandbox - Translate the broker CreateSandbox call into cluster resource calls
-func (p provider) CreateSandbox(podName string, namespace string, targets []string, apbRole string) (string, error) {
+func (p provider) CreateSandbox(podName string,
+	namespace string,
+	targets []string,
+	apbRole string) (string, error) {
+
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return "", err
@@ -173,7 +177,13 @@ func (p provider) CreateSandbox(podName string, namespace string, targets []stri
 }
 
 // DestroySandbox - Translate the broker DestorySandbox call into cluster resource calls
-func (p provider) DestroySandbox(podName string, namespace string, targets []string, configNamespace string, keepNamespace bool, keepNamespaceOnError bool) {
+func (p provider) DestroySandbox(podName string,
+	namespace string,
+	targets []string,
+	configNamespace string,
+	keepNamespace bool,
+	keepNamespaceOnError bool) {
+
 	log.Info("Destroying APB sandbox...")
 	if podName == "" {
 		log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
@@ -224,7 +234,11 @@ func (p provider) DestroySandbox(podName string, namespace string, targets []str
 	return
 }
 
-func shouldDeleteNamespace(keepNamespace bool, keepNamespaceOnError bool, pod *apicorev1.Pod, getPodErr error) bool {
+func shouldDeleteNamespace(keepNamespace bool,
+	keepNamespaceOnError bool,
+	pod *apicorev1.Pod,
+	getPodErr error) bool {
+
 	if keepNamespace {
 		return false
 	}

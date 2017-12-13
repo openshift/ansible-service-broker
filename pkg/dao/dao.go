@@ -325,8 +325,8 @@ func (d *Dao) GetExtractedCredentials(id string) (*apb.ExtractedCredentials, err
 }
 
 // SetExtractedCredentials - Set the extracted credentials for an id in the kvp API.
-func (d *Dao) SetExtractedCredentials(id string, extractedCredentials *apb.ExtractedCredentials) error {
-	return d.setObject(extractedCredentialsKey(id), extractedCredentials)
+func (d *Dao) SetExtractedCredentials(id string, extCreds *apb.ExtractedCredentials) error {
+	return d.setObject(extractedCredentialsKey(id), extCreds)
 }
 
 // DeleteExtractedCredentials - delete the extracted credentials for an id in the kvp API.

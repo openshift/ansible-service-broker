@@ -32,12 +32,13 @@ import (
 type extractCreds func(string, string) (*ExtractedCredentials, error)
 
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
-func ExtractCredentials(podname string, namespace string, runtimeVersion int) (*ExtractedCredentials, error) {
-	extractCredsFunc, err := getExtractCreds(runtimeVersion)
+// needs the podname, namespace and the runtime version.
+func ExtractCredentials(podname string, ns string, runtime int) (*ExtractedCredentials, error) {
+	extractCredsFunc, err := getExtractCreds(runtime)
 	if err != nil {
 		return nil, err
 	}
-	return extractCredsFunc(podname, namespace)
+	return extractCredsFunc(podname, ns)
 }
 
 // ExtractCredentialsAsFile - Extract credentials from running APB using exec

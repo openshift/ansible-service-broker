@@ -35,7 +35,9 @@ const (
 )
 
 // returns PodName, ExtractedCredentials, error
-func provisionOrUpdate(method executionMethod, instance *ServiceInstance) (string, *ExtractedCredentials, error) {
+func provisionOrUpdate(method executionMethod,
+	instance *ServiceInstance) (string, *ExtractedCredentials, error) {
+
 	// Explicitly error out if image field is missing from instance.Spec
 	// was introduced as a change to the apb instance.Spec to support integration
 	// with the broker and still allow for providing an img path
