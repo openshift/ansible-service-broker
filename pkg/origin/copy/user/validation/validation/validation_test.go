@@ -271,9 +271,9 @@ func TestValidateIdentityUpdate(t *testing.T) {
 	}
 }
 
-func TestValidateUserIdentityMapping(t *testing.T) {
-	validObj := func() *userapi.UserIdentityMapping {
-		return &userapi.UserIdentityMapping{
+func TestValidateIdentityMapping(t *testing.T) {
+	validObj := func() *userapi.IdentityMapping {
+		return &userapi.IdentityMapping{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "myprovider:myproviderusername",
 			},
@@ -282,32 +282,32 @@ func TestValidateUserIdentityMapping(t *testing.T) {
 		}
 	}
 
-	if errs := ValidateUserIdentityMapping(validObj()); len(errs) > 0 {
+	if errs := ValidateIdentityMapping(validObj()); len(errs) > 0 {
 		t.Errorf("Expected no errors, got %v", errs)
 	}
 
 	mismatchName := validObj()
 	mismatchName.Identity.Name = "myprovider:myproviderusername2"
-	if errs := ValidateUserIdentityMapping(mismatchName); len(errs) == 0 {
+	if errs := ValidateIdentityMapping(mismatchName); len(errs) == 0 {
 		t.Errorf("Expected error, got none")
 	}
 
 	emptyIdentityName := validObj()
 	emptyIdentityName.Identity.Name = ""
-	if errs := ValidateUserIdentityMapping(emptyIdentityName); len(errs) == 0 {
+	if errs := ValidateIdentityMapping(emptyIdentityName); len(errs) == 0 {
 		t.Errorf("Expected error, got none")
 	}
 
 	emptyUserName := validObj()
 	emptyUserName.Identity.Name = ""
-	if errs := ValidateUserIdentityMapping(emptyUserName); len(errs) == 0 {
+	if errs := ValidateIdentityMapping(emptyUserName); len(errs) == 0 {
 		t.Errorf("Expected error, got none")
 	}
 }
 
-func TestValidateUserIdentityMappingUpdate(t *testing.T) {
-	validObj := func() *userapi.UserIdentityMapping {
-		return &userapi.UserIdentityMapping{
+func TestValidateIdentityMappingUpdate(t *testing.T) {
+	validObj := func() *userapi.IdentityMapping {
+		return &userapi.IdentityMapping{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            "myprovider:myproviderusername",
 				ResourceVersion: "1",
@@ -319,25 +319,25 @@ func TestValidateUserIdentityMappingUpdate(t *testing.T) {
 
 	oldObj := validObj()
 
-	if errs := ValidateUserIdentityMappingUpdate(validObj(), oldObj); len(errs) > 0 {
+	if errs := ValidateIdentityMappingUpdate(validObj(), oldObj); len(errs) > 0 {
 		t.Errorf("Expected no errors, got %v", errs)
 	}
 
 	mismatchName := validObj()
 	mismatchName.Identity.Name = "myprovider:myproviderusername2"
-	if errs := ValidateUserIdentityMappingUpdate(mismatchName, oldObj); len(errs) == 0 {
+	if errs := ValidateIdentityMappingUpdate(mismatchName, oldObj); len(errs) == 0 {
 		t.Errorf("Expected error, got none")
 	}
 
 	emptyIdentityName := validObj()
 	emptyIdentityName.Identity.Name = ""
-	if errs := ValidateUserIdentityMappingUpdate(emptyIdentityName, oldObj); len(errs) == 0 {
+	if errs := ValidateIdentityMappingUpdate(emptyIdentityName, oldObj); len(errs) == 0 {
 		t.Errorf("Expected error, got none")
 	}
 
 	emptyUserName := validObj()
 	emptyUserName.Identity.Name = ""
-	if errs := ValidateUserIdentityMappingUpdate(emptyUserName, oldObj); len(errs) == 0 {
+	if errs := ValidateIdentityMappingUpdate(emptyUserName, oldObj); len(errs) == 0 {
 		t.Errorf("Expected error, got none")
 	}
 }
