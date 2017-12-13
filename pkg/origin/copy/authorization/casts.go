@@ -1,5 +1,7 @@
 package authorization
 
+//COPIED and modified for our use from: https://github.com/openshift/origin/tree/master/pkg/authorization/apis/authorization
+
 import (
 	kapi "k8s.io/kubernetes/pkg/api"
 )

@@ -24,11 +24,11 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 
 	logging "github.com/op/go-logging"
+	apicorev1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1beta1"
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeversiontypes "k8s.io/apimachinery/pkg/version"
-	apicorev1 "k8s.io/kubernetes/pkg/api/v1"
-	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
 // Provider - Variable for accessing provider functions

@@ -23,7 +23,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 
 	logging "github.com/op/go-logging"
-	apiv1 "k8s.io/kubernetes/pkg/api/v1"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 func watchPod(podName string, namespace string, log *logging.Logger) error {

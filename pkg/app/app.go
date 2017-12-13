@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	apirbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -32,9 +33,9 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/apiserver/pkg/server/routes"
+	"k8s.io/client-go/informers"
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 	"k8s.io/kubernetes/pkg/apis/rbac"
-	v1beta1rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -95,11 +96,11 @@ func apiServer(log *logging.Logger, config *config.Config, args Args, providers 
 		return nil, err
 	}
 
+	k8s, err := clients.Kubernetes(log)
+	if err != nil {
+		return nil, err
+	}
 	if len(providers) == 0 {
-		k8s, err := clients.Kubernetes(log)
-		if err != nil {
-			return nil, err
-		}
 		client, err := authenticationclient.NewForConfig(k8s.ClientConfig)
 		if err != nil {
 			return nil, err
@@ -124,7 +125,8 @@ func apiServer(log *logging.Logger, config *config.Config, args Args, providers 
 	}
 
 	log.Debug("Creating k8s apiserver")
-	return serverConfig.SkipComplete().New("ansible-service-broker", genericapiserver.EmptyDelegate)
+	s := informers.NewSharedInformerFactory(k8s.Client, 2*time.Hour)
+	return serverConfig.Complete(s).New("ansible-service-broker", genericapiserver.EmptyDelegate)
 }
 
 // CreateApp - Creates the application
@@ -398,9 +400,26 @@ func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]rbac.P
 	if err != nil {
 		return nil, err
 	}
-	rbacClusterRole := rbac.ClusterRole{}
-	if v1beta1rbac.Convert_v1beta1_ClusterRole_To_rbac_ClusterRole(k8sRole, &rbacClusterRole, nil); err != nil {
-		return nil, err
+	return convertAPIRbacToK8SRbac(k8sRole).Rules, nil
+}
+
+// convertAPIRbacToK8SRbac - because we are using the kubernetes validation,
+// and they have not started using the authoritative api package for their own
+// types, we need to do some conversion here now that we are on client-go 5.0.X
+func convertAPIRbacToK8SRbac(apiRole *apirbac.ClusterRole) *rbac.ClusterRole {
+	rules := []rbac.PolicyRule{}
+	for _, pr := range apiRole.Rules {
+		rules = append(rules, rbac.PolicyRule{
+			Verbs:           pr.Verbs,
+			APIGroups:       pr.APIGroups,
+			Resources:       pr.Resources,
+			ResourceNames:   pr.ResourceNames,
+			NonResourceURLs: pr.NonResourceURLs,
+		})
 	}
-	return rbacClusterRole.Rules, nil
+	return &rbac.ClusterRole{
+		TypeMeta:   apiRole.TypeMeta,
+		ObjectMeta: apiRole.ObjectMeta,
+		Rules:      rules,
+	}
 }

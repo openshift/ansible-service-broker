@@ -42,8 +42,8 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/pborman/uuid"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
 )
 
 // RequestContextKey - keys that will be used in the request context

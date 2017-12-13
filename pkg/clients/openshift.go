@@ -26,6 +26,7 @@ import (
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/conversion"
@@ -34,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/homedir"
 	kapi "k8s.io/kubernetes/pkg/api"
