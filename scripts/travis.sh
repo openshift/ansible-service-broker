@@ -70,7 +70,6 @@ elif [[ "$action" == "lint" ]]; then
   echo "              Lint               "
   echo "================================="
   make lint
-  cat pkg/clients/zz_generated.deepcopy.go
 elif [[ "$action" == "format" ]]; then
   echo "================================="
   echo "             Format              "
