@@ -20,4 +20,61 @@ There is also a third option that we should document, which is to allow everyone
     1. Add a field on the spec to state the registry/adapter that it is using?
     2. We will also need to track the namespace that it should check.
     3. Need to be able to not run this check if the not available.
-    4. Need this to be usable by other adapters if they want (ecr adapter could use this to look at IAM access of the originating origin user) 
+    4. Need this to be usable by other adapters if they want (ecr adapter could use this to look at IAM access of the originating origin user, gcr adapter could use their Cloud IAM). Or a calller could want to do their own authorization check using our built in auth model (basic auth example).
+
+### Possible Solutions
+1. Create new fields on the spec. These fields will keep track of the adapters/registries that added the spec. Add a function in the runtime package that will be called by the handler for authorization. This function will take the spec, the originating user structure, and some undefined structures as a variadic. Example:
+```go
+type RuntimeAuthorization func(apb.Spec, apb.UserInfo, interface{}...)
+
+var RuntimeAuthorization RuntimeAuthorization
+```
+2.  Create new fields on the spec sor that it can track the adapters/registries that added this specific spec. Add a interface Authorization for the runtime package. This will have a single method, Authorize that will take a UserInfo struct. This then can be chained, and the runtime package should manage this as this is supposed to be exposed so everyone can add one. We can helper methods to add providers to the authorization on the fly.
+```go
+type UserInfo {
+    .... openservicebroker userinfo
+}
+type Authorization interface {
+        Authorize(UserInfo) bool
+} 
+
+var authz Authorization
+
+func AddAuthorization(a Authorization) {
+    authz = chainAuthz(authz, a) 
+}
+
+func chainAuthz(a, b Authorization){
+    return AuthorizationFunc(func(u UserInfo){
+        if a(u) {
+            return b(u)
+        }
+        return false
+    })
+}
+type AuthorizationFunc func(UserInfo)
+
+func (a AuthorizationFunc) Authorize(u UserInfo) {
+    a(u)
+}
+```
+Using it would be:
+```go
+func addProviderAuth(provider auth.Provider) runtime.Authorization {
+    return runtime.AuthorizationFunc(func(u UserInfo) bool {
+        principal, err := provider.GetPrincipal(r)
+        if principal != nil {
+            log.Debug("We found one. HOORAY!")
+            // we found our principal, stop looking
+            return true
+        }
+        if err != nil {
+            log.Errorf("Error - %v", err)
+        }
+        return false
+    })
+}
+.... 
+runtime.AddAuthorization(addProviderAuth(provider))
+...
+```
