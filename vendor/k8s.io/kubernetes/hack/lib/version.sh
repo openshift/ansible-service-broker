@@ -36,6 +36,19 @@ kube::version::get_version_vars() {
     return
   fi
 
+  # If the kubernetes source was exported through git archive, then
+  # we likely don't have a git tree, but these magic values may be filled in.
+  if [[ '$Format:%%$' == "%" ]]; then
+    KUBE_GIT_COMMIT='$Format:%H$'
+    KUBE_GIT_TREE_STATE="git archive"
+    # When a 'git archive' is exported, the '$Format:%D$' below will look
+    # something like 'HEAD -> release-1.8, tag: v1.8.3' where then 'tag: '
+    # can be extracted from it.
+    if [[ '$Format:%D$' =~ tag:\ (v[^ ]+) ]]; then
+     KUBE_GIT_VERSION="${BASH_REMATCH[1]}"
+    fi
+  fi
+
   local git=(git --work-tree "${KUBE_ROOT}")
 
   if [[ -n ${KUBE_GIT_COMMIT-} ]] || KUBE_GIT_COMMIT=$("${git[@]}" rev-parse "HEAD^{commit}" 2>/dev/null); then
@@ -130,7 +143,9 @@ kube::version::ldflag() {
 kube::version::ldflags() {
   kube::version::get_version_vars
 
-  local -a ldflags=($(kube::version::ldflag "buildDate" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"))
+  local buildDate=
+  [[ -z ${SOURCE_DATE_EPOCH-} ]] || buildDate="--date=@${SOURCE_DATE_EPOCH}"
+  local -a ldflags=($(kube::version::ldflag "buildDate" "$(date ${buildDate} -u +'%Y-%m-%dT%H:%M:%SZ')"))
   if [[ -n ${KUBE_GIT_COMMIT-} ]]; then
     ldflags+=($(kube::version::ldflag "gitCommit" "${KUBE_GIT_COMMIT}"))
     ldflags+=($(kube::version::ldflag "gitTreeState" "${KUBE_GIT_TREE_STATE}"))

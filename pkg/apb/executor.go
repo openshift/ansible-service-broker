@@ -29,7 +29,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pborman/uuid"
-	"k8s.io/kubernetes/pkg/api/v1"
+	"k8s.io/api/core/v1"
 )
 
 // ExecuteApb - Runs an APB Action with a provided set of inputs

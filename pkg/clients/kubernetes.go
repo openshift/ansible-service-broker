@@ -20,15 +20,15 @@ import (
 	"errors"
 	"fmt"
 
+	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 
 	logging "github.com/op/go-logging"
+	apiv1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/kubernetes/pkg/api/v1"
-	rbac "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
 )
 
 // KubernetesClient - Client to interact with Kubernetes API
