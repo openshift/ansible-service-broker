@@ -99,7 +99,7 @@ func apiServer(config *config.Config,
 		return nil, err
 	}
 
-	k8s, err := clients.Kubernetes(log)
+	k8s, err := clients.Kubernetes()
 	if err != nil {
 		return nil, err
 	}
