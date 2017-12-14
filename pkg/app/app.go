@@ -37,7 +37,6 @@ import (
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
@@ -45,9 +44,9 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
-	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries"
 	agnosticruntime "github.com/openshift/ansible-service-broker/pkg/runtime"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -57,6 +56,8 @@ var (
 	Scheme = runtime.NewScheme()
 	// Codecs -k8s codecs for the scheme
 	Codecs = serializer.NewCodecFactory(Scheme)
+	// log - logging object
+	log = logutil.NewLog()
 )
 
 const (
@@ -72,12 +73,14 @@ type App struct {
 	args     Args
 	config   *config.Config
 	dao      *dao.Dao
-	log      *Log
 	registry []registries.Registry
 	engine   *broker.WorkEngine
 }
 
-func apiServer(log *logging.Logger, config *config.Config, args Args, providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
+func apiServer(config *config.Config,
+	args Args,
+	providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
+
 	log.Debug("calling NewSecureServingOptions")
 	secureServing := genericoptions.NewSecureServingOptions()
 	secureServing.ServerCert = genericoptions.GeneratableKeyCert{CertKey: genericoptions.CertKey{
@@ -92,11 +95,11 @@ func apiServer(log *logging.Logger, config *config.Config, args Args, providers 
 
 	serverConfig := genericapiserver.NewConfig(Codecs)
 	if err := secureServing.ApplyTo(serverConfig); err != nil {
-		log.Debug("error applying to %#v", err)
+		log.Debugf("error applying to %#v", err)
 		return nil, err
 	}
 
-	k8s, err := clients.Kubernetes(log)
+	k8s, err := clients.Kubernetes()
 	if err != nil {
 		return nil, err
 	}
@@ -155,84 +158,86 @@ func CreateApp() App {
 		os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
-	fmt.Printf("%#v", app.config)
-
-	if app.log, err = NewLog(app.config); err != nil {
+	c := logutil.LogConfig{
+		LogFile: app.config.GetString("log.logfile"),
+		Stdout:  app.config.GetBool("log.stdout"),
+		Level:   app.config.GetString("log.level"),
+		Color:   app.config.GetBool("log.color"),
+	}
+	if err = logutil.InitializeLog(c); err != nil {
 		os.Stderr.WriteString("ERROR: Failed to initialize logger\n")
 		os.Stderr.WriteString(err.Error())
 		os.Exit(1)
 	}
 
 	// Initializing clients as soon as we have deps ready.
-	err = initClients(app.log.Logger, app.config)
+	err = initClients(app.config)
 	if err != nil {
-		app.log.Error(err.Error())
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 
 	// Initialize Runtime
-	app.log.Debug("Connecting to Cluster")
-	agnosticruntime.NewRuntime(app.log.Logger)
+	log.Debug("Connecting to Cluster")
+	agnosticruntime.NewRuntime()
 	agnosticruntime.Provider.ValidateRuntime()
 	if err != nil {
-		app.log.Error(err.Error())
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 
-	app.log.Debug("Connecting Dao")
-	app.dao, err = dao.NewDao(app.log.Logger)
+	log.Debug("Connecting Dao")
+	app.dao, err = dao.NewDao()
 	if err != nil {
-		app.log.Error(err.Error())
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 
-	app.log.Debug("Connecting Registry")
+	log.Debug("Connecting Registry")
 	for name := range app.config.GetSubConfig("registry").ToMap() {
-		reg, err := registries.NewRegistry(app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)), app.log.Logger)
+		reg, err := registries.NewRegistry(app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)))
 		if err != nil {
-			app.log.Errorf(
+			log.Errorf(
 				"Failed to initialize %v Registry err - %v \n", name, err)
 			os.Exit(1)
 		}
 		app.registry = append(app.registry, reg)
 	}
 
-	app.log.Debug("Initializing WorkEngine")
+	log.Debug("Initializing WorkEngine")
 	app.engine = broker.NewWorkEngine(MsgBufferSize)
 	err = app.engine.AttachSubscriber(
-		broker.NewProvisionWorkSubscriber(app.dao, app.log.Logger),
+		broker.NewProvisionWorkSubscriber(app.dao),
 		broker.ProvisionTopic)
 	if err != nil {
-		app.log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
+		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
 	err = app.engine.AttachSubscriber(
-		broker.NewDeprovisionWorkSubscriber(app.dao, app.log.Logger),
+		broker.NewDeprovisionWorkSubscriber(app.dao),
 		broker.DeprovisionTopic)
 	if err != nil {
-		app.log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
+		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
 	err = app.engine.AttachSubscriber(
-		broker.NewUpdateWorkSubscriber(app.dao, app.log.Logger),
+		broker.NewUpdateWorkSubscriber(app.dao),
 		broker.UpdateTopic)
 	if err != nil {
-		app.log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
+		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
-	app.log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
+	log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
-	apb.InitializeSecretsCache(app.config.GetSubConfig("secrets"), app.log.Logger)
-	// Initialize Metrics.
-	metrics.Init(app.log.Logger)
-	app.log.Debug("Creating AnsibleBroker")
+	apb.InitializeSecretsCache(app.config.GetSubConfig("secrets"))
+	log.Debug("Creating AnsibleBroker")
 	// Intiialize the cluster config.
 	apb.InitializeClusterConfig(app.config.GetSubConfig("openshift"))
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.log.Logger, app.registry, *app.engine, app.config.GetSubConfig("broker"),
+		app.dao, app.registry, *app.engine, app.config.GetSubConfig("broker"),
 	); err != nil {
-		app.log.Error("Failed to create AnsibleBroker\n")
-		app.log.Error(err.Error())
+		log.Error("Failed to create AnsibleBroker\n")
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 
@@ -246,10 +251,10 @@ func (a *App) Recover() {
 	msg, err := a.broker.Recover()
 
 	if err != nil {
-		a.log.Error(err.Error())
+		log.Error(err.Error())
 	}
 
-	a.log.Notice(msg)
+	log.Notice(msg)
 }
 
 // Start - Will start the application to listen on the specified port.
@@ -258,26 +263,26 @@ func (a *App) Start() {
 	// see if we need to go any further.
 
 	if a.config.GetBool("broker.recovery") {
-		a.log.Info("Initiating Recovery Process")
+		log.Info("Initiating Recovery Process")
 		a.Recover()
 	}
 
 	if a.config.GetBool("broker.bootstrap_on_startup") {
-		a.log.Info("Broker configured to bootstrap on startup")
-		a.log.Info("Attempting bootstrap...")
+		log.Info("Broker configured to bootstrap on startup")
+		log.Info("Attempting bootstrap...")
 		if _, err := a.broker.Bootstrap(); err != nil {
-			a.log.Error("Failed to bootstrap on startup!")
-			a.log.Error(err.Error())
+			log.Error("Failed to bootstrap on startup!")
+			log.Error(err.Error())
 			os.Exit(1)
 		}
-		a.log.Notice("Broker successfully bootstrapped on startup")
+		log.Notice("Broker successfully bootstrapped on startup")
 	}
 
 	interval, err := time.ParseDuration(a.config.GetString("broker.refresh_interval"))
-	a.log.Debug("RefreshInterval: %v", interval.String())
+	log.Debug("RefreshInterval: %v", interval.String())
 	if err != nil {
-		a.log.Error(err.Error())
-		a.log.Error("Not using a refresh interval")
+		log.Error(err.Error())
+		log.Error("Not using a refresh interval")
 	} else {
 		ticker := time.NewTicker(interval)
 		ctx, cancelFunc := context.WithCancel(context.Background())
@@ -286,13 +291,13 @@ func (a *App) Start() {
 			for {
 				select {
 				case v := <-ticker.C:
-					a.log.Info("Broker configured to refresh specs every %v seconds", interval)
-					a.log.Info("Attempting bootstrap at %v", v.UTC())
+					log.Info("Broker configured to refresh specs every %v seconds", interval)
+					log.Info("Attempting bootstrap at %v", v.UTC())
 					if _, err := a.broker.Bootstrap(); err != nil {
-						a.log.Error("Failed to bootstrap")
-						a.log.Error(err.Error())
+						log.Error("Failed to bootstrap")
+						log.Error(err.Error())
 					}
-					a.log.Notice("Broker successfully bootstrapped")
+					log.Notice("Broker successfully bootstrapped")
 				case <-ctx.Done():
 					ticker.Stop()
 					return
@@ -301,19 +306,19 @@ func (a *App) Start() {
 		}()
 	}
 	//Retrieve the auth providers if basic auth is configured.
-	providers := auth.GetProviders(a.config, a.log.Logger)
+	providers := auth.GetProviders(a.config)
 
-	genericserver, servererr := apiServer(a.log.Logger, a.config, a.args, providers)
+	genericserver, servererr := apiServer(a.config, a.args, providers)
 	if servererr != nil {
-		a.log.Errorf("problem creating apiserver. %v", servererr)
+		log.Errorf("problem creating apiserver. %v", servererr)
 		panic(servererr)
 	}
 
 	rules := []rbac.PolicyRule{}
 	if !a.config.GetBool("broker.auto_escalate") {
-		rules, err = retrieveClusterRoleRules(a.config.GetString("openshift.sandbox_role"), a.log.Logger)
+		rules, err = retrieveClusterRoleRules(a.config.GetString("openshift.sandbox_role"))
 		if err != nil {
-			a.log.Errorf("Unable to retrieve cluster roles rules from cluster\n"+
+			log.Errorf("Unable to retrieve cluster roles rules from cluster\n"+
 				" You must be using OpenShift 3.7 to use the User rules check.\n%v", err)
 			os.Exit(1)
 		}
@@ -332,7 +337,7 @@ func (a *App) Start() {
 
 	daHandler := prometheus.InstrumentHandler(
 		"ansible-service-broker",
-		handler.NewHandler(a.broker, a.log.Logger, a.config, clusterURL, providers, rules),
+		handler.NewHandler(a.broker, a.config, clusterURL, providers, rules),
 	)
 
 	if clusterURL == "/" {
@@ -344,16 +349,16 @@ func (a *App) Start() {
 	defaultMetrics := routes.DefaultMetrics{}
 	defaultMetrics.Install(genericserver.Handler.NonGoRestfulMux)
 
-	a.log.Notice("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
+	log.Noticef("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
 
-	a.log.Notice("Ansible Service Broker Starting")
+	log.Notice("Ansible Service Broker Starting")
 	err = genericserver.PrepareRun().Run(wait.NeverStop)
-	a.log.Errorf("unable to start ansible service broker - %v", err)
+	log.Errorf("unable to start ansible service broker - %v", err)
 
 	//TODO: Add Flag so we can still use the old way of doing this.
 }
 
-func initClients(log *logging.Logger, c *config.Config) error {
+func initClients(c *config.Config) error {
 	// Designed to panic early if we cannot construct required clients.
 	// this likely means we're in an unrecoverable configuration or environment.
 	// Best we can do is alert the operator as early as possible.
@@ -366,7 +371,7 @@ func initClients(log *logging.Logger, c *config.Config) error {
 
 	// Intialize the etcd configuration
 	clients.InitEtcdConfig(c)
-	etcdClient, err := clients.Etcd(log)
+	etcdClient, err := clients.Etcd()
 	if err != nil {
 		return err
 	}
@@ -379,9 +384,9 @@ func initClients(log *logging.Logger, c *config.Config) error {
 		return err
 	}
 
-	log.Info("Etcd Version [Server: %s, Cluster: %s]", version.Server, version.Cluster)
+	log.Infof("Etcd Version [Server: %s, Cluster: %s]", version.Server, version.Cluster)
 
-	_, err = clients.Kubernetes(log)
+	_, err = clients.Kubernetes()
 	if err != nil {
 		return err
 	}
@@ -389,8 +394,8 @@ func initClients(log *logging.Logger, c *config.Config) error {
 	return nil
 }
 
-func retrieveClusterRoleRules(clusterRole string, log *logging.Logger) ([]rbac.PolicyRule, error) {
-	k8scli, err := clients.Kubernetes(log)
+func retrieveClusterRoleRules(clusterRole string) ([]rbac.PolicyRule, error) {
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return nil, err
 	}

@@ -22,11 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	logging "github.com/op/go-logging"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
-
-var log = logging.MustGetLogger("auth")
 
 func TestNewFusa(t *testing.T) {
 	username := []byte("admin")
@@ -37,7 +34,7 @@ func TestNewFusa(t *testing.T) {
 	defer os.Remove("/tmp/username")
 	defer os.Remove("/tmp/password")
 
-	fusa, err := NewFileUserServiceAdapter("/tmp/", log)
+	fusa, err := NewFileUserServiceAdapter("/tmp/")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -50,7 +47,7 @@ func TestNewFusa(t *testing.T) {
 }
 
 func TestErrorBuild(t *testing.T) {
-	fusa, err := NewFileUserServiceAdapter("", log)
+	fusa, err := NewFileUserServiceAdapter("")
 	if fusa != nil {
 		t.Fatal("fusa is not nil")
 	}
@@ -59,7 +56,7 @@ func TestErrorBuild(t *testing.T) {
 }
 
 func TestFusaError(t *testing.T) {
-	_, err := NewFileUserServiceAdapter("/var/tmp", log)
+	_, err := NewFileUserServiceAdapter("/var/tmp")
 	ft.AssertNotNil(t, err, "should have gotten an error")
 	ft.AssertTrue(t, strings.Contains(err.Error(), "no such file or directory"), "mismatch error message")
 }

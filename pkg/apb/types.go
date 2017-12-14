@@ -19,10 +19,12 @@ package apb
 import (
 	"encoding/json"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/config"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 )
+
+var log = logutil.NewLog()
 
 // Parameters - generic string to object or value parameter
 type Parameters map[string]interface{}
@@ -181,7 +183,7 @@ const (
 )
 
 // SpecLogDump - log spec for debug
-func SpecLogDump(spec *Spec, log *logging.Logger) {
+func SpecLogDump(spec *Spec) {
 	log.Debug("============================================================")
 	log.Debug("Spec: %s", spec.ID)
 	log.Debug("============================================================")
@@ -208,9 +210,9 @@ func SpecLogDump(spec *Spec, log *logging.Logger) {
 }
 
 // SpecsLogDump - log specs for debug
-func SpecsLogDump(specs []*Spec, log *logging.Logger) {
+func SpecsLogDump(specs []*Spec) {
 	for _, spec := range specs {
-		SpecLogDump(spec, log)
+		SpecLogDump(spec)
 	}
 }
 

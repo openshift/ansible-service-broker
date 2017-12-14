@@ -26,12 +26,12 @@ import (
 	"strings"
 	"sync"
 
-	logging "github.com/op/go-logging"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	yaml "gopkg.in/yaml.v1"
 )
 
 var (
-	log = logging.MustGetLogger("config")
+	log = logutil.NewLog()
 )
 
 // Config - The base config for the pieces of the applcation

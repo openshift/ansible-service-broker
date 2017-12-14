@@ -23,11 +23,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
 
 	"github.com/gorilla/mux"
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
@@ -130,25 +128,13 @@ func (m MockBroker) RemoveSpecs() error {
 	return nil
 }
 
-var log = logging.MustGetLogger("handler")
-
-func init() {
-	// setup logging
-	colorFormatter := logging.MustStringFormatter(
-		"%{color}[%{time}] [%{level}] %{message}%{color:reset}",
-	)
-	backend := logging.NewLogBackend(os.Stdout, "", 1)
-	backendFormatter := logging.NewBackendFormatter(backend, colorFormatter)
-	logging.SetBackend(backend, backendFormatter)
-}
-
 func TestNewHandler(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	c, err := config.CreateConfig("testdata/broker.yaml")
 	if err != nil {
 		t.Fail()
 	}
-	testhandler := NewHandler(testb, log, c, "", nil, nil)
+	testhandler := NewHandler(testb, c, "", nil, nil)
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
@@ -158,7 +144,7 @@ func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	testhandler := NewHandler(testb, log, c, "", nil, nil)
+	testhandler := NewHandler(testb, c, "", nil, nil)
 	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -179,7 +165,7 @@ func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	testhandler := NewHandler(testb, log, c, "", nil, nil)
+	testhandler := NewHandler(testb, c, "", nil, nil)
 	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -200,7 +186,7 @@ func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	testhandler := NewHandler(testb, log, c, "", nil, nil)
+	testhandler := NewHandler(testb, c, "", nil, nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -217,7 +203,7 @@ func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	testhandler := NewHandler(testb, log, c, "", nil, nil)
+	testhandler := NewHandler(testb, c, "", nil, nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -234,7 +220,7 @@ func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	testhandler := NewHandler(testb, log, c, "", nil, nil)
+	testhandler := NewHandler(testb, c, "", nil, nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -251,7 +237,7 @@ func TestDevHandlerDoesHaveAPBSpecsDeleteRoute(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-	testhandler := NewHandler(testb, log, c, "", nil, nil)
+	testhandler := NewHandler(testb, c, "", nil, nil)
 	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
@@ -430,7 +416,7 @@ func TestLastOperation(t *testing.T) {
 func buildBootstrapHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
 	testb := MockBroker{Name: "testbroker", Err: err}
 	c, err := config.CreateConfig("testdata/broker.yaml")
-	testhandler := handler{*mux.NewRouter(), testb, log, c, nil}
+	testhandler := handler{*mux.NewRouter(), testb, c, nil}
 
 	r := httptest.NewRequest("POST", "/v2/bootstrap", nil)
 	w := httptest.NewRecorder()
@@ -440,7 +426,7 @@ func buildBootstrapHandler(err error) (handler, *httptest.ResponseRecorder, *htt
 func buildCatalogHandler(err error) (handler, *httptest.ResponseRecorder, *http.Request) {
 	testb := MockBroker{Name: "testbroker", Err: err}
 	c, err := config.CreateConfig("testdata/broker.yaml")
-	testhandler := handler{*mux.NewRouter(), testb, log, c, nil}
+	testhandler := handler{*mux.NewRouter(), testb, c, nil}
 	r := httptest.NewRequest("GET", "/v2/catalog", nil)
 	w := httptest.NewRecorder()
 	return testhandler, w, r
@@ -450,7 +436,7 @@ func buildProvisionHandler(testuuid string, err error, operation string) (handle
 
 	testb := MockBroker{Name: "testbroker", Err: err, Operation: operation}
 	c, err := config.CreateConfig("testdata/broker.yaml")
-	testhandler := handler{*mux.NewRouter(), testb, log, c, nil}
+	testhandler := handler{*mux.NewRouter(), testb, c, nil}
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT", fmt.Sprintf("/v2/service_instance/%s", testuuid), trr)
 	r.Header.Add("Content-Type", "application/json")
@@ -467,7 +453,7 @@ func buildLastOperationHandler(testuuid string, err error) (handler, *httptest.R
 
 	testb := MockBroker{Name: "testbroker", Err: err}
 	c, _ := config.CreateConfig("testdata/broker.yaml")
-	testhandler := handler{*mux.NewRouter(), testb, log, c, nil}
+	testhandler := handler{*mux.NewRouter(), testb, c, nil}
 	r := httptest.NewRequest("GET",
 		fmt.Sprintf("/v2/service_instance/%s/last_operation?operation=%s", testuuid, testuuid), nil)
 	r.Header.Add("Content-Type", "application/json")
@@ -483,7 +469,7 @@ func buildBindHandler(testuuid string, err error) (handler, *httptest.ResponseRe
 
 	testb := MockBroker{Name: "testbroker", Err: err}
 	c, _ := config.CreateConfig("testdata/broker.yaml")
-	testhandler := handler{*mux.NewRouter(), testb, log, c, nil}
+	testhandler := handler{*mux.NewRouter(), testb, c, nil}
 	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
 	r := httptest.NewRequest("PUT",
 		fmt.Sprintf("/v2/service_instance/%s/service_bindings/%s", testuuid, testuuid), trr)
@@ -505,9 +491,9 @@ func TestHandlerAuthorized(t *testing.T) {
 	})
 
 	ba := auth.NewBasicAuth(
-		MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}}, log)
+		MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}})
 
-	authhandler := authHandler(testhandler, []auth.Provider{ba}, log)
+	authhandler := authHandler(testhandler, []auth.Provider{ba})
 
 	w := httptest.NewRecorder()
 
@@ -530,9 +516,9 @@ func TestHandlerRejected(t *testing.T) {
 	})
 
 	ba := auth.NewBasicAuth(
-		MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}}, log)
+		MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}})
 
-	authhandler := authHandler(testhandler, []auth.Provider{ba}, log)
+	authhandler := authHandler(testhandler, []auth.Provider{ba})
 
 	w := httptest.NewRecorder()
 

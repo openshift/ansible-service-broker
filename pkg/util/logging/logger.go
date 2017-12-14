@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-package app
+package logger
 
 import (
 	"errors"
@@ -22,7 +22,6 @@ import (
 	"os"
 
 	logging "github.com/op/go-logging"
-	"github.com/openshift/ansible-service-broker/pkg/config"
 )
 
 // LogConfig - The configuration for the logging.
@@ -33,47 +32,23 @@ type LogConfig struct {
 	Color   bool
 }
 
-// Log - Logging struct that will contain https://godoc.org/os#File and the logging object.
-type Log struct {
-	*logging.Logger
-	file *os.File
-}
+var backends []logging.Backend
+var logLevel logging.Level
 
-// MODULE - Module for the logger.
-const MODULE = "asb"
-
-// NewLog - Creates a new logging object
-// TODO: Consider no output?
-func NewLog(c *config.Config) (*Log, error) {
-	var err error
-	if c.Empty() {
-		return nil, errors.New("Cannot have a blank logfile and not log to stdout")
-	}
-	config := LogConfig{
-		LogFile: c.GetString("log.logfile"),
-		Stdout:  c.GetBool("log.stdout"),
-		Level:   c.GetString("log.level"),
-		Color:   c.GetBool("log.color"),
-	}
-
+//InitializeLog - initilize the logging utility
+func InitializeLog(config LogConfig) error {
 	if config.LogFile == "" && !config.Stdout {
-		return nil, errors.New("Cannot have a blank logfile and not log to stdout")
+		return errors.New("Cannot have a blank logfile and not log to stdout")
 	}
 
-	// TODO: More validation? Check file is good?
-	// TODO: Validate level is actually possible?
-
-	log := &Log{}
-
-	logger := logging.MustGetLogger(MODULE)
-	var backends []logging.Backend
+	logLevel = levelFromString(config.Level)
 
 	colorFormatter := logging.MustStringFormatter(
-		"%{color}[%{time}] [%{level}] %{message}%{color:reset}",
+		"%{color}[%{time}] [%{level}] - %{message}%{color:reset}",
 	)
 
 	standardFormatter := logging.MustStringFormatter(
-		"[%{time}] [%{level}] %{message}",
+		"[%{time}] [%{level}] - %{message}",
 	)
 
 	var formattedBackend = func(writer io.Writer, isColored bool) logging.Backend {
@@ -88,32 +63,36 @@ func NewLog(c *config.Config) (*Log, error) {
 	if config.LogFile != "" {
 		var logFile *os.File
 
-		if _, err = os.Stat(config.LogFile); os.IsNotExist(err) {
+		if _, err := os.Stat(config.LogFile); os.IsNotExist(err) {
 			if logFile, err = os.Create(config.LogFile); err != nil {
 				logFile.Close()
-				return nil, err
+				return err
 			}
 		} else {
 			if logFile, err = os.OpenFile(config.LogFile, os.O_APPEND|os.O_WRONLY, 0666); err != nil {
 				logFile.Close()
-				return nil, err
+				return err
 			}
 		}
-
-		log.file = logFile
-		backends = append(backends, formattedBackend(logFile, false))
+		b := formattedBackend(logFile, false)
+		bl := logging.AddModuleLevel(b)
+		bl.SetLevel(logLevel, "ASB")
+		backends = append(backends, bl)
 	}
 
 	if config.Stdout {
-		backends = append(backends, formattedBackend(os.Stdout, config.Color))
+		b := formattedBackend(os.Stdout, config.Color)
+		bl := logging.AddModuleLevel(b)
+		bl.SetLevel(logLevel, "ASB")
+		backends = append(backends, bl)
 	}
+	logging.SetBackend(backends...)
+	return nil
+}
 
-	multiBackend := logging.MultiLogger(backends...)
-	logger.SetBackend(multiBackend)
-	logging.SetLevel(levelFromString(config.Level), MODULE)
-	log.Logger = logger
-
-	return log, nil
+// NewLog - Creates a new logging object for the module provided.
+func NewLog() *logging.Logger {
+	return logging.MustGetLogger("ASB")
 }
 
 func levelFromString(str string) logging.Level {

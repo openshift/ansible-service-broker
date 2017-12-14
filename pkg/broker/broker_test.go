@@ -17,24 +17,11 @@
 package broker
 
 import (
-	"os"
 	"testing"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
-
-var log = logging.MustGetLogger("handler")
-
-func init() {
-	colorFormatter := logging.MustStringFormatter(
-		"%{color}[%{time}] [%{level}] %{message}%{color:reset}",
-	)
-	backend := logging.NewLogBackend(os.Stdout, "", 1)
-	backendFormatter := logging.NewBackendFormatter(backend, colorFormatter)
-	logging.SetBackend(backend, backendFormatter)
-}
 
 func TestAddNameAndIDForSpecStripsTailingDash(t *testing.T) {
 	spec1 := apb.Spec{FQName: "1234567890123456789012345678901234567890-"}

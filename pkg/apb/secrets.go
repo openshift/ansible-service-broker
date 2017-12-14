@@ -22,7 +22,6 @@ import (
 
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/config"
 )
@@ -55,7 +54,6 @@ type secretsCache struct {
 	mapping map[string]map[string]bool
 	rwSync  sync.RWMutex
 	rules   []AssociationRule
-	log     *logging.Logger
 }
 
 var secrets secretsCache
@@ -87,7 +85,7 @@ func AddSecretsFor(spec *Spec) {
 
 	for _, rule := range secrets.rules {
 		if match(spec, rule) {
-			secrets.log.Debugf("Spec %v matched rule %v", spec.FQName, rule)
+			log.Debugf("Spec %v matched rule %v", spec.FQName, rule)
 			addSecret(spec, rule)
 		}
 	}
@@ -104,7 +102,7 @@ func match(spec *Spec, rule AssociationRule) bool {
 
 // InitializeSecretsCache - Generates AssociationRules from config and
 // initializes the global secrets cache
-func InitializeSecretsCache(conf *config.Config, log *logging.Logger) {
+func InitializeSecretsCache(conf *config.Config) {
 	rules := []AssociationRule{}
 	for name := range conf.ToMap() {
 		rules = append(rules, AssociationRule{
@@ -115,7 +113,6 @@ func InitializeSecretsCache(conf *config.Config, log *logging.Logger) {
 	secrets = secretsCache{
 		mapping: make(map[string]map[string]bool),
 		rwSync:  sync.RWMutex{},
-		log:     log,
 		rules:   rules,
 	}
 }
@@ -124,13 +121,13 @@ func InitializeSecretsCache(conf *config.Config, log *logging.Logger) {
 // specs
 func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 	for _, spec := range inSpecs {
-		secrets.log.Debugf("Filtering secrets from spec %v", spec.FQName)
+		log.Debugf("Filtering secrets from spec %v", spec.FQName)
 		for _, secret := range GetSecrets(spec) {
 			secretKeys, err := getSecretKeys(secret, clusterConfig.Namespace)
 			if err != nil {
 				return nil, err
 			}
-			secrets.log.Debugf("Found secret keys: %v", secretKeys)
+			log.Debugf("Found secret keys: %v", secretKeys)
 			spec.Plans = filterPlans(spec.Plans, secretKeys)
 		}
 	}
@@ -140,7 +137,7 @@ func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 func filterPlans(inPlans []Plan, secretKeys []string) []Plan {
 	newPlans := []Plan{}
 	for _, plan := range inPlans {
-		secrets.log.Debugf("Filtering secrets from plan %v", plan.Name)
+		log.Debugf("Filtering secrets from plan %v", plan.Name)
 		plan.Parameters = filterParameters(plan.Parameters, secretKeys)
 		newPlans = append(newPlans, plan)
 	}
@@ -162,7 +159,7 @@ func filterParameters(inParams []ParameterDescriptor, secretKeys []string) []Par
 func paramInSecret(param ParameterDescriptor, secretKeys []string) bool {
 	for _, key := range secretKeys {
 		if key == param.Name {
-			secrets.log.Debugf("Param %v matched", param.Name, key)
+			log.Debugf("Param %v matched", param.Name, key)
 			return true
 		}
 	}
@@ -170,17 +167,17 @@ func paramInSecret(param ParameterDescriptor, secretKeys []string) bool {
 }
 
 func getSecretKeys(secretName, namespace string) ([]string, error) {
-	k8scli, err := clients.Kubernetes(secrets.log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return nil, err
 	}
 
 	secretData, err := k8scli.Client.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
 	if err != nil {
-		secrets.log.Warningf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
+		log.Warningf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
 		return []string{}, nil
 	}
-	secrets.log.Debugf("Found secret with name %v", secretName)
+	log.Debugf("Found secret with name %v", secretName)
 
 	ret := []string{}
 	for key := range secretData.Data {

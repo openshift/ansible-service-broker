@@ -24,7 +24,6 @@ import (
 	"strings"
 	"unsafe"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -240,10 +239,10 @@ func autoConvertV1PolicyRulesToAuthorizationPolicyRules(in []PolicyRule) ([]auth
 /* End of v1 openshift rest calls that are need. */
 
 // Openshift - Create a new openshift client if needed, returns reference
-func Openshift(log *logging.Logger) (*OpenshiftClient, error) {
+func Openshift() (*OpenshiftClient, error) {
 	errMsg := "Something went wrong while initializing openshift client!\n"
 	once.Openshift.Do(func() {
-		client, err := newOpenshift(log)
+		client, err := newOpenshift()
 		if err != nil {
 			log.Error(errMsg)
 			// NOTE: Looking to leverage panic recovery to gracefully handle this
@@ -260,7 +259,7 @@ func Openshift(log *logging.Logger) (*OpenshiftClient, error) {
 	return instances.Openshift, nil
 }
 
-func newOpenshift(log *logging.Logger) (*OpenshiftClient, error) {
+func newOpenshift() (*OpenshiftClient, error) {
 	// NOTE: Both the external and internal client object are using the same
 	// clientset library. Internal clientset normally uses a different
 	// library
@@ -321,7 +320,7 @@ func setConfigDefaults(config *rest.Config, APIPath string) error {
 }
 
 // SubjectRulesReview - create and run a OpenShift Subject Rules Review
-func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging.Logger) (result []rbac.PolicyRule, err error) {
+func (o OpenshiftClient) SubjectRulesReview(user, namespace string) (result []rbac.PolicyRule, err error) {
 	body := &SubjectRulesReview{
 		Spec: SubjectRulesReviewSpec{
 			User: user,
@@ -350,7 +349,7 @@ func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging
 }
 
 // ConvertRegistryImagesToSpecs - Return APB specs from internal OCP registry
-func (o OpenshiftClient) ConvertRegistryImagesToSpecs(log *logging.Logger, imageList []string) ([]FQImage, error) {
+func (o OpenshiftClient) ConvertRegistryImagesToSpecs(imageList []string) ([]FQImage, error) {
 	var fqList []FQImage
 	fqImage := FQImage{}
 	var err error
@@ -388,7 +387,7 @@ func (o OpenshiftClient) ConvertRegistryImagesToSpecs(log *logging.Logger, image
 }
 
 // ListRegistryImages - List images in internal OpenShift registry
-func (o OpenshiftClient) ListRegistryImages(log *logging.Logger) (images []string, err error) {
+func (o OpenshiftClient) ListRegistryImages() (images []string, err error) {
 	var imageList []string
 	r := &ImageList{}
 	err = o.imageRestClient.Get().

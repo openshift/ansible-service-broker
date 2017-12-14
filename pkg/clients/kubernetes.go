@@ -25,7 +25,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 
-	logging "github.com/op/go-logging"
 	apiv1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,13 +34,12 @@ import (
 type KubernetesClient struct {
 	Client       *clientset.Clientset
 	ClientConfig *rest.Config
-	log          *logging.Logger
 }
 
 // Kubernetes - Create a new kubernetes client if needed, returns reference
-func Kubernetes(log *logging.Logger) (*KubernetesClient, error) {
+func Kubernetes() (*KubernetesClient, error) {
 	once.Kubernetes.Do(func() {
-		client, err := newKubernetes(log)
+		client, err := newKubernetes()
 		if err != nil {
 			log.Error(err.Error())
 			panic(err.Error())
@@ -58,10 +56,10 @@ func Kubernetes(log *logging.Logger) (*KubernetesClient, error) {
 func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[string][]byte, error) {
 	secretData, err := k.Client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
-		k.log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
+		log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
 		return make(map[string][]byte), nil
 	}
-	k.log.Debugf("Found secret with name %v\n", secretName)
+	log.Debugf("Found secret with name %v\n", secretName)
 
 	return secretData.Data, nil
 }
@@ -76,9 +74,9 @@ func (k KubernetesClient) GetPodStatus(podName, namespace string) (*apiv1.PodSta
 	return &pod.Status, nil
 }
 
-func createOnce(log *logging.Logger) {
+func createOnce() {
 	errMsg := "Something went wrong while initializing kubernetes client!\n"
-	k8s, err := newKubernetes(log)
+	k8s, err := newKubernetes()
 	if err != nil {
 		log.Error(errMsg)
 		// NOTE: Looking to leverage panic recovery to gracefully handle this
@@ -104,7 +102,7 @@ func createClientConfigFromFile(configPath string) (*rest.Config, error) {
 	return config, nil
 }
 
-func newKubernetes(log *logging.Logger) (*KubernetesClient, error) {
+func newKubernetes() (*KubernetesClient, error) {
 	// NOTE: Both the external and internal client object are using the same
 	// clientset library. Internal clientset normally uses a different
 	// library
@@ -129,7 +127,6 @@ func newKubernetes(log *logging.Logger) (*KubernetesClient, error) {
 	k := &KubernetesClient{
 		Client:       clientset,
 		ClientConfig: clientConfig,
-		log:          log,
 	}
 	return k, err
 }
@@ -156,7 +153,7 @@ func (k KubernetesClient) CreateRoleBinding(
 	targetNamespace string,
 	roleRef rbac.RoleRef) error {
 
-	k.log.Noticef("Creating RoleBinding %s", roleBindingName)
+	log.Noticef("Creating RoleBinding %s", roleBindingName)
 	roleBinding := &rbac.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      roleBindingName,

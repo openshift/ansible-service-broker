@@ -82,7 +82,7 @@ func TestEtcd(t *testing.T) {
 				}
 			}()
 
-			log := logging.MustGetLogger("test")
+			log = logging.MustGetLogger("test")
 			if tc.ResetRun {
 				once.Etcd = sync.Once{}
 			}
@@ -90,7 +90,7 @@ func TestEtcd(t *testing.T) {
 				instances.Etcd = nil
 			}
 			etcdConfig = tc.Config
-			cl, err := Etcd(log)
+			cl, err := Etcd()
 			if !tc.ShouldError && err != nil {
 				t.Fatalf("failed to get etcd client - %v client - %v", err, cl)
 			} else if tc.ShouldError && err != nil {

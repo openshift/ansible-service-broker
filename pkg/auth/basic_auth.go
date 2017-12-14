@@ -19,8 +19,6 @@ package auth
 import (
 	"errors"
 	"net/http"
-
-	logging "github.com/op/go-logging"
 )
 
 // UserPrincipal - represents a User as a Principal to the auth system.
@@ -42,12 +40,11 @@ func (u UserPrincipal) GetName() string {
 // BasicAuth - Performs an HTTP Basic Auth validation.
 type BasicAuth struct {
 	usa UserServiceAdapter
-	log *logging.Logger
 }
 
 // NewBasicAuth - constructs a BasicAuth instance.
-func NewBasicAuth(userSvcAdapter UserServiceAdapter, log *logging.Logger) BasicAuth {
-	return BasicAuth{usa: userSvcAdapter, log: log}
+func NewBasicAuth(userSvcAdapter UserServiceAdapter) BasicAuth {
+	return BasicAuth{usa: userSvcAdapter}
 }
 
 // GetPrincipal - returns the User Principal that matches the credentials in the

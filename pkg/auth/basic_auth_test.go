@@ -46,7 +46,7 @@ func (m MockUserServiceAdapter) ValidateUser(username string, password string) b
 
 func TestGetPrincipalNoHeader(t *testing.T) {
 	musa := MockUserServiceAdapter{}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	r := httptest.NewRequest("POST", "/does/not/matter", nil)
 	principal, err := ba.GetPrincipal(r)
 	ft.AssertEqual(t, err.Error(), "invalid credentials, corrupt header", "")
@@ -55,13 +55,13 @@ func TestGetPrincipalNoHeader(t *testing.T) {
 
 func TestNewBasicAuth(t *testing.T) {
 	musa := MockUserServiceAdapter{}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	ft.AssertNotNil(t, ba, "new returned nil")
 }
 
 func TestValidAuth(t *testing.T) {
 	musa := MockUserServiceAdapter{userdb: map[string]string{"admin": "password"}}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	r := httptest.NewRequest("POST", "/does/not/matter", nil)
 	auth := "Basic " + base64.StdEncoding.EncodeToString([]byte("admin:password"))
 	r.Header.Add("Authorization", auth)
@@ -74,7 +74,7 @@ func TestValidAuth(t *testing.T) {
 
 func TestBearerToken(t *testing.T) {
 	musa := MockUserServiceAdapter{userdb: map[string]string{"admin": "invalid"}}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	r := httptest.NewRequest("POST", "/does/not/matter", nil)
 	auth := "Bearer " + base64.StdEncoding.EncodeToString([]byte("admin:password"))
 	r.Header.Add("Authorization", auth)
@@ -85,7 +85,7 @@ func TestBearerToken(t *testing.T) {
 
 func TestOnlyUsername(t *testing.T) {
 	musa := MockUserServiceAdapter{userdb: map[string]string{"admin": "invalid"}}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	r := httptest.NewRequest("POST", "/does/not/matter", nil)
 	auth := "Basic " + base64.StdEncoding.EncodeToString([]byte("admin"))
 	r.Header.Add("Authorization", auth)
@@ -97,7 +97,7 @@ func TestOnlyUsername(t *testing.T) {
 
 func TestEmptyHeader(t *testing.T) {
 	musa := MockUserServiceAdapter{userdb: map[string]string{"admin": "invalid"}}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	r := httptest.NewRequest("POST", "/does/not/matter", nil)
 	auth := "Basic " + base64.StdEncoding.EncodeToString([]byte(""))
 	r.Header.Add("Authorization", auth)
@@ -108,7 +108,7 @@ func TestEmptyHeader(t *testing.T) {
 
 func TestOnlyPassword(t *testing.T) {
 	musa := MockUserServiceAdapter{userdb: map[string]string{"admin": "invalid"}}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	r := httptest.NewRequest("POST", "/does/not/matter", nil)
 	auth := "Basic " + base64.StdEncoding.EncodeToString([]byte(":password"))
 	r.Header.Add("Authorization", auth)
@@ -119,7 +119,7 @@ func TestOnlyPassword(t *testing.T) {
 
 func TestInvalidAuth(t *testing.T) {
 	musa := MockUserServiceAdapter{userdb: map[string]string{"admin": "invalid"}}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	r := httptest.NewRequest("POST", "/does/not/matter", nil)
 	auth := "Basic " + base64.StdEncoding.EncodeToString([]byte("admin:password"))
 	r.Header.Add("Authorization", auth)
@@ -130,7 +130,7 @@ func TestInvalidAuth(t *testing.T) {
 
 func TestCreatePrincipal(t *testing.T) {
 	musa := MockUserServiceAdapter{userdb: map[string]string{"admin": "invalid"}}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	p, err := ba.createPrincipal("admin")
 	if err != nil {
 		t.Fatal(err)
@@ -141,7 +141,7 @@ func TestCreatePrincipal(t *testing.T) {
 
 func TestFailedCreatePrincipal(t *testing.T) {
 	musa := MockUserServiceAdapter{}
-	ba := NewBasicAuth(musa, log)
+	ba := NewBasicAuth(musa)
 	p, err := ba.createPrincipal("admin")
 	ft.AssertEqual(t, err.Error(), "user not found", "")
 	ft.AssertTrue(t, p == nil, "principal is not nil")

@@ -34,17 +34,19 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/config"
+	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/pborman/uuid"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+var log = logutil.NewLog()
 
 // RequestContextKey - keys that will be used in the request context
 type RequestContextKey string
@@ -63,13 +65,12 @@ const (
 type handler struct {
 	router           mux.Router
 	broker           broker.Broker
-	log              *logging.Logger
 	brokerConfig     *config.Config
 	clusterRoleRules []rbac.PolicyRule
 }
 
 // authHandler - does the authentication for the routes
-func authHandler(h http.Handler, providers []auth.Provider, log *logging.Logger) http.Handler {
+func authHandler(h http.Handler, providers []auth.Provider) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: determine what to do with the Principal. We don't really have a
@@ -98,7 +99,7 @@ func authHandler(h http.Handler, providers []auth.Provider, log *logging.Logger)
 	})
 }
 
-func userInfoHandler(h http.Handler, log *logging.Logger) http.Handler {
+func userInfoHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//Retrieve the UserInfo from request if available.
 		userJSONStr := r.Header.Get(OriginatingIdentityHeader)
@@ -159,12 +160,11 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 }
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
-func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig *config.Config, prefix string,
+func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
 	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule) http.Handler {
 	h := handler{
 		router:           *mux.NewRouter(),
 		broker:           b,
-		log:              log,
 		brokerConfig:     brokerConfig,
 		clusterRoleRules: clusterRoleRules,
 	}
@@ -196,7 +196,7 @@ func NewHandler(b broker.Broker, log *logging.Logger, brokerConfig *config.Confi
 		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
-	return handlers.LoggingHandler(os.Stdout, userInfoHandler(authHandler(h, providers, log), log))
+	return handlers.LoggingHandler(os.Stdout, userInfoHandler(authHandler(h, providers)))
 }
 
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -245,7 +245,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
-			h.log.Debugf("unable to retrieve user info from request context")
+			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 				Description: "Invalid user info from originating origin header.",
@@ -258,7 +258,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 			return
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 	// Ok let's provision this bad boy
 	resp, err := h.broker.Provision(instanceUUID, req, async)
@@ -308,7 +308,7 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
-			h.log.Debugf("unable to retrieve user info from request context")
+			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 				Description: "Invalid user info from originating origin header.",
@@ -321,7 +321,7 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 			return
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
 	resp, err := h.broker.Update(instanceUUID, req, async)
@@ -373,7 +373,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		}
 	}
 
-	nsDeleted, err := isNamespaceDeleted(serviceInstance.Context.Namespace, h.log)
+	nsDeleted, err := isNamespaceDeleted(serviceInstance.Context.Namespace)
 	if err != nil {
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 		return
@@ -382,7 +382,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
-			h.log.Debugf("unable to retrieve user info from request context")
+			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 				Description: "Invalid user info from originating origin header.",
@@ -398,7 +398,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 			}
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
 	resp, err := h.broker.Deprovision(serviceInstance, planID, nsDeleted, async)
@@ -458,7 +458,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
-			h.log.Debugf("unable to retrieve user info from request context")
+			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 				Description: "Invalid user info from originating origin header.",
@@ -471,7 +471,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 			return
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
 	// process binding request
@@ -519,7 +519,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
-	nsDeleted, err := isNamespaceDeleted(serviceInstance.Context.Namespace, h.log)
+	nsDeleted, err := isNamespaceDeleted(serviceInstance.Context.Namespace)
 	if err != nil {
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 		return
@@ -528,7 +528,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
-			h.log.Debugf("unable to retrieve user info from request context")
+			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{
 				Description: "Invalid user info from originating origin header.",
@@ -542,7 +542,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 			}
 		}
 	} else {
-		h.log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
+		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
 	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID, nsDeleted)
@@ -555,8 +555,8 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 	return
 }
 
-func isNamespaceDeleted(name string, log *logging.Logger) (bool, error) {
-	k8scli, err := clients.Kubernetes(log)
+func isNamespaceDeleted(name string) (bool, error) {
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return false, err
 	}
@@ -585,7 +585,7 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 	if op := r.FormValue("operation"); op != "" {
 		req.Operation = op
 	} else {
-		h.log.Warning(fmt.Sprintf("operation not supplied, relying solely on the instance_uuid [%s]", instanceUUID))
+		log.Warning(fmt.Sprintf("operation not supplied, relying solely on the instance_uuid [%s]", instanceUUID))
 	}
 
 	// service_id is optional
@@ -605,48 +605,48 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 
 // apbAddSpec - Development only route. Will be used by for local developers to add images to the catalog.
 func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	h.log.Debug("handler::apbAddSpec")
+	log.Debug("handler::apbAddSpec")
 	// Read Request for an image name
 
 	// create helper method from MockRegistry
 	ansibleBroker, ok := h.broker.(broker.DevBroker)
 	if !ok {
-		h.log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
+		log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
 		return
 	}
 	// Decode
 	spec64Yaml := r.FormValue("apbSpec")
 	if spec64Yaml == "" {
-		h.log.Errorf("Could not find form parameter apbSpec")
+		log.Errorf("Could not find form parameter apbSpec")
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Could not parameter apbSpec"})
 		return
 	}
 	decodedSpecYaml, err := base64.StdEncoding.DecodeString(spec64Yaml)
 	if err != nil {
-		h.log.Errorf("Something went wrong decoding spec from encoded string - %v err -%v", spec64Yaml, err)
+		log.Errorf("Something went wrong decoding spec from encoded string - %v err -%v", spec64Yaml, err)
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter encoding"})
 		return
 	}
-	h.log.Debug("Successfully decoded pushed spec:")
-	h.log.Debugf("%s", decodedSpecYaml)
+	log.Debug("Successfully decoded pushed spec:")
+	log.Debugf("%s", decodedSpecYaml)
 
 	var spec apb.Spec
 	if err = yaml.Unmarshal([]byte(decodedSpecYaml), &spec); err != nil {
-		h.log.Errorf("Unable to decode yaml - %v to spec err - %v", decodedSpecYaml, err)
+		log.Errorf("Unable to decode yaml - %v to spec err - %v", decodedSpecYaml, err)
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter yaml"})
 		return
 	}
-	h.log.Infof("Assuming pushed APB runtime version [%v]", version.MaxRuntimeVersion)
+	log.Infof("Assuming pushed APB runtime version [%v]", version.MaxRuntimeVersion)
 	spec.Runtime = version.MaxRuntimeVersion
 
-	h.log.Debug("Unmarshalled into apb.Spec:")
-	h.log.Debugf("%+v", spec)
+	log.Debug("Unmarshalled into apb.Spec:")
+	log.Debugf("%+v", spec)
 
 	resp, err := ansibleBroker.AddSpec(spec)
 	if err != nil {
-		h.log.Errorf("An error occurred while trying to add a spec via apb push:")
-		h.log.Errorf("%s", err.Error())
+		log.Errorf("An error occurred while trying to add a spec via apb push:")
+		log.Errorf("%s", err.Error())
 		writeResponse(w, http.StatusInternalServerError,
 			broker.ErrorResponse{Description: err.Error()})
 		return
@@ -658,7 +658,7 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 func (h handler) apbRemoveSpec(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	ansibleBroker, ok := h.broker.(broker.DevBroker)
 	if !ok {
-		h.log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
+		log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
 		return
 	}
@@ -668,7 +668,7 @@ func (h handler) apbRemoveSpec(w http.ResponseWriter, r *http.Request, params ma
 	if specID != "" {
 		err = ansibleBroker.RemoveSpec(specID)
 	} else {
-		h.log.Errorf("Unable to find spec id in request")
+		log.Errorf("Unable to find spec id in request")
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "No Spec/service id found."})
 		return
 	}
@@ -678,7 +678,7 @@ func (h handler) apbRemoveSpec(w http.ResponseWriter, r *http.Request, params ma
 func (h handler) apbRemoveSpecs(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	ansibleBroker, ok := h.broker.(broker.DevBroker)
 	if !ok {
-		h.log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
+		log.Errorf("unable to use broker - %T as ansible service broker", h.broker)
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: "Internal server error"})
 		return
 	}
@@ -691,9 +691,9 @@ func (h handler) printRequest(req *http.Request) {
 	if h.brokerConfig.GetBool("broker.output_request") {
 		b, err := httputil.DumpRequest(req, true)
 		if err != nil {
-			h.log.Errorf("unable to dump request to log: %v", err)
+			log.Errorf("unable to dump request to log: %v", err)
 		}
-		h.log.Infof("Request: %q", b)
+		log.Infof("Request: %q", b)
 	}
 }
 
@@ -701,12 +701,12 @@ func (h handler) printRequest(req *http.Request) {
 // the rules for the user in the namespace to determine if the user's roles
 // can cover the  all of the cluster role's rules.
 func (h handler) validateUser(userName, namespace string) (bool, int, error) {
-	openshiftClient, err := clients.Openshift(h.log)
+	openshiftClient, err := clients.Openshift()
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
 	// Retrieving the rules for the user in the namespace.
-	prs, err := openshiftClient.SubjectRulesReview(userName, namespace, h.log)
+	prs, err := openshiftClient.SubjectRulesReview(userName, namespace)
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}

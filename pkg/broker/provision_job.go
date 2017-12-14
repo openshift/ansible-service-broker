@@ -19,7 +19,6 @@ package broker
 import (
 	"encoding/json"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -27,7 +26,6 @@ import (
 // ProvisionJob - Job to provision
 type ProvisionJob struct {
 	serviceInstance *apb.ServiceInstance
-	log             *logging.Logger
 }
 
 // ProvisionMsg - Message to be returned from the provision job
@@ -47,22 +45,20 @@ func (m ProvisionMsg) Render() string {
 }
 
 // NewProvisionJob - Create a new provision job.
-func NewProvisionJob(serviceInstance *apb.ServiceInstance, log *logging.Logger,
-) *ProvisionJob {
+func NewProvisionJob(serviceInstance *apb.ServiceInstance) *ProvisionJob {
 	return &ProvisionJob{
 		serviceInstance: serviceInstance,
-		log:             log,
 	}
 }
 
 // Run - run the provision job.
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	metrics.ProvisionJobStarted()
-	podName, extCreds, err := apb.Provision(p.serviceInstance, p.log)
+	podName, extCreds, err := apb.Provision(p.serviceInstance)
 
 	if err != nil {
-		p.log.Error("broker::Provision error occurred.")
-		p.log.Errorf("%s", err.Error())
+		log.Error("broker::Provision error occurred.")
+		log.Errorf("%s", err.Error())
 
 		// send error message
 		// can't have an error type in a struct you want marshalled

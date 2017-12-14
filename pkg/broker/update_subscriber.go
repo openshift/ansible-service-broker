@@ -19,7 +19,6 @@ package broker
 import (
 	"encoding/json"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
@@ -28,13 +27,12 @@ import (
 // UpdateWorkSubscriber - Lissten for provision messages
 type UpdateWorkSubscriber struct {
 	dao       *dao.Dao
-	log       *logging.Logger
 	msgBuffer <-chan WorkMsg
 }
 
 // NewUpdateWorkSubscriber - Create a new work subscriber.
-func NewUpdateWorkSubscriber(dao *dao.Dao, log *logging.Logger) *UpdateWorkSubscriber {
-	return &UpdateWorkSubscriber{dao: dao, log: log}
+func NewUpdateWorkSubscriber(dao *dao.Dao) *UpdateWorkSubscriber {
+	return &UpdateWorkSubscriber{dao: dao}
 }
 
 // Subscribe - will start the work subscriber listenning on the message buffer for provision messages.
@@ -42,20 +40,20 @@ func (u *UpdateWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 	u.msgBuffer = msgBuffer
 
 	go func() {
-		u.log.Info("Listening for provision messages")
+		log.Info("Listening for provision messages")
 		for {
 			msg := <-msgBuffer
 			var umsg *UpdateMsg
 			var extCreds *apb.ExtractedCredentials
 			metrics.UpdateJobFinished()
 
-			u.log.Debug("Processed provision message from buffer")
+			log.Debug("Processed provision message from buffer")
 			// HACK: this seems like a hack, there's probably a better way to
 			// get the data sent through instead of a string
 			json.Unmarshal([]byte(msg.Render()), &umsg)
 
 			if umsg.Error != "" {
-				u.log.Errorf("Update job reporting error: %s", umsg.Error)
+				log.Errorf("Update job reporting error: %s", umsg.Error)
 				u.dao.SetState(umsg.InstanceUUID, apb.JobState{
 					Token:   umsg.JobToken,
 					State:   apb.StateFailed,

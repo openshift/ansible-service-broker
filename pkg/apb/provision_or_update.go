@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
@@ -36,7 +35,9 @@ const (
 )
 
 // returns PodName, ExtractedCredentials, error
-func provisionOrUpdate(method executionMethod, instance *ServiceInstance, log *logging.Logger) (string, *ExtractedCredentials, error) {
+func provisionOrUpdate(method executionMethod,
+	instance *ServiceInstance) (string, *ExtractedCredentials, error) {
+
 	// Explicitly error out if image field is missing from instance.Spec
 	// was introduced as a change to the apb instance.Spec to support integration
 	// with the broker and still allow for providing an img path
@@ -49,7 +50,7 @@ func provisionOrUpdate(method executionMethod, instance *ServiceInstance, log *l
 		return "", nil, errors.New("No image field found on instance.Spec")
 	}
 
-	k8scli, err := clients.Kubernetes(log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		log.Error("Something went wrong getting kubernetes client")
 		return "", nil, err
@@ -63,7 +64,7 @@ func provisionOrUpdate(method executionMethod, instance *ServiceInstance, log *l
 	}
 
 	metrics.ActionStarted(string(method))
-	executionContext, err := ExecuteApb(string(method), instance.Spec, instance.Context, instance.Parameters, log)
+	executionContext, err := ExecuteApb(string(method), instance.Spec, instance.Context, instance.Parameters)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,
@@ -78,7 +79,7 @@ func provisionOrUpdate(method executionMethod, instance *ServiceInstance, log *l
 	}
 
 	if instance.Spec.Runtime >= 2 || !instance.Spec.Bindable {
-		err := watchPod(executionContext.PodName, executionContext.Namespace, log)
+		err := watchPod(executionContext.PodName, executionContext.Namespace)
 		if err != nil {
 			log.Errorf("APB Execution failed - %v", err)
 			return executionContext.PodName, nil, err
@@ -93,7 +94,6 @@ func provisionOrUpdate(method executionMethod, instance *ServiceInstance, log *l
 		executionContext.PodName,
 		executionContext.Namespace,
 		instance.Spec.Runtime,
-		log,
 	)
 	if err != nil {
 		log.Errorf("apb::%v error occurred - %v", method, err)
