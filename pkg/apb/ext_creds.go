@@ -22,11 +22,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"runtime/debug"
+	"time"
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -55,65 +56,14 @@ func ExtractCredentials(podname string, ns string, runtime int) (*ExtractedCrede
 
 // ExtractCredentialsAsFile - Extract credentials from running APB using exec
 func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCredentials, error) {
-	// TODO: Error handling here
-	// It would also be nice to gather the script output that exec runs
-	// instead of only getting the credentials
-
-	/*	for r := 1; r <= apbWatchRetries; r++ {
-			// err will be the return code from the exec command
-			// Use the error code to determine the state
-			failedToExec := errors.New("exit status 1")
-			credsNotAvailable := errors.New("exit status 2")
-
-			output, err := runtime.RunCommand(
-				"kubectl",
-				"exec",
-				podname,
-				GatherCredentialsCommand,
-				"--namespace="+namespace,
-			)
-
-			// cannot exec container, pod is done
-			podFailed := strings.Contains(string(output), "current phase is Failed")
-			podCompleted := strings.Contains(string(output), "current phase is Succeeded") ||
-				strings.Contains(string(output), "cannot exec into a container in a completed pod")
-
-			if err == nil {
-				log.Notice("[%s] Bind credentials found", podname)
-				decodedOutput, err := decodeOutput(output)
-				if err != nil {
-					return nil, err
-				}
-				return buildExtractedCredentials(decodedOutput)
-			} else if podFailed {
-				// pod has completed but is in failed state
-				return nil, fmt.Errorf("[%s] APB failed", podname)
-			} else if podCompleted && err.Error() == failedToExec.Error() {
-				log.Notice("[%s] APB completed", podname)
-				return nil, nil
-			} else if err.Error() == failedToExec.Error() {
-				log.Info(string(output))
-				log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
-			} else if err.Error() == credsNotAvailable.Error() {
-				log.Info(string(output))
-				log.Warning("[%s] Retry attempt %d: Bind credentials not available yet", podname, r)
-			} else {
-				log.Info(string(output))
-				log.Warning("[%s] Retry attempt %d: Failed to exec into the container", podname, r)
-			}
-
-			log.Warning("[%s] Retry attempt %d: exec into %s failed", podname, r, podname)
-			time.Sleep(time.Duration(apbWatchInterval) * time.Second)
-		}
-	*/
-	k8sClient, err := clients.Kubernetes(log)
+	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		fmt.Printf("error creating k8s client:")
 		fmt.Printf("%v", err.Error())
-		return
+		return nil, nil
 	}
 
-	clientConfig := k8sClient.ClientConfig
+	clientConfig := k8scli.ClientConfig
 	clientConfig.GroupVersion = &v1.SchemeGroupVersion
 	clientConfig.NegotiatedSerializer =
 		serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
@@ -122,14 +72,11 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 	// Group, which is the case for pod exec.
 	clientConfig.APIPath = "/api"
 
-	log.Infof("%v\n", clientConfig)
-	log.Infof("%s", string(debug.Stack()))
-
 	restClient, err := rest.RESTClientFor(clientConfig)
 	if err != nil {
 		fmt.Printf("error creating rest client:")
 		fmt.Printf("%v", err.Error())
-		return
+		return nil, err
 	}
 
 	req := restClient.Post().
@@ -139,12 +86,12 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 		SubResource("exec")
 
 	req.VersionedParams(&v1.PodExecOptions{
-		Command: GatherCredentialsCommand,
+		Command: []string{GatherCredentialsCommand},
 		Stdin:   false,
 		Stdout:  true,
 		Stderr:  true,
 		TTY:     false,
-	}, v1.ParameterCodec)
+	}, scheme.ParameterCodec)
 
 	exec, err := remotecommand.NewSPDYExecutor(clientConfig, "POST", req.URL())
 	if err != nil {
@@ -157,20 +104,38 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 		stdoutWriter := bufio.NewWriter(&stdoutBuffer)
 		stderrWriter := bufio.NewWriter(&stderrBuffer)
 
-		err = exec.Stream(remotecommand.StreamOptions{
+		cmderr := exec.Stream(remotecommand.StreamOptions{
 			Stdout: stdoutWriter,
 			Stderr: stderrWriter,
 		})
-		if err == nil {
-			log.Notice("[%s] Bind credentials found", podname)
-			decodedOutput, err := decodeOutput(output)
+		if cmderr == nil {
+			log.Notice("[%v] bind credentials found", podname)
+			decodedOutput, err := decodeOutput(stdoutBuffer.Bytes())
 			if err != nil {
 				return nil, err
 			}
 			return buildExtractedCredentials(decodedOutput)
 		}
 		//Get Pods to determine if the pod is still alive.
-
+		pod, err := k8scli.Client.CoreV1().Pods(namespace).Get(podname, metav1.GetOptions{})
+		if err != nil {
+			//If pod can not be found then something is very wrong.
+			log.Errorf("unable to find pod: %v in namespace: %v - err: %v", podname, namespace, err)
+			return nil, err
+		}
+		switch pod.Status.Phase {
+		case v1.PodFailed:
+			// pod has completed but is in failed state
+			log.Errorf("pod: %v in namespace: %v failed", podname, namespace)
+			return nil, fmt.Errorf("[%s] APB failed", podname)
+		case v1.PodSucceeded:
+			log.Noticef("pod: %v in namespace: %v has been completed")
+			return nil, nil
+		default:
+			log.Infof("command output: %v - err: %v", stdoutBuffer.String(), stderrBuffer.String())
+			log.Warningf("retry attempt: %v pod: %v in namespace: %v failed to exec into the container", r, podname, namespace)
+		}
+		time.Sleep(time.Duration(apbWatchInterval) * time.Second)
 	}
 
 	return nil, fmt.Errorf("[%s] ExecTimeout: Failed to gather bind credentials after %d retries", podname, apbWatchRetries)
