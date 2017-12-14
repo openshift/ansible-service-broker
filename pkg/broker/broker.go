@@ -1177,7 +1177,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
-		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress})
+		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress, Method: apb.JobMethodUpdate})
 	} else {
 		// TODO: do we want to do synchronous updating?
 		log.Info("reverting to synchronous update in progress")
