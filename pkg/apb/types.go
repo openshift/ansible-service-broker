@@ -175,9 +175,6 @@ const (
 	apbWatchInterval = 5
 	apbWatchRetries  = 7200
 
-	// GatherCredentialsCommand - Command used when execing for bind credentials
-	GatherCredentialsCommand = "broker-bind-creds"
-
 	// ApbContainerName - The name of the apb container
 	ApbContainerName = "apb"
 )
