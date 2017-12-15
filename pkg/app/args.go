@@ -17,12 +17,10 @@
 package app
 
 import (
-	"fmt"
-
 	flags "github.com/jessevdk/go-flags"
 )
 
-// Args - Command line arguments for the ansbile service broker.
+// Args - Command line arguments for the ansible service broker.
 type Args struct {
 	ConfigFile string `short:"c" long:"config" description:"Config File" default:"/etc/ansible-service-broker/config.yaml"`
 	Version    bool   `short:"v" long:"version" description:"Print version information"`
@@ -34,7 +32,6 @@ func CreateArgs() (Args, error) {
 
 	_, err := flags.Parse(&args)
 	if err != nil {
-		fmt.Printf("err - %v", err)
 		return args, err
 	}
 	return args, nil

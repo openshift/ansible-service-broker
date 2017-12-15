@@ -37,6 +37,7 @@ import (
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
@@ -139,7 +140,11 @@ func CreateApp() App {
 
 	// Writing directly to stderr because log has not been bootstrapped
 	if app.args, err = CreateArgs(); err != nil {
-		os.Exit(1)
+		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+			os.Exit(0)
+		} else {
+			os.Exit(1)
+		}
 	}
 
 	if app.args.Version {
