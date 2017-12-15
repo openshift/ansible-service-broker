@@ -57,8 +57,7 @@ func ExtractCredentials(podname string, ns string, runtime int) (*ExtractedCrede
 func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCredentials, error) {
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
-		fmt.Printf("error creating k8s client:")
-		fmt.Printf("%v", err.Error())
+		log.Errorf("error creating k8s client: %v", err)
 		return nil, nil
 	}
 
@@ -73,8 +72,7 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 
 	restClient, err := rest.RESTClientFor(clientConfig)
 	if err != nil {
-		fmt.Printf("error creating rest client:")
-		fmt.Printf("%v", err.Error())
+		log.Errorf("error creating rest client: %v", err)
 		return nil, err
 	}
 
@@ -94,8 +92,7 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 
 	exec, err := remotecommand.NewSPDYExecutor(clientConfig, "POST", req.URL())
 	if err != nil {
-		fmt.Printf("error getting new remotecommand executor")
-		fmt.Printf("%v", err.Error())
+		log.Errorf("error getting new remotecommand executor - %v", err)
 	}
 
 	for r := 1; r <= apbWatchRetries; r++ {
@@ -126,7 +123,7 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 		case v1.PodFailed:
 			// pod has completed but is in failed state
 			log.Errorf("pod: %v in namespace: %v failed", podname, namespace)
-			return nil, fmt.Errorf("[%s] APB failed", podname)
+			return nil, log.Errorf("[%s] APB failed", podname)
 		case v1.PodSucceeded:
 			log.Noticef("pod: %v in namespace: %v has been completed")
 			return nil, nil
