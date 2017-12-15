@@ -27,7 +27,6 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -36,7 +35,7 @@ import (
 
 const (
 	// GatherCredentialsCommand - Command used when execing for bind credentials
-	// moving this constant here because eventuall Extrating creds will
+	// moving this constant here because eventually Extrating creds will
 	// need to be moved to runtime. Therefore keeping all of this together
 	// makes sense
 	GatherCredentialsCommand = "broker-bind-creds"
@@ -117,13 +116,13 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 			return buildExtractedCredentials(decodedOutput)
 		}
 		//Get Pods to determine if the pod is still alive.
-		pod, err := k8scli.Client.CoreV1().Pods(namespace).Get(podname, metav1.GetOptions{})
+		status, err := k8scli.GetPodStatus(podname, namespace)
 		if err != nil {
 			//If pod can not be found then something is very wrong.
 			log.Errorf("unable to find pod: %v in namespace: %v - err: %v", podname, namespace, err)
 			return nil, err
 		}
-		switch pod.Status.Phase {
+		switch status.Phase {
 		case v1.PodFailed:
 			// pod has completed but is in failed state
 			log.Errorf("pod: %v in namespace: %v failed", podname, namespace)
@@ -133,7 +132,7 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 			return nil, nil
 		default:
 			log.Infof("command output: %v - err: %v", stdoutBuffer.String(), stderrBuffer.String())
-			log.Warningf("retry attempt: %v pod: %v in namespace: %v failed to exec into the container", r, podname, namespace)
+			log.Infof("retry attempt: %v pod: %v in namespace: %v failed to exec into the container", r, podname, namespace)
 		}
 		time.Sleep(time.Duration(apbWatchInterval) * time.Second)
 	}
