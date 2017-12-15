@@ -71,9 +71,11 @@ func ExecuteApb(action string,
 		return executionContext, err
 	}
 
+	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 	labels := map[string]string{
-		"apb-fqname": spec.FQName,
-		"apb-action": action,
+		"apb-fqname":   spec.FQName,
+		"apb-action":   action,
+		"apb-pod-name": executionContext.PodName,
 	}
 
 	executionContext.Targets = append(executionContext.Targets, context.Namespace)
@@ -91,7 +93,6 @@ func ExecuteApb(action string,
 	//Sandbox (i.e Namespace) was created.
 	metrics.SandboxCreated()
 	executionContext.Namespace = ns.ObjectMeta.Name
-	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
 	err = copySecretsToNamespace(executionContext, clusterConfig, k8scli, secrets)
 	if err != nil {
 		log.Errorf("unable to copy secrets: %v to  new namespace", secrets)
