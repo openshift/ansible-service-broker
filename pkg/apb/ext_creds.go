@@ -66,7 +66,7 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 	clientConfig.NegotiatedSerializer =
 		serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
-	// NOTE: kubectl exec simply sets the API path to /api when where is no
+	// NOTE: kubectl exec simply sets the API path to /api when there is no
 	// Group, which is the case for pod exec.
 	clientConfig.APIPath = "/api"
 
@@ -123,7 +123,7 @@ func ExtractCredentialsAsFile(podname string, namespace string) (*ExtractedCrede
 		case v1.PodFailed:
 			// pod has completed but is in failed state
 			log.Errorf("pod: %v in namespace: %v failed", podname, namespace)
-			return nil, log.Errorf("[%s] APB failed", podname)
+			return nil, fmt.Errorf("[%v] APB failed", podname)
 		case v1.PodSucceeded:
 			log.Noticef("pod: %v in namespace: %v has been completed")
 			return nil, nil
