@@ -375,6 +375,8 @@ func TestGetType(t *testing.T) {
 		want     schema.PrimitiveType
 	}{
 		{"string", schema.StringType},
+		{"STRING", schema.StringType},
+		{"String", schema.StringType},
 		{"enum", schema.StringType},
 		{"int", schema.IntegerType},
 		{"object", schema.ObjectType},
