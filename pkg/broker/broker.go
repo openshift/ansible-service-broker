@@ -870,9 +870,14 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	var bindExtCreds *apb.ExtractedCredentials
 	metrics.ActionStarted("bind")
 	var token string
-	if async {
-		a.log.Info("ASYNC binding in progress")
 
+	// put the LaunchApbOnBind gate here
+	if async {
+		if !a.brokerConfig.LaunchApbOnBind {
+			continue
+		}
+
+		a.log.Info("ASYNC binding in progress")
 		bjob := NewBindingJob(serviceInstance, a.clusterConfig, a.log)
 
 		token, err = a.engine.StartNewJob("", bjob, BindingTopic)
@@ -886,17 +891,17 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 			State:  apb.StateInProgress,
 			Method: apb.JobMethodBind,
 		})
-	}
-
-	if a.brokerConfig.LaunchApbOnBind {
-		log.Info("Broker configured to run APB bind")
-		_, bindExtCreds, err = apb.Bind(&instance, &params)
-
-		if err != nil {
-			return nil, err
-		}
 	} else {
-		log.Warning("Broker configured to *NOT* launch and run APB bind")
+		if a.brokerConfig.LaunchApbOnBind {
+			log.Info("Broker configured to run APB bind")
+			_, bindExtCreds, err = apb.Bind(&instance, &params)
+
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			a.log.Warning("Broker configured to *NOT* launch and run APB bind")
+		}
 	}
 
 	instance.AddBinding(bindingUUID)
