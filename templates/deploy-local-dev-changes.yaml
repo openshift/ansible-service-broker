@@ -100,8 +100,8 @@ objects:
   kind: Endpoints
   metadata:
     labels:
-      app: etcd
-      service: asb-etcd
+      app: ansible-service-broker
+      service: asb
     name: asb
   subsets:
   - addresses:
