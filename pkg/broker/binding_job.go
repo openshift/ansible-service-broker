@@ -23,7 +23,6 @@ package broker
 import (
 	"encoding/json"
 
-	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -31,8 +30,6 @@ import (
 // BindingJob - Job to provision
 type BindingJob struct {
 	serviceInstance *apb.ServiceInstance
-	clusterConfig   apb.ClusterConfig
-	log             *logging.Logger
 }
 
 // BindingMsg - Message to be returned from the binding job
@@ -52,13 +49,9 @@ func (m BindingMsg) Render() string {
 }
 
 // NewBindingJob - Create a new binding job.
-func NewBindingJob(serviceInstance *apb.ServiceInstance, clusterConfig apb.ClusterConfig,
-	log *logging.Logger,
-) *BindingJob {
+func NewBindingJob(serviceInstance *apb.ServiceInstance) *BindingJob {
 	return &BindingJob{
 		serviceInstance: serviceInstance,
-		clusterConfig:   clusterConfig,
-		log:             log,
 	}
 }
 
@@ -68,11 +61,11 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	var podName, extCreds string
 	var err error
 
-	// podName, extCreds, err := apb.Provision(p.serviceInstance, p.clusterConfig, p.log)
+	// podName, extCreds, err := apb.Provision(p.serviceInstance)
 
 	if err != nil {
-		p.log.Error("broker::Binding error occurred.")
-		p.log.Errorf("%s", err.Error())
+		log.Error("broker::Binding error occurred.")
+		log.Errorf("%s", err.Error())
 
 		// send error message
 		// can't have an error type in a struct you want marshalled

@@ -874,19 +874,19 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// put the LaunchApbOnBind gate here
 	if async {
 		if !a.brokerConfig.LaunchApbOnBind {
-			continue
+			log.Error("LAUNCH APB ON BIND IS DISABLED")
 		}
 
-		a.log.Info("ASYNC binding in progress")
-		bjob := NewBindingJob(serviceInstance, a.clusterConfig, a.log)
+		log.Info("ASYNC binding in progress")
+		bjob := NewBindingJob(&instance)
 
 		token, err = a.engine.StartNewJob("", bjob, BindingTopic)
 		if err != nil {
-			a.log.Error("Failed to start new job for async binding\n%s", err.Error())
+			log.Error("Failed to start new job for async binding\n%s", err.Error())
 			return nil, err
 		}
 
-		a.dao.SetState(instanceUUID.String(), apb.JobState{
+		a.dao.SetState(instance.ID.String(), apb.JobState{
 			Token:  token,
 			State:  apb.StateInProgress,
 			Method: apb.JobMethodBind,
@@ -900,7 +900,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 				return nil, err
 			}
 		} else {
-			a.log.Warning("Broker configured to *NOT* launch and run APB bind")
+			log.Warning("Broker configured to *NOT* launch and run APB bind")
 		}
 	}
 
