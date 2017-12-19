@@ -19,6 +19,7 @@ package broker
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"encoding/json"
 
@@ -196,7 +197,7 @@ func createUIFormItem(pd apb.ParameterDescriptor, paramIndex int) (interface{}, 
 
 // getType transforms an apb parameter type to a JSON Schema type
 func getType(paramType string) (schema.PrimitiveTypes, error) {
-	switch paramType {
+	switch strings.ToLower(paramType) {
 	case "string", "enum":
 		return []schema.PrimitiveType{schema.StringType}, nil
 	case "int":

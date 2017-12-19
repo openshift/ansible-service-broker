@@ -458,7 +458,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	for i, spec := range specs {
 		ser, err := SpecToService(spec)
 		if err != nil {
-			log.Errorf("not adding spec to list of services due to error transforming to service - %v", err)
+			log.Errorf("not adding spec %v to list of services due to error transforming to service - %v", spec.FQName, err)
 		} else {
 			services[i] = ser
 		}
