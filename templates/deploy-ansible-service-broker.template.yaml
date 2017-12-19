@@ -298,6 +298,11 @@ objects:
           tag: "${TAG}"
           white_list:
             - ".*-apb$"
+        - type: local_openshift
+          name: localregistry
+          namespaces: ['openshift']
+          white_list:
+            - ".*-apb$"
       dao:
         etcd_host: asb-etcd.${NAMESPACE}.svc
         etcd_port: 2379
