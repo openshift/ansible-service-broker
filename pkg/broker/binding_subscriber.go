@@ -22,7 +22,7 @@ package broker
 import (
 	"encoding/json"
 
-	logging "github.com/op/go-logging"
+	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -30,60 +30,55 @@ import (
 // BindingWorkSubscriber - Listen for binding messages
 type BindingWorkSubscriber struct {
 	dao       *dao.Dao
-	log       *logging.Logger
 	msgBuffer <-chan WorkMsg
 }
 
-func NewBindingWorkSubscriber(dao *dao.Dao, log *logging.Logger) *BindingWorkSubscriber {
-	return &BindingWorkSubscriber{dao: dao, log: log}
+// NewBindingWorkSubscriber - Creates a new work subscriber
+func NewBindingWorkSubscriber(dao *dao.Dao) *BindingWorkSubscriber {
+	return &BindingWorkSubscriber{dao: dao}
 }
 
+// Subscribe - will start a work subscriber listening for bind job messages
 func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 	b.msgBuffer = msgBuffer
 
 	go func() {
-		b.log.Info("Listening for binding messages")
+		log.Info("Listening for binding messages")
 		for {
 			msg := <-msgBuffer
 			var bmsg *BindingMsg
-			//var extCreds *apb.ExtractedCredentials
+			var extCreds *apb.ExtractedCredentials
 			metrics.BindingJobFinished()
 
-			b.log.Debug("Processed binding message from buffer")
-			// HACK: this seems like a hack, there's probably a better way to
-			// get the data sent through instead of a string
+			log.Debug("Processed binding message from buffer")
+
 			json.Unmarshal([]byte(msg.Render()), &bmsg)
 
-			/*
-				if pmsg.Error != "" {
-					b.log.Errorf("Provision job reporting error: %s", pmsg.Error)
-					b.dao.SetState(pmsg.InstanceUUID, apb.JobState{
-						Token:   pmsg.JobToken,
-						State:   apb.StateFailed,
-						Podname: pmsg.PodName,
-						Method:  apb.JobMethodProvision,
-					})
-				} else if pmsg.Msg == "" {
-					// HACK: OMG this is horrible. We should probably pass in a
-					// state. Since we'll also be using this to get more granular
-					// updates one day.
-					b.dao.SetState(pmsg.InstanceUUID, apb.JobState{
-						Token:   pmsg.JobToken,
-						State:   apb.StateInProgress,
-						Podname: pmsg.PodName,
-						Method:  apb.JobMethodProvision,
-					})
-				} else {
-					json.Unmarshal([]byte(pmsg.Msg), &extCreds)
-					b.dao.SetState(pmsg.InstanceUUID, apb.JobState{
-						Token:   pmsg.JobToken,
-						State:   apb.StateSucceeded,
-						Podname: pmsg.PodName,
-						Method:  apb.JobMethodProvision,
-					})
-					b.dao.SetExtractedCredentials(pmsg.InstanceUUID, extCreds)
-				}
-			*/
+			if bmsg.Error != "" {
+				log.Errorf("Binding job reporting error: %s", bmsg.Error)
+				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
+					Token:   bmsg.JobToken,
+					State:   apb.StateFailed,
+					Podname: bmsg.PodName,
+					Method:  apb.JobMethodBind,
+				})
+			} else if bmsg.Msg == "" {
+				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
+					Token:   bmsg.JobToken,
+					State:   apb.StateInProgress,
+					Podname: bmsg.PodName,
+					Method:  apb.JobMethodBind,
+				})
+			} else {
+				json.Unmarshal([]byte(bmsg.Msg), &extCreds)
+				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
+					Token:   bmsg.JobToken,
+					State:   apb.StateSucceeded,
+					Podname: bmsg.PodName,
+					Method:  apb.JobMethodBind,
+				})
+				b.dao.SetExtractedCredentials(bmsg.InstanceUUID, extCreds)
+			}
 		}
 	}()
 }

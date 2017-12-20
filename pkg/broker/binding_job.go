@@ -30,6 +30,7 @@ import (
 // BindingJob - Job to provision
 type BindingJob struct {
 	serviceInstance *apb.ServiceInstance
+	params          *apb.Parameters
 }
 
 // BindingMsg - Message to be returned from the binding job
@@ -58,14 +59,14 @@ func NewBindingJob(serviceInstance *apb.ServiceInstance) *BindingJob {
 // Run - run the binding job.
 func (p *BindingJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	metrics.BindingJobStarted()
-	var podName, extCreds string
+	var podName string
+	var extCreds *apb.ExtractedCredentials
 	var err error
 
-	// podName, extCreds, err := apb.Provision(p.serviceInstance)
+	podName, extCreds, err = apb.Bind(p.serviceInstance, p.params)
 
 	if err != nil {
-		log.Error("broker::Binding error occurred.")
-		log.Errorf("%s", err.Error())
+		log.Errorf("broker::Binding error occurred.\n%s", err.Error())
 
 		// send error message
 		// can't have an error type in a struct you want marshalled
