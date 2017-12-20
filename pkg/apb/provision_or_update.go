@@ -74,7 +74,7 @@ func provisionOrUpdate(method executionMethod,
 		clusterConfig.KeepNamespaceOnError,
 	)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s] provision", executionContext.PodName)
+		log.Errorf("Problem executing apb [%s] provision - err: %v ", executionContext.PodName, err)
 		return executionContext.PodName, nil, err
 	}
 

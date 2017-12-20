@@ -44,11 +44,26 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 		log.Error("broker::Provision error occurred.")
 		log.Errorf("%s", err.Error())
 
-		// send error message
-		// can't have an error type in a struct you want marshalled
-		// https://github.com/golang/go/issues/5161
+		// Because we know the error we should return that error.
+		if err == apb.ErrorPodPullErr {
+			// send error message, can't have
+			// an error type in a struct you want marshalled
+			// https://github.com/golang/go/issues/5161
+			msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
+				JobToken: token,
+				SpecID:   p.serviceInstance.Spec.ID,
+				PodName:  "",
+				Msg:      "",
+				Error:    err.Error()}
+			return
+		}
+		//Unkown error defaulting to generic message.
 		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
+			JobToken: token,
+			SpecID:   p.serviceInstance.Spec.ID,
+			PodName:  "",
+			Msg:      "",
+			Error:    "Error occured during provision. Please contact administrator if it presists."}
 		return
 	}
 

@@ -25,6 +25,11 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 )
 
+var (
+	// ErrorPodPullErr - Error indicating we could not pull the image.
+	ErrorPodPullErr = fmt.Errorf("Unable to pull APB image from it's registry. Please contact your cluster admin")
+)
+
 func watchPod(podName string, namespace string) error {
 	log.Debugf(
 		"Watching pod [ %s ] in namespace [ %s ] for completion",
@@ -47,6 +52,9 @@ func watchPod(podName string, namespace string) error {
 
 		switch podStatus.Phase {
 		case apiv1.PodFailed:
+			if errorPullingImage(podStatus.Conditions) {
+				return ErrorPodPullErr
+			}
 			return fmt.Errorf("Pod [ %s ] failed - %v", podName, podStatus.Message)
 		case apiv1.PodSucceeded:
 			log.Debugf("Pod [ %s ] completed", podName)
@@ -59,4 +67,13 @@ func watchPod(podName string, namespace string) error {
 	}
 
 	return fmt.Errorf("Timed out while watching pod %s for completion", podName)
+}
+
+func errorPullingImage(conds []apiv1.PodCondition) bool {
+	for _, cond := range conds {
+		if cond.Reason == "ErrImgPull" {
+			return true
+		}
+	}
+	return false
 }

@@ -55,6 +55,7 @@ func (u *UpdateWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 					State:   apb.StateFailed,
 					Podname: msg.PodName,
 					Method:  apb.JobMethodUpdate,
+					Error:   msg.Error,
 				}); err != nil {
 					log.Errorf("failed to set state after update job msg received %v ", err)
 				}

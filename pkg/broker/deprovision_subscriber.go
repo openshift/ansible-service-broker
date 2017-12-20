@@ -91,6 +91,7 @@ func setFailedDeprovisionJob(dao *dao.Dao, dmsg JobMsg) {
 		State:   apb.StateFailed,
 		Podname: dmsg.PodName,
 		Method:  apb.JobMethodDeprovision,
+		Error:   dmsg.Error,
 	}); err != nil {
 		log.Errorf("failed to set state after deprovision %#v", err)
 	}

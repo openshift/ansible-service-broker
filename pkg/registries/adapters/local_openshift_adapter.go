@@ -114,6 +114,13 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 			namespace = nsList[1]
 		}
 		for _, ns := range r.Config.Namespaces {
+			// logging to warn users about the potential bug if
+			// the svc-acct does not have access to the namespace.
+			if ns != "openshift" {
+				r.Log.Warningf("You may not be able to load provision images from the namespace: %v.\n"+
+					"You should make sure that the namespace has given the permissions for the "+
+					"system:authenticated group.", ns)
+			}
 			if ns == namespace {
 				r.Log.Debugf("Image [%v] is in configured namespace [%v]. Adding to SpecList.", image.Name, ns)
 				specList = append(specList, spec)

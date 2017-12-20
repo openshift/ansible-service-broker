@@ -138,6 +138,7 @@ type JobState struct {
 	State   State     `json:"state"`
 	Podname string    `json:"podname"`
 	Method  JobMethod `json:"method"`
+	Error   string    `json:"error"`
 }
 
 // ClusterConfig - Configuration for the cluster.
