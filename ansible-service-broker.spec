@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.2
+Version: 1.1.3
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,37 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Dec 21 2017 Jason Montleon <jmontleo@redhat.com> 1.1.3-1
+- Fixes labels on asb Endpoint in local dev template (#598)
+  (mhrivnak@hrivnak.org)
+- Adding local openshift adapter (#601) (matzew@apache.org)
+- allows parameter types to be case-insensitive (#599) (mhrivnak@hrivnak.org)
+- Execute into a pod with API for runtime V1 (#596) (Shawn.Hurley21@gmail.com)
+- Simple template to support my blog post (#597) (jmrodri@gmail.com)
+- Bug 1525817 - remove duplicate help output and return 0 exit code. (#594)
+  (cchase@redhat.com)
+- stop multiple update apb containers from launching (#595)
+  (jmontleo@redhat.com)
+- Initial proposal for dealing with network isolation SDNs (#572)
+  (Shawn.Hurley21@gmail.com)
+- Remove logging from function and structs. (#582) (Shawn.Hurley21@gmail.com)
+- Upgrading dependancies to K8s 1.8.5 (#589) (Shawn.Hurley21@gmail.com)
+- Change the python path to /usr/bin/env (#591) (rhallise@redhat.com)
+- Notify the apb what cluster it's running on with extravars (#577)
+  (rhallise@redhat.com)
+- Make prep-local explicit and update docs (#587) (ernelson@redhat.com)
+- Bug 1510486 - Return 403 for disallowed actions (#586)
+  (Shawn.Hurley21@gmail.com)
+- Resolve runtime version from local openshift (#581) (david.j.zager@gmail.com)
+- fixes a typo and clarifies the name of "kube-service-catalog" (#583)
+  (mhrivnak@hrivnak.org)
+- Adding ability to warn and filter out bad specs. (#571)
+  (Shawn.Hurley21@gmail.com)
+- Remove unused ocLogin function (#580) (rhallise@redhat.com)
+- fixes README to reflect behavioral changes (#578) (mhrivnak@hrivnak.org)
+- Config impl (#567) (Shawn.Hurley21@gmail.com)
+- Identify the cluster in the NewRuntime call (#574) (rhallise@redhat.com)
+
 * Mon Dec 04 2017 Jason Montleon <jmontleo@redhat.com> 1.1.2-1
 - Broker should extract credentials from secret (#555)
   (david.j.zager@gmail.com)
