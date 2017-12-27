@@ -28,22 +28,6 @@ type ProvisionJob struct {
 	serviceInstance *apb.ServiceInstance
 }
 
-// ProvisionMsg - Message to be returned from the provision job
-type ProvisionMsg struct {
-	InstanceUUID string `json:"instance_uuid"`
-	JobToken     string `json:"job_token"`
-	SpecID       string `json:"spec_id"`
-	PodName      string `json:"podname"`
-	Msg          string `json:"msg"`
-	Error        string `json:"error"`
-}
-
-// Render - Display the provision message.
-func (m ProvisionMsg) Render() string {
-	render, _ := json.Marshal(m)
-	return string(render)
-}
-
 // NewProvisionJob - Create a new provision job.
 func NewProvisionJob(serviceInstance *apb.ServiceInstance) *ProvisionJob {
 	return &ProvisionJob{
@@ -63,7 +47,7 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
+		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
@@ -71,11 +55,11 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	// send creds
 	jsonmsg, err := json.Marshal(extCreds)
 	if err != nil {
-		msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
+		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
-	msgBuffer <- ProvisionMsg{InstanceUUID: p.serviceInstance.ID.String(),
+	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
 }
