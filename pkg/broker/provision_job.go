@@ -36,7 +36,7 @@ func NewProvisionJob(serviceInstance *apb.ServiceInstance) *ProvisionJob {
 }
 
 // Run - run the provision job.
-func (p *ProvisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
+func (p *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.ProvisionJobStarted()
 	podName, extCreds, err := apb.Provision(p.serviceInstance)
 

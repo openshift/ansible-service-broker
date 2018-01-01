@@ -30,21 +30,13 @@ func init() {
 }
 
 type mockSubscriber struct {
-	buffer <-chan WorkMsg
+	buffer <-chan JobMsg
 	called bool
 }
 
-func (ms *mockSubscriber) Subscribe(buffer <-chan WorkMsg) {
+func (ms *mockSubscriber) Subscribe(buffer <-chan JobMsg) {
 	ms.buffer = buffer
 	ms.called = true
-}
-
-type mockMsg struct {
-	msg string
-}
-
-func (mm mockMsg) Render() string {
-	return mm.msg
 }
 
 type mockWorker struct {
@@ -52,9 +44,9 @@ type mockWorker struct {
 	wg     *sync.WaitGroup
 }
 
-func (mw *mockWorker) Run(token string, buffer chan<- WorkMsg) {
+func (mw *mockWorker) Run(token string, buffer chan<- JobMsg) {
 	mw.called = true
-	buffer <- mockMsg{msg: "hello"}
+	buffer <- JobMsg{Msg: "hello"}
 	mw.wg.Done()
 }
 

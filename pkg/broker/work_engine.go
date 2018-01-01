@@ -24,18 +24,18 @@ import (
 
 // Work - is the interface that wraps the basic run method.
 type Work interface {
-	Run(token string, msgBuffer chan<- WorkMsg)
+	Run(token string, msgBuffer chan<- JobMsg)
 }
 
 // WorkEngine - a new engine for doing work.
 type WorkEngine struct {
-	topics map[WorkTopic]chan WorkMsg
+	topics map[WorkTopic]chan JobMsg
 	bufsz  int
 }
 
 // NewWorkEngine - creates a new work engine
 func NewWorkEngine(bufferSize int) *WorkEngine {
-	return &WorkEngine{topics: make(map[WorkTopic]chan WorkMsg), bufsz: bufferSize}
+	return &WorkEngine{topics: make(map[WorkTopic]chan JobMsg), bufsz: bufferSize}
 }
 
 // StartNewJob - Starts a job in an new goroutine, reporting to a specific topic.
@@ -57,7 +57,7 @@ func (engine *WorkEngine) StartNewJob(
 
 	msgBuffer, topicExists := engine.topics[topic]
 	if !topicExists {
-		msgBuffer = make(chan WorkMsg, engine.bufsz)
+		msgBuffer = make(chan JobMsg, engine.bufsz)
 		engine.topics[topic] = msgBuffer
 	}
 
@@ -66,7 +66,7 @@ func (engine *WorkEngine) StartNewJob(
 }
 
 // AttachSubscriber - Attach a subscriber a specific messaging topic.
-// Will send the WorkMsg to the subscribers through the message buffer.
+// Will send the JobMsg to the subscribers through the message buffer.
 func (engine *WorkEngine) AttachSubscriber(
 	subscriber WorkSubscriber, topic WorkTopic,
 ) error {
@@ -76,7 +76,7 @@ func (engine *WorkEngine) AttachSubscriber(
 
 	msgBuffer, topicExists := engine.topics[topic]
 	if !topicExists {
-		msgBuffer = make(chan WorkMsg, engine.bufsz)
+		msgBuffer = make(chan JobMsg, engine.bufsz)
 		engine.topics[topic] = msgBuffer
 	}
 
@@ -85,6 +85,6 @@ func (engine *WorkEngine) AttachSubscriber(
 }
 
 // GetActiveTopics - Get list of topics
-func (engine *WorkEngine) GetActiveTopics() map[WorkTopic]chan WorkMsg {
+func (engine *WorkEngine) GetActiveTopics() map[WorkTopic]chan JobMsg {
 	return engine.topics
 }

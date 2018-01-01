@@ -41,7 +41,7 @@ func NewDeprovisionJob(serviceInstance *apb.ServiceInstance,
 }
 
 // Run - will run the deprovision job.
-func (p *DeprovisionJob) Run(token string, msgBuffer chan<- WorkMsg) {
+func (p *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.DeprovisionJobStarted()
 
 	if p.skipApbExecution {
