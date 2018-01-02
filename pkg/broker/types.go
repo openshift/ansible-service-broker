@@ -17,6 +17,8 @@
 package broker
 
 import (
+	"encoding/json"
+
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
@@ -240,4 +242,20 @@ type UserInfo struct {
 	UID      string              `json:"uid"`
 	Groups   []string            `json:"groups,omitempty"`
 	Extra    map[string][]string `json:"extra,omitempty"`
+}
+
+// JobMsg - Message to be returned from the various jobs
+type JobMsg struct {
+	InstanceUUID string `json:"instance_uuid"`
+	JobToken     string `json:"job_token"`
+	SpecID       string `json:"spec_id"`
+	PodName      string `json:"podname"`
+	Error        string `json:"error"`
+	Msg          string `json:"msg"`
+}
+
+// Render - Display the job message.
+func (jm JobMsg) Render() string {
+	render, _ := json.Marshal(jm)
+	return string(render)
 }

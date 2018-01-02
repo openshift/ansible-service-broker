@@ -43,7 +43,7 @@ func (u *UpdateWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 		log.Info("Listening for provision messages")
 		for {
 			msg := <-msgBuffer
-			var umsg *UpdateMsg
+			var umsg *JobMsg
 			var extCreds *apb.ExtractedCredentials
 			metrics.UpdateJobFinished()
 

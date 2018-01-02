@@ -43,7 +43,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 		log.Info("Listening for deprovision messages")
 		for {
 			msg := <-msgBuffer
-			var dmsg *DeprovisionMsg
+			var dmsg *JobMsg
 			metrics.DeprovisionJobFinished()
 
 			log.Debug("Processed deprovision message from buffer")
@@ -89,7 +89,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
 	}()
 }
 
-func setFailedDeprovisionJob(dao *dao.Dao, dmsg *DeprovisionMsg) {
+func setFailedDeprovisionJob(dao *dao.Dao, dmsg *JobMsg) {
 	dao.SetState(dmsg.InstanceUUID, apb.JobState{
 		Token:   dmsg.JobToken,
 		State:   apb.StateFailed,
