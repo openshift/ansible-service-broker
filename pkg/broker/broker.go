@@ -454,13 +454,13 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 		return nil, err
 	}
 
-	services = make([]Service, len(specs))
-	for i, spec := range specs {
+	services = []Service{}
+	for _, spec := range specs {
 		ser, err := SpecToService(spec)
 		if err != nil {
 			log.Errorf("not adding spec %v to list of services due to error transforming to service - %v", spec.FQName, err)
 		} else {
-			services[i] = ser
+			services = append(services, ser)
 		}
 	}
 
@@ -1251,7 +1251,10 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 	state := StateToLastOperation(jobstate.State)
 	log.Debugf("state: %s", state)
-	return &LastOperationResponse{State: state, Description: ""}, err
+	if jobstate.Error == "" {
+		log.Debugf("job state has an error. Assuming that any error here is human readable. err - %v", jobstate.Error)
+	}
+	return &LastOperationResponse{State: state, Description: jobstate.Error}, err
 }
 
 // AddSpec - adding the spec to the catalog for local development

@@ -55,6 +55,7 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 					State:   apb.StateFailed,
 					Podname: msg.PodName,
 					Method:  apb.JobMethodProvision,
+					Error:   msg.Error,
 				}); err != nil {
 					log.Errorf("failed to set state after provision %v", err)
 				}

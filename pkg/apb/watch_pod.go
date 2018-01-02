@@ -25,6 +25,11 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 )
 
+var (
+	// ErrorPodPullErr - Error indicating we could not pull the image.
+	ErrorPodPullErr = fmt.Errorf("Unable to pull APB image from it's registry. Please contact your cluster admin")
+)
+
 func watchPod(podName string, namespace string) error {
 	log.Debugf(
 		"Watching pod [ %s ] in namespace [ %s ] for completion",
@@ -47,6 +52,9 @@ func watchPod(podName string, namespace string) error {
 
 		switch podStatus.Phase {
 		case apiv1.PodFailed:
+			if errorPullingImage(podStatus.ContainerStatuses) {
+				return ErrorPodPullErr
+			}
 			return fmt.Errorf("Pod [ %s ] failed - %v", podName, podStatus.Message)
 		case apiv1.PodSucceeded:
 			log.Debugf("Pod [ %s ] completed", podName)
@@ -59,4 +67,24 @@ func watchPod(podName string, namespace string) error {
 	}
 
 	return fmt.Errorf("Timed out while watching pod %s for completion", podName)
+}
+
+func errorPullingImage(conds []apiv1.ContainerStatus) bool {
+	if len(conds) < 1 {
+		log.Warningf("unable to get container status for APB pod")
+		return false
+	}
+	// We should expect only a single container for our APB pod.
+	// If this assumption changes then we may need to update this code.
+	// Basis for the image strings is here:
+	// https://github.com/kubernetes/kubernetes/blob/886e04f1fffbb04faf8a9f9ee141143b2684ae68/pkg/kubelet/images/types.go#L27
+	status := conds[0].State.Waiting
+
+	if status.Reason == "ErrImagePull" {
+		return true
+	} else if status.Reason == "ImagePullBackOff" {
+		return true
+	}
+
+	return false
 }
