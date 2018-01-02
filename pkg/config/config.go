@@ -261,8 +261,7 @@ func createSubMapFromArray(val []interface{}) map[string]interface{} {
 				if n, ok := name.(string); ok {
 					subMap[n] = value
 				}
-			}
-			if t, ok := s["type"]; ok {
+			} else if t, ok := s["type"]; ok {
 				if tp, ok := t.(string); ok {
 					subMap[tp] = value
 				}

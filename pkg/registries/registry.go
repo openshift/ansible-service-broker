@@ -180,7 +180,6 @@ func (r Registry) RegistryName() string {
 
 // NewRegistry - Create a new registry from the registry config.
 func NewRegistry(con *config.Config) (Registry, error) {
-	log.Debugf("configu - %#v", con)
 	var adapter adapters.Adapter
 	configuration := Config{
 		URL:        con.GetString("url"),
