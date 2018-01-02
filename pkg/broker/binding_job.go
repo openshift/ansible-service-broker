@@ -33,22 +33,6 @@ type BindingJob struct {
 	params          *apb.Parameters
 }
 
-// BindingMsg - Message to be returned from the binding job
-type BindingMsg struct {
-	InstanceUUID string `json:"instance_uuid"`
-	JobToken     string `json:"job_token"`
-	SpecID       string `json:"spec_id"`
-	PodName      string `json:"podname"`
-	Msg          string `json:"msg"`
-	Error        string `json:"error"`
-}
-
-// Render - Display the binding message.
-func (m BindingMsg) Render() string {
-	render, _ := json.Marshal(m)
-	return string(render)
-}
-
 // NewBindingJob - Create a new binding job.
 func NewBindingJob(serviceInstance *apb.ServiceInstance) *BindingJob {
 	return &BindingJob{
@@ -57,7 +41,7 @@ func NewBindingJob(serviceInstance *apb.ServiceInstance) *BindingJob {
 }
 
 // Run - run the binding job.
-func (p *BindingJob) Run(token string, msgBuffer chan<- WorkMsg) {
+func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.BindingJobStarted()
 	var podName string
 	var extCreds *apb.ExtractedCredentials
@@ -71,7 +55,7 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- WorkMsg) {
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- BindingMsg{InstanceUUID: p.serviceInstance.ID.String(),
+		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
@@ -79,11 +63,11 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- WorkMsg) {
 	// send creds
 	jsonmsg, err := json.Marshal(extCreds)
 	if err != nil {
-		msgBuffer <- BindingMsg{InstanceUUID: p.serviceInstance.ID.String(),
+		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
-	msgBuffer <- BindingMsg{InstanceUUID: p.serviceInstance.ID.String(),
+	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
 }

@@ -30,7 +30,7 @@ import (
 // BindingWorkSubscriber - Listen for binding messages
 type BindingWorkSubscriber struct {
 	dao       *dao.Dao
-	msgBuffer <-chan WorkMsg
+	msgBuffer <-chan JobMsg
 }
 
 // NewBindingWorkSubscriber - Creates a new work subscriber
@@ -39,14 +39,14 @@ func NewBindingWorkSubscriber(dao *dao.Dao) *BindingWorkSubscriber {
 }
 
 // Subscribe - will start a work subscriber listening for bind job messages
-func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
+func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 	b.msgBuffer = msgBuffer
 
 	go func() {
 		log.Info("Listening for binding messages")
 		for {
 			msg := <-msgBuffer
-			var bmsg *BindingMsg
+			var bmsg *JobMsg
 			var extCreds *apb.ExtractedCredentials
 			metrics.BindingJobFinished()
 
