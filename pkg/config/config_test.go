@@ -192,3 +192,11 @@ func TestConfigGetSubMap(t *testing.T) {
 	ft.AssertTrue(t, testInvalidSubMap.Empty())
 	ft.AssertTrue(t, testNoNameArray.Empty())
 }
+
+func TestConfigGetMap(t *testing.T) {
+	testMap := config.GetSubConfig("registry").ToMap()
+	_, ok := testMap["dh"]
+	ft.AssertTrue(t, ok)
+	_, ok = testMap["dockerhub"]
+	ft.AssertFalse(t, ok)
+}
