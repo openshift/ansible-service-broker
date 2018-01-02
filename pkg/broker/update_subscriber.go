@@ -27,7 +27,7 @@ import (
 // UpdateWorkSubscriber - Lissten for provision messages
 type UpdateWorkSubscriber struct {
 	dao       *dao.Dao
-	msgBuffer <-chan WorkMsg
+	msgBuffer <-chan JobMsg
 }
 
 // NewUpdateWorkSubscriber - Create a new work subscriber.
@@ -36,49 +36,55 @@ func NewUpdateWorkSubscriber(dao *dao.Dao) *UpdateWorkSubscriber {
 }
 
 // Subscribe - will start the work subscriber listenning on the message buffer for provision messages.
-func (u *UpdateWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
+func (u *UpdateWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 	u.msgBuffer = msgBuffer
 
 	go func() {
 		log.Info("Listening for provision messages")
 		for {
 			msg := <-msgBuffer
-			var umsg *JobMsg
 			var extCreds *apb.ExtractedCredentials
 			metrics.UpdateJobFinished()
 
 			log.Debug("Processed provision message from buffer")
-			// HACK: this seems like a hack, there's probably a better way to
-			// get the data sent through instead of a string
-			json.Unmarshal([]byte(msg.Render()), &umsg)
 
-			if umsg.Error != "" {
-				log.Errorf("Update job reporting error: %s", umsg.Error)
-				u.dao.SetState(umsg.InstanceUUID, apb.JobState{
-					Token:   umsg.JobToken,
+			if msg.Error != "" {
+				log.Errorf("Update job reporting error: %s", msg.Error)
+				if err := u.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateFailed,
-					Podname: umsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodUpdate,
-				})
-			} else if umsg.Msg == "" {
+				}); err != nil {
+					log.Errorf("failed to set state after update job msg received %v ", err)
+				}
+			} else if msg.Msg == "" {
 				// HACK: OMG this is horrible. We should probably pass in a
 				// state. Since we'll also be using this to get more granular
 				// updates one day.
-				u.dao.SetState(umsg.InstanceUUID, apb.JobState{
-					Token:   umsg.JobToken,
+				if err := u.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateInProgress,
-					Podname: umsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodUpdate,
-				})
+				}); err != nil {
+					log.Errorf("failed to set state after update job msg received %v ", err)
+				}
 			} else {
-				json.Unmarshal([]byte(umsg.Msg), &extCreds)
-				u.dao.SetState(umsg.InstanceUUID, apb.JobState{
-					Token:   umsg.JobToken,
+				if err := json.Unmarshal([]byte(msg.Msg), &extCreds); err != nil {
+					log.Errorf("failed to unmarshal the extracted credentials from JobMsg after update %v", err)
+				}
+				if err := u.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateSucceeded,
-					Podname: umsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodUpdate,
-				})
-				u.dao.SetExtractedCredentials(umsg.InstanceUUID, extCreds)
+				}); err != nil {
+					log.Errorf("failed to set state after update job msg received %v ", err)
+				}
+				if err := u.dao.SetExtractedCredentials(msg.InstanceUUID, extCreds); err != nil {
+					log.Errorf("failed to set extracted credentials after update job msg received %v ", err)
+				}
 			}
 		}
 	}()

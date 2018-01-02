@@ -27,7 +27,7 @@ import (
 // ProvisionWorkSubscriber - Lissten for provision messages
 type ProvisionWorkSubscriber struct {
 	dao       *dao.Dao
-	msgBuffer <-chan WorkMsg
+	msgBuffer <-chan JobMsg
 }
 
 // NewProvisionWorkSubscriber - Create a new work subscriber.
@@ -36,49 +36,55 @@ func NewProvisionWorkSubscriber(dao *dao.Dao) *ProvisionWorkSubscriber {
 }
 
 // Subscribe - will start the work subscriber listenning on the message buffer for provision messages.
-func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan WorkMsg) {
+func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 	p.msgBuffer = msgBuffer
 
 	go func() {
 		log.Info("Listening for provision messages")
 		for {
 			msg := <-msgBuffer
-			var pmsg *JobMsg
 			var extCreds *apb.ExtractedCredentials
 			metrics.ProvisionJobFinished()
 
 			log.Debug("Processed provision message from buffer")
-			// HACK: this seems like a hack, there's probably a better way to
-			// get the data sent through instead of a string
-			json.Unmarshal([]byte(msg.Render()), &pmsg)
 
-			if pmsg.Error != "" {
-				log.Errorf("Provision job reporting error: %s", pmsg.Error)
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{
-					Token:   pmsg.JobToken,
+			if msg.Error != "" {
+				log.Errorf("Provision job reporting error: %s", msg.Error)
+				if err := p.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateFailed,
-					Podname: pmsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodProvision,
-				})
-			} else if pmsg.Msg == "" {
+				}); err != nil {
+					log.Errorf("failed to set state after provision %v", err)
+				}
+			} else if msg.Msg == "" {
 				// HACK: OMG this is horrible. We should probably pass in a
 				// state. Since we'll also be using this to get more granular
 				// updates one day.
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{
-					Token:   pmsg.JobToken,
+				if err := p.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateInProgress,
-					Podname: pmsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodProvision,
-				})
+				}); err != nil {
+					log.Errorf("failed to set state after provision %v", err)
+				}
 			} else {
-				json.Unmarshal([]byte(pmsg.Msg), &extCreds)
-				p.dao.SetState(pmsg.InstanceUUID, apb.JobState{
-					Token:   pmsg.JobToken,
+				if err := json.Unmarshal([]byte(msg.Msg), &extCreds); err != nil {
+					log.Errorf("failed to unmarshal extracted credentials after provision %v", err)
+				}
+				if err := p.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateSucceeded,
-					Podname: pmsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodProvision,
-				})
-				p.dao.SetExtractedCredentials(pmsg.InstanceUUID, extCreds)
+				}); err != nil {
+					log.Errorf("failed to set state after provision %v", err)
+				}
+				if err := p.dao.SetExtractedCredentials(msg.InstanceUUID, extCreds); err != nil {
+					log.Errorf("failed to set extracted credentials after provision %v", err)
+				}
 			}
 		}
 	}()

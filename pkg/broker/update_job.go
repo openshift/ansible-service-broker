@@ -36,7 +36,7 @@ func NewUpdateJob(serviceInstance *apb.ServiceInstance) *UpdateJob {
 }
 
 // Run - run the update job.
-func (u *UpdateJob) Run(token string, msgBuffer chan<- WorkMsg) {
+func (u *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.UpdateJobStarted()
 	podName, extCreds, err := apb.Update(u.serviceInstance)
 
