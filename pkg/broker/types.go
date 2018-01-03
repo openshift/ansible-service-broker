@@ -301,4 +301,7 @@ func (jm JobMsg) Render() string {
 type SubscriberDAO interface {
 	SetExtractedCredentials(id string, extCreds *apb.ExtractedCredentials) error
 	SetState(id string, state apb.JobState) (string, error)
+	GetServiceInstance(id string) (*apb.ServiceInstance, error)
+	DeleteExtractedCredentials(id string) error
+	DeleteServiceInstance(id string) error
 }

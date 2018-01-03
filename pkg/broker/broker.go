@@ -368,7 +368,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 				job = NewProvisionJob(instance, apb.Provision)
 				topic = ProvisionTopic
 			} else if rs.State.Method == apb.JobMethodUpdate {
-				job = NewUpdateJob(instance)
+				job = NewUpdateJob(instance, apb.Update)
 				topic = UpdateTopic
 			} else {
 				log.Warningf(
@@ -380,7 +380,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// Need to use the same token as before, since that's what the
 			// catalog will try to ping.
-			_, err := a.engine.StartNewJob(rs.State.Token, job, topic)
+			_, err := a.engine.StartNewAsyncJob(rs.State.Token, job, topic)
 			if err != nil {
 				return "", err
 			}
@@ -620,32 +620,24 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		return nil, err
 	}
 
-	var token string
+	var token = a.engine.Token()
+	pjob := NewProvisionJob(serviceInstance, apb.Provision)
 
 	if async {
 		log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob(serviceInstance, apb.Provision)
-
-		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
+		token, err = a.engine.StartNewAsyncJob(token, pjob, ProvisionTopic)
 		if err != nil {
 			log.Error("Failed to start new job for async provision\n%s", err.Error())
 			return nil, err
 		}
 	} else {
 		log.Info("reverting to synchronous provisioning in progress")
-		_, extCreds, err := apb.Provision(serviceInstance)
-		if extCreds != nil {
-			log.Debug("broker::Provision, got ExtractedCredentials!")
-			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
-			if err != nil {
-				log.Error("Could not persist extracted credentials")
-				log.Error("%s", err.Error())
-				return nil, err
-			}
+		if err := a.engine.StartNewSyncJob(token, pjob, ProvisionTopic); err != nil {
+			log.Errorf("Failed to start new job for sync provision\n%s", err.Error())
+			return nil, err
 		}
 	}
-
 	// TODO: What data needs to be sent back on a response?
 	// Not clear what dashboardURL means in an AnsibleApp context
 	// operation should be the task id from the work_engine
@@ -688,14 +680,12 @@ func (a AnsibleBroker) Deprovision(
 		return &DeprovisionResponse{Operation: jobToken}, ErrorDeprovisionInProgress
 	}
 
-	var token string
-
+	var token = a.engine.Token()
+	dpjob := NewDeprovisionJob(&instance, skipApbExecution, apb.Deprovision)
 	if async {
 		log.Info("ASYNC deprovision in progress")
-		// asynchronously provision and return the token for the lastoperation
-		dpjob := NewDeprovisionJob(&instance, skipApbExecution)
 
-		token, err = a.engine.StartNewJob("", dpjob, DeprovisionTopic)
+		token, err = a.engine.StartNewAsyncJob(token, dpjob, DeprovisionTopic)
 		if err != nil {
 			log.Error("Failed to start new job for async deprovision\n%s", err.Error())
 			return nil, err
@@ -705,15 +695,9 @@ func (a AnsibleBroker) Deprovision(
 
 	if !skipApbExecution {
 		log.Info("Synchronous deprovision in progress")
-		_, err = apb.Deprovision(&instance)
-		if err != nil {
+		if err := a.engine.StartNewSyncJob(token, dpjob, DeprovisionTopic); err != nil {
 			return nil, err
 		}
-	}
-
-	err = cleanupDeprovision(&instance, a.dao)
-	if err != nil {
-		return nil, err
 	}
 	return &DeprovisionResponse{}, nil
 }
@@ -904,17 +888,19 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// 'LaunchApbOnBind' of the broker config, due to lack of async support of
 	// bind in Open Service Broker API Currently, the 'launchapbonbind' is set
 	// to false in the 'config' ConfigMap
-	var bindExtCreds *apb.ExtractedCredentials
+
 	metrics.ActionStarted("bind")
-	var token string
+	var (
+		bindExtCreds *apb.ExtractedCredentials
+		token        = a.engine.Token()
+		bindingJob   = NewBindingJob(&instance, bindingUUID, &params, apb.Bind)
+	)
 
 	if async && a.brokerConfig.LaunchApbOnBind {
 		// asynchronous mode, requires that the launch apb config
 		// entry is on, and that async comes in from the catalog
 		log.Info("ASYNC binding in progress")
-		bindjob := NewBindingJob(&instance, bindingUUID, &params, apb.Bind)
-
-		token, err = a.engine.StartNewJob("", bindjob, BindingTopic)
+		token, err = a.engine.StartNewAsyncJob("", bindingJob, BindingTopic)
 		if err != nil {
 			log.Error("Failed to start new job for async binding\n%s", err.Error())
 			return nil, false, err
@@ -937,21 +923,13 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// we are synchronous mode
 		log.Info("Broker configured to run APB bind")
-		_, bindExtCreds, err = apb.Bind(&instance, &params)
-
-		if err != nil {
+		if err := a.engine.StartNewSyncJob(token, bindingJob, BindingTopic); err != nil {
 			return nil, false, err
 		}
+		//TODO are we only setting the bindingUUID if sync?
 		instance.AddBinding(bindingUUID)
 		if err := a.dao.SetServiceInstance(instance.ID.String(), &instance); err != nil {
 			return nil, false, err
-		}
-		if bindExtCreds != nil {
-			err = a.dao.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
-			if err != nil {
-				log.Errorf("Could not persist extracted credentials - %v", err)
-				return nil, false, err
-			}
 		}
 	} else {
 		log.Warning("Broker configured to *NOT* launch and run APB bind")
@@ -1007,14 +985,17 @@ func (a AnsibleBroker) Unbind(
 	}
 	metrics.ActionStarted("unbind")
 
-	var token string
-	var jerr error
+	var (
+		token     = a.engine.Token()
+		jerr      error
+		unbindJob = NewUnbindingJob(&serviceInstance, &bindInstance, &params, apb.Unbind, skipApbExecution)
+	)
 	if async && a.brokerConfig.LaunchApbOnBind {
 		// asynchronous mode, required that the launch apb config
 		// entry is on, and that async comes in from the catalog
 		log.Info("ASYNC unbinding in progress")
-		unbindjob := NewUnbindingJob(&serviceInstance, &bindInstance, &params, apb.Unbind, skipApbExecution)
-		token, jerr = a.engine.StartNewJob("", unbindjob, UnbindingTopic)
+
+		token, jerr = a.engine.StartNewAsyncJob("", unbindJob, UnbindingTopic)
 		if jerr != nil {
 			log.Error("Failed to start new job for async unbind\n%s", jerr.Error())
 			return nil, false, jerr
@@ -1035,15 +1016,15 @@ func (a AnsibleBroker) Unbind(
 			err = nil
 		} else {
 			log.Debug("Launching apb for unbind in blocking mode")
-			err = apb.Unbind(&serviceInstance, &params)
-		}
-		if err != nil {
-			return nil, false, err
+			if err := a.engine.StartNewSyncJob(token, unbindJob, UnbindingTopic); err != nil {
+				return nil, false, err
+			}
 		}
 	} else {
 		log.Warning("Broker configured to *NOT* launch and run APB unbind")
 	}
 
+	//TODO should these not be handled in the subscriber if the subscriber is handling state
 	if bindExtCreds != nil {
 		err = a.dao.DeleteExtractedCredentials(bindInstance.ID.String())
 		if err != nil {
@@ -1253,35 +1234,27 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, err
 	}
 
-	var token string
+	var token = a.engine.Token()
 
 	log.Debug("Initiating update with the inputs:")
 	log.Debugf("fromPlanName: [%s]", fromPlanName)
 	log.Debugf("toPlanName: [%s]", toPlan.Name)
 	log.Debugf("PreviousValues: [ %+v ]", req.PreviousValues)
 	log.Debugf("ServiceInstance Parameters: [%v]", *si.Parameters)
-
+	ujob := NewUpdateJob(si, apb.Update)
 	if async {
 		log.Info("ASYNC update in progress")
 		// asyncronously provision and return the token for the lastoperation
-		ujob := NewUpdateJob(si)
-
-		token, err = a.engine.StartNewJob("", ujob, UpdateTopic)
+		token, err = a.engine.StartNewAsyncJob(token, ujob, UpdateTopic)
 		if err != nil {
 			log.Error("Failed to start new job for async update\n%s", err.Error())
 			return nil, err
 		}
 	} else {
 		log.Info("reverting to synchronous update in progress")
-		_, extCreds, err := apb.Update(si)
-		if extCreds != nil {
-			log.Debug("broker::Update, got ExtractedCredentials!")
-			err = a.dao.SetExtractedCredentials(instanceUUID.String(), extCreds)
-			if err != nil {
-				log.Error("Could not persist extracted credentials")
-				log.Error("%s", err.Error())
-				return nil, err
-			}
+		if err := a.engine.StartNewSyncJob(token, ujob, UpdateTopic); err != nil {
+			log.Errorf("Failed to start new job for sync update\n%s", err.Error())
+			return nil, err
 		}
 	}
 
@@ -1389,11 +1362,11 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 	state := StateToLastOperation(jobstate.State)
 	log.Debugf("state: %s", state)
-	// Error can not be nil, so we're not checking for it.
+	log.Debugf("description: %s", jobstate.Description)
 	if jobstate.Error != "" {
 		log.Debugf("job state has an error. Assuming that any error here is human readable. err - %v", jobstate.Error)
 	}
-	return &LastOperationResponse{State: state, Description: jobstate.Error}, err
+	return &LastOperationResponse{State: state, Description: jobstate.Description}, err
 }
 
 // AddSpec - adding the spec to the catalog for local development

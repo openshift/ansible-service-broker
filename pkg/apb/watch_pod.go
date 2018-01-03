@@ -18,11 +18,13 @@ package apb
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"reflect"
 
 	apiv1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 var (
@@ -32,45 +34,63 @@ var (
 	ErrorActionNotFound = fmt.Errorf("action not found")
 )
 
-func watchPod(podName string, namespace string) error {
+func watchPod(podName string, namespace string, podClient v1.PodInterface, statusUpdates chan<- JobState) error {
 	log.Debugf(
 		"Watching pod [ %s ] in namespace [ %s ] for completion",
 		podName,
 		namespace,
 	)
 
-	k8scli, err := clients.Kubernetes()
+	w, err := podClient.Watch(meta_v1.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("Unable to retrive kubernetes client - %v", err)
+		return fmt.Errorf("failed to watch pod %s in namespace %s error: %v", podName, namespace, err)
 	}
-
-	for r := 1; r <= apbWatchRetries; r++ {
-		log.Info("Watch pod [ %s ] tick %d", podName, r)
-
-		podStatus, err := k8scli.GetPodStatus(podName, namespace)
-		if err != nil {
-			return err
+	var send = func(state JobState) {
+		if nil == statusUpdates {
+			return
+		}
+		statusUpdates <- state
+	}
+	for podEvent := range w.ResultChan() {
+		pod, ok := podEvent.Object.(*apiv1.Pod)
+		if !ok {
+			log.Errorf("watch did not return a apiv1.Pod instead returned %v", reflect.TypeOf(podEvent.Object))
+			continue
+		}
+		if pod.Name != podName {
+			log.Debugf("watching pods in namespace %s ignoring pod %s as it is not the pod we are looking for", namespace, pod.Name)
+			continue
 		}
 
+		state := JobState{State: StateInProgress, Podname: podName}
+		lastOp := pod.Annotations["apb_last_operation"]
+		if lastOp != "" {
+			state.Description = lastOp
+		}
+		send(state)
+		podStatus := pod.Status
+		log.Debugf("pod [%s] in phase %s", podName, podStatus.Phase)
 		switch podStatus.Phase {
 		case apiv1.PodFailed:
+			w.Stop()
 			if errorPullingImage(podStatus.ContainerStatuses) {
 				return ErrorPodPullErr
 			}
-
-			// handle the return code from the pod
 			return translateExitStatus(podName, podStatus)
 		case apiv1.PodSucceeded:
+			w.Stop()
 			log.Debugf("Pod [ %s ] completed", podName)
 			return nil
 		default:
 			log.Debugf("Pod [ %s ] %s", podName, podStatus.Phase)
 		}
-
-		time.Sleep(time.Duration(apbWatchInterval) * time.Second)
+		if podEvent.Type == watch.Deleted {
+			w.Stop()
+			return fmt.Errorf("pod [ %s ] was unexpectedly deleted", podName)
+		}
 	}
-
-	return fmt.Errorf("Timed out while watching pod %s for completion", podName)
+	log.Debugf("finished watching pod %s in namespace %s ", podName, namespace)
+	return nil
 }
 
 func errorPullingImage(conds []apiv1.ContainerStatus) bool {
@@ -96,7 +116,7 @@ func errorPullingImage(conds []apiv1.ContainerStatus) bool {
 	return false
 }
 
-func translateExitStatus(podName string, podStatus *apiv1.PodStatus) error {
+func translateExitStatus(podName string, podStatus apiv1.PodStatus) error {
 	conds := podStatus.ContainerStatuses
 	if len(conds) < 1 {
 		log.Warningf("unable to get container status for APB pod")

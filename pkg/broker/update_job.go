@@ -24,44 +24,62 @@ import (
 // UpdateJob - Job to update
 type UpdateJob struct {
 	serviceInstance *apb.ServiceInstance
+	update          apb.Updater
 }
 
 // NewUpdateJob - Create a new update job.
-func NewUpdateJob(serviceInstance *apb.ServiceInstance) *UpdateJob {
+func NewUpdateJob(serviceInstance *apb.ServiceInstance, update apb.Updater) *UpdateJob {
 	return &UpdateJob{
 		serviceInstance: serviceInstance,
+		update:          update,
 	}
 }
 
 // Run - run the update job.
 func (u *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.UpdateJobStarted()
-	defer metrics.UpdateJobFinished()
-	jobMsg := JobMsg{
-		InstanceUUID: u.serviceInstance.ID.String(),
-		JobToken:     token,
-		SpecID:       u.serviceInstance.Spec.ID,
-		State: apb.JobState{
-			State:  apb.StateInProgress,
-			Method: apb.JobMethodUpdate,
-			Token:  token,
-		},
+	var (
+		stateUpdates = make(chan apb.JobState)
+		jobMsg       = JobMsg{
+			InstanceUUID: u.serviceInstance.ID.String(),
+			JobToken:     token,
+			SpecID:       u.serviceInstance.Spec.ID,
+			State: apb.JobState{
+				State:  apb.StateInProgress,
+				Method: apb.JobMethodUpdate,
+				Token:  token,
+			},
+		}
+		podName  string
+		err      error
+		errMsg   = "Error occurred during update. Please contact administrator if it persists."
+		extCreds *apb.ExtractedCredentials
+	)
+	go func() {
+		defer func() {
+			close(stateUpdates)
+			metrics.UpdateJobFinished()
+		}()
+		msgBuffer <- jobMsg
+		podName, extCreds, err = u.update(u.serviceInstance, stateUpdates)
+	}()
+	for su := range stateUpdates {
+		su.Token = token
+		su.Method = apb.JobMethodUpdate
+		msgBuffer <- JobMsg{InstanceUUID: u.serviceInstance.ID.String(), JobToken: token, State: su, PodName: su.Podname}
 	}
-	msgBuffer <- jobMsg
-	podName, extCreds, err := apb.Update(u.serviceInstance)
-
 	if err != nil {
 		log.Errorf(" broker::Update error occurred. %v", err)
-		errMsg := "Error occurred during update. Please contact administrator if it persists."
 		// Because we know the error we should return that error.
 		if err == apb.ErrorPodPullErr {
 			errMsg = err.Error()
 		}
 		jobMsg.State.State = apb.StateFailed
-		jobMsg.State.Error = errMsg
 		// send error message, can't have
 		// an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
+		jobMsg.State.Error = err.Error()
+		jobMsg.State.Description = errMsg
 		msgBuffer <- jobMsg
 		return
 	}
@@ -71,6 +89,7 @@ func (u *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 	if extCreds != nil {
 		jobMsg.ExtractedCredentials = *extCreds
 	}
+	jobMsg.State.Description = "update job completed"
 	jobMsg.PodName = podName
 	msgBuffer <- jobMsg
 }

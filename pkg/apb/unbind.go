@@ -19,11 +19,12 @@ package apb
 import (
 	"fmt"
 
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 )
 
 // Unbind - runs the abp with the unbind action.
-func Unbind(instance *ServiceInstance, parameters *Parameters) error {
+func Unbind(instance *ServiceInstance, parameters *Parameters, stateUpdates chan<- JobState) error {
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                            ")
 	log.Notice("============================================================")
@@ -47,7 +48,13 @@ func Unbind(instance *ServiceInstance, parameters *Parameters) error {
 		return err
 	}
 
-	err = watchPod(executionContext.PodName, executionContext.Namespace)
+	k8scli, err := clients.Kubernetes()
+	if err != nil {
+		log.Error("Something went wrong getting kubernetes client")
+		return err
+	}
+
+	err = watchPod(executionContext.PodName, executionContext.Namespace, k8scli.Client.CoreV1().Pods(executionContext.Namespace), stateUpdates)
 	if err != nil {
 		log.Errorf("Unbind action failed - %v", err)
 		return err

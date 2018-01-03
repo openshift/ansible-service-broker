@@ -36,7 +36,8 @@ const (
 
 // returns PodName, ExtractedCredentials, error
 func provisionOrUpdate(method executionMethod,
-	instance *ServiceInstance) (string, *ExtractedCredentials, error) {
+	instance *ServiceInstance,
+	stateUpdates chan<- JobState) (string, *ExtractedCredentials, error) {
 
 	// Explicitly error out if image field is missing from instance.Spec
 	// was introduced as a change to the apb instance.Spec to support integration
@@ -79,7 +80,8 @@ func provisionOrUpdate(method executionMethod,
 	}
 
 	if instance.Spec.Runtime >= 2 || !instance.Spec.Bindable {
-		err := watchPod(executionContext.PodName, executionContext.Namespace)
+		log.Debugf("watching pod for serviceinstance %#v", instance.Spec)
+		err := watchPod(executionContext.PodName, executionContext.Namespace, k8scli.Client.CoreV1().Pods(executionContext.Namespace), stateUpdates)
 		if err != nil {
 			log.Errorf("Provision or Update action failed - %v", err)
 			return executionContext.PodName, nil, err

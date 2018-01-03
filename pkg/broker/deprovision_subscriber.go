@@ -18,17 +18,16 @@ package broker
 
 import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 
 // DeprovisionWorkSubscriber - Lissten for provision messages
 type DeprovisionWorkSubscriber struct {
-	dao       dao.Dao
+	dao       SubscriberDAO
 	msgBuffer <-chan JobMsg
 }
 
 // NewDeprovisionWorkSubscriber - Create a new work subscriber.
-func NewDeprovisionWorkSubscriber(dao dao.Dao) *DeprovisionWorkSubscriber {
+func NewDeprovisionWorkSubscriber(dao SubscriberDAO) *DeprovisionWorkSubscriber {
 	return &DeprovisionWorkSubscriber{dao: dao}
 }
 
@@ -46,16 +45,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 			}
 			//only want to do this on success
 			if msg.State.State == apb.StateSucceeded {
-				instance, err := d.dao.GetServiceInstance(msg.InstanceUUID)
-				if err != nil {
-					log.Errorf(
-						"Error occurred getting service instance [ %s ] after deprovision job:",
-						msg.InstanceUUID,
-					)
-					setFailedDeprovisionJob(d.dao, msg)
-					continue
-				}
-				if err := cleanupDeprovision(instance, d.dao); err != nil {
+				if err := cleanupDeprovision(msg.InstanceUUID, d.dao); err != nil {
 					log.Errorf("Failed cleaning up deprovision after job, error: %v", err)
 					// Cleanup is reporting something has gone wrong. Deprovision overall
 					// has not completed. Mark the job as failed.
@@ -67,7 +57,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 	}()
 }
 
-func setFailedDeprovisionJob(dao dao.Dao, dmsg JobMsg) {
+func setFailedDeprovisionJob(dao SubscriberDAO, dmsg JobMsg) {
 	// have to set the state here manually as the logic that triggers this is in the subscriber
 	dmsg.State.State = apb.StateFailed
 	if _, err := dao.SetState(dmsg.InstanceUUID, dmsg.State); err != nil {
@@ -75,16 +65,13 @@ func setFailedDeprovisionJob(dao dao.Dao, dmsg JobMsg) {
 	}
 }
 
-func cleanupDeprovision(instance *apb.ServiceInstance, dao dao.Dao) error {
-	var err error
-	id := instance.ID.String()
-
-	if err = dao.DeleteExtractedCredentials(id); err != nil {
+func cleanupDeprovision(instanceID string, dao SubscriberDAO) error {
+	if err := dao.DeleteExtractedCredentials(instanceID); err != nil {
 		log.Error("failed to delete extracted credentials - %v", err)
 		return err
 	}
 
-	if err = dao.DeleteServiceInstance(id); err != nil {
+	if err := dao.DeleteServiceInstance(instanceID); err != nil {
 		log.Error("failed to delete service instance - %v", err)
 		return err
 	}

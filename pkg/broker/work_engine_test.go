@@ -101,7 +101,7 @@ func TestStartNewJob(t *testing.T) {
 	worker := &mockWorker{wg: &wg}
 	work = worker
 
-	token, err := engine.StartNewJob("testtoken", work, ProvisionTopic)
+	token, err := engine.StartNewAsyncJob("testtoken", work, ProvisionTopic)
 	ft.AssertNil(t, err)
 	ft.AssertEqual(t, "testtoken", token, "token doesn't match")
 

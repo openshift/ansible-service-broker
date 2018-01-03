@@ -48,7 +48,6 @@ func NewUnbindingJob(serviceInstance *apb.ServiceInstance, bindInstance *apb.Bin
 // Run - run the binding job.
 func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.UnbindingJobStarted()
-	defer metrics.UnbindingJobFinished()
 	jobMsg := JobMsg{
 		InstanceUUID: p.serviceInstance.ID.String(),
 		JobToken:     token,
@@ -60,21 +59,36 @@ func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 			Token:  token,
 		},
 	}
-	msgBuffer <- jobMsg
+	stateUpdates := make(chan apb.JobState)
+
 	log.Debugf("unbindjob: unbinding job (%v) started, calling apb.Unbind", token)
 
-	if p.skipApbExecution {
-		log.Info("unbinding job (%v) skipping apb execution", token)
-		jobMsg.State.State = apb.StateSucceeded
-		jobMsg.Msg = "unbind finished, execution skipped"
+	var err error
+
+	go func() {
+		defer func() {
+			metrics.UnbindingJobFinished()
+			close(stateUpdates)
+		}()
+		// set initial state
 		msgBuffer <- jobMsg
-		return
+		if p.skipApbExecution {
+			log.Info("unbinding job (%v) skipping apb execution", token)
+			jobMsg.State.State = apb.StateSucceeded
+			jobMsg.Msg = "unbind finished, execution skipped"
+			msgBuffer <- jobMsg
+			return
+		}
+		err = p.unbind(p.serviceInstance, p.params, stateUpdates)
+		log.Debug("unbindjob: returned from apb.Unbind")
+	}()
+	//read our status updates and send on updated JobMsgs for the subscriber to persist
+	for su := range stateUpdates {
+		su.Token = token
+		su.Method = apb.JobMethodDeprovision
+		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(), JobToken: token, State: su, PodName: su.Podname}
 	}
-
-	err := p.unbind(p.serviceInstance, p.params)
-
-	log.Debug("unbindjob: returned from apb.Unbind")
-
+	// status channel has closed so our Job has ended check for any err
 	if err != nil {
 		errMsg := "Error occurred during binding. Please contact administrator if it persists."
 		log.Errorf("unbindjob::Unbinding error occurred.\n%s", err.Error())

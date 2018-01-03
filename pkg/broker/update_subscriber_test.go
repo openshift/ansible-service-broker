@@ -33,7 +33,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/mock"
 )
 
-func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
+func TestUpdateWorkSubscriber_Subscribe(t *testing.T) {
 	cases := []struct {
 		Name   string
 		JobMsg broker.JobMsg
@@ -44,7 +44,7 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 			JobMsg: broker.JobMsg{
 				State: apb.JobState{
 					State:  apb.StateSucceeded,
-					Method: apb.JobMethodProvision,
+					Method: apb.JobMethodUpdate,
 				},
 				ExtractedCredentials: apb.ExtractedCredentials{
 					Credentials: map[string]interface{}{"user": "test", "pass": "test"},
@@ -68,7 +68,7 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 				}
 				dao.AssertOn["SetState"] = func(args ...interface{}) error {
 					state := args[1].(apb.JobState)
-					if state.Method != apb.JobMethodProvision {
+					if state.Method != apb.JobMethodUpdate {
 						return fmt.Errorf("expected to have a provision job state")
 					}
 					if state.State != apb.StateSucceeded {
@@ -89,14 +89,14 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 			JobMsg: broker.JobMsg{
 				State: apb.JobState{
 					State:  apb.StateFailed,
-					Method: apb.JobMethodProvision,
+					Method: apb.JobMethodUpdate,
 				},
 			},
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.AssertOn["SetState"] = func(args ...interface{}) error {
 					state := args[1].(apb.JobState)
-					if state.Method != apb.JobMethodProvision {
+					if state.Method != apb.JobMethodUpdate {
 						fmt.Println(state)
 						return fmt.Errorf("expected to have a provision job state but was %v", state.Method)
 					}
@@ -117,14 +117,14 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 			JobMsg: broker.JobMsg{
 				State: apb.JobState{
 					State:  apb.StateInProgress,
-					Method: apb.JobMethodProvision,
+					Method: apb.JobMethodUpdate,
 				},
 			},
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.AssertOn["SetState"] = func(args ...interface{}) error {
 					state := args[1].(apb.JobState)
-					if state.Method != apb.JobMethodProvision {
+					if state.Method != apb.JobMethodUpdate {
 						return fmt.Errorf("expected to have a provision job state")
 					}
 					if state.State != apb.StateInProgress {
@@ -144,7 +144,7 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			dao, expectedCalls := tc.DAO()
-			sub := broker.NewProvisionWorkSubscriber(dao)
+			sub := broker.NewUpdateWorkSubscriber(dao)
 			wait := sync.WaitGroup{}
 			wait.Add(1)
 			// this is a bit gross but hard to test the subscribe method as it has a constant for loop
@@ -164,57 +164,5 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 				t.Fatal("unexpected error checking calls ", err)
 			}
 		})
-	}
-}
-
-type mockProvisionSubscriberDAO struct {
-	calls     map[string]int
-	err       error
-	assertErr []error
-	assertOn  map[string]func(...interface{}) error
-}
-
-func (mp *mockProvisionSubscriberDAO) SetExtractedCredentials(id string, extCreds *apb.ExtractedCredentials) error {
-	assert := mp.assertOn["SetExtractedCredentials"]
-	if nil != assert {
-		if err := assert(id, extCreds); err != nil {
-			mp.assertErr = append(mp.assertErr, err)
-			return err
-		}
-	}
-	mp.calls["SetExtractedCredentials"]++
-	return mp.err
-
-}
-func (mp *mockProvisionSubscriberDAO) SetState(id string, state apb.JobState) (string, error) {
-	assert := mp.assertOn["SetState"]
-	if nil != assert {
-		if err := assert(id, state); err != nil {
-			mp.assertErr = append(mp.assertErr, err)
-			return "", err
-		}
-	}
-	mp.calls["SetState"]++
-	return "", mp.err
-
-}
-
-func (mp *mockProvisionSubscriberDAO) CheckCalls(calls map[string]int) error {
-	for k, v := range calls {
-		if mp.calls[k] != v {
-			return fmt.Errorf("expected %d calls to %s but got %d ", v, k, mp.calls[k])
-		}
-	}
-	return nil
-}
-
-func (mp *mockProvisionSubscriberDAO) AssertErrors() []error {
-	return mp.assertErr
-}
-
-func newProvisionSubscriberDAO() *mockProvisionSubscriberDAO {
-	return &mockProvisionSubscriberDAO{
-		calls:    map[string]int{},
-		assertOn: map[string]func(...interface{}) error{},
 	}
 }

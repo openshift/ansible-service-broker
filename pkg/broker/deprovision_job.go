@@ -25,22 +25,23 @@ import (
 type DeprovisionJob struct {
 	serviceInstance  *apb.ServiceInstance
 	skipApbExecution bool
+	deprovision      apb.Deprovisioner
 }
 
 // NewDeprovisionJob - Create a deprovision job.
-func NewDeprovisionJob(
-	serviceInstance *apb.ServiceInstance, skipApbExecution bool,
+func NewDeprovisionJob(serviceInstance *apb.ServiceInstance,
+	skipApbExecution bool, deprovision apb.Deprovisioner,
 ) *DeprovisionJob {
 	return &DeprovisionJob{
 		serviceInstance:  serviceInstance,
 		skipApbExecution: skipApbExecution,
+		deprovision:      deprovision,
 	}
 }
 
 // Run - will run the deprovision job.
 func (p *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.DeprovisionJobStarted()
-	defer metrics.DeprovisionJobFinished()
 	jobMsg := JobMsg{
 		InstanceUUID: p.serviceInstance.ID.String(),
 		JobToken:     token,
@@ -51,34 +52,56 @@ func (p *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 			Token:  token,
 		},
 	}
-	msgBuffer <- jobMsg
+	stateUpdates := make(chan apb.JobState)
 
-	if p.skipApbExecution {
-		log.Debug("skipping deprovision and sending complete msg to channel")
-		jobMsg.State.State = apb.StateSucceeded
+	var (
+		errMsg  = "Error occurred during deprovision. Please contact administrator if it persists."
+		podName string
+		jobErr  error
+	)
+
+	go func() {
+		defer func() {
+			close(stateUpdates)
+			metrics.DeprovisionJobFinished()
+		}()
 		msgBuffer <- jobMsg
-		return
-	}
-
-	podName, err := apb.Deprovision(p.serviceInstance)
-	if err != nil {
-		log.Errorf("broker::Deprovision error occurred. %v", err)
-		errMsg := "Error occurred during deprovision. Please contact administrator if it persists."
-		// Because we know the error we should return that error.
-		if err == apb.ErrorPodPullErr {
-			errMsg = err.Error()
+		if p.skipApbExecution {
+			log.Debug("skipping deprovision and sending complete msg to channel")
+			jobMsg.State.State = apb.StateSucceeded
+			msgBuffer <- jobMsg
+			return
 		}
+		podName, jobErr = p.deprovision(p.serviceInstance, stateUpdates)
+	}()
+	//read our status updates and send on updated JobMsgs for the subscriber to persist
+	for su := range stateUpdates {
+		su.Token = token
+		su.Method = apb.JobMethodDeprovision
+		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(), JobToken: token, State: su, PodName: su.Podname}
+	}
+	//Once our job is complete and the status updates channel closed evaluate jobErr to see was it successful or not
+	if jobErr != nil {
 		// send error message, can't have
 		// an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
+		// set the full error and log it
+		jobMsg.State.Error = jobErr.Error()
+		log.Errorf("broker::Deprovision error occurred. %v", jobErr)
+		if jobErr == apb.ErrorPodPullErr {
+			// Because we know the error we should send it back.
+			errMsg = jobErr.Error()
+		}
 		jobMsg.State.State = apb.StateFailed
-		jobMsg.State.Error = errMsg
+		// set the description as a displayable error
+		jobMsg.State.Description = errMsg
 		msgBuffer <- jobMsg
 		return
 	}
-
+	// no error so success
 	log.Debug("sending deprovision complete msg to channel")
 	jobMsg.State.State = apb.StateSucceeded
 	jobMsg.PodName = podName
+	jobMsg.State.Description = "completed deprovision job"
 	msgBuffer <- jobMsg
 }

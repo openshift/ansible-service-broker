@@ -19,12 +19,14 @@ package apb
 import (
 	"fmt"
 
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 )
 
 // Bind - Will run the APB with the bind action.
 func Bind(instance *ServiceInstance,
-	parameters *Parameters) (string, *ExtractedCredentials, error) {
+	parameters *Parameters,
+	stateUpdates chan<- JobState) (string, *ExtractedCredentials, error) {
 
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
@@ -48,9 +50,14 @@ func Bind(instance *ServiceInstance,
 		log.Errorf("Problem executing apb [%s] bind", executionContext.PodName)
 		return executionContext.PodName, nil, err
 	}
+	k8scli, err := clients.Kubernetes()
+	if err != nil {
+		log.Error("Something went wrong getting kubernetes client")
+		return executionContext.PodName, nil, err
+	}
 
 	if instance.Spec.Runtime >= 2 {
-		err := watchPod(executionContext.PodName, executionContext.Namespace)
+		err := watchPod(executionContext.PodName, executionContext.Namespace, k8scli.Client.CoreV1().Pods(executionContext.Namespace), stateUpdates)
 		if err != nil {
 			log.Errorf("Bind action failed - %v", err)
 			return executionContext.PodName, nil, err
