@@ -27,6 +27,9 @@ type ProvisionJob struct {
 	provision       apb.Provisioner
 }
 
+// Provisioner defines a function that knows how to provision an apb
+type Provisioner func(si *apb.ServiceInstance) (string, *apb.ExtractedCredentials, error)
+
 // NewProvisionJob - Create a new provision job.
 func NewProvisionJob(serviceInstance *apb.ServiceInstance, provision apb.Provisioner) *ProvisionJob {
 	return &ProvisionJob{
