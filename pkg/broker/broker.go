@@ -1251,7 +1251,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 	state := StateToLastOperation(jobstate.State)
 	log.Debugf("state: %s", state)
-	if jobstate.Error == "" {
+	if jobstate.Error != "" {
 		log.Debugf("job state has an error. Assuming that any error here is human readable. err - %v", jobstate.Error)
 	}
 	return &LastOperationResponse{State: state, Description: jobstate.Error}, err
