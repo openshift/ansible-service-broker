@@ -261,17 +261,25 @@ type UserInfo struct {
 
 // JobMsg - Message to be returned from the various jobs
 type JobMsg struct {
-	InstanceUUID string `json:"instance_uuid"`
-	JobToken     string `json:"job_token"`
-	SpecID       string `json:"spec_id"`
-	PodName      string `json:"podname"`
-	Error        string `json:"error"`
-	Msg          string `json:"msg"`
-	BindingUUID  string `json:"binding_uuid"`
+	InstanceUUID         string                   `json:"instance_uuid"`
+	JobToken             string                   `json:"job_token"`
+	SpecID               string                   `json:"spec_id"`
+	PodName              string                   `json:"podname"`
+	Msg                  string                   `json:"msg"`
+	State                apb.JobState             `json:"state"`
+	ExtractedCredentials apb.ExtractedCredentials `json:"extracted_credentials"`
+	BindingUUID          string                   `json:"binding_uuid"`
+	Error                string                   `json:"error"`
 }
 
 // Render - Display the job message.
 func (jm JobMsg) Render() string {
 	render, _ := json.Marshal(jm)
 	return string(render)
+}
+
+// SubscriberDAO defines the interface subscribers use when persisting state
+type SubscriberDAO interface {
+	SetExtractedCredentials(id string, extCreds *apb.ExtractedCredentials) error
+	SetState(id string, state apb.JobState) error
 }

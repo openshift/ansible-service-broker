@@ -329,3 +329,6 @@ type ExecutionContext struct {
 	Targets        []string
 	ProxyConfig    *ProxyConfig
 }
+
+// Provisioner defines a function that knows how to provision an apb
+type Provisioner func(si *ServiceInstance) (string, *ExtractedCredentials, error)

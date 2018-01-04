@@ -372,7 +372,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 			var job Work
 			var topic WorkTopic
 			if rs.State.Method == apb.JobMethodProvision {
-				job = NewProvisionJob(instance)
+				job = NewProvisionJob(instance, apb.Provision)
 				topic = ProvisionTopic
 			} else if rs.State.Method == apb.JobMethodUpdate {
 				job = NewUpdateJob(instance)
@@ -647,7 +647,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	if async {
 		log.Info("ASYNC provisioning in progress")
 		// asyncronously provision and return the token for the lastoperation
-		pjob := NewProvisionJob(serviceInstance)
+		pjob := NewProvisionJob(serviceInstance, apb.Provision)
 
 		token, err = a.engine.StartNewJob("", pjob, ProvisionTopic)
 		if err != nil {
