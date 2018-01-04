@@ -79,6 +79,9 @@ func errorPullingImage(conds []apiv1.ContainerStatus) bool {
 	// Basis for the image strings is here:
 	// https://github.com/kubernetes/kubernetes/blob/886e04f1fffbb04faf8a9f9ee141143b2684ae68/pkg/kubelet/images/types.go#L27
 	status := conds[0].State.Waiting
+	if status == nil {
+		return false
+	}
 
 	if status.Reason == "ErrImagePull" {
 		return true
