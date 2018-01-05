@@ -223,3 +223,36 @@ func TestBlackAndWhitelistNoOverride(t *testing.T) {
 	ft.AssertTrue(t, testSetEq(expectedFilteredNames, filteredNames))
 	ft.AssertTrue(t, testSetEq(expectedTotal, testNames()))
 }
+
+func TestOnlyWhitelistWithEmptyString(t *testing.T) {
+	filter := Filter{whitelist: []string{""},
+		blacklist: []string{}}
+	filter.Init()
+
+	log.Debugf("filter regex: %#v", filter.whiteRegexp)
+	log.Debugf("filter regex: %#v", filter.blackRegexp)
+
+	expectedFilteredNames := []string{
+		"totally-not-malicious-apb",
+		"malicious-bar-apb",
+		"specific-blacklist-apb",
+		// Not explicitly whitelisted, so should be filtered
+		"baz-apb",
+		"foobar-apb",
+		"legitimate-postgresql-apb",
+		"legitimate-mediawiki-apb",
+		"foo-apb",
+		"bar-apb",
+		"rhscl-postgresql-apb",
+	}
+
+	validNames, filteredNames := filter.Run(testNames())
+
+	expectedTotal := expectedFilteredNames
+	log.Debugf("validNames: %#v", validNames)
+	log.Debugf("filteredNames: %#v", filteredNames)
+	log.Debugf("expectedTotal: %#v", expectedTotal)
+	ft.AssertTrue(t, testSetEq(nil, validNames))
+	ft.AssertTrue(t, testSetEq(expectedFilteredNames, filteredNames))
+	ft.AssertTrue(t, testSetEq(expectedTotal, testNames()))
+}

@@ -17,7 +17,6 @@
 package registries
 
 import (
-	"fmt"
 	"regexp"
 	"sync"
 )
@@ -62,6 +61,10 @@ func compileRegexp(regexStrs []string) ([]*regexp.Regexp, []failedRegexp) {
 	failedRegexps := []failedRegexp{}
 
 	for _, str := range regexStrs {
+		if str == "" {
+			log.Debugf("Ignoring empty whitelist or blacklist regex.")
+			continue
+		}
 		cr, err := regexp.Compile(str)
 		if err != nil {
 			failedRegexps = append(failedRegexps, failedRegexp{str, err})
@@ -78,8 +81,7 @@ func compileRegexp(regexStrs []string) ([]*regexp.Regexp, []failedRegexp) {
 func (f *Filter) Run(totalList []string) ([]string, []string) {
 	filterMode := f.getFilterMode()
 	if filterMode == filterModeNone {
-		fmt.Printf("!!!!!!filter mode is none")
-		return nil, nil
+		return nil, totalList
 	}
 
 	whiteMatchSet, blackMatchSet := genMatchSets(
