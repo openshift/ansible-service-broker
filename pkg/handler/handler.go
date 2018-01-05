@@ -191,9 +191,9 @@ func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
 		createVarHandler(h.lastoperation)).Methods("GET")
 
 	if brokerConfig.GetBool("broker.dev_broker") {
-		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbAddSpec)).Methods("POST")
-		h.router.HandleFunc("/apb/spec/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
-		h.router.HandleFunc("/apb/spec", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
+		s.HandleFunc("/v2/apb", createVarHandler(h.apbAddSpec)).Methods("POST")
+		s.HandleFunc("/v2/apb/{spec_id}", createVarHandler(h.apbRemoveSpec)).Methods("DELETE")
+		s.HandleFunc("/v2/apb", createVarHandler(h.apbRemoveSpecs)).Methods("DELETE")
 	}
 
 	return handlers.LoggingHandler(os.Stdout, userInfoHandler(authHandler(h, providers)))
