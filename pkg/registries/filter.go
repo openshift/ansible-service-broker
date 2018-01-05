@@ -62,7 +62,7 @@ func compileRegexp(regexStrs []string) ([]*regexp.Regexp, []failedRegexp) {
 
 	for _, str := range regexStrs {
 		if str == "" {
-			log.Debugf("ignoring empty string that was set as regex string")
+			log.Debugf("Ignoring empty whitelist or blacklist regex.")
 			continue
 		}
 		cr, err := regexp.Compile(str)
