@@ -34,18 +34,30 @@ type SpecManifest map[string]*Spec
 
 // ParameterDescriptor - a parameter to be used by the service catalog to get data.
 type ParameterDescriptor struct {
-	Name         string      `json:"name"`
-	Title        string      `json:"title"`
-	Type         string      `json:"type"`
-	Description  string      `json:"description,omitempty"`
-	Default      interface{} `json:"default,omitempty"`
-	Maxlength    int         `json:"maxlength,omitempty"`
-	Pattern      string      `json:"pattern,omitempty"`
-	Enum         []string    `json:"enum,omitempty"`
-	Required     bool        `json:"required"`
-	Updatable    bool        `json:"updatable"`
-	DisplayType  string      `json:"display_type,omitempty" yaml:"display_type,omitempty"`
-	DisplayGroup string      `json:"display_group,omitempty" yaml:"display_group,omitempty"`
+	Name        string      `json:"name"`
+	Title       string      `json:"title"`
+	Type        string      `json:"type"`
+	Description string      `json:"description,omitempty"`
+	Default     interface{} `json:"default,omitempty"`
+
+	// string validators
+	DeprecatedMaxlength int    `json:"maxlength,omitempty" yaml:"maxlength,omitempty"` // backwards compatibility
+	MaxLength           int    `json:"maxLength,omitempty" yaml:"max_length,omitempty"`
+	MinLength           int    `json:"minLength,omitempty" yaml:"min_length,omitempty"`
+	Pattern             string `json:"pattern,omitempty"`
+
+	// number validators
+	MultipleOf       float64     `json:"multipleOf,omitempty" yaml:"multiple_of,omitempty"`
+	Maximum          interface{} `json:"maximum,omitempty"`
+	ExclusiveMaximum interface{} `json:"exclusiveMaximum,omitempty" yaml:"exclusive_maximum,omitempty"`
+	Minimum          interface{} `json:"minimum,omitempty"`
+	ExclusiveMinimum interface{} `json:"exclusiveMinimum,omitempty" yaml:"exclusive_minimum,omitempty"`
+
+	Enum         []string `json:"enum,omitempty"`
+	Required     bool     `json:"required"`
+	Updatable    bool     `json:"updatable"`
+	DisplayType  string   `json:"displayType,omitempty" yaml:"display_type,omitempty"`
+	DisplayGroup string   `json:"displayGroup,omitempty" yaml:"display_group,omitempty"`
 }
 
 // Plan - Plan object describing an APB deployment plan and associated parameters
@@ -199,9 +211,16 @@ func SpecLogDump(spec *Spec) {
 			log.Debug("  Type: %s", param.Type)
 			log.Debug("  Description: %s", param.Description)
 			log.Debug("  Default: %#v", param.Default)
-			log.Debug("  Maxlength: %d", param.Maxlength)
+			log.Debug("  DeprecatedMaxlength: %d", param.DeprecatedMaxlength)
+			log.Debug("  MaxLength: %d", param.MaxLength)
+			log.Debug("  MinLength: %d", param.MinLength)
 			log.Debug("  Pattern: %s", param.Pattern)
-			log.Debug("  Pattern: %s", param.Required)
+			log.Debug("  MultipleOf: %d", param.MultipleOf)
+			log.Debug("  Minimum: %d", param.Minimum)
+			log.Debug("  Maximum: %d", param.Maximum)
+			log.Debug("  ExclusiveMinimum: %d", param.ExclusiveMinimum)
+			log.Debug("  ExclusiveMaximum: %d", param.ExclusiveMaximum)
+			log.Debug("  Required: %s", param.Required)
 			log.Debug("  Enum: %v", param.Enum)
 		}
 	}
