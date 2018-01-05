@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	apirbac "k8s.io/api/rbac/v1"
+	apirbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -406,7 +406,7 @@ func retrieveClusterRoleRules(clusterRole string) ([]rbac.PolicyRule, error) {
 	}
 
 	// Retrieve Cluster Role that has been defined.
-	k8sRole, err := k8scli.Client.Rbac().ClusterRoles().Get(clusterRole, metav1.GetOptions{})
+	k8sRole, err := k8scli.Client.RbacV1beta1().ClusterRoles().Get(clusterRole, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
