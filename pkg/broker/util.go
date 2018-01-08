@@ -344,21 +344,21 @@ func setNumberValidators(pd apb.ParameterDescriptor, prop *schema.Schema) {
 
 	// since 0 is a valid value for maximum, minimum, exclusiveMaximum, and exclusiveMinimum,
 	// we have to allow for empty.
-	if max, ok := pd.Maximum.(float64); ok {
-		prop.Maximum = schema.Number{Val: max, Initialized: true}
+	if pd.Maximum != nil {
+		prop.Maximum = schema.Number{Val: float64(*pd.Maximum), Initialized: true}
 	}
-	if min, ok := pd.Minimum.(float64); ok {
-		prop.Minimum = schema.Number{Val: min, Initialized: true}
+	if pd.Minimum != nil {
+		prop.Minimum = schema.Number{Val: float64(*pd.Minimum), Initialized: true}
 	}
 
 	// JSON Schema defines exclusiveMaximum and exclusiveMinimum as numbers separate from maximum and minimum
 	// but go-jsschema defines ExclusiveMaximum and ExclusiveMinimum as bool and reuses Maximum and Minimum
-	if exMax, ok := pd.ExclusiveMaximum.(float64); ok {
-		prop.Maximum = schema.Number{Val: exMax, Initialized: true}
+	if pd.ExclusiveMaximum != nil {
+		prop.Maximum = schema.Number{Val: float64(*pd.ExclusiveMaximum), Initialized: true}
 		prop.ExclusiveMaximum = schema.Bool{Val: true, Default: false, Initialized: true}
 	}
-	if exMin, ok := pd.ExclusiveMinimum.(float64); ok {
-		prop.Minimum = schema.Number{Val: exMin, Initialized: true}
+	if pd.ExclusiveMinimum != nil {
+		prop.Minimum = schema.Number{Val: float64(*pd.ExclusiveMinimum), Initialized: true}
 		prop.ExclusiveMinimum = schema.Bool{Val: true, Default: false, Initialized: true}
 	}
 }

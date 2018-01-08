@@ -32,6 +32,9 @@ type Parameters map[string]interface{}
 // SpecManifest - Spec ID to Spec manifest
 type SpecManifest map[string]*Spec
 
+// NilableNumber - Number that could be nil (e.g. when omitted from json/yaml)
+type NilableNumber float64
+
 // ParameterDescriptor - a parameter to be used by the service catalog to get data.
 type ParameterDescriptor struct {
 	Name        string      `json:"name"`
@@ -47,11 +50,11 @@ type ParameterDescriptor struct {
 	Pattern             string `json:"pattern,omitempty"`
 
 	// number validators
-	MultipleOf       float64     `json:"multipleOf,omitempty" yaml:"multiple_of,omitempty"`
-	Maximum          interface{} `json:"maximum,omitempty"`
-	ExclusiveMaximum interface{} `json:"exclusiveMaximum,omitempty" yaml:"exclusive_maximum,omitempty"`
-	Minimum          interface{} `json:"minimum,omitempty"`
-	ExclusiveMinimum interface{} `json:"exclusiveMinimum,omitempty" yaml:"exclusive_minimum,omitempty"`
+	MultipleOf       float64        `json:"multipleOf,omitempty" yaml:"multiple_of,omitempty"`
+	Maximum          *NilableNumber `json:"maximum,omitempty"`
+	ExclusiveMaximum *NilableNumber `json:"exclusiveMaximum,omitempty" yaml:"exclusive_maximum,omitempty"`
+	Minimum          *NilableNumber `json:"minimum,omitempty"`
+	ExclusiveMinimum *NilableNumber `json:"exclusiveMinimum,omitempty" yaml:"exclusive_minimum,omitempty"`
 
 	Enum         []string `json:"enum,omitempty"`
 	Required     bool     `json:"required"`
@@ -216,10 +219,10 @@ func SpecLogDump(spec *Spec) {
 			log.Debug("  MinLength: %d", param.MinLength)
 			log.Debug("  Pattern: %s", param.Pattern)
 			log.Debug("  MultipleOf: %d", param.MultipleOf)
-			log.Debug("  Minimum: %d", param.Minimum)
-			log.Debug("  Maximum: %d", param.Maximum)
-			log.Debug("  ExclusiveMinimum: %d", param.ExclusiveMinimum)
-			log.Debug("  ExclusiveMaximum: %d", param.ExclusiveMaximum)
+			log.Debug("  Minimum: %#v", param.Minimum)
+			log.Debug("  Maximum: %#v", param.Maximum)
+			log.Debug("  ExclusiveMinimum: %#v", param.ExclusiveMinimum)
+			log.Debug("  ExclusiveMaximum: %#v", param.ExclusiveMaximum)
 			log.Debug("  Required: %s", param.Required)
 			log.Debug("  Enum: %v", param.Enum)
 		}
