@@ -33,7 +33,7 @@ func (o openshift) shouldJoinNetworks() (bool, PostSandboxCreate, PostSandboxDes
 	// Case insensitive check here because want to prepare if things change.
 	if strings.ToLower(pluginName) == "redhat/openshift-ovs-multitenant" {
 		log.Debugf("stating that the pluginname is multitenant - %v", pluginName)
-		return true, addPodNetworks, nil
+		return true, addPodNetworks, isolatePodNetworks
 	}
 	return false, nil, nil
 }
@@ -54,6 +54,38 @@ func addPodNetworks(pod, ns string, targetNS []string, apbRole string) error {
 		return err
 	}
 	_, err = o.JoinNamespacesNetworks(netns, targetNS[0])
+	if err != nil {
+		log.Errorf("Unable to join netns: %v to targetNS: %v", netns.Name, targetNS[0])
+		return err
+	}
+
+	//  wait for some time, to determine if the change was applied correctly.
+	backoff := wait.Backoff{
+		Steps:    15,
+		Duration: 500 * time.Millisecond,
+		Factor:   1.1,
+	}
+	return wait.ExponentialBackoff(backoff, func() (bool, error) {
+		return didAnnotationUpdate("join", netns.NetName)
+	})
+}
+
+func isolatePodNetworks(pod, ns string, targetNS []string) error {
+	log.Debugf("adding pod networks together namespace: %v, target namespaces: %v", ns, targetNS)
+	// Check to make sure that we have a target namespace.
+	if len(targetNS) < 1 {
+		return fmt.Errorf("Can not find target namespace to add to its networ")
+	}
+	o, err := clients.Openshift()
+	if err != nil {
+		return err
+	}
+	// Get corresponding NetNamespace for given namespace
+	netns, err := o.GetNetNamespace(ns)
+	if err != nil {
+		return err
+	}
+	_, err = o.IsolateNamespacesNetworks(netns, targetNS[0])
 	if err != nil {
 		log.Errorf("Unable to join netns: %v to targetNS: %v", netns.Name, targetNS[0])
 		return err

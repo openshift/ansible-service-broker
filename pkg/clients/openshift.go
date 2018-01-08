@@ -457,3 +457,20 @@ func (o OpenshiftClient) JoinNamespacesNetworks(netns *networkoapi.NetNamespace,
 	}
 	return result, nil
 }
+
+// IsolateNamespacesNetworks - Will take the net namespace to be added to a network,
+// and the namespace ID of the network that is being added to..
+func (o OpenshiftClient) IsolateNamespacesNetworks(netns *networkoapi.NetNamespace,
+	targetNS string,
+) (*networkoapi.NetNamespace, error) {
+	if netns.Annotations == nil {
+		netns.Annotations = make(map[string]string)
+	}
+	netns.Annotations[ChangePodNetworkAnnotation] = fmt.Sprintf("%s:%s", "isolate", targetNS)
+	result := &networkoapi.NetNamespace{}
+	err := o.networkClient.Put().Resource("netnamespaces").Name(netns.Name).Body(netns).Do().Into(result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
