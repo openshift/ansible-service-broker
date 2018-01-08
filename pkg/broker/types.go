@@ -213,6 +213,7 @@ type BindResponse struct {
 	SyslogDrainURL  string                 `json:"syslog_drain_url,omitempty"`
 	RouteServiceURL string                 `json:"route_service_url,omitempty"`
 	VolumeMounts    []interface{}          `json:"volume_mounts,omitempty"`
+	Operation       string                 `json:"operation,omitempty"`
 }
 
 // DeprovisionResponse - Response for a deprovision

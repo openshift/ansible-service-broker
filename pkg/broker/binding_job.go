@@ -34,9 +34,10 @@ type BindingJob struct {
 }
 
 // NewBindingJob - Create a new binding job.
-func NewBindingJob(serviceInstance *apb.ServiceInstance) *BindingJob {
+func NewBindingJob(serviceInstance *apb.ServiceInstance, params *apb.Parameters) *BindingJob {
 	return &BindingJob{
 		serviceInstance: serviceInstance,
+		params:          params,
 	}
 }
 

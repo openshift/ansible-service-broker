@@ -844,7 +844,8 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 					return nil, err
 				}
 				log.Debug("already have this binding instance, returning 200")
-				return a.buildBindResponse(provExtCreds, bindExtCreds)
+				// since we have this already, we can set async to false
+				return a.buildBindResponse(provExtCreds, bindExtCreds, false, "")
 			}
 
 			// parameters are different
@@ -871,16 +872,13 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	metrics.ActionStarted("bind")
 	var token string
 
-	// put the LaunchApbOnBind gate here
-	if async {
-		if !a.brokerConfig.LaunchApbOnBind {
-			log.Error("LAUNCH APB ON BIND IS DISABLED")
-		}
-
+	if async && a.brokerConfig.LaunchApbOnBind {
+		// asynchronous mode, requires that the launch apb config
+		// entry is on, and that async comes in from the catalog
 		log.Info("ASYNC binding in progress")
-		bjob := NewBindingJob(&instance)
+		bindjob := NewBindingJob(&instance, &params)
 
-		token, err = a.engine.StartNewJob("", bjob, BindingTopic)
+		token, err = a.engine.StartNewJob("", bindjob, BindingTopic)
 		if err != nil {
 			log.Error("Failed to start new job for async binding\n%s", err.Error())
 			return nil, err
@@ -891,34 +889,48 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 			State:  apb.StateInProgress,
 			Method: apb.JobMethodBind,
 		})
-	} else {
-		if a.brokerConfig.LaunchApbOnBind {
-			log.Info("Broker configured to run APB bind")
-			_, bindExtCreds, err = apb.Bind(&instance, &params)
+	} else if a.brokerConfig.LaunchApbOnBind {
+		// we are synchronous mode
+		// TODO: decide if we need to keep this at all
+		log.Info("Broker configured to run APB bind")
+		_, bindExtCreds, err = apb.Bind(&instance, &params)
 
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			log.Warning("Broker configured to *NOT* launch and run APB bind")
-		}
-	}
-
-	instance.AddBinding(bindingUUID)
-	if err := a.dao.SetServiceInstance(instance.ID.String(), &instance); err != nil {
-		return nil, err
-	}
-	if bindExtCreds != nil {
-		err = a.dao.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
 		if err != nil {
-			log.Errorf("Could not persist extracted credentials - %v", err)
 			return nil, err
 		}
+		instance.AddBinding(bindingUUID)
+		if err := a.dao.SetServiceInstance(instance.ID.String(), &instance); err != nil {
+			return nil, err
+		}
+		if bindExtCreds != nil {
+			err = a.dao.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
+			if err != nil {
+				log.Errorf("Could not persist extracted credentials - %v", err)
+				return nil, err
+			}
+		}
+	} else {
+		log.Warning("Broker configured to *NOT* launch and run APB bind")
 	}
-	return a.buildBindResponse(provExtCreds, bindExtCreds)
+
+	// TODO: if we're sync we need to return the Credentials, otherwise the
+	// Operation with the token
+	// maybe we just have 2 returns for each if/else segment
+	return a.buildBindResponse(provExtCreds, bindExtCreds, async, token)
 }
 
-func (a AnsibleBroker) buildBindResponse(pCreds, bCreds *apb.ExtractedCredentials) (*BindResponse, error) {
+func (a AnsibleBroker) buildBindResponse(pCreds, bCreds *apb.ExtractedCredentials,
+	async bool, token string) (*BindResponse, error) {
+
+	if async {
+		if token == "" {
+			log.Error("async used but no job token was created")
+			return nil, errors.New("no job token created during async")
+		}
+
+		return &BindResponse{Operation: token}, nil
+	}
+
 	// Can't bind to anything if we have nothing to return to the catalog
 	if pCreds == nil && bCreds == nil {
 		log.Errorf("No extracted credentials found from provision or bind instance ID")
@@ -928,6 +940,7 @@ func (a AnsibleBroker) buildBindResponse(pCreds, bCreds *apb.ExtractedCredential
 	if bCreds != nil {
 		return &BindResponse{Credentials: bCreds.Credentials}, nil
 	}
+
 	return &BindResponse{Credentials: pCreds.Credentials}, nil
 }
 
@@ -1281,6 +1294,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 	state := StateToLastOperation(jobstate.State)
 	log.Debugf("state: %s", state)
+	// Error can not be nil, so we're not checking for it.
 	if jobstate.Error != "" {
 		log.Debugf("job state has an error. Assuming that any error here is human readable. err - %v", jobstate.Error)
 	}
