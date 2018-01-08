@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.3
+Version: 1.1.4
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,24 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Jan 08 2018 David Zager <david.j.zager@gmail.com> 1.1.4-1
+- Use the router prefix for apb tool endpoints (#616) (rhallise@redhat.com)
+- Bug 1526887 - Handle case when whitelist/blacklist set to "" (#609)
+  (Shawn.Hurley21@gmail.com)
+- Bug 617 - fixing issue with versioning the rbac API. (#618)
+  (Shawn.Hurley21@gmail.com)
+- fix potential nil pointer panic (#613) (maleck13@users.noreply.github.com)
+- fix incorrect check in if statement (#611)
+  (maleck13@users.noreply.github.com)
+- Bug 1512042 - Allowing error messages to make it from apb to user. (#607)
+  (Shawn.Hurley21@gmail.com)
+- The config should only use type as a key when name does not exist. (#606)
+  (Shawn.Hurley21@gmail.com)
+- Remove WorkMsg interface to avoid unneeded marshalling and
+  unmarshalling.(#604) (maleck13@users.noreply.github.com)
+- remove the different job msg types to avoid duplication of code (#603)
+  (maleck13@users.noreply.github.com)
+
 * Thu Dec 21 2017 Jason Montleon <jmontleo@redhat.com> 1.1.3-1
 - Fixes labels on asb Endpoint in local dev template (#598)
   (mhrivnak@hrivnak.org)
