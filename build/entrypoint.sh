@@ -16,4 +16,4 @@ if [ ! -f "$BROKER_CONFIG" ] ; then
 fi
 echo "Using config file mounted to $BROKER_CONFIG"
 
-asbd -c $BROKER_CONFIG $FLAGS
+exec asbd -c $BROKER_CONFIG $FLAGS
