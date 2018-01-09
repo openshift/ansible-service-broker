@@ -48,7 +48,7 @@ func ExecuteApb(action string,
 	log.Debug("name:[ %s ]", spec.FQName)
 	log.Debug("image:[ %s ]", spec.Image)
 	log.Debug("action:[ %s ]", action)
-	log.Debug("pullPolciy:[ %s ]", clusterConfig.PullPolicy)
+	log.Debug("pullPolicy:[ %s ]", clusterConfig.PullPolicy)
 	log.Debug("role:[ %s ]", clusterConfig.SandboxRole)
 	// It's a critical error if a Namespace is not provided to the
 	// broker because its required to know where to execute the pods and
