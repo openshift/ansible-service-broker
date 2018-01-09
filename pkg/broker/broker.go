@@ -83,6 +83,7 @@ type Broker interface {
 	// TODO: consider returning a struct + error
 	Recover() (string, error)
 	GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error)
+	GetBind(apb.ServiceInstance, uuid.UUID) (*BindResponse, error)
 }
 
 // Config - Configuration for the broker.
@@ -769,6 +770,36 @@ func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance,
 	return len(methodJobs) > 0, token, nil
 }
 
+func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UUID) (*BindResponse, error) {
+
+	log.Debug("XXX entered GetBind")
+
+	// this might not be required
+	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
+	if err != nil && !client.IsKeyNotFound(err) {
+		log.Warningf("unable to retrieve provision time credentials - %v", err)
+		return nil, err
+	}
+
+	log.Debug("XXX we got the provisioned credentials")
+
+	bi, err := a.dao.GetBindInstance(bindingUUID.String())
+	if err != nil && !client.IsKeyNotFound(err) {
+		log.Warningf("id: %v - unable to retrieve binding credentials - %v", bindingUUID, err)
+		return nil, err
+	}
+
+	log.Debug("XXX we got the bind instance")
+
+	bindExtCreds, err := a.dao.GetExtractedCredentials(bi.ID.String())
+	if err != nil && !client.IsKeyNotFound(err) {
+		return nil, err
+	}
+
+	log.Debug("XXX we got the bind credentials")
+	return a.buildBindResponse(provExtCreds, bindExtCreds, false, "")
+}
+
 // Bind - will create a binding between a service.
 func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID, req *BindRequest, async bool,
 ) (*BindResponse, error) {
@@ -938,9 +969,11 @@ func (a AnsibleBroker) buildBindResponse(pCreds, bCreds *apb.ExtractedCredential
 	}
 
 	if bCreds != nil {
+		log.Debugf("bind creds: %v", bCreds.Credentials)
 		return &BindResponse{Credentials: bCreds.Credentials}, nil
 	}
 
+	log.Debugf("provision bind creds: %v", pCreds.Credentials)
 	return &BindResponse{Credentials: pCreds.Credentials}, nil
 }
 

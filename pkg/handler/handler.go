@@ -180,9 +180,12 @@ func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
 
 	s.HandleFunc("/v2/bootstrap", createVarHandler(h.bootstrap)).Methods("POST")
 	s.HandleFunc("/v2/catalog", createVarHandler(h.catalog)).Methods("GET")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.getinstance)).Methods("GET")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.provision)).Methods("PUT")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.update)).Methods("PATCH")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.deprovision)).Methods("DELETE")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
+		createVarHandler(h.getbind)).Methods("GET")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
 		createVarHandler(h.bind)).Methods("PUT")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
@@ -217,6 +220,27 @@ func (h handler) catalog(w http.ResponseWriter, r *http.Request, params map[stri
 	resp, err := h.broker.Catalog()
 
 	writeDefaultResponse(w, http.StatusOK, resp, err)
+}
+
+func (h handler) getinstance(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	defer r.Body.Close()
+	h.printRequest(r)
+
+	instanceUUID := uuid.Parse(params["instance_uuid"])
+	if instanceUUID == nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
+		return
+	}
+
+	// this should probably return a response, instead of the instance. Or we
+	// get a different one.
+	si, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		// return 404 or 422
+		log.Debugf("service instance %v", si)
+	}
+
+	writeDefaultResponse(w, http.StatusOK, nil, err)
 }
 
 func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -419,6 +443,65 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		writeDefaultResponse(w, http.StatusAccepted, resp, err)
 	} else {
 		writeDefaultResponse(w, http.StatusCreated, resp, err)
+	}
+}
+
+func (h handler) getbind(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	defer r.Body.Close()
+	h.printRequest(r)
+
+	log.Debug("handler: entered getbind")
+	// validate input uuids
+	instanceUUID := uuid.Parse(params["instance_uuid"])
+	if instanceUUID == nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
+		return
+	}
+
+	log.Debug("handler: instanceuuid is valid")
+
+	bindingUUID := uuid.Parse(params["binding_uuid"])
+	if bindingUUID == nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
+		return
+	}
+
+	log.Debug("handler: binduuid is valid")
+	/*
+		var req *broker.BindRequest
+		if err := readRequest(r, &req); err != nil {
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+			return
+		}
+	*/
+
+	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		}
+	}
+	log.Debug("handler: found service instance")
+
+	resp, err := h.broker.GetBind(serviceInstance, bindingUUID)
+
+	log.Debug("handler: GetBind called")
+
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound:
+			log.Debug("handler: bind not found")
+			writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
+		default:
+			log.Debug("handler: something went bad during the getbind")
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		}
+	} else {
+		log.Debug("handler: bind found")
+		writeDefaultResponse(w, http.StatusOK, resp, err)
 	}
 }
 
