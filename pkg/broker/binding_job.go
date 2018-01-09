@@ -48,7 +48,11 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	var extCreds *apb.ExtractedCredentials
 	var err error
 
+	log.Debug("BJ: binding job started, calling apb.Bind")
+
 	podName, extCreds, err = apb.Bind(p.serviceInstance, p.params)
+
+	log.Debug("BJ: RETURNED from apb.Bind")
 
 	if err != nil {
 		log.Errorf("broker::Binding error occurred.\n%s", err.Error())
@@ -61,14 +65,18 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		return
 	}
 
+	log.Debug("BJ: No error, going to marshal the credentials")
+
 	// send creds
 	jsonmsg, err := json.Marshal(extCreds)
 	if err != nil {
+		log.Debug("BJ: ERROR during marshal")
 		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
+	log.Debug("BJ: Looks like we're done")
 	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
 }
