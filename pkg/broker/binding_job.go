@@ -44,13 +44,10 @@ func NewBindingJob(serviceInstance *apb.ServiceInstance, params *apb.Parameters)
 // Run - run the binding job.
 func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.BindingJobStarted()
-	var podName string
-	var extCreds *apb.ExtractedCredentials
-	var err error
 
 	log.Debug("BJ: binding job started, calling apb.Bind")
 
-	podName, extCreds, err = apb.Bind(p.serviceInstance, p.params)
+	podName, extCreds, err := apb.Bind(p.serviceInstance, p.params)
 
 	log.Debug("BJ: RETURNED from apb.Bind")
 
