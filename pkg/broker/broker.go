@@ -774,31 +774,34 @@ func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance,
 // binding event.
 func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UUID) (*BindResponse, error) {
 
-	log.Debug("XXX entered GetBind")
+	log.Debug("broker.GetBind: entered GetBind")
 
-	// this might not be required
 	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, err
 	}
 
-	log.Debug("XXX we got the provisioned credentials")
-
 	bi, err := a.dao.GetBindInstance(bindingUUID.String())
-	if err != nil && !client.IsKeyNotFound(err) {
-		log.Warningf("id: %v - unable to retrieve binding credentials - %v", bindingUUID, err)
+	if err != nil {
+		if client.IsKeyNotFound(err) {
+			log.Warningf("id: %v - could not find bind instance - %v", bindingUUID, err)
+			return nil, ErrorNotFound
+		}
+		log.Warningf("id: %v - unable to retrieve bind instance - %v", bindingUUID, err)
 		return nil, err
 	}
-
-	log.Debug("XXX we got the bind instance")
 
 	bindExtCreds, err := a.dao.GetExtractedCredentials(bi.ID.String())
-	if err != nil && !client.IsKeyNotFound(err) {
+	if err != nil {
+		if client.IsKeyNotFound(err) {
+			return nil, ErrorNotFound
+		}
+
 		return nil, err
 	}
 
-	log.Debug("XXX we got the bind credentials")
+	log.Debug("broker.GetBind: we got the bind credentials")
 	return a.buildBindResponse(provExtCreds, bindExtCreds, false, "")
 }
 
