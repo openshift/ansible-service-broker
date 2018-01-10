@@ -41,6 +41,13 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 
 # Getting Started with the Ansible Service Broker
 
+There are a few different ways to quickly get up and running with a cluster + ansible-service-broker:
+
+* `oc cluster up`
+* Alternatively, [you can use minishift and install the broker with our addon, documented here](docs/minishift.md).
+
+Let's walk through an `oc cluster up` based setup.
+
 ## Prerequisites
 1. You will need a system setup for local [OpenShift Origin Cluster Management](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md)
     * Your OpenShift Client binary (`oc`) must be `>=` [v3.7.0-rc.0](https://github.com/openshift/origin/releases/tag/v3.7.0-rc.0)
