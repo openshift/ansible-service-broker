@@ -200,7 +200,7 @@ func getType(paramType string) (schema.PrimitiveTypes, error) {
 	switch strings.ToLower(paramType) {
 	case "string", "enum":
 		return []schema.PrimitiveType{schema.StringType}, nil
-	case "int":
+	case "int", "integer":
 		return []schema.PrimitiveType{schema.IntegerType}, nil
 	case "object":
 		return []schema.PrimitiveType{schema.ObjectType}, nil
@@ -274,7 +274,6 @@ func parametersToSchema(plan apb.Plan) (Schema, error) {
 func extractProperties(params []apb.ParameterDescriptor) (map[string]*schema.Schema, error) {
 	properties := make(map[string]*schema.Schema)
 
-	var patternRegex *regexp.Regexp
 	for _, pd := range params {
 		k := pd.Name
 
@@ -290,33 +289,87 @@ func extractProperties(params []apb.ParameterDescriptor) (map[string]*schema.Sch
 			Type:        t,
 		}
 
-		// we can NOT set values on the Schema object if we want to be
-		// omitempty. Setting maxlength to 0 is NOT the same as omitting it.
-		// 0 is a worthless value for Maxlength so we will not set it
-		if pd.Maxlength > 0 {
-			properties[k].MaxLength = schema.Integer{Val: pd.Maxlength, Initialized: true}
-		}
-
-		// do not set the regexp if it does not compile
-		if pd.Pattern != "" {
-			patternRegex, err = regexp.Compile(pd.Pattern)
-			properties[k].Pattern = patternRegex
-
-			if err != nil {
-				fmt.Printf("Invalid pattern: %s", err.Error())
-			}
-		}
-
-		// setup enums
-		if len(pd.Enum) > 0 {
-			properties[k].Enum = make([]interface{}, len(pd.Enum))
-			for i, v := range pd.Enum {
-				properties[k].Enum[i] = v
-			}
-		}
+		setStringValidators(pd, properties[k])
+		setNumberValidators(pd, properties[k])
+		setEnum(pd, properties[k])
 	}
 
 	return properties, nil
+}
+
+func setStringValidators(pd apb.ParameterDescriptor, prop *schema.Schema) {
+	if prop.Type[0] != schema.StringType {
+		return
+	}
+
+	// we can NOT set values on the Schema object if we want to be
+	// omitempty. Setting maxlength to 0 is NOT the same as omitting it.
+	// 0 is a worthless value for DeprecatedMaxlength so we will not set it
+
+	// maxlength
+	if pd.DeprecatedMaxlength > 0 {
+		prop.MaxLength = schema.Integer{Val: pd.DeprecatedMaxlength, Initialized: true}
+	}
+
+	// max_length overrides maxlength
+	if pd.MaxLength > 0 {
+		prop.MaxLength = schema.Integer{Val: pd.MaxLength, Initialized: true}
+	}
+	// min_length
+	if pd.MinLength > 0 {
+		prop.MinLength = schema.Integer{Val: pd.MinLength, Initialized: true}
+	}
+
+	// do not set the regexp if it does not compile
+	if pd.Pattern != "" {
+		patternRegex, err := regexp.Compile(pd.Pattern)
+		prop.Pattern = patternRegex
+
+		if err != nil {
+			fmt.Printf("Invalid pattern: %s", err.Error())
+		}
+	}
+}
+
+func setNumberValidators(pd apb.ParameterDescriptor, prop *schema.Schema) {
+	if prop.Type[0] != schema.NumberType && prop.Type[0] != schema.IntegerType {
+		return
+	}
+
+	// since 0 is not useful as a value for multipleOf,
+	// we can use it as a float64 and not worry about nil
+	if pd.MultipleOf > 0 {
+		prop.MultipleOf = schema.Number{Val: pd.MultipleOf, Initialized: true}
+	}
+
+	// since 0 is a valid value for maximum, minimum, exclusiveMaximum, and exclusiveMinimum,
+	// we have to allow for empty.
+	if pd.Maximum != nil {
+		prop.Maximum = schema.Number{Val: float64(*pd.Maximum), Initialized: true}
+	}
+	if pd.Minimum != nil {
+		prop.Minimum = schema.Number{Val: float64(*pd.Minimum), Initialized: true}
+	}
+
+	// JSON Schema defines exclusiveMaximum and exclusiveMinimum as numbers separate from maximum and minimum
+	// but go-jsschema defines ExclusiveMaximum and ExclusiveMinimum as bool and reuses Maximum and Minimum
+	if pd.ExclusiveMaximum != nil {
+		prop.Maximum = schema.Number{Val: float64(*pd.ExclusiveMaximum), Initialized: true}
+		prop.ExclusiveMaximum = schema.Bool{Val: true, Default: false, Initialized: true}
+	}
+	if pd.ExclusiveMinimum != nil {
+		prop.Minimum = schema.Number{Val: float64(*pd.ExclusiveMinimum), Initialized: true}
+		prop.ExclusiveMinimum = schema.Bool{Val: true, Default: false, Initialized: true}
+	}
+}
+
+func setEnum(pd apb.ParameterDescriptor, prop *schema.Schema) {
+	if len(pd.Enum) > 0 {
+		prop.Enum = make([]interface{}, len(pd.Enum))
+		for i, v := range pd.Enum {
+			prop.Enum[i] = v
+		}
+	}
 }
 
 func extractRequired(params []apb.ParameterDescriptor) []string {
@@ -330,7 +383,6 @@ func extractRequired(params []apb.ParameterDescriptor) []string {
 }
 
 func extractUpdatable(params []apb.ParameterDescriptor) (map[string]*schema.Schema, error) {
-	var patternRegex *regexp.Regexp
 	upd := make(map[string]*schema.Schema)
 	for _, v := range params {
 		t, err := getType(v.Type)
@@ -346,30 +398,9 @@ func extractUpdatable(params []apb.ParameterDescriptor) (map[string]*schema.Sche
 				Type:        t,
 			}
 
-			// we can NOT set values on the Schema object if we want to be
-			// omitempty. Setting maxlength to 0 is NOT the same as omitting it.
-			// 0 is a worthless value for Maxlength so we will not set it
-			if v.Maxlength > 0 {
-				upd[k].MaxLength = schema.Integer{Val: v.Maxlength, Initialized: true}
-			}
-
-			// do not set the regexp if it does not compile
-			if v.Pattern != "" {
-				patternRegex, err = regexp.Compile(v.Pattern)
-				upd[k].Pattern = patternRegex
-
-				if err != nil {
-					fmt.Printf("Invalid pattern: %s", err.Error())
-				}
-			}
-
-			// setup enums
-			if len(v.Enum) > 0 {
-				upd[k].Enum = make([]interface{}, len(v.Enum))
-				for i, v := range v.Enum {
-					upd[k].Enum[i] = v
-				}
-			}
+			setStringValidators(v, upd[k])
+			setNumberValidators(v, upd[k])
+			setEnum(v, upd[k])
 		}
 	}
 	return upd, nil

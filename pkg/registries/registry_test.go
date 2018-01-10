@@ -65,11 +65,11 @@ var expectedPlanParameters = []apb.ParameterDescriptor{
 		Description: "A random alphanumeric string if left blank",
 		Title:       "PostgreSQL Password"},
 	apb.ParameterDescriptor{
-		Name:      "postgresql_user",
-		Default:   "admin",
-		Title:     "PostgreSQL User",
-		Type:      "string",
-		Maxlength: 63},
+		Name:                "postgresql_user",
+		Default:             "admin",
+		Title:               "PostgreSQL User",
+		Type:                "string",
+		DeprecatedMaxlength: 63},
 	apb.ParameterDescriptor{
 		Name:    "postgresql_version",
 		Default: 9.5,

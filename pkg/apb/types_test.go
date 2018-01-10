@@ -235,7 +235,7 @@ func TestEncodedParameters(t *testing.T) {
 	ft.AssertEqual(t, sitelang.Type, "string")
 	ft.AssertEqual(t, sitelang.Description, "")
 	ft.AssertEqual(t, sitelang.Default, "en")
-	ft.AssertEqual(t, sitelang.Maxlength, 0)
+	ft.AssertEqual(t, sitelang.DeprecatedMaxlength, 0)
 	ft.AssertEqual(t, sitelang.Pattern, "")
 	ft.AssertEqual(t, len(sitelang.Enum), 0)
 }
