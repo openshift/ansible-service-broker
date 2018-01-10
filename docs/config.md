@@ -61,6 +61,7 @@ registry:
     auth_type: secret
     auth_name: asb-auth-secret
 ```
+The associated secret should have the values `username` and `password` defined. When using a secret you must ensure that `openshift.namespace` is also defined. This is where the secret will be read from. (`ansible-service-broker` namespace when using the template).
 
 ```
 registry:
@@ -71,7 +72,7 @@ registry:
     auth_name: /tmp/auth-credentials
 ```
 
-The associated secret should have the values `username` and `password` defined. The following is an example of using a YAML file to define credentials.
+The following is an example of using a YAML file to define credentials.
 ```
 $ cat /tmp/auth-credentials
 ---
