@@ -128,6 +128,11 @@ func (m MockBroker) RemoveSpecs() error {
 	return nil
 }
 
+func (m MockBroker) GetBind(si apb.ServiceInstance, bindid uuid.UUID) (*broker.BindResponse, error) {
+	m.called("getBind", true)
+	return nil, nil
+}
+
 func TestNewHandler(t *testing.T) {
 	testb := MockBroker{Name: "testbroker"}
 	c, err := config.CreateConfig("testdata/broker.yaml")
