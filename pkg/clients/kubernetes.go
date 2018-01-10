@@ -177,3 +177,19 @@ func (k KubernetesClient) DeleteRoleBinding(roleBindingName string, namespace st
 	}
 	return nil
 }
+
+// GetSecretData - Returns the data insdie of a given secret.
+func GetSecretData(secretName, namespace string) (map[string][]byte, error) {
+	k8scli, err := Kubernetes()
+	if err != nil {
+		return nil, err
+	}
+	secretData, err := k8scli.Client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
+		return make(map[string][]byte), nil
+	}
+	log.Debugf("Found secret with name %v\n", secretName)
+
+	return secretData.Data, nil
+}

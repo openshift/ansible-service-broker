@@ -320,6 +320,7 @@ objects:
         bearer_token_file: "${BEARER_TOKEN_FILE}"
         image_pull_policy: "${IMAGE_PULL_POLICY}"
         sandbox_role: "${SANDBOX_ROLE}"
+        namespace: ansible-service-broker
         keep_namespace: ${KEEP_NAMESPACE}
         keep_namespace_on_error: ${KEEP_NAMESPACE_ON_ERROR}
       broker:

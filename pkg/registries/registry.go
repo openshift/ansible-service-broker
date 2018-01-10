@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -27,11 +28,14 @@ import (
 	"sync"
 
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/registries/adapters"
+
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/openshift/ansible-service-broker/pkg/version"
+	yaml "gopkg.in/yaml.v1"
 )
 
 var regex = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*`)
@@ -179,7 +183,7 @@ func (r Registry) RegistryName() string {
 }
 
 // NewRegistry - Create a new registry from the registry config.
-func NewRegistry(con *config.Config) (Registry, error) {
+func NewRegistry(con *config.Config, asbNamespace string) (Registry, error) {
 	var adapter adapters.Adapter
 	configuration := Config{
 		URL:        con.GetString("url"),
@@ -199,6 +203,13 @@ func NewRegistry(con *config.Config) (Registry, error) {
 	}
 	if !configuration.Validate() {
 		return Registry{}, errors.New("unable to validate registry name")
+	}
+
+	// Retrieve registry auth if defined.
+	configuration, err := retrieveRegistryAuth(configuration, asbNamespace)
+	if err != nil {
+		log.Errorf("Unable to retrieve registry auth: %v", err)
+		return Registry{}, err
 	}
 
 	log.Info("== REGISTRY CX == ")
@@ -380,4 +391,66 @@ func isCompatibleVersion(specVersion string, minVersion string, maxVersion strin
 
 func isCompatibleRuntime(specRuntime int, minVersion int, maxVersion int) bool {
 	return specRuntime >= minVersion && specRuntime <= maxVersion
+}
+
+func retrieveRegistryAuth(reg Config, asbNamespace string) (Config, error) {
+	var username, password string
+	var err error
+	switch reg.AuthType {
+	case "secret":
+		username, password, err = readSecret(reg.AuthName, asbNamespace)
+		if err != nil {
+			return Config{}, err
+		}
+	case "file":
+		username, password, err = readFile(reg.AuthName)
+		if err != nil {
+			return Config{}, err
+		}
+	case "config":
+		if reg.User == "" || reg.Pass == "" {
+			return Config{}, fmt.Errorf("Failed to find registry credentials in config")
+		}
+		return reg, nil
+	case "":
+		username = ""
+		password = ""
+	default:
+		return Config{}, fmt.Errorf("Unrecognized registry AuthType: %s", reg.AuthType)
+	}
+	reg.User = username
+	reg.Pass = password
+	return reg, nil
+}
+
+func readFile(fileName string) (string, string, error) {
+	regCred := struct {
+		Username string
+		Password string
+	}{}
+
+	dat, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return "", "", fmt.Errorf("Failed to read registry credentials from file: %s", fileName)
+	}
+	err = yaml.Unmarshal(dat, &regCred)
+	if err != nil {
+		return "", "", fmt.Errorf("Failed to unmarshal registry credentials from file: %s", fileName)
+	}
+	return regCred.Username, regCred.Password, nil
+}
+
+func readSecret(secretName string, namespace string) (string, string, error) {
+	data, err := clients.GetSecretData(secretName, namespace)
+	if err != nil {
+		return "", "", fmt.Errorf("Failed to find Dockerhub credentials in secret: %s", secretName)
+	}
+	var username = strings.TrimSpace(string(data["username"]))
+	var password = strings.TrimSpace(string(data["password"]))
+
+	if username == "" || password == "" {
+		return username, password, fmt.Errorf("Secret: %s did not contain username/password credentials", secretName)
+	}
+
+	return username, password, nil
 }
