@@ -76,8 +76,8 @@ The following is an example of using a YAML file to define credentials.
 ```
 $ cat /tmp/auth-credentials
 ---
-username: foo
-password: foo
+username: leto
+password: spicemustflow
 ```
 
 ### Development
