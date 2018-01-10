@@ -145,7 +145,7 @@ func TestNewHandlerDoesNotHaveAPBRoute(t *testing.T) {
 		t.Fail()
 	}
 	testhandler := NewHandler(testb, c, "", nil, nil)
-	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
+	req, err := http.NewRequest(http.MethodPost, "/v2/spec", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
 	}
@@ -166,7 +166,7 @@ func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 		t.Fail()
 	}
 	testhandler := NewHandler(testb, c, "", nil, nil)
-	req, err := http.NewRequest(http.MethodPost, "/apb/spec", nil)
+	req, err := http.NewRequest(http.MethodPost, "/v2/apb", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
 	}
@@ -176,7 +176,7 @@ func TestDevHandlerDoesHaveAPBRoute(t *testing.T) {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 	testhandler.ServeHTTP(w, req)
-	ft.AssertEqual(t, w.Result().StatusCode, http.StatusOK, fmt.Sprintf("resulting status was not 404 - %v", w.Result().Status))
+	ft.AssertEqual(t, w.Result().StatusCode, http.StatusOK, fmt.Sprintf("resulting status was not 200 - %v", w.Result().Status))
 	ft.AssertNotNil(t, testhandler, "handler wasn't created")
 }
 
@@ -187,7 +187,7 @@ func TestNewHandlerDoesNotHaveAPBSpecDeleteRoute(t *testing.T) {
 		t.Fail()
 	}
 	testhandler := NewHandler(testb, c, "", nil, nil)
-	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
+	req, err := http.NewRequest(http.MethodDelete, "/v2/apb", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
 	}
@@ -204,7 +204,7 @@ func TestDevHandlerDoesHaveAPBSpecDeleteRoute(t *testing.T) {
 		t.Fail()
 	}
 	testhandler := NewHandler(testb, c, "", nil, nil)
-	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
+	req, err := http.NewRequest(http.MethodDelete, "/v2/apb", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
 	}
@@ -221,7 +221,7 @@ func TestNewHandlerDoesNotHaveAPBSpecsDeleteRoute(t *testing.T) {
 		t.Fail()
 	}
 	testhandler := NewHandler(testb, c, "", nil, nil)
-	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
+	req, err := http.NewRequest(http.MethodDelete, "/v2/apb", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
 	}
@@ -238,7 +238,7 @@ func TestDevHandlerDoesHaveAPBSpecsDeleteRoute(t *testing.T) {
 		t.Fail()
 	}
 	testhandler := NewHandler(testb, c, "", nil, nil)
-	req, err := http.NewRequest(http.MethodDelete, "/apb/spec", nil)
+	req, err := http.NewRequest(http.MethodDelete, "/v2/apb", nil)
 	if err != nil {
 		ft.AssertTrue(t, false, err.Error())
 	}
