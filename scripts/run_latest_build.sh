@@ -34,7 +34,8 @@
 #
 
 DOCKER_IP="$(ip addr show docker0 | grep -Po 'inet \K[\d.]+')"
-PUBLIC_IP=${DOCKER_IP:-"127.0.0.1"}
+DOCKER_IP=${DOCKER_IP:-"127.0.0.1"}
+PUBLIC_IP=${PUBLIC_IP:-$DOCKER_IP}
 HOSTNAME=${PUBLIC_IP}.nip.io
 ROUTING_SUFFIX="${HOSTNAME}"
 ORIGIN_IMAGE=${ORIGIN_IMAGE:-"docker.io/openshift/origin"}
