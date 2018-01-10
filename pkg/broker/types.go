@@ -44,6 +44,7 @@ const (
 	DeprovisionTopic WorkTopic = "deprovision_topic"
 	UpdateTopic      WorkTopic = "update_topic"
 	BindingTopic     WorkTopic = "binding_topic"
+	UnbindingTopic   WorkTopic = "unbinding_topic"
 )
 
 var workTopicSet = map[WorkTopic]bool{
@@ -51,6 +52,7 @@ var workTopicSet = map[WorkTopic]bool{
 	DeprovisionTopic: true,
 	UpdateTopic:      true,
 	BindingTopic:     true,
+	UnbindingTopic:   true,
 }
 
 // IsValidWorkTopic - Check if WorkTopic is part of acceptable set
