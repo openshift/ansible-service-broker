@@ -71,7 +71,13 @@ registry:
     auth_name: /tmp/auth-credentials
 ```
 
-The associated secret should have the values `username` and `password` defined.
+The associated secret should have the values `username` and `password` defined. The following is an example of using a YAML file to define credentials.
+```
+$ cat /tmp/auth-credentials
+---
+username: foo
+password: foo
+```
 
 ### Development
 
