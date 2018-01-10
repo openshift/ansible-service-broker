@@ -241,6 +241,14 @@ type BootstrapResponse struct {
 	ImageCount int `json:"image_count"`
 }
 
+// ServiceInstanceResponse - The response for a get service instance request
+type ServiceInstanceResponse struct {
+	ServiceID    string         `json:"service_id"`
+	PlanID       string         `json:"plan_id"`
+	DashboardURL string         `json:"dashboard_url,omitempty"`
+	Parameters   apb.Parameters `json:"parameters,omitempty"`
+}
+
 // UserInfo - holds information about the user that created a resource.
 type UserInfo struct {
 	Username string              `json:"username"`

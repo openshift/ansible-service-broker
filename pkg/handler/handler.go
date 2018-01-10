@@ -232,15 +232,30 @@ func (h handler) getinstance(w http.ResponseWriter, r *http.Request, params map[
 		return
 	}
 
-	// this should probably return a response, instead of the instance. Or we
-	// get a different one.
+	// TODO: typically the methods on the broker return a response this
+	// was an old utility method that I'm repurposing. I think we should
+	// make this consistent with the other methods in the broker.
 	si, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
-		// return 404 or 422
-		log.Debugf("service instance %v", si)
+		switch err {
+		case broker.ErrorNotFound: // return 404
+			writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
+		default: // return 422
+			writeResponse(w, http.StatusUnprocessableEntity, broker.ErrorResponse{Description: err.Error()})
+		}
 	}
 
-	writeDefaultResponse(w, http.StatusOK, nil, err)
+	// planParameterKey is unexported. Using the value here instead of
+	// refactoring the world. Besides with the above comment, this code
+	// would all live in the broker.go instead of here.
+	planID, ok := (*si.Parameters)["_apb_plan_id"].(string)
+	if !ok {
+		log.Warning("Could not retrieve the current plan name from parameters")
+	}
+
+	sir := broker.ServiceInstanceResponse{ServiceID: si.ID.String(), PlanID: planID, Parameters: *si.Parameters}
+
+	writeDefaultResponse(w, http.StatusOK, sir, err)
 }
 
 func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[string]string) {
@@ -526,6 +541,10 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 
 	// ignore the error, if async can't be parsed it will be false
 	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+
+	if !async && h.brokerConfig.GetBool("broker.launch_apb_on_bind") {
+		log.Warning("launch_apb_on_bind is enabled, but accepts_incomplete is false, binding may fail")
+	}
 
 	var req *broker.BindRequest
 	if err := readRequest(r, &req); err != nil {
