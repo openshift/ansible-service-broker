@@ -21,3 +21,4 @@ script:
   - ./scripts/travis.sh setup-broker
   - ./scripts/travis.sh ci
   - ./scripts/broker-ci/gather-logs.sh
+  - 'oc get pods --all-namespaces'
