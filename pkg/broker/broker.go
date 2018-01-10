@@ -770,6 +770,8 @@ func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance,
 	return len(methodJobs) > 0, token, nil
 }
 
+// GetBind - will return the binding between a service created via an async
+// binding event.
 func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UUID) (*BindResponse, error) {
 
 	log.Debug("XXX entered GetBind")
