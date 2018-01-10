@@ -42,7 +42,7 @@ func addPodNetworks(pod, ns string, targetNS []string, apbRole string) error {
 	log.Debugf("adding pod networks together namespace: %v, target namespaces: %v", ns, targetNS)
 	// Check to make sure that we have a target namespace.
 	if len(targetNS) < 1 {
-		return fmt.Errorf("Can not find target namespace to add to its networ")
+		return fmt.Errorf("Can not find target namespace to add to its network")
 	}
 	o, err := clients.Openshift()
 	if err != nil {
@@ -74,7 +74,7 @@ func isolatePodNetworks(pod, ns string, targetNS []string) error {
 	log.Debugf("adding pod networks together namespace: %v, target namespaces: %v", ns, targetNS)
 	// Check to make sure that we have a target namespace.
 	if len(targetNS) < 1 {
-		return fmt.Errorf("Can not find target namespace to add to its networ")
+		return fmt.Errorf("Can not find target namespace to add to its network")
 	}
 	o, err := clients.Openshift()
 	if err != nil {
