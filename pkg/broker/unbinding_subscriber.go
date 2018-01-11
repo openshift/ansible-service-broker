@@ -78,7 +78,7 @@ func (b *UnbindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 					Podname: bmsg.PodName,
 					Method:  apb.JobMethodBind,
 				})
-				b.dao.SetExtractedCredentials(bmsg.InstanceUUID, extCreds)
+				b.dao.SetExtractedCredentials(bmsg.BindingUUID, extCreds)
 			}
 		}
 	}()

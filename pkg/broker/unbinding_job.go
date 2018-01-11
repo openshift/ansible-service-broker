@@ -23,11 +23,13 @@ package broker
 import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
+	"github.com/pborman/uuid"
 )
 
 // UnbindingJob - Job to provision
 type UnbindingJob struct {
 	serviceInstance *apb.ServiceInstance
+	bindingUUID     uuid.UUID
 	params          *apb.Parameters
 }
 
@@ -56,7 +58,8 @@ func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
 		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
+			BindingUUID: p.bindingUUID.String(), JobToken: token,
+			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
@@ -66,11 +69,13 @@ func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	if err != nil {
 		log.Debug("BJ: ERROR during marshal")
 		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
+			BindingUUID: p.bindingUUID.String(), JobToken: token,
+			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
 	log.Debug("BJ: Looks like we're done")
 	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "unbind finished", Error: ""}
+		BindingUUID: p.bindingUUID.String(), JobToken: token,
+		SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "unbind finished", Error: ""}
 }

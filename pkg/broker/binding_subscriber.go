@@ -64,6 +64,7 @@ func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 					Method:  apb.JobMethodBind,
 				})
 			} else if bmsg.Msg == "" {
+				log.Debug("BS: IN PROGRESS")
 				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
 					Token:   bmsg.JobToken,
 					State:   apb.StateInProgress,
@@ -71,6 +72,7 @@ func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 					Method:  apb.JobMethodBind,
 				})
 			} else {
+				log.Debug("BS: GETTING CREDS")
 				json.Unmarshal([]byte(bmsg.Msg), &extCreds)
 				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
 					Token:   bmsg.JobToken,
@@ -78,7 +80,8 @@ func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 					Podname: bmsg.PodName,
 					Method:  apb.JobMethodBind,
 				})
-				b.dao.SetExtractedCredentials(bmsg.InstanceUUID, extCreds)
+				log.Debug("CALL SetExtractedCredentials $v - %v", bmsg.BindingUUID, extCreds)
+				b.dao.SetExtractedCredentials(bmsg.BindingUUID, extCreds)
 			}
 		}
 	}()

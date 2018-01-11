@@ -890,9 +890,14 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		}
 	}
 
+	log.Errorf("calling SetBindInstance for %v - [%v]", bindingUUID, bindingInstance)
+
 	if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
+		log.Errorf("FAILED to store bind instance: %v - [%v] %v", bindingUUID.String(), bindingInstance, err)
 		return nil, err
 	}
+
+	log.Errorf("HEY bind was set for %v - [%v]", bindingUUID, bindingInstance)
 
 	// Add the DB Credentials this will allow the apb to use these credentials
 	// if it so chooses.
@@ -912,7 +917,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		// asynchronous mode, requires that the launch apb config
 		// entry is on, and that async comes in from the catalog
 		log.Info("ASYNC binding in progress")
-		bindjob := NewBindingJob(&instance, &params)
+		bindjob := NewBindingJob(&instance, bindingUUID, &params)
 
 		token, err = a.engine.StartNewJob("", bindjob, BindingTopic)
 		if err != nil {

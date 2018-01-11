@@ -265,6 +265,7 @@ type JobMsg struct {
 	PodName      string `json:"podname"`
 	Error        string `json:"error"`
 	Msg          string `json:"msg"`
+	BindingUUID  string `json:"binding_uuid"`
 }
 
 // Render - Display the job message.
