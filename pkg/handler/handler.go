@@ -461,7 +461,6 @@ func (h handler) getbind(w http.ResponseWriter, r *http.Request, params map[stri
 	defer r.Body.Close()
 	h.printRequest(r)
 
-	log.Debug("handler: entered getbind")
 	// validate input uuids
 	instanceUUID := uuid.Parse(params["instance_uuid"])
 	if instanceUUID == nil {
@@ -469,15 +468,11 @@ func (h handler) getbind(w http.ResponseWriter, r *http.Request, params map[stri
 		return
 	}
 
-	log.Debug("handler: instanceuuid is valid")
-
 	bindingUUID := uuid.Parse(params["binding_uuid"])
 	if bindingUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
 		return
 	}
-
-	log.Debug("handler: binduuid is valid")
 
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
@@ -488,19 +483,14 @@ func (h handler) getbind(w http.ResponseWriter, r *http.Request, params map[stri
 			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 		}
 	}
-	log.Debug("handler: found service instance")
 
 	resp, err := h.broker.GetBind(serviceInstance, bindingUUID)
-
-	log.Debug("handler: GetBind called")
 
 	if err != nil {
 		switch err {
 		case broker.ErrorNotFound:
-			log.Debug("handler: bind not found")
 			writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
 		default:
-			log.Debug("handler: something went bad during the getbind")
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
 		}
 		return
