@@ -47,41 +47,48 @@ func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 		log.Info("Listening for binding messages")
 		for {
 			msg := <-msgBuffer
-			var bmsg *JobMsg
 			var extCreds *apb.ExtractedCredentials
 			metrics.BindingJobFinished()
 
 			log.Debug("Processed binding message from buffer")
 
-			json.Unmarshal([]byte(msg.Render()), &bmsg)
-
-			if bmsg.Error != "" {
-				log.Errorf("Binding job reporting error: %s", bmsg.Error)
-				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
-					Token:   bmsg.JobToken,
+			if msg.Error != "" {
+				log.Errorf("bindsub: Binding job reporting error: %s", msg.Error)
+				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateFailed,
-					Podname: bmsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodBind,
-				})
-			} else if bmsg.Msg == "" {
-				log.Debug("BS: IN PROGRESS")
-				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
-					Token:   bmsg.JobToken,
+				}); err != nil {
+					log.Errorf("failed to set state after bind %v", err)
+				}
+			} else if msg.Msg == "" {
+				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateInProgress,
-					Podname: bmsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodBind,
-				})
+				}); err != nil {
+					log.Errorf("failed to set state after bind %v", err)
+				}
 			} else {
-				log.Debug("BS: GETTING CREDS")
-				json.Unmarshal([]byte(bmsg.Msg), &extCreds)
-				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
-					Token:   bmsg.JobToken,
+				log.Debug("bindsub: getting creds")
+				if err := json.Unmarshal([]byte(msg.Msg), &extCreds); err != nil {
+					log.Errorf("failed to unmarshal extracted credentials after bind %v", err)
+				}
+				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateSucceeded,
-					Podname: bmsg.PodName,
+					Podname: msg.PodName,
 					Method:  apb.JobMethodBind,
-				})
-				log.Debug("CALL SetExtractedCredentials $v - %v", bmsg.BindingUUID, extCreds)
-				b.dao.SetExtractedCredentials(bmsg.BindingUUID, extCreds)
+				}); err != nil {
+					log.Errorf("failed to set state after bind %v", err)
+				}
+
+				log.Debug("CALL SetExtractedCredentials $v - %v", msg.BindingUUID, extCreds)
+				if err := b.dao.SetExtractedCredentials(msg.BindingUUID, extCreds); err != nil {
+					log.Errorf("failed to set extracted credentials after bind %v", err)
+				}
 			}
 		}
 	}()

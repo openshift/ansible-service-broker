@@ -21,8 +21,6 @@
 package broker
 
 import (
-	"encoding/json"
-
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
@@ -47,38 +45,38 @@ func (b *UnbindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 		log.Info("Listening for binding messages")
 		for {
 			msg := <-msgBuffer
-			var bmsg *JobMsg
-			var extCreds *apb.ExtractedCredentials
 			metrics.UnbindingJobFinished()
 
 			log.Debug("Processed binding message from buffer")
 
-			json.Unmarshal([]byte(msg.Render()), &bmsg)
-
-			if bmsg.Error != "" {
-				log.Errorf("Unbinding job reporting error: %s", bmsg.Error)
-				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
-					Token:   bmsg.JobToken,
+			if msg.Error != "" {
+				log.Errorf("bindsub: Uninding job reporting error: %s", msg.Error)
+				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateFailed,
-					Podname: bmsg.PodName,
-					Method:  apb.JobMethodBind,
-				})
-			} else if bmsg.Msg == "" {
-				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
-					Token:   bmsg.JobToken,
+					Podname: msg.PodName,
+					Method:  apb.JobMethodUnbind,
+				}); err != nil {
+					log.Errorf("failed to set state after unbind %v", err)
+				}
+			} else if msg.Msg == "" {
+				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateInProgress,
-					Podname: bmsg.PodName,
-					Method:  apb.JobMethodBind,
-				})
+					Podname: msg.PodName,
+					Method:  apb.JobMethodUnbind,
+				}); err != nil {
+					log.Errorf("failed to set state after unbind %v", err)
+				}
 			} else {
-				json.Unmarshal([]byte(bmsg.Msg), &extCreds)
-				b.dao.SetState(bmsg.InstanceUUID, apb.JobState{
-					Token:   bmsg.JobToken,
+				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
+					Token:   msg.JobToken,
 					State:   apb.StateSucceeded,
-					Podname: bmsg.PodName,
-					Method:  apb.JobMethodBind,
-				})
-				b.dao.SetExtractedCredentials(bmsg.BindingUUID, extCreds)
+					Podname: msg.PodName,
+					Method:  apb.JobMethodUnbind,
+				}); err != nil {
+					log.Errorf("failed to set state after unbind %v", err)
+				}
 			}
 		}
 	}()
