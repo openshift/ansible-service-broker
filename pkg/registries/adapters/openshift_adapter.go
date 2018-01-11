@@ -54,7 +54,7 @@ func (r OpenShiftAdapter) GetImageNames() ([]string, error) {
 	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
 
 	images := r.Config.Images
-	r.Log.Debug("HERE: %v", images)
+	r.Log.Debug("Configured to use images: %v", images)
 
 	return images, nil
 }
