@@ -25,6 +25,7 @@ import (
 	"unsafe"
 
 	"github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
+	networkoapi "github.com/openshift/api/network/v1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -41,6 +42,12 @@ import (
 	rbac "k8s.io/kubernetes/pkg/apis/rbac"
 )
 
+const (
+	// ChangePodNetworkAnnotation - Annotation used for changing a pod
+	// network, used to join networks together.
+	ChangePodNetworkAnnotation = "pod.network.openshift.io/multitenant.change-network"
+)
+
 /* Start of V1 Authorizaiont rules need for openshift rest call */
 var oldAllowAllPolicyRule = PolicyRule{APIGroups: nil, Verbs: []string{"*"}, Resources: []string{"*"}}
 
@@ -48,6 +55,7 @@ var oldAllowAllPolicyRule = PolicyRule{APIGroups: nil, Verbs: []string{"*"}, Res
 type OpenshiftClient struct {
 	authRestClient  rest.Interface
 	imageRestClient rest.Interface
+	networkClient   rest.Interface
 }
 
 type imageLabel struct {
@@ -287,6 +295,7 @@ func newOpenshift() (*OpenshiftClient, error) {
 func newForConfig(c *rest.Config) (*OpenshiftClient, error) {
 	authConfig := *c
 	imageConfig := *c
+	networkConfig := *c
 	if err := setConfigDefaults(&authConfig, "/apis/authorization.openshift.io"); err != nil {
 		return nil, err
 	}
@@ -302,7 +311,14 @@ func newForConfig(c *rest.Config) (*OpenshiftClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &OpenshiftClient{authRestClient: authClient, imageRestClient: imageClient}, nil
+	if err := setConfigDefaults(&networkConfig, "/apis/network.openshift.io"); err != nil {
+		return nil, err
+	}
+	networkClient, err := rest.RESTClientFor(&networkConfig)
+	if err != nil {
+		return nil, err
+	}
+	return &OpenshiftClient{authRestClient: authClient, imageRestClient: imageClient, networkClient: networkClient}, nil
 }
 
 func setConfigDefaults(config *rest.Config, APIPath string) error {
@@ -403,4 +419,58 @@ func (o OpenshiftClient) ListRegistryImages() (images []string, err error) {
 		imageList = append(imageList, strings.Split(image.DockerImage, "@")[0])
 	}
 	return imageList, nil
+}
+
+// GetClusterNetworkPlugin - Get cluster network
+func (o OpenshiftClient) GetClusterNetworkPlugin() (string, error) {
+	net := &networkoapi.ClusterNetwork{}
+	err := o.networkClient.Get().Resource("clusternetworks").Name(networkoapi.ClusterNetworkDefault).Do().Into(net)
+	if err != nil {
+		return "", err
+	}
+	return net.PluginName, nil
+}
+
+// GetNetNamespace - Get Net Namespace.
+func (o OpenshiftClient) GetNetNamespace(nsName string) (*networkoapi.NetNamespace, error) {
+	netNamespace := &networkoapi.NetNamespace{}
+	err := o.networkClient.Get().Resource("netnamespaces").Name(nsName).Do().Into(netNamespace)
+	if err != nil {
+		return nil, err
+	}
+	return netNamespace, nil
+}
+
+// JoinNamespacesNetworks - Will take the net namespace to be added to a network,
+// and the namespace ID of the network that is being added to.
+func (o OpenshiftClient) JoinNamespacesNetworks(netns *networkoapi.NetNamespace,
+	targetNS string,
+) (*networkoapi.NetNamespace, error) {
+	if netns.Annotations == nil {
+		netns.Annotations = make(map[string]string)
+	}
+	netns.Annotations[ChangePodNetworkAnnotation] = fmt.Sprintf("%s:%s", "join", targetNS)
+	result := &networkoapi.NetNamespace{}
+	err := o.networkClient.Put().Resource("netnamespaces").Name(netns.Name).Body(netns).Do().Into(result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// IsolateNamespacesNetworks - Will take the net namespace to be added to a network,
+// and the namespace ID of the network that is being added to..
+func (o OpenshiftClient) IsolateNamespacesNetworks(netns *networkoapi.NetNamespace,
+	targetNS string,
+) (*networkoapi.NetNamespace, error) {
+	if netns.Annotations == nil {
+		netns.Annotations = make(map[string]string)
+	}
+	netns.Annotations[ChangePodNetworkAnnotation] = fmt.Sprintf("%s:%s", "isolate", targetNS)
+	result := &networkoapi.NetNamespace{}
+	err := o.networkClient.Put().Resource("netnamespaces").Name(netns.Name).Body(netns).Do().Into(result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

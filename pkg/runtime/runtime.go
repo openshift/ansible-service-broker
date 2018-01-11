@@ -25,6 +25,7 @@ import (
 
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	apicorev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbac "k8s.io/api/rbac/v1beta1"
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,24 +35,29 @@ import (
 var log = logutil.NewLog()
 
 // Provider - Variable for accessing provider functions
-var Provider *provider
+var Provider Runtime
 
 // Runtime - Abstraction for broker actions
 type Runtime interface {
-	ValidateRuntime()
+	ValidateRuntime() error
 	GetRuntime() string
-	CreateSandbox(string, string, []string, string)
+	CreateSandbox(string, string, []string, string) (string, error)
 	DestroySandbox(string, string, []string, string, bool, bool)
+	AddPostCreateSandbox(f PostSandboxCreate)
+	AddPostDestroySandbox(f PostSandboxDestroy)
 }
 
 // Variables for interacting with runtimes
 type provider struct {
 	coe
+	postSandboxCreate  []PostSandboxCreate
+	postSandboxDestroy []PostSandboxDestroy
 }
 
 // Abstraction for actions that are different between runtimes
 type coe interface {
 	getRuntime() string
+	shouldJoinNetworks() (bool, PostSandboxCreate, PostSandboxDestroy)
 }
 
 // Different runtimes
@@ -89,6 +95,15 @@ func NewRuntime() {
 	}
 
 	Provider = &provider{coe: cluster}
+	if ok, postCreateHook, postDestroyHook := cluster.shouldJoinNetworks(); ok {
+		log.Debugf("adding posthook to provider now.")
+		if postCreateHook != nil {
+			Provider.AddPostCreateSandbox(postCreateHook)
+		}
+		if postDestroyHook != nil {
+			Provider.AddPostDestroySandbox(postDestroyHook)
+		}
+	}
 }
 
 func newOpenshift() coe {
@@ -171,7 +186,44 @@ func (p provider) CreateSandbox(podName string,
 		}
 	}
 
+	// Must create a Network policy to allow for comunication from the APB pod to the target namespace.
+	networkPolicy := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: podName,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				networkingv1.NetworkPolicyIngressRule{
+					From: []networkingv1.NetworkPolicyPeer{
+						networkingv1.NetworkPolicyPeer{
+							NamespaceSelector: metav1.AddLabelToSelector(&metav1.LabelSelector{}, "apb-pod-name", podName),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	log.Debugf("Creating network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+	_, err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Create(networkPolicy)
+	if err != nil {
+		log.Errorf("unable to create network policy object - %v", err)
+		return "", err
+	}
+	log.Debugf("Successfully created network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+
 	log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	log.Info("Running post create sandbox fuctions if defined.")
+	for i, f := range p.postSandboxCreate {
+		log.Debugf("Running post create sandbox function: %v", i+1)
+		err := f(podName, namespace, targets, apbRole)
+		if err != nil {
+			// Log the error and continue processing hooks. Expect hook to
+			// clean up after itself.
+			log.Warningf("Post create sandbox function failed with err: %v", err)
+		}
+	}
 
 	return podName, nil
 }
@@ -231,7 +283,27 @@ func (p provider) DestroySandbox(podName string,
 		}
 		log.Notice("Successfully deleted rolebinding %s, namespace %s", podName, target)
 	}
+
+	log.Debugf("Deleting network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+	// Must clean up the network policy that allowed comunication from the APB pod to the target namespace.
+	err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Delete(podName, &metav1.DeleteOptions{})
+	if err != nil {
+		log.Errorf("unable to delete the network policy object - %v", err)
+		return
+	}
+	log.Debugf("Successfully deleted network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+
+	log.Debugf("Running post sandbox destroy hooks")
+	for i, f := range p.postSandboxDestroy {
+		log.Debugf("Running post sandbox destroy:  %v", i+1)
+		f(podName, namespace, targets)
+	}
 	return
+}
+
+// GetRuntime - Return a string value of the runtime
+func (p provider) GetRuntime() string {
+	return p.coe.getRuntime()
 }
 
 func shouldDeleteNamespace(keepNamespace bool,
@@ -249,9 +321,4 @@ func shouldDeleteNamespace(keepNamespace bool,
 		}
 	}
 	return true
-}
-
-// GetRuntime - Return a string value of the runtime
-func (p provider) GetRuntime() string {
-	return p.coe.getRuntime()
 }

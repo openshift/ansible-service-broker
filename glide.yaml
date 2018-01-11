@@ -41,3 +41,5 @@ import:
   version: kubernetes-1.8.5
 - package: k8s.io/apiserver
   version: kubernetes-1.8.5
+- package: github.com/openshift/api
+  version: master

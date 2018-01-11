@@ -1,5 +1,5 @@
-hash: e672352101825e6598f62705c26b5e476aa7c6e71d56335a21af8a6983c718a0
-updated: 2017-12-14T13:32:19.868717-05:00
+hash: acb662294812de5d202fdf9b74e67d398250e463bbdf2f191cc4f3823fcefaeb
+updated: 2017-12-19T16:18:48.861372-05:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -146,6 +146,10 @@ imports:
   version: b2cb9fa56473e98db8caba80237377e83fe44db5
 - name: github.com/opencontainers/go-digest
   version: a6d0ee40d4207ea02364bd3b9e8e77b9159ba1eb
+- name: github.com/openshift/api
+  version: 3922a2604003bc9fba95f09e17581e9917270a65
+  subpackages:
+  - network/v1
 - name: github.com/pborman/uuid
   version: e790cca94e6cc75c7064b1332e63811d4aae1a53
 - name: github.com/peterbourgon/diskv
