@@ -92,11 +92,11 @@ func (m MockBroker) Deprovision(apb.ServiceInstance, string, bool, bool) (*broke
 	m.called("deprovision", true)
 	return nil, m.Err
 }
-func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest) (*broker.BindResponse, error) {
+func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest, bool) (*broker.BindResponse, error) {
 	m.called("bind", true)
 	return nil, m.Err
 }
-func (m MockBroker) Unbind(apb.ServiceInstance, uuid.UUID, string, bool) (*broker.UnbindResponse, error) {
+func (m MockBroker) Unbind(apb.ServiceInstance, uuid.UUID, string, bool, bool) (*broker.UnbindResponse, error) {
 	m.called("unbind", true)
 	return nil, m.Err
 }
@@ -126,6 +126,11 @@ func (m MockBroker) RemoveSpec(specID string) error {
 func (m MockBroker) RemoveSpecs() error {
 	m.called("removeSpecs", true)
 	return nil
+}
+
+func (m MockBroker) GetBind(si apb.ServiceInstance, bindid uuid.UUID) (*broker.BindResponse, error) {
+	m.called("getBind", true)
+	return nil, nil
 }
 
 func TestNewHandler(t *testing.T) {

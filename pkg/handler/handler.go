@@ -180,9 +180,12 @@ func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
 
 	s.HandleFunc("/v2/bootstrap", createVarHandler(h.bootstrap)).Methods("POST")
 	s.HandleFunc("/v2/catalog", createVarHandler(h.catalog)).Methods("GET")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.getinstance)).Methods("GET")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.provision)).Methods("PUT")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.update)).Methods("PATCH")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.deprovision)).Methods("DELETE")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
+		createVarHandler(h.getbind)).Methods("GET")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
 		createVarHandler(h.bind)).Methods("PUT")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}",
@@ -219,6 +222,43 @@ func (h handler) catalog(w http.ResponseWriter, r *http.Request, params map[stri
 	writeDefaultResponse(w, http.StatusOK, resp, err)
 }
 
+func (h handler) getinstance(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	defer r.Body.Close()
+	h.printRequest(r)
+
+	instanceUUID := uuid.Parse(params["instance_uuid"])
+	if instanceUUID == nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
+		return
+	}
+
+	// TODO: typically the methods on the broker return a response this
+	// was an old utility method that I'm repurposing. I think we should
+	// make this consistent with the other methods in the broker.
+	si, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound: // return 404
+			writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
+		default: // return 422
+			writeResponse(w, http.StatusUnprocessableEntity, broker.ErrorResponse{Description: err.Error()})
+		}
+		return
+	}
+
+	// planParameterKey is unexported. Using the value here instead of
+	// refactoring the world. Besides with the above comment, this code
+	// would all live in the broker.go instead of here.
+	planID, ok := (*si.Parameters)["_apb_plan_id"].(string)
+	if !ok {
+		log.Warning("Could not retrieve the current plan name from parameters")
+	}
+
+	sir := broker.ServiceInstanceResponse{ServiceID: si.ID.String(), PlanID: planID, Parameters: *si.Parameters}
+
+	writeDefaultResponse(w, http.StatusOK, sir, err)
+}
+
 func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 	h.printRequest(r)
@@ -229,10 +269,8 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
-	var async bool
-
 	// ignore the error, if async can't be parsed it will be false
-	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	var req *broker.ProvisionRequest
 	err := readRequest(r, &req)
@@ -300,10 +338,8 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
-	var async bool
-
 	// ignore the error, if async can't be parsed it will be false
-	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
@@ -352,9 +388,8 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		return
 	}
 
-	var async bool
 	// ignore the error, if async can't be parsed it will be false
-	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	planID := r.FormValue("plan_id")
 	if planID == "" {
@@ -422,6 +457,49 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 	}
 }
 
+func (h handler) getbind(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	defer r.Body.Close()
+	h.printRequest(r)
+
+	// validate input uuids
+	instanceUUID := uuid.Parse(params["instance_uuid"])
+	if instanceUUID == nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid instance_uuid"})
+		return
+	}
+
+	bindingUUID := uuid.Parse(params["binding_uuid"])
+	if bindingUUID == nil {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
+		return
+	}
+
+	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		}
+	}
+
+	resp, err := h.broker.GetBind(serviceInstance, bindingUUID)
+
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		}
+		return
+	}
+
+	log.Debug("handler: bind found")
+	writeDefaultResponse(w, http.StatusOK, resp, err)
+}
+
 func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 	h.printRequest(r)
@@ -437,6 +515,13 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 	if bindingUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
 		return
+	}
+
+	// ignore the error, if async can't be parsed it will be false
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
+
+	if !async && h.brokerConfig.GetBool("broker.launch_apb_on_bind") {
+		log.Warning("launch_apb_on_bind is enabled, but accepts_incomplete is false, binding may fail")
 	}
 
 	var req *broker.BindRequest
@@ -475,7 +560,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 	}
 
 	// process binding request
-	resp, err := h.broker.Bind(serviceInstance, bindingUUID, req)
+	resp, err := h.broker.Bind(serviceInstance, bindingUUID, req, async)
 
 	if err != nil {
 		switch err {
@@ -513,6 +598,13 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})
 	}
 
+	// ignore the error, if async can't be parsed it will be false
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
+
+	if !async && h.brokerConfig.GetBool("broker.launch_apb_on_bind") {
+		log.Warning("launch_apb_on_bind is enabled, but accepts_incomplete is false, unbinding may fail")
+	}
+
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
 		writeResponse(w, http.StatusGone, nil)
@@ -545,7 +637,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID, nsDeleted)
+	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID, nsDeleted, async)
 
 	if errors.IsNotFound(err) {
 		writeResponse(w, http.StatusGone, resp)

@@ -43,12 +43,16 @@ const (
 	ProvisionTopic   WorkTopic = "provision_topic"
 	DeprovisionTopic WorkTopic = "deprovision_topic"
 	UpdateTopic      WorkTopic = "update_topic"
+	BindingTopic     WorkTopic = "binding_topic"
+	UnbindingTopic   WorkTopic = "unbinding_topic"
 )
 
 var workTopicSet = map[WorkTopic]bool{
 	ProvisionTopic:   true,
 	DeprovisionTopic: true,
 	UpdateTopic:      true,
+	BindingTopic:     true,
+	UnbindingTopic:   true,
 }
 
 // IsValidWorkTopic - Check if WorkTopic is part of acceptable set
@@ -211,6 +215,7 @@ type BindResponse struct {
 	SyslogDrainURL  string                 `json:"syslog_drain_url,omitempty"`
 	RouteServiceURL string                 `json:"route_service_url,omitempty"`
 	VolumeMounts    []interface{}          `json:"volume_mounts,omitempty"`
+	Operation       string                 `json:"operation,omitempty"`
 }
 
 // DeprovisionResponse - Response for a deprovision
@@ -221,7 +226,9 @@ type DeprovisionResponse struct {
 
 // UnbindResponse - Response for unbinding
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#response-5
-type UnbindResponse struct{}
+type UnbindResponse struct {
+	Operation string `json:"operation,omitempty"`
+}
 
 // ErrorResponse - Error response for all broker errors
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#broker-errors
@@ -234,6 +241,14 @@ type ErrorResponse struct {
 type BootstrapResponse struct {
 	SpecCount  int `json:"spec_count"`
 	ImageCount int `json:"image_count"`
+}
+
+// ServiceInstanceResponse - The response for a get service instance request
+type ServiceInstanceResponse struct {
+	ServiceID    string         `json:"service_id"`
+	PlanID       string         `json:"plan_id"`
+	DashboardURL string         `json:"dashboard_url,omitempty"`
+	Parameters   apb.Parameters `json:"parameters,omitempty"`
 }
 
 // UserInfo - holds information about the user that created a resource.
@@ -252,6 +267,7 @@ type JobMsg struct {
 	PodName      string `json:"podname"`
 	Error        string `json:"error"`
 	Msg          string `json:"msg"`
+	BindingUUID  string `json:"binding_uuid"`
 }
 
 // Render - Display the job message.

@@ -68,6 +68,20 @@ var (
 			Help:      "How many update jobs are actively in the buffer.",
 		})
 
+	bindingJob = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Subsystem: subsystem,
+			Name:      "binding_jobs",
+			Help:      "How many binding jobs are actively in the buffer.",
+		})
+
+	unbindingJob = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Subsystem: subsystem,
+			Name:      "unbinding_jobs",
+			Help:      "How many unbinding jobs are actively in the buffer.",
+		})
+
 	requests = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Subsystem: subsystem,
@@ -147,6 +161,18 @@ func DeprovisionJobStarted() {
 	deprovisionJob.Inc()
 }
 
+// BindingJobStarted - Add a provision job to the counter.
+func BindingJobStarted() {
+	defer recoverMetricPanic()
+	bindingJob.Inc()
+}
+
+// UnbindingJobStarted - Add a provision job to the counter.
+func UnbindingJobStarted() {
+	defer recoverMetricPanic()
+	unbindingJob.Inc()
+}
+
 // ProvisionJobFinished - Remove a provision job from the counter.
 func ProvisionJobFinished() {
 	defer recoverMetricPanic()
@@ -169,6 +195,18 @@ func UpdateJobStarted() {
 func UpdateJobFinished() {
 	defer recoverMetricPanic()
 	updateJob.Dec()
+}
+
+// BindingJobFinished - Remove a provision job from the counter.
+func BindingJobFinished() {
+	defer recoverMetricPanic()
+	bindingJob.Dec()
+}
+
+// UnbindingJobFinished - Remove a provision job from the counter.
+func UnbindingJobFinished() {
+	defer recoverMetricPanic()
+	unbindingJob.Dec()
 }
 
 // ActionStarted - Registers that an action has been started.
