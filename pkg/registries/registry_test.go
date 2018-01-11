@@ -334,7 +334,7 @@ func TestNewRegistryRHCC(t *testing.T) {
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
-	reg, err := NewRegistry(c.GetSubConfig("registry.rhcc"))
+	reg, err := NewRegistry(c.GetSubConfig("registry.rhcc"), "")
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
@@ -347,7 +347,7 @@ func TestNewRegistryDockerHub(t *testing.T) {
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
-	reg, err := NewRegistry(c.GetSubConfig("registry.dh"))
+	reg, err := NewRegistry(c.GetSubConfig("registry.dh"), "")
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
@@ -360,7 +360,7 @@ func TestNewRegistryMock(t *testing.T) {
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
-	reg, err := NewRegistry(c.GetSubConfig("registry.mock"))
+	reg, err := NewRegistry(c.GetSubConfig("registry.mock"), "")
 	if err != nil {
 		ft.AssertTrue(t, false)
 	}
@@ -377,13 +377,13 @@ func TestPanicOnUnknow(t *testing.T) {
 		}
 	}()
 	c, _ := config.CreateConfig("testdata/registry.yaml")
-	r, err := NewRegistry(c.GetSubConfig("registry.makes-no-sense"))
+	r, err := NewRegistry(c.GetSubConfig("registry.makes-no-sense"), "")
 	fmt.Printf("%#v\n\n %v\n", r, err)
 }
 
 func TestValidateName(t *testing.T) {
 	c, _ := config.CreateConfig("testdata/registry.yaml")
-	_, err := NewRegistry(c.GetSubConfig("registry.makes_no_sense"))
+	_, err := NewRegistry(c.GetSubConfig("registry.makes_no_sense"), "")
 	if err == nil {
 		ft.AssertTrue(t, false)
 	}

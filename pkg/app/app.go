@@ -200,7 +200,8 @@ func CreateApp() App {
 
 	log.Debug("Connecting Registry")
 	for name := range app.config.GetSubConfig("registry").ToMap() {
-		reg, err := registries.NewRegistry(app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)))
+		reg, err := registries.NewRegistry(app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)),
+			app.config.GetString("openshift.namespace"))
 		if err != nil {
 			log.Errorf(
 				"Failed to initialize %v Registry err - %v \n", name, err)
