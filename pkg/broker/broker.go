@@ -1028,15 +1028,16 @@ func (a AnsibleBroker) Unbind(
 	metrics.ActionStarted("unbind")
 
 	var token string
+	var jerr error
 	if async && a.brokerConfig.LaunchApbOnBind {
 		// asynchronous mode, required that the launch apb config
 		// entry is on, and that async comes in from the catalog
 		log.Info("ASYNC unbinding in progress")
 		unbindjob := NewUnbindingJob(&serviceInstance, bindingUUID, &params, skipApbExecution)
-		token, err := a.engine.StartNewJob("", unbindjob, UnbindingTopic)
-		if err != nil {
-			log.Error("Failed to start new job for async unbind\n%s", err.Error())
-			return nil, err
+		token, jerr = a.engine.StartNewJob("", unbindjob, UnbindingTopic)
+		if jerr != nil {
+			log.Error("Failed to start new job for async unbind\n%s", jerr.Error())
+			return nil, jerr
 		}
 
 		if err := a.dao.SetState(serviceInstance.ID.String(), apb.JobState{
@@ -1083,6 +1084,7 @@ func (a AnsibleBroker) Unbind(
 	if token != "" {
 		return &UnbindResponse{Operation: token}, nil
 	}
+
 	return &UnbindResponse{}, nil
 }
 
