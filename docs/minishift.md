@@ -14,6 +14,12 @@ The Service Catalog can be deployed by adding the `--service-catalog` when start
 $ export MINISHIFT_ENABLE_EXPERIMENTAL=y
 ```
 
+Set the openshift-version to 3.7:
+
+```
+$ minishift config set openshift-version v3.7.0
+```
+
 Start Minishift with the `--service-catalog` flag
 
 ```
