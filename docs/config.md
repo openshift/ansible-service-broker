@@ -18,6 +18,8 @@ for APBs. All the registry config options are defined below
 | field         | description                                                                                                                      | Required |
 |---------------|----------------------------------------------------------------------------------------------------------------------------------|----------|
 | name          | The name of the registry. Used by the broker to identify APBs from this registry.                                                |     Y    |
+| auth_type     | How the broker should read the credentials                                                                                       |     N    |
+| auth_name     | Name of secret/file credentials should be read from. Used when auth_type is set to `secret` or `file`                            |     N    |
 | user          | The username for authenticating to the registry                                                                                  |     N    |
 | pass          | The password for authenticating to the registry                                                                                  |     N    |
 | org           | The namespace/organization that the image is contained in                                                                        |     N    |
@@ -47,6 +49,35 @@ registry:
     name: lo
     namespaces:
       - openshift
+```
+
+### Storing registry credentials in a secret/file
+
+```
+registry:
+  - name: rhcc
+    type: rhcc
+    url: registry.access.redhat.com
+    auth_type: secret
+    auth_name: asb-auth-secret
+```
+The associated secret should have the values `username` and `password` defined. When using a secret you must ensure that `openshift.namespace` is also defined. This is where the secret will be read from. (`ansible-service-broker` namespace when using the template).
+
+```
+registry:
+  - name: rhcc
+    type: rhcc
+    url: registry.access.redhat.com
+    auth_type: file
+    auth_name: /tmp/auth-credentials
+```
+
+The following is an example of using a YAML file to define credentials.
+```
+$ cat /tmp/auth-credentials
+---
+username: leto
+password: spicemustflow
 ```
 
 ### Development
