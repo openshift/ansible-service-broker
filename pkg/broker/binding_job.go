@@ -48,14 +48,14 @@ func NewBindingJob(serviceInstance *apb.ServiceInstance, bindingUUID uuid.UUID, 
 func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.BindingJobStarted()
 
-	log.Debug("BJ: binding job started, calling apb.Bind")
+	log.Debug("bindjob: binding job started, calling apb.Bind")
 
 	podName, extCreds, err := apb.Bind(p.serviceInstance, p.params)
 
-	log.Debug("BJ: RETURNED from apb.Bind")
+	log.Debug("bindjob: returned from apb.Bind")
 
 	if err != nil {
-		log.Errorf("broker::Binding error occurred.\n%s", err.Error())
+		log.Errorf("bindjob::Binding error occurred.\n%s", err.Error())
 
 		// send error message
 		// can't have an error type in a struct you want marshalled
@@ -66,19 +66,16 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		return
 	}
 
-	log.Debug("BJ: No error, going to marshal the credentials")
-
 	// send creds
 	jsonmsg, err := json.Marshal(extCreds)
 	if err != nil {
-		log.Debug("BJ: ERROR during marshal")
 		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 			BindingUUID: p.bindingUUID.String(), JobToken: token,
 			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
-	log.Debug("BJ: Looks like we're done")
+	log.Debug("bindjob: looks like we're done, sending credentials")
 	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 		BindingUUID: p.bindingUUID.String(), JobToken: token,
 		SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}

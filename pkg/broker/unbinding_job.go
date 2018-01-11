@@ -45,14 +45,14 @@ func NewUnbindingJob(serviceInstance *apb.ServiceInstance, params *apb.Parameter
 func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.UnbindingJobStarted()
 
-	log.Debug("BJ: unbinding job started, calling apb.Unbind")
+	log.Debug("unbindjob: unbinding job started, calling apb.Unbind")
 
 	err := apb.Unbind(p.serviceInstance, p.params)
 
-	log.Debug("BJ: RETURNED from apb.Unbind")
+	log.Debug("unbindjob: returned from apb.Unbind")
 
 	if err != nil {
-		log.Errorf("broker::Unbinding error occurred.\n%s", err.Error())
+		log.Errorf("unbindjob::Unbinding error occurred.\n%s", err.Error())
 
 		// send error message
 		// can't have an error type in a struct you want marshalled
@@ -63,18 +63,15 @@ func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		return
 	}
 
-	log.Debug("BJ: No error, going to marshal the credentials")
-
 	// send creds
 	if err != nil {
-		log.Debug("BJ: ERROR during marshal")
 		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 			BindingUUID: p.bindingUUID.String(), JobToken: token,
 			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
 		return
 	}
 
-	log.Debug("BJ: Looks like we're done")
+	log.Debug("unbindjob: Looks like we're done")
 	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 		BindingUUID: p.bindingUUID.String(), JobToken: token,
 		SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "unbind finished", Error: ""}
