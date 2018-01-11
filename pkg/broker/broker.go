@@ -890,14 +890,9 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		}
 	}
 
-	log.Errorf("calling SetBindInstance for %v - [%v]", bindingUUID, bindingInstance)
-
 	if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
-		log.Errorf("FAILED to store bind instance: %v - [%v] %v", bindingUUID.String(), bindingInstance, err)
 		return nil, err
 	}
-
-	log.Errorf("HEY bind was set for %v - [%v]", bindingUUID, bindingInstance)
 
 	// Add the DB Credentials this will allow the apb to use these credentials
 	// if it so chooses.
