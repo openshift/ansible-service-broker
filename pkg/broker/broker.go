@@ -920,11 +920,13 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 			return nil, err
 		}
 
-		a.dao.SetState(instance.ID.String(), apb.JobState{
+		if err := a.dao.SetState(instance.ID.String(), apb.JobState{
 			Token:  token,
 			State:  apb.StateInProgress,
 			Method: apb.JobMethodBind,
-		})
+		}); err != nil {
+			log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
+		}
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// we are synchronous mode
 		// TODO: decide if we need to keep this at all
@@ -1034,6 +1036,14 @@ func (a AnsibleBroker) Unbind(
 		if err != nil {
 			log.Error("Failed to start new job for async unbind\n%s", err.Error())
 			return nil, err
+		}
+
+		if err := a.dao.SetState(serviceInstance.ID.String(), apb.JobState{
+			Token:  token,
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodUnbind,
+		}); err != nil {
+			log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
 		}
 
 		return &UnbindResponse{Operation: token}, nil
