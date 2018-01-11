@@ -1027,6 +1027,7 @@ func (a AnsibleBroker) Unbind(
 	}
 	metrics.ActionStarted("unbind")
 
+	var token string
 	if async && a.brokerConfig.LaunchApbOnBind {
 		// asynchronous mode, required that the launch apb config
 		// entry is on, and that async comes in from the catalog
@@ -1045,8 +1046,6 @@ func (a AnsibleBroker) Unbind(
 		}); err != nil {
 			log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
 		}
-
-		return &UnbindResponse{Operation: token}, nil
 
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// only launch apb if we are always launching the APB.
@@ -1081,6 +1080,9 @@ func (a AnsibleBroker) Unbind(
 		return nil, err
 	}
 
+	if token != "" {
+		return &UnbindResponse{Operation: token}, nil
+	}
 	return &UnbindResponse{}, nil
 }
 
