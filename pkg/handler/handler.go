@@ -243,6 +243,7 @@ func (h handler) getinstance(w http.ResponseWriter, r *http.Request, params map[
 		default: // return 422
 			writeResponse(w, http.StatusUnprocessableEntity, broker.ErrorResponse{Description: err.Error()})
 		}
+		return
 	}
 
 	// planParameterKey is unexported. Using the value here instead of
@@ -477,13 +478,6 @@ func (h handler) getbind(w http.ResponseWriter, r *http.Request, params map[stri
 	}
 
 	log.Debug("handler: binduuid is valid")
-	/*
-		var req *broker.BindRequest
-		if err := readRequest(r, &req); err != nil {
-			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
-			return
-		}
-	*/
 
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
@@ -509,10 +503,11 @@ func (h handler) getbind(w http.ResponseWriter, r *http.Request, params map[stri
 			log.Debug("handler: something went bad during the getbind")
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
 		}
-	} else {
-		log.Debug("handler: bind found")
-		writeDefaultResponse(w, http.StatusOK, resp, err)
+		return
 	}
+
+	log.Debug("handler: bind found")
+	writeDefaultResponse(w, http.StatusOK, resp, err)
 }
 
 func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]string) {
