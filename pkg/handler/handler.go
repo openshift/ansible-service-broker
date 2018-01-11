@@ -268,10 +268,8 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
-	var async bool
-
 	// ignore the error, if async can't be parsed it will be false
-	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	var req *broker.ProvisionRequest
 	err := readRequest(r, &req)
@@ -339,10 +337,8 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
-	var async bool
-
 	// ignore the error, if async can't be parsed it will be false
-	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
 		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
@@ -391,9 +387,8 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		return
 	}
 
-	var async bool
 	// ignore the error, if async can't be parsed it will be false
-	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	planID := r.FormValue("plan_id")
 	if planID == "" {
@@ -537,10 +532,8 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		return
 	}
 
-	var async bool
-
 	// ignore the error, if async can't be parsed it will be false
-	async, _ = strconv.ParseBool(r.FormValue("accepts_incomplete"))
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
 	if !async && h.brokerConfig.GetBool("broker.launch_apb_on_bind") {
 		log.Warning("launch_apb_on_bind is enabled, but accepts_incomplete is false, binding may fail")
@@ -620,6 +613,13 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})
 	}
 
+	// ignore the error, if async can't be parsed it will be false
+	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
+
+	if !async && h.brokerConfig.GetBool("broker.launch_apb_on_bind") {
+		log.Warning("launch_apb_on_bind is enabled, but accepts_incomplete is false, unbinding may fail")
+	}
+
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
 		writeResponse(w, http.StatusGone, nil)
@@ -652,7 +652,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID, nsDeleted)
+	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID, nsDeleted, async)
 
 	if errors.IsNotFound(err) {
 		writeResponse(w, http.StatusGone, resp)

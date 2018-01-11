@@ -28,16 +28,19 @@ import (
 
 // UnbindingJob - Job to provision
 type UnbindingJob struct {
-	serviceInstance *apb.ServiceInstance
-	bindingUUID     uuid.UUID
-	params          *apb.Parameters
+	serviceInstance  *apb.ServiceInstance
+	bindingUUID      uuid.UUID
+	params           *apb.Parameters
+	skipApbExecution bool
 }
 
 // NewUnbindingJob - Create a new binding job.
-func NewUnbindingJob(serviceInstance *apb.ServiceInstance, params *apb.Parameters) *UnbindingJob {
+func NewUnbindingJob(serviceInstance *apb.ServiceInstance, bindingUUID uuid.UUID, params *apb.Parameters, skipApbExecution bool) *UnbindingJob {
 	return &UnbindingJob{
-		serviceInstance: serviceInstance,
-		params:          params,
+		serviceInstance:  serviceInstance,
+		bindingUUID:      bindingUUID,
+		params:           params,
+		skipApbExecution: skipApbExecution,
 	}
 }
 
@@ -45,7 +48,16 @@ func NewUnbindingJob(serviceInstance *apb.ServiceInstance, params *apb.Parameter
 func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.UnbindingJobStarted()
 
-	log.Debug("unbindjob: unbinding job started, calling apb.Unbind")
+	log.Debugf("unbindjob: unbinding job (%v) started, calling apb.Unbind", token)
+
+	if p.skipApbExecution {
+		log.Info("unbinding job (%v) skipping apb execution", token)
+		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
+			BindingUUID: p.bindingUUID.String(), JobToken: token,
+			SpecID: p.serviceInstance.Spec.ID, PodName: "",
+			Msg: "unbind finished, execution skipped", Error: ""}
+		return
+	}
 
 	err := apb.Unbind(p.serviceInstance, p.params)
 
@@ -57,14 +69,6 @@ func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			BindingUUID: p.bindingUUID.String(), JobToken: token,
-			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
-		return
-	}
-
-	// send creds
-	if err != nil {
 		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
 			BindingUUID: p.bindingUUID.String(), JobToken: token,
 			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}

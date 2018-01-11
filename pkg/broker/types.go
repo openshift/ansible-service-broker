@@ -226,7 +226,9 @@ type DeprovisionResponse struct {
 
 // UnbindResponse - Response for unbinding
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#response-5
-type UnbindResponse struct{}
+type UnbindResponse struct {
+	Operation string `json:"operation,omitempty"`
+}
 
 // ErrorResponse - Error response for all broker errors
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#broker-errors

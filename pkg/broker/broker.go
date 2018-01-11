@@ -78,7 +78,7 @@ type Broker interface {
 	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
 	Deprovision(apb.ServiceInstance, string, bool, bool) (*DeprovisionResponse, error)
 	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool) (*BindResponse, error)
-	Unbind(apb.ServiceInstance, uuid.UUID, string, bool) (*UnbindResponse, error)
+	Unbind(apb.ServiceInstance, uuid.UUID, string, bool, bool) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	// TODO: consider returning a struct + error
 	Recover() (string, error)
@@ -984,7 +984,7 @@ func (a AnsibleBroker) buildBindResponse(pCreds, bCreds *apb.ExtractedCredential
 
 // Unbind - unbind a services previous binding
 func (a AnsibleBroker) Unbind(
-	instance apb.ServiceInstance, bindingUUID uuid.UUID, planID string, skipApbExecution bool,
+	instance apb.ServiceInstance, bindingUUID uuid.UUID, planID string, skipApbExecution bool, async bool,
 ) (*UnbindResponse, error) {
 	if planID == "" {
 		errMsg :=
@@ -1024,8 +1024,22 @@ func (a AnsibleBroker) Unbind(
 		params["provision_params"] = *serviceInstance.Parameters
 	}
 	metrics.ActionStarted("unbind")
-	// only launch apb if we are always launching the APB.
-	if a.brokerConfig.LaunchApbOnBind {
+
+	if async && a.brokerConfig.LaunchApbOnBind {
+		// asynchronous mode, required that the launch apb config
+		// entry is on, and that async comes in from the catalog
+		log.Info("ASYNC unbinding in progress")
+		unbindjob := NewUnbindingJob(&serviceInstance, bindingUUID, &params, skipApbExecution)
+		token, err := a.engine.StartNewJob("", unbindjob, UnbindingTopic)
+		if err != nil {
+			log.Error("Failed to start new job for async unbind\n%s", err.Error())
+			return nil, err
+		}
+
+		return &UnbindResponse{Operation: token}, nil
+
+	} else if a.brokerConfig.LaunchApbOnBind {
+		// only launch apb if we are always launching the APB.
 		if skipApbExecution {
 			log.Debug("Skipping unbind apb execution")
 			err = nil

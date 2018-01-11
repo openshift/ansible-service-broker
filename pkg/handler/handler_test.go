@@ -96,7 +96,7 @@ func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest, bo
 	m.called("bind", true)
 	return nil, m.Err
 }
-func (m MockBroker) Unbind(apb.ServiceInstance, uuid.UUID, string, bool) (*broker.UnbindResponse, error) {
+func (m MockBroker) Unbind(apb.ServiceInstance, uuid.UUID, string, bool, bool) (*broker.UnbindResponse, error) {
 	m.called("unbind", true)
 	return nil, m.Err
 }
