@@ -33,7 +33,8 @@
 # 172.17.0.1 if not customized
 #
 
-DOCKER_IP="$(ip addr show docker0 | grep -Po 'inet \K[\d.]+')"
+DOCKER_IP="$(ip addr show docker0 2>/dev/null | grep -Po 'inet \K[\d.]+' 2>/dev/null)"
+
 DOCKER_IP=${DOCKER_IP:-"127.0.0.1"}
 PUBLIC_IP=${PUBLIC_IP:-$DOCKER_IP}
 HOSTNAME=${PUBLIC_IP}.nip.io
