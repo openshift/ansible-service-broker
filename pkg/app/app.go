@@ -369,7 +369,7 @@ func (a *App) Start() {
 	defaultMetrics := routes.DefaultMetrics{}
 	defaultMetrics.Install(genericserver.Handler.NonGoRestfulMux)
 
-	log.Noticef("Listening on https://%s", genericserver.SecureServingInfo.BindAddress)
+	log.Noticef("Listening on https://%s", genericserver.SecureServingInfo.Listener.Addr().String())
 
 	log.Notice("Ansible Service Broker Starting")
 	err = genericserver.PrepareRun().Run(wait.NeverStop)

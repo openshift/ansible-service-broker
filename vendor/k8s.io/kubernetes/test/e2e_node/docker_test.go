@@ -55,12 +55,12 @@ var _ = framework.KubeDescribe("Docker features [Feature:Docker]", func() {
 					Containers: []v1.Container{
 						{
 							Name:    "test-container-1",
-							Image:   imageutils.GetBusyBoxImage(),
+							Image:   "busybox",
 							Command: []string{"/bin/top"},
 						},
 						{
 							Name:    "test-container-2",
-							Image:   imageutils.GetBusyBoxImage(),
+							Image:   "busybox",
 							Command: []string{"/bin/sleep"},
 							Args:    []string{"10000"},
 						},

@@ -35,11 +35,13 @@ import:
   version: dba60db4f499229023f3935df5f2e4ef7b881b00
 
   # Kubernetes dependancies
+- package: k8s.io/kubernetes
+  version: v1.9.1
 - package: k8s.io/client-go
-  version: kubernetes-1.8.5
+  version: kubernetes-1.9.1
 - package: k8s.io/apimachinery
-  version: kubernetes-1.8.5
+  version: kubernetes-1.9.1
 - package: k8s.io/apiserver
-  version: kubernetes-1.8.5
+  version: kubernetes-1.9.1
 - package: github.com/openshift/api
   version: master

@@ -11,7 +11,7 @@ install:
   - go get golang.org/x/tools/cmd/goimports
 
 script:
-  - make verify build
+  - make verify build test
 
 notifications:
   irc: "chat.freenode.net#openshift-dev"

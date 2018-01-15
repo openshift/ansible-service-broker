@@ -3,10 +3,10 @@ package authorization
 import (
 	"fmt"
 
+	api "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 
 	"github.com/openshift/ansible-service-broker/pkg/origin/copy/user/validation"

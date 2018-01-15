@@ -27,7 +27,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	_ "k8s.io/kubernetes/pkg/api/install"
+	_ "k8s.io/kubernetes/pkg/apis/core/install"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -44,7 +44,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"k8s.io/kubernetes/pkg/controller/garbagecollector/metaonly"
 )
 
@@ -58,7 +58,7 @@ func TestGarbageCollectorConstruction(t *testing.T) {
 	config := &restclient.Config{}
 	config.ContentConfig.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: metaonly.NewMetadataCodecFactory()}
 	tweakableRM := meta.NewDefaultRESTMapper(nil, nil)
-	rm := &testRESTMapper{meta.MultiRESTMapper{tweakableRM, api.Registry.RESTMapper()}}
+	rm := &testRESTMapper{meta.MultiRESTMapper{tweakableRM, legacyscheme.Registry.RESTMapper()}}
 	metaOnlyClientPool := dynamic.NewClientPool(config, rm, dynamic.LegacyAPIPathResolverFunc)
 	config.ContentConfig.NegotiatedSerializer = nil
 	clientPool := dynamic.NewClientPool(config, rm, dynamic.LegacyAPIPathResolverFunc)
@@ -172,15 +172,15 @@ type garbageCollector struct {
 
 func setupGC(t *testing.T, config *restclient.Config) garbageCollector {
 	config.ContentConfig.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: metaonly.NewMetadataCodecFactory()}
-	metaOnlyClientPool := dynamic.NewClientPool(config, api.Registry.RESTMapper(), dynamic.LegacyAPIPathResolverFunc)
+	metaOnlyClientPool := dynamic.NewClientPool(config, legacyscheme.Registry.RESTMapper(), dynamic.LegacyAPIPathResolverFunc)
 	config.ContentConfig.NegotiatedSerializer = nil
-	clientPool := dynamic.NewClientPool(config, api.Registry.RESTMapper(), dynamic.LegacyAPIPathResolverFunc)
+	clientPool := dynamic.NewClientPool(config, legacyscheme.Registry.RESTMapper(), dynamic.LegacyAPIPathResolverFunc)
 	podResource := map[schema.GroupVersionResource]struct{}{{Version: "v1", Resource: "pods"}: {}}
 	client := fake.NewSimpleClientset()
 	sharedInformers := informers.NewSharedInformerFactory(client, 0)
 	alwaysStarted := make(chan struct{})
 	close(alwaysStarted)
-	gc, err := NewGarbageCollector(metaOnlyClientPool, clientPool, &testRESTMapper{api.Registry.RESTMapper()}, podResource, ignoredResources, sharedInformers, alwaysStarted)
+	gc, err := NewGarbageCollector(metaOnlyClientPool, clientPool, &testRESTMapper{legacyscheme.Registry.RESTMapper()}, podResource, ignoredResources, sharedInformers, alwaysStarted)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -415,7 +415,7 @@ func TestGCListWatcher(t *testing.T) {
 	testHandler := &fakeActionHandler{}
 	srv, clientConfig := testServerAndClientConfig(testHandler.ServeHTTP)
 	defer srv.Close()
-	clientPool := dynamic.NewClientPool(clientConfig, api.Registry.RESTMapper(), dynamic.LegacyAPIPathResolverFunc)
+	clientPool := dynamic.NewClientPool(clientConfig, legacyscheme.Registry.RESTMapper(), dynamic.LegacyAPIPathResolverFunc)
 	podResource := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
 	client, err := clientPool.ClientForGroupVersionResource(podResource)
 	if err != nil {
@@ -688,7 +688,7 @@ func TestGetDeletableResources(t *testing.T) {
 					// Valid GroupVersion
 					GroupVersion: "apps/v1",
 					APIResources: []metav1.APIResource{
-						{Name: "pods", Namespaced: true, Kind: "Pod", Verbs: metav1.Verbs{"delete"}},
+						{Name: "pods", Namespaced: true, Kind: "Pod", Verbs: metav1.Verbs{"delete", "list", "watch"}},
 						{Name: "services", Namespaced: true, Kind: "Service"},
 					},
 				},
@@ -696,7 +696,14 @@ func TestGetDeletableResources(t *testing.T) {
 					// Invalid GroupVersion, should be ignored
 					GroupVersion: "foo//whatever",
 					APIResources: []metav1.APIResource{
-						{Name: "bars", Namespaced: true, Kind: "Bar", Verbs: metav1.Verbs{"delete"}},
+						{Name: "bars", Namespaced: true, Kind: "Bar", Verbs: metav1.Verbs{"delete", "list", "watch"}},
+					},
+				},
+				{
+					// Valid GroupVersion, missing required verbs, should be ignored
+					GroupVersion: "acme/v1",
+					APIResources: []metav1.APIResource{
+						{Name: "widgets", Namespaced: true, Kind: "Widget", Verbs: metav1.Verbs{"delete"}},
 					},
 				},
 			},
@@ -710,7 +717,7 @@ func TestGetDeletableResources(t *testing.T) {
 				{
 					GroupVersion: "apps/v1",
 					APIResources: []metav1.APIResource{
-						{Name: "pods", Namespaced: true, Kind: "Pod", Verbs: metav1.Verbs{"delete"}},
+						{Name: "pods", Namespaced: true, Kind: "Pod", Verbs: metav1.Verbs{"delete", "list", "watch"}},
 						{Name: "services", Namespaced: true, Kind: "Service"},
 					},
 				},
@@ -725,7 +732,7 @@ func TestGetDeletableResources(t *testing.T) {
 				{
 					GroupVersion: "apps/v1",
 					APIResources: []metav1.APIResource{
-						{Name: "pods", Namespaced: true, Kind: "Pod", Verbs: metav1.Verbs{"delete"}},
+						{Name: "pods", Namespaced: true, Kind: "Pod", Verbs: metav1.Verbs{"delete", "list", "watch"}},
 						{Name: "services", Namespaced: true, Kind: "Service"},
 					},
 				},

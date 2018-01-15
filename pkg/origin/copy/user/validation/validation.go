@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	kvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/api/validation/path"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	kvalidation "k8s.io/kubernetes/pkg/api/validation"
 
 	userapi "github.com/openshift/ansible-service-broker/pkg/origin/copy/user"
 )
