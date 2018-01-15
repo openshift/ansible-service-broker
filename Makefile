@@ -102,6 +102,10 @@ ci: ## Run the CI workflow locally
 	@go get github.com/rthallisey/service-broker-ci/cmd/ci
 	@ci
 
+ci-k:
+	@go get github.com/rthallisey/service-broker-ci/cmd/ci
+	@KUBERNETES="k8s" ci --cluster kubernetes
+
 help: ## Show this help screen
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'
 	@echo ''

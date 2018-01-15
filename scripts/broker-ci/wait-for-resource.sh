@@ -3,11 +3,12 @@
 ACTION=$1
 RESOURCE=$2
 RESOURCE_NAME=$3
+NAMESPACE="${NAMESPACE:-ansible-service-broker}"
 
 if [ "${RESOURCE}" = "pod" ] && [ "${ACTION}" = "create" ]; then
     for r in $(seq 100); do
-	pod=$(oc get pods | grep ${RESOURCE_NAME} | awk $'{ print $3 }')
-	oc get pods -n default | grep ${RESOURCE_NAME}
+	pod=$(kubectl get pods -n $NAMESPACE | grep ${RESOURCE_NAME} | awk '{ print $3 }')
+	kubectl get pods -n $NAMESPACE | grep ${RESOURCE_NAME}
 	if [ "${pod}" = 'Running' ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} is running"
 	    break
@@ -17,7 +18,7 @@ if [ "${RESOURCE}" = "pod" ] && [ "${ACTION}" = "create" ]; then
     done
 elif [ "${ACTION}" = "create" ]; then
     for r in $(seq 100); do
-	oc get ${RESOURCE} | grep ${RESOURCE_NAME}
+	kubectl get ${RESOURCE} -n $NAMESPACE | grep ${RESOURCE_NAME}
 	if [ $? -eq 0 ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} has been created"
 	    break
@@ -27,7 +28,7 @@ elif [ "${ACTION}" = "create" ]; then
     done
 elif [ "${ACTION}" = "delete" ]; then
     for r in $(seq 100); do
-	oc get ${RESOURCE} | grep ${RESOURCE_NAME}
+	kubectl get ${RESOURCE} -n $NAMESPACE | grep ${RESOURCE_NAME}
 	if [ $? -eq 1 ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} has been deleted"
 	    break

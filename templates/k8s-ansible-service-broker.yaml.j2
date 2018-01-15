@@ -257,7 +257,7 @@ spec:
       containers:
         - image: "{{ broker_image }}"
           name: asb
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: config-volume
               mountPath: /etc/ansible-service-broker

@@ -4,9 +4,9 @@ metadata:
   name: postgresql
 spec:
   clusterServiceClassExternalName: dh-postgresql-apb
-  clusterServicePlanExternalName: prod
+  clusterServicePlanExternalName: dev
   parameters:
     postgresql_database: "admin"
     postgresql_password: "admin"
     postgresql_user: "admin"
-    postgresql_version: "9.5"
+    postgresql_version: "9.6"

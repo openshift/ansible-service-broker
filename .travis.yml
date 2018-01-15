@@ -4,21 +4,33 @@ go:
 dist: trusty
 sudo: required
 group: edge
+env:
+  - CHANGE_MINIKUBE_NONE_USER=true
 
-before_install:
-  - ./scripts/travis.sh before_install
-install:
-  - ./scripts/travis.sh install
-before_script:
-  - ./scripts/travis.sh before_script
-  - ./scripts/travis.sh format
-  - ./scripts/travis.sh vet
-  - ./scripts/travis.sh lint
-  - ./scripts/travis.sh build
-  - ./scripts/travis.sh test
-  - ./scripts/travis.sh setup-cluster
-  - ./scripts/travis.sh setup-broker
-script:
-  - ./scripts/travis.sh ci
-  - ./scripts/broker-ci/gather-logs.sh
-  - 'oc get pods --all-namespaces'
+jobs:
+  include:
+    - stage: "OpenShift and Kubernetes CI"
+      before_install:
+        - ./scripts/travis.sh before_install
+      install:
+        - ./scripts/travis.sh install
+      before_script:
+        - ./scripts/travis.sh before_script
+        - ./scripts/travis.sh format
+        - ./scripts/travis.sh vet
+        - ./scripts/travis.sh lint
+        - ./scripts/travis.sh build
+        - ./scripts/travis.sh test
+        - ./scripts/travis.sh setup-cluster
+        - ./scripts/travis.sh setup-broker
+      script:
+        - ./scripts/travis.sh ci
+        - ./scripts/broker-ci/gather-logs.sh
+    -
+      before_script:
+        - ./scripts/travis.sh setup-minikube
+        - ./scripts/travis.sh k8s-catalog
+        - ./scripts/travis.sh k8s-broker
+      script:
+        - ./scripts/travis.sh k8s-ci
+        - ./scripts/broker-ci/gather-logs.sh
