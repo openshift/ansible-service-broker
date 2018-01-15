@@ -52,6 +52,8 @@ Let's walk through an `oc cluster up` based setup.
 1. You will need a system setup for local [OpenShift Origin Cluster Management](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md)
     * Your OpenShift Client binary (`oc`) must be `>=` [v3.7.0-rc.0](https://github.com/openshift/origin/releases/tag/v3.7.0-rc.0)
 
+2. If you are using minishift you should look at the [minishift](https://github.com/openshift/ansible-service-broker/blob/master/docs/minishift.md) documentation to get the ansible service broker deployed and running.
+
 ## Deploy an OpenShift Origin Cluster with the Ansible Service Broker
 
 [![Watch the full asciicast](docs/images/run_latest.gif)](https://asciinema.org/a/134509)
