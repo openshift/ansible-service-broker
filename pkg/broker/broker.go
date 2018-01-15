@@ -995,6 +995,15 @@ func (a AnsibleBroker) Unbind(
 		return nil, errors.New(errMsg)
 	}
 
+	// Check if the binding exists
+	_, err := a.dao.GetBindInstance(bindingUUID.String())
+	if err != nil {
+		if client.IsKeyNotFound(err) {
+			return nil, ErrorNotFound
+		}
+		return nil, err
+	}
+
 	params := make(apb.Parameters)
 	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
@@ -1054,6 +1063,7 @@ func (a AnsibleBroker) Unbind(
 			log.Debug("Skipping unbind apb execution")
 			err = nil
 		} else {
+			log.Debug("Launching apb for unbind in blocking mode")
 			err = apb.Unbind(&serviceInstance, &params)
 		}
 		if err != nil {

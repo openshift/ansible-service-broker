@@ -28,7 +28,6 @@ import (
 	"strings"
 
 	yaml "gopkg.in/yaml.v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 
@@ -639,11 +638,19 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 
 	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID, nsDeleted, async)
 
-	if errors.IsNotFound(err) {
-		writeResponse(w, http.StatusGone, resp)
-	} else {
-		writeDefaultResponse(w, http.StatusOK, resp, err)
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound: // return 404
+			log.Debugf("Binding not found.")
+			writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
+		default: // return 500
+			log.Errorf("Unknown error: %v", err)
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		}
+		return
 	}
+
+	writeDefaultResponse(w, http.StatusOK, resp, err)
 	return
 }
 
