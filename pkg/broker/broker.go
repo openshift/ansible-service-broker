@@ -931,7 +931,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		// asynchronous mode, requires that the launch apb config
 		// entry is on, and that async comes in from the catalog
 		log.Info("ASYNC binding in progress")
-		bindjob := NewBindingJob(&instance, bindingUUID, &params)
+		bindjob := NewBindingJob(&instance, bindingUUID, &params, apb.Bind)
 
 		token, err = a.engine.StartNewJob("", bindjob, BindingTopic)
 		if err != nil {
@@ -1052,7 +1052,7 @@ func (a AnsibleBroker) Unbind(
 		// asynchronous mode, required that the launch apb config
 		// entry is on, and that async comes in from the catalog
 		log.Info("ASYNC unbinding in progress")
-		unbindjob := NewUnbindingJob(&serviceInstance, &bindInstance, &params, skipApbExecution)
+		unbindjob := NewUnbindingJob(&serviceInstance, &bindInstance, &params, apb.Unbind, skipApbExecution)
 		token, jerr = a.engine.StartNewJob("", unbindjob, UnbindingTopic)
 		if jerr != nil {
 			log.Error("Failed to start new job for async unbind\n%s", jerr.Error())

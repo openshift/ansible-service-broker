@@ -332,3 +332,9 @@ type ExecutionContext struct {
 
 // Provisioner defines a function that knows how to provision an apb
 type Provisioner func(si *ServiceInstance) (string, *ExtractedCredentials, error)
+
+// Binder defines a function that knows how to perform a binding
+type Binder func(si *ServiceInstance, params *Parameters) (string, *ExtractedCredentials, error)
+
+// UnBinder defines a function that knows how to perform a unbinding
+type UnBinder func(si *ServiceInstance, params *Parameters) error
