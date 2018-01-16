@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.4
+Version: 1.1.5
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,31 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Jan 16 2018 David Zager <david.j.zager@gmail.com> 1.1.5-1
+- Bug 1534715 - unbind checks for existence of binding before trying to delete
+  it (#642) (mhrivnak@hrivnak.org)
+- quiet errors related to docker0 address (#641) (Shawn.Hurley21@gmail.com)
+- Bug 1526949 - Set registry user/pass if auth_type is not defined (#635)
+  (dymurray@redhat.com)
+- Openshift Multi-tenant Sandbox Hooks (#600) (Shawn.Hurley21@gmail.com)
+- Async bind feature (#625) (jmrodri@gmail.com)
+- Fix debug statement for ISV registry to be more verbose (#633)
+  (dymurray@redhat.com)
+- Add minishift documentation (#627) (ernelson@redhat.com)
+- Update config doc to document storing creds in a secret (#628)
+  (dymurray@redhat.com)
+- Bug 588 - Run latest build with a default public ip. (#626)
+  (Shawn.Hurley21@gmail.com)
+- Bug 1533208 - Re adding registry auth as secrets and files (#629)
+  (Shawn.Hurley21@gmail.com)
+- fixing handler tests in master branch (#630) (Shawn.Hurley21@gmail.com)
+- uses "exec" so bash process gets replaced instead of retained (#624)
+  (mhrivnak@hrivnak.org)
+- Bug 1472226 - Add additional field validations for JSON Schema. (#615)
+  (cchase@redhat.com)
+- fixes typo in a log statement (#622) (mhrivnak@hrivnak.org)
+- Add 3.8/3.9 releasers to tito (#620) (david.j.zager@gmail.com)
+
 * Mon Jan 08 2018 David Zager <david.j.zager@gmail.com> 1.1.4-1
 - Use the router prefix for apb tool endpoints (#616) (rhallise@redhat.com)
 - Bug 1526887 - Handle case when whitelist/blacklist set to "" (#609)
