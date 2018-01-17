@@ -606,7 +606,23 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
-		writeResponse(w, http.StatusGone, nil)
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusGone, nil)
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		}
+		return
+	}
+
+	bindInstance, err := h.broker.GetBindInstance(bindingUUID)
+	if err != nil {
+		switch err {
+		case broker.ErrorNotFound:
+			writeResponse(w, http.StatusGone, nil)
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+		}
 		return
 	}
 
@@ -636,7 +652,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, err := h.broker.Unbind(serviceInstance, bindingUUID, planID, nsDeleted, async)
+	resp, err := h.broker.Unbind(serviceInstance, bindInstance, planID, nsDeleted, async)
 
 	if err != nil {
 		switch err {

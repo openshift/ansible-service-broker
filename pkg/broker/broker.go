@@ -78,11 +78,12 @@ type Broker interface {
 	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
 	Deprovision(apb.ServiceInstance, string, bool, bool) (*DeprovisionResponse, error)
 	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool) (*BindResponse, error)
-	Unbind(apb.ServiceInstance, uuid.UUID, string, bool, bool) (*UnbindResponse, error)
+	Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	// TODO: consider returning a struct + error
 	Recover() (string, error)
 	GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error)
+	GetBindInstance(uuid.UUID) (apb.BindInstance, error)
 	GetBind(apb.ServiceInstance, uuid.UUID) (*BindResponse, error)
 }
 
@@ -154,6 +155,18 @@ func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceIn
 	}
 	return *instance, nil
 
+}
+
+// GetBindInstance - retrieve the bind instance for a bindUUID
+func (a AnsibleBroker) GetBindInstance(bindUUID uuid.UUID) (apb.BindInstance, error) {
+	instance, err := a.dao.GetBindInstance(bindUUID.String())
+	if err != nil {
+		if client.IsKeyNotFound(err) {
+			return apb.BindInstance{}, ErrorNotFound
+		}
+		return apb.BindInstance{}, err
+	}
+	return *instance, nil
 }
 
 // Bootstrap - Loads all known specs from a registry into local storage for reference
@@ -986,7 +999,7 @@ func (a AnsibleBroker) buildBindResponse(pCreds, bCreds *apb.ExtractedCredential
 
 // Unbind - unbind a services previous binding
 func (a AnsibleBroker) Unbind(
-	instance apb.ServiceInstance, bindingUUID uuid.UUID, planID string, skipApbExecution bool, async bool,
+	instance apb.ServiceInstance, bindInstance apb.BindInstance, planID string, skipApbExecution bool, async bool,
 ) (*UnbindResponse, error) {
 	if planID == "" {
 		errMsg :=
@@ -995,21 +1008,12 @@ func (a AnsibleBroker) Unbind(
 		return nil, errors.New(errMsg)
 	}
 
-	// Check if the binding exists
-	_, err := a.dao.GetBindInstance(bindingUUID.String())
-	if err != nil {
-		if client.IsKeyNotFound(err) {
-			return nil, ErrorNotFound
-		}
-		return nil, err
-	}
-
 	params := make(apb.Parameters)
 	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
 		return nil, err
 	}
-	bindExtCreds, err := a.dao.GetExtractedCredentials(bindingUUID.String())
+	bindExtCreds, err := a.dao.GetExtractedCredentials(bindInstance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
 		return nil, err
 	}
@@ -1018,7 +1022,7 @@ func (a AnsibleBroker) Unbind(
 	if provExtCreds == nil && bindExtCreds == nil {
 		log.Warningf("Unable to find credentials for instance id: %v and binding id: %v"+
 			" something may have gone wrong. Proceeding with unbind.",
-			instance.ID, bindingUUID)
+			instance.ID, bindInstance.ID)
 	}
 	if provExtCreds != nil {
 		params[provisionCredentialsKey] = provExtCreds.Credentials
@@ -1042,7 +1046,7 @@ func (a AnsibleBroker) Unbind(
 		// asynchronous mode, required that the launch apb config
 		// entry is on, and that async comes in from the catalog
 		log.Info("ASYNC unbinding in progress")
-		unbindjob := NewUnbindingJob(&serviceInstance, bindingUUID, &params, skipApbExecution)
+		unbindjob := NewUnbindingJob(&serviceInstance, &bindInstance, &params, skipApbExecution)
 		token, jerr = a.engine.StartNewJob("", unbindjob, UnbindingTopic)
 		if jerr != nil {
 			log.Error("Failed to start new job for async unbind\n%s", jerr.Error())
@@ -1074,18 +1078,18 @@ func (a AnsibleBroker) Unbind(
 	}
 
 	if bindExtCreds != nil {
-		err = a.dao.DeleteExtractedCredentials(bindingUUID.String())
+		err = a.dao.DeleteExtractedCredentials(bindInstance.ID.String())
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err = a.dao.DeleteBindInstance(bindingUUID.String())
+	err = a.dao.DeleteBindInstance(bindInstance.ID.String())
 	if err != nil {
 		return nil, err
 	}
 
-	serviceInstance.RemoveBinding(bindingUUID)
+	serviceInstance.RemoveBinding(bindInstance.ID)
 	err = a.dao.SetServiceInstance(instance.ID.String(), &serviceInstance)
 	if err != nil {
 		return nil, err

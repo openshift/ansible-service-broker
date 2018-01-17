@@ -23,22 +23,21 @@ package broker
 import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
-	"github.com/pborman/uuid"
 )
 
 // UnbindingJob - Job to provision
 type UnbindingJob struct {
 	serviceInstance  *apb.ServiceInstance
-	bindingUUID      uuid.UUID
+	bindInstance     *apb.BindInstance
 	params           *apb.Parameters
 	skipApbExecution bool
 }
 
 // NewUnbindingJob - Create a new binding job.
-func NewUnbindingJob(serviceInstance *apb.ServiceInstance, bindingUUID uuid.UUID, params *apb.Parameters, skipApbExecution bool) *UnbindingJob {
+func NewUnbindingJob(serviceInstance *apb.ServiceInstance, bindInstance *apb.BindInstance, params *apb.Parameters, skipApbExecution bool) *UnbindingJob {
 	return &UnbindingJob{
 		serviceInstance:  serviceInstance,
-		bindingUUID:      bindingUUID,
+		bindInstance:     bindInstance,
 		params:           params,
 		skipApbExecution: skipApbExecution,
 	}
@@ -50,12 +49,20 @@ func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 	log.Debugf("unbindjob: unbinding job (%v) started, calling apb.Unbind", token)
 
+	msg := JobMsg{
+		InstanceUUID: p.serviceInstance.ID.String(),
+		BindingUUID:  p.bindInstance.ID.String(),
+		JobToken:     token,
+		SpecID:       p.serviceInstance.Spec.ID,
+		PodName:      "",
+		Msg:          "",
+		Error:        "",
+	}
+
 	if p.skipApbExecution {
 		log.Info("unbinding job (%v) skipping apb execution", token)
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			BindingUUID: p.bindingUUID.String(), JobToken: token,
-			SpecID: p.serviceInstance.Spec.ID, PodName: "",
-			Msg: "unbind finished, execution skipped", Error: ""}
+		msg.Msg = "unbind finished, execution skipped"
+		msgBuffer <- msg
 		return
 	}
 
@@ -69,14 +76,12 @@ func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			BindingUUID: p.bindingUUID.String(), JobToken: token,
-			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
+		msg.Error = err.Error()
+		msgBuffer <- msg
 		return
 	}
 
 	log.Debug("unbindjob: Looks like we're done")
-	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-		BindingUUID: p.bindingUUID.String(), JobToken: token,
-		SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "unbind finished", Error: ""}
+	msg.Msg = "unbind finished"
+	msgBuffer <- msg
 }
