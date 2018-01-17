@@ -130,6 +130,7 @@ func apiServer(config *config.Config,
 
 	log.Debug("Creating k8s apiserver")
 	s := informers.NewSharedInformerFactory(k8s.Client, 2*time.Hour)
+	metav1.AddToGroupVersion(Scheme, metav1.Unversioned)
 	return serverConfig.Complete(s).New("ansible-service-broker", genericapiserver.EmptyDelegate)
 }
 
