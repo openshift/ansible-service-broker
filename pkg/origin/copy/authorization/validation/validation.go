@@ -6,9 +6,10 @@ import (
 
 	kapi "k8s.io/api/core/v1"
 	kapihelper "k8s.io/apimachinery/pkg/api/equality"
+	kvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/api/validation/path"
 	unversionedvalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
-	kvalidation "k8s.io/apimachinery/pkg/util/validation"
+	kutilvalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	authorizationapi "github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
@@ -367,7 +368,7 @@ func validateRoleBinding(roleBinding *authorizationapi.RoleBinding, isNamespaced
 	allErrs = append(allErrs, kvalidation.ValidateObjectMeta(&roleBinding.ObjectMeta, isNamespaced, path.ValidatePathSegmentName, fldPath.Child("metadata"))...)
 
 	// roleRef namespace is empty when referring to global policy.
-	if (len(roleBinding.RoleRef.Namespace) > 0) && len(kvalidation.IsDNS1123Subdomain(roleBinding.RoleRef.Namespace)) != 0 {
+	if (len(roleBinding.RoleRef.Namespace) > 0) && len(kutilvalidation.IsDNS1123Subdomain(roleBinding.RoleRef.Namespace)) != 0 {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("roleRef", "namespace"), roleBinding.RoleRef.Namespace, "roleRef.namespace must be a valid subdomain"))
 	}
 
