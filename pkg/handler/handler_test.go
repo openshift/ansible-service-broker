@@ -359,7 +359,7 @@ func TestBindDuplicate(t *testing.T) {
 }
 
 func TestBindAlreadyProvisioned(t *testing.T) {
-	testhandler, w, r, params := buildBindHandler(uuid.New(), broker.ErrorAlreadyProvisioned)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), broker.ErrorBindingExists)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 200, "should've been an OK ")
 }

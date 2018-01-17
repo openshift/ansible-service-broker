@@ -565,7 +565,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		switch err {
 		case broker.ErrorDuplicate:
 			writeResponse(w, http.StatusConflict, broker.BindResponse{})
-		case broker.ErrorAlreadyProvisioned:
+		case broker.ErrorBindingExists:
 			writeResponse(w, http.StatusOK, resp)
 		case broker.ErrorNotFound:
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})

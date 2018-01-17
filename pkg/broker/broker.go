@@ -42,7 +42,9 @@ var (
 	ErrorDuplicate = errors.New("duplicate instance")
 	// ErrorNotFound  - Error for when a service instance is not found. (either etcd or kubernetes)
 	ErrorNotFound = errors.New("not found")
-	// ErrorBindingExists - Error for when deprovision is called on a service instance with active bindings
+	// ErrorBindingExists - Error for when deprovision is called on a service
+	// instance with active bindings, or bind requested for already-existing
+	// binding
 	ErrorBindingExists = errors.New("binding exists")
 	// ErrorProvisionInProgress - Error for when provision is called on a service instance that has a provision job in progress
 	ErrorProvisionInProgress = errors.New("provision in progress")
@@ -894,7 +896,11 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 				}
 				log.Debug("already have this binding instance, returning 200")
 				// since we have this already, we can set async to false
-				return a.buildBindResponse(provExtCreds, bindExtCreds, false, "")
+				resp, err := a.buildBindResponse(provExtCreds, bindExtCreds, false, "")
+				if err != nil {
+					return nil, err
+				}
+				return resp, ErrorBindingExists
 			}
 
 			// parameters are different
