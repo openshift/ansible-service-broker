@@ -96,7 +96,7 @@ func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest, bo
 	m.called("bind", true)
 	return nil, m.Err
 }
-func (m MockBroker) Unbind(apb.ServiceInstance, uuid.UUID, string, bool, bool) (*broker.UnbindResponse, error) {
+func (m MockBroker) Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*broker.UnbindResponse, error) {
 	m.called("unbind", true)
 	return nil, m.Err
 }
@@ -107,6 +107,10 @@ func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*bro
 
 func (m MockBroker) GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error) {
 	return apb.ServiceInstance{}, nil
+}
+
+func (m MockBroker) GetBindInstance(uuid.UUID) (apb.BindInstance, error) {
+	return apb.BindInstance{}, nil
 }
 
 func (m MockBroker) Recover() (string, error) {
