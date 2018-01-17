@@ -1,8 +1,8 @@
 package user
 
 import (
+	kapi "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kapi "k8s.io/kubernetes/pkg/api"
 )
 
 // Auth system gets identity name and provider

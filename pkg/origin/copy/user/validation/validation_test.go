@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	userapi "github.com/openshift/ansible-service-broker/pkg/origin/copy/user"
+	kapi "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kapi "k8s.io/kubernetes/pkg/api"
 )
 
 func TestValidateGroup(t *testing.T) {

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	kapi "k8s.io/api/core/v1"
+	kapihelper "k8s.io/apimachinery/pkg/api/equality"
+	kvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/api/validation/path"
 	unversionedvalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
-	kvalidation "k8s.io/apimachinery/pkg/util/validation"
+	kutilvalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	kapi "k8s.io/kubernetes/pkg/api"
-	kapihelper "k8s.io/kubernetes/pkg/api/helper"
-	"k8s.io/kubernetes/pkg/api/validation"
 
 	authorizationapi "github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 	uservalidation "github.com/openshift/ansible-service-broker/pkg/origin/copy/user/validation"
@@ -151,7 +151,7 @@ func ValidatePolicy(policy *authorizationapi.Policy, isNamespaced bool) field.Er
 }
 
 func validatePolicy(policy *authorizationapi.Policy, isNamespaced, skipRoleValidation bool) field.ErrorList {
-	allErrs := validation.ValidateObjectMeta(&policy.ObjectMeta, isNamespaced, ValidatePolicyName, field.NewPath("metadata"))
+	allErrs := kvalidation.ValidateObjectMeta(&policy.ObjectMeta, isNamespaced, ValidatePolicyName, field.NewPath("metadata"))
 
 	rolePath := field.NewPath("roles")
 	for roleKey, role := range policy.Roles {
@@ -177,7 +177,7 @@ func ValidatePolicyUpdate(policy *authorizationapi.Policy, oldPolicy *authorizat
 	// We skip role validation here because we handle it below
 	// It needs to based on if the role is an existing one vs. a new one
 	allErrs := validatePolicy(policy, isNamespaced, true)
-	allErrs = append(allErrs, validation.ValidateObjectMetaUpdate(&policy.ObjectMeta, &oldPolicy.ObjectMeta, field.NewPath("metadata"))...)
+	allErrs = append(allErrs, kvalidation.ValidateObjectMetaUpdate(&policy.ObjectMeta, &oldPolicy.ObjectMeta, field.NewPath("metadata"))...)
 	rolePath := field.NewPath("roles")
 	for roleKey, role := range policy.Roles {
 		if role == nil {
@@ -195,7 +195,7 @@ func ValidatePolicyUpdate(policy *authorizationapi.Policy, oldPolicy *authorizat
 }
 
 // PolicyBindingNameValidator -
-func PolicyBindingNameValidator(policyRefNamespace string) validation.ValidateNameFunc {
+func PolicyBindingNameValidator(policyRefNamespace string) kvalidation.ValidateNameFunc {
 	return func(name string, prefix bool) []string {
 		if reasons := path.ValidatePathSegmentName(name, prefix); len(reasons) != 0 {
 			return reasons
@@ -231,7 +231,7 @@ func ValidateClusterPolicyBindingUpdate(policy *authorizationapi.ClusterPolicyBi
 
 // ValidatePolicyBinding -
 func ValidatePolicyBinding(policyBinding *authorizationapi.PolicyBinding, isNamespaced bool) field.ErrorList {
-	allErrs := validation.ValidateObjectMeta(&policyBinding.ObjectMeta, isNamespaced, PolicyBindingNameValidator(policyBinding.PolicyRef.Namespace), field.NewPath("metadata"))
+	allErrs := kvalidation.ValidateObjectMeta(&policyBinding.ObjectMeta, isNamespaced, PolicyBindingNameValidator(policyBinding.PolicyRef.Namespace), field.NewPath("metadata"))
 
 	if !isNamespaced {
 		if len(policyBinding.PolicyRef.Namespace) > 0 {
@@ -263,7 +263,7 @@ func ValidatePolicyBinding(policyBinding *authorizationapi.PolicyBinding, isName
 // ValidatePolicyBindingUpdate -
 func ValidatePolicyBindingUpdate(policyBinding *authorizationapi.PolicyBinding, oldPolicyBinding *authorizationapi.PolicyBinding, isNamespaced bool) field.ErrorList {
 	allErrs := ValidatePolicyBinding(policyBinding, isNamespaced)
-	allErrs = append(allErrs, validation.ValidateObjectMetaUpdate(&policyBinding.ObjectMeta, &oldPolicyBinding.ObjectMeta, field.NewPath("metadata"))...)
+	allErrs = append(allErrs, kvalidation.ValidateObjectMetaUpdate(&policyBinding.ObjectMeta, &oldPolicyBinding.ObjectMeta, field.NewPath("metadata"))...)
 
 	if oldPolicyBinding.PolicyRef.Namespace != policyBinding.PolicyRef.Namespace {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("policyRef", "namespace"), policyBinding.PolicyRef.Namespace, "cannot change policyRef"))
@@ -298,7 +298,7 @@ func ValidateRole(role *authorizationapi.Role, isNamespaced bool) field.ErrorLis
 }
 
 func validateRole(role *authorizationapi.Role, isNamespaced bool, fldPath *field.Path) field.ErrorList {
-	allErrs := validation.ValidateObjectMeta(&role.ObjectMeta, isNamespaced, path.ValidatePathSegmentName, fldPath.Child("metadata"))
+	allErrs := kvalidation.ValidateObjectMeta(&role.ObjectMeta, isNamespaced, path.ValidatePathSegmentName, fldPath.Child("metadata"))
 	rulesPath := fldPath.Child("rules")
 	for i, rule := range role.Rules {
 		if rule.AttributeRestrictions != nil {
@@ -312,14 +312,14 @@ func validateRole(role *authorizationapi.Role, isNamespaced bool, fldPath *field
 func ValidateRoleUpdate(role *authorizationapi.Role, oldRole *authorizationapi.Role, isNamespaced bool, fldPath *field.Path) field.ErrorList {
 	allErrs := validateRoleUpdate(role, oldRole, isNamespaced, fldPath)
 	// We can use ValidateObjectMetaUpdate here because we know that we are validating a single role, and not a role embedded inside a policy object
-	allErrs = append(allErrs, validation.ValidateObjectMetaUpdate(&role.ObjectMeta, &oldRole.ObjectMeta, fldPath.Child("metadata"))...)
+	allErrs = append(allErrs, kvalidation.ValidateObjectMetaUpdate(&role.ObjectMeta, &oldRole.ObjectMeta, fldPath.Child("metadata"))...)
 	return allErrs
 }
 
 func validateRoleUpdate(role *authorizationapi.Role, oldRole *authorizationapi.Role, isNamespaced bool, fldPath *field.Path) field.ErrorList {
 	// We use ValidateObjectMeta here because roles embedded inside of policy objects are not guaranteed to
 	// have a resource version and thus will fail the policy's validation if ValidateObjectMetaUpdate was used
-	allErrs := validation.ValidateObjectMeta(&role.ObjectMeta, isNamespaced, path.ValidatePathSegmentName, fldPath.Child("metadata"))
+	allErrs := kvalidation.ValidateObjectMeta(&role.ObjectMeta, isNamespaced, path.ValidatePathSegmentName, fldPath.Child("metadata"))
 	rulesPath := fldPath.Child("rules")
 	for i, rule := range role.Rules {
 		if rule.AttributeRestrictions != nil && isNewRule(rule, oldRole) {
@@ -365,10 +365,10 @@ func ValidateRoleBinding(roleBinding *authorizationapi.RoleBinding, isNamespaced
 
 func validateRoleBinding(roleBinding *authorizationapi.RoleBinding, isNamespaced bool, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, validation.ValidateObjectMeta(&roleBinding.ObjectMeta, isNamespaced, path.ValidatePathSegmentName, fldPath.Child("metadata"))...)
+	allErrs = append(allErrs, kvalidation.ValidateObjectMeta(&roleBinding.ObjectMeta, isNamespaced, path.ValidatePathSegmentName, fldPath.Child("metadata"))...)
 
 	// roleRef namespace is empty when referring to global policy.
-	if (len(roleBinding.RoleRef.Namespace) > 0) && len(kvalidation.IsDNS1123Subdomain(roleBinding.RoleRef.Namespace)) != 0 {
+	if (len(roleBinding.RoleRef.Namespace) > 0) && len(kutilvalidation.IsDNS1123Subdomain(roleBinding.RoleRef.Namespace)) != 0 {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("roleRef", "namespace"), roleBinding.RoleRef.Namespace, "roleRef.namespace must be a valid subdomain"))
 	}
 
@@ -409,7 +409,7 @@ func validateRoleBindingSubject(subject kapi.ObjectReference, isNamespaced bool,
 
 	switch subject.Kind {
 	case authorizationapi.ServiceAccountKind:
-		if reasons := validation.ValidateServiceAccountName(subject.Name, false); len(subject.Name) > 0 && len(reasons) != 0 {
+		if reasons := kvalidation.ValidateServiceAccountName(subject.Name, false); len(subject.Name) > 0 && len(reasons) != 0 {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), subject.Name, strings.Join(reasons, ", ")))
 		}
 		if !isNamespaced && len(subject.Namespace) == 0 {
@@ -427,7 +427,7 @@ func validateRoleBindingSubject(subject kapi.ObjectReference, isNamespaced bool,
 		}
 
 	case authorizationapi.SystemUserKind:
-		isValidSAName := len(validation.ValidateServiceAccountName(subject.Name, false)) == 0
+		isValidSAName := len(kvalidation.ValidateServiceAccountName(subject.Name, false)) == 0
 		isValidUserName := len(uservalidation.ValidateUserName(subject.Name, false)) == 0
 		if isValidSAName || isValidUserName {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), subject.Name, "conforms to User.name or ServiceAccount.name restrictions"))
@@ -448,7 +448,7 @@ func validateRoleBindingSubject(subject kapi.ObjectReference, isNamespaced bool,
 // ValidateRoleBindingUpdate -
 func ValidateRoleBindingUpdate(roleBinding *authorizationapi.RoleBinding, oldRoleBinding *authorizationapi.RoleBinding, isNamespaced bool) field.ErrorList {
 	allErrs := ValidateRoleBinding(roleBinding, isNamespaced)
-	allErrs = append(allErrs, validation.ValidateObjectMetaUpdate(&roleBinding.ObjectMeta, &oldRoleBinding.ObjectMeta, field.NewPath("metadata"))...)
+	allErrs = append(allErrs, kvalidation.ValidateObjectMetaUpdate(&roleBinding.ObjectMeta, &oldRoleBinding.ObjectMeta, field.NewPath("metadata"))...)
 
 	if oldRoleBinding.RoleRef != roleBinding.RoleRef {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("roleRef"), roleBinding.RoleRef, "cannot change roleRef"))
@@ -459,8 +459,8 @@ func ValidateRoleBindingUpdate(roleBinding *authorizationapi.RoleBinding, oldRol
 
 // ValidateRoleBindingRestriction -
 func ValidateRoleBindingRestriction(rbr *authorizationapi.RoleBindingRestriction) field.ErrorList {
-	allErrs := validation.ValidateObjectMeta(&rbr.ObjectMeta, true,
-		validation.NameIsDNSSubdomain, field.NewPath("metadata"))
+	allErrs := kvalidation.ValidateObjectMeta(&rbr.ObjectMeta, true,
+		kvalidation.NameIsDNSSubdomain, field.NewPath("metadata"))
 
 	allErrs = append(allErrs,
 		ValidateRoleBindingRestrictionSpec(&rbr.Spec, field.NewPath("spec"))...)
@@ -472,7 +472,7 @@ func ValidateRoleBindingRestriction(rbr *authorizationapi.RoleBindingRestriction
 func ValidateRoleBindingRestrictionUpdate(rbr, old *authorizationapi.RoleBindingRestriction) field.ErrorList {
 	allErrs := ValidateRoleBindingRestriction(rbr)
 
-	allErrs = append(allErrs, validation.ValidateObjectMetaUpdate(&rbr.ObjectMeta,
+	allErrs = append(allErrs, kvalidation.ValidateObjectMetaUpdate(&rbr.ObjectMeta,
 		&old.ObjectMeta, field.NewPath("metadata"))...)
 
 	return allErrs

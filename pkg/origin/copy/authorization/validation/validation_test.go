@@ -3,9 +3,9 @@ package validation
 import (
 	"testing"
 
+	kapi "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	kapi "k8s.io/kubernetes/pkg/api"
 
 	authorizationapi "github.com/openshift/ansible-service-broker/pkg/origin/copy/authorization"
 )
