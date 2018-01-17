@@ -57,7 +57,32 @@ function catalog-logs {
     log-footer "catalog-logs"
 }
 
+function print-pod-errors {
+    log-header "pod-errors"
+    pods=$(kubectl get pods --all-namespaces --no-headers | awk '{ print $2 }')
+
+    for pod in $pods; do
+	namespace=$(kubectl get pods  --all-namespaces --no-headers | grep $pod | awk '{ print $1 }')
+	status=$(kubectl get pods $pod -n $namespace --no-headers | awk '{ print $3 }')
+
+	echo $pod
+	case "${status}" in
+	    "ImagePullBackOff")
+		kubectl describe pod $pod -n $namespace
+		;;
+	    "ErrImagePull")
+		kubectl describe pod $pod -n $namespace
+		;;
+	    "Error")
+		kubectl logs $pod -n $namespace
+		;;
+	esac
+    done
+    log-footer "pod-errors"
+}
+
 function print-all-logs {
+    print-pod-errors
     wait-logs
     pod-logs
     secret-logs
