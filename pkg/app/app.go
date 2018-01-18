@@ -251,7 +251,8 @@ func CreateApp() App {
 	}
 	log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
-	apb.InitializeSecretsCache(app.config.GetSubConfig("secrets"))
+	apb.InitializeSecretsCache(app.config.GetSubConfigArray("secrets"))
+
 	log.Debug("Creating AnsibleBroker")
 	// Intiialize the cluster config.
 	apb.InitializeClusterConfig(app.config.GetSubConfig("openshift"))

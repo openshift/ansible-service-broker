@@ -17,7 +17,6 @@
 package apb
 
 import (
-	"fmt"
 	"sync"
 
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -102,12 +101,12 @@ func match(spec *Spec, rule AssociationRule) bool {
 
 // InitializeSecretsCache - Generates AssociationRules from config and
 // initializes the global secrets cache
-func InitializeSecretsCache(conf *config.Config) {
+func InitializeSecretsCache(secretConfigs []*config.Config) {
 	rules := []AssociationRule{}
-	for name := range conf.ToMap() {
+	for _, secretConfig := range secretConfigs {
 		rules = append(rules, AssociationRule{
-			apbName: conf.GetString(fmt.Sprintf("%v.%v", name, "apb_name")),
-			secret:  conf.GetString(fmt.Sprintf("%v.%v", name, "secret")),
+			apbName: secretConfig.GetString("apb_name"),
+			secret:  secretConfig.GetString("secret"),
 		})
 	}
 	secrets = secretsCache{
