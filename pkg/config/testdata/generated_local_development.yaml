@@ -42,3 +42,6 @@ broker:
   testInt: 100
   testFloat32: 32.87
   testFloat64: 45677.0799485958595
+  new_object:
+    key: value1
+    key2: value2

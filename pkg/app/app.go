@@ -200,16 +200,17 @@ func CreateApp() App {
 	}
 
 	log.Debug("Connecting Registry")
-	for name := range app.config.GetSubConfig("registry").ToMap() {
-		reg, err := registries.NewRegistry(app.config.GetSubConfig(fmt.Sprintf("%v.%v", "registry", name)),
-			app.config.GetString("openshift.namespace"))
+	for _, config := range app.config.GetSubConfigArray("registry") {
+		reg, err := registries.NewRegistry(config, app.config.GetString("openshift.namespace"))
 		if err != nil {
 			log.Errorf(
-				"Failed to initialize %v Registry err - %v \n", name, err)
+				"Failed to initialize %v Registry err - %v \n", config.GetString("name"), err)
 			os.Exit(1)
 		}
 		app.registry = append(app.registry, reg)
 	}
+
+	validateRegistryNames(app.registry)
 
 	log.Debug("Initializing WorkEngine")
 	app.engine = broker.NewWorkEngine(MsgBufferSize)
@@ -447,5 +448,15 @@ func convertAPIRbacToK8SRbac(apiRole *apirbac.ClusterRole) *rbac.ClusterRole {
 		TypeMeta:   apiRole.TypeMeta,
 		ObjectMeta: apiRole.ObjectMeta,
 		Rules:      rules,
+	}
+}
+
+func validateRegistryNames(registrys []registries.Registry) {
+	names := map[string]bool{}
+	for _, registry := range registrys {
+		if _, ok := names[registry.RegistryName()]; ok {
+			panic(fmt.Sprintf("Name of registry: %v must be unique", registry.RegistryName()))
+		}
+		names[registry.RegistryName()] = true
 	}
 }

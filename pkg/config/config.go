@@ -176,6 +176,48 @@ func (c *Config) GetSubConfig(key string) *Config {
 	}
 }
 
+// GetSubConfigArray - Retrieve an array of sub configs
+// Example
+// - name: key
+//   - key: value
+//     key1: value1
+//   - key: newvalue
+//     key1: newvalue1
+// [Config{key: value, key1: value1}, Config{key: newvalue, key1: newvalue1}]
+func (c *Config) GetSubConfigArray(key string) []*Config {
+	c.mutex.RLock()
+	subMap := createNewMap(c.config)
+	keys := strings.Split(key, ".")
+	val := retrieveValueFromKeys(keys, subMap)
+	switch val.(type) {
+	case []interface{}:
+		return createSubConfigForArray(val.([]interface{}))
+	default:
+		log.Debugf("Unable to get %v from config", key)
+		return []*Config{}
+	}
+}
+
+func createSubConfigForArray(vals []interface{}) []*Config {
+	configs := []*Config{}
+	for _, value := range vals {
+		if v, ok := value.(map[string]interface{}); ok {
+			configs = append(configs, &Config{mutex: sync.RWMutex{}, config: v})
+		} else if v, ok := value.(map[interface{}]interface{}); ok {
+			// If no name field don't fill up the map
+			s, err := createStringMap(v)
+			if err != nil {
+				return configs
+			}
+			configs = append(configs, &Config{mutex: sync.RWMutex{}, config: s})
+		} else {
+			//We don't know what to do if they are not key value pairs.
+			return configs
+		}
+	}
+	return configs
+}
+
 // ToMap - Retrieve a copy of the undlying map for the config.
 func (c *Config) ToMap() map[string]interface{} {
 	c.mutex.RLock()
@@ -220,13 +262,13 @@ func retrieveValueFromKeys(keys []string, subMap map[string]interface{}) interfa
 			//If array of values we will attempt to make a map using the a
 			// name field on the underlying object.
 			//TODO: we should eventually add this back to the original map,
+			if i == len(keys)-1 {
+				return val
+			}
 			// then we could check for existence of this sub map.
 			subMap = createSubMapFromArray(val.([]interface{}))
 			if len(subMap) > 0 && i == len(keys)-1 {
 				return &Config{config: subMap, mutex: sync.RWMutex{}}
-			}
-			if i == len(keys)-1 {
-				return val
 			}
 		default:
 			if i == len(keys)-1 {
