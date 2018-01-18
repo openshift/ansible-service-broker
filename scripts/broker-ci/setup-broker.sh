@@ -6,7 +6,7 @@ source "${BROKER_DIR}/scripts/broker-ci/error.sh"
 set -ex
 
 function make-build-image {
-    set +x
+    set +ex
     RETRIES=3
     for x in $(seq $RETRIES); do
 	make build-image
@@ -23,7 +23,7 @@ function make-build-image {
 	exit 1
     fi
 
-    set -x
+    set -ex
 }
 
 function make-deploy {
