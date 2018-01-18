@@ -35,10 +35,11 @@ import (
 )
 
 type MockBroker struct {
-	Name      string
-	Verify    map[string]bool
-	Err       error
-	Operation string
+	Name                  string
+	Verify                map[string]bool
+	Err                   error
+	Operation             string
+	getServiceInstanceErr error
 }
 
 type MockUserServiceAdapter struct {
@@ -106,7 +107,7 @@ func (m MockBroker) LastOperation(uuid.UUID, *broker.LastOperationRequest) (*bro
 }
 
 func (m MockBroker) GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error) {
-	return apb.ServiceInstance{}, nil
+	return apb.ServiceInstance{}, m.getServiceInstanceErr
 }
 
 func (m MockBroker) GetBindInstance(uuid.UUID) (apb.BindInstance, error) {
@@ -365,7 +366,8 @@ func TestBindAlreadyProvisioned(t *testing.T) {
 }
 
 func TestBindNotFound(t *testing.T) {
-	testhandler, w, r, params := buildBindHandler(uuid.New(), broker.ErrorNotFound)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), nil)
+	testhandler.broker = MockBroker{Name: "testbroker", Err: nil, getServiceInstanceErr: broker.ErrorNotFound}
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "should've been a bad request for error not found")
 	ft.AssertError(t, w.Body, "not found")
