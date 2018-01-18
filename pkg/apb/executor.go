@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +46,7 @@ func ExecuteApb(
 	p *Parameters,
 	log *logging.Logger,
 ) (ExecutionContext, error) {
-	executionContext := ExecutionContext{}
+	executionContext := ExecutionContext{ProxyConfig: GetProxyConfig(log)}
 	extraVars, err := createExtraVars(context, p)
 
 	if err != nil {
@@ -138,9 +139,62 @@ func ExecuteApb(
 		},
 	}
 
+	if executionContext.ProxyConfig != nil {
+		pod.Spec.Containers[0].Env = createProxyPodEnv(
+			log, executionContext.ProxyConfig)
+	}
+
 	log.Notice(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
 	_, err = k8scli.CoreV1().Pods(executionContext.Namespace).Create(pod)
 	return executionContext, err
+}
+
+// GetProxyConfig - Returns a ProxyConfig based on the presence of a proxy
+// configuration in the broker's environment. HTTP_PROXY, HTTPS_PROXY, and
+// NO_PROXY are the relevant environment variables. If no proxy is found,
+// GetProxyConfig will return nil.
+func GetProxyConfig(log *logging.Logger) *ProxyConfig {
+	httpProxy, httpProxyPresent := os.LookupEnv(httpProxyEnvVar)
+	httpsProxy, httpsProxyPresent := os.LookupEnv(httpsProxyEnvVar)
+	noProxy, noProxyPresent := os.LookupEnv(noProxyEnvVar)
+
+	if !noProxyPresent && !httpProxyPresent && !httpsProxyPresent {
+		log.Debug("No proxy env vars found to be configured.")
+		return nil
+	}
+
+	if noProxyPresent && !httpProxyPresent && !httpsProxyPresent {
+		log.Info("NO_PROXY env var set, but no proxy has been found via HTTP_PROXY, or HTTPS_PROXY")
+		return nil
+	}
+
+	return &ProxyConfig{
+		HttpProxy:  httpProxy,
+		HttpsProxy: httpsProxy,
+		NoProxy:    noProxy,
+	}
+}
+
+func createProxyPodEnv(log *logging.Logger, conf *ProxyConfig) []v1.EnvVar {
+
+	log.Info("Proxy configuration present. Applying to APB before execution:")
+	log.Infof("%s=\"%s\"", httpProxyEnvVar, conf.HttpProxy)
+	log.Infof("%s=\"%s\"", httpsProxyEnvVar, conf.HttpsProxy)
+	log.Infof("%s=\"%s\"", noProxyEnvVar, conf.NoProxy)
+
+	return []v1.EnvVar{
+		v1.EnvVar{
+			Name:  httpProxyEnvVar,
+			Value: conf.HttpProxy,
+		},
+		v1.EnvVar{
+			Name:  httpsProxyEnvVar,
+			Value: conf.HttpsProxy,
+		},
+		v1.EnvVar{
+			Name:  noProxyEnvVar,
+			Value: conf.NoProxy,
+		}}
 }
 
 func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {
