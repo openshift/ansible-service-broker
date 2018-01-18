@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,20 +37,20 @@ func ExecuteApb(action string,
 	spec *Spec,
 	context *Context,
 	p *Parameters) (ExecutionContext, error) {
-
-	executionContext := ExecutionContext{}
-	extraVars, err := createExtraVars(context, p)
-
-	if err != nil {
-		return executionContext, err
-	}
-
 	log.Debug("ExecutingApb:")
 	log.Debug("name:[ %s ]", spec.FQName)
 	log.Debug("image:[ %s ]", spec.Image)
 	log.Debug("action:[ %s ]", action)
 	log.Debug("pullPolicy:[ %s ]", clusterConfig.PullPolicy)
 	log.Debug("role:[ %s ]", clusterConfig.SandboxRole)
+
+	executionContext := ExecutionContext{ProxyConfig: GetProxyConfig()}
+
+	extraVars, err := createExtraVars(context, p)
+
+	if err != nil {
+		return executionContext, err
+	}
 	// It's a critical error if a Namespace is not provided to the
 	// broker because its required to know where to execute the pods and
 	// sandbox them based on that Namespace. Should fail fast and loud,
@@ -66,6 +67,7 @@ func ExecuteApb(action string,
 	}
 
 	secrets := GetSecrets(spec)
+
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return executionContext, err
@@ -105,6 +107,7 @@ func ExecuteApb(action string,
 		return executionContext, err
 	}
 	volumes, volumeMounts := buildVolumeSpecs(secrets)
+
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   executionContext.PodName,
@@ -120,24 +123,7 @@ func ExecuteApb(action string,
 						"--extra-vars",
 						extraVars,
 					},
-					Env: []v1.EnvVar{
-						v1.EnvVar{
-							Name: "POD_NAME",
-							ValueFrom: &v1.EnvVarSource{
-								FieldRef: &v1.ObjectFieldSelector{
-									FieldPath: "metadata.name",
-								},
-							},
-						},
-						v1.EnvVar{
-							Name: "POD_NAMESPACE",
-							ValueFrom: &v1.EnvVarSource{
-								FieldRef: &v1.ObjectFieldSelector{
-									FieldPath: "metadata.namespace",
-								},
-							},
-						},
-					},
+					Env:             createPodEnv(executionContext),
 					ImagePullPolicy: pullPolicy,
 					VolumeMounts:    volumeMounts,
 				},
@@ -152,6 +138,34 @@ func ExecuteApb(action string,
 	_, err = k8scli.Client.CoreV1().Pods(executionContext.Namespace).Create(pod)
 
 	return executionContext, err
+}
+
+// GetProxyConfig - Returns a ProxyConfig based on the presence of a proxy
+// configuration in the broker's environment. HTTP_PROXY, HTTPS_PROXY, and
+// NO_PROXY are the relevant environment variables. If no proxy is found,
+// GetProxyConfig will return nil.
+func GetProxyConfig() *ProxyConfig {
+	httpProxy, httpProxyPresent := os.LookupEnv(httpProxyEnvVar)
+	httpsProxy, httpsProxyPresent := os.LookupEnv(httpsProxyEnvVar)
+	noProxy, noProxyPresent := os.LookupEnv(noProxyEnvVar)
+
+	// TODO: Probably some more permutations of these that should be validated?
+
+	if !noProxyPresent && !httpProxyPresent && !httpsProxyPresent {
+		log.Debug("No proxy env vars found to be configured.")
+		return nil
+	}
+
+	if noProxyPresent && !httpProxyPresent && !httpsProxyPresent {
+		log.Info("NO_PROXY env var set, but no proxy has been found via HTTP_PROXY, or HTTPS_PROXY")
+		return nil
+	}
+
+	return &ProxyConfig{
+		HttpProxy:  httpProxy,
+		HttpsProxy: httpsProxy,
+		NoProxy:    noProxy,
+	}
 }
 
 func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {
@@ -199,6 +213,52 @@ func createExtraVars(context *Context, parameters *Parameters) (string, error) {
 	paramsCopy["cluster"] = runtime.Provider.GetRuntime()
 	extraVars, err := json.Marshal(paramsCopy)
 	return string(extraVars), err
+}
+
+func createPodEnv(executionContext ExecutionContext) []v1.EnvVar {
+	podEnv := []v1.EnvVar{
+		v1.EnvVar{
+			Name: "POD_NAME",
+			ValueFrom: &v1.EnvVarSource{
+				FieldRef: &v1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+		v1.EnvVar{
+			Name: "POD_NAMESPACE",
+			ValueFrom: &v1.EnvVarSource{
+				FieldRef: &v1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
+			},
+		},
+	}
+
+	if executionContext.ProxyConfig != nil {
+		conf := executionContext.ProxyConfig
+
+		log.Info("Proxy configuration present. Applying to APB before execution:")
+		log.Infof("%s=\"%s\"", httpProxyEnvVar, conf.HttpProxy)
+		log.Infof("%s=\"%s\"", httpsProxyEnvVar, conf.HttpsProxy)
+		log.Infof("%s=\"%s\"", noProxyEnvVar, conf.NoProxy)
+
+		podEnv = append(podEnv, []v1.EnvVar{
+			v1.EnvVar{
+				Name:  httpProxyEnvVar,
+				Value: conf.HttpProxy,
+			},
+			v1.EnvVar{
+				Name:  httpsProxyEnvVar,
+				Value: conf.HttpsProxy,
+			},
+			v1.EnvVar{
+				Name:  noProxyEnvVar,
+				Value: conf.NoProxy,
+			}}...)
+	}
+
+	return podEnv
 }
 
 // Verify PullPolicy is acceptable
