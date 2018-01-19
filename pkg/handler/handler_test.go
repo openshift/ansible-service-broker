@@ -93,9 +93,9 @@ func (m MockBroker) Deprovision(apb.ServiceInstance, string, bool, bool) (*broke
 	m.called("deprovision", true)
 	return nil, m.Err
 }
-func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest, bool) (*broker.BindResponse, error) {
+func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest, bool) (*broker.BindResponse, bool, error) {
 	m.called("bind", true)
-	return nil, m.Err
+	return nil, false, m.Err
 }
 func (m MockBroker) Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*broker.UnbindResponse, error) {
 	m.called("unbind", true)

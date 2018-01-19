@@ -553,7 +553,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 	}
 
 	// process binding request
-	resp, err := h.broker.Bind(serviceInstance, bindingUUID, req, async)
+	resp, ranAsync, err := h.broker.Bind(serviceInstance, bindingUUID, req, async)
 
 	if err != nil {
 		switch err {
@@ -566,6 +566,10 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		default:
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
 		}
+		return
+	}
+	if ranAsync {
+		writeDefaultResponse(w, http.StatusAccepted, resp, err)
 	} else {
 		writeDefaultResponse(w, http.StatusCreated, resp, err)
 	}
