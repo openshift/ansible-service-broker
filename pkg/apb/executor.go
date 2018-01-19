@@ -162,8 +162,8 @@ func GetProxyConfig() *ProxyConfig {
 	}
 
 	return &ProxyConfig{
-		HttpProxy:  httpProxy,
-		HttpsProxy: httpsProxy,
+		HTTPProxy:  httpProxy,
+		HTTPSProxy: httpsProxy,
 		NoProxy:    noProxy,
 	}
 }
@@ -239,18 +239,18 @@ func createPodEnv(executionContext ExecutionContext) []v1.EnvVar {
 		conf := executionContext.ProxyConfig
 
 		log.Info("Proxy configuration present. Applying to APB before execution:")
-		log.Infof("%s=\"%s\"", httpProxyEnvVar, conf.HttpProxy)
-		log.Infof("%s=\"%s\"", httpsProxyEnvVar, conf.HttpsProxy)
+		log.Infof("%s=\"%s\"", httpProxyEnvVar, conf.HTTPProxy)
+		log.Infof("%s=\"%s\"", httpsProxyEnvVar, conf.HTTPSProxy)
 		log.Infof("%s=\"%s\"", noProxyEnvVar, conf.NoProxy)
 
 		podEnv = append(podEnv, []v1.EnvVar{
 			v1.EnvVar{
 				Name:  httpProxyEnvVar,
-				Value: conf.HttpProxy,
+				Value: conf.HTTPProxy,
 			},
 			v1.EnvVar{
 				Name:  httpsProxyEnvVar,
-				Value: conf.HttpsProxy,
+				Value: conf.HTTPSProxy,
 			},
 			v1.EnvVar{
 				Name:  noProxyEnvVar,

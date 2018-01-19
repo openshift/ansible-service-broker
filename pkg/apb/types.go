@@ -315,8 +315,8 @@ const (
 // ProxyConfig - Contains a desired proxy configuration for the broker and
 // the assets that it spawns.
 type ProxyConfig struct {
-	HttpProxy  string
-	HttpsProxy string
+	HTTPProxy  string
+	HTTPSProxy string
 	NoProxy    string
 }
 
