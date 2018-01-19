@@ -43,42 +43,44 @@ func NewDeprovisionJob(serviceInstance *apb.ServiceInstance,
 // Run - will run the deprovision job.
 func (p *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.DeprovisionJobStarted()
+	defer metrics.DeprovisionJobFinished()
+	jobMsg := JobMsg{
+		InstanceUUID: p.serviceInstance.ID.String(),
+		JobToken:     token,
+		SpecID:       p.serviceInstance.Spec.ID,
+		State: apb.JobState{
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodDeprovision,
+			Token:  token,
+		},
+	}
 
 	if p.skipApbExecution {
 		log.Debug("skipping deprovision and sending complete msg to channel")
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(), PodName: "",
-			JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: ""}
+		jobMsg.State.State = apb.StateSucceeded
+		msgBuffer <- jobMsg
 		return
 	}
 
 	podName, err := apb.Deprovision(p.serviceInstance)
 	if err != nil {
-		log.Error("broker::Deprovision error occurred.")
-		log.Errorf("%s", err.Error())
+		log.Errorf("broker::Deprovision error occurred. %v", err)
+		errMsg := "Error occurred during deprovision. Please contact administrator if it persists."
 		// Because we know the error we should return that error.
 		if err == apb.ErrorPodPullErr {
-			// send error message, can't have
-			// an error type in a struct you want marshalled
-			// https://github.com/golang/go/issues/5161
-			msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-				JobToken: token,
-				SpecID:   p.serviceInstance.Spec.ID,
-				PodName:  "",
-				Msg:      "",
-				Error:    err.Error()}
-			return
+			errMsg = err.Error()
 		}
-		//Unkown error defaulting to generic message.
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token,
-			SpecID:   p.serviceInstance.Spec.ID,
-			PodName:  "",
-			Msg:      "",
-			Error:    "Error occured during deprovision. Please contact administrator if it presists."}
+		// send error message, can't have
+		// an error type in a struct you want marshalled
+		// https://github.com/golang/go/issues/5161
+		jobMsg.State.State = apb.StateFailed
+		jobMsg.State.Error = errMsg
+		msgBuffer <- jobMsg
 		return
 	}
 
 	log.Debug("sending deprovision complete msg to channel")
-	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(), PodName: podName,
-		JobToken: token, SpecID: p.serviceInstance.Spec.ID, Error: ""}
+	jobMsg.State.State = apb.StateSucceeded
+	jobMsg.PodName = podName
+	msgBuffer <- jobMsg
 }

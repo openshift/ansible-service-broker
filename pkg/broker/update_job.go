@@ -17,8 +17,6 @@
 package broker
 
 import (
-	"encoding/json"
-
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -38,43 +36,37 @@ func NewUpdateJob(serviceInstance *apb.ServiceInstance) *UpdateJob {
 // Run - run the update job.
 func (u *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.UpdateJobStarted()
+	defer metrics.UpdateJobFinished()
+	jobMsg := JobMsg{
+		InstanceUUID: u.serviceInstance.ID.String(),
+		JobToken:     token,
+		SpecID:       u.serviceInstance.Spec.ID,
+		State: apb.JobState{
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodUpdate,
+			Token:  token,
+		},
+	}
 	podName, extCreds, err := apb.Update(u.serviceInstance)
 
 	if err != nil {
-		log.Error("broker::Update error occurred.")
-		log.Errorf("%s", err.Error())
-
+		log.Errorf(" broker::Update error occurred. %v", err)
+		errMsg := "Error occurred during update. Please contact administrator if it persists."
 		// Because we know the error we should return that error.
 		if err == apb.ErrorPodPullErr {
-			// send error message, can't have
-			// an error type in a struct you want marshalled
-			// https://github.com/golang/go/issues/5161
-			msgBuffer <- JobMsg{InstanceUUID: u.serviceInstance.ID.String(),
-				JobToken: token,
-				SpecID:   u.serviceInstance.Spec.ID,
-				PodName:  "",
-				Msg:      "",
-				Error:    err.Error()}
-			return
+			errMsg = err.Error()
 		}
-		//Unkown error defaulting to generic message.
-		msgBuffer <- JobMsg{InstanceUUID: u.serviceInstance.ID.String(),
-			JobToken: token,
-			SpecID:   u.serviceInstance.Spec.ID,
-			PodName:  "",
-			Msg:      "",
-			Error:    "Error occured during update. Please contact administrator if it presists."}
+		jobMsg.State.State = apb.StateFailed
+		jobMsg.State.Error = errMsg
+		// send error message, can't have
+		// an error type in a struct you want marshalled
+		// https://github.com/golang/go/issues/5161
+		msgBuffer <- jobMsg
 		return
 	}
-
-	// send creds
-	jsonmsg, err := json.Marshal(extCreds)
-	if err != nil {
-		msgBuffer <- JobMsg{InstanceUUID: u.serviceInstance.ID.String(),
-			JobToken: token, SpecID: u.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
-		return
-	}
-
-	msgBuffer <- JobMsg{InstanceUUID: u.serviceInstance.ID.String(),
-		JobToken: token, SpecID: u.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
+	jobMsg.State.State = apb.StateSucceeded
+	jobMsg.State.Podname = podName
+	jobMsg.ExtractedCredentials = *extCreds
+	jobMsg.PodName = podName
+	msgBuffer <- jobMsg
 }

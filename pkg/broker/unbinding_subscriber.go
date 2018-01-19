@@ -21,9 +21,7 @@
 package broker
 
 import (
-	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
-	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
 // UnbindingWorkSubscriber - Listen for binding messages
@@ -39,44 +37,12 @@ func NewUnbindingWorkSubscriber(dao *dao.Dao) *UnbindingWorkSubscriber {
 
 // Subscribe - will start a work subscriber listening for bind job messages
 func (b *UnbindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
-	b.msgBuffer = msgBuffer
-
 	go func() {
 		log.Info("Listening for binding messages")
-		for {
-			msg := <-msgBuffer
-			metrics.UnbindingJobFinished()
-
+		for msg := range msgBuffer {
 			log.Debug("Processed binding message from buffer")
-
-			if msg.Error != "" {
-				log.Errorf("bindsub: Uninding job reporting error: %s", msg.Error)
-				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
-					Token:   msg.JobToken,
-					State:   apb.StateFailed,
-					Podname: msg.PodName,
-					Method:  apb.JobMethodUnbind,
-				}); err != nil {
-					log.Errorf("failed to set state after unbind %v", err)
-				}
-			} else if msg.Msg == "" {
-				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
-					Token:   msg.JobToken,
-					State:   apb.StateInProgress,
-					Podname: msg.PodName,
-					Method:  apb.JobMethodUnbind,
-				}); err != nil {
-					log.Errorf("failed to set state after unbind %v", err)
-				}
-			} else {
-				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
-					Token:   msg.JobToken,
-					State:   apb.StateSucceeded,
-					Podname: msg.PodName,
-					Method:  apb.JobMethodUnbind,
-				}); err != nil {
-					log.Errorf("failed to set state after unbind %v", err)
-				}
+			if err := b.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
+				log.Errorf("failed to set state after deprovision %v", err)
 			}
 		}
 	}()

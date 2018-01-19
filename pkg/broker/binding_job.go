@@ -21,8 +21,6 @@
 package broker
 
 import (
-	"encoding/json"
-
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/pborman/uuid"
@@ -33,50 +31,63 @@ type BindingJob struct {
 	serviceInstance *apb.ServiceInstance
 	bindingUUID     uuid.UUID
 	params          *apb.Parameters
+	bind            apb.Binder
 }
 
 // NewBindingJob - Create a new binding job.
-func NewBindingJob(serviceInstance *apb.ServiceInstance, bindingUUID uuid.UUID, params *apb.Parameters) *BindingJob {
+func NewBindingJob(serviceInstance *apb.ServiceInstance, bindingUUID uuid.UUID, params *apb.Parameters, bind apb.Binder) *BindingJob {
 	return &BindingJob{
 		serviceInstance: serviceInstance,
 		bindingUUID:     bindingUUID,
 		params:          params,
+		bind:            bind,
 	}
 }
 
 // Run - run the binding job.
 func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.BindingJobStarted()
-
+	defer metrics.BindingJobFinished()
+	jobMsg := JobMsg{
+		InstanceUUID: p.serviceInstance.ID.String(),
+		JobToken:     token,
+		SpecID:       p.serviceInstance.Spec.ID,
+		BindingUUID:  p.bindingUUID.String(),
+		State: apb.JobState{
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodBind,
+			Token:  token,
+		},
+	}
 	log.Debug("bindjob: binding job started, calling apb.Bind")
 
-	podName, extCreds, err := apb.Bind(p.serviceInstance, p.params)
+	podName, extCreds, err := p.bind(p.serviceInstance, p.params)
 
 	log.Debug("bindjob: returned from apb.Bind")
 
 	if err != nil {
 		log.Errorf("bindjob::Binding error occurred.\n%s", err.Error())
+		jobMsg.State.State = apb.StateFailed
+		errMsg := "Error occurred during binding. Please contact administrator if it persists."
+		// Because we know the error we should return that error.
+		if err == apb.ErrorPodPullErr {
+			errMsg = err.Error()
+		}
 
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			BindingUUID: p.bindingUUID.String(), JobToken: token,
-			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
+		jobMsg.State.Error = errMsg
+		msgBuffer <- jobMsg
 		return
 	}
 
 	// send creds
-	jsonmsg, err := json.Marshal(extCreds)
-	if err != nil {
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			BindingUUID: p.bindingUUID.String(), JobToken: token,
-			SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
-		return
-	}
-
 	log.Debug("bindjob: looks like we're done, sending credentials")
-	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-		BindingUUID: p.bindingUUID.String(), JobToken: token,
-		SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
+	if nil != extCreds {
+		jobMsg.ExtractedCredentials = *extCreds
+	}
+	jobMsg.State.State = apb.StateSucceeded
+	jobMsg.PodName = podName
+	msgBuffer <- jobMsg
 }

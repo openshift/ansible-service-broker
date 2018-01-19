@@ -21,11 +21,8 @@
 package broker
 
 import (
-	"encoding/json"
-
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
-	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
 // BindingWorkSubscriber - Listen for binding messages
@@ -41,54 +38,18 @@ func NewBindingWorkSubscriber(dao *dao.Dao) *BindingWorkSubscriber {
 
 // Subscribe - will start a work subscriber listening for bind job messages
 func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
-	b.msgBuffer = msgBuffer
-
 	go func() {
 		log.Info("Listening for binding messages")
-		for {
-			msg := <-msgBuffer
-			var extCreds *apb.ExtractedCredentials
-			metrics.BindingJobFinished()
-
+		for msg := range msgBuffer {
 			log.Debug("Processed binding message from buffer")
-
-			if msg.Error != "" {
-				log.Errorf("bindsub: Binding job reporting error: %s", msg.Error)
-				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
-					Token:   msg.JobToken,
-					State:   apb.StateFailed,
-					Podname: msg.PodName,
-					Method:  apb.JobMethodBind,
-				}); err != nil {
-					log.Errorf("failed to set state after bind %v", err)
-				}
-			} else if msg.Msg == "" {
-				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
-					Token:   msg.JobToken,
-					State:   apb.StateInProgress,
-					Podname: msg.PodName,
-					Method:  apb.JobMethodBind,
-				}); err != nil {
-					log.Errorf("failed to set state after bind %v", err)
-				}
-			} else {
-				log.Debug("bindsub: getting creds")
-				if err := json.Unmarshal([]byte(msg.Msg), &extCreds); err != nil {
-					log.Errorf("failed to unmarshal extracted credentials after bind %v", err)
-				}
-				if err := b.dao.SetState(msg.InstanceUUID, apb.JobState{
-					Token:   msg.JobToken,
-					State:   apb.StateSucceeded,
-					Podname: msg.PodName,
-					Method:  apb.JobMethodBind,
-				}); err != nil {
-					log.Errorf("failed to set state after bind %v", err)
-				}
-
-				log.Debug("CALL SetExtractedCredentials $v - %v", msg.BindingUUID, extCreds)
-				if err := b.dao.SetExtractedCredentials(msg.BindingUUID, extCreds); err != nil {
+			if msg.State.State == apb.StateSucceeded {
+				log.Debug("CALL SetExtractedCredentials $v - %v", msg.BindingUUID, msg.ExtractedCredentials)
+				if err := b.dao.SetExtractedCredentials(msg.BindingUUID, &msg.ExtractedCredentials); err != nil {
 					log.Errorf("failed to set extracted credentials after bind %v", err)
 				}
+			}
+			if err := b.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
+				log.Errorf("failed to set state after provision %v", err)
 			}
 		}
 	}()

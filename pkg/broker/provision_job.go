@@ -17,8 +17,6 @@
 package broker
 
 import (
-	"encoding/json"
-
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -26,55 +24,56 @@ import (
 // ProvisionJob - Job to provision
 type ProvisionJob struct {
 	serviceInstance *apb.ServiceInstance
+	provision       apb.Provisioner
 }
 
 // NewProvisionJob - Create a new provision job.
-func NewProvisionJob(serviceInstance *apb.ServiceInstance) *ProvisionJob {
+func NewProvisionJob(serviceInstance *apb.ServiceInstance, provision apb.Provisioner) *ProvisionJob {
 	return &ProvisionJob{
 		serviceInstance: serviceInstance,
+		provision:       provision,
 	}
 }
 
 // Run - run the provision job.
 func (p *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.ProvisionJobStarted()
-	podName, extCreds, err := apb.Provision(p.serviceInstance)
+	defer metrics.ProvisionJobFinished()
+	jobMsg := JobMsg{
+		InstanceUUID: p.serviceInstance.ID.String(),
+		JobToken:     token,
+		SpecID:       p.serviceInstance.Spec.ID,
+		State: apb.JobState{
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodProvision,
+			Token:  token,
+		},
+	}
+
+	podName, extCreds, err := p.provision(p.serviceInstance)
 
 	if err != nil {
-		log.Error("broker::Provision error occurred.")
-		log.Errorf("%s", err.Error())
-
+		log.Errorf("broker::Provision error occurred. %s", err.Error())
+		errMsg := "Error occurred during provision. Please contact administrator if it persists."
 		// Because we know the error we should return that error.
 		if err == apb.ErrorPodPullErr {
-			// send error message, can't have
-			// an error type in a struct you want marshalled
-			// https://github.com/golang/go/issues/5161
-			msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-				JobToken: token,
-				SpecID:   p.serviceInstance.Spec.ID,
-				PodName:  "",
-				Msg:      "",
-				Error:    err.Error()}
-			return
+			errMsg = err.Error()
 		}
-		//Unkown error defaulting to generic message.
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token,
-			SpecID:   p.serviceInstance.Spec.ID,
-			PodName:  "",
-			Msg:      "",
-			Error:    "Error occured during provision. Please contact administrator if it presists."}
+		// send error message, can't have
+		// an error type in a struct you want marshalled
+		// https://github.com/golang/go/issues/5161
+		jobMsg.State.State = apb.StateFailed
+		jobMsg.State.Error = errMsg
+		msgBuffer <- jobMsg
 		return
 	}
 
 	// send creds
-	jsonmsg, err := json.Marshal(extCreds)
-	if err != nil {
-		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-			JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: "", Msg: "", Error: err.Error()}
-		return
+	jobMsg.State.State = apb.StateSucceeded
+	jobMsg.State.Podname = podName
+	if nil != extCreds {
+		jobMsg.ExtractedCredentials = *extCreds
 	}
-
-	msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(),
-		JobToken: token, SpecID: p.serviceInstance.Spec.ID, PodName: podName, Msg: string(jsonmsg), Error: ""}
+	jobMsg.PodName = podName
+	msgBuffer <- jobMsg
 }

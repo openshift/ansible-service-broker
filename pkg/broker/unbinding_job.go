@@ -31,57 +31,69 @@ type UnbindingJob struct {
 	bindInstance     *apb.BindInstance
 	params           *apb.Parameters
 	skipApbExecution bool
+	unbind           apb.UnBinder
 }
 
 // NewUnbindingJob - Create a new binding job.
-func NewUnbindingJob(serviceInstance *apb.ServiceInstance, bindInstance *apb.BindInstance, params *apb.Parameters, skipApbExecution bool) *UnbindingJob {
+func NewUnbindingJob(serviceInstance *apb.ServiceInstance, bindInstance *apb.BindInstance, params *apb.Parameters, unbind apb.UnBinder, skipApbExecution bool) *UnbindingJob {
 	return &UnbindingJob{
 		serviceInstance:  serviceInstance,
 		bindInstance:     bindInstance,
 		params:           params,
 		skipApbExecution: skipApbExecution,
+		unbind:           unbind,
 	}
 }
 
 // Run - run the binding job.
 func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.UnbindingJobStarted()
+	defer metrics.UnbindingJobFinished()
+	jobMsg := JobMsg{
+		InstanceUUID: p.serviceInstance.ID.String(),
+		JobToken:     token,
+		SpecID:       p.serviceInstance.Spec.ID,
+		BindingUUID:  p.bindInstance.ID.String(),
+		State: apb.JobState{
+			State:  apb.StateInProgress,
+			Method: apb.JobMethodUnbind,
+			Token:  token,
+		},
+	}
 
 	log.Debugf("unbindjob: unbinding job (%v) started, calling apb.Unbind", token)
 
-	msg := JobMsg{
-		InstanceUUID: p.serviceInstance.ID.String(),
-		BindingUUID:  p.bindInstance.ID.String(),
-		JobToken:     token,
-		SpecID:       p.serviceInstance.Spec.ID,
-		PodName:      "",
-		Msg:          "",
-		Error:        "",
-	}
-
 	if p.skipApbExecution {
 		log.Info("unbinding job (%v) skipping apb execution", token)
-		msg.Msg = "unbind finished, execution skipped"
-		msgBuffer <- msg
+		jobMsg.State.State = apb.StateSucceeded
+		jobMsg.Msg = "unbind finished, execution skipped"
+		msgBuffer <- jobMsg
 		return
 	}
 
-	err := apb.Unbind(p.serviceInstance, p.params)
+	err := p.unbind(p.serviceInstance, p.params)
 
 	log.Debug("unbindjob: returned from apb.Unbind")
 
 	if err != nil {
+		errMsg := "Error occurred during binding. Please contact administrator if it persists."
 		log.Errorf("unbindjob::Unbinding error occurred.\n%s", err.Error())
 
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
-		msg.Error = err.Error()
-		msgBuffer <- msg
+		// Because we know the error we should return that error.
+		if err == apb.ErrorPodPullErr {
+			errMsg = err.Error()
+		}
+		jobMsg.State.State = apb.StateFailed
+		jobMsg.State.Error = errMsg
+		msgBuffer <- jobMsg
 		return
 	}
 
 	log.Debug("unbindjob: Looks like we're done")
-	msg.Msg = "unbind finished"
-	msgBuffer <- msg
+	jobMsg.Msg = "unbind finished"
+	jobMsg.State.State = apb.StateSucceeded
+	msgBuffer <- jobMsg
 }

@@ -19,7 +19,6 @@ package broker
 import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
-	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
 // DeprovisionWorkSubscriber - Lissten for provision messages
@@ -36,18 +35,13 @@ func NewDeprovisionWorkSubscriber(dao *dao.Dao) *DeprovisionWorkSubscriber {
 // Subscribe - will start the work subscriber listenning on the message buffer for deprovision messages.
 func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 	d.msgBuffer = msgBuffer
-
 	go func() {
 		log.Info("Listening for deprovision messages")
-		for {
-			msg := <-msgBuffer
-			metrics.DeprovisionJobFinished()
-			log.Debug("Processed deprovision message from buffer")
+		for msg := range msgBuffer {
+			log.Debug("received deprovision message from buffer")
 
-			if msg.Error != "" {
-				// Job failed, mark failure
-				log.Errorf("Deprovision job reporting error: %s", msg.Error)
-				setFailedDeprovisionJob(d.dao, msg)
+			if err := d.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
+				log.Errorf("failed to set state after deprovision %v", err)
 				continue
 			}
 
@@ -60,40 +54,22 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 				setFailedDeprovisionJob(d.dao, msg)
 				continue
 			}
-
-			// Job is not reporting error, cleanup after deprovision
-			err = cleanupDeprovision(instance, d.dao)
-			if err != nil {
-				log.Error("Failed cleaning up deprovision after job, error: %s", err.Error())
+			if err := cleanupDeprovision(instance, d.dao); err != nil {
+				log.Errorf("Failed cleaning up deprovision after job, error: %v", err)
 				// Cleanup is reporting something has gone wrong. Deprovision overall
 				// has not completed. Mark the job as failed.
 				setFailedDeprovisionJob(d.dao, msg)
 				continue
-			}
-
-			// No errors reported, deprovision action successfully performed and
-			// broker has successfully cleaned up. Mark depro success
-			if err := d.dao.SetState(msg.InstanceUUID, apb.JobState{
-				Token:   msg.JobToken,
-				State:   apb.StateSucceeded,
-				Podname: msg.PodName,
-				Method:  apb.JobMethodDeprovision,
-			}); err != nil {
-				log.Errorf("failed to set state after deprovision %#v", err)
 			}
 		}
 	}()
 }
 
 func setFailedDeprovisionJob(dao *dao.Dao, dmsg JobMsg) {
-	if err := dao.SetState(dmsg.InstanceUUID, apb.JobState{
-		Token:   dmsg.JobToken,
-		State:   apb.StateFailed,
-		Podname: dmsg.PodName,
-		Method:  apb.JobMethodDeprovision,
-		Error:   dmsg.Error,
-	}); err != nil {
-		log.Errorf("failed to set state after deprovision %#v", err)
+	// have to set the state here manually as the logic that triggers this is in the subscriber
+	dmsg.State.State = apb.StateFailed
+	if err := dao.SetState(dmsg.InstanceUUID, dmsg.State); err != nil {
+		log.Errorf("failed to set state after deprovision %v", err)
 	}
 }
 
@@ -102,12 +78,12 @@ func cleanupDeprovision(instance *apb.ServiceInstance, dao *dao.Dao) error {
 	id := instance.ID.String()
 
 	if err = dao.DeleteExtractedCredentials(id); err != nil {
-		log.Error("failed to delete extracted credentials - %#v", err)
+		log.Error("failed to delete extracted credentials - %v", err)
 		return err
 	}
 
 	if err = dao.DeleteServiceInstance(id); err != nil {
-		log.Error("failed to delete service instance - %#v", err)
+		log.Error("failed to delete service instance - %v", err)
 		return err
 	}
 
