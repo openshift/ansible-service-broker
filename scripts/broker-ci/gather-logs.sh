@@ -44,7 +44,8 @@ function instance-logs {
 
 function catalog-logs {
     log-header "catalog-logs"
-    kubectl logs $(kubectl get pods -o name -l app=controller-manager --all-namespaces | cut -f 2 -d '/') -n kube-service-catalog
+    catalog_ns=$(kubectl get ns | grep catalog | cut -f 1 -d ' ' | head -1)
+    kubectl logs $(kubectl get pods -o name -l app=controller-manager --all-namespaces | cut -f 2 -d '/') -n $catalog_ns
     log-footer "catalog-logs"
 }
 
@@ -63,6 +64,10 @@ function print-pod-errors {
 		;;
 	    "ErrImagePull")
 		kubectl describe pod $pod -n $namespace
+		;;
+	    "CrashLoopBackOff")
+		kubectl describe pod $pod -n $namespace
+		kubectl logs $pod -n $namespace
 		;;
 	    "Error")
 		kubectl logs $pod -n $namespace
