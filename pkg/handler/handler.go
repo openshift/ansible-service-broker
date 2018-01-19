@@ -537,6 +537,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		default:
 			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 		}
+		return
 	}
 
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
