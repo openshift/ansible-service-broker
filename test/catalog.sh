@@ -1,8 +1,9 @@
 #!/bin/bash -e
 
-. shared.sh
-
 curl \
-  -H 'X-Broker-API-Version: 2.9' \
-  -s \
-  http://localhost:1338/v2/catalog
+    -k \
+    -X GET \
+    -H "Authorization: bearer $(oc whoami -t)" \
+    -H "Content-type: application/json" \
+    -H "Accept: application/json" \
+    "https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/catalog"

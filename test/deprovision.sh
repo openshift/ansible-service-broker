@@ -1,9 +1,18 @@
 #!/bin/bash -e
 
-instanceUUID="688eea24-9cf9-43e3-9942-d1863b2a16af"
+INSTANCE_ID=$1
+
+if [ "$INSTANCE_ID" = "" ]
+then
+  echo "Usage: $0 <instance uuid>"
+  exit
+fi
 
 curl \
-  -X DELETE \
-  -H 'X-Broker-API-Version: 2.9' \
-  -v \
-  http://localhost:1338/v2/service_instances/$instanceUUID
+    -k \
+    -X DELETE \
+    -H "Authorization: bearer $(oc whoami -t)" \
+    -H "Content-type: application/json" \
+    -H "Accept: application/json" \
+    -H "X-Broker-API-Originating-Identity: " \
+    "https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/service_instances/$INSTANCE_ID"

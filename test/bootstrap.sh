@@ -1,9 +1,11 @@
 #!/bin/bash -e
 
-. shared.sh
-
 curl \
-  -H 'X-Broker-API-Version: 2.9' \
-  -X POST \
-  -v \
-  http://localhost:1338/v2/bootstrap
+    -k \
+    -X POST \
+    -H "Authorization: bearer $(oc whoami -t)" \
+    -H "Content-type: application/json" \
+    -H "Accept: application/json" \
+    -H "X-Broker-API-Originating-Identity: " \
+    -d "$req" \
+    "https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/bootstrap"
