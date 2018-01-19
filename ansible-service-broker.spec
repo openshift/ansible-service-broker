@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.5
+Version: 1.1.6
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,29 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Jan 19 2018 David Zager <david.j.zager@gmail.com> 1.1.6-1
+- Bug 1536629 - send job state and credentials from job (#610)
+  (maleck13@users.noreply.github.com)
+- Bug 1536088 - fixes panic when bind can't find ServiceInstance (#653)
+  (mhrivnak@hrivnak.org)
+- Fix linting on ProxyConfig (#662) (ernelson@redhat.com)
+- Bug 1534957 - Fix secret parameters regression (#659) (ernelson@redhat.com)
+- make build-image isn't retrying (#656) (rhallise@redhat.com)
+- Add some missing networking permissions to the k8s template (#657)
+  (rhallise@redhat.com)
+- Bug 1535182 - adding ability to retrieve an array of subconfigs (#655)
+  (Shawn.Hurley21@gmail.com)
+- Bug 1506978 - Apply proxy settings to running APBs (#654)
+  (ernelson@redhat.com)
+- Bug 1535652 - return 200 to bind PUT when a binding already exists (#650)
+  (mhrivnak@hrivnak.org)
+- Bug 1534715 - Moves BindInstance retrieval and error handling to handler.go
+  (#648) (mhrivnak@hrivnak.org)
+- Bug 1534467 - apiserver was not told how to output error response (#647)
+  (Shawn.Hurley21@gmail.com)
+- Print information on any pod failures (#646) (rhallise@redhat.com)
+- vendor bump to k8s 1.9.1 (#645) (Shawn.Hurley21@gmail.com)
+
 * Tue Jan 16 2018 David Zager <david.j.zager@gmail.com> 1.1.5-1
 - Bug 1534715 - unbind checks for existence of binding before trying to delete
   it (#642) (mhrivnak@hrivnak.org)
