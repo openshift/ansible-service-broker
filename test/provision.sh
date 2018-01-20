@@ -1,20 +1,18 @@
 #!/bin/bash -e
 
 INSTANCE_ID="$1"
-BINDING_ID="$2"
 PLAN_UUID="$3"
 SERVICE_UUID="$4"
 
 validate_param() {
   if [ "$1" = "" ]
   then
-    echo "Usage: $0 <instance uuid> <binding uuid> <plan uuid> <service uuid>"
+    echo "Usage: $0 <instance uuid> <plan uuid> <service uuid>"
     exit
   fi
 }
 
 validate_param "$INSTANCE_ID"
-validate_param "$BINDING_ID"
 validate_param "$PLAN_UUID"
 validate_param "$SERVICE_UUID"
 
