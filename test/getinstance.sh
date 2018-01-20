@@ -1,12 +1,16 @@
 #!/bin/bash -e
 
-INSTANCE_ID=$1
+INSTANCE_ID="$1"
 
-if [ "$INSTANCE_ID" = "" ]
-then
-  echo "Usage: $0 <instance uuid> <binding uuid>"
-  exit
-fi
+validate_param() {
+  if [ "$1" = "" ]
+  then
+    echo "Usage: $0 <instance uuid>"
+    exit
+  fi
+}
+
+validate_param "$INSTANCE_ID"
 
 curl \
     -k \

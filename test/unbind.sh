@@ -1,20 +1,30 @@
 #!/bin/bash -e
 
-INSTANCE_ID=$1
-BINDING_ID=$2
-PLAN_UUID="7f4a5e35e4af2beb70076e72fab0b7ff"
+INSTANCE_ID="$1"
+BINDING_ID="$2"
+PLAN_UUID="$3"
 
-if [ "$INSTANCE_ID" = "" ]
-then
-  echo "Usage: $0 <instance uuid> <binding uuid>"
-  exit
-fi
+validate_param() {
+  if [ "$1" = "" ]
+  then
+    echo "Usage: $0 <instance uuid> <binding uuid> <plan uuid>"
+    exit
+  fi
+}
 
-if [ "$BINDING_ID" = "" ]
-then
-  echo "Usage: $0 <instance uuid> <binding uuid>"
-  exit
-fi
+validate_param "$INSTANCE_ID"
+validate_param "$BINDING_ID"
+validate_param "$PLAN_UUID"
+
+
+req="{
+  \"plan_id\": \"$PLAN_UUID\",
+  \"service_id\": \"$SERVICE_UUID\",
+  \"context\": \"blog-project\",
+  \"app_guid\":\"\",
+  \"bind_resource\":{},
+  \"parameters\": {}
+}"
 
 curl \
     -k \

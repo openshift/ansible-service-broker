@@ -1,21 +1,23 @@
 #!/bin/bash -e
 
-INSTANCE_ID=$1
-BINDING_ID=$2
-PLAN_UUID="7f4a5e35e4af2beb70076e72fab0b7ff"
-SERVICE_UUID="dh-postgresql-apb-s964m"
+INSTANCE_ID="$1"
+BINDING_ID="$2"
+PLAN_UUID="$3"
+SERVICE_UUID="$4"
 
-if [ "$INSTANCE_ID" = "" ]
-then
-  echo "Usage: $0 <instance uuid> <binding uuid>"
-  exit
-fi
+validate_param() {
+  if [ "$1" = "" ]
+  then
+    echo "Usage: $0 <instance uuid> <binding uuid> <plan uuid> <service uuid>"
+    exit
+  fi
+}
 
-if [ "$BINDING_ID" = "" ]
-then
-  echo "Usage: $0 <instance uuid> <binding uuid>"
-  exit
-fi
+validate_param "$INSTANCE_ID"
+validate_param "$BINDING_ID"
+validate_param "$PLAN_UUID"
+validate_param "$SERVICE_UUID"
+
 
 req="{
   \"plan_id\": \"$PLAN_UUID\",
