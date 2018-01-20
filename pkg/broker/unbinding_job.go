@@ -21,6 +21,7 @@
 package broker
 
 import (
+	"github.com/apex/log"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -60,7 +61,7 @@ func (p *UnbindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 			Token:  token,
 		},
 	}
-
+	msgBuffer <- jobMsg
 	log.Debugf("unbindjob: unbinding job (%v) started, calling apb.Unbind", token)
 
 	if p.skipApbExecution {

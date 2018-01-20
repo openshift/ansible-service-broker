@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/apex/log"
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"

@@ -21,6 +21,7 @@
 package broker
 
 import (
+	"github.com/apex/log"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/pborman/uuid"
@@ -60,6 +61,8 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		},
 	}
 	log.Debug("bindjob: binding job started, calling apb.Bind")
+
+	msgBuffer <- jobMsg
 
 	podName, extCreds, err := p.bind(p.serviceInstance, p.params)
 

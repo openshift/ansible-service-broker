@@ -17,6 +17,7 @@
 package broker
 
 import (
+	"github.com/apex/log"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
@@ -54,6 +55,7 @@ func (p *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 			Token:  token,
 		},
 	}
+	msgBuffer <- jobMsg
 
 	if p.skipApbExecution {
 		log.Debug("skipping deprovision and sending complete msg to channel")

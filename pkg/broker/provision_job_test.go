@@ -23,7 +23,7 @@ func TestProvisionJob_Run(t *testing.T) {
 	cases := []struct {
 		Name      string
 		Provision apb.Provisioner
-		Validate  func(msg broker.JobMsg) error
+		Validate  func(msgs []broker.JobMsg) error
 	}{
 		{
 			Name: "expect a success msg with extracted credentials",
@@ -33,17 +33,16 @@ func TestProvisionJob_Run(t *testing.T) {
 					"pass": "test",
 				}}, nil
 			},
-			Validate: func(msg broker.JobMsg) error {
-				if msg.State.State != apb.StateSucceeded {
-					return fmt.Errorf("expected the state to be %v but got %v", apb.StateSucceeded, msg.State.State)
+			Validate: func(msgs []broker.JobMsg) error {
+				if err := commonJobMsgValidation(apb.StateSucceeded, apb.JobMethodProvision, msgs); err != nil {
+					return err
 				}
-				if msg.State.Method != apb.JobMethodProvision {
-					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodProvision, msg.State.Method)
-				}
-				if msg.PodName == "" {
+				lastMsg := msgs[len(msgs)-1]
+
+				if lastMsg.PodName == "" {
 					return fmt.Errorf("expected the podName to be set but it was empty")
 				}
-				credentials := msg.ExtractedCredentials.Credentials
+				credentials := lastMsg.ExtractedCredentials.Credentials
 
 				if _, ok := credentials["user"]; !ok {
 					return fmt.Errorf("expected a user key in the credentials but it was missing")
@@ -59,18 +58,17 @@ func TestProvisionJob_Run(t *testing.T) {
 			Provision: func(si *apb.ServiceInstance) (string, *apb.ExtractedCredentials, error) {
 				return "", nil, fmt.Errorf("should not see")
 			},
-			Validate: func(msg broker.JobMsg) error {
-				if msg.State.State != apb.StateFailed {
-					return fmt.Errorf("expected the Job to be in state %v but was in %v ", apb.StateFailed, msg.State.State)
+			Validate: func(msgs []broker.JobMsg) error {
+				if err := commonJobMsgValidation(apb.StateFailed, apb.JobMethodProvision, msgs); err != nil {
+					return err
 				}
-				if msg.State.Method != apb.JobMethodProvision {
-					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodProvision, msg.State.Method)
-				}
-				if msg.State.Error == "" {
+				lastMsg := msgs[len(msgs)-1]
+
+				if lastMsg.State.Error == "" {
 					return fmt.Errorf("expected an error in the job state but got none")
 				}
-				if msg.State.Error == "should not see" {
-					return fmt.Errorf("expected not to see the error msg %s it should have been replaced with a generic error ", msg.State.Error)
+				if lastMsg.State.Error == "should not see" {
+					return fmt.Errorf("expected not to see the error msg %s it should have been replaced with a generic error ", lastMsg.State.Error)
 				}
 				return nil
 			},
@@ -80,18 +78,16 @@ func TestProvisionJob_Run(t *testing.T) {
 			Provision: func(si *apb.ServiceInstance) (string, *apb.ExtractedCredentials, error) {
 				return "", nil, apb.ErrorPodPullErr
 			},
-			Validate: func(msg broker.JobMsg) error {
-				if msg.State.State != apb.StateFailed {
-					return fmt.Errorf("expected the Job to be in state %v but was in %v ", apb.StateFailed, msg.State.State)
+			Validate: func(msgs []broker.JobMsg) error {
+				if err := commonJobMsgValidation(apb.StateFailed, apb.JobMethodProvision, msgs); err != nil {
+					return err
 				}
-				if msg.State.Method != apb.JobMethodProvision {
-					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodProvision, msg.State.Method)
-				}
-				if msg.State.Error == "" {
+				lastMsg := msgs[len(msgs)-1]
+				if lastMsg.State.Error == "" {
 					return fmt.Errorf("expected an error in the job state but got none")
 				}
-				if msg.State.Error != apb.ErrorPodPullErr.Error() {
-					return fmt.Errorf("expected to see the error msg %s but got %s ", apb.ErrorPodPullErr, msg.State.Error)
+				if lastMsg.State.Error != apb.ErrorPodPullErr.Error() {
+					return fmt.Errorf("expected to see the error msg %s but got %s ", apb.ErrorPodPullErr, lastMsg.State.Error)
 				}
 				return nil
 			},
@@ -102,18 +98,15 @@ func TestProvisionJob_Run(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			provJob := broker.NewProvisionJob(serviceInstance, tc.Provision)
 			receiver := make(chan broker.JobMsg)
-			timedOut := false
 			time.AfterFunc(1*time.Second, func() {
 				close(receiver)
-				timedOut = true
 			})
 			go provJob.Run("", receiver)
-
-			msg := <-receiver
-			if timedOut {
-				t.Fatal("timed out waiting for a msg from the Job")
+			var msgs []broker.JobMsg
+			for m := range receiver {
+				msgs = append(msgs, m)
 			}
-			if err := tc.Validate(msg); err != nil {
+			if err := tc.Validate(msgs); err != nil {
 				t.Fatal("failed to validate the jobmsg ", err)
 			}
 		})

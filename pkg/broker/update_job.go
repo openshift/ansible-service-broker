@@ -17,6 +17,7 @@
 package broker
 
 import (
+	"github.com/apex/log"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -47,6 +48,7 @@ func (u *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 			Token:  token,
 		},
 	}
+	msgBuffer <- jobMsg
 	podName, extCreds, err := apb.Update(u.serviceInstance)
 
 	if err != nil {

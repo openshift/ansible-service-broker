@@ -643,14 +643,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			log.Error("Failed to start new job for async provision\n%s", err.Error())
 			return nil, err
 		}
-
-		// HACK: there might be a delay between the first time the state in etcd
-		// is set and the job was already started. But I need the token.
-		a.dao.SetState(instanceUUID.String(), apb.JobState{
-			Token:  token,
-			State:  apb.StateInProgress,
-			Method: apb.JobMethodProvision,
-		})
 	} else {
 		log.Info("reverting to synchronous provisioning in progress")
 		_, extCreds, err := apb.Provision(serviceInstance)
@@ -719,14 +711,6 @@ func (a AnsibleBroker) Deprovision(
 			log.Error("Failed to start new job for async deprovision\n%s", err.Error())
 			return nil, err
 		}
-
-		// HACK: there might be a delay between the first time the state in etcd
-		// is set and the job was already started. But I need the token.
-		a.dao.SetState(instance.ID.String(), apb.JobState{
-			Token:  token,
-			State:  apb.StateInProgress,
-			Method: apb.JobMethodDeprovision,
-		})
 		return &DeprovisionResponse{Operation: token}, nil
 	}
 
@@ -927,16 +911,6 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 			log.Error("Failed to start new job for async binding\n%s", err.Error())
 			return nil, false, err
 		}
-
-		if err := a.dao.SetState(instance.ID.String(), apb.JobState{
-			Token:  token,
-			State:  apb.StateInProgress,
-			Method: apb.JobMethodBind,
-		}); err != nil {
-			log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
-			return nil, false, err
-		}
-		return &BindResponse{Operation: token}, true, nil
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// we are synchronous mode
 		log.Info("Broker configured to run APB bind")
@@ -1020,15 +994,6 @@ func (a AnsibleBroker) Unbind(
 			log.Error("Failed to start new job for async unbind\n%s", jerr.Error())
 			return nil, jerr
 		}
-
-		if err := a.dao.SetState(serviceInstance.ID.String(), apb.JobState{
-			Token:  token,
-			State:  apb.StateInProgress,
-			Method: apb.JobMethodUnbind,
-		}); err != nil {
-			log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
-		}
-
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// only launch apb if we are always launching the APB.
 		if skipApbExecution {
@@ -1260,10 +1225,6 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 			log.Error("Failed to start new job for async update\n%s", err.Error())
 			return nil, err
 		}
-
-		// HACK: there might be a delay between the first time the state in etcd
-		// is set and the job was already started. But I need the token.
-		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress, Method: apb.JobMethodUpdate})
 	} else {
 		log.Info("reverting to synchronous update in progress")
 		_, extCreds, err := apb.Update(si)
