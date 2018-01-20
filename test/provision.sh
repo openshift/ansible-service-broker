@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
 INSTANCE_ID="$1"
-PLAN_UUID="$3"
-SERVICE_UUID="$4"
+PLAN_UUID="$2"
+SERVICE_UUID="$3"
 
 validate_param() {
   if [ "$1" = "" ]
