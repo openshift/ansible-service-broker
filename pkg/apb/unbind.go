@@ -23,11 +23,6 @@ import (
 )
 
 // Unbind - runs the abp with the unbind action.
-// TODO: Figure out the right way to allow apb to log
-// It's passed in here, but that's a hard coupling point to
-// github.com/op/go-logging, which is used all over the broker
-// Maybe apb defines its own interface and accepts that optionally
-// Little looser, but still not great
 func Unbind(instance *ServiceInstance, parameters *Parameters) error {
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                            ")
