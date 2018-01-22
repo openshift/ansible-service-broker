@@ -3,8 +3,7 @@
 ## Introduction
 
 The purpose of this document is to provide troubleshooting steps for different
-scenarios. Where possible, sections and sub-section should be created to
-classify different types of troubles.
+scenarios. Review the [debugging guide](./debugging.md) for general issues. Where possible, sections and sub-section should be created to classify different types of troubles.
 
 ## Service Catalog and Broker Communication Issues
 
@@ -15,7 +14,7 @@ of an unknown certificate authority.
 
 Looking at the output below, we see the broker is running.
 
-```
+```bash
 $ oc get pods
 NAME          READY     STATUS    RESTARTS   AGE
 asb-1-xzjqx   2/2       Running   0          4s
@@ -25,7 +24,7 @@ However, in the "Status" field of the `ansible-service-broker` description
 we can see there is a `certificate signed by unknown authority` preventing
 the service-catalog from fetching the broker's catalog.
 
-```
+```bash
 $ oc describe servicebroker ansible-service-broker
 Name:           ansible-service-broker
 Namespace:
@@ -52,7 +51,7 @@ We need to provide the service-catalog with the caBundle so that it can
 validate the certificate signing chain. We can get the caBundle with
 the following command:
 
-```
+```bash
 $ oc get secret -n kube-service-catalog -o go-template='{{ range .items }}{{ if eq .type "kubernetes.io/service-account-token" }}{{ index .data "service-ca.crt" }}{{end}}{{"\n"}}{{end}}' | tail -n1
 ```
 
@@ -85,7 +84,7 @@ able to communicate with the broker.
 
 Looking at the output below, we see the broker is running.
 
-```
+```bash
 $ oc get pods
 NAME          READY     STATUS    RESTARTS   AGE
 asb-1-xzjqx   2/2       Running   0          4s
@@ -97,7 +96,7 @@ the service-catalog from fetching the broker's catalog. The "Spec" field
 shows that the service-catalog is configured to use token based authentication
 to communicate with the broker.
 
-```
+```bash
 $ oc describe servicebroker ansible-service-broker
 Name:           ansible-service-broker
 Namespace:
@@ -132,7 +131,7 @@ see that the service-catalog is configured to use token based authentication
 when communicating with the broker and the "auth" field of the `broker-config`
 ConfigMap confirms the broker has basic auth enabled.
 
-```
+```bash
 $ oc get configmap broker-config -o yaml
 apiVersion: v1
 kind: ConfigMap
@@ -184,7 +183,7 @@ data:
 
 Redeploy the broker using origin clients `rollout latest` command.
 
-```
+```bash
 $ oc rollout latest asb
 deploymentconfig "asb" rolled out
 ```
@@ -193,22 +192,23 @@ deploymentconfig "asb" rolled out
 
 The broker exposes [Prometheus](https://prometheus.io/) style metrics for monitoring and troubleshooting purposes. You can access these metrics via the `/metrics` endpoint by calling:
 
-```
+```bash
 curl -H "Authorization: `oc whoami -t`" <broker_url>/metrics
 ```
+
 **Requirements for the above call to work**:
 
 1. The user that you are logged in as will need to have access to `cluster-debugger-role`.
-2. The broker url will need to be exposed and reachable.
+1. The broker url will need to be exposed and reachable.
 
 #### Current ASB Metrics Exposed
 
 1. asb_sandbox - Keeps track of the active sandboxes.
-2. asb_specs_loaded - will keep track of the number of specs currently loaded, will be reset on bootstrap. Labels can be used to determine the registry that has X number loaded.
-3. asb_spec_reset - will keep track of how many times the specs have been reset.
-4. asb_provision_jobs - will keep track of how many jobs are currently in the provision buffer.
-5. asb_deprovision_jobs - will keep track of how many jobs are currently in the deprovision buffer.
-6. asb_update_jobs - will keep track of how many jobs are currently in the update buffer.
-5. asb_actions_requested - keeps track of the number of actions requested that passed initial validation (broken down by action = bind,unbind,update,provision,deprovision).
+1. asb_specs_loaded - will keep track of the number of specs currently loaded, will be reset on bootstrap. Labels can be used to determine the registry that has X number loaded.
+1. asb_spec_reset - will keep track of how many times the specs have been reset.
+1. asb_provision_jobs - will keep track of how many jobs are currently in the provision buffer.
+1. asb_deprovision_jobs - will keep track of how many jobs are currently in the deprovision buffer.
+1. asb_update_jobs - will keep track of how many jobs are currently in the update buffer.
+1. asb_actions_requested - keeps track of the number of actions requested that passed initial validation (broken down by action = bind,unbind,update,provision,deprovision).
 
 The metrics that are exposed are currently a work in a progress and we would love feedback if you think a new metric would be valuable.
