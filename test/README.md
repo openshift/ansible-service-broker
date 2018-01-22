@@ -15,3 +15,7 @@ When running the scripts you will need to be logged into the OpenShift cluster
 since the scripts will use `oc whoami -t` to get your token for authentication.
 
 NOTE: and you can't be a system:admin for this.
+
+NOTE: You will also need to enable `auto_escalate` feature on the broker. You
+can do this by editing the template or by editing the configmap of an already
+deployed broker
