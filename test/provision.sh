@@ -1,25 +1,42 @@
 #!/bin/bash -e
 
-instanceUUID="abd21149-07d7-4a8a-b40b-4b815110c3cc"
-planUUID="4c10ff42-be89-420a-9bab-27a9bef9aed8"
-serviceUUID="0aaafc10-132b-41a8-a58c-73268ff1006a"
+INSTANCE_ID="$1"
+PLAN_UUID="$2"
+SERVICE_UUID="$3"
+
+validate_param() {
+  if [ "$1" = "" ]
+  then
+    echo "Usage: $0 <instance uuid> <plan uuid> <service uuid>"
+    exit
+  fi
+}
+
+validate_param "$INSTANCE_ID"
+validate_param "$PLAN_UUID"
+validate_param "$SERVICE_UUID"
+
 
 req="{
-  \"plan_id\": \"$planUUID\",
-  \"service_id\": \"$serviceUUID\",
+  \"plan_id\": \"$PLAN_UUID\",
+  \"service_id\": \"$SERVICE_UUID\",
   \"context\": {
     \"platform\": \"kubernetes\",
-    \"namespace\": \"mysql-project\"
-  }
-  \"parameters\": {
-    \"MYSQL_USER\": \"username\"
-  }
+    \"namespace\": \"blog-project\"
+  },
+  \"app_guid\":\"\",
+  \"bind_resource\":{},
+  \"parameters\": {}
 }"
 
 curl \
-  -X PUT \
-  -H 'X-Broker-API-Version: 2.9' \
-  -H 'Content-Type: application/json' \
-  -d "$req" \
-  -v \
-  "http://localhost:1338/v2/service_instances/$instanceUUID?accepts_incomplete=true"
+    -k \
+    -X PUT \
+    -H "Authorization: bearer $(oc whoami -t)" \
+    -H "Content-type: application/json" \
+    -H "Accept: application/json" \
+    -H "X-Broker-API-Originating-Identity: " \
+    -d "$req" \
+    "https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true"
+
+
