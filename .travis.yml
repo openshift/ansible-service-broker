@@ -11,7 +11,6 @@ install:
   - ./scripts/travis.sh install
 before_script:
   - ./scripts/travis.sh before_script
-script:
   - ./scripts/travis.sh format
   - ./scripts/travis.sh vet
   - ./scripts/travis.sh lint
@@ -19,6 +18,7 @@ script:
   - ./scripts/travis.sh test
   - ./scripts/travis.sh setup-cluster
   - ./scripts/travis.sh setup-broker
+script:
   - ./scripts/travis.sh ci
   - ./scripts/broker-ci/gather-logs.sh
   - 'oc get pods --all-namespaces'
