@@ -174,9 +174,6 @@ func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
 		s = h.router.PathPrefix(prefix).Subrouter()
 	}
 
-	// TODO: Reintroduce router restriction based on API version when settled upstream
-	// root := h.router.Headers("X-Broker-API-Version", "2.9").Subrouter()
-
 	s.HandleFunc("/v2/bootstrap", createVarHandler(h.bootstrap)).Methods("POST")
 	s.HandleFunc("/v2/catalog", createVarHandler(h.catalog)).Methods("GET")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}", createVarHandler(h.getinstance)).Methods("GET")
