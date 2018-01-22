@@ -44,7 +44,7 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 There are a few different ways to quickly get up and running with a cluster + ansible-service-broker:
 
 * `oc cluster up`
-* Alternatively, [you can use minishift and install the broker with our addon, documented here](docs/minishift.md).
+* Alternatively, [you can use minishift and install the broker with our addon, documented here](https://github.com/minishift/minishift-addons/blob/master/add-ons/ansible-service-broker/README.md).
 
 Let's walk through an `oc cluster up` based setup.
 
