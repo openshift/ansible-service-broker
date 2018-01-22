@@ -911,6 +911,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 			log.Error("Failed to start new job for async binding\n%s", err.Error())
 			return nil, false, err
 		}
+		return &BindResponse{Operation: token}, true, nil
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// we are synchronous mode
 		log.Info("Broker configured to run APB bind")

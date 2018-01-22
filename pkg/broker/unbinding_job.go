@@ -21,7 +21,6 @@
 package broker
 
 import (
-	"github.com/apex/log"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
