@@ -1,6 +1,5 @@
 %if 0%{?fedora} || 0%{?rhel} >= 6
 %global with_devel 1
-# TODO: package new deps
 %global with_bundled 0
 %global with_debug 0
 %global with_check 0

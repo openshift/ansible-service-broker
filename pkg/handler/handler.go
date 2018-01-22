@@ -59,8 +59,6 @@ const (
 	UserInfoContext RequestContextKey = "userInfo"
 )
 
-// TODO: implement asynchronous operations
-
 type handler struct {
 	router           mux.Router
 	broker           broker.Broker
@@ -72,8 +70,6 @@ type handler struct {
 func authHandler(h http.Handler, providers []auth.Provider) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// TODO: determine what to do with the Principal. We don't really have a
-		// context or a session to store it on. Do we need it past this?
 		var principalFound error
 		for _, provider := range providers {
 			principal, err := provider.GetPrincipal(r)

@@ -121,7 +121,6 @@ func (d *Dao) DeleteSpec(specID string) error {
 
 // BatchSetSpecs - set specs based on SpecManifest in the kvp API.
 func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
-	// TODO: Is there no batch insert in the etcd api?
 	for id, spec := range specs {
 		err := d.SetSpec(id, spec)
 		if err != nil {
@@ -155,7 +154,6 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 
 // BatchDeleteSpecs - set specs based on SpecManifest in the kvp API.
 func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
-	// TODO: Is there no batch insert in the etcd api?
 	for _, spec := range specs {
 		err := d.DeleteSpec(spec.ID)
 		if err != nil {

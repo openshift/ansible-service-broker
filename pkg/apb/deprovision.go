@@ -37,7 +37,6 @@ func Deprovision(instance *ServiceInstance) (string, error) {
 	// was introduced as a change to the apb instance.Spec to support integration
 	// with the broker and still allow for providing an img path
 	// Legacy ansibleapps will hit this.
-	// TODO: Move this validation to a Spec creation function (yet to be created)
 	if instance.Spec.Image == "" {
 		log.Error("No image field found on the apb instance.Spec (apb.yaml)")
 		log.Error("apb instance.Spec requires [name] and [image] fields to be separate")

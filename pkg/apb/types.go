@@ -280,7 +280,6 @@ type BindInstance struct {
 }
 
 // LoadJSON - Generic function to unmarshal json
-// TODO: Remove in favor of calling the same method.
 func LoadJSON(payload string, obj interface{}) error {
 	err := json.Unmarshal([]byte(payload), obj)
 	if err != nil {

@@ -51,9 +51,6 @@ func writeResponse(w http.ResponseWriter, code int, obj interface{}) error {
 }
 
 func writeDefaultResponse(w http.ResponseWriter, code int, resp interface{}, err error) error {
-	// TODO: ke.StatusError import is not working, compiler thinks ke.StatusError is undefined...
-	// } else if statusErr, ok := err.(*ke.StatusError); ok {
-	// return writeResponse(w, int(statusErr.ErrStatus.Code), broker.ErrorResponse{Description: err.Error()})
 	if err == nil {
 		return writeResponse(w, code, resp)
 	}

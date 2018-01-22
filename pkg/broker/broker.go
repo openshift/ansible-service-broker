@@ -82,7 +82,6 @@ type Broker interface {
 	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool) (*BindResponse, error)
 	Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
-	// TODO: consider returning a struct + error
 	Recover() (string, error)
 	GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error)
 	GetBindInstance(uuid.UUID) (apb.BindInstance, error)
@@ -173,7 +172,6 @@ func (a AnsibleBroker) GetBindInstance(bindUUID uuid.UUID) (apb.BindInstance, er
 
 // Bootstrap - Loads all known specs from a registry into local storage for reference
 // Potentially a large download; on the order of 10s of thousands
-// TODO: Response here? Async?
 // TODO: How do we handle a large amount of data on this side as well? Pagination?
 func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	log.Info("AnsibleBroker::Bootstrap")
@@ -403,9 +401,6 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// YES, we have a podname
 			log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
 
-			// TODO: ExtractCredentials is doing more than it should
-			// be and it needs to be broken up.
-
 			// did the pod finish?
 			extCreds, extErr := apb.ExtractCredentials(
 				rs.State.Podname,
@@ -414,7 +409,6 @@ func (a AnsibleBroker) Recover() (string, error) {
 			)
 
 			// NO, pod failed.
-			// TODO: do we restart the job or mark it as failed?
 			if extErr != nil {
 				log.Error("broker::Recover error occurred.")
 				log.Error("%s", extErr.Error())
@@ -465,7 +459,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	log.Debugf("Filtering secret parameters out of specs...")
 	specs, err = apb.FilterSecrets(specs)
 	if err != nil {
-		// TODO: Should we blow up or warn and continue?
+		// Should we blow up or warn and continue?
 		log.Errorf("Something went real bad trying to load secrets %v", err)
 		return nil, err
 	}
@@ -519,11 +513,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	////////////////////////////////////////////////////////////
 	// Provision Flow
 	// -> Retrieve Spec from etcd (if missing, 400, this returns err missing)
-	// -> TODO: Check to see if the spec supports or requires async, and reconcile
-	//    need a typed error condition so the REST server knows correct response
-	//    depending on the scenario
-	//    (async requested, unsupported, 422)
-	//    (async not requested, required, ?)
 	// -> Make entry in /instance, ID'd by instance. Value should be Instance type
 	//    Purpose is to make sure everything neeed to deprovision is available
 	//    in persistence.
@@ -663,7 +652,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			Method: apb.JobMethodProvision,
 		})
 	} else {
-		// TODO: do we want to do synchronous provisioning?
 		log.Info("reverting to synchronous provisioning in progress")
 		_, extCreds, err := apb.Provision(serviceInstance)
 		if extCreds != nil {
@@ -742,7 +730,6 @@ func (a AnsibleBroker) Deprovision(
 		return &DeprovisionResponse{Operation: token}, nil
 	}
 
-	// TODO: do we want to do synchronous deprovisioning?
 	if !skipApbExecution {
 		log.Info("Synchronous deprovision in progress")
 		_, err = apb.Deprovision(&instance)
@@ -948,7 +935,6 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		}
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// we are synchronous mode
-		// TODO: decide if we need to keep this at all
 		log.Info("Broker configured to run APB bind")
 		_, bindExtCreds, err = apb.Bind(&instance, &params)
 
@@ -970,7 +956,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		log.Warning("Broker configured to *NOT* launch and run APB bind")
 	}
 
-	// TODO: if we're sync we need to return the Credentials, otherwise the
+	// if we're sync we need to return the Credentials, otherwise the
 	// Operation with the token
 	// maybe we just have 2 returns for each if/else segment
 	return a.buildBindResponse(provExtCreds, bindExtCreds, async, token)
@@ -1145,11 +1131,6 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	// Update Flow
 	// -> Retrieve Spec from etcd (if missing, 400, this returns err missing)
 	// -> Retrieve Instance from etcd (if missing, 400, this returns err missing)
-	// -> TODO: Check to see if the spec supports or requires async, and reconcile
-	//    need a typed error condition so the REST server knows correct response
-	//    depending on the scenario
-	//    (async requested, unsupported, 422)
-	//    (async not requested, required, ?)
 	// -> Update entry in /instance, ID'd by instance. Value should be Instance type
 	//    Purpose is to make sure everything neeed to deprovision is available
 	//    in persistence.
@@ -1308,7 +1289,6 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		// is set and the job was already started. But I need the token.
 		a.dao.SetState(instanceUUID.String(), apb.JobState{Token: token, State: apb.StateInProgress, Method: apb.JobMethodUpdate})
 	} else {
-		// TODO: do we want to do synchronous updating?
 		log.Info("reverting to synchronous update in progress")
 		_, extCreds, err := apb.Update(si)
 		if extCreds != nil {
@@ -1371,7 +1351,6 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	log.Debugf("plan_id: %s", req.PlanID)
 	log.Debugf("operation:  %s", req.Operation) // Operation is the job token id from the work_engine
 
-	// TODO:validate the format to avoid some sort of injection hack
 	jobstate, err := a.dao.GetState(instanceUUID.String(), req.Operation)
 	if err != nil {
 		// not sure what we do with the error if we can't find the state
