@@ -10,3 +10,8 @@ Some bash scripts to exercise the OSB API using curl.
 * last_operation.sh - polls the last_operation endpoint for job status
 * provision.sh - provisions a service instance
 * unbind.sh - deletes a bind
+
+When running the scripts you will need to be logged into the OpenShift cluster
+since the scripts will use `oc whoami -t` to get your token for authentication.
+
+NOTE: and you can't be a system:admin for this.
