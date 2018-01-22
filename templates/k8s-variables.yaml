@@ -4,7 +4,7 @@
 
 dockerhub_org: ansibleplaybookbundle
 
-broker_image: "ansibleplaybookbundle/ansible-service-broker:latest"
+broker_image: "ansibleplaybookbundle/origin-ansible-service-broker:latest"
 etcd_image: "quay.io/coreos/etcd:latest"
 
 # Path of the etcd binary

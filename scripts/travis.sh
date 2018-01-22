@@ -110,6 +110,21 @@ elif [[ "$action" == "ci" ]]; then
   echo "================================="
   echo "            Broker CI            "
   echo "================================="
-  make ci LOCAL_CI=false
+  make ci
+  exit $?
+elif [[ "$action" == "k8s-ci" ]]; then
+  echo "================================="
+  echo "    Broker CI for Kubernetes     "
+  echo "================================="
+  make ci-k
+  exit $?
+elif [[ "$action" == "setup-minikube" ]]; then
+  ./scripts/broker-ci/setup-minikube.sh
+  exit $?
+elif [[ "$action" == "k8s-catalog" ]]; then
+  ./scripts/broker-ci/setup-catalog.sh
+  exit $?
+elif [[ "$action" == "k8s-broker" ]]; then
+  TAG=build ./scripts/run_latest_k8s_build.sh
   exit $?
 fi
