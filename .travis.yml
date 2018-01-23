@@ -17,6 +17,11 @@ jobs:
               TRAVIS_COMMIT_RANGE="FETCH_HEAD...$TRAVIS_BRANCH"
             fi
             git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|examples))/' || {
+              git diff --name-only HEAD^
+              echo $TRAVIS_COMMIT_RANGE
+              echo $(git diff --name-only $TRAVIS_COMMIT_RANGE)
+              echo $(git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|examples))/')
+
               echo "Only docs were updated, stopping build process."
               exit 0
             }
