@@ -216,7 +216,7 @@ If you see connection errors in the logs, review the [Service Catalog and ASB Co
 
 ## Debugging APBs
 
-Once the ASB is communication with the service catalog have been verified, you may view information about the APBs. For example, you may want to get a list of all of your APBs (services), along with all of their service plans.
+Once the ASB's communication with the service catalog has been verified, you may view information about the APBs. For example, you may want to get a list of all of your APBs (services), along with all of their service plans.
 
 ### WebUI
 
