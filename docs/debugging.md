@@ -29,77 +29,7 @@ All pods should be in the ready and should be 'Running'.  If not, investigate th
 The ASB will first get a list of the APBs from the specified org upon bootstrap.  For example, if the [`ansibleplaybookbundle`](https://hub.docker.com/u/ansibleplaybookbundle/dashboard/) org was used, the ASB pod logs will show some like this in the very beginning of the log
 
 ```bash
-$ oc  logs asb-1-wtd6f
-Using config file mounted to /etc/ansible-service-broker/config.yaml
-============================================================
-==           Starting Ansible Service Broker...           ==
-============================================================
-[2018-01-22T21:22:11.89Z] [NOTICE] - Initializing clients...
-[2018-01-22T21:22:11.891Z] [DEBUG] - Trying to connect to etcd
-[2018-01-22T21:22:11.891Z] [INFO] - == ETCD CX ==
-[2018-01-22T21:22:11.891Z] [INFO] - EtcdHost: asb-etcd.ansible-service-broker.svc
-[2018-01-22T21:22:11.891Z] [INFO] - EtcdPort: 2379
-[2018-01-22T21:22:11.891Z] [INFO] - Endpoints: [https://asb-etcd.ansible-service-broker.svc:2379]
-[2018-01-22T21:22:11.907Z] [INFO] - Etcd Version [Server: 3.2.15, Cluster: 3.2.0]
-[2018-01-22T21:22:11.911Z] [DEBUG] - Connecting to Cluster
-[2018-01-22T21:22:11.936Z] [INFO] - OpenShift version: v3.9.0-alpha.3+a7df486-94
-[2018-01-22T21:22:11.938Z] [DEBUG] - plugin for the network - 
-[2018-01-22T21:22:11.938Z] [NOTICE] - unable to retrieve the network plugin, defaulting to not joining networks - clusternetworks.network.openshift.io "default" not found
-[2018-01-22T21:22:11.939Z] [INFO] - Kubernetes version: v1.9.1+a0ce1bc657
-[2018-01-22T21:22:11.939Z] [DEBUG] - Connecting Dao
-[2018-01-22T21:22:11.939Z] [DEBUG] - Connecting Registry
-[2018-01-22T21:22:11.939Z] [DEBUG] - Unable to get user from config
-[2018-01-22T21:22:11.939Z] [DEBUG] - Unable to get pass from config
-[2018-01-22T21:22:11.939Z] [DEBUG] - Unable to get images from config
-[2018-01-22T21:22:11.939Z] [DEBUG] - Unable to get namespaces from config
-[2018-01-22T21:22:11.939Z] [DEBUG] - Unable to get fail_on_error from config
-[2018-01-22T21:22:11.939Z] [DEBUG] - Unable to get black_list from config
-[2018-01-22T21:22:11.939Z] [DEBUG] - Unable to get auth_type from config
-[2018-01-22T21:22:11.939Z] [DEBUG] - Unable to get auth_name from config
-[2018-01-22T21:22:11.939Z] [INFO] - == REGISTRY CX == 
-[2018-01-22T21:22:11.939Z] [INFO] - Name: dh
-[2018-01-22T21:22:11.939Z] [INFO] - Type: dockerhub
-[2018-01-22T21:22:11.94Z] [INFO] - Url: docker.io
-[2018-01-22T21:22:11.94Z] [DEBUG] - Creating filter for registry: dh
-[2018-01-22T21:22:11.94Z] [DEBUG] - whitelist: [.*-apb$]
-[2018-01-22T21:22:11.94Z] [DEBUG] - blacklist: []
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get url from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get user from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get pass from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get org from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get tag from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get images from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get fail_on_error from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get black_list from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get auth_type from config
-[2018-01-22T21:22:11.94Z] [DEBUG] - Unable to get auth_name from config
-[2018-01-22T21:22:11.94Z] [INFO] - == REGISTRY CX == 
-[2018-01-22T21:22:11.94Z] [INFO] - Name: localregistry
-[2018-01-22T21:22:11.94Z] [INFO] - Type: local_openshift
-[2018-01-22T21:22:11.94Z] [INFO] - Url: 
-[2018-01-22T21:22:11.94Z] [DEBUG] - Creating filter for registry: localregistry
-[2018-01-22T21:22:11.94Z] [DEBUG] - whitelist: [.*-apb$]
-[2018-01-22T21:22:11.94Z] [DEBUG] - blacklist: []
-[2018-01-22T21:22:11.94Z] [DEBUG] - Initializing WorkEngine
-[2018-01-22T21:22:11.94Z] [DEBUG] - Active work engine topics: map[unbinding_topic:0xc42007f0e0 provision_topic:0xc42007ef60 deprovision_topic:0xc42007efc0 update_topic:0xc42007f020 binding_topic:0xc42007f080]
-[2018-01-22T21:22:11.94Z] [INFO] - Listening for provision messages
-[2018-01-22T21:22:11.94Z] [INFO] - Listening for deprovision messages
-[2018-01-22T21:22:11.941Z] [INFO] - Listening for binding messages
-[2018-01-22T21:22:11.941Z] [DEBUG] - Unable to get secrets from config
-[2018-01-22T21:22:11.94Z] [INFO] - Listening for update messages
-[2018-01-22T21:22:11.941Z] [DEBUG] - Creating AnsibleBroker
-[2018-01-22T21:22:11.941Z] [DEBUG] - Unable to get cluster_url from config
-[2018-01-22T21:22:11.941Z] [INFO] - Initiating Recovery Process
-[2018-01-22T21:22:11.94Z] [INFO] - Listening for binding messages
-[2018-01-22T21:22:11.941Z] [DEBUG] - Dao::FindByState
-[2018-01-22T21:22:11.941Z] [INFO] - No jobs to recover
-[2018-01-22T21:22:11.941Z] [NOTICE] - 
-[2018-01-22T21:22:11.942Z] [INFO] - Broker configured to bootstrap on startup
-[2018-01-22T21:22:11.942Z] [INFO] - Attempting bootstrap...
-[2018-01-22T21:22:11.942Z] [INFO] - AnsibleBroker::Bootstrap
-[2018-01-22T21:22:11.942Z] [DEBUG] - Dao::BatchGetRaw
-[2018-01-22T21:22:11.942Z] [DEBUG] - DockerHubAdapter::GetImages
-[2018-01-22T21:22:11.942Z] [DEBUG] - BundleSpecLabel: com.redhat.apb.spec
+$ oc  logs asb-1-wtd6f | grep ansibleplaybookbundle
 [2018-01-22T21:22:11.942Z] [DEBUG] - Loading image list for org: [ ansibleplaybookbundle ]
 [2018-01-22T21:22:13.005Z] [DEBUG] - Trying to load ansibleplaybookbundle/s2i-apb
 [2018-01-22T21:22:13.005Z] [DEBUG] - Trying to load ansibleplaybookbundle/hello-world-apb
@@ -137,8 +67,6 @@ Using config file mounted to /etc/ansible-service-broker/config.yaml
 [2018-01-22T21:22:13.006Z] [DEBUG] - Trying to load ansibleplaybookbundle/origin-pod
 [2018-01-22T21:22:13.007Z] [DEBUG] - Trying to load ansibleplaybookbundle/origin-sti-builder
 [2018-01-22T21:22:13.007Z] [DEBUG] - Trying to load ansibleplaybookbundle/origin-recycler
-[2018-01-22T21:22:13.007Z] [DEBUG] - Filter applied against registry: dh
-[2018-01-22T21:22:13.007Z] [DEBUG] - APBs passing white/blacklist filter:
 [2018-01-22T21:22:13.007Z] [DEBUG] - -> ansibleplaybookbundle/pyzip-demo-apb
 [2018-01-22T21:22:13.007Z] [DEBUG] - -> ansibleplaybookbundle/pyzip-demo-db-apb
 [2018-01-22T21:22:13.007Z] [DEBUG] - -> ansibleplaybookbundle/nginx-apb
@@ -157,6 +85,23 @@ Using config file mounted to /etc/ansible-service-broker/config.yaml
 [2018-01-22T21:22:13.008Z] [DEBUG] - -> ansibleplaybookbundle/wordpress-ha-apb
 [2018-01-22T21:22:13.008Z] [DEBUG] - -> ansibleplaybookbundle/postgresql-apb
 [2018-01-22T21:22:13.008Z] [DEBUG] - -> ansibleplaybookbundle/thelounge-apb
+[2018-01-22T21:22:13.305Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/pyzip-demo-apb:latest into Spec
+[2018-01-22T21:22:13.521Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/pyzip-demo-db-apb:latest into Spec
+[2018-01-22T21:22:13.633Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/nginx-apb:latest into Spec
+[2018-01-22T21:22:13.831Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/manageiq-apb:latest into Spec
+[2018-01-22T21:22:13.938Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/jenkins-apb:latest into Spec
+[2018-01-22T21:22:14.039Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/hello-world-db-apb:latest into Spec
+[2018-01-22T21:22:14.156Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/rds-postgres-apb:latest into Spec
+[2018-01-22T21:22:14.272Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/etherpad-apb:latest into Spec
+[2018-01-22T21:22:14.389Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/mediawiki-apb:latest into Spec
+[2018-01-22T21:22:14.569Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/mysql-apb:latest into Spec
+[2018-01-22T21:22:14.679Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/mariadb-apb:latest into Spec
+[2018-01-22T21:22:15.045Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/hello-world-apb:latest into Spec
+[2018-01-22T21:22:15.29Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/rocketchat-apb:latest into Spec
+[2018-01-22T21:22:15.395Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/hastebin-apb:latest into Spec
+[2018-01-22T21:22:16.311Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/wordpress-ha-apb:latest into Spec
+[2018-01-22T21:22:16.759Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/postgresql-apb:latest into Spec
+[2018-01-22T21:22:16.853Z] [DEBUG] - Successfully converted Image docker.io/ansibleplaybookbundle/thelounge-apb:latest into Spec
 ```
 
 If you do NOT see any APBs as shown in the logs above, verify that the Docker Org used is correct, and that the permissions for the org are properly set (i.e. public).
@@ -212,6 +157,12 @@ Verify that ASB's service catalog connection was successful by making sure that 
 [2018-01-22T21:32:17.141Z] [INFO] - Broker configured to refresh specs every 10m0s seconds
 ```
 
+You can also verify APB's connection to the service catalog via the `curl` command below, which lists all the APB information:
+
+```bash
+curl -k -H "Authorization: Bearer $(oc whoami -t)" https://$(oc get routes --no-headers | awk '{print $2}')/ansible-service-broker/v2/catalog
+```
+
 If you see connection errors in the logs, review the [Service Catalog and ASB Communication Troubleshooting Guide](https://github.com/openshift/ansible-service-broker/blob/master/docs/troubleshooting.md#service-catalog-and-broker-communication-issues) for further troubleshooting steps.
 
 ## Debugging APBs
@@ -224,7 +175,7 @@ Logon to the OpenShift WebUI (e.g. <https://172.17.0.1:8443>). You should see a 
 
 ### CLI
 
-You can also get all of the APB information via the `curl` command as shown below:
+As shown earlier, you can retrieve all of the APB information via the `curl` command below:
 
 ```bash
 curl -k -H "Authorization: Bearer $(oc whoami -t)" https://$(oc get routes --no-headers | awk '{print $2}')/ansible-service-broker/v2/catalog
