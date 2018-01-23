@@ -184,6 +184,8 @@ func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
 		createVarHandler(h.unbind)).Methods("DELETE")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}/last_operation",
+		createVarHandler(h.lastoperation)).Methods("GET")
 
 	if brokerConfig.GetBool("broker.dev_broker") {
 		s.HandleFunc("/v2/apb", createVarHandler(h.apbAddSpec)).Methods("POST")
@@ -692,9 +694,18 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 		return
 	}
 
+	// we have a binding job
+	if strings.Index(r.URL.Path, "/service_bindings/") > 0 {
+		bindingUUID := uuid.Parse(params["binding_uuid"])
+		if bindingUUID == nil {
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
+			return
+		}
+	}
+
 	req := broker.LastOperationRequest{}
 
-	// operation is rqeuired
+	// operation is required
 	if op := r.FormValue("operation"); op != "" {
 		req.Operation = op
 	} else {
