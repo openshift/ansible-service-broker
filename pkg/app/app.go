@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-// TODO: REMOVE Comment
 package app
 
 import (
