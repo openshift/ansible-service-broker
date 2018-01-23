@@ -110,60 +110,13 @@ If you do NOT see any APBs as shown in the logs above, verify that the Docker Or
 
 The ASB may get a list of APBs from the Docker Org, but it still needs to connect to the service catalog to use them in the cluster.
 
-Verify that ASB's service catalog connection was successful by making sure that no connection errors occurred (e.g. 'TLS handshake errors').  If the ASB's service catalog connection was successful, the logs may look something like this.
+First check the ASB's logs and making sure that no connection errors occurred (e.g. 'TLS handshake errors'). If you see connection errors in the logs, review the [Service Catalog and ASB Communication Troubleshooting Guide](https://github.com/openshift/ansible-service-broker/blob/master/docs/troubleshooting.md#service-catalog-and-broker-communication-issues) for further troubleshooting steps.
 
-```bash
-172.17.0.4 - - [22/Jan/2018:21:23:04 +0000] "GET /ansible-service-broker/v2/catalog HTTP/1.1" 200 79226
-[2018-01-22T21:23:10.425Z] [DEBUG] - Unable to find originating origin header
-[2018-01-22T21:23:10.425Z] [INFO] - AnsibleBroker::Catalog
-[2018-01-22T21:23:10.426Z] [DEBUG] - Dao::BatchGetRaw
-[2018-01-22T21:23:10.427Z] [DEBUG] - Successfully loaded [ 17 ] objects from etcd dir [ /spec ]
-[2018-01-22T21:23:10.427Z] [DEBUG] - Batch idx [ 0 ] -> [ a946a139a9308a59bf642ac52b4ba317 ]
-[2018-01-22T21:23:10.428Z] [DEBUG] - Batch idx [ 1 ] -> [ ba9c2d4db404ce97111bea80225de968 ]
-[2018-01-22T21:23:10.428Z] [DEBUG] - Batch idx [ 2 ] -> [ f6c4486b7fb0cdac4b58e193607f7011 ]
-[2018-01-22T21:23:10.428Z] [DEBUG] - Batch idx [ 3 ] -> [ 9f7da06f179b895a8ee5f9a3ce4af7ef ]
-[2018-01-22T21:23:10.428Z] [DEBUG] - Batch idx [ 4 ] -> [ 1dda1477cace09730bd8ed7a6505607e ]
-[2018-01-22T21:23:10.428Z] [DEBUG] - Batch idx [ 5 ] -> [ f4509733ca0636df3d69b6af53260160 ]
-[2018-01-22T21:23:10.428Z] [DEBUG] - Batch idx [ 6 ] -> [ 6df7afbd132c094704b4a8bfd44378c0 ]
-[2018-01-22T21:23:10.429Z] [DEBUG] - Batch idx [ 7 ] -> [ ddd528762894b277001df310a126d5ad ]
-[2018-01-22T21:23:10.429Z] [DEBUG] - Batch idx [ 8 ] -> [ eebf92c7670f30007a4b8db3a8166d5c ]
-[2018-01-22T21:23:10.429Z] [DEBUG] - Batch idx [ 9 ] -> [ 135bd0df0401e2fdd52fd136935014fb ]
-[2018-01-22T21:23:10.429Z] [DEBUG] - Batch idx [ 10 ] -> [ 67042296c7c95e84142f21f58da2ebfe ]
-[2018-01-22T21:23:10.429Z] [DEBUG] - Batch idx [ 11 ] -> [ 0e991006d21029e47abe71acc255e807 ]
-[2018-01-22T21:23:10.429Z] [DEBUG] - Batch idx [ 12 ] -> [ ca91b61da8476984f18fc13883ae2fdb ]
-[2018-01-22T21:23:10.429Z] [DEBUG] - Batch idx [ 13 ] -> [ b43a4272a6efcaaa3e0b9616324f1099 ]
-[2018-01-22T21:23:10.429Z] [DEBUG] - Batch idx [ 14 ] -> [ 693cb128e68365830c913631300deac0 ]
-[2018-01-22T21:23:10.43Z] [DEBUG] - Batch idx [ 15 ] -> [ c65fbd4e701cb71d74fd2cc35e14432b ]
-[2018-01-22T21:23:10.43Z] [DEBUG] - Batch idx [ 16 ] -> [ ab24ffd54da0aefdea5277e0edce8425 ]
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secret parameters out of specs...
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-wordpress-ha-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-rocketchat-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-mediawiki-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-hello-world-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-postgresql-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-jenkins-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-manageiq-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-mysql-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-thelounge-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-nginx-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-mariadb-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-pyzip-demo-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-etherpad-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-hello-world-db-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-pyzip-demo-db-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-rds-postgres-apb
-[2018-01-22T21:23:10.43Z] [DEBUG] - Filtering secrets from spec dh-hastebin-apb
-172.17.0.4 - - [22/Jan/2018:21:23:10 +0000] "GET /ansible-service-broker/v2/catalog HTTP/1.1" 200 79226
-[2018-01-22T21:32:17.141Z] [INFO] - Broker configured to refresh specs every 10m0s seconds
-```
-
-You can also verify APB's connection to the service catalog via the `curl` command below, which lists all the APB information:
+You can verify ASB's connection to the service catalog via the `curl` command below, which also provides all the APB information:
 
 ```bash
 curl -k -H "Authorization: Bearer $(oc whoami -t)" https://$(oc get routes --no-headers | awk '{print $2}')/ansible-service-broker/v2/catalog
 ```
-
-If you see connection errors in the logs, review the [Service Catalog and ASB Communication Troubleshooting Guide](https://github.com/openshift/ansible-service-broker/blob/master/docs/troubleshooting.md#service-catalog-and-broker-communication-issues) for further troubleshooting steps.
 
 ## Debugging APBs
 
@@ -175,11 +128,15 @@ Logon to the OpenShift WebUI (e.g. <https://172.17.0.1:8443>). You should see a 
 
 ### CLI
 
+#### APB List
+
 As shown earlier, you can retrieve all of the APB information via the `curl` command below:
 
 ```bash
 curl -k -H "Authorization: Bearer $(oc whoami -t)" https://$(oc get routes --no-headers | awk '{print $2}')/ansible-service-broker/v2/catalog
 ```
+
+#### Service Plans
 
 You can get a list of all of the service plans via the `oc get clusterserviceplans` command.  However, the output of that command does not show anything useful since it only shows the 'NAME' and 'AGE'. To get a better list, issue the following command
 
