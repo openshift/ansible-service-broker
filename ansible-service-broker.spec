@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.6
+Version: 1.1.7
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,16 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Jan 23 2018 Jason Montleon <jmontleo@redhat.com> 1.1.7-1
+- Skip running the travis job if we're only changing docs (#678)
+  (rhallise@redhat.com)
+- fixes #665 - remove many of the TODOs (#673) (jmrodri@gmail.com)
+- Add a second job that runs the broker on k8s (#643) (rhallise@redhat.com)
+- Update test bash scripts (#668) (jmrodri@gmail.com)
+- Fail faster with travis (#658) (rhallise@redhat.com)
+- Remove old comment re: platform version header (#661) (ernelson@redhat.com)
+- Remove ancient comment with app startup (#664) (ernelson@redhat.com)
+
 * Fri Jan 19 2018 David Zager <david.j.zager@gmail.com> 1.1.6-1
 - Bug 1536629 - send job state and credentials from job (#610)
   (maleck13@users.noreply.github.com)
