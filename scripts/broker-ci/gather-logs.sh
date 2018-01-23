@@ -45,7 +45,7 @@ function instance-logs {
 function catalog-logs {
     log-header "catalog-logs"
     catalog_ns=$(kubectl get ns | grep catalog | cut -f 1 -d ' ' | head -1)
-    kubectl logs $(kubectl get pods -o name -l app=controller-manager --all-namespaces | cut -f 2 -d '/') -n $catalog_ns
+    kubectl logs $(kubectl get pods -n $catalog_ns | grep controller-manager | awk '{ print $1 }') -n $catalog_ns
     log-footer "catalog-logs"
 }
 
