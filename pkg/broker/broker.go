@@ -79,7 +79,7 @@ type Broker interface {
 	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
 	Deprovision(apb.ServiceInstance, string, bool, bool) (*DeprovisionResponse, error)
-	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool) (*BindResponse, error)
+	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool) (*BindResponse, bool, error)
 	Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*UnbindResponse, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	Recover() (string, error)
@@ -804,12 +804,14 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 	}
 
 	log.Debug("broker.GetBind: we got the bind credentials")
-	return a.buildBindResponse(provExtCreds, bindExtCreds, false, "")
+	return NewBindResponse(provExtCreds, bindExtCreds)
 }
 
-// Bind - will create a binding between a service.
+// Bind - will create a binding between a service. Parameter "async" declares
+// whether the caller is willing to have the operation run asynchronously. The
+// returned bool will be true if the operation actually ran asynchronously.
 func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID, req *BindRequest, async bool,
-) (*BindResponse, error) {
+) (*BindResponse, bool, error) {
 	// binding_id is the id of the binding.
 	// the instanceUUID is the previously provisioned service id.
 	//
@@ -826,17 +828,17 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		errMsg :=
 			"PlanID from bind request is blank. " +
 				"Bind requests must specify PlanIDs"
-		return nil, errors.New(errMsg)
+		return nil, false, errors.New(errMsg)
 	}
 
 	planName, err := a.dao.GetPlanName(req.PlanID)
 	if err != nil {
 		// etcd return not found i.e. code 100
 		if client.IsKeyNotFound(err) {
-			return nil, ErrorNotFound
+			return nil, false, ErrorNotFound
 		}
 		// otherwise unknown error bubble it up
-		return nil, err
+		return nil, false, err
 	}
 
 	log.Debugf(
@@ -872,32 +874,32 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
-		return nil, err
+		return nil, false, err
 	}
 	if bi, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
 		if uuid.Equal(bi.ID, bindingInstance.ID) {
 			if reflect.DeepEqual(bi.Parameters, bindingInstance.Parameters) {
 				bindExtCreds, err := a.dao.GetExtractedCredentials(bi.ID.String())
 				if err != nil && !client.IsKeyNotFound(err) {
-					return nil, err
+					return nil, false, err
 				}
 				log.Debug("already have this binding instance, returning 200")
 				// since we have this already, we can set async to false
-				resp, err := a.buildBindResponse(provExtCreds, bindExtCreds, false, "")
+				resp, err := NewBindResponse(provExtCreds, bindExtCreds)
 				if err != nil {
-					return nil, err
+					return nil, false, err
 				}
-				return resp, ErrorBindingExists
+				return resp, false, ErrorBindingExists
 			}
 
 			// parameters are different
 			log.Info("duplicate binding instance diff params, returning 409 conflict")
-			return nil, ErrorDuplicate
+			return nil, false, ErrorDuplicate
 		}
 	}
 
 	if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// Add the DB Credentials this will allow the apb to use these credentials
@@ -923,7 +925,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		token, err = a.engine.StartNewJob("", bindjob, BindingTopic)
 		if err != nil {
 			log.Error("Failed to start new job for async binding\n%s", err.Error())
-			return nil, err
+			return nil, false, err
 		}
 
 		if err := a.dao.SetState(instance.ID.String(), apb.JobState{
@@ -932,61 +934,35 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 			Method: apb.JobMethodBind,
 		}); err != nil {
 			log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
+			return nil, false, err
 		}
+		return &BindResponse{Operation: token}, true, nil
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// we are synchronous mode
 		log.Info("Broker configured to run APB bind")
 		_, bindExtCreds, err = apb.Bind(&instance, &params)
 
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		instance.AddBinding(bindingUUID)
 		if err := a.dao.SetServiceInstance(instance.ID.String(), &instance); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if bindExtCreds != nil {
 			err = a.dao.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
 			if err != nil {
 				log.Errorf("Could not persist extracted credentials - %v", err)
-				return nil, err
+				return nil, false, err
 			}
 		}
 	} else {
 		log.Warning("Broker configured to *NOT* launch and run APB bind")
 	}
 
-	// if we're sync we need to return the Credentials, otherwise the
-	// Operation with the token
-	// maybe we just have 2 returns for each if/else segment
-	return a.buildBindResponse(provExtCreds, bindExtCreds, async, token)
-}
-
-func (a AnsibleBroker) buildBindResponse(pCreds, bCreds *apb.ExtractedCredentials,
-	async bool, token string) (*BindResponse, error) {
-
-	if async {
-		if token == "" {
-			log.Error("async used but no job token was created")
-			return nil, errors.New("no job token created during async")
-		}
-
-		return &BindResponse{Operation: token}, nil
-	}
-
-	// Can't bind to anything if we have nothing to return to the catalog
-	if pCreds == nil && bCreds == nil {
-		log.Errorf("No extracted credentials found from provision or bind instance ID")
-		return nil, errors.New("No credentials available")
-	}
-
-	if bCreds != nil {
-		log.Debugf("bind creds: %v", bCreds.Credentials)
-		return &BindResponse{Credentials: bCreds.Credentials}, nil
-	}
-
-	log.Debugf("provision bind creds: %v", pCreds.Credentials)
-	return &BindResponse{Credentials: pCreds.Credentials}, nil
+	resp, err := NewBindResponse(provExtCreds, bindExtCreds)
+	// If we made it this far, the operation completed synchronously.
+	return resp, false, err
 }
 
 // Unbind - unbind a services previous binding

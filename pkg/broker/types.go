@@ -18,6 +18,7 @@ package broker
 
 import (
 	"encoding/json"
+	"errors"
 
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
@@ -216,6 +217,23 @@ type BindResponse struct {
 	RouteServiceURL string                 `json:"route_service_url,omitempty"`
 	VolumeMounts    []interface{}          `json:"volume_mounts,omitempty"`
 	Operation       string                 `json:"operation,omitempty"`
+}
+
+// NewBindResponse - creates a BindResponse based on available credentials.
+func NewBindResponse(pCreds, bCreds *apb.ExtractedCredentials) (*BindResponse, error) {
+	// Can't bind to anything if we have nothing to return to the catalog
+	if pCreds == nil && bCreds == nil {
+		log.Errorf("No extracted credentials found from provision or bind instance ID")
+		return nil, errors.New("No credentials available")
+	}
+
+	if bCreds != nil {
+		log.Debugf("bind creds: %v", bCreds.Credentials)
+		return &BindResponse{Credentials: bCreds.Credentials}, nil
+	}
+
+	log.Debugf("provision bind creds: %v", pCreds.Credentials)
+	return &BindResponse{Credentials: pCreds.Credentials}, nil
 }
 
 // DeprovisionResponse - Response for a deprovision
