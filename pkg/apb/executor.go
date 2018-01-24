@@ -255,6 +255,18 @@ func createPodEnv(executionContext ExecutionContext) []v1.EnvVar {
 			v1.EnvVar{
 				Name:  noProxyEnvVar,
 				Value: conf.NoProxy,
+			},
+			v1.EnvVar{
+				Name:  strings.ToLower(httpProxyEnvVar),
+				Value: conf.HTTPProxy,
+			},
+			v1.EnvVar{
+				Name:  strings.ToLower(httpsProxyEnvVar),
+				Value: conf.HTTPSProxy,
+			},
+			v1.EnvVar{
+				Name:  strings.ToLower(noProxyEnvVar),
+				Value: conf.NoProxy,
 			}}...)
 	}
 
