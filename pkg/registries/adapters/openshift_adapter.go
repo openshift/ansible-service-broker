@@ -67,8 +67,7 @@ func (r OpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 		r.Log.Debug("%v", imageName)
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
-			r.Log.Errorf("unable to retrieve spec data for image - %v", err)
-			return specs, err
+			r.Log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)
 		}
 		if spec != nil {
 			specs = append(specs, spec)

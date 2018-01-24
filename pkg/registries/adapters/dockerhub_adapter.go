@@ -111,8 +111,7 @@ func (r DockerHubAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	for _, imageName := range imageNames {
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
-			r.Log.Errorf("unable to retrieve spec data for image - %v", err)
-			return specs, err
+			r.Log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)
 		}
 		if spec != nil {
 			specs = append(specs, spec)
