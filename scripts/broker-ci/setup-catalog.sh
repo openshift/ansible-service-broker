@@ -33,10 +33,10 @@ function service-catalog {
     helm install /tmp/service-catalog/charts/catalog \
     --name catalog \
     --namespace catalog \
-    --set apiserver.image="apiserver:canary" \
-    --set apiserver.imagePullPolicy="Never" \
-    --set controllerManager.image="controller-manager:canary" \
-    --set controllerManager.imagePullPolicy="Never"
+    --set imagePullPolicy="Never" \
+    --set image="service-catalog:canary" \
+    --set apiserver.verbosity="2" \
+    --set controllerManager.verbosity="2"
 }
 
 echo "Starting the Service Catalog"

@@ -16,6 +16,12 @@ function log-footer {
     travis_fold end $footer
 }
 
+function docker-images {
+    log-header "docker-images"
+    docker images
+    log-footer "docker-images"
+}
+
 function pod-logs {
     log-header "pod-logs"
     kubectl get pods --all-namespaces
@@ -45,7 +51,7 @@ function instance-logs {
 function catalog-logs {
     log-header "catalog-logs"
     catalog_ns=$(kubectl get ns | grep catalog | cut -f 1 -d ' ' | head -1)
-    kubectl logs --since=10m $(kubectl get pods -n $catalog_ns | grep controller-manager | awk '{ print $1 }') -n $catalog_ns
+    kubectl logs --since=5m $(kubectl get pods -n $catalog_ns | grep controller-manager | awk '{ print $1 }') -n $catalog_ns
     log-footer "catalog-logs"
 }
 
@@ -79,6 +85,7 @@ function print-pod-errors {
 
 function print-all-logs {
     print-pod-errors
+    docker-images
     secret-logs
     pod-logs
     instance-logs
