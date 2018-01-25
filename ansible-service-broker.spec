@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.7
+Version: 1.1.8
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,16 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Jan 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.1.8-1
+- Add proxy docs (#634) (ernelson@redhat.com)
+- Bug 1536629 - Send job msg immediately as job starts. (#671) (maleck13@users.noreply.github.com)
+- Bug 1537367 - missing last_operation for bindings (#677) (jmrodri@gmail.com)
+- Continue to load specs even when a spec fails to load (#682) (rhallise@redhat.com)
+- Bug 1506978 - Include lowercase proxy vars (#683) (ernelson@redhat.com)
+- One CI fix and a few improvements (#679) (rhallise@redhat.com)
+- add ASB debugging guide (#676) (jkim@redhat.com)
+- Bug 1536659 - bind PUT returns http code 202 when operation runs async (#669) (mhrivnak@hrivnak.org)
+
 * Tue Jan 23 2018 Jason Montleon <jmontleo@redhat.com> 1.1.7-1
 - Skip running the travis job if we're only changing docs (#678)
   (rhallise@redhat.com)
