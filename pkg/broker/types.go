@@ -299,5 +299,5 @@ func (jm JobMsg) Render() string {
 // SubscriberDAO defines the interface subscribers use when persisting state
 type SubscriberDAO interface {
 	SetExtractedCredentials(id string, extCreds *apb.ExtractedCredentials) error
-	SetState(id string, state apb.JobState) error
+	SetState(id string, state apb.JobState) (string, error)
 }

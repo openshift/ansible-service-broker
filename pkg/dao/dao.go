@@ -83,10 +83,13 @@ type Dao interface {
 	DeleteExtractedCredentials(string) error
 
 	// SetState - Set the Job State in the kvp API for id.
-	SetState(string, apb.JobState) error
+	SetState(string, apb.JobState) (string, error)
 
 	// GetState - Retrieve a job state from the kvp API for an ID and Token.
 	GetState(string, string) (apb.JobState, error)
+
+	// GetStateByKey - Retrieve a job state from the kvp API for a job key
+	GetStateByKey(key string) (apb.JobState, error)
 
 	// BatchSetPlanNames - set plannames based on PlanNameManifest in the kvp API.
 	BatchSetPlanNames(map[string]string) error
