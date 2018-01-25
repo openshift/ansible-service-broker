@@ -26,15 +26,21 @@ func TestUnBindingJob_Run(t *testing.T) {
 		UnBinder      apb.UnBinder
 		UnBindParams  *apb.Parameters
 		SkipExecution bool
-		Validate      func(msgs []broker.JobMsg) error
+		Validate      func(msg broker.JobMsg) error
 	}{
 		{
 			Name: "expect a success msg",
 			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters) error {
 				return nil
 			},
-			Validate: func(msgs []broker.JobMsg) error {
-				return commonJobMsgValidation(apb.StateSucceeded, apb.JobMethodUnbind, msgs)
+			Validate: func(msg broker.JobMsg) error {
+				if msg.State.State != apb.StateSucceeded {
+					return fmt.Errorf("expected the state to be %v but got %v", apb.StateSucceeded, msg.State.State)
+				}
+				if msg.State.Method != apb.JobMethodUnbind {
+					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodUnbind, msg.State.Method)
+				}
+				return nil
 			},
 		},
 		{
@@ -43,8 +49,14 @@ func TestUnBindingJob_Run(t *testing.T) {
 			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters) error {
 				return nil
 			},
-			Validate: func(msgs []broker.JobMsg) error {
-				return commonJobMsgValidation(apb.StateSucceeded, apb.JobMethodUnbind, msgs)
+			Validate: func(msg broker.JobMsg) error {
+				if msg.State.State != apb.StateSucceeded {
+					return fmt.Errorf("expected the state to be %v but got %v", apb.StateSucceeded, msg.State.State)
+				}
+				if msg.State.Method != apb.JobMethodUnbind {
+					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodUnbind, msg.State.Method)
+				}
+				return nil
 			},
 		},
 		{
@@ -52,16 +64,18 @@ func TestUnBindingJob_Run(t *testing.T) {
 			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters) error {
 				return fmt.Errorf("should not see")
 			},
-			Validate: func(msgs []broker.JobMsg) error {
-				if err := commonJobMsgValidation(apb.StateFailed, apb.JobMethodUnbind, msgs); err != nil {
-					return err
+			Validate: func(msg broker.JobMsg) error {
+				if msg.State.State != apb.StateFailed {
+					return fmt.Errorf("expected the Job to be in state %v but was in %v ", apb.StateFailed, msg.State.State)
 				}
-				lastMsg := msgs[len(msgs)-1]
-				if lastMsg.State.Error == "" {
+				if msg.State.Method != apb.JobMethodUnbind {
+					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodUnbind, msg.State.Method)
+				}
+				if msg.State.Error == "" {
 					return fmt.Errorf("expected an error in the job state but got none")
 				}
-				if lastMsg.State.Error == "should not see" {
-					return fmt.Errorf("expected not to see the error msg %s it should have been replaced with a generic error ", lastMsg.State.Error)
+				if msg.State.Error == "should not see" {
+					return fmt.Errorf("expected not to see the error msg %s it should have been replaced with a generic error ", msg.State.Error)
 				}
 				return nil
 			},
@@ -71,16 +85,18 @@ func TestUnBindingJob_Run(t *testing.T) {
 			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters) error {
 				return apb.ErrorPodPullErr
 			},
-			Validate: func(msgs []broker.JobMsg) error {
-				if err := commonJobMsgValidation(apb.StateFailed, apb.JobMethodUnbind, msgs); err != nil {
-					return err
+			Validate: func(msg broker.JobMsg) error {
+				if msg.State.State != apb.StateFailed {
+					return fmt.Errorf("expected the Job to be in state %v but was in %v ", apb.StateFailed, msg.State.State)
 				}
-				lastMsg := msgs[len(msgs)-1]
-				if lastMsg.State.Error == "" {
+				if msg.State.Method != apb.JobMethodUnbind {
+					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodUnbind, msg.State.Method)
+				}
+				if msg.State.Error == "" {
 					return fmt.Errorf("expected an error in the job state but got none")
 				}
-				if lastMsg.State.Error != apb.ErrorPodPullErr.Error() {
-					return fmt.Errorf("expected to see the error msg %s but got %s ", apb.ErrorPodPullErr, lastMsg.State.Error)
+				if msg.State.Error != apb.ErrorPodPullErr.Error() {
+					return fmt.Errorf("expected to see the error msg %s but got %s ", apb.ErrorPodPullErr, msg.State.Error)
 				}
 				return nil
 			},
@@ -91,16 +107,18 @@ func TestUnBindingJob_Run(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			unbindJob := broker.NewUnbindingJob(serviceInstance, bindingInst, tc.UnBindParams, tc.UnBinder, tc.SkipExecution)
 			receiver := make(chan broker.JobMsg)
+			timedOut := false
 			time.AfterFunc(1*time.Second, func() {
 				close(receiver)
+				timedOut = true
 			})
 			go unbindJob.Run("", receiver)
 
-			var msgs []broker.JobMsg
-			for m := range receiver {
-				msgs = append(msgs, m)
+			msg := <-receiver
+			if timedOut {
+				t.Fatal("timed out waiting for a msg from the Job")
 			}
-			if err := tc.Validate(msgs); err != nil {
+			if err := tc.Validate(msg); err != nil {
 				t.Fatal("failed to validate the jobmsg ", err)
 			}
 

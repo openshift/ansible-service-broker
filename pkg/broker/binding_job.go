@@ -61,8 +61,6 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	}
 	log.Debug("bindjob: binding job started, calling apb.Bind")
 
-	msgBuffer <- jobMsg
-
 	podName, extCreds, err := p.bind(p.serviceInstance, p.params)
 
 	log.Debug("bindjob: returned from apb.Bind")
