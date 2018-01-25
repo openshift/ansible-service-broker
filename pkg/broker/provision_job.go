@@ -49,7 +49,7 @@ func (p *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 			Token:  token,
 		},
 	}
-	msgBuffer <- jobMsg
+
 	podName, extCreds, err := p.provision(p.serviceInstance)
 
 	if err != nil {
