@@ -8,6 +8,7 @@
   * [Secret Parameters](secrets.md)
   * [Debugging](debugging.md)
   * [Troubleshooting](troubleshooting.md)
+  * [Running behind a proxy](proxy.md)
 * Ansible Playbook Bundle
   * [Design](https://github.com/fusor/ansible-playbook-bundle/blob/master/docs/design.md)
 * Bind Operation
