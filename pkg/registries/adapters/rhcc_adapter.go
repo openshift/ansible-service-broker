@@ -72,19 +72,13 @@ func (r RHCCAdapter) GetImageNames() ([]string, error) {
 
 // FetchSpecs - retrieve the spec from the image names
 func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
+	r.Log.Debug("RHCCAdapter::FetchSpecs")
 	specs := []*apb.Spec{}
-	if r.Config.Tag == "" {
-		r.Config.Tag = "latest"
-	}
 	for _, imageName := range imageNames {
-		req, err := http.NewRequest("GET",
-			fmt.Sprintf("%v/v2/%v/manifests/%v", r.Config.URL.String(), imageName, r.Config.Tag), nil)
+		r.Log.Debug("%v", imageName)
+		spec, err := r.loadSpec(imageName)
 		if err != nil {
-			return specs, err
-		}
-		spec, err := imageToSpec(r.Log, req, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
-		if err != nil {
-			return specs, err
+			r.Log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)
 		}
 		if spec != nil {
 			specs = append(specs, spec)
@@ -120,4 +114,18 @@ func (r RHCCAdapter) loadImages(Query string) (RHCCImageResponse, error) {
 	r.Log.Debug("Properly unmarshalled image response")
 
 	return imageResp, nil
+}
+
+func (r RHCCAdapter) loadSpec(imageName string) (*apb.Spec, error) {
+	r.Log.Debug("RHCCAdapter::LoadSpec")
+	if r.Config.Tag == "" {
+		r.Config.Tag = "latest"
+	}
+	req, err := http.NewRequest("GET",
+		fmt.Sprintf("%v/v2/%v/manifests/%v", r.Config.URL.String(), imageName, r.Config.Tag), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return imageToSpec(r.Log, req, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
 }
