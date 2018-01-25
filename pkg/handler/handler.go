@@ -184,6 +184,8 @@ func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
 		createVarHandler(h.unbind)).Methods("DELETE")
 	s.HandleFunc("/v2/service_instances/{instance_uuid}/last_operation",
 		createVarHandler(h.lastoperation)).Methods("GET")
+	s.HandleFunc("/v2/service_instances/{instance_uuid}/service_bindings/{binding_uuid}/last_operation",
+		createVarHandler(h.lastoperation)).Methods("GET")
 
 	if brokerConfig.GetBool("broker.dev_broker") {
 		s.HandleFunc("/v2/apb", createVarHandler(h.apbAddSpec)).Methods("POST")
@@ -692,13 +694,38 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 		return
 	}
 
+	// we have a binding job
+	if strings.Index(r.URL.Path, "/service_bindings/") > 0 {
+		bindingUUID := uuid.Parse(params["binding_uuid"])
+		if bindingUUID == nil {
+			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
+			return
+		}
+
+		// let's see if the bindInstance exists or not. We don't need the
+		// actual instance, just need to know if it is there.
+		_, err := h.broker.GetBindInstance(bindingUUID)
+		if err != nil {
+			switch err {
+			case broker.ErrorNotFound:
+				writeResponse(w, http.StatusGone, nil)
+			default:
+				writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+			}
+			return
+		}
+	}
+
 	req := broker.LastOperationRequest{}
 
-	// operation is rqeuired
+	// operation is expected
 	if op := r.FormValue("operation"); op != "" {
 		req.Operation = op
 	} else {
-		log.Warning(fmt.Sprintf("operation not supplied, relying solely on the instance_uuid [%s]", instanceUUID))
+		errmsg := fmt.Sprintf("operation not supplied for a last_operation with instance_uuid [%s]", instanceUUID)
+		log.Error(errmsg)
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: errmsg})
+		return
 	}
 
 	// service_id is optional
