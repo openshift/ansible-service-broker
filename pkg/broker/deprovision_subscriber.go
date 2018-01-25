@@ -44,22 +44,24 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 				log.Errorf("failed to set state after deprovision %v", err)
 				continue
 			}
-
-			instance, err := d.dao.GetServiceInstance(msg.InstanceUUID)
-			if err != nil {
-				log.Errorf(
-					"Error occurred getting service instance [ %s ] after deprovision job:",
-					msg.InstanceUUID,
-				)
-				setFailedDeprovisionJob(d.dao, msg)
-				continue
-			}
-			if err := cleanupDeprovision(instance, d.dao); err != nil {
-				log.Errorf("Failed cleaning up deprovision after job, error: %v", err)
-				// Cleanup is reporting something has gone wrong. Deprovision overall
-				// has not completed. Mark the job as failed.
-				setFailedDeprovisionJob(d.dao, msg)
-				continue
+			//only want to do this on success
+			if msg.State.State == apb.StateSucceeded {
+				instance, err := d.dao.GetServiceInstance(msg.InstanceUUID)
+				if err != nil {
+					log.Errorf(
+						"Error occurred getting service instance [ %s ] after deprovision job:",
+						msg.InstanceUUID,
+					)
+					setFailedDeprovisionJob(d.dao, msg)
+					continue
+				}
+				if err := cleanupDeprovision(instance, d.dao); err != nil {
+					log.Errorf("Failed cleaning up deprovision after job, error: %v", err)
+					// Cleanup is reporting something has gone wrong. Deprovision overall
+					// has not completed. Mark the job as failed.
+					setFailedDeprovisionJob(d.dao, msg)
+					continue
+				}
 			}
 		}
 	}()

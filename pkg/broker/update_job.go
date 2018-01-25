@@ -47,6 +47,7 @@ func (u *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 			Token:  token,
 		},
 	}
+	msgBuffer <- jobMsg
 	podName, extCreds, err := apb.Update(u.serviceInstance)
 
 	if err != nil {

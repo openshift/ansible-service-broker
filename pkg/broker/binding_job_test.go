@@ -12,6 +12,25 @@ import (
 	"github.com/pborman/uuid"
 )
 
+func commonJobMsgValidation(expectedFinalState apb.State, expectedMethod apb.JobMethod, msgs []broker.JobMsg) error {
+	if len(msgs) < 2 {
+		return fmt.Errorf("expected 2 msgs but only got %v", len(msgs))
+	}
+	for i, msg := range msgs {
+		if msg.State.Method != expectedMethod {
+			return fmt.Errorf("expected job msg method to be %v but it was %v", expectedMethod, msg.State.Method)
+		}
+		if i == 0 && msg.State.State != apb.StateInProgress {
+			return fmt.Errorf("expected job msg state to be %v but it was %v", apb.StateInProgress, msg.State.State)
+		}
+
+		if i == len(msgs)-1 && msg.State.State != expectedFinalState {
+			return fmt.Errorf("expected job msg state to be %v but it was %v", expectedFinalState, msg.State.State)
+		}
+	}
+	return nil
+}
+
 func TestBindingJob_Run(t *testing.T) {
 	instanceID := uuid.NewRandom()
 	bindingID := uuid.NewRandom()
@@ -25,7 +44,7 @@ func TestBindingJob_Run(t *testing.T) {
 		Name       string
 		Binder     apb.Binder
 		BindParams *apb.Parameters
-		Validate   func(msg broker.JobMsg) error
+		Validate   func(msgs []broker.JobMsg) error
 	}{
 		{
 			Name: "expect a success msg with extracted credentials",
@@ -35,17 +54,15 @@ func TestBindingJob_Run(t *testing.T) {
 					"pass": "test",
 				}}, nil
 			},
-			Validate: func(msg broker.JobMsg) error {
-				if msg.State.State != apb.StateSucceeded {
-					return fmt.Errorf("expected the state to be %v but got %v", apb.StateSucceeded, msg.State.State)
+			Validate: func(msgs []broker.JobMsg) error {
+				if err := commonJobMsgValidation(apb.StateSucceeded, apb.JobMethodBind, msgs); err != nil {
+					return err
 				}
-				if msg.State.Method != apb.JobMethodBind {
-					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodBind, msg.State.Method)
-				}
-				if msg.PodName == "" {
+				lastMsg := msgs[len(msgs)-1]
+				if lastMsg.PodName == "" {
 					return fmt.Errorf("expected the podName to be set but it was empty")
 				}
-				credentials := msg.ExtractedCredentials.Credentials
+				credentials := lastMsg.ExtractedCredentials.Credentials
 
 				if _, ok := credentials["user"]; !ok {
 					return fmt.Errorf("expected a user key in the credentials but it was missing")
@@ -61,18 +78,16 @@ func TestBindingJob_Run(t *testing.T) {
 			Binder: func(si *apb.ServiceInstance, params *apb.Parameters) (string, *apb.ExtractedCredentials, error) {
 				return "", nil, fmt.Errorf("should not see")
 			},
-			Validate: func(msg broker.JobMsg) error {
-				if msg.State.State != apb.StateFailed {
-					return fmt.Errorf("expected the Job to be in state %v but was in %v ", apb.StateFailed, msg.State.State)
+			Validate: func(msgs []broker.JobMsg) error {
+				if err := commonJobMsgValidation(apb.StateFailed, apb.JobMethodBind, msgs); err != nil {
+					return err
 				}
-				if msg.State.Method != apb.JobMethodBind {
-					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodBind, msg.State.Method)
-				}
-				if msg.State.Error == "" {
+				lastMsg := msgs[len(msgs)-1]
+				if lastMsg.State.Error == "" {
 					return fmt.Errorf("expected an error in the job state but got none")
 				}
-				if msg.State.Error == "should not see" {
-					return fmt.Errorf("expected not to see the error msg %s it should have been replaced with a generic error ", msg.State.Error)
+				if lastMsg.State.Error == "should not see" {
+					return fmt.Errorf("expected not to see the error msg %s it should have been replaced with a generic error ", lastMsg.State.Error)
 				}
 				return nil
 			},
@@ -82,18 +97,16 @@ func TestBindingJob_Run(t *testing.T) {
 			Binder: func(si *apb.ServiceInstance, params *apb.Parameters) (string, *apb.ExtractedCredentials, error) {
 				return "", nil, apb.ErrorPodPullErr
 			},
-			Validate: func(msg broker.JobMsg) error {
-				if msg.State.State != apb.StateFailed {
-					return fmt.Errorf("expected the Job to be in state %v but was in %v ", apb.StateFailed, msg.State.State)
+			Validate: func(msgs []broker.JobMsg) error {
+				if err := commonJobMsgValidation(apb.StateFailed, apb.JobMethodBind, msgs); err != nil {
+					return err
 				}
-				if msg.State.Method != apb.JobMethodBind {
-					return fmt.Errorf("expected job method to be %v but it was %v", apb.JobMethodBind, msg.State.Method)
-				}
-				if msg.State.Error == "" {
+				lastMsg := msgs[len(msgs)-1]
+				if lastMsg.State.Error == "" {
 					return fmt.Errorf("expected an error in the job state but got none")
 				}
-				if msg.State.Error != apb.ErrorPodPullErr.Error() {
-					return fmt.Errorf("expected to see the error msg %s but got %s ", apb.ErrorPodPullErr, msg.State.Error)
+				if lastMsg.State.Error != apb.ErrorPodPullErr.Error() {
+					return fmt.Errorf("expected to see the error msg %s but got %s ", apb.ErrorPodPullErr, lastMsg.State.Error)
 				}
 				return nil
 			},
@@ -104,18 +117,15 @@ func TestBindingJob_Run(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			bindingJob := broker.NewBindingJob(serviceInstance, bindingID, tc.BindParams, tc.Binder)
 			receiver := make(chan broker.JobMsg)
-			timedOut := false
 			time.AfterFunc(1*time.Second, func() {
 				close(receiver)
-				timedOut = true
 			})
 			go bindingJob.Run("", receiver)
-
-			msg := <-receiver
-			if timedOut {
-				t.Fatal("timed out waiting for a msg from the Job")
+			var msgs []broker.JobMsg
+			for m := range receiver {
+				msgs = append(msgs, m)
 			}
-			if err := tc.Validate(msg); err != nil {
+			if err := tc.Validate(msgs); err != nil {
 				t.Fatal("failed to validate the jobmsg ", err)
 			}
 
