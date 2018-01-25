@@ -411,8 +411,9 @@ func TestMissingOperation(t *testing.T) {
 
 	testhandler, w, _, params := buildLastOperationHandler(testuuid, nil)
 	testhandler.lastoperation(w, r, params)
-	ft.AssertEqual(t, w.Code, 200, "invalid error code")
-	ft.AssertState(t, w.Body, "in progress")
+	ft.AssertEqual(t, w.Code, 400, "invalid error code")
+	errmsg := fmt.Sprintf("operation not supplied for a last_operation with instance_uuid [%s]", testuuid)
+	ft.AssertError(t, w.Body, errmsg)
 }
 
 func TestLastOperation(t *testing.T) {
