@@ -40,7 +40,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 		for msg := range msgBuffer {
 			log.Debug("received deprovision message from buffer")
 
-			if err := d.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
+			if _, err := d.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
 				log.Errorf("failed to set state after deprovision %v", err)
 				continue
 			}
@@ -68,7 +68,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 func setFailedDeprovisionJob(dao *dao.Dao, dmsg JobMsg) {
 	// have to set the state here manually as the logic that triggers this is in the subscriber
 	dmsg.State.State = apb.StateFailed
-	if err := dao.SetState(dmsg.InstanceUUID, dmsg.State); err != nil {
+	if _, err := dao.SetState(dmsg.InstanceUUID, dmsg.State); err != nil {
 		log.Errorf("failed to set state after deprovision %v", err)
 	}
 }

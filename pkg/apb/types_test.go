@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
+	"github.com/pborman/uuid"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -238,4 +239,93 @@ func TestEncodedParameters(t *testing.T) {
 	ft.AssertEqual(t, sitelang.DeprecatedMaxlength, 0)
 	ft.AssertEqual(t, sitelang.Pattern, "")
 	ft.AssertEqual(t, len(sitelang.Enum), 0)
+}
+
+func TestBindInstanceUserParamsNil(t *testing.T) {
+	a := BindInstance{
+		ID:        uuid.NewUUID(),
+		ServiceID: uuid.NewUUID(),
+	}
+	up := a.UserParameters()
+	ft.AssertTrue(t, up == nil)
+}
+
+func TestBindInstanceUserParams(t *testing.T) {
+	a := BindInstance{
+		ID:        uuid.NewUUID(),
+		ServiceID: uuid.NewUUID(),
+	}
+	a.Parameters = &Parameters{
+		"foo":                  "bar",
+		"cluster":              "mycluster",
+		"namespace":            "mynamespace",
+		"_apb_provision_creds": "letmein",
+	}
+
+	up := a.UserParameters()
+
+	// Make sure the "foo" key is still included
+	ft.AssertTrue(t, up["foo"] == "bar")
+
+	// Make sure all of these got filtered out
+	for _, key := range []string{"cluster", "namespace", "_apb_provision_creds"} {
+		_, ok := up[key]
+		ft.AssertFalse(t, ok)
+	}
+
+}
+
+func TestBindInstanceEqual(t *testing.T) {
+	a := BindInstance{
+		ID:         uuid.NewUUID(),
+		ServiceID:  uuid.NewUUID(),
+		Parameters: &Parameters{"foo": "bar"},
+	}
+	b := BindInstance{
+		ID:         a.ID,
+		ServiceID:  a.ServiceID,
+		Parameters: &Parameters{"foo": "bar"},
+	}
+	ft.AssertTrue(t, a.IsEqual(&b))
+	ft.AssertTrue(t, b.IsEqual(&a))
+}
+
+func TestBindInstanceNotEqual(t *testing.T) {
+
+	a := BindInstance{
+		ID:         uuid.Parse(uuid.New()),
+		ServiceID:  uuid.Parse(uuid.New()),
+		Parameters: &Parameters{"foo": "bar"},
+	}
+
+	data := map[string]BindInstance{
+		"different parameters": BindInstance{
+			ID:         a.ID,
+			ServiceID:  a.ServiceID,
+			Parameters: &Parameters{"foo": "notbar"},
+		},
+		"different ID": BindInstance{
+			ID:         uuid.Parse(uuid.New()),
+			ServiceID:  a.ServiceID,
+			Parameters: &Parameters{"foo": "bar"},
+		},
+		"different ServiceID": BindInstance{
+			ID:         a.ID,
+			ServiceID:  uuid.Parse(uuid.New()),
+			Parameters: &Parameters{"foo": "bar"},
+		},
+		"no parameters": BindInstance{
+			ID:        a.ID,
+			ServiceID: a.ServiceID,
+		},
+	}
+
+	for key, binding := range data {
+		if a.IsEqual(&binding) {
+			t.Errorf("bindings were equal for case: %s", key)
+		}
+		if binding.IsEqual(&a) {
+			t.Errorf("bindings were equal for case: %s", key)
+		}
+	}
 }

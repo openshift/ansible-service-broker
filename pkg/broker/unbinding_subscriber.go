@@ -41,7 +41,7 @@ func (b *UnbindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 		log.Info("Listening for binding messages")
 		for msg := range msgBuffer {
 			log.Debug("Processed binding message from buffer")
-			if err := b.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
+			if _, err := b.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
 				log.Errorf("failed to set state after deprovision %v", err)
 			}
 		}
