@@ -704,7 +704,7 @@ func (a AnsibleBroker) Deprovision(
 	if async {
 		log.Info("ASYNC deprovision in progress")
 		// asynchronously provision and return the token for the lastoperation
-		dpjob := NewDeprovisionJob(&instance, skipApbExecution, a.dao)
+		dpjob := NewDeprovisionJob(&instance, skipApbExecution)
 
 		token, err = a.engine.StartNewJob("", dpjob, DeprovisionTopic)
 		if err != nil {
