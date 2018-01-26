@@ -18,7 +18,6 @@ package broker
 
 import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
@@ -26,17 +25,15 @@ import (
 type DeprovisionJob struct {
 	serviceInstance  *apb.ServiceInstance
 	skipApbExecution bool
-	dao              *dao.Dao
 }
 
 // NewDeprovisionJob - Create a deprovision job.
-func NewDeprovisionJob(serviceInstance *apb.ServiceInstance,
-	skipApbExecution bool, dao *dao.Dao,
+func NewDeprovisionJob(
+	serviceInstance *apb.ServiceInstance, skipApbExecution bool,
 ) *DeprovisionJob {
 	return &DeprovisionJob{
 		serviceInstance:  serviceInstance,
 		skipApbExecution: skipApbExecution,
-		dao:              dao,
 	}
 }
 
