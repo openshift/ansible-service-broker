@@ -285,7 +285,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 			return
 		}
 
-		if ok, status, err := h.validateUser(userInfo.Username, req.Context.Namespace); !ok {
+		if ok, status, err := h.validateUser(userInfo, req.Context.Namespace); !ok {
 			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 			return
 		}
@@ -346,7 +346,7 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 			return
 		}
 
-		if ok, status, err := h.validateUser(userInfo.Username, req.Context.Namespace); !ok {
+		if ok, status, err := h.validateUser(userInfo, req.Context.Namespace); !ok {
 			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 			return
 		}
@@ -420,7 +420,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		}
 
 		if !nsDeleted {
-			ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace)
+			ok, status, err := h.validateUser(userInfo, serviceInstance.Context.Namespace)
 			if !ok {
 				writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 				return
@@ -546,7 +546,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 			return
 		}
 
-		if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+		if ok, status, err := h.validateUser(userInfo, serviceInstance.Context.Namespace); !ok {
 			writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 			return
 		}
@@ -643,7 +643,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 			return
 		}
 		if !nsDeleted {
-			if ok, status, err := h.validateUser(userInfo.Username, serviceInstance.Context.Namespace); !ok {
+			if ok, status, err := h.validateUser(userInfo, serviceInstance.Context.Namespace); !ok {
 				writeResponse(w, status, broker.ErrorResponse{Description: err.Error()})
 				return
 			}
@@ -840,13 +840,13 @@ func (h handler) printRequest(req *http.Request) {
 // validateUser will use the cached cluster role's rules, and retrieve
 // the rules for the user in the namespace to determine if the user's roles
 // can cover the  all of the cluster role's rules.
-func (h handler) validateUser(userName, namespace string) (bool, int, error) {
+func (h handler) validateUser(userInfo broker.UserInfo, namespace string) (bool, int, error) {
 	openshiftClient, err := clients.Openshift()
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
 	// Retrieving the rules for the user in the namespace.
-	prs, err := openshiftClient.SubjectRulesReview(userName, namespace)
+	prs, err := openshiftClient.SubjectRulesReview(userInfo.Username, userInfo.Groups, userInfo.Extra, namespace)
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
