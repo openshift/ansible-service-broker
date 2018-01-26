@@ -49,6 +49,7 @@ jobs:
       before_script:
         - ./scripts/travis.sh setup-minikube
         - ./scripts/travis.sh k8s-catalog
+        - ./scripts/travis.sh pv-setup
         - ./scripts/travis.sh k8s-broker
       script:
         - ./scripts/travis.sh k8s-ci
