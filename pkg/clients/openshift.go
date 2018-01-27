@@ -303,10 +303,18 @@ func setConfigDefaults(config *rest.Config, APIPath string) error {
 }
 
 // SubjectRulesReview - create and run a OpenShift Subject Rules Review
-func (o OpenshiftClient) SubjectRulesReview(user, namespace string, log *logging.Logger) (result []rbac.PolicyRule, err error) {
+func (o OpenshiftClient) SubjectRulesReview(user string, groups []string,
+	extra map[string][]string, namespace string, log *logging.Logger) (result []rbac.PolicyRule, err error) {
+
+	var scopes []string
+	if extra != nil {
+		scopes = extra["scopes.authorization.openshift.io"]
+	}
 	body := &SubjectRulesReview{
 		Spec: SubjectRulesReviewSpec{
-			User: user,
+			User:   user,
+			Groups: groups,
+			Scopes: scopes,
 		},
 	}
 	body.Kind = "SubjectRulesReview"
