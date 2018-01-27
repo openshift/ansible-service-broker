@@ -118,6 +118,9 @@ elif [[ "$action" == "k8s-ci" ]]; then
   echo "================================="
   make ci-k
   exit $?
+elif [[ "$action" == "pv-setup" ]]; then
+  ./scripts/broker-ci/pv-setup.sh
+  exit $?
 elif [[ "$action" == "setup-minikube" ]]; then
   ./scripts/broker-ci/setup-minikube.sh
   exit $?

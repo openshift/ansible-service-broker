@@ -1,8 +1,11 @@
 #!/bin/bash
 
-FULL_PATH_DIR="$(dirname $(dirname $(readlink -f $0)))"
-BROKER_DIR="$(dirname "${BASH_SOURCE}")/../"
-TEMPLATE_DIR="${BROKER_DIR}/templates"
+BROKER_URL="https://raw.githubusercontent.com/openshift/ansible-service-broker/master/"
+TEMPLATE_URL="${BROKER_URL}/templates"
+
+curl ${TEMPLATE_URL}/k8s-template.py -o /tmp/k8s-template.py
+curl ${TEMPLATE_URL}/k8s-variables.yaml -o /tmp/k8s-variables.yaml
+curl ${TEMPLATE_URL}/k8s-ansible-service-broker.yaml.j2 -o /tmp/k8s-ansible-service-broker.yaml.j2
 
 TAG="${TAG:-}"
 
@@ -28,34 +31,28 @@ EOF
 
     sed -i 's/REPLACE_TOKEN_STRING/'"$client_token"'/g' /tmp/broker-resource.yaml
     kubectl create -f /tmp/broker-resource.yaml -n ansible-service-broker
-
-    broker=$(kubectl get pods -n ansible-service-broker | grep -v etcd | grep asb | awk '{ print $1}')
-    NAMESPACE="ansible-service-broker" ./${BROKER_DIR}/scripts/broker-ci/wait-for-resource.sh create pod "${broker}"
 }
 
 function ansible-service-broker {
     if [ "$TAG" == "build" ]; then
 	make build-image TAG="${TAG}"
-	sed -i 's/origin-ansible-service-broker:latest/origin-ansible-service-broker:'"$TAG"'/g' ${TEMPLATE_DIR}/k8s-variables.yaml
+	sed -i 's/origin-ansible-service-broker:latest/origin-ansible-service-broker:'"$TAG"'/g' /tmp/k8s-variables.yaml
     elif [ -n "$TAG" ]; then
-	sed -i 's/origin-ansible-service-broker:latest/origin-ansible-service-broker:'"$TAG"'/g' ${TEMPLATE_DIR}/k8s-variables.yaml
+	sed -i 's/origin-ansible-service-broker:latest/origin-ansible-service-broker:'"$TAG"'/g' /tmp/k8s-variables.yaml
     fi
 
-    sed -i 's/tag: latest/tag: canary/g' ${TEMPLATE_DIR}/k8s-variables.yaml
+    sed -i 's/tag: latest/tag: canary/g' /tmp/k8s-variables.yaml
 
-    ./${TEMPLATE_DIR}/k8s-template.py
+    python /tmp/k8s-template.py
     kubectl create ns ansible-service-broker
 
     context=$(kubectl config current-context)
     cluster=$(kubectl config get-contexts $context --no-headers | awk '{ print $3 }')
 
     kubectl config set-context $context --cluster=$cluster --namespace=ansible-service-broker
-    kubectl create -f "${TEMPLATE_DIR}/k8s-ansible-service-broker.yaml"
+    kubectl create -f "/tmp/k8s-ansible-service-broker.yaml"
 
     create-broker-resource
-
-    broker=$(kubectl get pods -n ansible-service-broker | grep -v etcd | grep asb | awk '{ print $1}')
-    NAMESPACE="ansible-service-broker" ./${BROKER_DIR}/scripts/broker-ci/wait-for-resource.sh create pod "${broker}"
 }
 
 echo "========================================================================"

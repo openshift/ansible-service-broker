@@ -49,8 +49,9 @@ function create_pv() {
   fi
 }
 
-pv="pv${2}"
-basedir="${1}"
-setup_pv_dir "${basedir}"
-
-create_pv "${basedir}" "${pv}"
+basedir="/persistedvolumes"
+for vol in $(seq 20); do
+    pv="pv${vol}"
+    setup_pv_dir "${basedir}"
+    create_pv "${basedir}" "${pv}"
+done

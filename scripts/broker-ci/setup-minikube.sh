@@ -1,6 +1,5 @@
 #!/bin/bash
 
-BROKER_DIR="$(dirname "${BASH_SOURCE}")/../../"
 set -x
 
 function install-nsenter {
@@ -35,7 +34,3 @@ minikube update-context
 
 JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
 echo "Minikube started"
-
-for item in $(seq 20); do
-    ./${BROKER_DIR}/scripts/broker-ci/pv-setup.sh /persistedvolumes $item
-done
