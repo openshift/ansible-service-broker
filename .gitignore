@@ -59,3 +59,7 @@ validation.out
 
 # Vendor ci binary
 vendor/github.com/rthallisey/service-broker-ci/ci
+
+# IDE baggage
+.idea/
+.vscode/
