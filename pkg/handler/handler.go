@@ -655,21 +655,20 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, err := h.broker.Unbind(serviceInstance, bindInstance, planID, nsDeleted, async)
+	resp, ranAsync, err := h.broker.Unbind(serviceInstance, bindInstance, planID, nsDeleted, async)
 
-	if err != nil {
-		switch err {
-		case broker.ErrorNotFound: // return 404
-			log.Debugf("Binding not found.")
-			writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
-		default: // return 500
-			log.Errorf("Unknown error: %v", err)
-			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
-		}
-		return
+	switch {
+	case err == broker.ErrorNotFound: // return 404
+		log.Debugf("Binding not found.")
+		writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
+	case err != nil: // return 500
+		log.Errorf("Unknown error: %v", err)
+		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+	case ranAsync == true: // return 202
+		writeDefaultResponse(w, http.StatusAccepted, resp, err)
+	default: // return 200
+		writeDefaultResponse(w, http.StatusOK, resp, err)
 	}
-
-	writeDefaultResponse(w, http.StatusOK, resp, err)
 	return
 }
 
