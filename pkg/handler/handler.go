@@ -443,6 +443,9 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		case broker.ErrorDeprovisionInProgress:
 			writeResponse(w, http.StatusAccepted, broker.DeprovisionResponse{})
 			return
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
+			return
 		}
 	} else if async {
 		writeDefaultResponse(w, http.StatusAccepted, resp, err)
