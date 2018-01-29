@@ -80,7 +80,7 @@ type Broker interface {
 	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
 	Deprovision(apb.ServiceInstance, string, bool, bool) (*DeprovisionResponse, error)
 	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool) (*BindResponse, bool, error)
-	Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*UnbindResponse, error)
+	Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*UnbindResponse, bool, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	Recover() (string, error)
 	GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error)
@@ -965,25 +965,27 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	return resp, false, err
 }
 
-// Unbind - unbind a services previous binding
+// Unbind - unbind a service's previous binding. Parameter "async" declares
+// whether the caller is willing to have the operation run asynchronously. The
+// returned bool will be true if the operation actually ran asynchronously.
 func (a AnsibleBroker) Unbind(
 	instance apb.ServiceInstance, bindInstance apb.BindInstance, planID string, skipApbExecution bool, async bool,
-) (*UnbindResponse, error) {
+) (*UnbindResponse, bool, error) {
 	if planID == "" {
 		errMsg :=
 			"PlanID from unbind request is blank. " +
 				"Unbind requests must specify PlanIDs"
-		return nil, errors.New(errMsg)
+		return nil, false, errors.New(errMsg)
 	}
 
 	params := make(apb.Parameters)
 	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
-		return nil, err
+		return nil, false, err
 	}
 	bindExtCreds, err := a.dao.GetExtractedCredentials(bindInstance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
-		return nil, err
+		return nil, false, err
 	}
 	// Add the credentials to the parameters so that an APB can choose what
 	// it would like to do.
@@ -1001,7 +1003,7 @@ func (a AnsibleBroker) Unbind(
 	serviceInstance, err := a.GetServiceInstance(instance.ID)
 	if err != nil {
 		log.Debugf("Service instance with id %s does not exist", instance.ID.String())
-		return nil, err
+		return nil, false, err
 	}
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
@@ -1018,7 +1020,7 @@ func (a AnsibleBroker) Unbind(
 		token, jerr = a.engine.StartNewJob("", unbindjob, UnbindingTopic)
 		if jerr != nil {
 			log.Error("Failed to start new job for async unbind\n%s", jerr.Error())
-			return nil, jerr
+			return nil, false, jerr
 		}
 
 		if err := a.dao.SetState(serviceInstance.ID.String(), apb.JobState{
@@ -1039,7 +1041,7 @@ func (a AnsibleBroker) Unbind(
 			err = apb.Unbind(&serviceInstance, &params)
 		}
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	} else {
 		log.Warning("Broker configured to *NOT* launch and run APB unbind")
@@ -1048,26 +1050,26 @@ func (a AnsibleBroker) Unbind(
 	if bindExtCreds != nil {
 		err = a.dao.DeleteExtractedCredentials(bindInstance.ID.String())
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	}
 
 	err = a.dao.DeleteBindInstance(bindInstance.ID.String())
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	serviceInstance.RemoveBinding(bindInstance.ID)
 	err = a.dao.SetServiceInstance(instance.ID.String(), &serviceInstance)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if token != "" {
-		return &UnbindResponse{Operation: token}, nil
+		return &UnbindResponse{Operation: token}, true, nil
 	}
 
-	return &UnbindResponse{}, nil
+	return &UnbindResponse{}, false, nil
 }
 
 // Update  - will update a service
