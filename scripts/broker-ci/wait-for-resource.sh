@@ -8,8 +8,11 @@ NAMESPACE="${NAMESPACE:-ansible-service-broker}"
 if [ "${RESOURCE}" = "pod" ] && [ "${ACTION}" = "create" ]; then
     for r in $(seq 100); do
 	pod=$(kubectl get pods -n $NAMESPACE | grep ${RESOURCE_NAME} | awk '{ print $3 }')
+	expected=$(kubectl get pods -n $NAMESPACE | grep ${RESOURCE_NAME} | awk '{ print $2 }' | cut -f 2 -d '/')
+	actual=$(kubectl get pods -n $NAMESPACE | grep ${RESOURCE_NAME} | awk '{ print $2 }' | cut -f 1 -d '/')
 	kubectl get pods -n $NAMESPACE | grep ${RESOURCE_NAME}
-	if [ "${pod}" = 'Running' ]; then
+
+	if [ "${pod}" = 'Running' ] && [ "${actual}" = "${expected}" ]; then
 	    echo "${RESOURCE_NAME} ${RESOURCE} is running"
 	    break
 	fi
