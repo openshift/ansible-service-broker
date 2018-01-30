@@ -207,6 +207,7 @@ registry:
 | ca_file | Location of the certificate authority file | N |
 | bearer_token_file | Location of bearer token to be used | N |
 | image_pull_policy | When to pull the image | Y |
+| namespace | The namespace that the broker has been deployed to. Important for things like passing parameter values via secret | Y |
 | sandbox_role | Role to give to apb sandbox environment | Y |
 | keep_namespace | Always keep namespace after apb execution | N |
 | keep_namespace_on_error | Keep namespace after apb execution has an error | N |
