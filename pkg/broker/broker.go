@@ -1200,6 +1200,21 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	req.Parameters = a.validateRequestedUpdateParams(req.Parameters, toPlan, si)
 
+	if fromPlanName == toPlanName && len(req.Parameters) == 0 {
+		log.Warningf("Returning without running the APB. No changes were actually requested")
+
+		noopUpdateUuid := uuid.New()
+
+		a.dao.SetState(si.ID.String(), apb.JobState{
+			Token:   noopUpdateUuid,
+			State:   apb.StateSucceeded,
+			Podname: "noop-update",
+			Method:  apb.JobMethodUpdate,
+		})
+
+		return &UpdateResponse{noopUpdateUuid}, nil
+	}
+
 	// Parameters look good, update the ServiceInstance values
 	for newParamKey, newParamVal := range req.Parameters {
 		(*si.Parameters)[newParamKey] = newParamVal
@@ -1271,6 +1286,18 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 		} else if !pd.Updatable {
 			log.Warningf("Removing non-updatable parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
 			delete(reqParams, requestedParamKey)
+		} else if reqParams[requestedParamKey] == (*si.Parameters)[requestedParamKey] {
+			log.Warningf("Removing unchanged parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
+			delete(reqParams, requestedParamKey)
+		} else if pd.Type == "enum" {
+			enums := make(map[string]bool)
+			for _, v := range pd.Enum {
+				enums[v] = true
+			}
+			if !enums[reqParams[requestedParamKey]] {
+				log.Warningf("Removing invalid enum parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
+				delete(reqParams, requestedParamKey)
+			}
 		}
 	}
 	return reqParams
