@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.19
+Version: 1.0.20
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Jan 31 2018 David Zager <david.j.zager@gmail.com> 1.0.20-1
+- Adding ability for Subject Rules Review to do the correct check. (#696)
+  (Shawn.Hurley21@gmail.com)
+
 * Tue Nov 07 2017 David Zager <david.j.zager@gmail.com> 1.0.19-1
 - Bug 1507111 - Do not force image tag to be IP + Port (#540)
   (dymurray@redhat.com)
