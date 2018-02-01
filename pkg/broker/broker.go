@@ -60,7 +60,9 @@ var (
 	ErrorParameterNotFound = errors.New("parameter not found")
 	// ErrorPlanUpdateNotPossible - Error when a Plan Update request cannot be satisfied
 	ErrorPlanUpdateNotPossible = errors.New("plan update not possible")
-	log                        = logutil.NewLog()
+	// ErrorNoUpdateRequested - Error for when no valid updates are requested
+	ErrorNoUpdateRequested = errors.New("no valid updates requested")
+	log                    = logutil.NewLog()
 )
 
 const (
@@ -1203,16 +1205,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	if fromPlanName == toPlanName && len(req.Parameters) == 0 {
 		log.Warningf("Returning without running the APB. No changes were actually requested")
 
-		noopUpdateUuid := uuid.New()
-
-		a.dao.SetState(si.ID.String(), apb.JobState{
-			Token:   noopUpdateUuid,
-			State:   apb.StateSucceeded,
-			Podname: "noop-update",
-			Method:  apb.JobMethodUpdate,
-		})
-
-		return &UpdateResponse{noopUpdateUuid}, nil
+		return &UpdateResponse{}, ErrorNoUpdateRequested
 	}
 
 	// Parameters look good, update the ServiceInstance values
