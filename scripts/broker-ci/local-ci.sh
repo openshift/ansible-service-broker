@@ -69,6 +69,14 @@ function unbind {
 }
 
 function verify-ci-run {
+    docker images
+    kubectl get configmap -o yaml
+    # curl -H "authorization: bearer $(oc whoami -t)"  https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/catalog --insecure
+    oc get clusterserviceclass -o custom-columns=Name:spec.externalName,externalID:spec.externalID,Broker:spec.clusterServiceBrokerName
+    oc get clusterserviceclass -o yaml $(oc get clusterserviceclass -o custom-columns=Name:spec.externalName,externalID:spec.externalID,Broker:spec.clusterServiceBrokerName  | grep mediawiki | awk '{print $2 }')
+    oc get clusterserviceclass -o yaml $(oc get clusterserviceclass -o custom-columns=Name:spec.externalName,externalID:spec.externalID,Broker:spec.clusterServiceBrokerName  | grep postgresql | awk '{print $2 }
+')
+
     ROUTE=$(oc get route -n default | grep mediawiki | cut -f 4 -d ' ')/index.php/Main_Page
     BIND_CHECK=$(curl ${ROUTE}| grep "div class" | cut -f 2 -d "'")
     print-with-yellow "Running: curl ${ROUTE}| grep \"div class\" | cut -f 2 -d \"'\""
