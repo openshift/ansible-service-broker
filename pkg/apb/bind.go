@@ -52,7 +52,7 @@ func Bind(instance *ServiceInstance,
 	if instance.Spec.Runtime >= 2 {
 		err := watchPod(executionContext.PodName, executionContext.Namespace)
 		if err != nil {
-			log.Errorf("APB Execution failed - %v", err)
+			log.Errorf("Bind action failed - %v", err)
 			return executionContext.PodName, nil, err
 		}
 	}

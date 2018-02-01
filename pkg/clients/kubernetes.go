@@ -57,7 +57,7 @@ func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[strin
 	secretData, err := k.Client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
-		return make(map[string][]byte), nil
+		return make(map[string][]byte), err
 	}
 	log.Debugf("Found secret with name %v\n", secretName)
 
@@ -184,12 +184,6 @@ func GetSecretData(secretName, namespace string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	secretData, err := k8scli.Client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
-	if err != nil {
-		log.Errorf("Unable to load secret '%s' from namespace '%s'", secretName, namespace)
-		return make(map[string][]byte), nil
-	}
-	log.Debugf("Found secret with name %v\n", secretName)
 
-	return secretData.Data, nil
+	return k8scli.GetSecretData(secretName, namespace)
 }
