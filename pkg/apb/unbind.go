@@ -49,7 +49,7 @@ func Unbind(instance *ServiceInstance, parameters *Parameters) error {
 
 	err = watchPod(executionContext.PodName, executionContext.Namespace)
 	if err != nil {
-		log.Errorf("APB Execution failed - %v", err)
+		log.Errorf("Unbind action failed - %v", err)
 		return err
 	}
 
