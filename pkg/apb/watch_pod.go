@@ -59,17 +59,7 @@ func watchPod(podName string, namespace string) error {
 			}
 
 			// handle the return code from the pod
-			exitCode := getExitCode(podStatus.ContainerStatuses)
-			if exitCode == 8 {
-				log.Errorf("Pod [ %s ] failed - action not found.", podName)
-				return ErrorActionNotFound
-			} else if exitCode > 0 {
-				return fmt.Errorf("Pod [ %s ] failed with exit code [%d]", podName, exitCode)
-			} else if exitCode < 0 {
-				return fmt.Errorf("Pod [ %s ] failed. Unable to determine exit code [%d]", podName, exitCode)
-			}
-
-			return fmt.Errorf("Pod [ %s ] failed - %v", podName, podStatus.Message)
+			return translateExitStatus(podName, podStatus)
 		case apiv1.PodSucceeded:
 			log.Debugf("Pod [ %s ] completed", podName)
 			return nil
@@ -106,15 +96,26 @@ func errorPullingImage(conds []apiv1.ContainerStatus) bool {
 	return false
 }
 
-func getExitCode(conds []apiv1.ContainerStatus) int32 {
+func translateExitStatus(podName string, podStatus *apiv1.PodStatus) error {
+	conds := podStatus.ContainerStatuses
 	if len(conds) < 1 {
 		log.Warningf("unable to get container status for APB pod")
-		return -120 // picked some weird number
-	}
-	status := conds[0].State.Terminated
-	if status == nil {
-		return -127 // picked some weird number
+		return fmt.Errorf("Pod [ %s ] failed - Unable to determine exit code - %v", podName, podStatus.Message)
 	}
 
-	return status.ExitCode
+	status := conds[0].State.Terminated
+	if status == nil {
+		return fmt.Errorf("Pod [ %s ] failed. Unable to determine status - %v", podName, podStatus.Message)
+	}
+
+	if status.ExitCode == 8 {
+		log.Errorf("Pod [ %s ] failed - action not found.", podName)
+		return ErrorActionNotFound
+	} else if status.ExitCode != 0 {
+		return fmt.Errorf("Pod [ %s ] failed with exit code [%d]", podName, status.ExitCode)
+	}
+
+	// exit code was 0 so not really an error
+	log.Warning("Pod was marked as failed but exit code was 0 - %v", status.Message)
+	return nil
 }
