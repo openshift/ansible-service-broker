@@ -264,7 +264,7 @@ func TestRegistryLoadSpecsNoError(t *testing.T) {
 	}
 	ft.AssertTrue(t, a.Called["GetImageNames"])
 	ft.AssertTrue(t, a.Called["FetchSpecs"])
-	ft.AssertEqual(t, numImages, 1)
+	ft.AssertEqual(t, numImages, 2)
 	ft.AssertEqual(t, len(specs), 1)
 	ft.AssertEqual(t, specs[0], &s)
 }

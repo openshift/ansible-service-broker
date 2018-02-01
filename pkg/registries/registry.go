@@ -111,8 +111,6 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 			r.config.Name, err)
 		return []*apb.Spec{}, 0, err
 	}
-	// Registry will throw out all images that do not end in -apb
-	imageNames = registryFilterImagesForAPBs(imageNames)
 	validNames, filteredNames := r.filter.Run(imageNames)
 
 	log.Debug("Filter applied against registry: %s", r.config.Name)
@@ -157,16 +155,6 @@ func (r Registry) LoadSpecs() ([]*apb.Spec, int, error) {
 	metrics.SpecsLoaded(r.RegistryName(), len(validatedSpecs))
 
 	return validatedSpecs, len(imageNames), nil
-}
-
-func registryFilterImagesForAPBs(imageNames []string) []string {
-	newNames := []string{}
-	for _, imagesName := range imageNames {
-		if strings.HasSuffix(strings.ToLower(imagesName), "-apb") {
-			newNames = append(newNames, imagesName)
-		}
-	}
-	return newNames
 }
 
 // Fail - will determine if the registry should cause a failure.
