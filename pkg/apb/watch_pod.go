@@ -109,7 +109,7 @@ func translateExitStatus(podName string, podStatus *apiv1.PodStatus) error {
 	}
 
 	if status.ExitCode == 8 {
-		log.Errorf("Pod [ %s ] failed - action not found.", podName)
+		log.Errorf("Pod [ %s ] failed - action's playbook not found.", podName)
 		return ErrorActionNotFound
 	} else if status.ExitCode != 0 {
 		return fmt.Errorf("Pod [ %s ] failed with exit code [%d]", podName, status.ExitCode)
