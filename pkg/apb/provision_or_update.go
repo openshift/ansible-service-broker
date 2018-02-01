@@ -81,7 +81,7 @@ func provisionOrUpdate(method executionMethod,
 	if instance.Spec.Runtime >= 2 || !instance.Spec.Bindable {
 		err := watchPod(executionContext.PodName, executionContext.Namespace)
 		if err != nil {
-			log.Errorf("APB Execution failed - %v", err)
+			log.Errorf("Provision or Update action failed - %v", err)
 			return executionContext.PodName, nil, err
 		}
 	}

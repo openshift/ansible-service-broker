@@ -62,7 +62,7 @@ func Deprovision(instance *ServiceInstance) (string, error) {
 
 	err = watchPod(executionContext.PodName, executionContext.Namespace)
 	if err != nil {
-		log.Errorf("APB Execution failed - %v", err)
+		log.Errorf("Deprovision action failed - %v", err)
 		return executionContext.PodName, err
 	}
 

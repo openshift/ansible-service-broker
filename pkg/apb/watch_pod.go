@@ -28,6 +28,8 @@ import (
 var (
 	// ErrorPodPullErr - Error indicating we could not pull the image.
 	ErrorPodPullErr = fmt.Errorf("Unable to pull APB image from it's registry. Please contact your cluster admin")
+	// ErrorActionNotFound - Error indicating pod does not have the action.
+	ErrorActionNotFound = fmt.Errorf("action not found")
 )
 
 func watchPod(podName string, namespace string) error {
@@ -55,7 +57,9 @@ func watchPod(podName string, namespace string) error {
 			if errorPullingImage(podStatus.ContainerStatuses) {
 				return ErrorPodPullErr
 			}
-			return fmt.Errorf("Pod [ %s ] failed - %v", podName, podStatus.Message)
+
+			// handle the return code from the pod
+			return translateExitStatus(podName, podStatus)
 		case apiv1.PodSucceeded:
 			log.Debugf("Pod [ %s ] completed", podName)
 			return nil
@@ -90,4 +94,28 @@ func errorPullingImage(conds []apiv1.ContainerStatus) bool {
 	}
 
 	return false
+}
+
+func translateExitStatus(podName string, podStatus *apiv1.PodStatus) error {
+	conds := podStatus.ContainerStatuses
+	if len(conds) < 1 {
+		log.Warningf("unable to get container status for APB pod")
+		return fmt.Errorf("Pod [ %s ] failed - Unable to determine exit code - %v", podName, podStatus.Message)
+	}
+
+	status := conds[0].State.Terminated
+	if status == nil {
+		return fmt.Errorf("Pod [ %s ] failed. Unable to determine status - %v", podName, podStatus.Message)
+	}
+
+	if status.ExitCode == 8 {
+		log.Errorf("Pod [ %s ] failed - action's playbook not found.", podName)
+		return ErrorActionNotFound
+	} else if status.ExitCode != 0 {
+		return fmt.Errorf("Pod [ %s ] failed with exit code [%d]", podName, status.ExitCode)
+	}
+
+	// exit code was 0 so not really an error
+	log.Warning("Pod was marked as failed but exit code was 0 - %v", status.Message)
+	return nil
 }
