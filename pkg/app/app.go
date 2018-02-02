@@ -222,7 +222,7 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 	err = app.engine.AttachSubscriber(
-		broker.NewDeprovisionWorkSubscriber(app.dao),
+		broker.NewDeprovisionWorkSubscriber(app.dao, app.config.GetBool("broker.force_delete")),
 		broker.DeprovisionTopic)
 	if err != nil {
 		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
