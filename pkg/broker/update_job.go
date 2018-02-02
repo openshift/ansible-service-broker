@@ -64,9 +64,12 @@ func (u *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 		msgBuffer <- jobMsg
 		return
 	}
+
 	jobMsg.State.State = apb.StateSucceeded
 	jobMsg.State.Podname = podName
-	jobMsg.ExtractedCredentials = *extCreds
+	if extCreds != nil {
+		jobMsg.ExtractedCredentials = *extCreds
+	}
 	jobMsg.PodName = podName
 	msgBuffer <- jobMsg
 }
