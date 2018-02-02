@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.8
+Version: 1.1.9
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,18 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Feb 02 2018 David Zager <david.j.zager@gmail.com> 1.1.9-1
+- Bug 1538986 - Remove bad enum values from Update Request (#721)
+  (jmontleo@redhat.com)
+- Bug 1533425 - handle missing pod action error (#720) (jmrodri@gmail.com)
+- Backport fall-through default for deprovision (#705) (ernelson@redhat.com)
+- Bug 1539757 - async unbind returns http 202 (#702) (mhrivnak@hrivnak.org)
+- Adding ability for Subject Rules Review to do the correct check. (#694)
+  (Shawn.Hurley21@gmail.com)
+- Revert "Bug 1536629 - Send job msg immediately as job starts. To set initial
+  JobState  (#671)" (#686) (jmrodri@gmail.com)
+- Bug 1537367 - fix the test for last_operation (#689) (jmrodri@gmail.com)
+
 * Thu Jan 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.1.8-1
 - Add proxy docs (#634) (ernelson@redhat.com)
 - Bug 1536629 - Send job msg immediately as job starts. (#671) (maleck13@users.noreply.github.com)
