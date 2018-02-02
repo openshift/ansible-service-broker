@@ -60,7 +60,9 @@ var (
 	ErrorParameterNotFound = errors.New("parameter not found")
 	// ErrorPlanUpdateNotPossible - Error when a Plan Update request cannot be satisfied
 	ErrorPlanUpdateNotPossible = errors.New("plan update not possible")
-	log                        = logutil.NewLog()
+	// ErrorNoUpdateRequested - Error for when no valid updates are requested
+	ErrorNoUpdateRequested = errors.New("no valid updates requested")
+	log                    = logutil.NewLog()
 )
 
 const (
@@ -1234,6 +1236,12 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	req.Parameters = a.validateRequestedUpdateParams(req.Parameters, toPlan, si)
 
+	if fromPlanName == toPlanName && len(req.Parameters) == 0 {
+		log.Warningf("Returning without running the APB. No changes were actually requested")
+
+		return &UpdateResponse{}, ErrorNoUpdateRequested
+	}
+
 	// Parameters look good, update the ServiceInstance values
 	for newParamKey, newParamVal := range req.Parameters {
 		(*si.Parameters)[newParamKey] = newParamVal
@@ -1309,6 +1317,18 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 		} else if !pd.Updatable {
 			log.Warningf("Removing non-updatable parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
 			delete(reqParams, requestedParamKey)
+		} else if reqParams[requestedParamKey] == (*si.Parameters)[requestedParamKey] {
+			log.Warningf("Removing unchanged parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
+			delete(reqParams, requestedParamKey)
+		} else if pd.Type == "enum" {
+			enums := make(map[string]bool)
+			for _, v := range pd.Enum {
+				enums[v] = true
+			}
+			if !enums[reqParams[requestedParamKey]] {
+				log.Warningf("Removing invalid enum parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
+				delete(reqParams, requestedParamKey)
+			}
 		}
 	}
 	return reqParams
