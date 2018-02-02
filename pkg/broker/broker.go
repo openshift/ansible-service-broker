@@ -111,14 +111,14 @@ type DevBroker interface {
 
 // AnsibleBroker - Broker using ansible and images to interact with oc/kubernetes/etcd
 type AnsibleBroker struct {
-	dao          *dao.Dao
+	dao          dao.Dao
 	registry     []registries.Registry
 	engine       *WorkEngine
 	brokerConfig Config
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
-func NewAnsibleBroker(dao *dao.Dao,
+func NewAnsibleBroker(dao dao.Dao,
 	registry []registries.Registry,
 	engine WorkEngine,
 	brokerConfig *config.Config) (*AnsibleBroker, error) {

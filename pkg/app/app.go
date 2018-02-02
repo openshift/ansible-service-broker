@@ -73,7 +73,7 @@ type App struct {
 	broker   *broker.AnsibleBroker
 	args     Args
 	config   *config.Config
-	dao      *dao.Dao
+	dao      dao.Dao
 	registry []registries.Registry
 	engine   *broker.WorkEngine
 }

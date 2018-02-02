@@ -23,11 +23,11 @@ import (
 
 // UpdateWorkSubscriber - Lissten for provision messages
 type UpdateWorkSubscriber struct {
-	dao *dao.Dao
+	dao dao.Dao
 }
 
 // NewUpdateWorkSubscriber - Create a new work subscriber.
-func NewUpdateWorkSubscriber(dao *dao.Dao) *UpdateWorkSubscriber {
+func NewUpdateWorkSubscriber(dao dao.Dao) *UpdateWorkSubscriber {
 	return &UpdateWorkSubscriber{dao: dao}
 }
 

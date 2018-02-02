@@ -23,12 +23,12 @@ import (
 
 // DeprovisionWorkSubscriber - Lissten for provision messages
 type DeprovisionWorkSubscriber struct {
-	dao       *dao.Dao
+	dao       dao.Dao
 	msgBuffer <-chan JobMsg
 }
 
 // NewDeprovisionWorkSubscriber - Create a new work subscriber.
-func NewDeprovisionWorkSubscriber(dao *dao.Dao) *DeprovisionWorkSubscriber {
+func NewDeprovisionWorkSubscriber(dao dao.Dao) *DeprovisionWorkSubscriber {
 	return &DeprovisionWorkSubscriber{dao: dao}
 }
 
@@ -67,7 +67,7 @@ func (d *DeprovisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 	}()
 }
 
-func setFailedDeprovisionJob(dao *dao.Dao, dmsg JobMsg) {
+func setFailedDeprovisionJob(dao dao.Dao, dmsg JobMsg) {
 	// have to set the state here manually as the logic that triggers this is in the subscriber
 	dmsg.State.State = apb.StateFailed
 	if err := dao.SetState(dmsg.InstanceUUID, dmsg.State); err != nil {
@@ -75,7 +75,7 @@ func setFailedDeprovisionJob(dao *dao.Dao, dmsg JobMsg) {
 	}
 }
 
-func cleanupDeprovision(instance *apb.ServiceInstance, dao *dao.Dao) error {
+func cleanupDeprovision(instance *apb.ServiceInstance, dao dao.Dao) error {
 	var err error
 	id := instance.ID.String()
 
