@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.0
+Version: 1.2.1
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,26 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Feb 02 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.1-1
+- Bug 1541265 - avoid broker panic, check for nil (#723) (jmrodri@gmail.com)
+- Bug 1538986 - Remove bad enum values from Update Request (#713) (jmontleo@redhat.com)
+- Bug 1533425 - handle missing pod action error (#716) (jmrodri@gmail.com)
+- Bug 1534957 - Add namespace to broker config docs (#712) (ernelson@redhat.com)
+- Bug 1539757 - async unbind returns http 202 (#704) (mhrivnak@hrivnak.org)
+- Bug 1537367 - fix the test for last_operation (#688) (jmrodri@gmail.com)
+- No longer only search for apbs that end with -apb (#719) (rhallise@redhat.com)
+- revert image back to match blog post in simple broker template. (#714) (Shawn.Hurley21@gmail.com)
+- Proposes solutions for tracking state of BindInstance creation (#680) (mhrivnak@hrivnak.org)
+- Check that all the containers in a pod are running (#706) (rhallise@redhat.com)
+- Ignore IDE extras (#703) (ernelson@redhat.com)
+- Add fall through case to deprovision handler (#700) (pgough@redhat.com)
+- update copyright date to 2018 (#699) (jmrodri@gmail.com)
+- Make the k8s CI scripts consumable with curl (#695) (rhallise@redhat.com)
+- Adding ability for Subject Rules Review to do the correct check. (#693) (Shawn.Hurley21@gmail.com)
+- Remove unecessary dao ref from DeproJob (#691) (ernelson@redhat.com)
+- add a 3.10 releaser (#690) (jmrodri@gmail.com)
+- bump version to 1.2 (jmrodri@gmail.com)
+
 * Thu Jan 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.1.8-1
 - Add proxy docs (#634) (ernelson@redhat.com)
 - Bug 1536629 - Send job msg immediately as job starts. (#671) (maleck13@users.noreply.github.com)
