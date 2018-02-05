@@ -152,13 +152,13 @@ func NewFileUserServiceAdapter(dir string) (*FileUserServiceAdapter, error) {
 
 // GetProviders - returns the list of configured providers
 func GetProviders(authConfig *config.Config) []Provider {
-	providers := make([]Provider, 0, len(authConfig.GetSubConfig("broker.auth").ToMap()))
+	providers := make([]Provider, 0, len(authConfig.GetSubConfigArray("broker.auth")))
 
-	for t := range authConfig.GetSubConfig("broker.auth").ToMap() {
-		if authConfig.GetBool(fmt.Sprintf("broker.auth.%v.enabled", t)) {
-			provider, err := createProvider(t)
+	for _, p := range authConfig.GetSubConfigArray("broker.auth") {
+		if p.GetBool("enabled") {
+			provider, err := createProvider(p.GetString("type"))
 			if err != nil {
-				log.Warning("Unable to create provider for %v. %v", t, err)
+				log.Warning("Unable to create provider for %v. %v", p, err)
 				continue
 			}
 			providers = append(providers, provider)
