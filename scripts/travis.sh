@@ -65,6 +65,15 @@ elif [[ "$action" == "before_script" ]]; then
   sudo mv ${tmp} /etc/docker/daemon.json
   sudo mount --make-shared /
   sudo service docker restart
+elif [[ "$action" == "docs" ]]; then
+  echo "================================="
+  echo "           Doc Change            "
+  echo "================================="
+  # Copied from https://github.com/facebook/react/pull/2000
+  git diff --name-only HEAD^ | grep -qvE '(\.md$)|(^(docs|examples))/' || {
+      echo "Only docs were updated, stopping build process."
+      exit 9
+  }
 elif [[ "$action" == "lint" ]]; then
   echo "================================="
   echo "              Lint               "
