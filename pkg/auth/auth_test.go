@@ -72,7 +72,7 @@ func TestGetProviders(t *testing.T) {
 	t.Skip("requires /var/run/asb-auth/{username,password} to be present")
 	config, err := config.CreateConfig("testdata/test-config.yaml")
 	if err != nil {
-		t.Fatal("Unable to create config - %v", err)
+		t.Fatalf("Unable to create config - %v", err)
 	}
 
 	testproviders := GetProviders(config)
