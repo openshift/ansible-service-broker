@@ -172,6 +172,7 @@ cluster::deployments delete asb-etcd -n ${ASB_PROJECT}
 kubectl delete endpoints asb -n ${ASB_PROJECT}
 cluster::routes delete asb-etcd -n ${ASB_PROJECT}
 kubectl delete service asb-etcd -n ${ASB_PROJECT}
+kubectl delete service asb -n ${ASB_PROJECT}
 
 # Process required changes for local development
 cluster::process ${TEMPLATE_LOCAL_DEV} ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} -p TERMINATION=${TERMINATION}

@@ -34,9 +34,6 @@ function cluster::process {
 apiVersion: v1
 kind: Endpoints
 metadata:
-  labels:
-    app: ansible-service-broker
-    service: asb
   name: asb
 subsets:
 - addresses:

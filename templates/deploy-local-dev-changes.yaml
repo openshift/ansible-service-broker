@@ -99,9 +99,6 @@ objects:
 - apiVersion: v1
   kind: Endpoints
   metadata:
-    labels:
-      app: ansible-service-broker
-      service: asb
     name: asb
   subsets:
   - addresses:
@@ -110,6 +107,19 @@ objects:
     - name: port-1338
       port: 1338
       protocol: TCP
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: asb
+    annotations:
+      service.alpha.openshift.io/serving-cert-secret-name: asb-tls
+  spec:
+    ports:
+      - name: port-1338
+        port: 1338
+        targetPort: 1338
+        protocol: TCP
 
 parameters:
 - description: Name of the etcd target port to connect to
