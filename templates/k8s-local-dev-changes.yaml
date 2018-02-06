@@ -12,6 +12,18 @@ spec:
     service: asb-etcd
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: asb
+spec:
+  ports:
+    - name: port-1338
+      port: 1338
+      targetPort: 1338
+      protocol: TCP
+
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
