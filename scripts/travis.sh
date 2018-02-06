@@ -74,6 +74,7 @@ elif [[ "$action" == "docs" ]]; then
       TRAVIS_COMMIT_RANGE="$TRAVIS_BRANCH"
   fi
   git remote show origin
+  git fetch origin
   git diff --name-only origin/$TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|examples))/' || {
       echo "Only docs were updated, stopping build process."
       exit 0
