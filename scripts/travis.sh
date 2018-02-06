@@ -70,28 +70,10 @@ elif [[ "$action" == "docs" ]]; then
   echo "           Doc Change            "
   echo "================================="
   # Copied from https://github.com/facebook/react/pull/2000
-  git show release-1.1
-  git branch
-  git log
-  git diff --name-only HEAD^
-  git diff --name-only HEAD^^
-  git diff --name-only "$TRAVIS_BRANCH"
-  if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-      git diff --name-only | grep -qvE '(\.md$)|(^(docs|examples))/' || {
-	  echo "Only docs were updated, stopping build process."
-	  exit 0
-      }
-  else
-      git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|examples))/' || {
-	  echo "Only docs were updated, stopping build process."
-	  exit 0
-      }
-  fi
-
-  git remote show origin
-  git fetch origin
-  git git branch
-
+  git diff --name-only HEAD^ | grep -qvE '(\.md$)|(^(docs|examples))/' || {
+      echo "Only docs were updated, stopping build process."
+      exit 9
+  }
 elif [[ "$action" == "lint" ]]; then
   echo "================================="
   echo "              Lint               "
