@@ -73,7 +73,8 @@ elif [[ "$action" == "docs" ]]; then
   git show release-1.1
   git branch
   git log
-  git diff --name-only HEAD^^^
+  git diff --name-only HEAD^
+  git diff --name-only HEAD^^
   git diff --name-only "$TRAVIS_BRANCH"
   if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
       git diff --name-only | grep -qvE '(\.md$)|(^(docs|examples))/' || {
