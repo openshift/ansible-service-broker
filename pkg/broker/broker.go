@@ -58,6 +58,8 @@ var (
 	ErrorParameterNotUpdatable = errors.New("parameter not updatable")
 	// ErrorParameterNotFound - Error for when a parameter for update is not found
 	ErrorParameterNotFound = errors.New("parameter not found")
+	// ErrorParameterUnknownEnum - Error for when an unknown enum param has been requested
+	ErrorParameterUnknownEnum = errors.New("unknown enum parameter value requested")
 	// ErrorPlanUpdateNotPossible - Error when a Plan Update request cannot be satisfied
 	ErrorPlanUpdateNotPossible = errors.New("plan update not possible")
 	// ErrorNoUpdateRequested - Error for when no valid updates are requested
@@ -1146,6 +1148,12 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, ErrorNotFound
 	}
 
+	// copy previous params, since the loaded si is mutated during update
+	prevParams := make(apb.Parameters)
+	for k, v := range *si.Parameters {
+		prevParams[k] = v
+	}
+
 	////////////////////////////////////////////////////////////
 	// TODO -- HACK!: Update will report a 202 if it finds any jobs
 	// in_progress for a particular instance, *even if the requests are different*.
@@ -1234,7 +1242,10 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		log.Debug("Plan transition NOT requested as part of update")
 	}
 
-	req.Parameters = a.validateRequestedUpdateParams(req.Parameters, toPlan, si)
+	req.Parameters, err = a.validateRequestedUpdateParams(req.Parameters, toPlan, prevParams, si)
+	if err != nil {
+		return nil, err
+	}
 
 	if fromPlanName == toPlanName && len(req.Parameters) == 0 {
 		log.Warningf("Returning without running the APB. No changes were actually requested")
@@ -1305,33 +1316,74 @@ func (a AnsibleBroker) isValidPlanTransition(fromPlan *apb.Plan, toPlanName stri
 func (a AnsibleBroker) validateRequestedUpdateParams(
 	reqParams map[string]string,
 	toPlan *apb.Plan,
+	prevParams map[string]interface{},
 	si *apb.ServiceInstance,
-) map[string]string {
-	for requestedParamKey := range reqParams {
-		var pd *apb.ParameterDescriptor
+) (map[string]string, error) {
+	log.Debugf("Validating update parameters...")
+	log.Debugf("Request Params: %v", reqParams)
+	log.Debugf("Previous Params: %v", prevParams)
 
-		// Confirm the parameter actually exists on the plan
-		if pd = toPlan.GetParameter(requestedParamKey); pd == nil {
-			log.Warningf("Removing non-existent parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
-			delete(reqParams, requestedParamKey)
+	// The catalog will always pass all parameters for update, so let's filter
+	// out parameters that the user has not changed first.
+	changedParams := make(map[string]string)
+	for reqParam, reqVal := range reqParams {
+		if prevVal, ok := prevParams[reqParam]; ok {
+			if reqVal != prevVal {
+				changedParams[reqParam] = reqVal
+			}
+		} else {
+			// A key from the parameters requested for change was NOT found in the
+			// parameters in the broker's last known ServiceInstance for the given
+			// :service_id.
+			//
+			// This is a potentially valid scenario, although I'm not sure
+			// what the implications are for the broader system, so some integration
+			// testing is going to be required here.
+			// Ex: EriksApp v1.0 was deployed at T as an APB by the broker. At T+1,
+			// a EriksApp v2.0 has been released with new features that necessitates
+			// additional parameters in an APB. The v2.0 APB is released and the broker
+			// picks it up via boostrap. The old clusterserviceclass (Spec) is still
+			// around, since the v1.0 ServiceInstance is still running. The cluster op
+			// then decides to update the v1.0 ServiceInstance, providing a set of
+			// new credentials on top of those that were originally used to provision
+			// the v1.0 ServiceInstance. These new keys should be passed to the APB,
+			// along with any changed values to the existing parameters, so the APB
+			// can make sense of them.
+			log.Notice("Requested update parameter: [%v] with the value of [%v] was found " +
+				"in an update request, but it did not exist on the previous service instance.")
+		}
+	}
+	log.Debugf("Changed Params: %v", changedParams)
+
+	// Copy changed params to returnParams so to avoid iterating over a mutating collection
+	returnParams := make(map[string]string)
+	for k, v := range returnParams {
+		returnParams[k] = v
+	}
+
+	for reqParam := range changedParams {
+		pd := toPlan.GetParameter(reqParam)
+		if pd == nil {
+			// Confirm the parameter actually exists on the plan
+			log.Warningf("Removing non-parameter %s, requested for update on instance %s, from request.", reqParam, si.ID)
+			return nil, ErrorParameterNotFound
 		} else if !pd.Updatable {
-			log.Warningf("Removing non-updatable parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
-			delete(reqParams, requestedParamKey)
-		} else if reqParams[requestedParamKey] == (*si.Parameters)[requestedParamKey] {
-			log.Warningf("Removing unchanged parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
-			delete(reqParams, requestedParamKey)
+			log.Errorf("Request attempted to update non-updatable parameter: %v on ServiceInstance: %v", reqParam, si.ID)
+			return nil, ErrorParameterNotUpdatable
 		} else if pd.Type == "enum" {
 			enums := make(map[string]bool)
 			for _, v := range pd.Enum {
 				enums[v] = true
 			}
-			if !enums[reqParams[requestedParamKey]] {
-				log.Warningf("Removing invalid enum parameter %s, requested for update on instance %s, from request.", requestedParamKey, si.ID)
-				delete(reqParams, requestedParamKey)
+			if !enums[changedParams[reqParam]] {
+				log.Warningf("Removing invalid enum parameter %s, requested for update on instance %s, from request.", reqParam, si.ID)
+				return nil, ErrorParameterUnknownEnum
 			}
 		}
 	}
-	return reqParams
+
+	log.Debugf("Validated Params: %v", returnParams)
+	return returnParams, nil
 }
 
 // LastOperation - gets the last operation and status

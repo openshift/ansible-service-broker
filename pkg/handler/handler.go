@@ -364,8 +364,16 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
 		case broker.ErrorNoUpdateRequested:
 			writeResponse(w, http.StatusOK, resp)
-		default:
+		case broker.ErrorNoUpdateRequested:
+			writeResponse(w, http.StatusOK, resp)
+		case broker.ErrorPlanNotFound,
+			broker.ErrorParameterNotUpdatable,
+			broker.ErrorParameterNotFound,
+			broker.ErrorParameterUnknownEnum,
+			broker.ErrorPlanUpdateNotPossible:
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
+		default:
+			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 		}
 	} else if async {
 		writeDefaultResponse(w, http.StatusAccepted, resp, err)
