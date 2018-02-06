@@ -22,6 +22,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/openshift/ansible-service-broker/pkg/config"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
@@ -65,4 +66,17 @@ func TestUser(t *testing.T) {
 	user := User{Username: "admin", Password: "password"}
 	ft.AssertEqual(t, user.GetType(), "user", "type doesn't match user")
 	ft.AssertEqual(t, user.GetName(), user.Username, "get name and username do not match")
+}
+
+func TestGetProviders(t *testing.T) {
+	t.Skip("requires /var/run/asb-auth/{username,password} to be present")
+	config, err := config.CreateConfig("testdata/test-config.yaml")
+	if err != nil {
+		t.Fatal("Unable to create config - %v", err)
+	}
+
+	testproviders := GetProviders(config)
+
+	t.Log(len(testproviders))
+	ft.AssertEqual(t, len(testproviders), 1, "providers not parsed correctly")
 }
