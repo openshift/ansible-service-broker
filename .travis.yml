@@ -11,15 +11,7 @@ jobs:
   include:
     - stage: "OpenShift and Kubernetes CI"
       before_install:
-        # Copied from https://github.com/facebook/react/pull/2000
-        - |
-            if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-              TRAVIS_COMMIT_RANGE="$TRAVIS_BRANCH"
-            fi
-            git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|examples))/' || {
-              echo "Only docs were updated, stopping build process."
-              exit 0
-            }
+        - ./scripts/travis.sh docs
         - ./scripts/travis.sh before_install
       install:
         - ./scripts/travis.sh install
@@ -37,15 +29,7 @@ jobs:
         - ./scripts/broker-ci/gather-logs.sh
     -
       before_install:
-        # Copied from https://github.com/facebook/react/pull/2000
-        - |
-            if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-              TRAVIS_COMMIT_RANGE="$TRAVIS_BRANCH"
-            fi
-            git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|examples))/' || {
-              echo "Only docs were updated, stopping build process."
-              exit 0
-            }
+        - ./scripts/travis.sh docs
       before_script:
         - ./scripts/travis.sh setup-minikube
         - ./scripts/travis.sh k8s-catalog
