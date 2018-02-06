@@ -11,7 +11,7 @@ jobs:
   include:
     - stage: "OpenShift and Kubernetes CI"
       before_install:
-        - ./scripts/travis.sh docs
+        - ./scripts/travis.sh docs; if [ $? -eq 0 ]; then exit 0; fi
         - ./scripts/travis.sh before_install
       install:
         - ./scripts/travis.sh install
@@ -29,7 +29,7 @@ jobs:
         - ./scripts/broker-ci/gather-logs.sh
     -
       before_install:
-        - ./scripts/travis.sh docs
+        - ./scripts/travis.sh docs; if [ $? -eq 0 ]; then exit 0; fi
       before_script:
         - ./scripts/travis.sh setup-minikube
         - ./scripts/travis.sh k8s-catalog
