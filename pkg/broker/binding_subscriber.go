@@ -27,12 +27,12 @@ import (
 
 // BindingWorkSubscriber - Listen for binding messages
 type BindingWorkSubscriber struct {
-	dao       *dao.Dao
+	dao       dao.Dao
 	msgBuffer <-chan JobMsg
 }
 
 // NewBindingWorkSubscriber - Creates a new work subscriber
-func NewBindingWorkSubscriber(dao *dao.Dao) *BindingWorkSubscriber {
+func NewBindingWorkSubscriber(dao dao.Dao) *BindingWorkSubscriber {
 	return &BindingWorkSubscriber{dao: dao}
 }
 

@@ -26,12 +26,12 @@ import (
 
 // UnbindingWorkSubscriber - Listen for binding messages
 type UnbindingWorkSubscriber struct {
-	dao       *dao.Dao
+	dao       dao.Dao
 	msgBuffer <-chan JobMsg
 }
 
 // NewUnbindingWorkSubscriber - Creates a new work subscriber
-func NewUnbindingWorkSubscriber(dao *dao.Dao) *UnbindingWorkSubscriber {
+func NewUnbindingWorkSubscriber(dao dao.Dao) *UnbindingWorkSubscriber {
 	return &UnbindingWorkSubscriber{dao: dao}
 }
 
