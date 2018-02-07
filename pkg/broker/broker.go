@@ -152,10 +152,10 @@ func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceIn
 	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
 	if err != nil {
 		if client.IsKeyNotFound(err) {
-			log.Errorf("Could not find a service instance in dao - %v", err)
+			log.Infof("Could not find a service instance in dao - %v", err)
 			return apb.ServiceInstance{}, ErrorNotFound
 		}
-		log.Error("Couldn't find a service instance: ", err)
+		log.Info("Couldn't find a service instance: ", err)
 		return apb.ServiceInstance{}, err
 	}
 	return *instance, nil
