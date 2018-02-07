@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.9
+Version: 1.1.10
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,20 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Feb 07 2018 David Zager <david.j.zager@gmail.com> 1.1.10-1
+- Bug 1543029 - last_operation returns correct body with 410 response (#744)
+  (mhrivnak@hrivnak.org)
+- Bug 1542387 - Print out status of response from RHCC registry if not 200
+  (#743) (dymurray@redhat.com)
+- Bug 1540121 - Remove redundant validation copy (#740) (ernelson@redhat.com)
+- Bug 1539308 - Do not report errors on dupe depros (#738)
+  (ernelson@redhat.com)
+- Do a git diff against origin/<branch> (#735) (rhallise@redhat.com)
+- Bug 1540121 - Return 400 for bad update requests (#734) (ernelson@redhat.com)
+- Fix vet issue. (ernelson@redhat.com)
+- Bug 1541335 - fix auth config parsing (#729) (jmrodri@gmail.com)
+- Bug 1541265 - avoid broker panic, check for nil (#724) (jmrodri@gmail.com)
+
 * Fri Feb 02 2018 David Zager <david.j.zager@gmail.com> 1.1.9-1
 - Bug 1538986 - Remove bad enum values from Update Request (#721)
   (jmontleo@redhat.com)
