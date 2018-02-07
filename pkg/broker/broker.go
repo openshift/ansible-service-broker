@@ -1317,12 +1317,6 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 	}
 	log.Debugf("Changed Params: %v", changedParams)
 
-	// Copy changed params to returnParams so to avoid iterating over a mutating collection
-	returnParams := make(map[string]string)
-	for k, v := range returnParams {
-		returnParams[k] = v
-	}
-
 	for reqParam := range changedParams {
 		pd := toPlan.GetParameter(reqParam)
 		if pd == nil {
@@ -1344,8 +1338,8 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 		}
 	}
 
-	log.Debugf("Validated Params: %v", returnParams)
-	return returnParams, nil
+	log.Debugf("Validated Params: %v", changedParams)
+	return changedParams, nil
 }
 
 // LastOperation - gets the last operation and status
