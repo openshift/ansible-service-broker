@@ -720,7 +720,7 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 		if err != nil {
 			switch err {
 			case broker.ErrorNotFound:
-				writeResponse(w, http.StatusGone, nil)
+				writeResponse(w, http.StatusGone, make(map[string]interface{}, 1))
 			default:
 				writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
 			}
