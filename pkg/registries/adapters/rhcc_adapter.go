@@ -18,6 +18,7 @@ package adapters
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -103,7 +104,9 @@ func (r RHCCAdapter) loadImages(Query string) (RHCCImageResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	r.Log.Debug("Got Image Response from RHCC")
+	if resp.StatusCode != 200 {
+		return RHCCImageResponse{}, errors.New(resp.Status)
+	}
 	imageList, err := ioutil.ReadAll(resp.Body)
 
 	imageResp := RHCCImageResponse{}
