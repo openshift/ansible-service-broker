@@ -231,6 +231,7 @@ ssl_cert|Tells the broker where to find the tls crt file. If not set the [apiser
 refresh_interval|The interval to query registries for new image specs|"600s"|N
 auto_escalate|Allows the broker to escalate the permissions of a user while running the APB [read more](administration.md)|false|N
 cluster_url|Sets the prefix for the url that the broker is expecting|ansible-service-broker|N
+force_delete|Allow the broker to prune services instances orphaned by failed deprovision|false|N
 
 ## Secrets Configuration
 The secrets config section will create associations between secrets in the broker's namespace and apbs the broker runs.

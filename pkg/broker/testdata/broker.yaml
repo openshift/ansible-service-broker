@@ -6,3 +6,4 @@ broker:
   output_request: true
   ssl_cert_key: /var/run/secrets/kubernetes.io/serviceaccount/tls.key
   ssl_cert: /var/run/secrets/kubernetes.io/serviceaccount/tls.crt
+  force_delete: false

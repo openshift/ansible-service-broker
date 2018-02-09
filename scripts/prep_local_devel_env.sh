@@ -237,4 +237,5 @@ broker:
   ssl_cert: ${TLS_CRT}
   refresh_interval: "600s"
   auto_escalate: ${AUTO_ESCALATE:-false}
+  force_delete: false
 EOF
