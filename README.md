@@ -5,6 +5,7 @@ Ansible Service Broker
 [![Go_Report_Card](https://goreportcard.com/badge/github.com/openshift/ansible-service-broker)](https://goreportcard.com/report/github.com/openshift/ansible-service-broker)
 [![Coverage Status](https://coveralls.io/repos/github/openshift/ansible-service-broker/badge.svg?branch=coveralls)](https://coveralls.io/github/openshift/ansible-service-broker?branch=coveralls)
 [![Join the chat at freenode:asbroker](https://img.shields.io/badge/irc-freenode%3A%20%23asbroker-blue.svg)](http://webchat.freenode.net/?channels=%23asbroker)
+[![Subscribe to the Mailing List](https://img.shields.io/badge/subscribe-Mailing_List-blue.svg)](https://www.redhat.com/mailman/listinfo/ansible-service-broker)
 [![Licensed under Apache License version 2.0](https://img.shields.io/github/license/openshift/origin.svg?maxAge=2592000)](https://www.apache.org/licenses/LICENSE-2.0)
 
 Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker)
