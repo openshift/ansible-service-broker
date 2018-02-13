@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.0.20
+Version: 1.0.21
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -307,6 +307,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Feb 13 2018 David Zager <david.j.zager@gmail.com> 1.0.21-1
+- Bug 1541461 - Deal with buggy encoded scopes from service catalog. (#756)
+  (Shawn.Hurley21@gmail.com)
+- adding sprint139 images for 1.0 release CI (#759) (Shawn.Hurley21@gmail.com)
+
 * Wed Jan 31 2018 David Zager <david.j.zager@gmail.com> 1.0.20-1
 - Adding ability for Subject Rules Review to do the correct check. (#696)
   (Shawn.Hurley21@gmail.com)
