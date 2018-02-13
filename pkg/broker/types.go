@@ -274,6 +274,7 @@ type UserInfo struct {
 	Username string              `json:"username"`
 	UID      string              `json:"uid"`
 	Groups   []string            `json:"groups,omitempty"`
+	Scopes   []string            `json:"scopes.authorization.openshift.io"`
 	Extra    map[string][]string `json:"extra,omitempty"`
 }
 
