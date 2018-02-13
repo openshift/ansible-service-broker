@@ -493,7 +493,7 @@ parameters:
 - description: APB Image Tag
   displayname: APB Image Tag
   name: TAG
-  value: sprint140
+  value: sprint138
 
 - description: OpenShift User Password
   displayname: OpenShift User Password
