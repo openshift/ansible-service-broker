@@ -707,7 +707,18 @@ func (h handler) validateUser(userInfo broker.UserInfo, namespace string) (bool,
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
 	// Retrieving the rules for the user in the namespace.
-	prs, err := openshiftClient.SubjectRulesReview(userInfo.Username, userInfo.Groups, userInfo.Extra, namespace, h.log)
+	s := userInfo.Scopes
+	if userInfo.Extra != nil {
+		scope, ok := userInfo.Extra["scopes.authorization.openshift.io"]
+		switch {
+		case ok && userInfo.Scopes != nil:
+			h.log.Infof("Unable to determine correct scope to use. Found both top level scope and scope in extras.")
+			return false, http.StatusForbidden, fmt.Errorf("unable to determine correct scope to use")
+		case ok:
+			s = scope
+		}
+	}
+	prs, err := openshiftClient.SubjectRulesReview(userInfo.Username, userInfo.Groups, s, namespace, h.log)
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
