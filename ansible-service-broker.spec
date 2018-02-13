@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.10
+Version: 1.1.11
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Feb 13 2018 David Zager <david.j.zager@gmail.com> 1.1.11-1
+- Bug 1541461 - Deal with buggy encoded scopes from service catalog. (#755)
+  (Shawn.Hurley21@gmail.com)
+
 * Wed Feb 07 2018 David Zager <david.j.zager@gmail.com> 1.1.10-1
 - Bug 1543029 - last_operation returns correct body with 410 response (#744)
   (mhrivnak@hrivnak.org)
