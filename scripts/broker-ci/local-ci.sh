@@ -43,10 +43,12 @@ function deprovision {
 
 function bind {
     print-with-green "Waiting for services to be ready"
-    sleep 30
+    sleep 120
     oc create -f ./scripts/broker-ci/bind-mediawiki-postgresql.yaml || BIND_ERROR=true
     ./scripts/broker-ci/wait-for-resource.sh create ServiceBinding mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
     ./scripts/broker-ci/wait-for-resource.sh create secret mediawiki-postgresql-binding >> /tmp/wait-for-pods-log 2>&1
+    oc get secrets -o yaml
+    oc get servicebindings -o yaml
 
     DB_HOST=$(oc get secret -n default mediawiki-postgresql-binding -o jsonpath='{ .data.DB_HOST }' | base64 --decode)
     DB_NAME=$(oc get secret -n default mediawiki-postgresql-binding -o jsonpath='{ .data.DB_NAME }' | base64 --decode)
