@@ -345,6 +345,7 @@ objects:
         ssl_cert_key: /etc/tls/private/tls.key
         ssl_cert: /etc/tls/private/tls.crt
         auto_escalate: ${AUTO_ESCALATE}
+        force_delete: ${FORCE_DELETE}
         auth:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
@@ -590,6 +591,11 @@ parameters:
 - description: Auto escalate the broker. Will remove user impresonation
   displayname: Auto Escalate
   name: AUTO_ESCALATE
+  value: "false"
+
+- description: Allow the broker to prune services instances orphaned by failed deprovision
+  displayname: Force delete
+  name: FORCE_DELETE
   value: "false"
 
 - description: APB ImagePullPolicy

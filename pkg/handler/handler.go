@@ -442,6 +442,13 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 
 	resp, err := h.broker.Deprovision(serviceInstance, planID, nsDeleted, async)
 
+	if h.brokerConfig.GetBool("broker.force_delete") {
+		// Regardless of deprovision outcome we are going to do a best effort clean up of resources
+		// Return success to client to avoid polling of last operation endpoint
+		// and allow cleanup of service instance object
+		writeResponse(w, http.StatusOK, broker.DeprovisionResponse{})
+	}
+
 	if err != nil {
 		switch err {
 		case broker.ErrorNotFound:

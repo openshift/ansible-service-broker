@@ -104,6 +104,7 @@ type Config struct {
 	RefreshInterval    string `yaml:"refresh_interval"`
 	AutoEscalate       bool   `yaml:"auto_escalate"`
 	ClusterURL         string `yaml:"cluster_url"`
+	ForceDelete        bool   `yaml:"force_delete"`
 }
 
 // DevBroker - Interface for the development broker.
@@ -142,6 +143,7 @@ func NewAnsibleBroker(dao dao.Dao,
 			RefreshInterval:    brokerConfig.GetString("refresh_interval"),
 			AutoEscalate:       brokerConfig.GetBool("auto_escalate"),
 			ClusterURL:         brokerConfig.GetString("cluster_url"),
+			ForceDelete:        brokerConfig.GetBool("force_delete"),
 		},
 	}
 	return broker, nil
@@ -722,6 +724,10 @@ func (a AnsibleBroker) Deprovision(
 		log.Info("Synchronous deprovision in progress")
 		_, err = apb.Deprovision(&instance)
 		if err != nil {
+			if a.brokerConfig.ForceDelete {
+				log.Infof("Deprovision failed. Attempting to clean up related resources. User should ensure clean up is successful")
+				cleanupDeprovision(&instance, a.dao)
+			}
 			return nil, err
 		}
 	}

@@ -20,6 +20,7 @@ AUTO_ESCALATE | true | Auto escalate the users permissions when running an APB
 BROKER_CA_CERT | "" | Tells the broker that the ca that has signed the SSL Cert and Key
 KEEP_NAMESPACE | false | Always keep the APB namespace after execution.
 KEEP_NAMESPACE_ON_ERROR | true | Keeps the APB namespace after an error during execution.
+FORCE_DELETE | false | Allow the broker to prune services instances orphaned by failed deprovision
 
 ## Template
 The following is the template used to deploy the ASB:

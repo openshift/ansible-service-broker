@@ -148,6 +148,7 @@ data:
       ssl_cert_key: /etc/tls/private/tls.key
       ssl_cert: /etc/tls/private/tls.crt
       auto_escalate: True
+      force_delete: false
       auth:
         - type: basic
           enabled: True
@@ -175,10 +176,10 @@ data:
       ssl_cert_key: /etc/tls/private/tls.key
       ssl_cert: /etc/tls/private/tls.crt
       auto_escalate: true
+      force_delete: false
       auth:
         - type: basic
-+           enabled: false
--           enabled: true
+          enabled: false
 ```
 
 Redeploy the broker using origin clients `rollout latest` command.
