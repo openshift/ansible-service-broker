@@ -9,9 +9,6 @@ for r in $(seq $RETRIES); do
 
         echo "Running: curl ${ENDPOINT}| grep \"div class\" | cut -f 2 -d \"'\""
 
-        oc get pods
-        oc get routes
-
         BIND_CHECK=$(curl ${ENDPOINT}| grep "div class" | cut -f 2 -d "'")
         if [ "${BIND_CHECK}" = "" ] || [ "${BIND_CHECK}" = "error" ]; then
                 echo "Failed to gather data from ${ENDPOINT}"
@@ -20,7 +17,7 @@ for r in $(seq $RETRIES); do
                 echo "You can double check by opening http://${ENDPOINT} in your browser"
                 break
         fi
-        sleep 2
+        sleep 10
 done
 
 if [ "${r}" == "${RETRIES}" ]; then
