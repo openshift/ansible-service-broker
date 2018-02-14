@@ -93,4 +93,9 @@ function print-all-logs {
     catalog-logs
 }
 
+mediawiki=$(kubectl get pods | grep mediawiki | awk '{ print $1 }')
+postgresql=$(kubectl get pods | grep postgresql | awk '{ print $1 }')
+kubectl get pods -o yaml $mediawiki
+kubectl logs $mediawiki
+kubectl logs $postgresql
 print-all-logs
