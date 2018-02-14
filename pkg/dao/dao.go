@@ -334,14 +334,20 @@ func (d *Dao) DeleteExtractedCredentials(id string) error {
 }
 
 // SetState - Set the Job State in the kvp API for id.
-func (d *Dao) SetState(id string, state apb.JobState) error {
-	return d.setObject(stateKey(id, state.Token), state)
+func (d *Dao) SetState(id string, state apb.JobState) (string, error) {
+	key := stateKey(id, state.Token)
+	return key, d.setObject(key, state)
 }
 
 // GetState - Retrieve a job state from the kvp API for an ID and Token.
 func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
+	return d.GetStateByKey(stateKey(id, token))
+}
+
+// GetStateByKey - Retrieve a job state from the kvp API for a job key
+func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
 	state := apb.JobState{}
-	if err := d.getObject(stateKey(id, token), &state); err != nil {
+	if err := d.getObject(key, &state); err != nil {
 		return apb.JobState{State: apb.StateFailed}, err
 	}
 	return state, nil

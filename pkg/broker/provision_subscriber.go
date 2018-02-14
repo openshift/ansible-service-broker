@@ -43,7 +43,7 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 					log.Errorf("failed to set extracted credentials after provision %v", err)
 				}
 			}
-			if err := p.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
+			if _, err := p.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
 				log.Errorf("failed to set state after provision %v", err)
 			}
 		}
