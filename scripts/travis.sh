@@ -13,8 +13,6 @@ if [[ "$action" == "before_install" ]]; then
   echo "================================="
   echo "        Before Install           "
   echo "================================="
-  sudo do-release-upgrade -f DistUpgradeViewNonInteractive
-  sudo apt-get -qq update
   sudo apt-get install -y python-apt autoconf pkg-config e2fslibs-dev libblkid-dev zlib1g-dev liblzo2-dev asciidoc
 elif [[ "$action" == "install" ]]; then
   echo "================================="
