@@ -18,3 +18,7 @@ script:
   - ./scripts/travis.sh build
   - ./scripts/travis.sh test
   - ./scripts/travis.sh ci
+  - kubectl get pods
+  - kubectl get secrets
+  - oc get routes
+  - curl -H "authorization: bearer $(oc whoami -t)"  https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/catalog --insecure
