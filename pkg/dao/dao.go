@@ -90,13 +90,4 @@ type Dao interface {
 
 	// GetStateByKey - Retrieve a job state from the kvp API for a job key
 	GetStateByKey(key string) (apb.JobState, error)
-
-	// BatchSetPlanNames - set plannames based on PlanNameManifest in the kvp API.
-	BatchSetPlanNames(map[string]string) error
-
-	// SetPlanName - Set the Plan name in the kvp API for the given id.
-	SetPlanName(string, string) error
-
-	// GetPlanName - Retrieve the plan name associated with the ID
-	GetPlanName(string) (string, error)
 }

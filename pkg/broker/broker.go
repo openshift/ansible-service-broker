@@ -252,11 +252,6 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, err
 	}
 
-	// save off the plan names as well
-	if err = a.dao.BatchSetPlanNames(planNameManifest); err != nil {
-		return nil, err
-	}
-
 	apb.AddSecrets(specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
@@ -542,7 +537,6 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	*/
 	var spec *apb.Spec
 	var err error
-	var planName string
 
 	// Retrieve requested spec
 	specID := req.ServiceID
@@ -568,20 +562,15 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		return nil, errors.New(errMsg)
 	}
 
-	planName, err = a.dao.GetPlanName(req.PlanID)
-	if err != nil {
-		// etcd return not found i.e. code 100
-		if client.IsKeyNotFound(err) {
-			return nil, ErrorNotFound
-		}
-		// otherwise unknown error bubble it up
-		return nil, err
+	plan, ok := spec.GetPlanFromID(req.PlanID)
+	if !ok {
+		return nil, ErrorNotFound
 	}
 
 	log.Debugf(
 		"Injecting PlanID as parameter: { %s: %s }",
-		planParameterKey, planName)
-	parameters[planParameterKey] = planName
+		planParameterKey, plan.Name)
+	parameters[planParameterKey] = plan.Name
 	log.Debugf("Injecting ServiceClassID as parameter: { %s: %s }",
 		serviceClassIDKey, req.ServiceID)
 	parameters[serviceClassIDKey] = req.ServiceID
@@ -814,23 +803,17 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 				"Bind requests must specify PlanIDs"
 		return nil, false, errors.New(errMsg)
 	}
-
-	planName, err := a.dao.GetPlanName(req.PlanID)
-	if err != nil {
-		// etcd return not found i.e. code 100
-		if client.IsKeyNotFound(err) {
-			log.Debug("Plan not found")
-			return nil, false, ErrorNotFound
-		}
-		// otherwise unknown error bubble it up
-		return nil, false, err
+	plan, ok := instance.Spec.GetPlanFromID(req.PlanID)
+	if !ok {
+		log.Debug("Plan not found")
+		return nil, false, ErrorNotFound
 	}
 
 	log.Debugf(
 		"Injecting PlanID as parameter: { %s: %s }",
-		planParameterKey, planName)
+		planParameterKey, plan.Name)
 
-	params[planParameterKey] = planName
+	params[planParameterKey] = plan.Name
 	log.Debugf("Injecting ServiceClassID as parameter: { %s: %s }",
 		serviceClassIDKey, req.ServiceID)
 
@@ -1149,8 +1132,8 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	*/
 
 	var err error
-	var fromPlanName, toPlanName string
-	var fromPlan, toPlan *apb.Plan
+	var fromPlanName string
+	var fromPlan, toPlan apb.Plan
 
 	si, err := a.dao.GetServiceInstance(instanceUUID.String())
 	if err != nil {
@@ -1208,46 +1191,43 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, errors.New(emsg)
 	}
 
+	fromPlan, ok = spec.GetPlan(fromPlanName)
+	if !ok {
+		log.Error("The plan %s, specified for updating from on instance %s, does not exist.", fromPlanName, si.ID)
+		return nil, ErrorPlanNotFound
+	}
+
 	log.Debugf("Update received the following Request.PlanID: [%s]", req.PlanID)
 
 	if req.PlanID == "" {
 		// Lock to currentPlan if no plan passed in request
 		// No need to decode from FQPlanID -> ServiceClass scoped plan name, since
 		// `fromPlanName` in this case is already decoded. Ex: "prod" instead of the md5 hash
-		toPlanName = fromPlanName
+		toPlan = fromPlan
 	} else {
 		// The catalog only identifies plans via their md5(FQPlanID), and will request
 		// and update using that hash. If a PlanID is submitted, we'll need to look up
 		// the ServiceClass scoped plan name via the passed in hash so the APB
 		// will understand what to do with it, since APBs do not understand plan hashes.
-		toPlanName, err = a.dao.GetPlanName(req.PlanID)
-		if err != nil {
+
+		toPlan, ok = spec.GetPlanFromID(req.PlanID)
+		if !ok {
 			log.Error("Could not find requested PlanID %s in plan name lookup table", req.PlanID)
 			return nil, ErrorPlanNotFound
 		}
 	}
 
-	// Retrieve from/to plans by name, else respond with appropriate error
-	if fromPlan = spec.GetPlan(fromPlanName); fromPlan == nil {
-		log.Error("The plan %s, specified for updating from on instance %s, does not exist.", fromPlanName, si.ID)
-		return nil, ErrorPlanNotFound
-	}
-	if toPlan = spec.GetPlan(toPlanName); toPlan == nil {
-		log.Error("The plan %s, specified for updating to on instance %s, does not exist.", toPlanName, si.ID)
-		return nil, ErrorPlanNotFound
-	}
-
 	// If a plan transition has been requested, validate it is possible and then
 	// update the service instance with the desired next plan
-	if fromPlanName != toPlanName {
-		log.Debug("Validating plan transition from: %s, to: %s", fromPlanName, toPlanName)
-		if ok := a.isValidPlanTransition(fromPlan, toPlanName); !ok {
-			log.Error("The current plan, %s, cannot be updated to the requested plan, %s.", fromPlanName, toPlanName)
+	if fromPlan.Name != toPlan.Name {
+		log.Debug("Validating plan transition from: %s, to: %s", fromPlan.Name, toPlan.Name)
+		if ok := a.isValidPlanTransition(fromPlan, toPlan.Name); !ok {
+			log.Error("The current plan, %s, cannot be updated to the requested plan, %s.", fromPlan.Name, toPlan.Name)
 			return nil, ErrorPlanUpdateNotPossible
 		}
 
 		log.Debug("Plan transition valid!")
-		(*si.Parameters)[planParameterKey] = toPlanName
+		(*si.Parameters)[planParameterKey] = toPlan.Name
 	} else {
 		log.Debug("Plan transition NOT requested as part of update")
 	}
@@ -1257,7 +1237,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		return nil, err
 	}
 
-	if fromPlanName == toPlanName && len(req.Parameters) == 0 {
+	if fromPlan.Name == toPlan.Name && len(req.Parameters) == 0 {
 		log.Warningf("Returning without running the APB. No changes were actually requested")
 
 		return &UpdateResponse{}, ErrorNoUpdateRequested
@@ -1277,7 +1257,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	log.Debug("Initiating update with the inputs:")
 	log.Debugf("fromPlanName: [%s]", fromPlanName)
-	log.Debugf("toPlanName: [%s]", toPlanName)
+	log.Debugf("toPlanName: [%s]", toPlan.Name)
 	log.Debugf("PreviousValues: [ %+v ]", req.PreviousValues)
 	log.Debugf("ServiceInstance Parameters: [%v]", *si.Parameters)
 
@@ -1308,7 +1288,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	return &UpdateResponse{Operation: token}, nil
 }
 
-func (a AnsibleBroker) isValidPlanTransition(fromPlan *apb.Plan, toPlanName string) bool {
+func (a AnsibleBroker) isValidPlanTransition(fromPlan apb.Plan, toPlanName string) bool {
 	// Make sure that we can find the plan we're updating from.
 	// This should probably never fail, but cover our tail.
 	for _, validToPlanName := range fromPlan.UpdatesTo {
@@ -1321,7 +1301,7 @@ func (a AnsibleBroker) isValidPlanTransition(fromPlan *apb.Plan, toPlanName stri
 
 func (a AnsibleBroker) validateRequestedUpdateParams(
 	reqParams map[string]string,
-	toPlan *apb.Plan,
+	toPlan apb.Plan,
 	prevParams map[string]interface{},
 	si *apb.ServiceInstance,
 ) (map[string]string, error) {
@@ -1422,10 +1402,6 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	spec.Image = spec.FQName
 	addNameAndIDForSpec([]*apb.Spec{&spec}, apbPushRegName)
 	log.Debugf("Generated name for pushed APB: [%s], ID: [%s]", spec.FQName, spec.ID)
-	for _, p := range spec.Plans {
-		a.dao.SetPlanName(p.ID, p.Name)
-	}
-
 	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err
 	}
