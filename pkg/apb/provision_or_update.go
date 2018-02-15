@@ -111,6 +111,4 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 	}
 
 	e.extractedCredentials = creds
-	e.actionFinishedWithSuccess()
-	return
 }

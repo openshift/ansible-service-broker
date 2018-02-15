@@ -17,6 +17,8 @@
 package clients
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
 
@@ -62,6 +64,97 @@ func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[strin
 	log.Debugf("Found secret with name %v\n", secretName)
 
 	return secretData.Data, nil
+}
+
+// SaveExtractedCredentialSecret - Save the extCreds as a secret
+func (k KubernetesClient) SaveExtractedCredentialSecret(instanceID, ns string,
+	extCreds map[string]interface{}, labels map[string]string) error {
+
+	data := map[string][]byte{}
+	for key, val := range extCreds {
+		var buf bytes.Buffer
+		enc := gob.NewEncoder(&buf)
+		err := enc.Encode(val)
+		if err != nil {
+			log.Errorf("unable to encode value for ext creds secret: %v err - %v", val, err)
+			return err
+		}
+		data[key] = buf.Bytes()
+	}
+	s := &apiv1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   instanceID,
+			Labels: labels,
+		},
+		Data: data,
+	}
+	_, err := k.Client.CoreV1().Secrets(ns).Create(s)
+	if err != nil {
+		log.Errorf("Unable to create secret '%v' into namespace '%v'", instanceID, ns)
+		return err
+	}
+	return nil
+}
+
+// UpdateExtractedCredentialSecret - Updates the extCreds in a secret
+func (k KubernetesClient) UpdateExtractedCredentialSecret(instanceID, ns string,
+	extCreds map[string]interface{}, labels map[string]string) error {
+	data := map[string][]byte{}
+	for key, val := range extCreds {
+		var buf bytes.Buffer
+		enc := gob.NewEncoder(&buf)
+		err := enc.Encode(val)
+		if err != nil {
+			log.Errorf("unable to encode value for ext creds secret: %v err - %v", val, err)
+			return err
+		}
+		data[key] = buf.Bytes()
+	}
+	s := &apiv1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   instanceID,
+			Labels: labels,
+		},
+		Data: data,
+	}
+	_, err := k.Client.CoreV1().Secrets(ns).Update(s)
+	if err != nil {
+		log.Errorf("Unable to create secret '%v' into namespace '%v'", instanceID, ns)
+		return err
+	}
+	return nil
+}
+
+// GetExtractedCredentialSecretData - Get extracted credentials secret data
+func (k KubernetesClient) GetExtractedCredentialSecretData(instanceID, ns string) (map[string]interface{}, error) {
+	data, err := GetSecretData(instanceID, ns)
+	if err != nil {
+		log.Errorf("unable to get secret data for %v, in namespace: %v", instanceID, ns)
+		return nil, err
+	}
+	creds := map[string]interface{}{}
+	for key, b := range data {
+		var val interface{}
+		buf := bytes.NewBuffer(b)
+		dec := gob.NewDecoder(buf)
+		err := dec.Decode(&val)
+		if err != nil {
+			log.Errorf("unable to decode value for ext creds secret: %v err - %v", instanceID, err)
+			return nil, err
+		}
+		creds[key] = val
+	}
+	return creds, nil
+}
+
+// DeleteExtractedCredentialSecret - delete extracted credentials secret
+func (k KubernetesClient) DeleteExtractedCredentialSecret(instanceID, ns string) error {
+	err := k.Client.CoreV1().Secrets(ns).Delete(instanceID, &metav1.DeleteOptions{})
+	if err != nil {
+		log.Errorf("Unable to create secret '%v' into namespace '%v'", instanceID, ns)
+		return err
+	}
+	return nil
 }
 
 // GetPodStatus - Returns the current status of a pod in a specified namespace

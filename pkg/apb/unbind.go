@@ -26,7 +26,7 @@ import (
 
 // Unbind - runs the abp with the unbind action.
 func (e *executor) Unbind(
-	instance *ServiceInstance, parameters *Parameters,
+	instance *ServiceInstance, parameters *Parameters, bindingID string,
 ) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                            ")
@@ -67,6 +67,13 @@ func (e *executor) Unbind(
 			k8scli.Client.CoreV1().Pods(executionContext.Namespace), e.updateDescription)
 		if err != nil {
 			log.Errorf("Unbind action failed - %v", err)
+			e.actionFinishedWithError(err)
+			return
+		}
+		// Delete the binding extracted credential here.
+		err = runtime.Provider.DeleteExtractedCredential(bindingID, clusterConfig.Namespace)
+		if err != nil {
+			log.Errorf("Unbind failed to delete extracted credential - %v", err)
 			e.actionFinishedWithError(err)
 			return
 		}

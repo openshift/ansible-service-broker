@@ -26,7 +26,7 @@ import (
 
 // Bind - Will run the APB with the bind action.
 func (e *executor) Bind(
-	instance *ServiceInstance, parameters *Parameters,
+	instance *ServiceInstance, parameters *Parameters, bindingID string,
 ) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
@@ -84,6 +84,13 @@ func (e *executor) Bind(
 			return
 		}
 
+		labels := map[string]string{"apbAction": "bind", "apbName": instance.Spec.FQName}
+		err = runtime.Provider.CreateExtractedCredential(bindingID, clusterConfig.Namespace, creds.Credentials, labels)
+		if err != nil {
+			log.Errorf("apb::%v error occurred - %v", executionMethodProvision, err)
+			e.actionFinishedWithError(err)
+			return
+		}
 		e.extractedCredentials = creds
 		e.actionFinishedWithSuccess()
 	}()

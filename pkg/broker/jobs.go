@@ -22,6 +22,7 @@ package broker
 
 import (
 	"fmt"
+
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
@@ -192,7 +193,7 @@ func (j *BindJob) Run(token string, msgBuffer chan<- JobMsg) {
 		metricsJobFinishedHook: metrics.BindJobFinished,
 		skipExecution:          false,
 		run: func(e apb.Executor) <-chan apb.StatusMessage {
-			return e.Bind(j.serviceInstance, j.params)
+			return e.Bind(j.serviceInstance, j.params, j.bindingID)
 		},
 	}
 	job.Run(token, msgBuffer)
@@ -218,7 +219,7 @@ func (j *UnbindJob) Run(token string, msgBuffer chan<- JobMsg) {
 		metricsJobFinishedHook: metrics.UnbindJobFinished,
 		skipExecution:          j.skipExecution,
 		run: func(e apb.Executor) <-chan apb.StatusMessage {
-			return e.Unbind(j.serviceInstance, j.params)
+			return e.Unbind(j.serviceInstance, j.params, j.bindingID)
 		},
 	}
 	job.Run(token, msgBuffer)

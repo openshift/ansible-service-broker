@@ -16,6 +16,10 @@
 
 package apb
 
+import (
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
+)
+
 // Provision - will run the abp with the provision action.
 func (e *executor) Provision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
@@ -27,7 +31,16 @@ func (e *executor) Provision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Noticef("Spec.Description: %s", instance.Spec.Description)
 	log.Notice("============================================================")
 
-	go e.provisionOrUpdate(executionMethodProvision, instance)
-
+	go func() {
+		e.provisionOrUpdate(executionMethodProvision, instance)
+		labels := map[string]string{"apbAction": string(executionMethodProvision), "apbName": instance.Spec.FQName}
+		err := runtime.Provider.CreateExtractedCredential(instance.ID.String(), clusterConfig.Namespace, e.extractedCredentials.Credentials, labels)
+		if err != nil {
+			log.Errorf("apb::%v error occurred - %v", executionMethodProvision, err)
+			e.actionFinishedWithError(err)
+			return
+		}
+		e.actionFinishedWithSuccess()
+	}()
 	return e.statusChan
 }

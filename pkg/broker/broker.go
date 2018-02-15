@@ -117,13 +117,15 @@ type AnsibleBroker struct {
 	registry     []registries.Registry
 	engine       *WorkEngine
 	brokerConfig Config
+	namespace    string
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
 func NewAnsibleBroker(dao dao.Dao,
 	registry []registries.Registry,
 	engine WorkEngine,
-	brokerConfig *config.Config) (*AnsibleBroker, error) {
+	brokerConfig *config.Config,
+	namespace string) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
 		dao:      dao,
@@ -141,6 +143,7 @@ func NewAnsibleBroker(dao dao.Dao,
 			AutoEscalate:       brokerConfig.GetBool("auto_escalate"),
 			ClusterURL:         brokerConfig.GetString("cluster_url"),
 		},
+		namespace: namespace,
 	}
 	return broker, nil
 }
@@ -421,7 +424,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 					Podname: rs.State.Podname,
 					Method:  rs.State.Method,
 				})
-				err = a.dao.SetExtractedCredentials(instanceID, extCreds)
+				err = apb.SetExtractedCredentials(instanceID, extCreds)
 				if err != nil {
 					log.Error("Could not persist extracted credentials")
 					log.Error("%s", err.Error())
@@ -745,7 +748,7 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 
 	log.Debug("broker.GetBind: entered GetBind")
 
-	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
+	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, err
@@ -761,7 +764,7 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 		return nil, err
 	}
 
-	bindExtCreds, err := a.dao.GetExtractedCredentials(bi.ID.String())
+	bindExtCreds, err := apb.GetExtractedCredentials(bi.ID.String())
 	if err != nil {
 		if client.IsKeyNotFound(err) {
 			return nil, ErrorNotFound
@@ -833,7 +836,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// if binding instance exists, and the parameters are different return: 409.
 	//
 	// return 201 when we're done.
-	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
+	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, false, err
@@ -841,7 +844,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 
 	if existingBI, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
 		if existingBI.IsEqual(bindingInstance) {
-			bindExtCreds, err := a.dao.GetExtractedCredentials(existingBI.ID.String())
+			bindExtCreds, err := apb.GetExtractedCredentials(existingBI.ID.String())
 			// It's ok if there aren't any bind credentials yet.
 			if err != nil && !client.IsKeyNotFound(err) {
 				return nil, false, err
@@ -974,11 +977,11 @@ func (a AnsibleBroker) Unbind(
 	}
 
 	params := make(apb.Parameters)
-	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
+	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
 		return nil, false, err
 	}
-	bindExtCreds, err := a.dao.GetExtractedCredentials(bindInstance.ID.String())
+	bindExtCreds, err := apb.GetExtractedCredentials(bindInstance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
 		return nil, false, err
 	}

@@ -54,13 +54,6 @@ func TestDeprovisionWorkSubscriber_Subscribe(t *testing.T) {
 			},
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
-				dao.AssertOn["DeleteExtractedCredentials"] = func(args ...interface{}) error {
-					id := args[0].(string)
-					if id != "id" {
-						return fmt.Errorf("epected the id to be : id but was %s", id)
-					}
-					return nil
-				}
 				dao.AssertOn["DeleteServiceInstance"] = func(args ...interface{}) error {
 					id := args[0].(string)
 					if id != "id" {
@@ -76,9 +69,8 @@ func TestDeprovisionWorkSubscriber_Subscribe(t *testing.T) {
 					return nil
 				}
 				expectedCalls := map[string]int{
-					"DeleteExtractedCredentials": 1,
-					"DeleteServiceInstance":      1,
-					"SetState":                   1,
+					"DeleteServiceInstance": 1,
+					"SetState":              1,
 				}
 				return dao, expectedCalls
 			},
@@ -97,13 +89,6 @@ func TestDeprovisionWorkSubscriber_Subscribe(t *testing.T) {
 			},
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
-				dao.AssertOn["DeleteExtractedCredentials"] = func(args ...interface{}) error {
-					id := args[0].(string)
-					if id != "id" {
-						return fmt.Errorf("epected the id to be : id but was %s", id)
-					}
-					return nil
-				}
 				dao.AssertOn["DeleteServiceInstance"] = func(args ...interface{}) error {
 					id := args[0].(string)
 					if id != "id" {
@@ -125,56 +110,8 @@ func TestDeprovisionWorkSubscriber_Subscribe(t *testing.T) {
 				}
 				dao.Errs["DeleteServiceInstance"] = fmt.Errorf("not there")
 				expectedCalls := map[string]int{
-					"DeleteExtractedCredentials": 1,
-					"DeleteServiceInstance":      1,
-					"SetState":                   2,
-				}
-				return dao, expectedCalls
-			},
-		},
-		{
-			Name: "should set state to failed if clean up failed to delete extractedCredentials",
-			JobMsg: broker.JobMsg{
-				InstanceUUID: instanceID,
-				State: apb.JobState{
-					State:  apb.StateSucceeded,
-					Method: apb.JobMethodProvision,
-				},
-				ExtractedCredentials: apb.ExtractedCredentials{
-					Credentials: map[string]interface{}{"user": "test", "pass": "test"},
-				},
-			},
-			DAO: func() (*mock.SubscriberDAO, map[string]int) {
-				dao := mock.NewSubscriberDAO()
-				dao.AssertOn["DeleteExtractedCredentials"] = func(args ...interface{}) error {
-					id := args[0].(string)
-					if id != "id" {
-						return fmt.Errorf("epected the id to be : id but was %s", id)
-					}
-					return nil
-				}
-				dao.AssertOn["DeleteServiceInstance"] = func(args ...interface{}) error {
-
-					return fmt.Errorf("shouldn't have got to DeleteServiceInstance")
-
-				}
-				var states []apb.JobState
-				dao.AssertOn["SetState"] = func(i ...interface{}) error {
-					state := i[1].(apb.JobState)
-					states = append(states, state)
-					if states[0].State != apb.StateSucceeded {
-						return fmt.Errorf("expected to the state to be %v but was %v", apb.StateSucceeded, states[0].State)
-					}
-					if len(states) == 2 && states[1].State != apb.StateFailed {
-						return fmt.Errorf("expected to the state to be %v but was %v", apb.StateFailed, states[1].State)
-					}
-					return nil
-				}
-				dao.Errs["DeleteExtractedCredentials"] = fmt.Errorf("not there")
-				expectedCalls := map[string]int{
-					"DeleteExtractedCredentials": 1,
-					"DeleteServiceInstance":      0,
-					"SetState":                   2,
+					"DeleteServiceInstance": 1,
+					"SetState":              2,
 				}
 				return dao, expectedCalls
 			},

@@ -16,10 +16,6 @@
 
 package broker
 
-import (
-	"github.com/openshift/ansible-service-broker/pkg/apb"
-)
-
 // ProvisionWorkSubscriber - Listen for provision messages
 type ProvisionWorkSubscriber struct {
 	dao SubscriberDAO
@@ -37,12 +33,6 @@ func (p *ProvisionWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 		for msg := range msgBuffer {
 			log.Debug("received provision message from buffer")
 
-			if msg.State.State == apb.StateSucceeded {
-				log.Debugf("job in state succeeded setting credentials")
-				if err := p.dao.SetExtractedCredentials(msg.InstanceUUID, &msg.ExtractedCredentials); err != nil {
-					log.Errorf("failed to set extracted credentials after provision %v", err)
-				}
-			}
 			if _, err := p.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
 				log.Errorf("failed to set state after provision %v", err)
 			}

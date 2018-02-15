@@ -44,8 +44,8 @@ type ExecutorAccessors interface {
 type ExecutorAsync interface {
 	Provision(*ServiceInstance) <-chan StatusMessage
 	Deprovision(instance *ServiceInstance) <-chan StatusMessage
-	Bind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage
-	Unbind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage
+	Bind(instance *ServiceInstance, parameters *Parameters, bindingID string) <-chan StatusMessage
+	Unbind(instance *ServiceInstance, parameters *Parameters, bindingID string) <-chan StatusMessage
 	Update(instance *ServiceInstance) <-chan StatusMessage
 }
 

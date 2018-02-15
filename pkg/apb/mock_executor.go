@@ -10,12 +10,12 @@ type MockExecutor struct {
 }
 
 // Bind provides a mock function with given fields: instance, parameters
-func (_m *MockExecutor) Bind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage {
+func (_m *MockExecutor) Bind(instance *ServiceInstance, parameters *Parameters, bindingID string) <-chan StatusMessage {
 	ret := _m.Called(instance, parameters)
 
 	var r0 <-chan StatusMessage
-	if rf, ok := ret.Get(0).(func(*ServiceInstance, *Parameters) <-chan StatusMessage); ok {
-		r0 = rf(instance, parameters)
+	if rf, ok := ret.Get(0).(func(*ServiceInstance, *Parameters, string) <-chan StatusMessage); ok {
+		r0 = rf(instance, parameters, bindingID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan StatusMessage)
@@ -102,12 +102,12 @@ func (_m *MockExecutor) Provision(_a0 *ServiceInstance) <-chan StatusMessage {
 }
 
 // Unbind provides a mock function with given fields: instance, parameters
-func (_m *MockExecutor) Unbind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage {
+func (_m *MockExecutor) Unbind(instance *ServiceInstance, parameters *Parameters, bindingID string) <-chan StatusMessage {
 	ret := _m.Called(instance, parameters)
 
 	var r0 <-chan StatusMessage
-	if rf, ok := ret.Get(0).(func(*ServiceInstance, *Parameters) <-chan StatusMessage); ok {
-		r0 = rf(instance, parameters)
+	if rf, ok := ret.Get(0).(func(*ServiceInstance, *Parameters, string) <-chan StatusMessage); ok {
+		r0 = rf(instance, parameters, bindingID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan StatusMessage)

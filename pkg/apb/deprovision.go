@@ -74,6 +74,12 @@ func (e *executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 			e.actionFinishedWithError(err)
 			return
 		}
+		err = runtime.Provider.DeleteExtractedCredential(instance.ID.String(), clusterConfig.Namespace)
+		if err != nil {
+			log.Errorf("unable to delete the extracted credentials - %v", err)
+			e.actionFinishedWithError(err)
+			return
+		}
 
 		e.actionFinishedWithSuccess()
 	}()

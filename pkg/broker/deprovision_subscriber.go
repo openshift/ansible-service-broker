@@ -17,7 +17,6 @@
 package broker
 
 import (
-	"github.com/coreos/etcd/client"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
@@ -66,16 +65,8 @@ func setFailedDeprovisionJob(dao SubscriberDAO, dmsg JobMsg) {
 	}
 }
 
-func cleanupDeprovision(instanceID string, dao SubscriberDAO) error {
-	err := dao.DeleteExtractedCredentials(instanceID)
-
-	if err != nil && client.IsKeyNotFound(err) {
-		log.Infof("Attempted to delete extracted credentials, but key was not found: [%v]", instanceID)
-	} else if err != nil {
-		return err
-	}
-
-	if err := dao.DeleteServiceInstance(instanceID); err != nil {
+func cleanupDeprovision(id string, dao SubscriberDAO) error {
+	if err := dao.DeleteServiceInstance(id); err != nil {
 		log.Error("failed to delete service instance - %v", err)
 		return err
 	}

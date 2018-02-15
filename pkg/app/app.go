@@ -185,7 +185,7 @@ func CreateApp() App {
 
 	// Initialize Runtime
 	log.Debug("Connecting to Cluster")
-	agnosticruntime.NewRuntime()
+	agnosticruntime.NewRuntime(nil)
 	agnosticruntime.Provider.ValidateRuntime()
 	if err != nil {
 		log.Error(err.Error())
@@ -257,7 +257,7 @@ func CreateApp() App {
 	// Intiialize the cluster config.
 	apb.InitializeClusterConfig(app.config.GetSubConfig("openshift"))
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.registry, *app.engine, app.config.GetSubConfig("broker"),
+		app.dao, app.registry, *app.engine, app.config.GetSubConfig("broker"), app.config.GetString("openshift.namespace"),
 	); err != nil {
 		log.Error("Failed to create AnsibleBroker\n")
 		log.Error(err.Error())
