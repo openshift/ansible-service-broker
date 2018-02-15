@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.11
+Version: 1.1.12
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Feb 15 2018 David Zager <david.j.zager@gmail.com> 1.1.12-1
+- Bug 1543521 - fix async bind when job already in-progress (#750)
+  (mhrivnak@hrivnak.org)
+- Upgrading from ubuntu 14.04 is no longer needed (#761) (rhallise@redhat.com)
+
 * Tue Feb 13 2018 David Zager <david.j.zager@gmail.com> 1.1.11-1
 - Bug 1541461 - Deal with buggy encoded scopes from service catalog. (#755)
   (Shawn.Hurley21@gmail.com)
