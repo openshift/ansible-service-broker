@@ -43,7 +43,7 @@ func (u *UpdateWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 					log.Errorf("failed to set extracted credentials after update %v", err)
 				}
 			}
-			if err := u.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
+			if _, err := u.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
 				log.Errorf("failed to set state after update %v", err)
 			}
 		}

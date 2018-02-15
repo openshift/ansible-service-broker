@@ -166,16 +166,16 @@ func (mp *mockProvisionSubscriberDAO) SetExtractedCredentials(id string, extCred
 	return mp.err
 
 }
-func (mp *mockProvisionSubscriberDAO) SetState(id string, state apb.JobState) error {
+func (mp *mockProvisionSubscriberDAO) SetState(id string, state apb.JobState) (string, error) {
 	assert := mp.assertOn["SetState"]
 	if nil != assert {
 		if err := assert(id, state); err != nil {
 			mp.assertErr = append(mp.assertErr, err)
-			return err
+			return "", err
 		}
 	}
 	mp.calls["SetState"]++
-	return mp.err
+	return "", mp.err
 
 }
 

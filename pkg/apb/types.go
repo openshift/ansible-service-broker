@@ -18,6 +18,7 @@ package apb
 
 import (
 	"encoding/json"
+	"reflect"
 
 	"github.com/openshift/ansible-service-broker/pkg/config"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
@@ -193,6 +194,15 @@ const (
 
 	// ApbContainerName - The name of the apb container
 	ApbContainerName = "apb"
+
+	// ProvisionCredentialsKey parameter name passed to APBs
+	ProvisionCredentialsKey = "_apb_provision_creds"
+	// BindCredentialsKey parameter name passed to APBs
+	BindCredentialsKey = "_apb_bind_creds"
+	// ClusterKey parameter name passed to APBs
+	ClusterKey = "cluster"
+	// NamespaceKey parameter name passed to APBs
+	NamespaceKey = "namespace"
 )
 
 // SpecLogDump - log spec for debug
@@ -274,9 +284,38 @@ func (si *ServiceInstance) RemoveBinding(bindingUUID uuid.UUID) {
 
 // BindInstance - Binding Instance describes a completed binding
 type BindInstance struct {
-	ID         uuid.UUID   `json:"id"`
-	ServiceID  uuid.UUID   `json:"service_id"`
-	Parameters *Parameters `json:"parameters"`
+	ID           uuid.UUID   `json:"id"`
+	ServiceID    uuid.UUID   `json:"service_id"`
+	Parameters   *Parameters `json:"parameters"`
+	CreateJobKey string
+}
+
+// UserParameters - returns the Parameters field with any keys and values
+// removed that are typically added by the broker itself. The return value
+// should represent what a OSB API client provides in a bind request.
+func (bi *BindInstance) UserParameters() Parameters {
+	if bi.Parameters == nil {
+		return nil
+	}
+	userparams := make(Parameters)
+	for key, value := range *bi.Parameters {
+		switch key {
+		// Do not copy keys that are generally added by the broker itself.
+		case ClusterKey, NamespaceKey, ProvisionCredentialsKey:
+			continue
+		}
+		userparams[key] = value
+	}
+	return userparams
+}
+
+// IsEqual - Determines if two BindInstances are equal, omitting any Parameters
+// that generally get added by the broker itself.
+func (bi *BindInstance) IsEqual(newbi *BindInstance) bool {
+	if !uuid.Equal(bi.ID, newbi.ID) || !uuid.Equal(bi.ServiceID, newbi.ServiceID) {
+		return false
+	}
+	return reflect.DeepEqual(bi.UserParameters(), newbi.UserParameters())
 }
 
 // LoadJSON - Generic function to unmarshal json
