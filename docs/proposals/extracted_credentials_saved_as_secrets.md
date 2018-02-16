@@ -16,6 +16,8 @@ kind: Secret
 metadata:
   name: <Service/Binding id>
   namespace: <Namespace for the broker>
+  labels:
+    <labels provided>
 ```
 
 [Gob encoding](https://godoc.org/encoding/gob) will allow us to save arbitrary data in the secret for a key. The secrets keys will look rational to a user who looks at the created secret. This user would need permissions to see the secret, but if someone is looking at the secret making it obvious what data is in there will be helpful. 
@@ -49,7 +51,7 @@ init {
 
 
 ### Work Items
-- [ ] Add kubernetes client methods to interact with extracted credentials to the [namespace](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#openshift-configuration). 
+- [ ] Add kubernetes client methods to interact with extracted credentials in the [namespace](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#openshift-configuration). 
 - [ ] Add runtime methods for interacting with extracted credentials. These methods should be overridable. 
 - [ ] Remove all dao implementation and interface methods regarding extracted credentials.
 - [ ] Remove all instances of interacting with dao extracted credentials in the `broker` package. Add back call to APB package to get extracted credentials when needed.
