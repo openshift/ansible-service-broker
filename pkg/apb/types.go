@@ -103,7 +103,7 @@ type Spec struct {
 	Plans       []Plan                 `json:"plans"`
 }
 
-// GetPlan - retrieves a  plan from a spec by name. Will return
+// GetPlan - retrieves a plan from a spec by name. Will return
 // empty plan and false if the requested plan does not exist.
 func (s *Spec) GetPlan(name string) (Plan, bool) {
 	for _, plan := range s.Plans {
@@ -114,7 +114,7 @@ func (s *Spec) GetPlan(name string) (Plan, bool) {
 	return Plan{}, false
 }
 
-// GetPlanFromID - retrieves a refernece to a plan from a spec by name. Will return
+// GetPlanFromID - retrieves a plan from a spec by id. Will return
 // empty plan and false if the requested plan does not exist.
 func (s *Spec) GetPlanFromID(id string) (Plan, bool) {
 	for _, plan := range s.Plans {
