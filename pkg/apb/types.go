@@ -103,15 +103,26 @@ type Spec struct {
 	Plans       []Plan                 `json:"plans"`
 }
 
-// GetPlan - retrieves a reference to a plan from a spec by name. Will return
-// nil if the requested plan does not exist.
-func (s *Spec) GetPlan(name string) *Plan {
-	for i, plan := range s.Plans {
+// GetPlan - retrieves a plan from a spec by name. Will return
+// empty plan and false if the requested plan does not exist.
+func (s *Spec) GetPlan(name string) (Plan, bool) {
+	for _, plan := range s.Plans {
 		if plan.Name == name {
-			return &s.Plans[i]
+			return plan, true
 		}
 	}
-	return nil
+	return Plan{}, false
+}
+
+// GetPlanFromID - retrieves a plan from a spec by id. Will return
+// empty plan and false if the requested plan does not exist.
+func (s *Spec) GetPlanFromID(id string) (Plan, bool) {
+	for _, plan := range s.Plans {
+		if plan.ID == id {
+			return plan, true
+		}
+	}
+	return Plan{}, false
 }
 
 // Context - Determines the context in which the service is running
