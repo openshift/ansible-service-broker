@@ -28,23 +28,28 @@ We will interact with the secrets from the namespace defined in the configuratio
 
 The APB package will now be required to do all CRUD operations for extracted credentials. The APB package will expose a single retrieve extracted credentials method, that will take a UUID (either service instance id or binding instance id) and returns an `apb` package extracted credentials object.
 
-Runtime package should be used to encapsulate the `clients` package calls. This will mean we have a default function for CRUD operations with extracted credentials. These default functions will be set to function vars at init of runtime. The function vars are then overrideable in the future. example:
+Runtime package should be used to encapsulate the `clients` package calls. This will mean we have a default functions for CRUD operations with extracted credentials. These default functions will be attached to a default struct and the default struct will be unexported. the NewRuntime function will now have a parameter of an ExtractedCredentials interface. If this interface is nil we will use the default struct. to function vars at init of runtime. The function vars are then overrideable in the future. example:
 ```go
-var SaveExtractedCredentials SaveExtractedCredentialsFunc
-...
 
-func saveExtractedCredentials(...) {
+type defaultExtCreds struct{}
+
+func (d defaultExtCreds) saveExtractedCredentials(...) {
     ...
     k8scli, err := clients.Kubernetes()
     if err != nil {
         ...
     }
     k8scli.Clients.CoreV1().Secrets()...
-
 }
+...
 
-init {
-    SaveExtractedCredentials = saveExtractedCredentials
+type ExtractedCredentials interface {
+    // Saves the extracted credentials. 
+    // string - Id or name of the extracted credntials.
+    // string - namespace or location information for the extracted credentials.
+    // map[strin]interface{} - extracted credentials
+    // map[string]string - labels or other metadata to associate with the extracted credentials.
+    SaveExtractedCredentials(string, string, map[string]interface{}, map[string]string) error
     ....
 }
 ```
