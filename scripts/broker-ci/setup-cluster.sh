@@ -12,6 +12,7 @@ function cluster-setup () {
 ---
 dockerhub_org: ansibleplaybookbundle
 broker_tag: latest
+apb_tag: release-1.1
 broker_kind: ClusterServiceBroker
 EOF
 
