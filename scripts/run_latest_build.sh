@@ -42,6 +42,15 @@ ROUTING_SUFFIX="${HOSTNAME}"
 ORIGIN_IMAGE=${ORIGIN_IMAGE:-"docker.io/openshift/origin"}
 ORIGIN_VERSION=${ORIGIN_VERSION:-"latest"}
 
+if [ "$ORIGIN_VERSION" != "latest" ]; then
+    version=$(oc version | head -1)
+    client_version=$(echo $version | egrep -o 'v[0-9]+(\.[0-9]+)+' | tr -d v.)
+    origin_version=$(echo $ORIGIN_VERSION | tr -d v.)
+    if (( $origin_version > $client_version )); then
+	echo "WARNING: Using client version: $version with cluster version: $ORIGIN_VERSION"
+    fi
+fi
+
 oc cluster up --image=${ORIGIN_IMAGE} \
     --version=${ORIGIN_VERSION} \
     --service-catalog=true \
