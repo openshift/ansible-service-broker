@@ -161,11 +161,12 @@ const (
 
 // JobState - The job state
 type JobState struct {
-	Token   string    `json:"token"`
-	State   State     `json:"state"`
-	Podname string    `json:"podname"`
-	Method  JobMethod `json:"method"`
-	Error   string    `json:"error"`
+	Token       string    `json:"token"`
+	State       State     `json:"state"`
+	Podname     string    `json:"podname"`
+	Method      JobMethod `json:"method"`
+	Error       string    `json:"error"`
+	Description string    `json:"description"`
 }
 
 // ClusterConfig - Configuration for the cluster.
@@ -380,10 +381,16 @@ type ExecutionContext struct {
 }
 
 // Provisioner defines a function that knows how to provision an apb
-type Provisioner func(si *ServiceInstance) (string, *ExtractedCredentials, error)
+type Provisioner func(si *ServiceInstance, statusUpdate chan<- JobState) (string, *ExtractedCredentials, error)
+
+// Deprovisioner defines a function that knows how to deprovision an apb
+type Deprovisioner func(si *ServiceInstance, statusUpdate chan<- JobState) (string, error)
+
+// Updater defines a function that knows how to update an apb
+type Updater func(si *ServiceInstance, statusUpdate chan<- JobState) (string, *ExtractedCredentials, error)
 
 // Binder defines a function that knows how to perform a binding
-type Binder func(si *ServiceInstance, params *Parameters) (string, *ExtractedCredentials, error)
+type Binder func(si *ServiceInstance, params *Parameters, statusUpdate chan<- JobState) (string, *ExtractedCredentials, error)
 
 // UnBinder defines a function that knows how to perform a unbinding
-type UnBinder func(si *ServiceInstance, params *Parameters) error
+type UnBinder func(si *ServiceInstance, params *Parameters, statusUpdate chan<- JobState) error

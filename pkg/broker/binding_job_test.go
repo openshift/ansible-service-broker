@@ -12,25 +12,6 @@ import (
 	"github.com/pborman/uuid"
 )
 
-func commonJobMsgValidation(expectedFinalState apb.State, expectedMethod apb.JobMethod, msgs []broker.JobMsg) error {
-	if len(msgs) < 2 {
-		return fmt.Errorf("expected 2 msgs but only got %v", len(msgs))
-	}
-	for i, msg := range msgs {
-		if msg.State.Method != expectedMethod {
-			return fmt.Errorf("expected job msg method to be %v but it was %v", expectedMethod, msg.State.Method)
-		}
-		if i == 0 && msg.State.State != apb.StateInProgress {
-			return fmt.Errorf("expected job msg state to be %v but it was %v", apb.StateInProgress, msg.State.State)
-		}
-
-		if i == len(msgs)-1 && msg.State.State != expectedFinalState {
-			return fmt.Errorf("expected job msg state to be %v but it was %v", expectedFinalState, msg.State.State)
-		}
-	}
-	return nil
-}
-
 func TestBindingJob_Run(t *testing.T) {
 	instanceID := uuid.NewRandom()
 	bindingID := uuid.NewRandom()
@@ -48,7 +29,7 @@ func TestBindingJob_Run(t *testing.T) {
 	}{
 		{
 			Name: "expect a success msg with extracted credentials",
-			Binder: func(si *apb.ServiceInstance, params *apb.Parameters) (string, *apb.ExtractedCredentials, error) {
+			Binder: func(si *apb.ServiceInstance, params *apb.Parameters, status chan<- apb.JobState) (string, *apb.ExtractedCredentials, error) {
 				return "podName", &apb.ExtractedCredentials{Credentials: map[string]interface{}{
 					"user": "test",
 					"pass": "test",
@@ -75,7 +56,7 @@ func TestBindingJob_Run(t *testing.T) {
 		},
 		{
 			Name: "expect failure state and generic error when unknown error type",
-			Binder: func(si *apb.ServiceInstance, params *apb.Parameters) (string, *apb.ExtractedCredentials, error) {
+			Binder: func(si *apb.ServiceInstance, params *apb.Parameters, status chan<- apb.JobState) (string, *apb.ExtractedCredentials, error) {
 				return "", nil, fmt.Errorf("should not see")
 			},
 			Validate: func(msgs []broker.JobMsg) error {
@@ -94,7 +75,7 @@ func TestBindingJob_Run(t *testing.T) {
 		},
 		{
 			Name: "expect failure state and full error when known error type",
-			Binder: func(si *apb.ServiceInstance, params *apb.Parameters) (string, *apb.ExtractedCredentials, error) {
+			Binder: func(si *apb.ServiceInstance, params *apb.Parameters, status chan<- apb.JobState) (string, *apb.ExtractedCredentials, error) {
 				return "", nil, apb.ErrorPodPullErr
 			},
 			Validate: func(msgs []broker.JobMsg) error {

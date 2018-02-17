@@ -30,7 +30,7 @@ func TestUnBindingJob_Run(t *testing.T) {
 	}{
 		{
 			Name: "expect a success msg",
-			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters) error {
+			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters, state chan<- apb.JobState) error {
 				return nil
 			},
 			Validate: func(msgs []broker.JobMsg) error {
@@ -40,7 +40,7 @@ func TestUnBindingJob_Run(t *testing.T) {
 		{
 			Name:          "expect a success msg when skipping apb execution",
 			SkipExecution: true,
-			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters) error {
+			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters, state chan<- apb.JobState) error {
 				return nil
 			},
 			Validate: func(msgs []broker.JobMsg) error {
@@ -49,7 +49,7 @@ func TestUnBindingJob_Run(t *testing.T) {
 		},
 		{
 			Name: "expect failure state and generic error when unknown error type",
-			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters) error {
+			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters, state chan<- apb.JobState) error {
 				return fmt.Errorf("should not see")
 			},
 			Validate: func(msgs []broker.JobMsg) error {
@@ -68,7 +68,7 @@ func TestUnBindingJob_Run(t *testing.T) {
 		},
 		{
 			Name: "expect failure state and full error when known error type",
-			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters) error {
+			UnBinder: func(si *apb.ServiceInstance, params *apb.Parameters, state chan<- apb.JobState) error {
 				return apb.ErrorPodPullErr
 			},
 			Validate: func(msgs []broker.JobMsg) error {

@@ -17,13 +17,14 @@
 package apb
 
 import (
+	"github.com/openshift/ansible-service-broker/pkg/clients"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/pkg/errors"
 )
 
 // Deprovision - runs the abp with the deprovision action.
-func Deprovision(instance *ServiceInstance) (string, error) {
+func Deprovision(instance *ServiceInstance, stateUpdates chan<- JobState) (string, error) {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
@@ -59,8 +60,12 @@ func Deprovision(instance *ServiceInstance) (string, error) {
 		log.Errorf("Problem executing apb [%s] deprovision", executionContext.PodName)
 		return executionContext.PodName, err
 	}
-
-	err = watchPod(executionContext.PodName, executionContext.Namespace)
+	k8scli, err := clients.Kubernetes()
+	if err != nil {
+		log.Error("Something went wrong getting kubernetes client")
+		return executionContext.PodName, err
+	}
+	err = watchPod(executionContext.PodName, executionContext.Namespace, k8scli.Client.CoreV1().Pods(executionContext.Namespace), stateUpdates)
 	if err != nil {
 		log.Errorf("Deprovision action failed - %v", err)
 		return executionContext.PodName, err

@@ -47,7 +47,6 @@ func NewBindingJob(serviceInstance *apb.ServiceInstance, bindingUUID uuid.UUID, 
 // Run - run the binding job.
 func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 	metrics.BindingJobStarted()
-	defer metrics.BindingJobFinished()
 	jobMsg := JobMsg{
 		InstanceUUID: p.serviceInstance.ID.String(),
 		JobToken:     token,
@@ -59,14 +58,36 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 			Token:  token,
 		},
 	}
-	log.Debug("bindjob: binding job started, calling apb.Bind")
+	stateUpdates := make(chan apb.JobState)
+	// variables set by the bind action
+	var (
+		err      error
+		podName  string
+		extCreds *apb.ExtractedCredentials
+	)
+	// run the bind async and block on reading the status updates
+	go func() {
+		defer func() {
+			metrics.BindingJobFinished()
+			close(stateUpdates)
+		}()
+		// send starting state
+		msgBuffer <- jobMsg
+		log.Debug("bindjob: binding job started, calling apb.Bind")
 
-	msgBuffer <- jobMsg
+		podName, extCreds, err = p.bind(p.serviceInstance, p.params, stateUpdates)
 
-	podName, extCreds, err := p.bind(p.serviceInstance, p.params)
+		log.Debug("bindjob: returned from apb.Bind")
+	}()
 
-	log.Debug("bindjob: returned from apb.Bind")
+	//read our status updates and send on updated JobMsgs for the subscriber to persist
+	for su := range stateUpdates {
+		su.Token = token
+		su.Method = apb.JobMethodDeprovision
+		msgBuffer <- JobMsg{InstanceUUID: p.serviceInstance.ID.String(), JobToken: token, State: su, PodName: su.Podname}
+	}
 
+	// status channel closed our job is complete lets check the err
 	if err != nil {
 		log.Errorf("bindjob::Binding error occurred.\n%s", err.Error())
 		jobMsg.State.State = apb.StateFailed
@@ -75,7 +96,6 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		if err == apb.ErrorPodPullErr {
 			errMsg = err.Error()
 		}
-
 		// send error message
 		// can't have an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
@@ -84,7 +104,7 @@ func (p *BindingJob) Run(token string, msgBuffer chan<- JobMsg) {
 		return
 	}
 
-	// send creds
+	// send creds if available and state success
 	log.Debug("bindjob: looks like we're done, sending credentials")
 	if nil != extCreds {
 		jobMsg.ExtractedCredentials = *extCreds

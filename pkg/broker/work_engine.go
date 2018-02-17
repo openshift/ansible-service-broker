@@ -38,31 +38,50 @@ func NewWorkEngine(bufferSize int) *WorkEngine {
 	return &WorkEngine{topics: make(map[WorkTopic]chan JobMsg), bufsz: bufferSize}
 }
 
-// StartNewJob - Starts a job in an new goroutine, reporting to a specific topic.
+// StartNewAsyncJob - Starts a job in an new goroutine, reporting to a specific topic.
 // returns token, or generated token if an empty token is passed in.
-func (engine *WorkEngine) StartNewJob(
+func (engine *WorkEngine) StartNewAsyncJob(
 	token string, work Work, topic WorkTopic,
 ) (string, error) {
 	if valid := IsValidWorkTopic(topic); !valid {
 		return "", errors.New("invalid work topic")
 	}
 
-	var jobToken string
-
 	if token == "" {
-		jobToken = uuid.New()
-	} else {
-		jobToken = token
+		token = engine.Token()
+	}
+	go work.Run(token, engine.topic(topic))
+	return token, nil
+}
+
+// StartNewSyncJob - Starts a job and waits for it to finish, reporting to a specific topic.
+func (engine *WorkEngine) StartNewSyncJob(
+	token string, work Work, topic WorkTopic,
+) error {
+	if valid := IsValidWorkTopic(topic); !valid {
+		return errors.New("invalid work topic")
 	}
 
+	if token == "" {
+		token = engine.Token()
+	}
+
+	work.Run(token, engine.topic(topic))
+	return nil
+}
+
+// Token generates a new work token
+func (engine *WorkEngine) Token() string {
+	return uuid.New()
+}
+
+func (engine *WorkEngine) topic(topic WorkTopic) chan JobMsg {
 	msgBuffer, topicExists := engine.topics[topic]
 	if !topicExists {
 		msgBuffer = make(chan JobMsg, engine.bufsz)
 		engine.topics[topic] = msgBuffer
 	}
-
-	go work.Run(jobToken, msgBuffer)
-	return jobToken, nil
+	return msgBuffer
 }
 
 // AttachSubscriber - Attach a subscriber a specific messaging topic.

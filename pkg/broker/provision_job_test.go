@@ -20,6 +20,7 @@ func TestProvisionJob_Run(t *testing.T) {
 			ID: "test",
 		},
 	}
+
 	cases := []struct {
 		Name      string
 		Provision apb.Provisioner
@@ -27,7 +28,7 @@ func TestProvisionJob_Run(t *testing.T) {
 	}{
 		{
 			Name: "expect a success msg with extracted credentials",
-			Provision: func(si *apb.ServiceInstance) (string, *apb.ExtractedCredentials, error) {
+			Provision: func(si *apb.ServiceInstance, statusUpdates chan<- apb.JobState) (string, *apb.ExtractedCredentials, error) {
 				return "podName", &apb.ExtractedCredentials{Credentials: map[string]interface{}{
 					"user": "test",
 					"pass": "test",
@@ -55,7 +56,7 @@ func TestProvisionJob_Run(t *testing.T) {
 		},
 		{
 			Name: "expect failure state and generic error when unknown error type",
-			Provision: func(si *apb.ServiceInstance) (string, *apb.ExtractedCredentials, error) {
+			Provision: func(si *apb.ServiceInstance, statusUpdates chan<- apb.JobState) (string, *apb.ExtractedCredentials, error) {
 				return "", nil, fmt.Errorf("should not see")
 			},
 			Validate: func(msgs []broker.JobMsg) error {
@@ -67,7 +68,7 @@ func TestProvisionJob_Run(t *testing.T) {
 				if lastMsg.State.Error == "" {
 					return fmt.Errorf("expected an error in the job state but got none")
 				}
-				if lastMsg.State.Error == "should not see" {
+				if lastMsg.State.Description == "should not see" {
 					return fmt.Errorf("expected not to see the error msg %s it should have been replaced with a generic error ", lastMsg.State.Error)
 				}
 				return nil
@@ -75,7 +76,7 @@ func TestProvisionJob_Run(t *testing.T) {
 		},
 		{
 			Name: "expect failure state and full error when known error type",
-			Provision: func(si *apb.ServiceInstance) (string, *apb.ExtractedCredentials, error) {
+			Provision: func(si *apb.ServiceInstance, statusUpdates chan<- apb.JobState) (string, *apb.ExtractedCredentials, error) {
 				return "", nil, apb.ErrorPodPullErr
 			},
 			Validate: func(msgs []broker.JobMsg) error {
@@ -98,7 +99,8 @@ func TestProvisionJob_Run(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			provJob := broker.NewProvisionJob(serviceInstance, tc.Provision)
 			receiver := make(chan broker.JobMsg)
-			time.AfterFunc(1*time.Second, func() {
+			// give some time to allow msgs to be sent as we are not actually provisioning this should be plenty
+			time.AfterFunc(200*time.Millisecond, func() {
 				close(receiver)
 			})
 			go provJob.Run("", receiver)

@@ -18,16 +18,15 @@ package broker
 
 import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 
 // UpdateWorkSubscriber - Lissten for provision messages
 type UpdateWorkSubscriber struct {
-	dao dao.Dao
+	dao SubscriberDAO
 }
 
 // NewUpdateWorkSubscriber - Create a new work subscriber.
-func NewUpdateWorkSubscriber(dao dao.Dao) *UpdateWorkSubscriber {
+func NewUpdateWorkSubscriber(dao SubscriberDAO) *UpdateWorkSubscriber {
 	return &UpdateWorkSubscriber{dao: dao}
 }
 
