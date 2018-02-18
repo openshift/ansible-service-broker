@@ -25,7 +25,9 @@ import (
 )
 
 // Unbind - runs the abp with the unbind action.
-func (e *Executor) Unbind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage {
+func (e *Executor) Unbind(
+	instance *ServiceInstance, parameters *Parameters,
+) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                            ")
 	log.Notice("============================================================")

@@ -27,7 +27,7 @@ import (
 // Bind - Will run the APB with the bind action.
 func (e *Executor) Bind(
 	instance *ServiceInstance, parameters *Parameters,
-) chan<- StatusMessage {
+) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       BINDING                              ")
 	log.Notice("============================================================")
