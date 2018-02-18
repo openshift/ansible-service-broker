@@ -20,11 +20,12 @@ import (
 	"fmt"
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	"github.com/openshift/ansible-service-broker/pkg/runtime"
 )
 
 // Unbind - runs the abp with the unbind action.
-func Unbind(instance *ServiceInstance, parameters *Parameters, stateUpdates chan<- JobState) error {
+func (e *Executor) Unbind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                            ")
 	log.Notice("============================================================")
@@ -34,31 +35,42 @@ func Unbind(instance *ServiceInstance, parameters *Parameters, stateUpdates chan
 	log.Notice(fmt.Sprintf("ServiceInstance.Description: %s", instance.Spec.Description))
 	log.Notice("============================================================")
 
-	executionContext, err := ExecuteApb("unbind", instance.Spec, instance.Context, parameters)
-	defer runtime.Provider.DestroySandbox(
-		executionContext.PodName,
-		executionContext.Namespace,
-		executionContext.Targets,
-		clusterConfig.Namespace,
-		clusterConfig.KeepNamespace,
-		clusterConfig.KeepNamespaceOnError,
-	)
-	if err != nil {
-		log.Errorf("Problem executing apb [%s] unbind", executionContext.PodName)
-		return err
-	}
+	go func() {
+		e.start()
+		metrics.ActionStarted("unbind")
+		executionContext, err := e.executeApb("unbind", instance.Spec,
+			instance.Context, parameters)
+		defer runtime.Provider.DestroySandbox(
+			executionContext.PodName,
+			executionContext.Namespace,
+			executionContext.Targets,
+			clusterConfig.Namespace,
+			clusterConfig.KeepNamespace,
+			clusterConfig.KeepNamespaceOnError,
+		)
+		if err != nil {
+			log.Errorf("Problem executing apb [%s] unbind", executionContext.PodName)
+			e.finishWithError(err)
+			return
+		}
 
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		log.Error("Something went wrong getting kubernetes client")
-		return err
-	}
+		k8scli, err := clients.Kubernetes()
+		if err != nil {
+			log.Error("Something went wrong getting kubernetes client")
+			e.finishWithError(err)
+			return
+		}
 
-	err = watchPod(executionContext.PodName, executionContext.Namespace, k8scli.Client.CoreV1().Pods(executionContext.Namespace), stateUpdates)
-	if err != nil {
-		log.Errorf("Unbind action failed - %v", err)
-		return err
-	}
+		err = watchPod(executionContext.PodName, executionContext.Namespace,
+			k8scli.Client.CoreV1().Pods(executionContext.Namespace), e.updateDescription)
+		if err != nil {
+			log.Errorf("Unbind action failed - %v", err)
+			e.finishWithError(err)
+			return
+		}
 
-	return nil
+		e.finishWithSuccess()
+	}()
+
+	return e.statusChan
 }

@@ -24,7 +24,7 @@ import (
 )
 
 // Deprovision - runs the abp with the deprovision action.
-func Deprovision(instance *ServiceInstance, stateUpdates chan<- JobState) (string, error) {
+func (e *Executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
@@ -34,42 +34,49 @@ func Deprovision(instance *ServiceInstance, stateUpdates chan<- JobState) (strin
 	log.Noticef("ServiceInstance.Description: %s", instance.Spec.Description)
 	log.Notice("============================================================")
 
-	// Explicitly error out if image field is missing from instance.Spec
-	// was introduced as a change to the apb instance.Spec to support integration
-	// with the broker and still allow for providing an img path
-	// Legacy ansibleapps will hit this.
-	if instance.Spec.Image == "" {
-		log.Error("No image field found on the apb instance.Spec (apb.yaml)")
-		log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
-		log.Error("Are you trying to run a legacy ansibleapp without an image field?")
-		return "", errors.New("No image field found on instance.Spec")
-	}
+	go func() {
+		e.start()
+		if instance.Spec.Image == "" {
+			log.Error("No image field found on the apb instance.Spec (apb.yaml)")
+			log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
+			log.Error("Are you trying to run a legacy ansibleapp without an image field?")
+			e.finishWithError(errors.New("No image field found on instance.Spec"))
+			return
+		}
 
-	// Might need to change up this interface to feed in instance ids
-	metrics.ActionStarted("deprovision")
-	executionContext, err := ExecuteApb("deprovision", instance.Spec, instance.Context, instance.Parameters)
-	defer runtime.Provider.DestroySandbox(
-		executionContext.PodName,
-		executionContext.Namespace,
-		executionContext.Targets,
-		clusterConfig.Namespace,
-		clusterConfig.KeepNamespace,
-		clusterConfig.KeepNamespaceOnError,
-	)
-	if err != nil {
-		log.Errorf("Problem executing apb [%s] deprovision", executionContext.PodName)
-		return executionContext.PodName, err
-	}
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		log.Error("Something went wrong getting kubernetes client")
-		return executionContext.PodName, err
-	}
-	err = watchPod(executionContext.PodName, executionContext.Namespace, k8scli.Client.CoreV1().Pods(executionContext.Namespace), stateUpdates)
-	if err != nil {
-		log.Errorf("Deprovision action failed - %v", err)
-		return executionContext.PodName, err
-	}
+		// Might need to change up this interface to feed in instance ids
+		metrics.ActionStarted("deprovision")
+		executionContext, err := e.executeApb("deprovision", instance.Spec,
+			instance.Context, instance.Parameters)
+		defer runtime.Provider.DestroySandbox(
+			executionContext.PodName,
+			executionContext.Namespace,
+			executionContext.Targets,
+			clusterConfig.Namespace,
+			clusterConfig.KeepNamespace,
+			clusterConfig.KeepNamespaceOnError,
+		)
+		if err != nil {
+			log.Errorf("Problem executing apb [%s] deprovision", executionContext.PodName)
+			e.finishWithError(err)
+			return
+		}
+		k8scli, err := clients.Kubernetes()
+		if err != nil {
+			log.Error("Something went wrong getting kubernetes client")
+			e.finishWithError(err)
+			return
+		}
+		err = watchPod(executionContext.PodName, executionContext.Namespace,
+			k8scli.Client.CoreV1().Pods(executionContext.Namespace), e.updateDescription)
+		if err != nil {
+			log.Errorf("Deprovision action failed - %v", err)
+			e.finishWithError(err)
+			return
+		}
 
-	return executionContext.PodName, err
+		e.finishWithSuccess()
+	}()
+
+	return e.statusChan
 }

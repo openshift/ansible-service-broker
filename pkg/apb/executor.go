@@ -32,11 +32,74 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// ExecuteApb - Runs an APB Action with a provided set of inputs
-func ExecuteApb(action string,
-	spec *Spec,
-	context *Context,
-	p *Parameters) (ExecutionContext, error) {
+// Executor - Main struct used for running APBs. Manages their lifecycle.
+type Executor struct {
+	extractedCredentials *ExtractedCredentials
+	podName              string
+	lastStatus           StatusMessage
+	statusChan           chan StatusMessage
+}
+
+// NewExecutor - Creates a new Executor for running an APB.
+func NewExecutor() *Executor {
+	exec := &Executor{
+		statusChan: make(chan StatusMessage),
+		lastStatus: StatusMessage{State: StateNotYetStarted},
+	}
+	return exec
+}
+
+// GetPodName- Returns the name of the pod running the APB
+func (e *Executor) GetPodName() string {
+	return e.podName
+}
+
+// GetLastStatus - Returns the last known status of the APB
+func (e *Executor) GetLastStatus() StatusMessage {
+	return e.lastStatus
+}
+
+// ExtractedCredentials - Credentials extracted from the APB while running,
+// if they were discovered.
+func (e *Executor) GetExtractedCredentials() *ExtractedCredentials {
+	return e.extractedCredentials
+}
+
+func (e *Executor) start() {
+	status := e.lastStatus
+	status.State = StateInProgress
+	e.lastStatus = status
+	e.statusChan <- status
+}
+
+func (e *Executor) finishWithSuccess() {
+	status := e.lastStatus
+	status.State = StateSucceeded
+	e.lastStatus = status
+	e.statusChan <- status
+	close(e.statusChan)
+}
+
+func (e *Executor) finishWithError(err error) {
+	status := e.lastStatus
+	status.Error = err
+	status.State = StateFailed
+	e.lastStatus = status
+	e.statusChan <- status
+	close(e.statusChan)
+}
+
+func (e *Executor) updateDescription(newDescription string) {
+	status := e.lastStatus
+	status.Description = newDescription
+	e.lastStatus = status
+	e.statusChan <- status
+}
+
+// executeApb - Runs an APB Action with a provided set of inputs
+func (e *Executor) executeApb(
+	action string, spec *Spec, context *Context, p *Parameters,
+) (ExecutionContext, error) {
 	log.Debug("ExecutingApb:")
 	log.Debug("name:[ %s ]", spec.FQName)
 	log.Debug("image:[ %s ]", spec.Image)
@@ -79,6 +142,8 @@ func ExecuteApb(action string,
 		"apb-action":   action,
 		"apb-pod-name": executionContext.PodName,
 	}
+
+	e.podName = executionContext.PodName
 
 	executionContext.Targets = append(executionContext.Targets, context.Namespace)
 	// Create namespace.

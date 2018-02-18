@@ -17,7 +17,7 @@
 package apb
 
 // Update - will run the abp with the provision action.
-func Update(instance *ServiceInstance, statusUpdate chan<- JobState) (string, *ExtractedCredentials, error) {
+func (e *Executor) Update(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       UPDATING                             ")
 	log.Notice("============================================================")
@@ -27,9 +27,7 @@ func Update(instance *ServiceInstance, statusUpdate chan<- JobState) (string, *E
 	log.Noticef("Spec.Description: %s", instance.Spec.Description)
 	log.Notice("============================================================")
 
-	// Nearly all of the logic for provisioning or updating is shared between
-	// provision and update, save for passing through the method type. Update
-	// provides a nice public interface, but the bulk of the work is passed to
-	// provisionOrUpdate as an implementation detail.
-	return provisionOrUpdate(executionMethodUpdate, instance, statusUpdate)
+	go e.provisionOrUpdate(executionMethodUpdate, instance)
+
+	return e.statusChan
 }

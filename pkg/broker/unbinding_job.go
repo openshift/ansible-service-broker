@@ -31,7 +31,7 @@ type UnbindingJob struct {
 	bindInstance     *apb.BindInstance
 	params           *apb.Parameters
 	skipApbExecution bool
-	unbind           apb.UnBinder
+	unbind           apb.Unbinder
 }
 
 // NewUnbindingJob - Create a new binding job.
