@@ -42,14 +42,17 @@ func SpecToService(spec *apb.Spec) (Service, error) {
 		return Service{}, err
 	}
 	retSvc := Service{
-		ID:            spec.ID,
-		Name:          spec.FQName,
-		Description:   spec.Description,
-		Tags:          make([]string, len(spec.Tags)),
-		Bindable:      spec.Bindable,
-		PlanUpdatable: planUpdatable(spec.Plans),
-		Plans:         plans,
-		Metadata:      spec.Metadata,
+		ID:                   spec.ID,
+		Name:                 spec.FQName,
+		Description:          spec.Description,
+		Tags:                 make([]string, len(spec.Tags)),
+		Bindable:             spec.Bindable,
+		PlanUpdatable:        planUpdatable(spec.Plans),
+		Plans:                plans,
+		Metadata:             spec.Metadata,
+		InstancesRetrievable: true,
+		// NOTE: not setting BindingsRetrievable here since that is dependent on
+		// whether we have async bind enabled.
 	}
 
 	copy(retSvc.Tags, spec.Tags)
