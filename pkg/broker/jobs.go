@@ -70,11 +70,11 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 	exec := apb.NewExecutor()
 	for status := range j.run(exec) {
-		podName = exec.GetPodName()
+		podName = exec.PodName()
 		msgBuffer <- j.createJobMsg(podName, token, status.State, status.Description)
 	}
 
-	err = exec.GetLastStatus().Error
+	err = exec.LastStatus().Error
 
 	if err != nil {
 		log.Errorf("broker::%s error occurred. %s", j.method, err.Error())
@@ -93,7 +93,7 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 		return
 	}
 
-	extCreds := exec.GetExtractedCredentials()
+	extCreds := exec.ExtractedCredentials()
 	if extCreds != nil {
 		jobMsg.ExtractedCredentials = *extCreds
 	}

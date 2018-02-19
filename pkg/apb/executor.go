@@ -51,19 +51,19 @@ func NewExecutor() *Executor {
 	return exec
 }
 
-// GetPodName - Returns the name of the pod running the APB
-func (e *Executor) GetPodName() string {
+// PodName - Returns the name of the pod running the APB
+func (e *Executor) PodName() string {
 	return e.podName
 }
 
-// GetLastStatus - Returns the last known status of the APB
-func (e *Executor) GetLastStatus() StatusMessage {
+// LastStatus - Returns the last known status of the APB
+func (e *Executor) LastStatus() StatusMessage {
 	return e.lastStatus
 }
 
-// GetExtractedCredentials - Credentials extracted from the APB while running,
+// ExtractedCredentials - Credentials extracted from the APB while running,
 // if they were discovered.
-func (e *Executor) GetExtractedCredentials() *ExtractedCredentials {
+func (e *Executor) ExtractedCredentials() *ExtractedCredentials {
 	return e.extractedCredentials
 }
 
