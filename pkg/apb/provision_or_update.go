@@ -35,7 +35,7 @@ const (
 )
 
 // returns PodName, ExtractedCredentials, error
-func (e *Executor) provisionOrUpdate(method executionMethod, instance *ServiceInstance) {
+func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceInstance) {
 	e.start()
 	// Explicitly error out if image field is missing from instance.Spec
 	// was introduced as a change to the apb instance.Spec to support integration

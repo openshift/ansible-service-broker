@@ -17,7 +17,7 @@
 package apb
 
 // Update - will run the abp with the provision action.
-func (e *Executor) Update(instance *ServiceInstance) <-chan StatusMessage {
+func (e *executor) Update(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       UPDATING                             ")
 	log.Notice("============================================================")

@@ -27,7 +27,7 @@ import (
 )
 
 type metricsHookFn func()
-type runFn func(*apb.Executor) <-chan apb.StatusMessage
+type runFn func(apb.Executor) <-chan apb.StatusMessage
 
 type apbJob struct {
 	serviceInstanceID      string
@@ -36,7 +36,7 @@ type apbJob struct {
 	method                 apb.JobMethod
 	metricsJobStartHook    metricsHookFn
 	metricsJobFinishedHook metricsHookFn
-	executor               *apb.Executor
+	executor               apb.Executor
 	run                    runFn
 
 	// NOTE: skipExecution is an artifact of an older time when we did not have
@@ -144,7 +144,7 @@ func (j *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 		metricsJobStartHook:    metrics.ProvisionJobStarted,
 		metricsJobFinishedHook: metrics.ProvisionJobFinished,
 		skipExecution:          false,
-		run: func(exec *apb.Executor) <-chan apb.StatusMessage {
+		run: func(exec apb.Executor) <-chan apb.StatusMessage {
 			return exec.Provision(j.serviceInstance)
 		},
 	}
@@ -167,7 +167,7 @@ func (j *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 		metricsJobStartHook:    metrics.DeprovisionJobStarted,
 		metricsJobFinishedHook: metrics.DeprovisionJobFinished,
 		skipExecution:          j.skipExecution,
-		run: func(e *apb.Executor) <-chan apb.StatusMessage {
+		run: func(e apb.Executor) <-chan apb.StatusMessage {
 			return e.Deprovision(j.serviceInstance)
 		},
 	}
@@ -192,7 +192,7 @@ func (j *BindJob) Run(token string, msgBuffer chan<- JobMsg) {
 		metricsJobStartHook:    metrics.BindJobStarted,
 		metricsJobFinishedHook: metrics.BindJobFinished,
 		skipExecution:          false,
-		run: func(e *apb.Executor) <-chan apb.StatusMessage {
+		run: func(e apb.Executor) <-chan apb.StatusMessage {
 			return e.Bind(j.serviceInstance, j.params)
 		},
 	}
@@ -218,7 +218,7 @@ func (j *UnbindJob) Run(token string, msgBuffer chan<- JobMsg) {
 		metricsJobStartHook:    metrics.UnbindJobStarted,
 		metricsJobFinishedHook: metrics.UnbindJobFinished,
 		skipExecution:          j.skipExecution,
-		run: func(e *apb.Executor) <-chan apb.StatusMessage {
+		run: func(e apb.Executor) <-chan apb.StatusMessage {
 			return e.Unbind(j.serviceInstance, j.params)
 		},
 	}
@@ -240,7 +240,7 @@ func (j *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 		metricsJobStartHook:    metrics.UpdateJobStarted,
 		metricsJobFinishedHook: metrics.UpdateJobFinished,
 		skipExecution:          false,
-		run: func(e *apb.Executor) <-chan apb.StatusMessage {
+		run: func(e apb.Executor) <-chan apb.StatusMessage {
 			return e.Update(j.serviceInstance)
 		},
 	}

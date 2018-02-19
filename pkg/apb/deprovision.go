@@ -24,7 +24,7 @@ import (
 )
 
 // Deprovision - runs the abp with the deprovision action.
-func (e *Executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
+func (e *executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")

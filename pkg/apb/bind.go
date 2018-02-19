@@ -25,7 +25,7 @@ import (
 )
 
 // Bind - Will run the APB with the bind action.
-func (e *Executor) Bind(
+func (e *executor) Bind(
 	instance *ServiceInstance, parameters *Parameters,
 ) <-chan StatusMessage {
 	log.Notice("============================================================")

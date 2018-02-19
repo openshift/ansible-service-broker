@@ -31,7 +31,7 @@ func TestApbJobRun(t *testing.T) {
 				method:            apb.JobMethodProvision,
 				skipExecution:     false,
 				executor:          apb.NewExecutor(),
-				run: func(exec *apb.Executor) <-chan apb.StatusMessage {
+				run: func(exec apb.Executor) <-chan apb.StatusMessage {
 					statusChan := make(chan apb.StatusMessage)
 					go func() {
 						statusChan <- apb.StatusMessage{
@@ -86,7 +86,7 @@ func TestApbJobRun(t *testing.T) {
 				method:            apb.JobMethodProvision,
 				skipExecution:     true,
 				executor:          apb.NewExecutor(),
-				run: func(exec *apb.Executor) <-chan apb.StatusMessage {
+				run: func(exec apb.Executor) <-chan apb.StatusMessage {
 					statusChan := make(chan apb.StatusMessage)
 					go func() {
 						// We should *not* see these messages based on the fact that

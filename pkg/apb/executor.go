@@ -33,8 +33,29 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// Executor - Main struct used for running APBs. Manages their lifecycle.
-type Executor struct {
+// ExecutorAccessors - Accessors for Executor state.
+type ExecutorAccessors interface {
+	PodName() string
+	LastStatus() StatusMessage
+	ExtractedCredentials() *ExtractedCredentials
+}
+
+// ExecutorAsync - Main interface used for running APBs asynchronously.
+type ExecutorAsync interface {
+	Provision(*ServiceInstance) <-chan StatusMessage
+	Deprovision(instance *ServiceInstance) <-chan StatusMessage
+	Bind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage
+	Unbind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage
+	Update(instance *ServiceInstance) <-chan StatusMessage
+}
+
+// Executor - Composite executor interface.
+type Executor interface {
+	ExecutorAccessors
+	ExecutorAsync
+}
+
+type executor struct {
 	extractedCredentials *ExtractedCredentials
 	podName              string
 	lastStatus           StatusMessage
@@ -43,8 +64,8 @@ type Executor struct {
 }
 
 // NewExecutor - Creates a new Executor for running an APB.
-func NewExecutor() *Executor {
-	exec := &Executor{
+func NewExecutor() Executor {
+	exec := &executor{
 		statusChan: make(chan StatusMessage),
 		lastStatus: StatusMessage{State: StateNotYetStarted},
 	}
@@ -52,34 +73,34 @@ func NewExecutor() *Executor {
 }
 
 // PodName - Returns the name of the pod running the APB
-func (e *Executor) PodName() string {
+func (e *executor) PodName() string {
 	return e.podName
 }
 
 // LastStatus - Returns the last known status of the APB
-func (e *Executor) LastStatus() StatusMessage {
+func (e *executor) LastStatus() StatusMessage {
 	return e.lastStatus
 }
 
 // ExtractedCredentials - Credentials extracted from the APB while running,
 // if they were discovered.
-func (e *Executor) ExtractedCredentials() *ExtractedCredentials {
+func (e *executor) ExtractedCredentials() *ExtractedCredentials {
 	return e.extractedCredentials
 }
 
-func (e *Executor) start() {
-	log.Debug("Executor::start")
+func (e *executor) start() {
+	log.Debug("executor::start")
 	status := e.lastStatus
 	status.State = StateInProgress
 	e.lastStatus = status
 	e.statusChan <- status
 }
 
-func (e *Executor) finishWithSuccess() {
+func (e *executor) finishWithSuccess() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	log.Debug("Executor::finishWithSuccess")
+	log.Debug("executor::finishWithSuccess")
 
 	if e.statusChan != nil {
 		status := e.lastStatus
@@ -89,15 +110,15 @@ func (e *Executor) finishWithSuccess() {
 		close(e.statusChan)
 		e.statusChan = nil
 	} else {
-		log.Warning("Executor::finishWithSuccess was called, but the statusChan was already closed!")
+		log.Warning("executor::finishWithSuccess was called, but the statusChan was already closed!")
 	}
 }
 
-func (e *Executor) finishWithError(err error) {
+func (e *executor) finishWithError(err error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	log.Debug("Executor::finishWithError [ %v ]", err.Error())
+	log.Debug("executor::finishWithError [ %v ]", err.Error())
 
 	if e.statusChan != nil {
 		status := e.lastStatus
@@ -108,11 +129,11 @@ func (e *Executor) finishWithError(err error) {
 		close(e.statusChan)
 		e.statusChan = nil
 	} else {
-		log.Warning("Executor::finishWithError was called, but the statusChan was already closed!")
+		log.Warning("executor::finishWithError was called, but the statusChan was already closed!")
 	}
 }
 
-func (e *Executor) updateDescription(newDescription string) {
+func (e *executor) updateDescription(newDescription string) {
 	status := e.lastStatus
 	status.Description = newDescription
 	e.lastStatus = status
@@ -120,7 +141,7 @@ func (e *Executor) updateDescription(newDescription string) {
 }
 
 // executeApb - Runs an APB Action with a provided set of inputs
-func (e *Executor) executeApb(
+func (e *executor) executeApb(
 	action string, spec *Spec, context *Context, p *Parameters,
 ) (ExecutionContext, error) {
 	log.Debug("ExecutingApb:")

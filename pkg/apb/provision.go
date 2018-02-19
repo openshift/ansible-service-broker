@@ -17,7 +17,7 @@
 package apb
 
 // Provision - will run the abp with the provision action.
-func (e *Executor) Provision(instance *ServiceInstance) <-chan StatusMessage {
+func (e *executor) Provision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
