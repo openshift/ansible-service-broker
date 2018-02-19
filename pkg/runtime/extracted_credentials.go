@@ -1,7 +1,14 @@
 package runtime
 
 import (
+	"errors"
+
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+)
+
+var (
+	//ErrCredentialsNotFound - Credentials not found.
+	ErrCredentialsNotFound = errors.New("extracted credentials were not found")
 )
 
 // ExtractedCredential - Interface to define CRUD operations for
@@ -59,8 +66,14 @@ func (d defaultExtractedCredential) GetExtractedCredential(ID, ns string) (map[s
 	}
 	creds, err := k8scli.GetExtractedCredentialSecretData(ID, ns)
 	if err != nil {
-		log.Errorf("unable to get extracted credentials - %v", err)
-		return nil, err
+		switch {
+		case err == clients.ErrCredentialsNotFound:
+			log.Debugf("credentials not found id: %v, namespace: %v", ID, ns)
+			return nil, ErrCredentialsNotFound
+		default:
+			log.Errorf("unable to get extracted credentials - %v", err)
+			return nil, err
+		}
 	}
 	return creds, nil
 }

@@ -749,7 +749,7 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 	log.Debug("broker.GetBind: entered GetBind")
 
 	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
-	if err != nil && !client.IsKeyNotFound(err) {
+	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, err
 	}
@@ -766,7 +766,7 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 
 	bindExtCreds, err := apb.GetExtractedCredentials(bi.ID.String())
 	if err != nil {
-		if client.IsKeyNotFound(err) {
+		if err == apb.ErrExtractedCredentialsNotFound {
 			return nil, ErrorNotFound
 		}
 
@@ -837,7 +837,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	//
 	// return 201 when we're done.
 	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
-	if err != nil && !client.IsKeyNotFound(err) {
+	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, false, err
 	}
@@ -846,7 +846,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		if existingBI.IsEqual(bindingInstance) {
 			bindExtCreds, err := apb.GetExtractedCredentials(existingBI.ID.String())
 			// It's ok if there aren't any bind credentials yet.
-			if err != nil && !client.IsKeyNotFound(err) {
+			if err != nil && err != apb.ErrExtractedCredentialsNotFound {
 				return nil, false, err
 			}
 			var createJob apb.JobState
@@ -946,6 +946,17 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		}
 	} else {
 		log.Warning("Broker configured to *NOT* launch and run APB bind")
+		// Create a credentials for the binding using the provision credentials
+		bindExtCreds = provExtCreds
+		err := apb.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
+		if err != nil {
+			log.Errorf("Unable to create new binding extracted creds from provision creds - %v", err)
+			return nil, false, err
+		}
+		instance.AddBinding(bindingUUID)
+		if err := a.dao.SetServiceInstance(instance.ID.String(), &instance); err != nil {
+			return nil, false, err
+		}
 	}
 
 	resp, err := NewBindResponse(provExtCreds, bindExtCreds)
@@ -978,11 +989,11 @@ func (a AnsibleBroker) Unbind(
 
 	params := make(apb.Parameters)
 	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
-	if err != nil && !client.IsKeyNotFound(err) {
+	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
 		return nil, false, err
 	}
 	bindExtCreds, err := apb.GetExtractedCredentials(bindInstance.ID.String())
-	if err != nil && !client.IsKeyNotFound(err) {
+	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
 		return nil, false, err
 	}
 	// Add the credentials to the parameters so that an APB can choose what

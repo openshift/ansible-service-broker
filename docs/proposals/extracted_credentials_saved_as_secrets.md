@@ -8,9 +8,7 @@ The problem is that we should not manage data that is of a sensitive nature if w
 In the secret, we will save the data in the following format.
 ```yaml
 data:
-  DB_PASSWORD: <GOB_ENCODED_VALUE>
-  DB_USERNAME: <GOB_ENCODED_VALUE>
-  ....
+  credentials: <base64 encoded json>
 apiVersion: v1
 kind: Secret
 metadata:
@@ -20,7 +18,7 @@ metadata:
     <labels provided>
 ```
 
-[Gob encoding](https://godoc.org/encoding/gob) will allow us to save arbitrary data in the secret for a key. The secrets keys will look rational to a user who looks at the created secret. This user would need permissions to see the secret, but if someone is looking at the secret making it obvious what data is in there will be helpful. 
+To encode the credentials in a generic way, we must marshal a `map[string]interface{}` so that we can retrieve the data. This is not how I wanted the secret to look, but will allow anyone to use the credentials and will allow us to retrieve the credentials without writing our own gob parser.
 
 The functions for saving and retrieving will be in the `clients` package. This means the callers will be required to use the underlying extracted credentials type `map[string]interface{}` because we do not want a circular dependency between `apb` package and `clients` package. 
 
@@ -56,9 +54,9 @@ type ExtractedCredentials interface {
 
 
 ### Work Items
-- [ ] Add kubernetes client methods to interact with extracted credentials in the [namespace](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#openshift-configuration). 
-- [ ] Add runtime methods for interacting with extracted credentials. These methods should be overridable. 
-- [ ] Remove all dao implementation and interface methods regarding extracted credentials.
-- [ ] Remove all instances of interacting with dao extracted credentials in the `broker` package. Add back call to APB package to get extracted credentials when needed.
-- [ ] Update APB package to create/save/delete extracted credentials for the correct actions. this should call the correct `runtime` package methods.
-- [ ] Add exposed method on APB  that will retrieve the extracted credentials.
+- [x] Add kubernetes client methods to interact with extracted credentials in the [namespace](https://github.com/openshift/ansible-service-broker/blob/master/docs/config.md#openshift-configuration). 
+- [x] Add runtime methods for interacting with extracted credentials. These methods should be overridable. 
+- [x] Remove all dao implementation and interface methods regarding extracted credentials.
+- [x] Remove all instances of interacting with dao extracted credentials in the `broker` package. Add back call to APB package to get extracted credentials when needed.
+- [x] Update APB package to create/save/delete extracted credentials for the correct actions. this should call the correct `runtime` package methods.
+- [x] Add exposed method on APB  that will retrieve the extracted credentials.

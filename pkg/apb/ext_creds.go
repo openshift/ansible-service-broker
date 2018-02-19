@@ -42,6 +42,11 @@ const (
 	GatherCredentialsCommand = "broker-bind-creds"
 )
 
+var (
+	// ErrExtractedCredentialsNotFound - Extracted Credentials are not found.
+	ErrExtractedCredentialsNotFound = fmt.Errorf("credentials not found")
+)
+
 type extractCreds func(string, string) (*ExtractedCredentials, error)
 
 // ExtractCredentials - Extract credentials from pod in a certain namespace.
@@ -191,7 +196,14 @@ func decodeOutput(output []byte) ([]byte, error) {
 func GetExtractedCredentials(id string) (*ExtractedCredentials, error) {
 	creds, err := runtime.Provider.GetExtractedCredential(id, clusterConfig.Namespace)
 	if err != nil {
-		log.Errorf("unable to get the extracted credential secret - %v", err)
+		switch {
+		case err == runtime.ErrCredentialsNotFound:
+			log.Debugf("extracted credential secret not found - %v", id)
+			return nil, ErrExtractedCredentialsNotFound
+		default:
+			log.Errorf("unable to get the extracted credential secret - %v", err)
+			return nil, err
+		}
 	}
 	return &ExtractedCredentials{Credentials: creds}, nil
 }
