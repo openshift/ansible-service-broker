@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -38,6 +39,7 @@ type Executor struct {
 	podName              string
 	lastStatus           StatusMessage
 	statusChan           chan StatusMessage
+	mutex                sync.Mutex
 }
 
 // NewExecutor - Creates a new Executor for running an APB.
@@ -66,6 +68,7 @@ func (e *Executor) GetExtractedCredentials() *ExtractedCredentials {
 }
 
 func (e *Executor) start() {
+	log.Debug("Executor::start")
 	status := e.lastStatus
 	status.State = StateInProgress
 	e.lastStatus = status
@@ -73,20 +76,40 @@ func (e *Executor) start() {
 }
 
 func (e *Executor) finishWithSuccess() {
-	status := e.lastStatus
-	status.State = StateSucceeded
-	e.lastStatus = status
-	e.statusChan <- status
-	close(e.statusChan)
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	log.Debug("Executor::finishWithSuccess")
+
+	if e.statusChan != nil {
+		status := e.lastStatus
+		status.State = StateSucceeded
+		e.lastStatus = status
+		e.statusChan <- status
+		close(e.statusChan)
+		e.statusChan = nil
+	} else {
+		log.Warning("Executor::finishWithSuccess was called, but the statusChan was already closed!")
+	}
 }
 
 func (e *Executor) finishWithError(err error) {
-	status := e.lastStatus
-	status.Error = err
-	status.State = StateFailed
-	e.lastStatus = status
-	e.statusChan <- status
-	close(e.statusChan)
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	log.Debug("Executor::finishWithError [ %v ]", err.Error())
+
+	if e.statusChan != nil {
+		status := e.lastStatus
+		status.Error = err
+		status.State = StateFailed
+		e.lastStatus = status
+		e.statusChan <- status
+		close(e.statusChan)
+		e.statusChan = nil
+	} else {
+		log.Warning("Executor::finishWithError was called, but the statusChan was already closed!")
+	}
 }
 
 func (e *Executor) updateDescription(newDescription string) {
