@@ -34,11 +34,11 @@ var (
 	ErrorActionNotFound = fmt.Errorf("action not found")
 )
 
-type UpdateDescriptionFn func(string)
+type updateDescriptionFn func(string)
 
 func watchPod(
 	podName string, namespace string, podClient v1.PodInterface,
-	updateDescription UpdateDescriptionFn,
+	updateDescription updateDescriptionFn,
 ) error {
 	log.Debugf(
 		"Watching pod [ %s ] in namespace [ %s ] for completion",

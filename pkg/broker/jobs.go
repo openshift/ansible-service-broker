@@ -171,7 +171,7 @@ func (j *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job.Run(token, msgBuffer)
 }
 
-// BindingJob - Job to bind.
+// BindJob - Job to bind.
 type BindJob struct {
 	serviceInstance *apb.ServiceInstance
 	bindingID       string
