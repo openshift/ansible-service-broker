@@ -97,7 +97,7 @@ func NewRuntime(extCreds ExtractedCredential) {
 	}
 
 	var c ExtractedCredential
-	if extCreds != nil {
+	if extCreds == nil {
 		c = defaultExtractedCredential{}
 	} else {
 		c = extCreds
