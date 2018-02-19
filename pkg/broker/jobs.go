@@ -36,6 +36,7 @@ type apbJob struct {
 	method                 apb.JobMethod
 	metricsJobStartHook    metricsHookFn
 	metricsJobFinishedHook metricsHookFn
+	executor               *apb.Executor
 	run                    runFn
 
 	// NOTE: skipExecution is an artifact of an older time when we did not have
@@ -48,9 +49,10 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 	var (
 		err     error
 		podName string
+		exec    = j.executor
+		errMsg  = fmt.Sprintf(
+			"Error occurred during %s. Please contact administrator if the issue persists.", j.method)
 	)
-	errMsg := fmt.Sprintf(
-		"Error occurred during %s. Please contact administrator if the issue persists.", j.method)
 
 	j.metricsJobStartHook()
 	defer j.metricsJobFinishedHook()
@@ -68,7 +70,6 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 		return
 	}
 
-	exec := apb.NewExecutor()
 	for status := range j.run(exec) {
 		podName = exec.PodName()
 		msgBuffer <- j.createJobMsg(podName, token, status.State, status.Description)
@@ -136,6 +137,7 @@ type ProvisionJob struct {
 // Run - Run the provision job.
 func (j *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
+		executor:               apb.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		method:                 apb.JobMethodProvision,
@@ -158,6 +160,7 @@ type DeprovisionJob struct {
 // Run - Run the deprovision job.
 func (j *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
+		executor:               apb.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		method:                 apb.JobMethodDeprovision,
@@ -181,6 +184,7 @@ type BindJob struct {
 // Run - Run the bind job.
 func (j *BindJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
+		executor:               apb.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		bindingID:              &j.bindingID,
@@ -206,6 +210,7 @@ type UnbindJob struct {
 // Run - Run the unbind job.
 func (j *UnbindJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
+		executor:               apb.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		bindingID:              &j.bindingID,
@@ -228,6 +233,7 @@ type UpdateJob struct {
 // Run - Run the update job.
 func (j *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
+		executor:               apb.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		method:                 apb.JobMethodUpdate,
