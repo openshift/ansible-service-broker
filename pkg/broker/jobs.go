@@ -63,6 +63,7 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 	if j.skipExecution {
 		log.Debugf("skipExecution: True for %s, sending complete msg to channel", j.method)
 		jobMsg.State.State = apb.StateSucceeded
+		jobMsg.State.Description = fmt.Sprintf("%s job completed", j.method)
 		msgBuffer <- jobMsg
 		return
 	}
