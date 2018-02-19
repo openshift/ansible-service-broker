@@ -94,6 +94,7 @@ func (e *Executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 	}
 
 	if !instance.Spec.Bindable {
+		e.finishWithSuccess()
 		return
 	}
 
