@@ -470,6 +470,14 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 		if err != nil {
 			log.Errorf("not adding spec %v to list of services due to error transforming to service - %v", spec.FQName, err)
 		} else {
+			// Bug 1539542 - in order for async bind to work,
+			// bindings_retrievable needs to be set to true. We only want to
+			// set BindingsRetrievable to true if the service is bindable
+			// AND we the broker is configured to launch apbs on bind
+			if ser.Bindable && a.brokerConfig.LaunchApbOnBind {
+				ser.BindingsRetrievable = true
+			}
+
 			services = append(services, ser)
 		}
 	}
