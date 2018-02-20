@@ -62,6 +62,11 @@ message FeaturesConfiguration {
   // InactivityTimeoutMinutes is the number of minutes of inactivity before you are automatically logged out of
   // the web console (optional). If set to 0, inactivity timeout is disabled.
   optional int64 inactivityTimeoutMinutes = 1;
+
+  // ClusterResourceOverridesEnabled indicates that the cluster is configured for overcommit. When set to
+  // true, the web console will hide the CPU request, CPU limit, and memory request fields in its editors
+  // and skip validation on those fields. The memory limit field will still be displayed.
+  optional bool clusterResourceOverridesEnabled = 2;
 }
 
 // HTTPServingInfo holds configuration for serving HTTP

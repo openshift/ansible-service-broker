@@ -49,6 +49,11 @@ type FeaturesConfiguration struct {
 	// InactivityTimeoutMinutes is the number of minutes of inactivity before you are automatically logged out of
 	// the web console (optional). If set to 0, inactivity timeout is disabled.
 	InactivityTimeoutMinutes int64 `json:"inactivityTimeoutMinutes" protobuf:"varint,1,opt,name=inactivityTimeoutMinutes"`
+
+	// ClusterResourceOverridesEnabled indicates that the cluster is configured for overcommit. When set to
+	// true, the web console will hide the CPU request, CPU limit, and memory request fields in its editors
+	// and skip validation on those fields. The memory limit field will still be displayed.
+	ClusterResourceOverridesEnabled bool `json:"clusterResourceOverridesEnabled" protobuf:"varint,2,opt,name=clusterResourceOverridesEnabled"`
 }
 
 // ExtensionsConfiguration holds custom script, stylesheets, and properties used for web console customization

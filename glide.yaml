@@ -1,6 +1,5 @@
 package: github.com/openshift/ansible-service-broker
 import:
-# our dependancies
 - package: github.com/coreos/etcd
   version: ~3.2.9
   subpackages:
@@ -19,9 +18,6 @@ import:
 - package: gopkg.in/yaml.v1
 - package: github.com/pborman/uuid
   version: ^1.0.0
-  #
-  # Need to pin version for both protobuf because a dependancy asks for a lower
-  # version than another dependancy can use.
 - package: github.com/gogo/protobuf
   version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
@@ -30,11 +26,8 @@ import:
   version: 24f28ae800abfde9310e779f94be606b1a98a3fc
   subpackages:
   - proto
- # Need to pin version because of underlying dependancy mismatch.
 - package: google.golang.org/grpc
   version: dba60db4f499229023f3935df5f2e4ef7b881b00
-
-  # Kubernetes dependancies
 - package: k8s.io/kubernetes
   version: v1.9.1
 - package: k8s.io/client-go
@@ -45,3 +38,5 @@ import:
   version: kubernetes-1.9.1
 - package: github.com/openshift/api
   version: master
+- package: github.com/stretchr/testify
+  version: ^1.2.1
