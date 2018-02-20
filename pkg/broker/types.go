@@ -65,16 +65,18 @@ func IsValidWorkTopic(topic WorkTopic) bool {
 // Service - Service object to be returned.
 // based on https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-objects
 type Service struct {
-	Name            string                 `json:"name"`
-	ID              string                 `json:"id"`
-	Description     string                 `json:"description"`
-	Tags            []string               `json:"tags,omitempty"`
-	Requires        []string               `json:"requires,omitempty"`
-	Bindable        bool                   `json:"bindable"`
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-	DashboardClient *DashboardClient       `json:"dashboard_client,omitempty"`
-	PlanUpdatable   bool                   `json:"plan_updateable,omitempty"`
-	Plans           []Plan                 `json:"plans"`
+	Name                 string                 `json:"name"`
+	ID                   string                 `json:"id"`
+	Description          string                 `json:"description"`
+	Tags                 []string               `json:"tags,omitempty"`
+	Requires             []string               `json:"requires,omitempty"`
+	Bindable             bool                   `json:"bindable"`
+	Metadata             map[string]interface{} `json:"metadata,omitempty"`
+	DashboardClient      *DashboardClient       `json:"dashboard_client,omitempty"`
+	InstancesRetrievable bool                   `json:"instances_retrievable"`
+	BindingsRetrievable  bool                   `json:"bindings_retrievable"`
+	PlanUpdatable        bool                   `json:"plan_updateable,omitempty"`
+	Plans                []Plan                 `json:"plans"`
 }
 
 // DashboardClient - Dashboard Client to be returned
