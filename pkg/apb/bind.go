@@ -77,13 +77,14 @@ func (e *executor) Bind(
 			executionContext.Namespace,
 			instance.Spec.Runtime,
 		)
-		e.extractedCredentials = creds
+
 		if err != nil {
 			log.Errorf("apb::bind error occurred - %v", err)
 			e.finishWithError(err)
 			return
 		}
 
+		e.extractedCredentials = creds
 		e.finishWithSuccess()
 	}()
 

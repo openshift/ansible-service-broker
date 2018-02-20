@@ -103,7 +103,6 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 		executionContext.Namespace,
 		instance.Spec.Runtime,
 	)
-	e.extractedCredentials = creds
 
 	if err != nil {
 		log.Errorf("apb::%v error occurred - %v", method, err)
@@ -111,6 +110,7 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 		return
 	}
 
+	e.extractedCredentials = creds
 	e.finishWithSuccess()
 	return
 }
