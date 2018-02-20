@@ -90,10 +90,8 @@ func (e *executor) ExtractedCredentials() *ExtractedCredentials {
 
 func (e *executor) start() {
 	log.Debug("executor::start")
-	status := e.lastStatus
-	status.State = StateInProgress
-	e.lastStatus = status
-	e.statusChan <- status
+	e.lastStatus.State = StateInProgress
+	e.statusChan <- e.lastStatus
 }
 
 func (e *executor) finishWithSuccess() {
@@ -103,10 +101,8 @@ func (e *executor) finishWithSuccess() {
 	log.Debug("executor::finishWithSuccess")
 
 	if e.statusChan != nil {
-		status := e.lastStatus
-		status.State = StateSucceeded
-		e.lastStatus = status
-		e.statusChan <- status
+		e.lastStatus.State = StateSucceeded
+		e.statusChan <- e.lastStatus
 		close(e.statusChan)
 		e.statusChan = nil
 	} else {
@@ -121,11 +117,8 @@ func (e *executor) finishWithError(err error) {
 	log.Debug("executor::finishWithError [ %v ]", err.Error())
 
 	if e.statusChan != nil {
-		status := e.lastStatus
-		status.Error = err
-		status.State = StateFailed
-		e.lastStatus = status
-		e.statusChan <- status
+		e.lastStatus.State = StateFailed
+		e.statusChan <- e.lastStatus
 		close(e.statusChan)
 		e.statusChan = nil
 	} else {
