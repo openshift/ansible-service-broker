@@ -388,18 +388,3 @@ type ExecutionContext struct {
 	Targets        []string
 	ProxyConfig    *ProxyConfig
 }
-
-// Provisioner - a function that knows how to provision an apb
-type Provisioner func(si *ServiceInstance) (<-chan StatusMessage, error)
-
-// Deprovisioner - a function that knows how to deprovision an apb
-type Deprovisioner func(si *ServiceInstance) (<-chan StatusMessage, error)
-
-// Updater - a function that knows how to update an apb
-type Updater func(si *ServiceInstance) (<-chan StatusMessage, error)
-
-// Binder - a function that knows how to perform a binding
-type Binder func(si *ServiceInstance, params *Parameters) (<-chan StatusMessage, error)
-
-// Unbinder - a function that knows how to perform a unbinding
-type Unbinder func(si *ServiceInstance, params *Parameters) (<-chan StatusMessage, error)
