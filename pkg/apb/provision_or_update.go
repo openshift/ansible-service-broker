@@ -36,7 +36,7 @@ const (
 
 // returns PodName, ExtractedCredentials, error
 func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceInstance) {
-	e.start()
+	e.actionStarted()
 	// Explicitly error out if image field is missing from instance.Spec
 	// was introduced as a change to the apb instance.Spec to support integration
 	// with the broker and still allow for providing an img path
@@ -46,14 +46,14 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 		log.Error("No image field found on the apb instance.Spec (apb.yaml)")
 		log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
 		log.Error("Are you trying to run a legacy apb without an image field?")
-		e.finishWithError(errors.New("No image field found on instance.Spec"))
+		e.actionFinishedWithError(errors.New("No image field found on instance.Spec"))
 		return
 	}
 
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		log.Error("Something went wrong getting kubernetes client")
-		e.finishWithError(err)
+		e.actionFinishedWithError(err)
 		return
 	}
 
@@ -61,7 +61,7 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 	log.Info("Checking if namespace %s exists.", ns)
 	_, err = k8scli.Client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 	if err != nil {
-		e.finishWithError(fmt.Errorf("Project %s does not exist", ns))
+		e.actionFinishedWithError(fmt.Errorf("Project %s does not exist", ns))
 		return
 	}
 
@@ -78,7 +78,7 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 	)
 	if err != nil {
 		log.Errorf("Problem executing apb [%s] provision - err: %v ", executionContext.PodName, err)
-		e.finishWithError(err)
+		e.actionFinishedWithError(err)
 		return
 	}
 
@@ -88,13 +88,13 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 			k8scli.Client.CoreV1().Pods(executionContext.Namespace), e.updateDescription)
 		if err != nil {
 			log.Errorf("Provision or Update action failed - %v", err)
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 	}
 
 	if !instance.Spec.Bindable {
-		e.finishWithSuccess()
+		e.actionFinishedWithSuccess()
 		return
 	}
 
@@ -106,11 +106,11 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 
 	if err != nil {
 		log.Errorf("apb::%v error occurred - %v", method, err)
-		e.finishWithError(err)
+		e.actionFinishedWithError(err)
 		return
 	}
 
 	e.extractedCredentials = creds
-	e.finishWithSuccess()
+	e.actionFinishedWithSuccess()
 	return
 }

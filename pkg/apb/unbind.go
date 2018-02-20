@@ -38,7 +38,7 @@ func (e *executor) Unbind(
 	log.Notice("============================================================")
 
 	go func() {
-		e.start()
+		e.actionStarted()
 		metrics.ActionStarted("unbind")
 		executionContext, err := e.executeApb("unbind", instance.Spec,
 			instance.Context, parameters)
@@ -52,14 +52,14 @@ func (e *executor) Unbind(
 		)
 		if err != nil {
 			log.Errorf("Problem executing apb [%s] unbind", executionContext.PodName)
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 
 		k8scli, err := clients.Kubernetes()
 		if err != nil {
 			log.Error("Something went wrong getting kubernetes client")
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 
@@ -67,11 +67,11 @@ func (e *executor) Unbind(
 			k8scli.Client.CoreV1().Pods(executionContext.Namespace), e.updateDescription)
 		if err != nil {
 			log.Errorf("Unbind action failed - %v", err)
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 
-		e.finishWithSuccess()
+		e.actionFinishedWithSuccess()
 	}()
 
 	return e.statusChan

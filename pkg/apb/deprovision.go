@@ -35,12 +35,12 @@ func (e *executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 
 	go func() {
-		e.start()
+		e.actionStarted()
 		if instance.Spec.Image == "" {
 			log.Error("No image field found on the apb instance.Spec (apb.yaml)")
 			log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
 			log.Error("Are you trying to run a legacy ansibleapp without an image field?")
-			e.finishWithError(errors.New("No image field found on instance.Spec"))
+			e.actionFinishedWithError(errors.New("No image field found on instance.Spec"))
 			return
 		}
 
@@ -58,24 +58,24 @@ func (e *executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 		)
 		if err != nil {
 			log.Errorf("Problem executing apb [%s] deprovision", executionContext.PodName)
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 		k8scli, err := clients.Kubernetes()
 		if err != nil {
 			log.Error("Something went wrong getting kubernetes client")
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 		err = watchPod(executionContext.PodName, executionContext.Namespace,
 			k8scli.Client.CoreV1().Pods(executionContext.Namespace), e.updateDescription)
 		if err != nil {
 			log.Errorf("Deprovision action failed - %v", err)
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 
-		e.finishWithSuccess()
+		e.actionFinishedWithSuccess()
 	}()
 
 	return e.statusChan

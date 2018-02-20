@@ -88,17 +88,17 @@ func (e *executor) ExtractedCredentials() *ExtractedCredentials {
 	return e.extractedCredentials
 }
 
-func (e *executor) start() {
-	log.Debug("executor::start")
+func (e *executor) actionStarted() {
+	log.Debug("executor::actionStarted")
 	e.lastStatus.State = StateInProgress
 	e.statusChan <- e.lastStatus
 }
 
-func (e *executor) finishWithSuccess() {
+func (e *executor) actionFinishedWithSuccess() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	log.Debug("executor::finishWithSuccess")
+	log.Debug("executor::actionFinishedWithSuccess")
 
 	if e.statusChan != nil {
 		e.lastStatus.State = StateSucceeded
@@ -106,15 +106,15 @@ func (e *executor) finishWithSuccess() {
 		close(e.statusChan)
 		e.statusChan = nil
 	} else {
-		log.Warning("executor::finishWithSuccess was called, but the statusChan was already closed!")
+		log.Warning("executor::actionFinishedWithSuccess was called, but the statusChan was already closed!")
 	}
 }
 
-func (e *executor) finishWithError(err error) {
+func (e *executor) actionFinishedWithError(err error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	log.Debug("executor::finishWithError [ %v ]", err.Error())
+	log.Debug("executor::actionFinishedWithError[ %v ]", err.Error())
 
 	if e.statusChan != nil {
 		e.lastStatus.State = StateFailed
@@ -122,7 +122,7 @@ func (e *executor) finishWithError(err error) {
 		close(e.statusChan)
 		e.statusChan = nil
 	} else {
-		log.Warning("executor::finishWithError was called, but the statusChan was already closed!")
+		log.Warning("executor::actionFinishedWithError was called, but the statusChan was already closed!")
 	}
 }
 

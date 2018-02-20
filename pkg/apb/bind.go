@@ -38,7 +38,7 @@ func (e *executor) Bind(
 	log.Notice("============================================================")
 
 	go func() {
-		e.start()
+		e.actionStarted()
 		metrics.ActionStarted("bind")
 		executionContext, err := e.executeApb(
 			"bind", instance.Spec, instance.Context, parameters)
@@ -52,13 +52,13 @@ func (e *executor) Bind(
 		)
 		if err != nil {
 			log.Errorf("Problem executing apb [%s] bind", executionContext.PodName)
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 		k8scli, err := clients.Kubernetes()
 		if err != nil {
 			log.Error("Something went wrong getting kubernetes client")
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 
@@ -67,7 +67,7 @@ func (e *executor) Bind(
 				k8scli.Client.CoreV1().Pods(executionContext.Namespace), e.updateDescription)
 			if err != nil {
 				log.Errorf("Bind action failed - %v", err)
-				e.finishWithError(err)
+				e.actionFinishedWithError(err)
 				return
 			}
 		}
@@ -80,12 +80,12 @@ func (e *executor) Bind(
 
 		if err != nil {
 			log.Errorf("apb::bind error occurred - %v", err)
-			e.finishWithError(err)
+			e.actionFinishedWithError(err)
 			return
 		}
 
 		e.extractedCredentials = creds
-		e.finishWithSuccess()
+		e.actionFinishedWithSuccess()
 	}()
 
 	return e.statusChan
