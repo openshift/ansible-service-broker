@@ -49,6 +49,7 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 	var (
 		err     error
 		podName string
+		jobMsg  JobMsg
 		exec    = j.executor
 		errMsg  = fmt.Sprintf(
 			"Error occurred during %s. Please contact administrator if the issue persists.", j.method)
@@ -56,11 +57,6 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 	j.metricsJobStartHook()
 	defer j.metricsJobFinishedHook()
-
-	// Initial jobMsg
-	jobMsg := j.createJobMsg(
-		"", token, apb.StateInProgress, fmt.Sprintf("%s job started", j.method))
-	msgBuffer <- jobMsg
 
 	if j.skipExecution {
 		log.Debugf("skipExecution: True for %s, sending complete msg to channel", j.method)
@@ -72,7 +68,12 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 	for status := range j.run(exec) {
 		podName = exec.PodName()
-		msgBuffer <- j.createJobMsg(podName, token, status.State, status.Description)
+		jobMsg = j.createJobMsg(podName, token, status.State, status.Description)
+		if status.State == apb.StateInProgress {
+			// Only send intermediate messages since the final ones are processed
+			// and messaged separately (otherwise we'll double up).
+			msgBuffer <- jobMsg
+		}
 	}
 
 	err = exec.LastStatus().Error
@@ -100,7 +101,6 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 	}
 
 	jobMsg.State.State = apb.StateSucceeded
-	jobMsg.PodName = podName
 	jobMsg.State.Description = fmt.Sprintf("%s job completed", j.method)
 	msgBuffer <- jobMsg
 }
