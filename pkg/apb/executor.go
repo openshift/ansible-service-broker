@@ -91,6 +91,7 @@ func (e *executor) ExtractedCredentials() *ExtractedCredentials {
 func (e *executor) actionStarted() {
 	log.Debug("executor::actionStarted")
 	e.lastStatus.State = StateInProgress
+	e.lastStatus.Description = "action started"
 	e.statusChan <- e.lastStatus
 }
 
@@ -102,6 +103,7 @@ func (e *executor) actionFinishedWithSuccess() {
 
 	if e.statusChan != nil {
 		e.lastStatus.State = StateSucceeded
+		e.lastStatus.Description = "action finished with success"
 		e.statusChan <- e.lastStatus
 		close(e.statusChan)
 		e.statusChan = nil
@@ -118,6 +120,8 @@ func (e *executor) actionFinishedWithError(err error) {
 
 	if e.statusChan != nil {
 		e.lastStatus.State = StateFailed
+		e.lastStatus.Error = err
+		e.lastStatus.Description = "action finished with error"
 		e.statusChan <- e.lastStatus
 		close(e.statusChan)
 		e.statusChan = nil

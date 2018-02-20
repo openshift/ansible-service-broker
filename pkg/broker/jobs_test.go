@@ -34,6 +34,12 @@ func TestApbJobRun(t *testing.T) {
 				run: func(exec apb.Executor) <-chan apb.StatusMessage {
 					statusChan := make(chan apb.StatusMessage)
 					go func() {
+						// Initial message sent from executor.actionStarted
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateInProgress,
+							Description: "action started",
+						}
+						// Two updateDescription calls
 						statusChan <- apb.StatusMessage{
 							State:       apb.StateInProgress,
 							Description: "lastOp0",
@@ -41,6 +47,11 @@ func TestApbJobRun(t *testing.T) {
 						statusChan <- apb.StatusMessage{
 							State:       apb.StateInProgress,
 							Description: "lastOp1",
+						}
+						// Final status sent by executor.actionFinishedWithSuccess
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateSucceeded,
+							Description: "action finished with success",
 						}
 						close(statusChan)
 					}()
@@ -89,8 +100,12 @@ func TestApbJobRun(t *testing.T) {
 				run: func(exec apb.Executor) <-chan apb.StatusMessage {
 					statusChan := make(chan apb.StatusMessage)
 					go func() {
-						// We should *not* see these messages based on the fact that
-						// skipExecution was specfied
+						// Initial message sent from executor.actionStarted
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateInProgress,
+							Description: "action started",
+						}
+						// Two updateDescription calls
 						statusChan <- apb.StatusMessage{
 							State:       apb.StateInProgress,
 							Description: "lastOp0",
@@ -99,28 +114,26 @@ func TestApbJobRun(t *testing.T) {
 							State:       apb.StateInProgress,
 							Description: "lastOp1",
 						}
+						// Final status sent by executor.actionFinishedWithSuccess
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateSucceeded,
+							Description: "action finished with success",
+						}
 						close(statusChan)
 					}()
 					return statusChan
 				},
 			},
-			expectedMsgCount: 2,
+			expectedMsgCount: 1,
 			validate: func(messages []JobMsg) error {
-				if len(messages) != 2 {
-					return fmt.Errorf("expected 4 job messages")
+				if len(messages) != 1 {
+					return fmt.Errorf("expected 1 job messages")
 				}
-
-				first := messages[0]
-				if first.State.State != apb.StateInProgress ||
-					first.PodName != "" {
-					return fmt.Errorf("unexpected first message contents")
-				}
-
-				second := messages[1]
-				if second.State.State != apb.StateSucceeded {
+				// Since the apb is never executed, we're just expecting a single
+				// success JobMsg
+				if messages[0].State.State != apb.StateSucceeded {
 					return fmt.Errorf("unexpected second message contents")
 				}
-
 				return nil
 			},
 		},
