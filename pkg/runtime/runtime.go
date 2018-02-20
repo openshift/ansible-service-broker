@@ -67,6 +67,10 @@ type openshift struct{}
 type kubernetes struct{}
 
 // NewRuntime - Initialize provider variable
+// extCreds - You can pass an ExtractedCredential conforming object this will
+// be used to do CRUD operations. If you want to use the default pass nil
+// and we will use the built-in default of saving them as secrets in the
+// broker namespace.
 func NewRuntime(extCreds ExtractedCredential) {
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
