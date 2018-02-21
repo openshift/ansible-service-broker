@@ -161,14 +161,14 @@ func DeprovisionJobStarted() {
 	deprovisionJob.Inc()
 }
 
-// BindingJobStarted - Add a provision job to the counter.
-func BindingJobStarted() {
+// BindJobStarted - Add a provision job to the counter.
+func BindJobStarted() {
 	defer recoverMetricPanic()
 	bindingJob.Inc()
 }
 
-// UnbindingJobStarted - Add a provision job to the counter.
-func UnbindingJobStarted() {
+// UnbindJobStarted - Add a provision job to the counter.
+func UnbindJobStarted() {
 	defer recoverMetricPanic()
 	unbindingJob.Inc()
 }
@@ -197,14 +197,14 @@ func UpdateJobFinished() {
 	updateJob.Dec()
 }
 
-// BindingJobFinished - Remove a provision job from the counter.
-func BindingJobFinished() {
+// BindJobFinished - Remove a provision job from the counter.
+func BindJobFinished() {
 	defer recoverMetricPanic()
 	bindingJob.Dec()
 }
 
-// UnbindingJobFinished - Remove a provision job from the counter.
-func UnbindingJobFinished() {
+// UnbindJobFinished - Remove a provision job from the counter.
+func UnbindJobFinished() {
 	defer recoverMetricPanic()
 	unbindingJob.Dec()
 }

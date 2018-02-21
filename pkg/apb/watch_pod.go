@@ -34,7 +34,12 @@ var (
 	ErrorActionNotFound = fmt.Errorf("action not found")
 )
 
-func watchPod(podName string, namespace string, podClient v1.PodInterface, statusUpdates chan<- JobState) error {
+type updateDescriptionFn func(string)
+
+func watchPod(
+	podName string, namespace string, podClient v1.PodInterface,
+	updateDescription updateDescriptionFn,
+) error {
 	log.Debugf(
 		"Watching pod [ %s ] in namespace [ %s ] for completion",
 		podName,
@@ -44,12 +49,6 @@ func watchPod(podName string, namespace string, podClient v1.PodInterface, statu
 	w, err := podClient.Watch(meta_v1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to watch pod %s in namespace %s error: %v", podName, namespace, err)
-	}
-	var send = func(state JobState) {
-		if nil == statusUpdates {
-			return
-		}
-		statusUpdates <- state
 	}
 	for podEvent := range w.ResultChan() {
 		pod, ok := podEvent.Object.(*apiv1.Pod)
@@ -62,12 +61,10 @@ func watchPod(podName string, namespace string, podClient v1.PodInterface, statu
 			continue
 		}
 
-		state := JobState{State: StateInProgress, Podname: podName}
 		lastOp := pod.Annotations["apb_last_operation"]
 		if lastOp != "" {
-			state.Description = lastOp
+			updateDescription(lastOp)
 		}
-		send(state)
 		podStatus := pod.Status
 		log.Debugf("pod [%s] in phase %s", podName, podStatus.Phase)
 		switch podStatus.Phase {

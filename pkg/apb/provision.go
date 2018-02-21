@@ -17,10 +17,7 @@
 package apb
 
 // Provision - will run the abp with the provision action.
-func Provision(
-	instance *ServiceInstance,
-	stateUpdates chan<- JobState,
-) (string, *ExtractedCredentials, error) {
+func (e *executor) Provision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       PROVISIONING                         ")
 	log.Notice("============================================================")
@@ -30,9 +27,7 @@ func Provision(
 	log.Noticef("Spec.Description: %s", instance.Spec.Description)
 	log.Notice("============================================================")
 
-	// Nearly all of the logic for provisioning or updating is shared between
-	// provision and update, save for passing through the method type. Provision
-	// provides a nice public interface, but the bulk of the work is passed to
-	// provisionOrUpdate as an implementation detail.
-	return provisionOrUpdate(executionMethodProvision, instance, stateUpdates)
+	go e.provisionOrUpdate(executionMethodProvision, instance)
+
+	return e.statusChan
 }

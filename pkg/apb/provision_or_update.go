@@ -35,10 +35,8 @@ const (
 )
 
 // returns PodName, ExtractedCredentials, error
-func provisionOrUpdate(method executionMethod,
-	instance *ServiceInstance,
-	stateUpdates chan<- JobState) (string, *ExtractedCredentials, error) {
-
+func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceInstance) {
+	e.actionStarted()
 	// Explicitly error out if image field is missing from instance.Spec
 	// was introduced as a change to the apb instance.Spec to support integration
 	// with the broker and still allow for providing an img path
@@ -47,25 +45,29 @@ func provisionOrUpdate(method executionMethod,
 	if instance.Spec.Image == "" {
 		log.Error("No image field found on the apb instance.Spec (apb.yaml)")
 		log.Error("apb instance.Spec requires [name] and [image] fields to be separate")
-		log.Error("Are you trying to run a legacy ansibleapp without an image field?")
-		return "", nil, errors.New("No image field found on instance.Spec")
+		log.Error("Are you trying to run a legacy apb without an image field?")
+		e.actionFinishedWithError(errors.New("No image field found on instance.Spec"))
+		return
 	}
 
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		log.Error("Something went wrong getting kubernetes client")
-		return "", nil, err
+		e.actionFinishedWithError(err)
+		return
 	}
 
 	ns := instance.Context.Namespace
 	log.Info("Checking if namespace %s exists.", ns)
 	_, err = k8scli.Client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 	if err != nil {
-		return "", nil, fmt.Errorf("Project %s does not exist", ns)
+		e.actionFinishedWithError(fmt.Errorf("Project %s does not exist", ns))
+		return
 	}
 
 	metrics.ActionStarted(string(method))
-	executionContext, err := ExecuteApb(string(method), instance.Spec, instance.Context, instance.Parameters)
+	executionContext, err := e.executeApb(string(method), instance.Spec,
+		instance.Context, instance.Parameters)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,
@@ -76,20 +78,24 @@ func provisionOrUpdate(method executionMethod,
 	)
 	if err != nil {
 		log.Errorf("Problem executing apb [%s] provision - err: %v ", executionContext.PodName, err)
-		return executionContext.PodName, nil, err
+		e.actionFinishedWithError(err)
+		return
 	}
 
 	if instance.Spec.Runtime >= 2 || !instance.Spec.Bindable {
 		log.Debugf("watching pod for serviceinstance %#v", instance.Spec)
-		err := watchPod(executionContext.PodName, executionContext.Namespace, k8scli.Client.CoreV1().Pods(executionContext.Namespace), stateUpdates)
+		err := watchPod(executionContext.PodName, executionContext.Namespace,
+			k8scli.Client.CoreV1().Pods(executionContext.Namespace), e.updateDescription)
 		if err != nil {
 			log.Errorf("Provision or Update action failed - %v", err)
-			return executionContext.PodName, nil, err
+			e.actionFinishedWithError(err)
+			return
 		}
 	}
 
 	if !instance.Spec.Bindable {
-		return executionContext.PodName, nil, nil
+		e.actionFinishedWithSuccess()
+		return
 	}
 
 	creds, err := ExtractCredentials(
@@ -97,10 +103,14 @@ func provisionOrUpdate(method executionMethod,
 		executionContext.Namespace,
 		instance.Spec.Runtime,
 	)
+
 	if err != nil {
 		log.Errorf("apb::%v error occurred - %v", method, err)
-		return executionContext.PodName, creds, err
+		e.actionFinishedWithError(err)
+		return
 	}
 
-	return executionContext.PodName, creds, err
+	e.extractedCredentials = creds
+	e.actionFinishedWithSuccess()
+	return
 }

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -32,11 +33,114 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// ExecuteApb - Runs an APB Action with a provided set of inputs
-func ExecuteApb(action string,
-	spec *Spec,
-	context *Context,
-	p *Parameters) (ExecutionContext, error) {
+// ExecutorAccessors - Accessors for Executor state.
+type ExecutorAccessors interface {
+	PodName() string
+	LastStatus() StatusMessage
+	ExtractedCredentials() *ExtractedCredentials
+}
+
+// ExecutorAsync - Main interface used for running APBs asynchronously.
+type ExecutorAsync interface {
+	Provision(*ServiceInstance) <-chan StatusMessage
+	Deprovision(instance *ServiceInstance) <-chan StatusMessage
+	Bind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage
+	Unbind(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage
+	Update(instance *ServiceInstance) <-chan StatusMessage
+}
+
+// Executor - Composite executor interface.
+type Executor interface {
+	ExecutorAccessors
+	ExecutorAsync
+}
+
+type executor struct {
+	extractedCredentials *ExtractedCredentials
+	podName              string
+	lastStatus           StatusMessage
+	statusChan           chan StatusMessage
+	mutex                sync.Mutex
+}
+
+// NewExecutor - Creates a new Executor for running an APB.
+func NewExecutor() Executor {
+	exec := &executor{
+		statusChan: make(chan StatusMessage),
+		lastStatus: StatusMessage{State: StateNotYetStarted},
+	}
+	return exec
+}
+
+// PodName - Returns the name of the pod running the APB
+func (e *executor) PodName() string {
+	return e.podName
+}
+
+// LastStatus - Returns the last known status of the APB
+func (e *executor) LastStatus() StatusMessage {
+	return e.lastStatus
+}
+
+// ExtractedCredentials - Credentials extracted from the APB while running,
+// if they were discovered.
+func (e *executor) ExtractedCredentials() *ExtractedCredentials {
+	return e.extractedCredentials
+}
+
+func (e *executor) actionStarted() {
+	log.Debug("executor::actionStarted")
+	e.lastStatus.State = StateInProgress
+	e.lastStatus.Description = "action started"
+	e.statusChan <- e.lastStatus
+}
+
+func (e *executor) actionFinishedWithSuccess() {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	log.Debug("executor::actionFinishedWithSuccess")
+
+	if e.statusChan != nil {
+		e.lastStatus.State = StateSucceeded
+		e.lastStatus.Description = "action finished with success"
+		e.statusChan <- e.lastStatus
+		close(e.statusChan)
+		e.statusChan = nil
+	} else {
+		log.Warning("executor::actionFinishedWithSuccess was called, but the statusChan was already closed!")
+	}
+}
+
+func (e *executor) actionFinishedWithError(err error) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	log.Debug("executor::actionFinishedWithError[ %v ]", err.Error())
+
+	if e.statusChan != nil {
+		e.lastStatus.State = StateFailed
+		e.lastStatus.Error = err
+		e.lastStatus.Description = "action finished with error"
+		e.statusChan <- e.lastStatus
+		close(e.statusChan)
+		e.statusChan = nil
+	} else {
+		log.Warning("executor::actionFinishedWithError was called, but the statusChan was already closed!")
+	}
+}
+
+func (e *executor) updateDescription(newDescription string) {
+	status := e.lastStatus
+	status.Description = newDescription
+	e.lastStatus = status
+	e.statusChan <- status
+}
+
+// executeApb - Runs an APB Action with a provided set of inputs
+func (e *executor) executeApb(
+	action string, spec *Spec, context *Context, p *Parameters,
+) (ExecutionContext, error) {
 	log.Debug("ExecutingApb:")
 	log.Debug("name:[ %s ]", spec.FQName)
 	log.Debug("image:[ %s ]", spec.Image)
@@ -79,6 +183,8 @@ func ExecuteApb(action string,
 		"apb-action":   action,
 		"apb-pod-name": executionContext.PodName,
 	}
+
+	e.podName = executionContext.PodName
 
 	executionContext.Targets = append(executionContext.Targets, context.Namespace)
 	// Create namespace.

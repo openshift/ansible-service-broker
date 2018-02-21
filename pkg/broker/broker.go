@@ -365,10 +365,10 @@ func (a AnsibleBroker) Recover() (string, error) {
 			var job Work
 			var topic WorkTopic
 			if rs.State.Method == apb.JobMethodProvision {
-				job = NewProvisionJob(instance, apb.Provision)
+				job = &ProvisionJob{instance}
 				topic = ProvisionTopic
 			} else if rs.State.Method == apb.JobMethodUpdate {
-				job = NewUpdateJob(instance, apb.Update)
+				job = &UpdateJob{instance}
 				topic = UpdateTopic
 			} else {
 				log.Warningf(
@@ -629,7 +629,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	}
 
 	var token = a.engine.Token()
-	pjob := NewProvisionJob(serviceInstance, apb.Provision)
+	pjob := &ProvisionJob{serviceInstance}
 
 	if async {
 		log.Info("ASYNC provisioning in progress")
@@ -689,7 +689,7 @@ func (a AnsibleBroker) Deprovision(
 	}
 
 	var token = a.engine.Token()
-	dpjob := NewDeprovisionJob(&instance, skipApbExecution, apb.Deprovision)
+	dpjob := &DeprovisionJob{&instance, skipApbExecution}
 	if async {
 		log.Info("ASYNC deprovision in progress")
 
@@ -901,7 +901,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	var (
 		bindExtCreds *apb.ExtractedCredentials
 		token        = a.engine.Token()
-		bindingJob   = NewBindingJob(&instance, bindingUUID, &params, apb.Bind)
+		bindingJob   = &BindJob{&instance, bindingUUID.String(), &params}
 	)
 
 	if async && a.brokerConfig.LaunchApbOnBind {
@@ -996,7 +996,8 @@ func (a AnsibleBroker) Unbind(
 	var (
 		token     = a.engine.Token()
 		jerr      error
-		unbindJob = NewUnbindingJob(&serviceInstance, &bindInstance, &params, apb.Unbind, skipApbExecution)
+		unbindJob = &UnbindJob{
+			&serviceInstance, bindInstance.ID.String(), &params, skipApbExecution}
 	)
 	if async && a.brokerConfig.LaunchApbOnBind {
 		// asynchronous mode, required that the launch apb config
@@ -1249,7 +1250,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	log.Debugf("toPlanName: [%s]", toPlan.Name)
 	log.Debugf("PreviousValues: [ %+v ]", req.PreviousValues)
 	log.Debugf("ServiceInstance Parameters: [%v]", *si.Parameters)
-	ujob := NewUpdateJob(si, apb.Update)
+	ujob := &UpdateJob{si}
 	if async {
 		log.Info("ASYNC update in progress")
 		// asyncronously provision and return the token for the lastoperation

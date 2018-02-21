@@ -139,6 +139,13 @@ type ExtractedCredentials struct {
 // State - Job State
 type State string
 
+// StatusMessage - Describes the latest known status of a running APB
+type StatusMessage struct {
+	State       State
+	Description string
+	Error       error
+}
+
 // JobMethod - APB Method Type that the job was spawned from.
 type JobMethod string
 
@@ -193,11 +200,13 @@ func InitializeClusterConfig(config *config.Config) {
 }
 
 const (
-	// StateInProgress - In progress job state
+	// StateNotYetStarted - Executor has not yet started state.
+	StateNotYetStarted State = "not yet started"
+	// StateInProgress - APB is in progress state
 	StateInProgress State = "in progress"
-	// StateSucceeded - Succeeded job state
+	// StateSucceeded - Succeeded state
 	StateSucceeded State = "succeeded"
-	// StateFailed - Failed job state
+	// StateFailed - Failed state
 	StateFailed State = "failed"
 
 	// 5s x 7200 retries, 2 hours
@@ -379,18 +388,3 @@ type ExecutionContext struct {
 	Targets        []string
 	ProxyConfig    *ProxyConfig
 }
-
-// Provisioner defines a function that knows how to provision an apb
-type Provisioner func(si *ServiceInstance, statusUpdate chan<- JobState) (string, *ExtractedCredentials, error)
-
-// Deprovisioner defines a function that knows how to deprovision an apb
-type Deprovisioner func(si *ServiceInstance, statusUpdate chan<- JobState) (string, error)
-
-// Updater defines a function that knows how to update an apb
-type Updater func(si *ServiceInstance, statusUpdate chan<- JobState) (string, *ExtractedCredentials, error)
-
-// Binder defines a function that knows how to perform a binding
-type Binder func(si *ServiceInstance, params *Parameters, statusUpdate chan<- JobState) (string, *ExtractedCredentials, error)
-
-// UnBinder defines a function that knows how to perform a unbinding
-type UnBinder func(si *ServiceInstance, params *Parameters, statusUpdate chan<- JobState) error
