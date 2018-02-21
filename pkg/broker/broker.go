@@ -64,7 +64,9 @@ var (
 	ErrorPlanUpdateNotPossible = errors.New("plan update not possible")
 	// ErrorNoUpdateRequested - Error for when no valid updates are requested
 	ErrorNoUpdateRequested = errors.New("no valid updates requested")
-	log                    = logutil.NewLog()
+	// ErrorUnbindingInProgress - Error when unbind is called that has an unbinding job in progress
+	ErrorUnbindingInProgress = errors.New("unbinding in progress")
+	log                      = logutil.NewLog()
 )
 
 const (
@@ -961,6 +963,16 @@ func (a AnsibleBroker) Unbind(
 		return nil, false, errors.New(errMsg)
 	}
 
+	jobInProgress, jobToken, err := a.isJobInProgress(&instance, apb.JobMethodUnbind)
+	if err != nil {
+		log.Errorf("An error occurred while trying to determine if a unbind job is already in progress for instance: %s", instance.ID)
+		return nil, false, err
+	}
+	if jobInProgress {
+		log.Infof("Unbind requested for instance %s, but job is already in progress", instance.ID)
+		return &UnbindResponse{Operation: jobToken}, false, ErrorUnbindingInProgress
+	}
+
 	params := make(apb.Parameters)
 	provExtCreds, err := a.dao.GetExtractedCredentials(instance.ID.String())
 	if err != nil && !client.IsKeyNotFound(err) {
@@ -1017,6 +1029,7 @@ func (a AnsibleBroker) Unbind(
 		}); err != nil {
 			log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
 		}
+		return &UnbindResponse{Operation: token}, true, nil
 
 	} else if a.brokerConfig.LaunchApbOnBind {
 		// only launch apb if we are always launching the APB.
@@ -1033,27 +1046,10 @@ func (a AnsibleBroker) Unbind(
 		log.Warning("Broker configured to *NOT* launch and run APB unbind")
 	}
 
-	//TODO should these not be handled in the subscriber if the subscriber is handling state
-	if bindExtCreds != nil {
-		err = a.dao.DeleteExtractedCredentials(bindInstance.ID.String())
-		if err != nil {
-			return nil, false, err
-		}
-	}
+	err = cleanupUnbind(&bindInstance, &serviceInstance, bindExtCreds, a.dao)
 
-	err = a.dao.DeleteBindInstance(bindInstance.ID.String())
 	if err != nil {
 		return nil, false, err
-	}
-
-	serviceInstance.RemoveBinding(bindInstance.ID)
-	err = a.dao.SetServiceInstance(instance.ID.String(), &serviceInstance)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if token != "" {
-		return &UnbindResponse{Operation: token}, true, nil
 	}
 
 	return &UnbindResponse{}, false, nil
