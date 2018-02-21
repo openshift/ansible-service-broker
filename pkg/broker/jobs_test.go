@@ -272,7 +272,7 @@ func TestApbJobRun(t *testing.T) {
 		},
 	}
 
-	for i, tc := range cases {
+	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			msgBuffer := make(chan JobMsg)
 			messages := []JobMsg{}
