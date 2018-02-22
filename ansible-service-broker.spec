@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.13
+Version: 1.1.14
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Feb 22 2018 David Zager <david.j.zager@gmail.com> 1.1.14-1
+- Bug 1539542 - return bindings_retrievable (#774) (jmrodri@gmail.com)
+
 * Mon Feb 19 2018 Jason Montleon <jmontleo@redhat.com> 1.1.13-1
 - Lock down CI & templates in this branch to this release (#770)
   (david.j.zager@gmail.com)
