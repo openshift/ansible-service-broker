@@ -1,8 +1,10 @@
-hash: fb62b9eca001b26304dfab51214d2e5c4d03518d33cad73824decc68eb4100b5
-updated: 2018-02-20T16:06:09.767694251-05:00
+hash: 3899c064e389ad0ffa1d51355ceaa25d2cc00d4ea0c3695bcb8771f2018a9456
+updated: 2018-02-22T15:50:48.091983-05:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
+- name: github.com/automationbroker/broker-client-go
+  version: 4b803ec21d2f4bbd9feab7638224867f74f1736f
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
@@ -150,7 +152,7 @@ imports:
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib
 - name: github.com/prometheus/client_golang
