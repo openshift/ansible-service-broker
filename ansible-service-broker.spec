@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.1
+Version: 1.2.2
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,35 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Feb 23 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.2-1
+- Bug 1539542 - return bindings_retrievable (#776) (jmrodri@gmail.com)
+- Bug 1543521 - fix async bind when job already in-progress (#764) (mhrivnak@hrivnak.org)
+- Bug 1541461 - Deal with buggy encoded scopes from service catalog. (#754) (Shawn.Hurley21@gmail.com)
+- Bug 1543029 - last_operation returns correct body with 410 response (#746) (mhrivnak@hrivnak.org)
+- Bug 1542387 - Print out status of response from RHCC registry if not 200 (#742) (dymurray@redhat.com)
+- Bug 1539308 - Do not report errors on dupe depros (#739) (ernelson@redhat.com)
+- Bug 1540121 - Return 400 for bad update requests (#736) (ernelson@redhat.com)
+- Bug 1541335 - fix auth config parsing (#728) (jmrodri@gmail.com)
+- Lock asb-brew releaser to 3.10 branch (#788) (david.j.zager@gmail.com)
+- rename file to be more consistent. (#779) (jmrodri@gmail.com)
+- Fix last op endpoint unbind response (#765) (pgough@redhat.com)
+- apb pkg public interface overhaul (#773) (ernelson@redhat.com)
+- fixing k8s ansible service broker template to include namespace config (#777) (Shawn.Hurley21@gmail.com)
+- 475 last operation description (#619) (maleck13@users.noreply.github.com)
+- Remove plan dao methods (#766) (Shawn.Hurley21@gmail.com)
+- Proposal for saving extracted credentials (#768) (Shawn.Hurley21@gmail.com)
+- Add a warning that the client is an older version (#769) (rhallise@redhat.com)
+- Remove upgrade from Ubuntu 14.0 to 16.04 (#762) (rhallise@redhat.com)
+- Remove minishift docs and link to golden source (#672) (ernelson@redhat.com)
+- Add a mailing list subscribe badge (#758) (rhallise@redhat.com)
+- Update simple-broker-template to include necessary roles for local_openshift reg (#749) (dymurray@redhat.com)
+- Remove redundant validation copy (#741) (ernelson@redhat.com)
+- Travis merges commits so do a diff against HEAD^ (#737) (rhallise@redhat.com)
+- Make the endpoints headless for local brokers (#731) (rhallise@redhat.com)
+- Fix vet test (#733) (rhallise@redhat.com)
+- initial prop for custom resources. (#722) (Shawn.Hurley21@gmail.com)
+- partial fix for PR #722 Work Item 1 (#725) (Shawn.Hurley21@gmail.com)
+
 * Fri Feb 02 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.1-1
 - Bug 1541265 - avoid broker panic, check for nil (#723) (jmrodri@gmail.com)
 - Bug 1538986 - Remove bad enum values from Update Request (#713) (jmontleo@redhat.com)
