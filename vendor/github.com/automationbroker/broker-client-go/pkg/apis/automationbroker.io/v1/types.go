@@ -18,7 +18,6 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 // +genclient
@@ -57,29 +56,31 @@ const (
 
 // BundleSpec is the spec for an APB resource
 type BundleSpec struct {
-	Runtime     int                   `json:"runtime"`
-	Version     string                `json:"version"`
-	FQName      string                `json:"fq_name"`
-	Image       string                `json:"image"`
-	Description string                `json:"description"`
-	Tags        []string              `json:"tags"`
-	Bindable    bool                  `json:"bindable"`
-	Async       AsyncType             `json:"async"`
-	Metadata    *runtime.RawExtension `json:"metadata"`
-	Plans       []Plan                `json:"plans"`
+	Runtime     int       `json:"runtime"`
+	Version     string    `json:"version"`
+	FQName      string    `json:"fq_name"`
+	Image       string    `json:"image"`
+	Description string    `json:"description"`
+	Tags        []string  `json:"tags"`
+	Bindable    bool      `json:"bindable"`
+	Async       AsyncType `json:"async"`
+	// Store the metadata as a json encoded string to preserve the genericness
+	Metadata string `json:"metadata"`
+	Plans    []Plan `json:"plans"`
 }
 
 // Plan - a plan for a bundle spec
 type Plan struct {
-	ID             string                `json:"id"`
-	Name           string                `json:"name"`
-	Description    string                `json:"description"`
-	Metadata       *runtime.RawExtension `json:"metadata"`
-	Free           bool                  `json:"free"`
-	Bindable       bool                  `json:"bindable"`
-	UpdatesTo      []string              `json:"updates_to"`
-	Parameters     []Parameters          `json:"parameters"`
-	BindParameters []Parameters          `json:"bindParameters"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	// Store the metadata as a json encoded string to preserve the genericness
+	Metadata       string       `json:"metadata"`
+	Free           bool         `json:"free"`
+	Bindable       bool         `json:"bindable"`
+	UpdatesTo      []string     `json:"updates_to"`
+	Parameters     []Parameters `json:"parameters"`
+	BindParameters []Parameters `json:"bindParameters"`
 }
 
 // NilableNumber - Number that could be nil (e.g. when omitted from json/yaml)
@@ -87,25 +88,26 @@ type NilableNumber float64
 
 // Parameters - describe the parameters for a plan
 type Parameters struct {
-	Name                string                `json:"name"`
-	Title               string                `json:"title"`
-	Type                string                `json:"type"`
-	Description         string                `json:"description"`
-	Default             *runtime.RawExtension `json:"default"`
-	DeprecatedMaxLength int                   `json:"deprecatedMaxLength"`
-	MaxLength           int                   `json:"maxLength"`
-	MinLength           int                   `json:"minLength,omitempty" yaml:"min_length,omitempty"`
-	Pattern             string                `json:"pattern,omitempty"`
-	MultipleOf          float64               `json:"multipleOf,omitempty" yaml:"multiple_of,omitempty"`
-	Maximum             *NilableNumber        `json:"maximum,omitempty"`
-	ExclusiveMaximum    *NilableNumber        `json:"exclusiveMaximum,omitempty" yaml:"exclusive_maximum,omitempty"`
-	Minimum             *NilableNumber        `json:"minimum,omitempty"`
-	ExclusiveMinimum    *NilableNumber        `json:"exclusiveMinimum,omitempty" yaml:"exclusive_minimum,omitempty"`
-	Enum                []string              `json:"enum,omitempty"`
-	Required            bool                  `json:"required"`
-	Updatable           bool                  `json:"updatable"`
-	DisplayType         string                `json:"displayType,omitempty" yaml:"display_type,omitempty"`
-	DisplayGroup        string                `json:"displayGroup,omitempty" yaml:"display_group,omitempty"`
+	Name        string `json:"name"`
+	Title       string `json:"title"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	// Store the default value as a json encoded string
+	Default             string         `json:"default"`
+	DeprecatedMaxLength int            `json:"deprecatedMaxLength"`
+	MaxLength           int            `json:"maxLength"`
+	MinLength           int            `json:"minLength,omitempty" yaml:"min_length,omitempty"`
+	Pattern             string         `json:"pattern,omitempty"`
+	MultipleOf          float64        `json:"multipleOf,omitempty" yaml:"multiple_of,omitempty"`
+	Maximum             *NilableNumber `json:"maximum,omitempty"`
+	ExclusiveMaximum    *NilableNumber `json:"exclusiveMaximum,omitempty" yaml:"exclusive_maximum,omitempty"`
+	Minimum             *NilableNumber `json:"minimum,omitempty"`
+	ExclusiveMinimum    *NilableNumber `json:"exclusiveMinimum,omitempty" yaml:"exclusive_minimum,omitempty"`
+	Enum                []string       `json:"enum,omitempty"`
+	Required            bool           `json:"required"`
+	Updatable           bool           `json:"updatable"`
+	DisplayType         string         `json:"displayType,omitempty" yaml:"display_type,omitempty"`
+	DisplayGroup        string         `json:"displayGroup,omitempty" yaml:"display_group,omitempty"`
 }
 
 // +genclient
@@ -190,9 +192,10 @@ type ServiceBindingList struct {
 
 // ServiceBindingSpec  is a service binding.
 type ServiceBindingSpec struct {
-	ServiceInstanceID string                `json:"serviceInstanceID"`
-	Parameters        *runtime.RawExtension `json:"parameters"`
-	JobToken          string                `json:"jobToken"`
+	ServiceInstanceID string `json:"serviceInstanceID"`
+	// Store the parameters as a json encoded string.
+	Parameters string `json:"parameters"`
+	JobToken   string `json:"jobToken"`
 }
 
 // +genclient
@@ -219,10 +222,11 @@ type ServiceInstanceList struct {
 
 // ServiceInstanceSpec  is a service instance.
 type ServiceInstanceSpec struct {
-	BundleID   string                `json:"bundleID"`
-	Context    Context               `json:"context"`
-	Parameters *runtime.RawExtension `json:"parameters"`
-	BindingIDs []string              `json:"bindingIDs"`
+	BundleID string  `json:"bundleID"`
+	Context  Context `json:"context"`
+	// Store the parameters as json encoded strings.
+	Parameters string   `json:"parameters"`
+	BindingIDs []string `json:"bindingIDs"`
 }
 
 // Context is the context for the ServiceInstance.

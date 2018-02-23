@@ -1,10 +1,15 @@
 hash: 3899c064e389ad0ffa1d51355ceaa25d2cc00d4ea0c3695bcb8771f2018a9456
-updated: 2018-02-22T15:50:48.091983-05:00
+updated: 2018-02-23T08:32:21.830775-05:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: github.com/automationbroker/broker-client-go
-  version: 4b803ec21d2f4bbd9feab7638224867f74f1736f
+  version: 0f9f969c875af6d45e92fb3a90ef34c21a8efe74
+  subpackages:
+  - client/clientset/versioned/scheme
+  - client/clientset/versioned/typed/automationbroker.io/v1
+  - pkg/apis/automationbroker.io
+  - pkg/apis/automationbroker.io/v1
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
