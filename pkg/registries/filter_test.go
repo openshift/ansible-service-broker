@@ -29,6 +29,7 @@ import (
 
 const testWhitelistFile = "whitelist.yaml"
 const testBlacklistFile = "blacklist.yaml"
+const emptyWhiteListFile = "empty_whitelist.yaml"
 const testBlacklistOverrideFile = "blacklist_override.yaml"
 
 func testGetRegexFromFile(file string) []string {
@@ -103,7 +104,9 @@ func TestOnlyBlacklist(t *testing.T) {
 		blacklist: testGetRegexFromFile(testBlacklistFile)}
 	filter.Init()
 
-	expectedValidNames := []string{
+	expectedValidNames := []string{}
+
+	expectedFilteredNames := []string{
 		"legitimate-postgresql-apb",
 		"legitimate-mediawiki-apb",
 		"foo-apb",
@@ -111,9 +114,6 @@ func TestOnlyBlacklist(t *testing.T) {
 		"rhscl-postgresql-apb",
 		"baz-apb",
 		"foobar-apb",
-	}
-
-	expectedFilteredNames := []string{
 		"totally-not-malicious-apb",
 		"malicious-bar-apb",
 		"specific-blacklist-apb",
@@ -147,6 +147,34 @@ func TestOnlyWhitelist(t *testing.T) {
 		// Not explicitly whitelisted, so should be filtered
 		"baz-apb",
 		"foobar-apb",
+	}
+
+	validNames, filteredNames := filter.Run(testNames())
+
+	expectedTotal := append(expectedValidNames, expectedFilteredNames...)
+	ft.AssertTrue(t, testSetEq(expectedValidNames, validNames))
+	ft.AssertTrue(t, testSetEq(expectedFilteredNames, filteredNames))
+	ft.AssertTrue(t, testSetEq(expectedTotal, testNames()))
+}
+
+func TestEmptyWhitelist(t *testing.T) {
+	filter := Filter{whitelist: testGetRegexFromFile(emptyWhiteListFile),
+		blacklist: []string{}}
+	filter.Init()
+
+	expectedValidNames := []string{}
+
+	expectedFilteredNames := []string{
+		"totally-not-malicious-apb",
+		"malicious-bar-apb",
+		"specific-blacklist-apb",
+		"baz-apb",
+		"foobar-apb",
+		"legitimate-postgresql-apb",
+		"legitimate-mediawiki-apb",
+		"foo-apb",
+		"bar-apb",
+		"rhscl-postgresql-apb",
 	}
 
 	validNames, filteredNames := filter.Run(testNames())

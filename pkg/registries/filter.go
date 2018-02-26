@@ -192,7 +192,11 @@ func applyMatchSets(
 	filteredVals := []string{}
 	totalSet := toMatchSetT(totalList)
 
-	if len(whiteMatchSet) != 0 && len(blackMatchSet) != 0 {
+	if len(whiteMatchSet) == 0 {
+		// If nothing is whitelisted, filter everything
+		filteredVals = totalList
+		totalSet = nil
+	} else if len(blackMatchSet) != 0 && len(whiteMatchSet) != 0 {
 		// Blacklist matches override white
 		for k := range blackMatchSet {
 			if _, ok := blackMatchSet[k]; ok {
