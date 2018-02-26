@@ -40,7 +40,62 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 - [Amazon Web Services deployed into OpenShift via Ansible Service Broker](https://www.youtube.com/watch?v=EKo3khfmhi8&index=2&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
 - [Presentation Open Service Broker API + Ansible Service Broker/Ansible Playbook Bundles](https://www.youtube.com/watch?v=BaPMFZZ5lsc&index=1&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
 
-# Getting Started with the Ansible Service Broker
+# Getting Started on Kubernetes
+
+[Minikube](https://kubernetes.io/docs/getting-started-guides/minikube/) makes
+it easy to get started with Kubernetes. Run the commands below individually or
+as a script to start a minikube VM that includes the service catalog and the
+broker. If you already have a Kubernetes cluster, skip the ``minikube`` command
+and proceed with the remaining ones as applicable.
+
+## Prerequisites:
+
+* [Install](https://kubernetes.io/docs/tasks/tools/install-minikube/) minikube
+  and kubectl. Make sure ``minikube start`` and ``minikube delete`` are
+  working.
+* [Install](https://docs.helm.sh/using_helm/#install-helm) the ``helm`` binary.
+* Clone the broker's [GitHub repository](https://github.com/openshift/ansible-service-broker)
+
+## Install
+
+Run the following from the root of the cloned git repository.
+
+```bash
+#!/bin/env bash
+
+# Adjust the version to your liking. Follow installation docs
+# at https://github.com/kubernetes/minikube.
+minikube start --kubernetes-version v1.9.3
+
+# Install helm and tiller. See documentation for obtaining the helm
+# binary. https://docs.helm.sh/using_helm/#install-helm
+helm init
+
+# Wait until tiller is ready before moving on
+until kubectl get pods -n kube-system -l name=tiller | grep 1/1; do sleep 1; done
+
+kubectl create clusterrolebinding tiller-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+
+# Adds the chart repository for the service catalog
+helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
+
+# Installs the service catalog
+helm install svc-cat/catalog --name catalog --namespace catalog
+
+# Wait until the catalog is ready before moving on
+until kubectl get pods -n catalog -l app=catalog-catalog-apiserver | grep 2/2; do sleep 1; done
+until kubectl get pods -n catalog -l app=catalog-catalog-controller-manager | grep 1/1; do sleep 1; done
+
+./scripts/run_latest_k8s_build.sh
+```
+
+## Use
+
+Once everything is installed, you can interact with the service catalog using
+the ``svcat`` command. Learn how to install and use it
+[here](https://github.com/kubernetes-incubator/service-catalog/tree/master/cmd/svcat).
+
+# Getting Started on OpenShift
 
 There are a few different ways to quickly get up and running with a cluster + ansible-service-broker:
 
