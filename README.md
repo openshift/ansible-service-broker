@@ -100,7 +100,9 @@ the ``svcat`` command. Learn how to install and use it
 There are a few different ways to quickly get up and running with a cluster + ansible-service-broker:
 
 * `oc cluster up`
-* Alternatively, [you can use minishift and install the broker with our addon, documented here](https://github.com/minishift/minishift-addons/blob/master/add-ons/ansible-service-broker/README.md).
+* Alternatively, [you can use minishift and install the broker with our addon, documented here](https://github.com/eriknelson/minishift-addons/tree/asb-updates/add-ons/ansible-service-broker).
+NOTE: The current ansible-service-broker addon in github.com/minishift/minishift-addons is **broken**. There is a [PR against minishift/minishift-addons](https://github.com/minishift/minishift-addons/pull/76)
+to fix this, so until it is merged, please use the `asb-updates` branch from [eriknelson/minishift-addons](https://github.com/eriknelson/minishift-addons/tree/asb-updates).
 
 Let's walk through an `oc cluster up` based setup.
 
