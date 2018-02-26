@@ -3,13 +3,6 @@
 This is not quite the same as a fan-in / fan-out out pattern but not a
 million miles away either.
 
-## Terminology
-
-**Observer:** suggestion to change the name from subscriber to observer
-as I think it more clearly conveys what they will be doing.
-For this doc, I will continue to call them subscribers to avoid
-confusion.
-
 ## Problem Description
 
 Our current subscriber pattern has some issues that have been outlined in the following
@@ -47,9 +40,9 @@ that removes the outlined problems and improves the overall design of the broker
 
 ## Subscriber design principal
 
-This proposal outlines changes to the subscribers and allowing
-the addition of more subscribers allowing them all to act on the same message.
-The order these subscribers are called in should not matter, their work
+This proposal outlines changes to the subscribers and for allowing
+the addition of more subscribers. Each of these subscribers will act on the same message.
+It is vital that the order these subscribers are called in should not matter, their work
 should be independent of any other subscribers work.
 
 ## Proposal
@@ -59,18 +52,21 @@ should be independent of any other subscribers work.
 
 Currently, the subscribers implement the WorkSubscriber interface, we
 would change this interface and the current subscribers.
-Rather than passing the channel into the subscriber, we would rename and
+Rather than passing the channel into the subscriber, we would
 change this interface to accept a ```JobMsg```, value not a pointer to stop
-unexpected mutation, and return an error.
+unexpected mutation.
 The current subscribers would handle state persistence and would be
 renamed to reflect their role.
  
 ```go
 #Note I call it observer here see terminology
-type WorkObserver interface{
-   Notify(msg JobMsg)error
+type WorkSubscriber interface{
+   Notify(msg JobMsg)
 }
 ```
+
+It is intended that each subscriber would handle any errors that occurred internally
+either with logic or simply by logging the error in a clear fashion.
 
 
 #### Change how subscribers are referenced
@@ -87,7 +83,7 @@ type WorkEngine struct {
 
 ```
 
-
+When a new subscriber is added, it would be added to the slice associated with a topic.
 
 ### Channel changes
 There a couple of options available as the goal here is to avoid
@@ -144,12 +140,17 @@ above and close them down once a message was received.
 
 Remove the single channel per topic and replace it with a channel per
 job. The work engine would be updated to create a channel per Job
-when starting a new job. The work engine would be responsible for
-the lifecycle of these channels. As above, the subscribers would be
-registered in a map and called in a non-blocking way when a message was received.
-While more complex, this method would allow us to leverage more control
-(use a buffer to control how much could be sent while still
-not impacting on any other Jobs that running).
+when starting a new job. It would store active channels in a map where
+the key would be the job token.  The work engine would be responsible for
+the lifecycle of these channels. It would ensure they were started, stopped 
+and resources cleaned up. 
+
+As above, the subscribers would be registered in a map and called in a non-blocking way when a message was received.
+While more complex, this method would allow us to leverage more control in the future.
+For example adding a [WaitGroup](https://golang.org/pkg/sync/#WaitGroup) could allow us to limit how much 
+parallel work we do per job. This would allow us to have some control over a "noisey" job that created many messages
+while still allowing all of the subscribers to act on the message asynchronously 
+(note this may not be needed and may be early optimisation right now and so should be seen as an example).
 
 Sudo Code:
 
@@ -158,20 +159,24 @@ Sudo Code:
 StartNewJob(token string, work Work, topic WorkTopic){
   a.jobs[token] = make(chan JobMsg)
   go func(){
+      //optional used as an example to show limiting the work while still acting on the message async
+      wait := &sync.WaitGroup{}
       //make sure we always close the channel  
       defer close(e.jobs[token])
-      // start reading from the channel 
+      // read messages sent to the channel 
       go func(){
       // will auto stop once the channel is closed
         for msg := range a.jobs[token]{
+            wait.Add(len(a.subscribers[topic]))
             for _, s := range a.subscribers[topic]{
                // Note we could choose to run these sync but again if there was a slow
                // subscriber it would block receiving on the channel.
-               go s(msg)
+               go s(msg,wait)
             }
+            wait.Wait()
         } 
       }()
-      // should block until done.
+      // Start the actual job and block until done.
       work.Run()
   }()
 }
