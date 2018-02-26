@@ -3,7 +3,7 @@ package clients
 import (
 	"errors"
 
-	clientset "gopkg.in/automationbroker/broker-client-go.v1/client/clientset/versioned"
+	clientset "github.com/automationbroker/broker-client-go/client/clientset/versioned"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/homedir"
 )

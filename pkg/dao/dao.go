@@ -18,6 +18,8 @@ package dao
 
 import (
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/config"
+	crd "github.com/openshift/ansible-service-broker/pkg/dao/crd"
 	etcd "github.com/openshift/ansible-service-broker/pkg/dao/etcd"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 )
@@ -25,8 +27,12 @@ import (
 var log = logutil.NewLog()
 
 // NewDao - Create a new Dao object
-func NewDao() (Dao, error) {
+func NewDao(c *config.Config) (Dao, error) {
+	if c.GetString("dao.type") == "crd" {
+		return crd.NewDao(c.GetString("openshift.namespace"))
+	}
 	return etcd.NewDao()
+
 }
 
 // Dao - object to interface with the data store.

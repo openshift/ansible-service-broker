@@ -193,7 +193,7 @@ func CreateApp() App {
 	}
 
 	log.Debug("Connecting Dao")
-	app.dao, err = dao.NewDao()
+	app.dao, err = dao.NewDao(app.config)
 	if err != nil {
 		log.Error(err.Error())
 		os.Exit(1)
@@ -390,26 +390,29 @@ func initClients(c *config.Config) error {
 	// method on the app. Forces developers at authorship time to think about
 	// dependencies / make sure things are ready.
 	log.Notice("Initializing clients...")
-	log.Debug("Trying to connect to etcd")
 
-	// Intialize the etcd configuration
-	clients.InitEtcdConfig(c)
-	etcdClient, err := clients.Etcd()
-	if err != nil {
-		return err
+	if strings.ToLower(c.GetString("dao.type")) != "crd" {
+
+		log.Debug("Trying to connect to etcd")
+		// Intialize the etcd configuration
+		clients.InitEtcdConfig(c)
+		etcdClient, err := clients.Etcd()
+		if err != nil {
+			return err
+		}
+
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		defer cancelFunc()
+
+		version, err := etcdClient.GetVersion(ctx)
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Etcd Version [Server: %s, Cluster: %s]", version.Server, version.Cluster)
 	}
 
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
-
-	version, err := etcdClient.GetVersion(ctx)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Etcd Version [Server: %s, Cluster: %s]", version.Server, version.Cluster)
-
-	_, err = clients.Kubernetes()
+	_, err := clients.Kubernetes()
 	if err != nil {
 		return err
 	}
