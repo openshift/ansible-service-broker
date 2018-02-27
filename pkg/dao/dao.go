@@ -87,4 +87,7 @@ type Dao interface {
 
 	// GetStateByKey - Retrieve a job state from the kvp API for a job key
 	GetStateByKey(key string) (apb.JobState, error)
+
+	// IsNotFoundError - Will determine if the error is a not found error from the DAO implementation.
+	IsNotFoundError(err error) bool
 }

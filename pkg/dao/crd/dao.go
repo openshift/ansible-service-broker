@@ -25,6 +25,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/clients"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -179,7 +180,6 @@ func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
 	log.Debugf("get binidng instance: %v", id)
 	bi, err := d.client.ServiceBindings(d.namespace).Get(id, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("unable to get bind instance.")
 		return nil, err
 	}
 	return convertServiceBindingToAPB(bi.Spec, bi.GetName()), nil
@@ -217,6 +217,7 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	j := convertJobStateToCRD(&state)
 	if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
 		js.Spec = j
+		js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", convertStateToCRD(state.State))
 		_, err := d.client.JobStates(d.namespace).Update(js)
 		if err != nil {
 			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
@@ -297,4 +298,9 @@ func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState,
 		jss = append(jss, *convertJobStateToAPB(js.Spec, js.GetName()))
 	}
 	return jss, nil
+}
+
+// IsNotFoundError - Will determine if the error is an apimachinary IsNotFound error.
+func (d *Dao) IsNotFoundError(err error) bool {
+	return apierrors.IsNotFound(err)
 }
