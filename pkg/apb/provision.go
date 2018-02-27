@@ -33,12 +33,15 @@ func (e *executor) Provision(instance *ServiceInstance) <-chan StatusMessage {
 
 	go func() {
 		e.provisionOrUpdate(executionMethodProvision, instance)
-		labels := map[string]string{"apbAction": string(executionMethodProvision), "apbName": instance.Spec.FQName}
-		err := runtime.Provider.CreateExtractedCredential(instance.ID.String(), clusterConfig.Namespace, e.extractedCredentials.Credentials, labels)
-		if err != nil {
-			log.Errorf("apb::%v error occurred - %v", executionMethodProvision, err)
-			e.actionFinishedWithError(err)
-			return
+		// Provision can not have extracted credentials.
+		if e.extractedCredentials != nil {
+			labels := map[string]string{"apbAction": string(executionMethodProvision), "apbName": instance.Spec.FQName}
+			err := runtime.Provider.CreateExtractedCredential(instance.ID.String(), clusterConfig.Namespace, e.extractedCredentials.Credentials, labels)
+			if err != nil {
+				log.Errorf("apb::%v error occurred - %v", executionMethodProvision, err)
+				e.actionFinishedWithError(err)
+				return
+			}
 		}
 		e.actionFinishedWithSuccess()
 	}()
