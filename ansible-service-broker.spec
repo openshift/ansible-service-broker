@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.14
+Version: 1.1.15
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Feb 27 2018 David Zager <david.j.zager@gmail.com> 1.1.15-1
+- Bug 1548311 - Mark depro extcred misses success (#790) (ernelson@redhat.com)
+- Filter everything when whitelist is empty (#793) (rhallise@redhat.com)
+- Lock asb-brew releaser to 3.9 branch (#786) (david.j.zager@gmail.com)
+
 * Thu Feb 22 2018 David Zager <david.j.zager@gmail.com> 1.1.14-1
 - Bug 1539542 - return bindings_retrievable (#774) (jmrodri@gmail.com)
 
