@@ -61,7 +61,7 @@ type BundleSpec struct {
 	FQName      string    `json:"fq_name"`
 	Image       string    `json:"image"`
 	Description string    `json:"description"`
-	Tags        []string  `json:"tags"`
+	Tags        []string  `json:"tags,omitempty"`
 	Bindable    bool      `json:"bindable"`
 	Async       AsyncType `json:"async"`
 	// Store the metadata as a json encoded string to preserve the genericness
@@ -78,9 +78,9 @@ type Plan struct {
 	Metadata       string       `json:"metadata"`
 	Free           bool         `json:"free"`
 	Bindable       bool         `json:"bindable"`
-	UpdatesTo      []string     `json:"updates_to"`
-	Parameters     []Parameters `json:"parameters"`
-	BindParameters []Parameters `json:"bindParameters"`
+	UpdatesTo      []string     `json:"updates_to,omitempty"`
+	Parameters     []Parameters `json:"parameters,omitempty"`
+	BindParameters []Parameters `json:"bindParameters,omitempty"`
 }
 
 // NilableNumber - Number that could be nil (e.g. when omitted from json/yaml)
@@ -140,9 +140,9 @@ type JobMethod string
 
 const (
 	//StateNotYetStarted - has not yet started state
-	StateNotYetStarted State = "not yet started"
+	StateNotYetStarted State = "not-started"
 	// StateInProgress - APB is in progress state
-	StateInProgress State = "in progress"
+	StateInProgress State = "in-progress"
 	// StateSucceeded - Succeeded state
 	StateSucceeded State = "succeeded"
 	// StateFailed - Failed state
@@ -161,11 +161,11 @@ const (
 
 // JobStateSpec describes the job state for an async job
 type JobStateSpec struct {
-	State       State
-	PodName     string
-	Method      JobMethod
-	Error       string
-	Description string
+	State       State     `json:"state"`
+	PodName     string    `json:"podName"`
+	Method      JobMethod `json:"method"`
+	Error       string    `json:"error"`
+	Description string    `json:"description"`
 }
 
 // +genclient

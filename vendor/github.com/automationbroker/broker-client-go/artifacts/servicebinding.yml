@@ -16,7 +16,7 @@ spec:
       serviceInstanceId:
         type: string
       parameters:
-        type: object
+        type: string
       JobToken:
         type: string
 

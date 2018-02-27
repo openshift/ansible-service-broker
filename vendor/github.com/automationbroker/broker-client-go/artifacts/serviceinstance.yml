@@ -26,7 +26,7 @@ spec:
                 namespace:
                   type: string
             parameters:
-              type: object
+              type: string
             bindingIds:
               type: array
               items:
