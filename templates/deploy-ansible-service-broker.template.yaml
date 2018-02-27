@@ -93,6 +93,10 @@ objects:
     attributeRestrictions: null
     resources: ["networkpolicies"]
     verbs: ["create", "delete"]
+  - apiGroups: ["automationbroker.io"]
+    attributeRestrictions: null
+    resources: ["bundles", "jobstates", "servicebindings", "serviceinstances"]
+    verbs: ["*"]
 
 - apiVersion: rbac.authorization.k8s.io/v1beta1
   kind: ClusterRoleBinding
@@ -316,6 +320,7 @@ objects:
           white_list:
             - ".*-apb$"
       dao:
+        type: "crd"
         etcd_host: asb-etcd.${NAMESPACE}.svc
         etcd_port: 2379
         etcd_ca_file: ${BROKER_ETCD_TRUSTED_CA}
@@ -441,7 +446,7 @@ objects:
               description:
                 type: string
               metadata:
-                type: object
+                type: string
               async:
                 type: string
                 pattern: '^(optional|required|unsupported)$'
@@ -458,7 +463,7 @@ objects:
                     description:
                       type: string
                     metadata:
-                      type: object
+                      type: string
                     free:
                       type: boolean
                     bindable:
@@ -481,7 +486,7 @@ objects:
                           description:
                             type: string
                           default:
-                            type: object
+                            type: string
                           deprecateMaxLength:
                             type: integer
                           maxLength:
@@ -513,7 +518,7 @@ objects:
                           displayGroup:
                             type: string
                     bindParameters:
-                      type: object
+                      type: array
                       properties:
                         name:
                           type: string
@@ -524,7 +529,7 @@ objects:
                         description:
                           type: string
                         default:
-                          type: object
+                          type: string
                         deprecateMaxLength:
                           type: integer
                         maxLength:
@@ -601,7 +606,7 @@ objects:
         serviceInstanceId:
           type: string
         parameters:
-          type: object
+          type: string
         JobToken:
           type: string
 
@@ -633,7 +638,7 @@ objects:
                   namespace:
                     type: string
               parameters:
-                type: object
+                type: string
               bindingIds:
                 type: array
                 items:

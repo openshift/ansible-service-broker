@@ -346,7 +346,7 @@ func convertParametersToAPB(param v1.Parameters) apb.ParameterDescriptor {
 }
 
 func convertServiceInstanceToAPB(si v1.ServiceInstanceSpec, spec *apb.Spec, id string) *apb.ServiceInstance {
-	var parameters *apb.Parameters
+	parameters := &apb.Parameters{}
 	if si.Parameters != "" {
 		err := json.Unmarshal([]byte(si.Parameters), parameters)
 		if err != nil {
@@ -372,7 +372,7 @@ func convertServiceInstanceToAPB(si v1.ServiceInstanceSpec, spec *apb.Spec, id s
 }
 
 func convertServiceBindingToAPB(bi v1.ServiceBindingSpec, id string) *apb.BindInstance {
-	var parameters *apb.Parameters
+	parameters := &apb.Parameters{}
 	if bi.Parameters != "" {
 		err := json.Unmarshal([]byte(bi.Parameters), parameters)
 		if err != nil {

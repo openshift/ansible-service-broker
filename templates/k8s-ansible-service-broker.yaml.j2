@@ -360,7 +360,7 @@ spec:
             description:
               type: string
             metadata:
-              type: object
+              type: string
             async:
               type: string
               pattern: '^(optional|required|unsupported)$'
@@ -377,7 +377,7 @@ spec:
                   description:
                     type: string
                   metadata:
-                    type: object
+                    type: string
                   free:
                     type: boolean
                   bindable:
@@ -400,7 +400,7 @@ spec:
                         description:
                           type: string
                         default:
-                          type: object
+                          type: string
                         deprecateMaxLength:
                           type: integer
                         maxLength:
@@ -523,7 +523,7 @@ spec:
       serviceInstanceId:
         type: string
       parameters:
-        type: object
+        type: string
       JobToken:
         type: string
 
@@ -556,7 +556,7 @@ spec:
                 namespace:
                   type: string
             parameters:
-              type: object
+              type: string
             bindingIds:
               type: array
               items:

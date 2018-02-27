@@ -32,7 +32,8 @@ var log = logutil.NewLog()
 
 const (
 	// instanceLabel for the job state to track which instance created it.
-	instanceLabel string = "instanceId"
+	jobStateInstanceLabel string = "instanceId"
+	jobStateLabel         string = "state"
 )
 
 // Dao - object to interface with the data store.
@@ -43,7 +44,7 @@ type Dao struct {
 
 // NewDao - Create a new Dao object
 func NewDao(namespace string) (*Dao, error) {
-	dao := Dao{}
+	dao := Dao{namespace: namespace}
 
 	crdClient, err := clients.CRDClient()
 	if err != nil {
@@ -141,6 +142,16 @@ func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
 	log.Debugf("set service instance: %v", id)
 	spec := convertServiceInstanceToCRD(serviceInstance)
+	if si, err := d.client.ServiceInstances(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
+		log.Debugf("updateing service instance: %v", id)
+		si.Spec = spec
+		_, err := d.client.ServiceInstances(d.namespace).Update(si)
+		if err != nil {
+			log.Errorf("unable to update service instance - %v", err)
+			return err
+		}
+		return nil
+	}
 	s := v1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
@@ -148,6 +159,7 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 		},
 		Spec: spec,
 	}
+
 	_, err := d.client.ServiceInstances(d.namespace).Create(&s)
 	if err != nil {
 		log.Errorf("unable to save service instance - %v", err)
@@ -203,11 +215,23 @@ func (d *Dao) DeleteBindInstance(id string) error {
 func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	log.Debugf("set job state for instance: %v token: %v", instanceID, state.Token)
 	j := convertJobStateToCRD(&state)
+	if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
+		js.Spec = j
+		_, err := d.client.JobStates(d.namespace).Update(js)
+		if err != nil {
+			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+			return state.Token, err
+		}
+		return state.Token, nil
+	}
+
 	js := v1.JobState{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      state.Token,
 			Namespace: d.namespace,
-			Labels:    map[string]string{instanceLabel: instanceID},
+			Labels: map[string]string{jobStateInstanceLabel: instanceID,
+				jobStateLabel: fmt.Sprintf("%v", convertStateToCRD(state.State)),
+			},
 		},
 		Spec: j,
 	}
@@ -240,7 +264,7 @@ func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
 func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
 	log.Debugf("Dao::FindJobStateByState -> [%v]", state)
 	jobStates, err := d.client.JobStates(d.namespace).List(metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("state=%v", state),
+		LabelSelector: fmt.Sprintf("state=%v", convertStateToCRD(state)),
 	})
 	if err != nil {
 		log.Errorf("unable to get job states for the state: %v - %v", state, err)
@@ -250,7 +274,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	rs := []apb.RecoverStatus{}
 	for _, js := range jobStates.Items {
 		rs = append(rs, apb.RecoverStatus{
-			InstanceID: uuid.Parse(js.GetLabels()[instanceLabel]),
+			InstanceID: uuid.Parse(js.GetLabels()[jobStateInstanceLabel]),
 			State:      *convertJobStateToAPB(js.Spec, js.GetName()),
 		})
 	}
@@ -261,8 +285,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState, error) {
 	log.Debugf("Dao::FindJobStateByState -> [%v]", state)
 	jobStates, err := d.client.JobStates(d.namespace).List(metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("state=%v", state),
-		LabelSelector: fmt.Sprintf("%v=%v", instanceLabel, ID),
+		LabelSelector: fmt.Sprintf("%v=%v,%v=%v", jobStateInstanceLabel, ID, jobStateLabel, convertStateToCRD(state)),
 	})
 	if err != nil {
 		log.Errorf("unable to get job states for the state: %v - %v", state, err)
