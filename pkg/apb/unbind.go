@@ -73,9 +73,7 @@ func (e *executor) Unbind(
 		// Delete the binding extracted credential here.
 		err = runtime.Provider.DeleteExtractedCredential(bindingID, clusterConfig.Namespace)
 		if err != nil {
-			log.Errorf("Unbind failed to delete extracted credential - %v", err)
-			e.actionFinishedWithError(err)
-			return
+			log.Infof("Unbind failed to delete extracted credential m- %v", err)
 		}
 
 		e.actionFinishedWithSuccess()
