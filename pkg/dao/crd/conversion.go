@@ -361,6 +361,7 @@ func convertServiceInstanceToAPB(si v1.ServiceInstanceSpec, spec *apb.Spec, id s
 	}
 
 	return &apb.ServiceInstance{
+		ID:   uuid.Parse(id),
 		Spec: spec,
 		Context: &apb.Context{
 			Namespace: si.Context.Namespace,

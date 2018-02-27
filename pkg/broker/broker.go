@@ -606,10 +606,14 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// if err is not nil, we will just bubble that up
 
 	if si, err := a.dao.GetServiceInstance(instanceUUID.String()); err == nil {
+		log.Infof("Here - %v", si.ID.String())
+		log.Infof("Here - %v", serviceInstance.ID.String())
 		// This will use the package to make sure that if the type is changed
 		// away from []byte it can still be evaluated.
 		if uuid.Equal(si.ID, serviceInstance.ID) {
+			log.Infof("Here - %v", serviceInstance)
 			if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
+				log.Infof("Here - %v reflect deep equals", serviceInstance)
 				alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance, apb.JobMethodProvision)
 				if err != nil {
 					return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
@@ -625,6 +629,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			return nil, ErrorDuplicate
 		}
 	}
+	log.Infof("Here not found service instance. - %v", serviceInstance)
 
 	//
 	// Looks like this is a new provision, let's get started.
@@ -730,6 +735,7 @@ func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance,
 	method apb.JobMethod) (bool, string, error) {
 
 	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
+	log.Infof("All Jobs for instance: %v in state:  %v - \n%#v", instance.ID, apb.StateInProgress, allJobs)
 	if err != nil {
 		return false, "", err
 	}
