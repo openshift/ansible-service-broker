@@ -21,7 +21,6 @@
 package broker
 
 import (
-	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 
@@ -42,12 +41,6 @@ func (b *BindingWorkSubscriber) Subscribe(msgBuffer <-chan JobMsg) {
 		log.Info("Listening for binding messages")
 		for msg := range msgBuffer {
 			log.Debug("Processed binding message from buffer")
-			if msg.State.State == apb.StateSucceeded {
-				log.Debug("CALL SetExtractedCredentials $v - %v", msg.BindingUUID, msg.ExtractedCredentials)
-				if err := b.dao.SetExtractedCredentials(msg.BindingUUID, &msg.ExtractedCredentials); err != nil {
-					log.Errorf("failed to set extracted credentials after bind %v", err)
-				}
-			}
 			if _, err := b.dao.SetState(msg.InstanceUUID, msg.State); err != nil {
 				log.Errorf("failed to set state after provision %v", err)
 			}

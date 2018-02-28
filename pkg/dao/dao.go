@@ -73,15 +73,6 @@ type Dao interface {
 	// DeleteBindInstance - Delete the binding instance for an id in the kvp API.
 	DeleteBindInstance(string) error
 
-	// GetExtractedCredentials - Get the extracted credentials for an id in the kvp API.
-	GetExtractedCredentials(string) (*apb.ExtractedCredentials, error)
-
-	// SetExtractedCredentials - Set the extracted credentials for an id in the kvp API.
-	SetExtractedCredentials(string, *apb.ExtractedCredentials) error
-
-	// DeleteExtractedCredentials - delete the extracted credentials for an id in the kvp API.
-	DeleteExtractedCredentials(string) error
-
 	// SetState - Set the Job State in the kvp API for id.
 	SetState(string, apb.JobState) (string, error)
 

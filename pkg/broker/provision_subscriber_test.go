@@ -52,20 +52,6 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 			},
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
-				dao.AssertOn["SetExtractedCredentials"] = func(args ...interface{}) error {
-					cred := args[1]
-					if nil == cred {
-						return fmt.Errorf("expected credentials to passed")
-					}
-					creds := cred.(*apb.ExtractedCredentials)
-					if _, ok := creds.Credentials["user"]; !ok {
-						return fmt.Errorf("expected there to be a user field in the credentials")
-					}
-					if _, ok := creds.Credentials["pass"]; !ok {
-						return fmt.Errorf("expected there to be a pass field in the credentials")
-					}
-					return nil
-				}
 				dao.AssertOn["SetState"] = func(args ...interface{}) error {
 					state := args[1].(apb.JobState)
 					if state.Method != apb.JobMethodProvision {
@@ -78,8 +64,7 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 
 				}
 				expectedCalls := map[string]int{
-					"SetExtractedCredentials": 1,
-					"SetState":                1,
+					"SetState": 1,
 				}
 				return dao, expectedCalls
 			},
@@ -106,8 +91,7 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 					return nil
 				}
 				expectedCalls := map[string]int{
-					"SetExtractedCredentials": 0,
-					"SetState":                1,
+					"SetState": 1,
 				}
 				return dao, expectedCalls
 			},
@@ -133,8 +117,7 @@ func TestProvisionWorkSubscriber_Subscribe(t *testing.T) {
 					return nil
 				}
 				expectedCalls := map[string]int{
-					"SetExtractedCredentials": 0,
-					"SetState":                1,
+					"SetState": 1,
 				}
 				return dao, expectedCalls
 			},

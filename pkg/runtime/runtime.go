@@ -45,11 +45,13 @@ type Runtime interface {
 	DestroySandbox(string, string, []string, string, bool, bool)
 	AddPostCreateSandbox(f PostSandboxCreate)
 	AddPostDestroySandbox(f PostSandboxDestroy)
+	ExtractedCredential
 }
 
 // Variables for interacting with runtimes
 type provider struct {
 	coe
+	ExtractedCredential
 	postSandboxCreate  []PostSandboxCreate
 	postSandboxDestroy []PostSandboxDestroy
 }
@@ -65,7 +67,11 @@ type openshift struct{}
 type kubernetes struct{}
 
 // NewRuntime - Initialize provider variable
-func NewRuntime() {
+// extCreds - You can pass an ExtractedCredential conforming object this will
+// be used to do CRUD operations. If you want to use the default pass nil
+// and we will use the built-in default of saving them as secrets in the
+// broker namespace.
+func NewRuntime(extCreds ExtractedCredential) {
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		log.Error(err.Error())
@@ -94,7 +100,14 @@ func NewRuntime() {
 		panic(err.Error())
 	}
 
-	Provider = &provider{coe: cluster}
+	var c ExtractedCredential
+	if extCreds == nil {
+		c = defaultExtractedCredential{}
+	} else {
+		c = extCreds
+	}
+
+	Provider = &provider{coe: cluster, ExtractedCredential: c}
 	if ok, postCreateHook, postDestroyHook := cluster.shouldJoinNetworks(); ok {
 		log.Debugf("adding posthook to provider now.")
 		if postCreateHook != nil {
@@ -104,6 +117,7 @@ func NewRuntime() {
 			Provider.AddPostDestroySandbox(postDestroyHook)
 		}
 	}
+
 }
 
 func newOpenshift() coe {

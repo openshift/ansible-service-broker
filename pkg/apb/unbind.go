@@ -26,7 +26,7 @@ import (
 
 // Unbind - runs the abp with the unbind action.
 func (e *executor) Unbind(
-	instance *ServiceInstance, parameters *Parameters,
+	instance *ServiceInstance, parameters *Parameters, bindingID string,
 ) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                       UNBINDING                            ")
@@ -69,6 +69,11 @@ func (e *executor) Unbind(
 			log.Errorf("Unbind action failed - %v", err)
 			e.actionFinishedWithError(err)
 			return
+		}
+		// Delete the binding extracted credential here.
+		err = runtime.Provider.DeleteExtractedCredential(bindingID, clusterConfig.Namespace)
+		if err != nil {
+			log.Infof("Unbind failed to delete extracted credential m- %v", err)
 		}
 
 		e.actionFinishedWithSuccess()

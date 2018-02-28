@@ -17,9 +17,11 @@
 package clients
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -28,6 +30,15 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	credentialsKey = "credentials"
+)
+
+var (
+	// ErrCredentialsNotFound - Will be the return if extracted credentials can not be found
+	ErrCredentialsNotFound = errors.New("credentials not found")
 )
 
 // KubernetesClient - Client to interact with Kubernetes API
@@ -62,6 +73,95 @@ func (k KubernetesClient) GetSecretData(secretName, namespace string) (map[strin
 	log.Debugf("Found secret with name %v\n", secretName)
 
 	return secretData.Data, nil
+}
+
+// SaveExtractedCredentialSecret - Save the extCreds as a secret
+func (k KubernetesClient) SaveExtractedCredentialSecret(instanceID, ns string,
+	extCreds map[string]interface{}, labels map[string]string) error {
+
+	b, err := json.Marshal(extCreds)
+	if err != nil {
+		log.Errorf("Unable to marshal credentials - %v", err)
+		return err
+	}
+
+	data := map[string][]byte{credentialsKey: b}
+	s := &apiv1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   instanceID,
+			Labels: labels,
+		},
+		Data: data,
+	}
+	_, err = k.Client.CoreV1().Secrets(ns).Create(s)
+	if err != nil {
+		log.Errorf("Unable to create secret '%v' into namespace '%v'", instanceID, ns)
+		return err
+	}
+	return nil
+}
+
+// UpdateExtractedCredentialSecret - Updates the extCreds in a secret
+func (k KubernetesClient) UpdateExtractedCredentialSecret(instanceID, ns string,
+	extCreds map[string]interface{}, labels map[string]string) error {
+
+	b, err := json.Marshal(extCreds)
+	if err != nil {
+		log.Errorf("Unable to marshal credentials - %v", err)
+		return err
+	}
+
+	data := map[string][]byte{credentialsKey: b}
+	s := &apiv1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   instanceID,
+			Labels: labels,
+		},
+		Data: data,
+	}
+	_, err = k.Client.CoreV1().Secrets(ns).Update(s)
+	if err != nil {
+		log.Errorf("Unable to create secret '%v' into namespace '%v'", instanceID, ns)
+		return err
+	}
+	return nil
+}
+
+// GetExtractedCredentialSecretData - Get extracted credentials secret data
+func (k KubernetesClient) GetExtractedCredentialSecretData(instanceID, ns string) (map[string]interface{}, error) {
+	data, err := GetSecretData(instanceID, ns)
+	if err != nil {
+		log.Errorf("unable to get secret data for %v, in namespace: %v", instanceID, ns)
+		switch {
+		case k8serrors.IsNotFound(err):
+			return nil, ErrCredentialsNotFound
+		default:
+			return nil, err
+		}
+	}
+	var b []byte
+	var ok bool
+	if b, ok = data[credentialsKey]; !ok {
+		log.Errorf("Unable to find credentials in the secret data name: %v, in namespace: %v", instanceID, ns)
+		return nil, ErrCredentialsNotFound
+	}
+	creds := map[string]interface{}{}
+	err = json.Unmarshal(b, &creds)
+	if err != nil {
+		log.Errorf("unable to get secret data for %v, in namespace: %v", instanceID, ns)
+		return nil, err
+	}
+	return creds, nil
+}
+
+// DeleteExtractedCredentialSecret - delete extracted credentials secret
+func (k KubernetesClient) DeleteExtractedCredentialSecret(instanceID, ns string) error {
+	err := k.Client.CoreV1().Secrets(ns).Delete(instanceID, &metav1.DeleteOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		log.Errorf("Unable to create secret '%v' into namespace '%v'", instanceID, ns)
+		return err
+	}
+	return nil
 }
 
 // GetPodStatus - Returns the current status of a pod in a specified namespace

@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/openshift/ansible-service-broker/pkg/runtime"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -39,6 +40,11 @@ const (
 	// need to be moved to runtime. Therefore keeping all of this together
 	// makes sense
 	GatherCredentialsCommand = "broker-bind-creds"
+)
+
+var (
+	// ErrExtractedCredentialsNotFound - Extracted Credentials are not found.
+	ErrExtractedCredentialsNotFound = fmt.Errorf("credentials not found")
 )
 
 type extractCreds func(string, string) (*ExtractedCredentials, error)
@@ -184,4 +190,32 @@ func decodeOutput(output []byte) ([]byte, error) {
 	}
 
 	return decodedjson, nil
+}
+
+// GetExtractedCredentials - Will get the extracted credentials for a caller of the APB package.
+func GetExtractedCredentials(id string) (*ExtractedCredentials, error) {
+	creds, err := runtime.Provider.GetExtractedCredential(id, clusterConfig.Namespace)
+	if err != nil {
+		switch {
+		case err == runtime.ErrCredentialsNotFound:
+			log.Debugf("extracted credential secret not found - %v", id)
+			return nil, ErrExtractedCredentialsNotFound
+		default:
+			log.Errorf("unable to get the extracted credential secret - %v", err)
+			return nil, err
+		}
+	}
+	return &ExtractedCredentials{Credentials: creds}, nil
+}
+
+// DeleteExtractedCredentials - Will delete the extracted credentials for a caller of the APB package.
+// Please use this method with caution.
+func DeleteExtractedCredentials(id string) error {
+	return runtime.Provider.DeleteExtractedCredential(id, clusterConfig.Namespace)
+}
+
+// SetExtractedCredentials - Will set new credentials for an id.
+// Please use this method with caution.
+func SetExtractedCredentials(id string, creds *ExtractedCredentials) error {
+	return runtime.Provider.CreateExtractedCredential(id, clusterConfig.Namespace, creds.Credentials, nil)
 }
