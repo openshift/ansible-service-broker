@@ -320,7 +320,6 @@ objects:
           white_list:
             - ".*-apb$"
       dao:
-        type: "crd"
         etcd_host: asb-etcd.${NAMESPACE}.svc
         etcd_port: 2379
         etcd_ca_file: ${BROKER_ETCD_TRUSTED_CA}
