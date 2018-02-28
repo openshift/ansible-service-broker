@@ -45,7 +45,7 @@ objects:
   kind: ServiceAccount
   metadata:
     name: asb
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
 
 - apiVersion: rbac.authorization.k8s.io/v1beta1
   kind: ClusterRoleBinding
@@ -58,7 +58,7 @@ objects:
   subjects:
   - kind: ServiceAccount
     name: asb
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
 
 - apiVersion: rbac.authorization.k8s.io/v1beta1
   kind: ClusterRole
@@ -101,7 +101,7 @@ objects:
   subjects:
   - kind: ServiceAccount
     name: asb
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
   roleRef:
     kind: ClusterRole
     name: asb-auth
@@ -112,14 +112,14 @@ objects:
   metadata:
     name: access-asb-role
   rules:
-  - nonResourceURLs: ["${BROKER_URL_PREFIX}", "${BROKER_URL_PREFIX}/*"]
+  - nonResourceURLs: ["/${BROKER_URL_PREFIX}", "/${BROKER_URL_PREFIX}/*"]
     verbs: ["get", "post", "put", "patch", "delete"]
 
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
     name: etcd
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
   spec:
     accessModes:
       - ReadWriteOnce
@@ -262,7 +262,7 @@ objects:
   kind: Secret
   metadata:
     name: asb-auth-secret
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
   data:
     username: ${BROKER_USER}
     password: ${BROKER_PASS}
@@ -271,7 +271,7 @@ objects:
   kind: Secret
   metadata:
     name: ${REGISTRY_SECRET_NAME}
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
   data:
     username: ${DOCKERHUB_USER}
     password: ${DOCKERHUB_PASS}
@@ -280,7 +280,7 @@ objects:
   kind: Secret
   metadata:
     name: etcd-auth-secret
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
   data:
     ca.crt: ${ETCD_TRUSTED_CA}
 
@@ -288,7 +288,7 @@ objects:
   kind: Secret
   metadata:
     name: broker-etcd-auth-secret
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
   data:
     client.crt: ${BROKER_CLIENT_CERT}
     client.key: ${BROKER_CLIENT_KEY}
@@ -297,7 +297,7 @@ objects:
   kind: ConfigMap
   metadata:
     name: broker-config
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
     labels:
       app: ansible-service-broker
   data:
@@ -332,7 +332,7 @@ objects:
         bearer_token_file: "${BEARER_TOKEN_FILE}"
         image_pull_policy: "${IMAGE_PULL_POLICY}"
         sandbox_role: "${SANDBOX_ROLE}"
-        namespace: ansible-service-broker
+        namespace: "${NAMESPACE}"
         keep_namespace: ${KEEP_NAMESPACE}
         keep_namespace_on_error: ${KEEP_NAMESPACE_ON_ERROR}
       broker:
@@ -345,6 +345,7 @@ objects:
         ssl_cert_key: /etc/tls/private/tls.key
         ssl_cert: /etc/tls/private/tls.crt
         auto_escalate: ${AUTO_ESCALATE}
+        cluster_url: "${BROKER_URL_PREFIX}"
         auth:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
@@ -353,7 +354,7 @@ objects:
   kind: ServiceAccount
   metadata:
     name: ansibleservicebroker-client
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
 
 - apiVersion: rbac.authorization.k8s.io/v1beta1
   kind: ClusterRoleBinding
@@ -362,7 +363,7 @@ objects:
   subjects:
   - kind: ServiceAccount
     name: ansibleservicebroker-client
-    namespace: ansible-service-broker
+    namespace: "${NAMESPACE}"
   roleRef:
     kind: ClusterRole
     name: access-asb-role
@@ -397,7 +398,7 @@ objects:
   metadata:
     name: ansible-service-broker
   spec:
-    url: https://asb.ansible-service-broker.svc:1338${BROKER_URL_PREFIX}/
+    url: https://asb.${NAMESPACE}.svc:1338/${BROKER_URL_PREFIX}/
     authInfo:
       ${{BROKER_AUTH}}
     caBundle: ${BROKER_CA_CERT}
