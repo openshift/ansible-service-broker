@@ -32,7 +32,13 @@ func (e *executor) Provision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 
 	go func() {
-		e.provisionOrUpdate(executionMethodProvision, instance)
+		e.actionStarted()
+		err := e.provisionOrUpdate(executionMethodProvision, instance)
+		if err != nil {
+			log.Errorf("Provision APB error: %v", err)
+			e.actionFinishedWithError(err)
+			return
+		}
 		// Provision can not have extracted credentials.
 		if e.extractedCredentials != nil {
 			labels := map[string]string{"apbAction": string(executionMethodProvision), "apbName": instance.Spec.FQName}

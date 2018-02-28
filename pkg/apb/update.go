@@ -32,13 +32,21 @@ func (e *executor) Update(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 
 	go func() {
-		e.provisionOrUpdate(executionMethodUpdate, instance)
-		labels := map[string]string{"apbAction": string(executionMethodUpdate), "apbName": instance.Spec.FQName}
-		err := runtime.Provider.UpdateExtractedCredential(instance.ID.String(), clusterConfig.Namespace, e.extractedCredentials.Credentials, labels)
+		e.actionStarted()
+		err := e.provisionOrUpdate(executionMethodUpdate, instance)
 		if err != nil {
-			log.Errorf("apb::%v error occurred - %v", executionMethodUpdate, err)
+			log.Errorf("Update APB error: %v", err)
 			e.actionFinishedWithError(err)
 			return
+		}
+		if e.extractedCredentials != nil {
+			labels := map[string]string{"apbAction": string(executionMethodUpdate), "apbName": instance.Spec.FQName}
+			err := runtime.Provider.UpdateExtractedCredential(instance.ID.String(), clusterConfig.Namespace, e.extractedCredentials.Credentials, labels)
+			if err != nil {
+				log.Errorf("apb::%v error occurred - %v", executionMethodUpdate, err)
+				e.actionFinishedWithError(err)
+				return
+			}
 		}
 		e.actionFinishedWithSuccess()
 	}()
