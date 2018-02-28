@@ -1,0 +1,14 @@
+apiVersion: "automationbroker.io/v1"
+kind: ServiceBinding
+metadata:
+  name: newuidhere
+  namespace: ansible-service-broker
+spec:
+  serviceInstanceId: "serviceIdnewuidhere"
+  jobToken: "12345678-xxx-xxx-rfg343243"
+  parameters:
+    mediawiki_admin_pass: "shawnhurley"
+    mediawiki_admin_user: "admin"
+    mediawiki_db_schema: "mediawiki"
+    mediawiki_site_lang: "en"
+    mediawiki_site_name: "MediaWiki"
