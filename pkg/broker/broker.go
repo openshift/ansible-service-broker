@@ -25,7 +25,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/coreos/etcd/client"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -152,7 +151,7 @@ func NewAnsibleBroker(dao dao.Dao,
 func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceInstance, error) {
 	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
 	if err != nil {
-		if client.IsKeyNotFound(err) {
+		if a.dao.IsNotFoundError(err) {
 			log.Infof("Could not find a service instance in dao - %v", err)
 			return apb.ServiceInstance{}, ErrorNotFound
 		}
@@ -167,7 +166,7 @@ func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceIn
 func (a AnsibleBroker) GetBindInstance(bindUUID uuid.UUID) (apb.BindInstance, error) {
 	instance, err := a.dao.GetBindInstance(bindUUID.String())
 	if err != nil {
-		if client.IsKeyNotFound(err) {
+		if a.dao.IsNotFoundError(err) {
 			return apb.BindInstance{}, ErrorNotFound
 		}
 		return apb.BindInstance{}, err
@@ -316,7 +315,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 	recoverStatuses, err := a.dao.FindJobStateByState(apb.StateInProgress)
 	if err != nil {
 		// no jobs or states to recover, this is OK.
-		if client.IsKeyNotFound(err) {
+		if a.dao.IsNotFoundError(err) {
 			log.Info("No jobs to recover")
 			return "", nil
 		}
@@ -555,7 +554,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	specID := req.ServiceID
 	if spec, err = a.dao.GetSpec(specID); err != nil {
 		// etcd return not found i.e. code 100
-		if client.IsKeyNotFound(err) {
+		if a.dao.IsNotFoundError(err) {
 			return nil, ErrorNotFound
 		}
 		// otherwise unknown error bubble it up
@@ -730,6 +729,7 @@ func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance,
 	method apb.JobMethod) (bool, string, error) {
 
 	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
+	log.Infof("All Jobs for instance: %v in state:  %v - \n%#v", instance.ID, apb.StateInProgress, allJobs)
 	if err != nil {
 		return false, "", err
 	}
@@ -756,7 +756,7 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 
 	bi, err := a.dao.GetBindInstance(bindingUUID.String())
 	if err != nil {
-		if client.IsKeyNotFound(err) {
+		if a.dao.IsNotFoundError(err) {
 			log.Warningf("id: %v - could not find bind instance - %v", bindingUUID, err)
 			return nil, ErrorNotFound
 		}
@@ -856,12 +856,12 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 
 			switch {
 			// unknown error
-			case err != nil && !client.IsKeyNotFound(err):
+			case err != nil && !a.dao.IsNotFoundError(err):
 				return nil, false, err
 			// If there is a job in "succeeded" state, or no job at all, or
 			// the referenced job no longer exists (we assume it got
 			// cleaned up eventually), assume everything is complete.
-			case createJob.State == apb.StateSucceeded, existingBI.CreateJobKey == "", client.IsKeyNotFound(err):
+			case createJob.State == apb.StateSucceeded, existingBI.CreateJobKey == "", a.dao.IsNotFoundError(err):
 				log.Debug("already have this binding instance, returning 200")
 				resp, err := NewBindResponse(provExtCreds, bindExtCreds)
 				if err != nil {
@@ -882,7 +882,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		// parameters are different
 		log.Info("duplicate binding instance diff params, returning 409 conflict")
 		return nil, false, ErrorDuplicate
-	} else if !client.IsKeyNotFound(err) {
+	} else if !a.dao.IsNotFoundError(err) {
 		return nil, false, err
 	}
 
@@ -1175,7 +1175,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	spec, err := a.dao.GetSpec(si.Spec.ID)
 	if err != nil {
 		// etcd return not found i.e. code 100
-		if client.IsKeyNotFound(err) {
+		if a.dao.IsNotFoundError(err) {
 			return nil, ErrorNotFound
 		}
 		// otherwise unknown error bubble it up
@@ -1410,7 +1410,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 // RemoveSpec - remove the spec specified from the catalog/etcd
 func (a AnsibleBroker) RemoveSpec(specID string) error {
 	spec, err := a.dao.GetSpec(specID)
-	if client.IsKeyNotFound(err) {
+	if a.dao.IsNotFoundError(err) {
 		return ErrorNotFound
 	}
 	if err != nil {

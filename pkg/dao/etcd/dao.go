@@ -333,6 +333,11 @@ func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
 	return state, nil
 }
 
+// IsNotFoundError - Will determine if an error is a key is not found error.
+func (d *Dao) IsNotFoundError(err error) bool {
+	return client.IsKeyNotFound(err)
+}
+
 func (d *Dao) getObject(key string, data interface{}) error {
 	raw, err := d.GetRaw(key)
 	if err != nil {

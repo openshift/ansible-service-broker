@@ -29,10 +29,12 @@ var instances struct {
 	Etcd       etcd.Client
 	Kubernetes *KubernetesClient
 	Openshift  *OpenshiftClient
+	CRD        *CRD
 }
 
 var once struct {
 	Etcd       sync.Once
 	Kubernetes sync.Once
 	Openshift  sync.Once
+	CRD        sync.Once
 }
