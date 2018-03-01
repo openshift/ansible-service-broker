@@ -63,13 +63,16 @@ func (d *Dao) GetSpec(id string) (*apb.Spec, error) {
 		log.Errorf("unable to get bundle from k8s api - %v", err)
 		return nil, err
 	}
-	return bundleToSpec(s.Spec, s.GetName()), nil
+	return bundleToSpec(s.Spec, s.GetName())
 }
 
 // SetSpec - set spec for an id in the kvp API.
 func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
 	log.Debugf("set spec: %v", id)
-	bundleSpec := specToBundle(spec)
+	bundleSpec, err := specToBundle(spec)
+	if err != nil {
+		return err
+	}
 	b := v1.Bundle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
@@ -77,7 +80,7 @@ func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
 		},
 		Spec: bundleSpec,
 	}
-	_, err := d.client.Bundles(d.namespace).Create(&b)
+	_, err = d.client.Bundles(d.namespace).Create(&b)
 	return err
 }
 
@@ -108,8 +111,18 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 		return nil, err
 	}
 	specs := []*apb.Spec{}
+	// capture all the errors and still try to save the correct bundles
+	errs := arrayErrors{}
 	for _, b := range l.Items {
-		specs = append(specs, bundleToSpec(b.Spec, b.GetName()))
+		spec, err := bundleToSpec(b.Spec, b.GetName())
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		specs = append(specs, spec)
+	}
+	if len(errs) > 0 {
+		return specs, errs
 	}
 	return specs, nil
 }
@@ -136,15 +149,18 @@ func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	return convertServiceInstanceToAPB(servInstance.Spec, spec, servInstance.GetName()), nil
+	return convertServiceInstanceToAPB(servInstance.Spec, spec, servInstance.GetName())
 }
 
 // SetServiceInstance - Set service instance for an id in the kvp API.
 func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
 	log.Debugf("set service instance: %v", id)
-	spec := convertServiceInstanceToCRD(serviceInstance)
+	spec, err := convertServiceInstanceToCRD(serviceInstance)
+	if err != nil {
+		return err
+	}
 	if si, err := d.client.ServiceInstances(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
-		log.Debugf("updateing service instance: %v", id)
+		log.Debugf("updating service instance: %v", id)
 		si.Spec = spec
 		_, err := d.client.ServiceInstances(d.namespace).Update(si)
 		if err != nil {
@@ -161,7 +177,7 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 		Spec: spec,
 	}
 
-	_, err := d.client.ServiceInstances(d.namespace).Create(&s)
+	_, err = d.client.ServiceInstances(d.namespace).Create(&s)
 	if err != nil {
 		log.Errorf("unable to save service instance - %v", err)
 		return err
@@ -182,13 +198,16 @@ func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	return convertServiceBindingToAPB(bi.Spec, bi.GetName()), nil
+	return convertServiceBindingToAPB(bi.Spec, bi.GetName())
 }
 
 // SetBindInstance - Set the bind instance for id in the kvp API.
 func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 	log.Debugf("set binding instance: %v", id)
-	b := convertServiceBindingToCRD(bindInstance)
+	b, err := convertServiceBindingToCRD(bindInstance)
+	if err != nil {
+		return err
+	}
 	bi := v1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
@@ -196,7 +215,7 @@ func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 		},
 		Spec: b,
 	}
-	_, err := d.client.ServiceBindings(d.namespace).Create(&bi)
+	_, err = d.client.ServiceBindings(d.namespace).Create(&bi)
 	if err != nil {
 		log.Errorf("unable to save service binding - %v", err)
 		return err
@@ -214,7 +233,10 @@ func (d *Dao) DeleteBindInstance(id string) error {
 // SetState - Set the Job State in the kvp API for id.
 func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	log.Debugf("set job state for instance: %v token: %v", instanceID, state.Token)
-	j := convertJobStateToCRD(&state)
+	j, err := convertJobStateToCRD(&state)
+	if err != nil {
+		return "", err
+	}
 	if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
 		js.Spec = j
 		js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", convertStateToCRD(state.State))
@@ -237,7 +259,7 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 		Spec: j,
 	}
 
-	_, err := d.client.JobStates(d.namespace).Create(&js)
+	_, err = d.client.JobStates(d.namespace).Create(&js)
 	if err != nil {
 		log.Errorf("unable to create the job state - %v", err)
 		return "", err
@@ -252,7 +274,10 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 		log.Errorf("unable to get state for token: %v", err)
 		return apb.JobState{}, err
 	}
-	j := convertJobStateToAPB(js.Spec, js.GetName())
+	j, err := convertJobStateToAPB(js.Spec, js.GetName())
+	if err != nil {
+		return apb.JobState{}, err
+	}
 	return *j, nil
 }
 
@@ -273,11 +298,20 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	}
 
 	rs := []apb.RecoverStatus{}
+	errs := arrayErrors{}
 	for _, js := range jobStates.Items {
+		j, err := convertJobStateToAPB(js.Spec, js.GetName())
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
 		rs = append(rs, apb.RecoverStatus{
 			InstanceID: uuid.Parse(js.GetLabels()[jobStateInstanceLabel]),
-			State:      *convertJobStateToAPB(js.Spec, js.GetName()),
+			State:      *j,
 		})
+	}
+	if len(errs) > 0 {
+		return rs, errs
 	}
 	return rs, nil
 }
@@ -294,8 +328,17 @@ func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState,
 	}
 
 	jss := []apb.JobState{}
+	errs := arrayErrors{}
 	for _, js := range jobStates.Items {
-		jss = append(jss, *convertJobStateToAPB(js.Spec, js.GetName()))
+		job, err := convertJobStateToAPB(js.Spec, js.GetName())
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		jss = append(jss, *job)
+	}
+	if len(errs) > 0 {
+		return jss, errs
 	}
 	return jss, nil
 }

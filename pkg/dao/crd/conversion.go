@@ -2,6 +2,7 @@ package dao
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 
 	"github.com/automationbroker/broker-client-go/pkg/apis/automationbroker.io/v1"
@@ -9,16 +10,30 @@ import (
 	"github.com/pborman/uuid"
 )
 
-func specToBundle(spec *apb.Spec) v1.BundleSpec {
+type arrayErrors []error
+
+func (a arrayErrors) Error() string {
+	return fmt.Sprintf("%#v", a)
+}
+
+func specToBundle(spec *apb.Spec) (v1.BundleSpec, error) {
 	// encode the metadata as string
 	b, err := json.Marshal(spec.Metadata)
 	if err != nil {
 		log.Errorf("unable to marshal the metadata for spec to a json byte array - %v", err)
-		return v1.BundleSpec{}
+		return v1.BundleSpec{}, err
 	}
 	plans := []v1.Plan{}
+	errs := arrayErrors{}
 	for _, specPlan := range spec.Plans {
-		plans = append(plans, convertPlanToCRD(specPlan))
+		plan, err := convertPlanToCRD(specPlan)
+		if err != nil {
+			errs = append(errs, err)
+		}
+		plans = append(plans, plan)
+	}
+	if len(errs) > 0 {
+		return v1.BundleSpec{}, errs
 	}
 
 	return v1.BundleSpec{
@@ -32,7 +47,7 @@ func specToBundle(spec *apb.Spec) v1.BundleSpec {
 		Async:       convertToAsyncType(spec.Async),
 		Metadata:    string(b),
 		Plans:       plans,
-	}
+	}, nil
 }
 
 func convertToAsyncType(s string) v1.AsyncType {
@@ -52,21 +67,35 @@ func convertToAsyncType(s string) v1.AsyncType {
 	}
 }
 
-func convertPlanToCRD(plan apb.Plan) v1.Plan {
+func convertPlanToCRD(plan apb.Plan) (v1.Plan, error) {
 	b, err := json.Marshal(plan.Metadata)
 	if err != nil {
 		log.Errorf("unable to marshal the metadata for plan to a json byte array - %v", err)
-		return v1.Plan{}
+		return v1.Plan{}, err
 	}
 
 	bindParams := []v1.Parameters{}
 	params := []v1.Parameters{}
+	errs := arrayErrors{}
 	for _, p := range plan.Parameters {
-		params = append(params, convertParametersToCRD(p))
+		param, err := convertParametersToCRD(p)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		params = append(params, param)
 	}
 
 	for _, p := range plan.BindParameters {
-		bindParams = append(bindParams, convertParametersToCRD(p))
+		param, err := convertParametersToCRD(p)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		bindParams = append(bindParams, param)
+	}
+	if len(errs) > 0 {
+		return v1.Plan{}, err
 	}
 	return v1.Plan{
 		ID:             plan.ID,
@@ -78,14 +107,14 @@ func convertPlanToCRD(plan apb.Plan) v1.Plan {
 		UpdatesTo:      plan.UpdatesTo,
 		Parameters:     params,
 		BindParameters: bindParams,
-	}
+	}, nil
 }
 
-func convertParametersToCRD(param apb.ParameterDescriptor) v1.Parameters {
+func convertParametersToCRD(param apb.ParameterDescriptor) (v1.Parameters, error) {
 	b, err := json.Marshal(map[string]interface{}{"default": param.Default})
 	if err != nil {
 		log.Errorf("unable to marshal the default for parameter to a json byte array - %v", err)
-		return v1.Parameters{}
+		return v1.Parameters{}, err
 	}
 
 	var v1Max *v1.NilableNumber
@@ -129,16 +158,16 @@ func convertParametersToCRD(param apb.ParameterDescriptor) v1.Parameters {
 		Updatable:           param.Updatable,
 		DisplayType:         param.DisplayType,
 		DisplayGroup:        param.DisplayGroup,
-	}
+	}, nil
 }
 
-func convertServiceInstanceToCRD(si *apb.ServiceInstance) v1.ServiceInstanceSpec {
+func convertServiceInstanceToCRD(si *apb.ServiceInstance) (v1.ServiceInstanceSpec, error) {
 	var b []byte
 	if si.Parameters != nil {
 		by, err := json.Marshal(si.Parameters)
 		if err != nil {
 			log.Errorf("unable to convert parameters to encoded json byte array -%v", err)
-			return v1.ServiceInstanceSpec{}
+			return v1.ServiceInstanceSpec{}, err
 		}
 		b = by
 	}
@@ -156,16 +185,16 @@ func convertServiceInstanceToCRD(si *apb.ServiceInstance) v1.ServiceInstanceSpec
 		},
 		Parameters: string(b),
 		BindingIDs: bindingIDs,
-	}
+	}, nil
 }
 
-func convertServiceBindingToCRD(bi *apb.BindInstance) v1.ServiceBindingSpec {
+func convertServiceBindingToCRD(bi *apb.BindInstance) (v1.ServiceBindingSpec, error) {
 	var b []byte
 	if bi.Parameters != nil {
 		by, err := json.Marshal(bi.Parameters)
 		if err != nil {
 			log.Errorf("Unable to marshal parameters to json byte array - %v", err)
-			return v1.ServiceBindingSpec{}
+			return v1.ServiceBindingSpec{}, err
 		}
 		b = by
 	}
@@ -173,17 +202,17 @@ func convertServiceBindingToCRD(bi *apb.BindInstance) v1.ServiceBindingSpec {
 		ServiceInstanceID: bi.ServiceID.String(),
 		Parameters:        string(b),
 		JobToken:          bi.CreateJobKey,
-	}
+	}, nil
 }
 
-func convertJobStateToCRD(js *apb.JobState) v1.JobStateSpec {
+func convertJobStateToCRD(js *apb.JobState) (v1.JobStateSpec, error) {
 	return v1.JobStateSpec{
 		State:       convertStateToCRD(js.State),
 		Method:      convertJobMethodToCRD(js.Method),
 		PodName:     js.Podname,
 		Error:       js.Error,
 		Description: js.Description,
-	}
+	}, nil
 }
 
 func convertJobMethodToCRD(j apb.JobMethod) v1.JobMethod {
@@ -220,17 +249,27 @@ func convertStateToCRD(s apb.State) v1.State {
 	return v1.StateFailed
 }
 
-func bundleToSpec(spec v1.BundleSpec, id string) *apb.Spec {
+func bundleToSpec(spec v1.BundleSpec, id string) (*apb.Spec, error) {
 	// encode the metadata as string
 	m := map[string]interface{}{}
 	err := json.Unmarshal([]byte(spec.Metadata), &m)
 	if err != nil {
 		log.Errorf("unable to unmarshal the metadata for spec - %v", err)
-		return &apb.Spec{}
+		return &apb.Spec{}, err
 	}
 	plans := []apb.Plan{}
+	errs := arrayErrors{}
 	for _, specPlan := range spec.Plans {
-		plans = append(plans, convertPlanToAPB(specPlan))
+		plan, err := convertPlanToAPB(specPlan)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		plans = append(plans, plan)
+	}
+
+	if len(errs) > 0 {
+		return &apb.Spec{}, errs
 	}
 
 	return &apb.Spec{
@@ -245,7 +284,7 @@ func bundleToSpec(spec v1.BundleSpec, id string) *apb.Spec {
 		Async:       convertAsyncTypeToString(spec.Async),
 		Metadata:    m,
 		Plans:       plans,
-	}
+	}, nil
 }
 
 func convertAsyncTypeToString(a v1.AsyncType) string {
@@ -261,22 +300,33 @@ func convertAsyncTypeToString(a v1.AsyncType) string {
 	return "required"
 }
 
-func convertPlanToAPB(plan v1.Plan) apb.Plan {
+func convertPlanToAPB(plan v1.Plan) (apb.Plan, error) {
 	m := map[string]interface{}{}
 	err := json.Unmarshal([]byte(plan.Metadata), &m)
 	if err != nil {
 		log.Errorf("unable to unmarshal the metadata for plan - %v", err)
-		return apb.Plan{}
+		return apb.Plan{}, err
 	}
 
 	bindParams := []apb.ParameterDescriptor{}
 	params := []apb.ParameterDescriptor{}
+	errs := arrayErrors{}
 	for _, p := range plan.Parameters {
-		params = append(params, convertParametersToAPB(p))
+		param, err := convertParametersToAPB(p)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		params = append(params, param)
 	}
 
 	for _, p := range plan.BindParameters {
-		bindParams = append(bindParams, convertParametersToAPB(p))
+		param, err := convertParametersToAPB(p)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		bindParams = append(bindParams, param)
 	}
 	return apb.Plan{
 		ID:             plan.ID,
@@ -288,15 +338,15 @@ func convertPlanToAPB(plan v1.Plan) apb.Plan {
 		UpdatesTo:      plan.UpdatesTo,
 		Parameters:     params,
 		BindParameters: bindParams,
-	}
+	}, nil
 }
 
-func convertParametersToAPB(param v1.Parameters) apb.ParameterDescriptor {
+func convertParametersToAPB(param v1.Parameters) (apb.ParameterDescriptor, error) {
 	m := map[string]interface{}{}
 	err := json.Unmarshal([]byte(param.Default), &m)
 	if err != nil {
 		log.Errorf("unable to unmarshal the default for parameter - %v", err)
-		return apb.ParameterDescriptor{}
+		return apb.ParameterDescriptor{}, err
 	}
 
 	b := m["default"]
@@ -342,16 +392,16 @@ func convertParametersToAPB(param v1.Parameters) apb.ParameterDescriptor {
 		Updatable:           param.Updatable,
 		DisplayType:         param.DisplayType,
 		DisplayGroup:        param.DisplayGroup,
-	}
+	}, nil
 }
 
-func convertServiceInstanceToAPB(si v1.ServiceInstanceSpec, spec *apb.Spec, id string) *apb.ServiceInstance {
+func convertServiceInstanceToAPB(si v1.ServiceInstanceSpec, spec *apb.Spec, id string) (*apb.ServiceInstance, error) {
 	parameters := &apb.Parameters{}
 	if si.Parameters != "" {
 		err := json.Unmarshal([]byte(si.Parameters), parameters)
 		if err != nil {
 			log.Errorf("unable to convert parameters to unmarshaled apb parameters -%v", err)
-			return &apb.ServiceInstance{}
+			return &apb.ServiceInstance{}, err
 		}
 	}
 
@@ -369,16 +419,16 @@ func convertServiceInstanceToAPB(si v1.ServiceInstanceSpec, spec *apb.Spec, id s
 		},
 		Parameters: parameters,
 		BindingIDs: bindingIDs,
-	}
+	}, nil
 }
 
-func convertServiceBindingToAPB(bi v1.ServiceBindingSpec, id string) *apb.BindInstance {
+func convertServiceBindingToAPB(bi v1.ServiceBindingSpec, id string) (*apb.BindInstance, error) {
 	parameters := &apb.Parameters{}
 	if bi.Parameters != "" {
 		err := json.Unmarshal([]byte(bi.Parameters), parameters)
 		if err != nil {
 			log.Errorf("Unable to unmarshal parameters to apb parameters- %v", err)
-			return &apb.BindInstance{}
+			return &apb.BindInstance{}, err
 		}
 	}
 	return &apb.BindInstance{
@@ -386,10 +436,10 @@ func convertServiceBindingToAPB(bi v1.ServiceBindingSpec, id string) *apb.BindIn
 		ServiceID:    uuid.Parse(bi.ServiceInstanceID),
 		Parameters:   parameters,
 		CreateJobKey: bi.JobToken,
-	}
+	}, nil
 }
 
-func convertJobStateToAPB(js v1.JobStateSpec, id string) *apb.JobState {
+func convertJobStateToAPB(js v1.JobStateSpec, id string) (*apb.JobState, error) {
 	return &apb.JobState{
 		Token:       id,
 		State:       convertStateToAPB(js.State),
@@ -397,7 +447,7 @@ func convertJobStateToAPB(js v1.JobStateSpec, id string) *apb.JobState {
 		Podname:     js.PodName,
 		Error:       js.Error,
 		Description: js.Description,
-	}
+	}, nil
 }
 
 func convertJobMethodToAPB(j v1.JobMethod) apb.JobMethod {
