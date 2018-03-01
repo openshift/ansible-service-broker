@@ -26,9 +26,8 @@ Some important prerequisites necessary for running the broker behind a proxy:
 **NO_PROXY**
 
 The cluster must be configured to *not* proxy internal cluster requests. This
-is typically configured with a `NO_PROXY` setting of ".cluster.local,.svc", in addition
-to any other desired `NO_PROXY` settings. This is because the broker must be able
-to directly communicate with its etcd instance.
+is typically configured with a `NO_PROXY` setting of `.cluster.local,.svc,.default`, in addition
+to any other desired `NO_PROXY` settings.
 
 > NOTE: Brokers deploying unversioned, or v1 APBs MUST also add `172.30.0.1` to their
 `NO_PROXY` list. APBs prior to v2 extracted their credentials from running APB
