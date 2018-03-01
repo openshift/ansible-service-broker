@@ -1,6 +1,9 @@
 FROM centos:7
 MAINTAINER Ansible Service Broker Community
 
+ARG VERSION=release-1.0
+LABEL "com.redhat.version"=$VERSION
+
 ENV USER_NAME=ansibleservicebroker \
     USER_UID=1001 \
     BASE_DIR=/opt/ansibleservicebroker
@@ -35,7 +38,7 @@ ENV GOPATH=/go
 ENV BROKER_PATH=${GOPATH}/src/github.com/openshift
 
 RUN mkdir -p /go/src/github.com/openshift/ansible-service-broker
-RUN git clone https://github.com/openshift/ansible-service-broker ${BROKER_PATH}/ansible-service-broker
+RUN git clone -b $VERSION https://github.com/openshift/ansible-service-broker ${BROKER_PATH}/ansible-service-broker
 WORKDIR /go/src/github.com/openshift/ansible-service-broker
 
 RUN go build -i -ldflags="-s -w" ./cmd/broker
