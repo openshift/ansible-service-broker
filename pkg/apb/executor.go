@@ -229,7 +229,7 @@ func (e *executor) executeApb(
 						"--extra-vars",
 						extraVars,
 					},
-					Env:             createPodEnv(executionContext),
+					Env:             createPodEnv(executionContext, spec.Name),
 					ImagePullPolicy: pullPolicy,
 					VolumeMounts:    volumeMounts,
 				},
@@ -321,7 +321,7 @@ func createExtraVars(context *Context, parameters *Parameters) (string, error) {
 	return string(extraVars), err
 }
 
-func createPodEnv(executionContext ExecutionContext) []v1.EnvVar {
+func createPodEnv(executionContext ExecutionContext, bundleName string) []v1.EnvVar {
 	podEnv := []v1.EnvVar{
 		v1.EnvVar{
 			Name: "POD_NAME",
@@ -338,6 +338,10 @@ func createPodEnv(executionContext ExecutionContext) []v1.EnvVar {
 					FieldPath: "metadata.namespace",
 				},
 			},
+		},
+		v1.EnvVar{
+			Name:  "BUNDLE_NAME",
+			Value: bundleName,
 		},
 	}
 

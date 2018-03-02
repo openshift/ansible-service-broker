@@ -87,6 +87,8 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 			r.Log.Errorf("Failed to load image spec")
 			continue
 		}
+		spec.FQName = spec.Name
+
 		spec.Runtime, err = getAPBRuntimeVersion(r.Log, image.Runtime)
 		if err != nil {
 			r.Log.Errorf("Failed to parse image runtime version")
