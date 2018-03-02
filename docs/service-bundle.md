@@ -192,10 +192,11 @@ operation.
 
 The container will be run in a pod by itself with ``restartPolicy: Never``. The
 pod will run in a sandbox namespace created by the broker for that specific
-operation only. The namespace will be deleted at some point after the pod
-finishes.
+operation only. The namespace is not intended to persist, and in normal
+operation it will be deleted as soon as the pod completes. The broker can
+optionally be configured to retain the namespace for debugging purposes.
 
-APB is run with a service account granted access to the ``POD_NAMESPACE`` and
+The pod is run with a service account granted access to the ``POD_NAMESPACE`` and
 to the “namespace” that the pod is to deploy to. Networks between the two
 namespaces are tied together so that you can reliably find your services in the
 target namespace. That only works for
@@ -205,8 +206,12 @@ or for multi tenant openshift-sdn.
 ### Proxy
 
 If there are proxy settings for the broker, they will be forwarded to the pod
-by setting environment variables for ``HTTP_PROXY``, ``HTTPS_PROXY``, and
-``NO_PROXY``. 
+by setting environment variables for ``HTTP_PROXY``, ``HTTPS_PROXY``,
+``NO_PROXY``, ``http_proxy``, ``https_proxy``, and ``no_proxy``.
+
+No action is taken to apply proxy settings to pods that a service bundle
+creates. Each service bundle is repsonsible for configuring its provisioned
+resources to use a proxy as appropriate.
 
 ### Service Account
 
@@ -215,10 +220,10 @@ Details of a kubernetes service account are mounted at
 
 Keys contained in the Secret:
 
-* ca.crt: a base64-encoded CA certificate that was used to sign the certificate
-  used by the broker to serve its API.
+* ca.crt: a base64-encoded CA certificate
 * service-ca.crt: a base64-encoded CA certificate that was used to sign the
-  certificate used by etcd to serve its API.
+  certificate used by the broker to serve its API and the certificate used by
+  etcd to serve its API.
 * namespace: a base64-encoded string containing the namespace the service
   bundle is running in.
 * token: a base64-encoded string used to authenticate to the kubernetes API.
