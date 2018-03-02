@@ -216,15 +216,30 @@ resources to use a proxy as appropriate.
 ### Service Account
 
 Details of a kubernetes service account are mounted at
-``/var/run/secrets/kubernetes.io/serviceaccount``
+``/var/run/secrets/kubernetes.io/serviceaccount`` by Kubernetes. That mount is
+documented [here](https://kubernetes.io/docs/admin/service-accounts-admin/).
 
-Keys contained in the Secret:
+Clients running in a Service Bundle will usually need a ``.kube/config`` file
+such as the following to use the service account:
 
-* ca.crt: a base64-encoded CA certificate
-* service-ca.crt: a base64-encoded CA certificate that was used to sign the
-  certificate used by the broker to serve its API and the certificate used by
-  etcd to serve its API.
-* namespace: a base64-encoded string containing the namespace the service
-  bundle is running in.
-* token: a base64-encoded string used to authenticate to the kubernetes API.
+```
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    server: https://kubernetes.default:443
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    user: apb-user
+  name: /kubernetes/apb-user
+current-context: /kubernetes/apb-user
+kind: Config
+preferences: {}
+users:
+- name: apb-user
+  user:
+    tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+```
 
