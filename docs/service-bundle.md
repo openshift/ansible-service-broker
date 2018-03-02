@@ -1,7 +1,7 @@
 # Service Bundle Specification
 
 A Service Bundle is a container image that the broker can use to manage
-deployment of a service in a cluster. It adheres to the properties and
+the deployment of a service in a cluster. It adheres to the properties and
 behaviors described below.
 
 ## Label
@@ -90,7 +90,7 @@ Example of JSON document passed to __provision__:
 
 * cluster: the type of cluster on which the service bundle is being run
   (currently either ‘openshift’ or ‘kubernetes’).
-* _apb_plan_id: the name of a “plan”, as defined through the OSB API, that is
+* _apb_plan_id: the name of a “plan”, as defined by the OSB API, that is
   available on the service class.
 * _apb_service_class_id: the “service_id”, as defined through the OSB API, that
   is being used for the current action.
@@ -99,7 +99,7 @@ Example of JSON document passed to __provision__:
 * namespace: the target namespace in which resources should be created,
   deleted, or acted upon.
 
-Other keys represent parameter names from the Plan, the values for which have
+Other keys represent parameter names from the Plan, the values of which have
 the type specified in the Plan.
 
 Example of JSON document passed to __bind__:
