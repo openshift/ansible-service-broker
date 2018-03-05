@@ -163,11 +163,11 @@ information see our [version document](docs/versioning.md).
 
 ## APB Compatibility Matrix
 
-| ansible-service-broker      | APB runtime 1 | APB runtime 2 |
-|-----------------------------|---------------|---------------|
-| ansible-service-broker 1.0  |       ✓       |       X       |
-| ansible-service-broker 1.1  |       ✓       |       ✓       |
-| ansible-service-broker HEAD |       ✓       |       ✓       |
+| ansible-service-broker                      | APB runtime 1 | APB runtime 2 |
+|---------------------------------------------|---------------|---------------|
+| ansible-service-broker release-1.0, v3.7    |       ✓       |       X       |
+| ansible-service-broker release-1.1, v3.9    |       ✓       |       ✓       |
+| ansible-service-broker HEAD                 |       ✓       |       ✓       |
 
 Key:
 
