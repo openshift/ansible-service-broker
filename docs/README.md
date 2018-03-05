@@ -10,7 +10,7 @@
   * [Troubleshooting](troubleshooting.md)
   * [Running behind a proxy](proxy.md)
 * Ansible Playbook Bundle
-  * [Design](https://github.com/fusor/ansible-playbook-bundle/blob/master/docs/design.md)
+  * [Design](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle/blob/master/docs/design.md)
 * Bind Operation
   * [Data Transmission](bind-data-transmission.md)
   * [Use Cases](usecases.md)

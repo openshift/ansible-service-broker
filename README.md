@@ -9,7 +9,7 @@ Ansible Service Broker
 [![Licensed under Apache License version 2.0](https://img.shields.io/github/license/openshift/origin.svg?maxAge=2592000)](https://www.apache.org/licenses/LICENSE-2.0)
 
 Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker)
-that manages applications defined in [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle).
+that manages applications defined in [Ansible Playbook Bundles](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle).
 Ansible Playbook Bundles (APB) are a method of defining applications via a collection of Ansible Playbooks built into a container
 with an Ansible runtime with the playbooks corresponding to a type of request specified in the
 [Open Service Broker API Specification](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#api-overview).
@@ -18,10 +18,10 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 
 **Features**
 
-- Easily define, distribute, and provision microservice(s), like [RocketChat](https://github.com/fusor/apb-examples/tree/master/rocketchat-apb)
+- Easily define, distribute, and provision microservice(s), like [RocketChat](https://github.com/ansibleplaybookbundle/rocketchat-apb)
   and [PostgreSQL](https://github.com/ansibleplaybookbundle/postgresql-apb), via ansible playbooks packaged in
-  [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle).
-- Easily bind microservice(s) provisioned through [Ansible Playbook Bundles](https://github.com/fusor/ansible-playbook-bundle),
+  [Ansible Playbook Bundles](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle).
+- Easily bind microservice(s) provisioned through [Ansible Playbook Bundles](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle),
   for example: [Using the Service Catalog to Bind a PostgreSQL APB to a Python Web App](https://www.youtube.com/watch?v=xmd52NhEjCk).
 
 **Learn More:**
@@ -34,7 +34,7 @@ Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM
 - Our [YouTube Channel](https://www.youtube.com/channel/UC04eOMIMiV06_RSZPb4OOBw)
 
 **Important Links**
-- Check out the [ansible playbook bundle](https://github.com/fusor/ansible-playbook-bundle) project
+- Check out the [ansible playbook bundle](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle) project
    and our [library of example APBs](https://github.com/fusor/apb-examples)
 - [catasb](https://github.com/fusor/catasb) gives you more control over your development environment
 - [Amazon Web Services deployed into OpenShift via Ansible Service Broker](https://www.youtube.com/watch?v=EKo3khfmhi8&index=2&list=PLZ7osZ-J70IaVc0NVyLs7tLO1hbhBdxHe)
