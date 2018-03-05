@@ -11,6 +11,7 @@
   * [Running behind a proxy](proxy.md)
 * Ansible Playbook Bundle
   * [Design](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle/blob/master/docs/design.md)
+  * [Service Bundle Contract](service-bundle.md)
 * Bind Operation
   * [Data Transmission](bind-data-transmission.md)
   * [Use Cases](usecases.md)
