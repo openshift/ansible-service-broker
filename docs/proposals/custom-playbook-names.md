@@ -18,6 +18,36 @@ action.  I could change the directory in the Dockerfile to include
 ```playbooks/apb_number_1```, but it gets back the the initial problem I
 outlined where I need to make my playbook structure to fit the APB mold.
 
+Common ansible playbook structure
+```bash
+playbooks/
+├── apb_number_1.yml  # Provision Playbook
+├── apb_number_2.yml
+└── roles
+    ├── apb_number_1
+    │   └── provision.yml  # Provision Tasks
+    └── apb_number_2
+        └── provision.yml  # The ```action.yml``` file is pushed down in the directory structure
+```
+
+Not as common ansible playbook structure
+```bash
+playbooks
+├── apb_number_1
+│   └── provision.yml   # Provision Playbook
+└── apb_number_2
+    └── provision.yml
+```
+
+Not as common ansible playbook structure
+```bash
+multiple_apb_repo
+├── apb_number_1
+│   └── provision.yml   # Provision Playbook
+└── apb_number_2
+    └── provision.yml
+```
+
 The APB structure is rigid and if I want to turn my existing playbook into
 an APB I will have to make some changes to the structure of my playbooks.
 This will make is difficult for folks who already have playbooks to buy into
