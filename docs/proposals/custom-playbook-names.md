@@ -46,6 +46,13 @@ elif [[ -e "$playbooks/$ACTION.yml" ]]; then
 +  ANSIBLE_ROLES_PATH=/etc/ansible/roles:/opt/ansible/roles ansible-playbook $playbooks/$BUNDLE_NAME.yml "${@}" ${extra_args} -e action=$ACTION
 ```
 
+## Add a New Field to ```apb.yml```
+The new field, ```playbook_name```, would either have to be added to the OSB API
+spec or ignored by catalog.
+
+It would get picked up in the broker and passed to the APB as the environment
+variable ```BUNDLE_NAME```.
+
 ## Work Items
  - Check for ```"$playbooks/$BUNDLE_NAME.yaml"``` in apb-base
  - Add ```BUNDLE_NAME``` to the APB environment
