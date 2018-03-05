@@ -23,7 +23,7 @@ package broker
 import (
 	"fmt"
 
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 

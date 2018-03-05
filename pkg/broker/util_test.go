@@ -25,8 +25,8 @@ import (
 
 	"strings"
 
+	"github.com/automationbroker/bundle-lib/apb"
 	schema "github.com/lestrrat/go-jsschema"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	yaml "gopkg.in/yaml.v2"
 )

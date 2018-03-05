@@ -3,7 +3,7 @@ package mock
 import (
 	"fmt"
 
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 )
 
 // SubscriberDAO is mock DAO

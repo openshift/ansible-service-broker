@@ -42,12 +42,11 @@ func (az *Cloud) requestBackoff() (resourceRequestBackoff wait.Backoff) {
 }
 
 // GetVirtualMachineWithRetry invokes az.getVirtualMachine with exponential backoff retry
-func (az *Cloud) GetVirtualMachineWithRetry(name types.NodeName) (compute.VirtualMachine, bool, error) {
+func (az *Cloud) GetVirtualMachineWithRetry(name types.NodeName) (compute.VirtualMachine, error) {
 	var machine compute.VirtualMachine
-	var exists bool
+	var retryErr error
 	err := wait.ExponentialBackoff(az.requestBackoff(), func() (bool, error) {
-		var retryErr error
-		machine, exists, retryErr = az.getVirtualMachine(name)
+		machine, retryErr = az.getVirtualMachine(name)
 		if retryErr != nil {
 			glog.Errorf("backoff: failure, will retry,err=%v", retryErr)
 			return false, nil
@@ -55,7 +54,11 @@ func (az *Cloud) GetVirtualMachineWithRetry(name types.NodeName) (compute.Virtua
 		glog.V(2).Infof("backoff: success")
 		return true, nil
 	})
-	return machine, exists, err
+	if err == wait.ErrWaitTimeout {
+		err = retryErr
+	}
+
+	return machine, err
 }
 
 // GetScaleSetsVMWithRetry invokes az.getScaleSetsVM with exponential backoff retry
@@ -73,23 +76,6 @@ func (az *Cloud) GetScaleSetsVMWithRetry(name types.NodeName) (compute.VirtualMa
 		return true, nil
 	})
 	return machine, exists, err
-}
-
-// VirtualMachineClientGetWithRetry invokes az.VirtualMachinesClient.Get with exponential backoff retry
-func (az *Cloud) VirtualMachineClientGetWithRetry(resourceGroup, vmName string, types compute.InstanceViewTypes) (compute.VirtualMachine, error) {
-	var machine compute.VirtualMachine
-	err := wait.ExponentialBackoff(az.requestBackoff(), func() (bool, error) {
-		var retryErr error
-		az.operationPollRateLimiter.Accept()
-		machine, retryErr = az.VirtualMachinesClient.Get(resourceGroup, vmName, types)
-		if retryErr != nil {
-			glog.Errorf("backoff: failure, will retry,err=%v", retryErr)
-			return false, nil
-		}
-		glog.V(2).Infof("backoff: success")
-		return true, nil
-	})
-	return machine, err
 }
 
 // VirtualMachineClientListWithRetry invokes az.VirtualMachinesClient.List with exponential backoff retry
@@ -146,11 +132,11 @@ func (az *Cloud) VirtualMachineClientListWithRetry() ([]compute.VirtualMachine, 
 }
 
 // GetIPForMachineWithRetry invokes az.getIPForMachine with exponential backoff retry
-func (az *Cloud) GetIPForMachineWithRetry(name types.NodeName) (string, error) {
-	var ip string
+func (az *Cloud) GetIPForMachineWithRetry(name types.NodeName) (string, string, error) {
+	var ip, publicIP string
 	err := wait.ExponentialBackoff(az.requestBackoff(), func() (bool, error) {
 		var retryErr error
-		ip, retryErr = az.getIPForMachine(name)
+		ip, publicIP, retryErr = az.getIPForMachine(name)
 		if retryErr != nil {
 			glog.Errorf("backoff: failure, will retry,err=%v", retryErr)
 			return false, nil
@@ -158,7 +144,7 @@ func (az *Cloud) GetIPForMachineWithRetry(name types.NodeName) (string, error) {
 		glog.V(2).Infof("backoff: success")
 		return true, nil
 	})
-	return ip, err
+	return ip, publicIP, err
 }
 
 // CreateOrUpdateSGWithRetry invokes az.SecurityGroupsClient.CreateOrUpdate with exponential backoff retry

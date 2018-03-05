@@ -23,6 +23,7 @@ go_library(
         "azure_storage.go",
         "azure_storageaccount.go",
         "azure_util.go",
+        "azure_util_cache.go",
         "azure_util_vmss.go",
         "azure_wrap.go",
         "azure_zones.go",
@@ -51,7 +52,9 @@ go_library(
         "//vendor/k8s.io/apimachinery/pkg/types:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/errors:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/sets:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/uuid:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/wait:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
         "//vendor/k8s.io/client-go/util/flowcontrol:go_default_library",
     ],
 )
@@ -61,6 +64,7 @@ go_test(
     srcs = [
         "azure_loadbalancer_test.go",
         "azure_test.go",
+        "azure_util_cache_test.go",
         "azure_util_test.go",
         "azure_wrap_test.go",
     ],

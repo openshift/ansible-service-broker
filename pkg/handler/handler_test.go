@@ -25,11 +25,11 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/config"
 	"github.com/gorilla/mux"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
-	"github.com/openshift/ansible-service-broker/pkg/config"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
 )

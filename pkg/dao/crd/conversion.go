@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	"github.com/automationbroker/broker-client-go/pkg/apis/automationbroker.io/v1"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/pborman/uuid"
 )
 

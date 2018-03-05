@@ -17,7 +17,7 @@
 package dao
 
 import (
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 )
 
 // MapJobStatesWithMethod - takes a slice of JobState stucts and returns a slice containing

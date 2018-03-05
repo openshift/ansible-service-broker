@@ -23,8 +23,8 @@ import (
 
 	"encoding/json"
 
+	"github.com/automationbroker/bundle-lib/apb"
 	schema "github.com/lestrrat/go-jsschema"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
 type formItem struct {

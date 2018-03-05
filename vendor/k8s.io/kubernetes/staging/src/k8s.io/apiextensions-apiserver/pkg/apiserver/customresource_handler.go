@@ -25,9 +25,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	openapispec "github.com/go-openapi/spec"
-	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/validate"
 	"github.com/golang/glog"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -210,18 +207,10 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		handler(w, req)
 		return
 	case "update":
-		if terminating {
-			http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
-			return
-		}
 		handler := handlers.UpdateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
 		handler(w, req)
 		return
 	case "patch":
-		if terminating {
-			http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
-			return
-		}
 		handler := handlers.PatchResource(storage, requestScope, r.admission, unstructured.UnstructuredObjectConverter{})
 		handler(w, req)
 		return
@@ -275,14 +264,14 @@ func (r *crdHandler) removeDeadStorage() {
 	r.customStorage.Store(storageMap)
 }
 
-// GetCustomResourceListerCollectionDeleter returns the ListerCollectionDeleter for
-// the given uid, or nil if one does not exist.
-func (r *crdHandler) GetCustomResourceListerCollectionDeleter(crd *apiextensions.CustomResourceDefinition) finalizer.ListerCollectionDeleter {
+// GetCustomResourceListerCollectionDeleter returns the ListerCollectionDeleter of
+// the given crd.
+func (r *crdHandler) GetCustomResourceListerCollectionDeleter(crd *apiextensions.CustomResourceDefinition) (finalizer.ListerCollectionDeleter, error) {
 	info, err := r.getServingInfoFor(crd)
 	if err != nil {
-		utilruntime.HandleError(err)
+		return nil, err
 	}
-	return info.storage
+	return info.storage, nil
 }
 
 func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefinition) (*crdInfo, error) {
@@ -318,15 +307,10 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 	}
 	creator := unstructuredCreator{}
 
-	// convert CRD schema to openapi schema
-	openapiSchema := &openapispec.Schema{}
-	if err := apiservervalidation.ConvertToOpenAPITypes(crd, openapiSchema); err != nil {
+	validator, err := apiservervalidation.NewSchemaValidator(crd.Spec.Validation)
+	if err != nil {
 		return nil, err
 	}
-	if err := openapispec.ExpandSchema(openapiSchema, nil, nil); err != nil {
-		return nil, err
-	}
-	validator := validate.NewSchemaValidator(openapiSchema, nil, "", strfmt.Default)
 
 	storage := customresource.NewREST(
 		schema.GroupResource{Group: crd.Spec.Group, Resource: crd.Status.AcceptedNames.Plural},

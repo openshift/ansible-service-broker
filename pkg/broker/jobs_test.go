@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 )
 
 func TestApbJobRun(t *testing.T) {

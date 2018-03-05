@@ -25,11 +25,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/config"
+	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/registries"
+	"github.com/automationbroker/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
-	"github.com/openshift/ansible-service-broker/pkg/registries"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 )

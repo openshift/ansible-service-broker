@@ -24,7 +24,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/openshift/ansible-service-broker/pkg/config"
+	"github.com/automationbroker/config"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 )
 

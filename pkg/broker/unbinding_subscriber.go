@@ -21,7 +21,7 @@
 package broker
 
 import (
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 )
 

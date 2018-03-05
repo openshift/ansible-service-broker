@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openshift/ansible-service-broker/pkg/config"
+	"github.com/automationbroker/config"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 

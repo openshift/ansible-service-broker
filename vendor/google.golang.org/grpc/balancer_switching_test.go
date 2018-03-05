@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/balancer/roundrobin"
 	_ "google.golang.org/grpc/grpclog/glogger"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
@@ -39,7 +40,7 @@ func checkPickFirst(cc *ClientConn, servers []*server) error {
 	)
 	connected := false
 	for i := 0; i < 5000; i++ {
-		if err = Invoke(context.Background(), "/foo/bar", &req, &reply, cc); ErrorDesc(err) == servers[0].port {
+		if err = Invoke(context.Background(), "/foo/bar", &req, &reply, cc); errorDesc(err) == servers[0].port {
 			if connected {
 				// connected is set to false if peer is not server[0]. So if
 				// connected is true here, this is the second time we saw
@@ -58,7 +59,7 @@ func checkPickFirst(cc *ClientConn, servers []*server) error {
 	// The following RPCs should all succeed with the first server.
 	for i := 0; i < 3; i++ {
 		err = Invoke(context.Background(), "/foo/bar", &req, &reply, cc)
-		if ErrorDesc(err) != servers[0].port {
+		if errorDesc(err) != servers[0].port {
 			return fmt.Errorf("Index %d: want peer %v, got peer %v", i, servers[0].port, err)
 		}
 	}
@@ -79,7 +80,7 @@ func checkRoundRobin(cc *ClientConn, servers []*server) error {
 		for _, s := range servers {
 			var up bool
 			for i := 0; i < 5000; i++ {
-				if err = Invoke(context.Background(), "/foo/bar", &req, &reply, cc); ErrorDesc(err) == s.port {
+				if err = Invoke(context.Background(), "/foo/bar", &req, &reply, cc); errorDesc(err) == s.port {
 					up = true
 					break
 				}
@@ -94,7 +95,7 @@ func checkRoundRobin(cc *ClientConn, servers []*server) error {
 	serverCount := len(servers)
 	for i := 0; i < 3*serverCount; i++ {
 		err = Invoke(context.Background(), "/foo/bar", &req, &reply, cc)
-		if ErrorDesc(err) != servers[i%serverCount].port {
+		if errorDesc(err) != servers[i%serverCount].port {
 			return fmt.Errorf("Index %d: want peer %v, got peer %v", i, servers[i%serverCount].port, err)
 		}
 	}
@@ -129,6 +130,34 @@ func TestSwitchBalancer(t *testing.T) {
 	cc.handleServiceConfig(`{"loadBalancingPolicy": "pick_first"}`)
 	if err := checkPickFirst(cc, servers); err != nil {
 		t.Fatalf("check pickfirst returned non-nil error: %v", err)
+	}
+}
+
+// Test that balancer specified by dial option will not be overridden.
+func TestBalancerDialOption(t *testing.T) {
+	defer leakcheck.Check(t)
+	r, rcleanup := manual.GenerateAndRegisterManualResolver()
+	defer rcleanup()
+
+	numServers := 2
+	servers, _, scleanup := startServers(t, numServers, math.MaxInt32)
+	defer scleanup()
+
+	cc, err := Dial(r.Scheme()+":///test.server", WithInsecure(), WithCodec(testCodec{}), WithBalancerName(roundrobin.Name))
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	defer cc.Close()
+	r.NewAddress([]resolver.Address{{Addr: servers[0].addr}, {Addr: servers[1].addr}})
+	// The init balancer is roundrobin.
+	if err := checkRoundRobin(cc, servers); err != nil {
+		t.Fatalf("check roundrobin returned non-nil error: %v", err)
+	}
+	// Switch to pickfirst.
+	cc.handleServiceConfig(`{"loadBalancingPolicy": "pick_first"}`)
+	// Balancer is still roundrobin.
+	if err := checkRoundRobin(cc, servers); err != nil {
+		t.Fatalf("check roundrobin returned non-nil error: %v", err)
 	}
 }
 
@@ -182,7 +211,7 @@ func TestSwitchBalancerGRPCLBFirst(t *testing.T) {
 	r.NewAddress([]resolver.Address{{Addr: "backend"}})
 	for i := 0; i < 5000; i++ {
 		cc.mu.Lock()
-		isPickFirst = cc.curBalancerName == pickfirstName
+		isPickFirst = cc.curBalancerName == PickFirstBalancerName
 		cc.mu.Unlock()
 		if isPickFirst {
 			break
@@ -210,7 +239,7 @@ func TestSwitchBalancerGRPCLBSecond(t *testing.T) {
 	var isPickFirst bool
 	for i := 0; i < 5000; i++ {
 		cc.mu.Lock()
-		isPickFirst = cc.curBalancerName == pickfirstName
+		isPickFirst = cc.curBalancerName == PickFirstBalancerName
 		cc.mu.Unlock()
 		if isPickFirst {
 			break
@@ -258,7 +287,7 @@ func TestSwitchBalancerGRPCLBSecond(t *testing.T) {
 	r.NewAddress([]resolver.Address{{Addr: "backend"}})
 	for i := 0; i < 5000; i++ {
 		cc.mu.Lock()
-		isPickFirst = cc.curBalancerName == pickfirstName
+		isPickFirst = cc.curBalancerName == PickFirstBalancerName
 		cc.mu.Unlock()
 		if isPickFirst {
 			break
@@ -352,7 +381,7 @@ func TestSwitchBalancerGRPCLBServiceConfig(t *testing.T) {
 	var isPickFirst bool
 	for i := 0; i < 5000; i++ {
 		cc.mu.Lock()
-		isPickFirst = cc.curBalancerName == pickfirstName
+		isPickFirst = cc.curBalancerName == PickFirstBalancerName
 		cc.mu.Unlock()
 		if isPickFirst {
 			break
@@ -391,7 +420,7 @@ func TestSwitchBalancerGRPCLBServiceConfig(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
-	// Balancer shoult NOT switch to round_robin because resolved list contains
+	// Balancer should NOT switch to round_robin because resolved list contains
 	// grpclb.
 	if isRoundRobin {
 		t.Fatalf("within 200 ms, cc.balancer switched to round_robin, want grpclb")

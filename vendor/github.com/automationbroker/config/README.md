@@ -1,0 +1,1 @@
+This is a config package built to be used by the automation broker. It creates a config object that can be traversed using the keys. If no key is found then an empty value is returned with a log statement. It also allows you to pas sub configs around. 

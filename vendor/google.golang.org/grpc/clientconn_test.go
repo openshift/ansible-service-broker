@@ -169,11 +169,12 @@ func TestDialWaitsForServerSettings(t *testing.T) {
 }
 
 func TestCloseConnectionWhenServerPrefaceNotReceived(t *testing.T) {
-	defer leakcheck.Check(t)
 	mctBkp := minConnectTimeout
+	// Call this only after transportMonitor goroutine has ended.
 	defer func() {
 		minConnectTimeout = mctBkp
 	}()
+	defer leakcheck.Check(t)
 	minConnectTimeout = time.Millisecond * 500
 	server, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
@@ -247,6 +248,21 @@ func TestCloseConnectionWhenServerPrefaceNotReceived(t *testing.T) {
 		t.Fatalf("Error while dialing. Err: %v", err)
 	}
 	<-done
+	// TODO: The code from BEGIN to END should be delete once issue
+	// https://github.com/grpc/grpc-go/issues/1750 is fixed.
+	// BEGIN
+	// Set underlying addrConns state to Shutdown so that no reconnect
+	// attempts take place and thereby resetting minConnectTimeout is
+	// race free.
+	client.mu.Lock()
+	addrConns := client.conns
+	client.mu.Unlock()
+	for ac := range addrConns {
+		ac.mu.Lock()
+		ac.state = connectivity.Shutdown
+		ac.mu.Unlock()
+	}
+	// END
 	client.Close()
 	close(clientDone)
 }
@@ -583,6 +599,41 @@ func TestNonblockingDialWithEmptyBalancer(t *testing.T) {
 	}
 }
 
+func TestResolverServiceConfigBeforeAddressNotPanic(t *testing.T) {
+	defer leakcheck.Check(t)
+	r, rcleanup := manual.GenerateAndRegisterManualResolver()
+	defer rcleanup()
+
+	cc, err := Dial(r.Scheme()+":///test.server", WithInsecure())
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	defer cc.Close()
+
+	// SwitchBalancer before NewAddress. There was no balancer created, this
+	// makes sure we don't call close on nil balancerWrapper.
+	r.NewServiceConfig(`{"loadBalancingPolicy": "round_robin"}`) // This should not panic.
+
+	time.Sleep(time.Second) // Sleep to make sure the service config is handled by ClientConn.
+}
+
+func TestResolverEmptyUpdateNotPanic(t *testing.T) {
+	defer leakcheck.Check(t)
+	r, rcleanup := manual.GenerateAndRegisterManualResolver()
+	defer rcleanup()
+
+	cc, err := Dial(r.Scheme()+":///test.server", WithInsecure())
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	defer cc.Close()
+
+	// This make sure we don't create addrConn with empty address list.
+	r.NewAddress([]resolver.Address{}) // This should not panic.
+
+	time.Sleep(time.Second) // Sleep to make sure the service config is handled by ClientConn.
+}
+
 func TestClientUpdatesParamsAfterGoAway(t *testing.T) {
 	defer leakcheck.Check(t)
 	lis, err := net.Listen("tcp", "localhost:0")
@@ -596,7 +647,7 @@ func TestClientUpdatesParamsAfterGoAway(t *testing.T) {
 	defer s.Stop()
 	cc, err := Dial(addr, WithBlock(), WithInsecure(), WithKeepaliveParams(keepalive.ClientParameters{
 		Time:                50 * time.Millisecond,
-		Timeout:             1 * time.Millisecond,
+		Timeout:             100 * time.Millisecond,
 		PermitWithoutStream: true,
 	}))
 	if err != nil {

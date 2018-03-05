@@ -21,8 +21,8 @@ import (
 
 	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker.io/v1"
 	v1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker.io/v1"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/clients"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
