@@ -151,6 +151,51 @@ Let's walk through an `oc cluster up` based setup.
 1. View the route for MediaWiki and verify the wiki is up and running.
     * Observe that mediawiki123 is on deployment '#2', having been automatically redeployed
 
+# Versioning
+
+Our release versions align with
+[openshift/origin](https://github.com/openshift/origin/). For more detailed
+information see our [version document](docs/versioning.md).
+
+# Compatibility
+
+## APB Compatibility Matrix
+
+| ansible-service-broker                      | APB runtime 1 | APB runtime 2 |
+|---------------------------------------------|---------------|---------------|
+| ansible-service-broker release-1.0, v3.7    |       ✓       |       X       |
+| ansible-service-broker release-1.1, v3.9    |       ✓       |       ✓       |
+| ansible-service-broker HEAD                 |       ✓       |       ✓       |
+
+Key:
+
+* `✓` Supported.
+* `X` Will not work. Not supported.
+
+Ansible Playbook Bundle images are built on the [apb-base
+image](https://github.com/ansibleplaybookbundle/apb-base). Starting with
+apb-base 1.1, a new APB runtime was introduced and captured in the label
+[`com.redhat.apb.runtime`](https://github.com/ansibleplaybookbundle/apb-base/blob/master/Dockerfile-latest#L3).
+Currently, there are two APB runtime versions:
+
+* APB runtime 1 - all APBs tagged `release-1.0` as well as APBs with no
+  `"com.redhat.apb.runtime"` label.
+* APB runtime 2 - all APBs tagged `release-1.1` as well as APBs with label
+  `"com.redhat.apb.runtime"="2"`.
+
+You can examime the runtime of a
+particular APB with `docker inspect $APB --format "{{ index
+.Config.Labels \"com.redhat.apb.runtime\" }}"`. An APB without a
+`"com.redhat.apb.runtime"` label is APB runtime 1. For example:
+
+```
+$ docker inspect docker.io/ansibleplaybookbundle/mediawiki-apb:latest --format "{{ index .Config.Labels \"com.redhat.apb.runtime\" }}"
+2
+
+# No label on release-1.0
+$ docker inspect docker.io/ansibleplaybookbundle/mediawiki-apb:release-1.0 --format "{{ index .Config.Labels \"com.redhat.apb.runtime\" }}"
+```
+
 # Contributing
 
 First, **start with the** [Contributing Guide](CONTRIBUTING.md).
