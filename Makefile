@@ -15,7 +15,7 @@ COVERAGE_SVC     := travis-ci
 .DEFAULT_GOAL    := build
 
 vendor: ## Install or update project dependencies
-	@glide install -v
+	@dep ensure
 
 broker: $(SOURCES) ## Build the broker
 	go build -i -ldflags="-s -w" ./cmd/broker
