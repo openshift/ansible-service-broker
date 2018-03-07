@@ -138,6 +138,7 @@ func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spe
 		log.Errorf("Something went wrong loading decoded spec yaml, %s", err)
 		return nil, err
 	}
+	spec.FQName = spec.Name
 
 	spec.Runtime, err = getAPBRuntimeVersion(log, conf.Config.Label.Runtime)
 	if err != nil {

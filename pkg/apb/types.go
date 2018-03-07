@@ -90,10 +90,11 @@ func (p *Plan) GetParameter(name string) *ParameterDescriptor {
 
 // Spec - A APB spec
 type Spec struct {
+	FQName      string
+	Name        string                 `json:"name" yaml:"name"`
 	ID          string                 `json:"id"`
 	Runtime     int                    `json:"runtime"`
 	Version     string                 `json:"version"`
-	FQName      string                 `json:"name" yaml:"name"`
 	Image       string                 `json:"image" yaml:"-"`
 	Tags        []string               `json:"tags"`
 	Bindable    bool                   `json:"bindable"`
