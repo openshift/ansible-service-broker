@@ -604,25 +604,27 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	//
 	// if err is not nil, we will just bubble that up
 
-	if si, err := a.dao.GetServiceInstance(instanceUUID.String()); err == nil {
-		// This will use the package to make sure that if the type is changed
-		// away from []byte it can still be evaluated.
-		if uuid.Equal(si.ID, serviceInstance.ID) {
-			if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
-				alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance, apb.JobMethodProvision)
-				if err != nil {
-					return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
-				}
-				if alreadyInProgress {
-					log.Infof("Provision requested for instance %s, but job is already in progress", serviceInstance.ID)
-					return &ProvisionResponse{Operation: jobToken}, ErrorProvisionInProgress
-				}
-				log.Debug("already have this instance returning 200")
-				return &ProvisionResponse{}, ErrorAlreadyProvisioned
+	si, err := a.dao.GetServiceInstance(instanceUUID.String())
+	if err != nil && !a.dao.IsNotFoundError(err) {
+		return nil, err
+	}
+	// This will use the package to make sure that if the type is changed
+	// away from []byte it can still be evaluated.
+	if si != nil && uuid.Equal(si.ID, serviceInstance.ID) {
+		if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
+			alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance, apb.JobMethodProvision)
+			if err != nil {
+				return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
 			}
-			log.Info("we have a duplicate instance with parameters that differ, returning 409 conflict")
-			return nil, ErrorDuplicate
+			if alreadyInProgress {
+				log.Infof("Provision requested for instance %s, but job is already in progress", serviceInstance.ID)
+				return &ProvisionResponse{Operation: jobToken}, ErrorProvisionInProgress
+			}
+			log.Debug("already have this instance returning 200")
+			return &ProvisionResponse{}, ErrorAlreadyProvisioned
 		}
+		log.Info("we have a duplicate instance with parameters that differ, returning 409 conflict")
+		return nil, ErrorDuplicate
 	}
 
 	//
@@ -692,8 +694,22 @@ func (a AnsibleBroker) Deprovision(
 		return &DeprovisionResponse{Operation: jobToken}, ErrorDeprovisionInProgress
 	}
 
+	params := make(apb.Parameters)
+
+	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
+	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
+		log.Warningf("unable to retrieve provision time credentials - %v", err)
+		return nil, err
+	}
+
+	// Add the DB Credentials. This will allow the apb to use these credentials
+	// if it so chooses.
+	if provExtCreds != nil {
+		params[apb.ProvisionCredentialsKey] = provExtCreds.Credentials
+	}
+
 	var token = a.engine.Token()
-	dpjob := &DeprovisionJob{&instance, skipApbExecution}
+	dpjob := &DeprovisionJob{&instance, skipApbExecution, &params}
 	if async {
 		log.Info("ASYNC deprovision in progress")
 

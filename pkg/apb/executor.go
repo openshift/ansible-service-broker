@@ -43,11 +43,13 @@ type ExecutorAccessors interface {
 // ExecutorAsync - Main interface used for running APBs asynchronously.
 type ExecutorAsync interface {
 	Provision(*ServiceInstance) <-chan StatusMessage
-	Deprovision(instance *ServiceInstance) <-chan StatusMessage
+	Deprovision(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage
 	Bind(instance *ServiceInstance, parameters *Parameters, bindingID string) <-chan StatusMessage
 	Unbind(instance *ServiceInstance, parameters *Parameters, bindingID string) <-chan StatusMessage
 	Update(instance *ServiceInstance) <-chan StatusMessage
 }
+
+//go:generate mockery -name=Executor -inpkg -note=Generated
 
 // Executor - Composite executor interface.
 type Executor interface {

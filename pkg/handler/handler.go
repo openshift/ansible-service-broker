@@ -296,6 +296,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 	resp, err := h.broker.Provision(instanceUUID, req, async)
 
 	if err != nil {
+		log.Errorf("provision error %+v", err)
 		switch err {
 		case broker.ErrorDuplicate:
 			writeResponse(w, http.StatusConflict, broker.ProvisionResponse{})
