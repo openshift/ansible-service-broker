@@ -31,6 +31,8 @@ generate_notes () {
     local start=$1
     local end=HEAD
     local commits=$(git --no-pager log --reverse --pretty=format:"%s" "$start".."$end")
+    local first_commit=$(git rev-parse "$start")
+    local last_commit=$(git rev-parse "$end")
     local date=$(date +%Y%m%d)
     local notes_file=$(mktemp)
     local bug_file=$(mktemp)
@@ -38,6 +40,10 @@ generate_notes () {
 
     cat <<EOF >> $notes_file
 # Release notes for $date
+
+* First Commit: $first_commit
+* Last Commit: $last_commit
+
 EOF
 
     cat <<EOF >> $bug_file
