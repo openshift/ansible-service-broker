@@ -86,13 +86,6 @@ func cleanupUnbind(bindInstance *apb.BindInstance, serviceInstance *apb.ServiceI
 	var err error
 	id := bindInstance.ID.String()
 
-	if bindExtCreds != nil {
-		if err = apb.DeleteExtractedCredentials(id); err != nil {
-			log.Errorf("failed to delete extracted credentials - %v", err)
-			return err
-		}
-	}
-
 	if err = dao.DeleteBindInstance(id); err != nil {
 		log.Errorf("failed to delete bind instance - %v", err)
 		return err
