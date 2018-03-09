@@ -61,6 +61,7 @@ oc cluster up --image=${ORIGIN_IMAGE} \
 # Logging in as system:admin so we can create a clusterrolebinding and
 # creating ansible-service-broker project
 #
+echo 'Logging in as "system:admin" to create broker resources...'
 oc login -u system:admin
 oc new-project ansible-service-broker
 
@@ -128,3 +129,5 @@ fi
 #   select postgres
 # Click deploy on mediawiki, after it's redeployed access webui
 #
+
+echo 'NOTE: You are currently logged in as "system:admin", if you intend to use the apb tool, is is required you log in as a user with a token. "developer" is recommended.'
