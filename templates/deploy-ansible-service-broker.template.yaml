@@ -317,8 +317,11 @@ objects:
         - type: local_openshift
           name: localregistry
           namespaces: ['openshift']
+          # NOTE TO ADMINS: The default whitelist policy here will pass *all* APBs
+          # found in the local openshift registry. If this is not desired,
+          # manipulate the following regex to only match APBs you wish to be made available.
           white_list:
-            - ".*-apb$"
+            - ".*"
       dao:
         type: "${DAO_TYPE}"
         etcd_host: asb-etcd.${NAMESPACE}.svc
