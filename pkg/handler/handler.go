@@ -672,7 +672,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		log.Debugf("Binding not found.")
 		writeResponse(w, http.StatusNotFound, broker.ErrorResponse{Description: err.Error()})
 	case err == broker.ErrorUnbindingInProgress:
-		writeResponse(w, http.StatusAccepted, broker.ErrorResponse{Description: err.Error()})
+		writeResponse(w, http.StatusAccepted, resp)
 	case err != nil: // return 500
 		log.Errorf("Unknown error: %v", err)
 		writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
