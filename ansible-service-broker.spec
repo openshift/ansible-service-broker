@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.2
+Version: 1.2.3
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,31 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Mar 09 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.3-1
+- Add a note to run latest about current user (#829) (ernelson@redhat.com)
+- Default to an open localregistry policy (#827) (ernelson@redhat.com)
+- return the token for a unbind in progress (#824) (Shawn.Hurley21@gmail.com)
+- remove extra deletion of extracted credentials in broker package (#825) (Shawn.Hurley21@gmail.com)
+- adding a blank line to the help output (#826) (jmrodri@gmail.com)
+- Add breadcrumbs to release notes (#820) (david.j.zager@gmail.com)
+- switching dependency management from glide to dep (#817) (Shawn.Hurley21@gmail.com)
+- Document the Broker's versioning strategy (#810) (david.j.zager@gmail.com)
+- parameterize dao:type. Defaults to etcd (#816) (jmrodri@gmail.com)
+- Adds Service Bundle contract document (#808) (mhrivnak@hrivnak.org)
+- Removing links to older fusor GH org (#814) (matzew@apache.org)
+- Initial pass at proposal to change subscribers (#727) (maleck13@users.noreply.github.com)
+- Broker client dao (#795) (Shawn.Hurley21@gmail.com)
+- Force canary image be built from master (#805) (david.j.zager@gmail.com)
+- parameterize the 'ansible-service-broker' namespace with the NAMESPACE variable (#800) (jkim@redhat.com)
+- Bug 1550385 - Add .default to proxy docs NO_PROXY (#807) (ernelson@redhat.com)
+- Remove tmp note re: minishift-addon (#802) (ernelson@redhat.com)
+- Broker client vendor update (#794) (Shawn.Hurley21@gmail.com)
+- Save extracted credentials into a secret (#775) (Shawn.Hurley21@gmail.com)
+- Bug 1548311 - Return success on depro extcred miss (#791) (ernelson@redhat.com)
+- Temporarily link to minishift-addons fork (#796) (ernelson@redhat.com)
+- Adds docs for installing the broker in minikube. (#792) (mhrivnak@hrivnak.org)
+- Filter everything when whitelist is empty (#781) (rhallise@redhat.com)
+
 * Fri Feb 23 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.2-1
 - Bug 1539542 - return bindings_retrievable (#776) (jmrodri@gmail.com)
 - Bug 1543521 - fix async bind when job already in-progress (#764) (mhrivnak@hrivnak.org)
