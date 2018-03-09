@@ -62,8 +62,6 @@ var (
 )
 
 const (
-	// MsgBufferSize - The buffer for the message channel.
-	MsgBufferSize = 20
 	// defaultClusterURLPreFix - prefix for the ansible service broker.
 	defaultClusterURLPreFix = "/ansible-service-broker"
 )
@@ -213,43 +211,43 @@ func CreateApp() App {
 	validateRegistryNames(app.registry)
 
 	log.Debug("Initializing WorkEngine")
-	app.engine = broker.NewWorkEngine(MsgBufferSize)
+	stateSubscriber := broker.NewJobStateSubscriber(app.dao)
+	app.engine = broker.NewWorkEngine()
 	err = app.engine.AttachSubscriber(
-		broker.NewProvisionWorkSubscriber(app.dao),
+		stateSubscriber,
 		broker.ProvisionTopic)
 	if err != nil {
 		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
 	err = app.engine.AttachSubscriber(
-		broker.NewDeprovisionWorkSubscriber(app.dao),
+		stateSubscriber,
 		broker.DeprovisionTopic)
 	if err != nil {
 		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
 	err = app.engine.AttachSubscriber(
-		broker.NewUpdateWorkSubscriber(app.dao),
+		stateSubscriber,
 		broker.UpdateTopic)
 	if err != nil {
 		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
 	err = app.engine.AttachSubscriber(
-		broker.NewBindingWorkSubscriber(app.dao),
+		stateSubscriber,
 		broker.BindingTopic)
 	if err != nil {
 		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
 	err = app.engine.AttachSubscriber(
-		broker.NewUnbindingWorkSubscriber(app.dao),
+		stateSubscriber,
 		broker.UnbindingTopic)
 	if err != nil {
 		log.Errorf("Failed to attach subscriber to WorkEngine: %s", err.Error())
 		os.Exit(1)
 	}
-	log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
 	apb.InitializeSecretsCache(app.config.GetSubConfigArray("secrets"))
 

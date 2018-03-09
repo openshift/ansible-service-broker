@@ -305,4 +305,12 @@ type SubscriberDAO interface {
 	SetState(id string, state apb.JobState) (string, error)
 	GetServiceInstance(id string) (*apb.ServiceInstance, error)
 	DeleteServiceInstance(id string) error
+	GetBindInstance(id string) (*apb.BindInstance, error)
+	DeleteBindInstance(id string) error
+	SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error
+}
+
+// WorkSubscriber - Interface tha wraps the Subscribe method
+type WorkSubscriber interface {
+	Notify(msg JobMsg)
 }

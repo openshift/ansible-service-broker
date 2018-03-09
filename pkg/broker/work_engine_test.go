@@ -26,16 +26,16 @@ import (
 var engine *WorkEngine
 
 func init() {
-	engine = NewWorkEngine(10)
+	engine = NewWorkEngine()
 }
 
 type mockSubscriber struct {
-	buffer <-chan JobMsg
+	msg    JobMsg
 	called bool
 }
 
-func (ms *mockSubscriber) Subscribe(buffer <-chan JobMsg) {
-	ms.buffer = buffer
+func (ms *mockSubscriber) Notify(msg JobMsg) {
+	ms.msg = msg
 	ms.called = true
 }
 
@@ -50,35 +50,17 @@ func (mw *mockWorker) Run(token string, buffer chan<- JobMsg) {
 	mw.wg.Done()
 }
 
-func TestNewWorkEngine(t *testing.T) {
-	we := NewWorkEngine(10)
-	ft.AssertNotNil(t, we)
-	ft.AssertEqual(t, we.bufsz, 10)
-}
-
-func TestGetActiveTopics(t *testing.T) {
-	topics := engine.GetActiveTopics()
-	ft.AssertEqual(t, 0, len(topics))
-	dasub := mockSubscriber{}
-	engine.AttachSubscriber(&dasub, ProvisionTopic)
-
-	// ensure topic is added and buffer passed to subscriber
-	topics = engine.GetActiveTopics()
-	ft.AssertEqual(t, 1, len(topics))
-	_, exists := topics[ProvisionTopic]
-	ft.AssertTrue(t, exists, "topic does not exist")
-}
-
 func TestAttachSubscriber(t *testing.T) {
 	dasub := mockSubscriber{}
+	subsBefore := len(engine.GetSubscribers(ProvisionTopic))
 	err := engine.AttachSubscriber(&dasub, ProvisionTopic)
 	if err != nil {
 		t.Fatal(err)
 	}
-	topics := engine.GetActiveTopics()
-	_, exists := topics[ProvisionTopic]
-	ft.AssertTrue(t, exists, "topic does not exist")
-	ft.AssertTrue(t, dasub.called, "subscribe never called")
+	subsAfter := len(engine.GetSubscribers(ProvisionTopic))
+	if subsAfter != subsBefore+1 {
+		t.Fatal("expected subscribers to increase by one")
+	}
 }
 
 func TestInvalidWorkTopic(t *testing.T) {

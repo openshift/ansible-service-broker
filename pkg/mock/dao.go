@@ -86,6 +86,49 @@ func (mp *SubscriberDAO) GetServiceInstance(id string) (*apb.ServiceInstance, er
 	return retOb.(*apb.ServiceInstance), mp.Errs["GetServiceInstance"]
 }
 
+//DeleteBindInstance mock impl
+func (mp *SubscriberDAO) DeleteBindInstance(id string) error {
+	assert := mp.AssertOn["DeleteBindInstance"]
+	if nil != assert {
+		if err := assert(id); err != nil {
+			mp.assertErr = append(mp.assertErr, err)
+			return err
+		}
+	}
+	mp.calls["DeleteBindInstance"]++
+	return mp.Errs["DeleteBindInstance"]
+}
+
+// SetServiceInstance mock iml
+func (mp *SubscriberDAO) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
+	assert := mp.AssertOn["SetServiceInstance"]
+	if nil != assert {
+		if err := assert(id); err != nil {
+			mp.assertErr = append(mp.assertErr, err)
+			return err
+		}
+	}
+	mp.calls["SetServiceInstance"]++
+	return mp.Errs["SetServiceInstance"]
+}
+
+// GetBindInstance mock impl
+func (mp *SubscriberDAO) GetBindInstance(id string) (*apb.BindInstance, error) {
+	assert := mp.AssertOn["GetBindInstance"]
+	if nil != assert {
+		if err := assert(id); err != nil {
+			mp.assertErr = append(mp.assertErr, err)
+			return nil, err
+		}
+	}
+	mp.calls["GetBindInstance"]++
+	retOb := mp.Object["GetBindInstance"]
+	if nil == retOb {
+		return nil, mp.Errs["GetBindInstance"]
+	}
+	return retOb.(*apb.BindInstance), mp.Errs["GetBindInstance"]
+}
+
 // CheckCalls will check the calls made match the expected calls
 func (mp *SubscriberDAO) CheckCalls(calls map[string]int) error {
 	for k, v := range calls {

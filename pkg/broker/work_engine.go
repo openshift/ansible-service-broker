@@ -29,13 +29,13 @@ type Work interface {
 
 // WorkEngine - a new engine for doing work.
 type WorkEngine struct {
-	topics map[WorkTopic]chan JobMsg
-	bufsz  int
+	subscribers map[WorkTopic][]WorkSubscriber
+	jobs        map[string]chan JobMsg
 }
 
 // NewWorkEngine - creates a new work engine
-func NewWorkEngine(bufferSize int) *WorkEngine {
-	return &WorkEngine{topics: make(map[WorkTopic]chan JobMsg), bufsz: bufferSize}
+func NewWorkEngine() *WorkEngine {
+	return &WorkEngine{jobs: make(map[string]chan JobMsg), subscribers: map[WorkTopic][]WorkSubscriber{}}
 }
 
 // StartNewAsyncJob - Starts a job in an new goroutine, reporting to a specific topic.
@@ -50,8 +50,31 @@ func (engine *WorkEngine) StartNewAsyncJob(
 	if token == "" {
 		token = engine.Token()
 	}
-	go work.Run(token, engine.topic(topic))
+	go engine.start(token, work, topic)
+
 	return token, nil
+}
+
+func (engine *WorkEngine) start(token string, work Work, topic WorkTopic) {
+	engine.jobs[token] = make(chan JobMsg)
+	// run the job and close the channel in a new routine
+
+	defer func() {
+		log.Debug("closing channel for job ", token, engine.jobs)
+		close(engine.jobs[token])
+		delete(engine.jobs, token)
+	}()
+
+	go func() {
+		// listen for new messages and hand them off to the subscribers
+		for msg := range engine.jobs[token] {
+			for _, sub := range engine.subscribers[topic] {
+				//TODO edge case consider the fact that a subscriber may never exit and so we would leak go routines
+				go sub.Notify(msg)
+			}
+		}
+	}()
+	work.Run(token, engine.jobs[token])
 }
 
 // StartNewSyncJob - Starts a job and waits for it to finish, reporting to a specific topic.
@@ -66,22 +89,13 @@ func (engine *WorkEngine) StartNewSyncJob(
 		token = engine.Token()
 	}
 
-	work.Run(token, engine.topic(topic))
+	engine.start(token, work, topic)
 	return nil
 }
 
 // Token generates a new work token
 func (engine *WorkEngine) Token() string {
 	return uuid.New()
-}
-
-func (engine *WorkEngine) topic(topic WorkTopic) chan JobMsg {
-	msgBuffer, topicExists := engine.topics[topic]
-	if !topicExists {
-		msgBuffer = make(chan JobMsg, engine.bufsz)
-		engine.topics[topic] = msgBuffer
-	}
-	return msgBuffer
 }
 
 // AttachSubscriber - Attach a subscriber a specific messaging topic.
@@ -93,17 +107,17 @@ func (engine *WorkEngine) AttachSubscriber(
 		return errors.New("invalid work topic")
 	}
 
-	msgBuffer, topicExists := engine.topics[topic]
-	if !topicExists {
-		msgBuffer = make(chan JobMsg, engine.bufsz)
-		engine.topics[topic] = msgBuffer
-	}
+	engine.subscribers[topic] = append(engine.subscribers[topic], subscriber)
 
-	subscriber.Subscribe(msgBuffer)
 	return nil
 }
 
-// GetActiveTopics - Get list of topics
-func (engine *WorkEngine) GetActiveTopics() map[WorkTopic]chan JobMsg {
-	return engine.topics
+// GetActiveJobs - Get list of active jobs
+func (engine *WorkEngine) GetActiveJobs() map[string]chan JobMsg {
+	return engine.jobs
+}
+
+// GetSubscribers - Get list of subscribers to a topic
+func (engine *WorkEngine) GetSubscribers(topic WorkTopic) []WorkSubscriber {
+	return engine.subscribers[topic]
 }

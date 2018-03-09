@@ -1092,13 +1092,6 @@ func (a AnsibleBroker) Unbind(
 	} else {
 		log.Warning("Broker configured to *NOT* launch and run APB unbind")
 	}
-
-	err = cleanupUnbind(&bindInstance, &serviceInstance, bindExtCreds, a.dao)
-
-	if err != nil {
-		return nil, false, err
-	}
-
 	return &UnbindResponse{}, false, nil
 }
 
