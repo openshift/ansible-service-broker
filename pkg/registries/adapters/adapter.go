@@ -49,9 +49,11 @@ const BundleSpecLabel = "com.redhat.apb.spec"
 // would need to complete its request to the images.
 type Configuration struct {
 	URL        *url.URL
+	Name       string
 	User       string
 	Pass       string
 	Org        string
+	BaseImage  string
 	Images     []string
 	Namespaces []string
 	Tag        string
