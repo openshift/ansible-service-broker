@@ -25,13 +25,13 @@ func (_m *MockExecutor) Bind(instance *ServiceInstance, parameters *Parameters, 
 	return r0
 }
 
-// Deprovision provides a mock function with given fields: instance, parameters
-func (_m *MockExecutor) Deprovision(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage {
-	ret := _m.Called(instance, parameters)
+// Deprovision provides a mock function with given fields: instance
+func (_m *MockExecutor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
+	ret := _m.Called(instance)
 
 	var r0 <-chan StatusMessage
-	if rf, ok := ret.Get(0).(func(*ServiceInstance, *Parameters) <-chan StatusMessage); ok {
-		r0 = rf(instance, parameters)
+	if rf, ok := ret.Get(0).(func(*ServiceInstance) <-chan StatusMessage); ok {
+		r0 = rf(instance)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan StatusMessage)

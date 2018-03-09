@@ -155,7 +155,6 @@ func (j *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 type DeprovisionJob struct {
 	serviceInstance *apb.ServiceInstance
 	skipExecution   bool
-	params          *apb.Parameters
 }
 
 // Run - Run the deprovision job.
@@ -169,7 +168,7 @@ func (j *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 		metricsJobFinishedHook: metrics.DeprovisionJobFinished,
 		skipExecution:          j.skipExecution,
 		run: func(e apb.Executor) <-chan apb.StatusMessage {
-			return e.Deprovision(j.serviceInstance, j.params)
+			return e.Deprovision(j.serviceInstance)
 		},
 	}
 	job.Run(token, msgBuffer)

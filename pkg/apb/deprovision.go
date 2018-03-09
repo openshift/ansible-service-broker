@@ -24,7 +24,7 @@ import (
 )
 
 // Deprovision - runs the abp with the deprovision action.
-func (e *executor) Deprovision(instance *ServiceInstance, parameters *Parameters) <-chan StatusMessage {
+func (e *executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Notice("============================================================")
 	log.Notice("                      DEPROVISIONING                        ")
 	log.Notice("============================================================")
@@ -47,7 +47,7 @@ func (e *executor) Deprovision(instance *ServiceInstance, parameters *Parameters
 		// Might need to change up this interface to feed in instance ids
 		metrics.ActionStarted("deprovision")
 		executionContext, err := e.executeApb("deprovision", instance.Spec,
-			instance.Context, parameters)
+			instance.Context, instance.Parameters)
 		defer runtime.Provider.DestroySandbox(
 			executionContext.PodName,
 			executionContext.Namespace,

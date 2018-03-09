@@ -694,22 +694,22 @@ func (a AnsibleBroker) Deprovision(
 		return &DeprovisionResponse{Operation: jobToken}, ErrorDeprovisionInProgress
 	}
 
-	params := make(apb.Parameters)
-
 	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
 	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, err
 	}
 
-	// Add the DB Credentials. This will allow the apb to use these credentials
+	// Add the DB Credentials to the parameters. This will allow the apb to use these credentials
 	// if it so chooses.
-	if provExtCreds != nil {
+	if provExtCreds != nil && instance.Parameters != nil {
+		params := *instance.Parameters
 		params[apb.ProvisionCredentialsKey] = provExtCreds.Credentials
+		instance.Parameters = &params
 	}
 
 	var token = a.engine.Token()
-	dpjob := &DeprovisionJob{&instance, skipApbExecution, &params}
+	dpjob := &DeprovisionJob{&instance, skipApbExecution}
 	if async {
 		log.Info("ASYNC deprovision in progress")
 
