@@ -1,10 +1,10 @@
-# Helm Chart Registry Adapter Proposal
+# Basic Helm Chart Registry Adapter Proposal
 
 ## Introduction
 
 Add a new registry adapter type, `helm`, that supports Helm chart
-repositories. With this change, an admin, could configure the broker by adding
-a `helm` type registry and have the Helm charts hosted in that Helm chart
+repositories. With this change, an admin could configure the broker by adding
+a `helm` registry type and have the Helm charts hosted in that Helm chart
 repository converted into objects the broker knows how to manage for use via
 the Service Catalog.
 
@@ -13,21 +13,22 @@ the Service Catalog.
 Currently, our broker only supports docker container image type registries.
 However, with [Helm](https://helm.sh) being the "package manager for Kubernetes",
 there is already a strong collection of applications defined in the form of
-Helm charts. Adding the ability to the broker to consume these Helm charts as
-Service Bundles allows work already done on Helm charts to be made available in
+Helm charts. Modifying the broker to consume these Helm charts as Service
+Bundles allows work already done in Helm charts to be made available in
 a cluster.
 
-## Phase 1 - Adding a Basic Helm Chart Registry Adapter
-
-### Creating a Base Image for Executing Helm Charts
+## Creating a Base Image for Executing Helm Charts
 
 Ansible Playbook Bundles (APBs) have already been described as an instance of
 the more generic Service Bundle. Here, we will be creating a new type of
 Service Bundle, Helm Bundles, that respect the Service Bundle contract but use
 Helm as the runtime. We already have a [Helm Bundle
-Base](https://github.com/ansibleplaybookbundle/helm-bundle-base) and the
-changes shown in [Helm Bundle Base PR 2](https://github.com/ansibleplaybookbundle/helm-bundle-base/pull/2)
-show the work required to implement the Service Bundle contract using Helm.
+Base](https://github.com/ansibleplaybookbundle/helm-bundle-base) and this
+[PR](https://github.com/ansibleplaybookbundle/helm-bundle-base/pull/2)
+shows the work required to implement the Service Bundle contract generically
+using Helm.
+
+## Broker Modifications
 
 ### Broker Config Options
 
@@ -51,18 +52,16 @@ registry:
    Helm chart
 1. White List/Black List: allows the Admin to filter out Helm charts
 
-#### Changes to the Registry Package
+### Changes to the Registry Package
 
 - Add the ability to read the `base_image` from the broker config.
 - Pass the URL and BaseImage to the registry adapter.
 - Instantiate a Helm registry adapter to handle Helm Chart registries in the
   config.
 
-#### Creating a Helm Adapter
+### Creating a Helm Adapter
 
-The `HelmAdapter` struct will look something like, the addition of `Charts`
-makes it possible to save our work and only ready the registries index file
-once:
+The `HelmAdapter` struct will look something like the example below:
 
 ```
 // import "k8s.io/helm/pkg/repo"
@@ -70,20 +69,61 @@ once:
 type HelmAdapter struct {
     Config Configuration
     Log    *logging.Logger
-    Charts map[string]*repo.ChartVersion
+    Charts map[string][]*repo.ChartVersion
 }
 ```
+
+The addition of the `Charts` field makes it possible to save our work and only
+read the registries' index file once.
 
 When the broker calls `GetImageNames()` the Helm adapter will read the
 `index.yaml` found at the Helm Chart Repository URL based on the [chart
 repository
-structure](https://github.com/kubernetes/helm/blob/master/docs/chart_repository.md#the-chart-repository-structure)
-and add the latest version of each chart to the `Charts` field as well as
-its name to the list of `imageNames` to be returned.
+structure](https://github.com/kubernetes/helm/blob/master/docs/chart_repository.md#the-chart-repository-structure).
+The broker will create an entry in the `Charts` field to hold a list of
+`ChartVersion` objects and  add the chart name to the list of `imageNames`
+to be returned.
 
 After these image names are filtered, the subsequent call to `FetchSpecs()`
-will find the chart by name in the `Charts` field and create a `Spec` object
-for it. For example:
+will:
+
+- Find the chart by name in the `Charts` field
+- Save all the versions of the chart:
+
+```
+var chartVersions []string
+for _, chart := range charts {
+    chartVersions = append(chartVersions, chart.Version)
+}
+```
+
+- Use the latest version of the chart to create a bundle `Spec` object:
+
+```
+// Use the latest chart for creating the bundle
+chart := charts[0]
+```
+
+- Load the chart in memory to grab the content of the values file:
+
+```
+resp, err := http.Get(chart.URLs[0])
+if err != nil {
+        return specs, err
+}
+defer resp.Body.Close()
+
+helmChart, err := chartutil.LoadArchive(resp.Body)
+if err != nil {
+        return specs, err
+}
+
+if helmChart.Values != nil {
+        values = helmChart.Values.Raw
+}
+```
+
+- Create a bundle `Spec` object:
 
 ```
 // Convert chart to Bundle Spec
@@ -127,10 +167,19 @@ spec := &apb.Spec{
                     Required:  false,
                 },
                 apb.ParameterDescriptor{
+                    Name:      "version",
+                    Title:     "Helm Chart Version",
+                    Type:      "enum",
+		    Enum:      chartVersions,
+                    Default:   chart.Version,
+                    Updatable: true,
+                    Required:  false,
+                },
+                apb.ParameterDescriptor{
                     Name:      "name",
                     Title:     "Release Name",
                     Type:      "string",
-                    Default:   "helmrunner",
+                    Default:   "helm-sb",
                     Updatable: false,
                     Required:  false,
                 },
@@ -149,21 +198,9 @@ spec := &apb.Spec{
 }
 ```
 
-Most of the data required to create a useful `Spec` object is contained in
-the Chart object. However, in order to retrieve the default values we will use
-[Helm's Chartutil
-pkg](https://github.com/kubernetes/helm/blob/master/pkg/chartutil/load.go) to
-load the archive specified at `Chart.URLs[0]` and read the values.
-
-## Phase 2 - Support Authenticated Chart Repositories
+## Work Not Covered
 
 Helm Chart Repositories can be authenticated, [this
 issue](https://github.com/kubernetes/helm/issues/1038) provides more
 information. The broker should support authenticated chart repositories.
-
-## Phase 3 - Chart Versions as Parameter
-
-In phase 1, only the latest chart version will be used. The broker should
-support all versions of a chart and allow the consumer to specify which version
-of a chart they wish to install. The base image would need to be updated to
-handle specifying a specific version at provision time.
+A separate proposal will be created for this work.
