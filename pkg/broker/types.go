@@ -310,7 +310,8 @@ type SubscriberDAO interface {
 	SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error
 }
 
-// WorkSubscriber - Interface tha wraps the Subscribe method
+// WorkSubscriber - Defines how a Subscriber can be notified of changes
 type WorkSubscriber interface {
+	ID() string
 	Notify(msg JobMsg)
 }

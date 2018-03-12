@@ -17,7 +17,10 @@
 package broker
 
 import (
+	"context"
 	"errors"
+	"sync"
+	"time"
 
 	"github.com/pborman/uuid"
 )
@@ -29,13 +32,14 @@ type Work interface {
 
 // WorkEngine - a new engine for doing work.
 type WorkEngine struct {
-	subscribers map[WorkTopic][]WorkSubscriber
-	jobs        map[string]chan JobMsg
+	subscribers   map[WorkTopic][]WorkSubscriber
+	jobs          map[string]chan JobMsg
+	jobBufferSize int
 }
 
 // NewWorkEngine - creates a new work engine
-func NewWorkEngine() *WorkEngine {
-	return &WorkEngine{jobs: make(map[string]chan JobMsg), subscribers: map[WorkTopic][]WorkSubscriber{}}
+func NewWorkEngine(bufferSize int) *WorkEngine {
+	return &WorkEngine{jobs: make(map[string]chan JobMsg), subscribers: map[WorkTopic][]WorkSubscriber{}, jobBufferSize: bufferSize}
 }
 
 // StartNewAsyncJob - Starts a job in an new goroutine, reporting to a specific topic.
@@ -50,31 +54,63 @@ func (engine *WorkEngine) StartNewAsyncJob(
 	if token == "" {
 		token = engine.Token()
 	}
-	go engine.start(token, work, topic)
+	go engine.startJob(token, work, topic)
 
 	return token, nil
 }
 
-func (engine *WorkEngine) start(token string, work Work, topic WorkTopic) {
-	engine.jobs[token] = make(chan JobMsg)
-	// run the job and close the channel in a new routine
+func waitForNotify(sub WorkSubscriber, msg JobMsg, signal chan<- struct{}) {
+	sub.Notify(msg)
+	signal <- struct{}{}
+}
 
+func (engine *WorkEngine) startJob(token string, work Work, topic WorkTopic) {
+	// create a channel specifically for use with this job
+	jobChannel := make(chan JobMsg, engine.jobBufferSize)
+	engine.jobs[token] = jobChannel
+	// ensure we always clean up
 	defer func() {
 		log.Debug("closing channel for job ", token, engine.jobs)
-		close(engine.jobs[token])
+		close(jobChannel)
 		delete(engine.jobs, token)
 	}()
 
 	go func() {
-		// listen for new messages and hand them off to the subscribers
-		for msg := range engine.jobs[token] {
+		// listen for a new message for the job keyed to this token and hand off to the subscribers async. Wait for them all to be done before accepting
+		// the next message
+		for msg := range jobChannel {
+			wg := &sync.WaitGroup{}
+			// hand off the msg to all subscribers async
 			for _, sub := range engine.subscribers[topic] {
-				//TODO edge case consider the fact that a subscriber may never exit and so we would leak go routines
-				go sub.Notify(msg)
+				go func(msg JobMsg, sub WorkSubscriber) {
+					wg.Add(1)
+					// ensure things don't get locked up. Each subscriber has up tp the configured amount of time to complete its action
+					ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second) //TODO make configurable
+					// used to tell us when the subscribers notify method is completed
+					notifySignal := make(chan struct{})
+					//If our subscriber times out or returns normally we will always clean up
+					defer func() {
+						wg.Done()
+						close(notifySignal)
+						cancel()
+					}()
+					// notify the subscriber
+					go waitForNotify(sub, msg, notifySignal)
+					//act on whichever happens first the subscriber's notify method completing or the timeout
+					select {
+					case <-notifySignal:
+						return
+					case <-ctx.Done():
+						log.Errorf("Subscriber %s timeout %v ", sub.ID(), ctx.Err())
+						return
+					}
+				}(msg, sub)
 			}
+			//ensure we wait until all subs are done before taking on the next message
+			wg.Wait()
 		}
 	}()
-	work.Run(token, engine.jobs[token])
+	work.Run(token, jobChannel)
 }
 
 // StartNewSyncJob - Starts a job and waits for it to finish, reporting to a specific topic.
@@ -89,7 +125,7 @@ func (engine *WorkEngine) StartNewSyncJob(
 		token = engine.Token()
 	}
 
-	engine.start(token, work, topic)
+	engine.startJob(token, work, topic)
 	return nil
 }
 

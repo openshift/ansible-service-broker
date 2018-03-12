@@ -64,6 +64,8 @@ var (
 const (
 	// defaultClusterURLPreFix - prefix for the ansible service broker.
 	defaultClusterURLPreFix = "/ansible-service-broker"
+	// MsgBufferSize - The buffer for the message channel.
+	MsgBufferSize = 20
 )
 
 // App - All the application pieces that are installed.
@@ -212,7 +214,7 @@ func CreateApp() App {
 
 	log.Debug("Initializing WorkEngine")
 	stateSubscriber := broker.NewJobStateSubscriber(app.dao)
-	app.engine = broker.NewWorkEngine()
+	app.engine = broker.NewWorkEngine(MsgBufferSize)
 	err = app.engine.AttachSubscriber(
 		stateSubscriber,
 		broker.ProvisionTopic)

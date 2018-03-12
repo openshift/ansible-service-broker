@@ -26,7 +26,7 @@ import (
 var engine *WorkEngine
 
 func init() {
-	engine = NewWorkEngine()
+	engine = NewWorkEngine(10)
 }
 
 type mockSubscriber struct {
@@ -37,6 +37,10 @@ type mockSubscriber struct {
 func (ms *mockSubscriber) Notify(msg JobMsg) {
 	ms.msg = msg
 	ms.called = true
+}
+
+func (ms *mockSubscriber) ID() string {
+	return "mock"
 }
 
 type mockWorker struct {

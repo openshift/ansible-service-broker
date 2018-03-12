@@ -22,6 +22,11 @@ func isBinding(msg JobMsg) bool {
 	return msg.State.Method == apb.JobMethodBind || msg.State.Method == apb.JobMethodUnbind
 }
 
+// ID is used as an identifier for the type of subscriber
+func (jss *JobStateSubscriber) ID() string {
+	return "jobstate"
+}
+
 // Notify external API to notify this subscriber of a change in the Job
 func (jss *JobStateSubscriber) Notify(msg JobMsg) {
 	log.Debugf("JobStateSubscriber Notify : msg state %v ", msg.State)
@@ -39,6 +44,7 @@ func (jss *JobStateSubscriber) Notify(msg JobMsg) {
 			return
 		}
 	}
+	return
 }
 
 // handle specific logic for the succeeded state
