@@ -730,11 +730,13 @@ func (a AnsibleBroker) Deprovision(
 
 		// HACK: there might be a delay between the first time the state in etcd
 		// is set and the job was already started. But I need the token.
-		a.dao.SetState(instance.ID.String(), apb.JobState{
-			Token:  token,
-			State:  apb.StateInProgress,
-			Method: apb.JobMethodDeprovision,
-		})
+		if !skipApbExecution {
+			a.dao.SetState(instance.ID.String(), apb.JobState{
+				Token:  token,
+				State:  apb.StateInProgress,
+				Method: apb.JobMethodDeprovision,
+			})
+		}
 		return &DeprovisionResponse{Operation: token}, nil
 	}
 
