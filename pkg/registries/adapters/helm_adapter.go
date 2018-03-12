@@ -39,7 +39,7 @@ const (
 type HelmAdapter struct {
 	Config Configuration
 	Log    *logging.Logger
-	Charts map[string]*repo.ChartVersion
+	Charts map[string][]*repo.ChartVersion
 }
 
 // RegistryName - Retrieve the registry name
@@ -51,25 +51,20 @@ func (r *HelmAdapter) RegistryName() string {
 func (r *HelmAdapter) GetImageNames() ([]string, error) {
 	var imageNames []string
 
-	r.Charts = map[string]*repo.ChartVersion{}
+	r.Charts = map[string][]*repo.ChartVersion{}
 
 	index, err := r.getHelmIndex()
 	if err != nil {
 		return imageNames, err
 	}
 
-	for _, entry := range index.Entries {
+	for name, entry := range index.Entries {
 		if len(entry) == 0 {
 			continue
 		}
 
-		// TODO: We may want to handle the multiple chart versions in the future
-		// for now though, just grab the latest (SortEntries() is intended to make
-		// the first entry the latest version)
-		chart := entry[0]
-
-		r.Charts[chart.Name] = chart
-		imageNames = append(imageNames, chart.Name)
+		r.Charts[name] = entry
+		imageNames = append(imageNames, name)
 	}
 
 	return imageNames, nil
@@ -83,10 +78,17 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	)
 
 	for _, name := range imageNames {
-		chart, ok := r.Charts[name]
+		var chartVersions []string
+		charts, ok := r.Charts[name]
 		if !ok {
 			continue
 		}
+
+		for _, chart := range charts {
+			chartVersions = append(chartVersions, chart.Version)
+		}
+		// Use the latest chart for creating the bundle
+		chart := charts[0]
 
 		resp, err := http.Get(chart.URLs[0])
 		if err != nil {
@@ -144,11 +146,12 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 							Required:  false,
 						},
 						apb.ParameterDescriptor{
-							Name:      "name",
-							Title:     "Release Name",
-							Type:      "string",
-							Default:   "helmrunner",
-							Updatable: false,
+							Name:      "version",
+							Title:     "Helm Chart Version",
+							Type:      "enum",
+							Enum:      chartVersions,
+							Default:   chart.Version,
+							Updatable: true,
 							Required:  false,
 						},
 						apb.ParameterDescriptor{
@@ -157,7 +160,7 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 							Type:        "string",
 							DisplayType: "textarea",
 							Default:     values,
-							Updatable:   false,
+							Updatable:   true,
 							Required:    false,
 						},
 					},
