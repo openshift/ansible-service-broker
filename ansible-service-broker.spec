@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.15
+Version: 1.1.16
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,13 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Mar 13 2018 David Zager <david.j.zager@gmail.com> 1.1.16-1
+- Bug 1554239 - overwriting job state that has been finished. (#833)
+  (Shawn.Hurley21@gmail.com)
+- Force canary image be built from release-1.1 (#804) (david.j.zager@gmail.com)
+- Bug 1550385 - Add .default to proxy docs NO_PROXY (#806)
+  (ernelson@redhat.com)
+
 * Tue Feb 27 2018 David Zager <david.j.zager@gmail.com> 1.1.15-1
 - Bug 1548311 - Mark depro extcred misses success (#790) (ernelson@redhat.com)
 - Filter everything when whitelist is empty (#793) (rhallise@redhat.com)
