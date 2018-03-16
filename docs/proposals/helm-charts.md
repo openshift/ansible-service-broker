@@ -2,10 +2,10 @@
 
 ## Introduction
 
-Add a new registry adapter type, `helm`, that supports Helm chart
-repositories. With this change, an admin could configure the broker by adding
-a `helm` registry type and have the Helm charts hosted in that Helm chart
-repository converted into objects the broker knows how to manage for use via
+Add a new registry adapter type, `helm`, that supports Helm Chart
+Repositories. With this change, an admin could configure the broker by adding
+a `helm` registry type and have the Helm charts hosted in that Helm Chart
+Repository converted into objects the broker knows how to manage for use via
 the Service Catalog.
 
 ## Problem Description
@@ -19,12 +19,12 @@ a cluster.
 
 ## Creating a Base Image for Executing Helm Charts
 
-Ansible Playbook Bundles (APBs) have already been described as an instance of
-the more generic Service Bundle. Here, we will be creating a new type of
-Service Bundle, Helm Bundles, that respect the Service Bundle contract but use
-Helm as the runtime. We already have a [Helm Bundle
-Base](https://github.com/ansibleplaybookbundle/helm-bundle-base) and this
-[PR](https://github.com/ansibleplaybookbundle/helm-bundle-base/pull/2)
+Ansible Playbook Bundles (APBs) have served as an initial implementation of the
+more generic [Service Bundle Contract](../service-bundle.md). Here, we will be
+creating a new type of Service Bundle, Helm Bundles, that respect the Service
+Bundle contract but use Helm as the runtime. We already have a
+[Helm Bundle Base](https://github.com/ansibleplaybookbundle/helm-bundle-base)
+and this [PR](https://github.com/ansibleplaybookbundle/helm-bundle-base/pull/2)
 shows the work required to implement the Service Bundle contract generically
 using Helm.
 
@@ -40,23 +40,23 @@ registry:
   - type: helm
     name: stable
     url: "https://kubernetes-charts.storage.googleapis.com"
-    base_image: "docker.io/djzager/helm-bundle-base:latest"
+    runner: "docker.io/djzager/helm-runner:latest"
     white_list:
       - ".*"
 ```
 
-1. Type: refers to the registry adapter to handle this registry
+1. Type: refers to the registry adapter to handle Helm Chart Repositories
 1. Name: gives a name to this registry item
-1. URL: the URL for the Helm chart repository
-1. Base Image: the container image to use when provisioning/deprovisioning a
-   Helm chart
-1. White List/Black List: allows the Admin to filter out Helm charts
+1. URL: the URL for the Helm Chart Repository
+1. Runner: the container image to use when interacting with a given
+   Helm Chart
+1. White List/Black List: allows the Admin to filter out Helm Charts
 
 ### Changes to the Registry Package
 
-- Add the ability to read the `base_image` from the broker config.
+- Add the ability to read the `runner` from the broker config.
 - Pass the URL and BaseImage to the registry adapter.
-- Instantiate a Helm registry adapter to handle Helm Chart registries in the
+- Instantiate a Helm registry adapter to handle Helm Chart repositories in the
   config.
 
 ### Creating a Helm Adapter
@@ -76,16 +76,41 @@ type HelmAdapter struct {
 The addition of the `Charts` field makes it possible to save our work and only
 read the registries' index file once.
 
-When the broker calls `GetImageNames()` the Helm adapter will read the
-`index.yaml` found at the Helm Chart Repository URL based on the [chart
-repository
-structure](https://github.com/kubernetes/helm/blob/master/docs/chart_repository.md#the-chart-repository-structure).
-The broker will create an entry in the `Charts` field to hold a list of
-`ChartVersion` objects and  add the chart name to the list of `imageNames`
-to be returned.
+When the registry package calls `GetImageNames()` the Helm adapter will read the
+`index.yaml` found at the Helm Chart Repository URL based on the
+[chart repository structure](https://github.com/kubernetes/helm/blob/master/docs/chart_repository.md#the-chart-repository-structure).
+Inside `GetImageNames()`, the `Charts` fields will be initialized and we will
+save the `ChartVersion`s into the `Charts` field based on the Chart's name. For
+example:
 
-After these image names are filtered, the subsequent call to `FetchSpecs()`
-will:
+```
+// GetImageNames - retrieve the images
+func (r *HelmAdapter) GetImageNames() ([]string, error) {
+       var imageNames []string
+
+       r.Charts = map[string][]*repo.ChartVersion{}
+
+       index, err := r.getHelmIndex()
+       if err != nil {
+               return imageNames, err
+       }
+
+       for name, entry := range index.Entries {
+               if len(entry) == 0 {
+                       continue
+               }
+
+               r.Charts[name] = entry
+               imageNames = append(imageNames, name)
+       }
+
+       return imageNames, nil
+}
+```
+
+This way we only have to evaluate the Chart Repository on the call to
+`GetImageNames()` and the subsequent call to `FetchSpecs()` can work
+to transform Charts:
 
 - Find the chart by name in the `Charts` field
 - Save all the versions of the chart:
@@ -170,7 +195,7 @@ spec := &apb.Spec{
                     Name:      "version",
                     Title:     "Helm Chart Version",
                     Type:      "enum",
-		    Enum:      chartVersions,
+                    Enum:      chartVersions,
                     Default:   chart.Version,
                     Updatable: true,
                     Required:  false,
