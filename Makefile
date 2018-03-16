@@ -23,6 +23,10 @@ broker: $(SOURCES) ## Build the broker
 build: broker ## Build binary from source
 	@echo > /dev/null
 
+generate: ## regenerate mocks
+	go get github.com/vektra/mockery/.../
+	@go generate ./...
+
 lint: ## Run golint
 	@golint -set_exit_status $(addsuffix /... , $(SOURCE_DIRS))
 
