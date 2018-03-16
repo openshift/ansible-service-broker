@@ -73,9 +73,6 @@ type HelmAdapter struct {
 }
 ```
 
-The addition of the `Charts` field makes it possible to save our work and only
-read the registries' index file once.
-
 When the registry package calls `GetImageNames()` the Helm adapter will read the
 `index.yaml` found at the Helm Chart Repository URL based on the
 [chart repository structure](https://github.com/kubernetes/helm/blob/master/docs/chart_repository.md#the-chart-repository-structure).
