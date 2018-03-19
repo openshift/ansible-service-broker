@@ -57,7 +57,7 @@ type Config struct {
 	Tag        string
 	Type       string
 	Name       string
-	BaseImage  string
+	Runner     string
 	Images     []string
 	Namespaces []string
 	// Fail will tell the registry that it is ok to fail the bootstrap if
@@ -182,7 +182,7 @@ func NewRegistry(con *config.Config, asbNamespace string) (Registry, error) {
 		Tag:        con.GetString("tag"),
 		Type:       con.GetString("type"),
 		Name:       con.GetString("name"),
-		BaseImage:  con.GetString("base_image"),
+		Runner:     con.GetString("runner"),
 		Images:     con.GetSliceOfStrings("images"),
 		Namespaces: con.GetSliceOfStrings("namespaces"),
 		Fail:       con.GetBool("fail_on_error"),
@@ -218,11 +218,10 @@ func NewRegistry(con *config.Config, asbNamespace string) (Registry, error) {
 	}
 	c := adapters.Configuration{
 		URL:        u,
-		Name:       configuration.Name,
 		User:       configuration.User,
 		Pass:       configuration.Pass,
 		Org:        configuration.Org,
-		BaseImage:  configuration.BaseImage,
+		Runner:     configuration.Runner,
 		Images:     configuration.Images,
 		Namespaces: configuration.Namespaces,
 		Tag:        configuration.Tag,

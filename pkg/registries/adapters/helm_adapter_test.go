@@ -17,39 +17,116 @@
 package adapters
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	logging "github.com/op/go-logging"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
+const MariaDB = "mariadb"
+const MariaDBPath = "/mariadb-2.1.4.tgz"
+const RepoResponse = `
+apiVersion: v1
+entries:
+  mariadb:
+  - appVersion: 10.1.31
+    created: 2018-03-19T13:33:01.77344858-04:00
+    description: Fast, reliable, scalable, and easy to use open-source relational
+      database system. MariaDB Server is intended for mission-critical, heavy-load
+      production systems as well as for embedding into mass-deployed software.
+    digest: bb3900d825e06e63bebd35fd05d16b05f6be030abdf02513b9affa3fd17f67b4
+    engine: gotpl
+    home: https://mariadb.org
+    icon: https://bitnami.com/assets/stacks/mariadb/img/mariadb-stack-220x234.png
+    keywords:
+    - mariadb
+    - mysql
+    - database
+    - sql
+    - prometheus
+    maintainers:
+    - email: containers@bitnami.com
+      name: bitnami-bot
+    name: mariadb
+    sources:
+    - https://github.com/bitnami/bitnami-docker-mariadb
+    - https://github.com/prometheus/mysqld_exporter
+    urls:
+    - mariadb-2.1.4.tgz
+    version: 2.1.4
+generated: 2018-03-19T13:33:01.771496768-04:00
+`
+
 func TestHelmRegistryName(t *testing.T) {
 	ha := HelmAdapter{}
 	ft.AssertEqual(t, ha.RegistryName(), "helm", "Helm adapter name mismatch")
 }
 
-func TestHelmGetImageNames(t *testing.T) {
-	log := &logging.Logger{}
-	configURL, _ := url.Parse("https://kubernetes-charts.storage.googleapis.com")
-	config := Configuration{
-		URL:  configURL,
-		Name: "stable",
-	}
-
-	ha := HelmAdapter{Config: config, Log: log}
-	ha.GetImageNames()
-}
-
 func TestHelmFetchSpecs(t *testing.T) {
-	log := &logging.Logger{}
-	configURL, _ := url.Parse("https://kubernetes-charts.storage.googleapis.com")
-	config := Configuration{
-		URL:  configURL,
-		Name: "stable",
-	}
-	ha := HelmAdapter{Config: config, Log: log}
+	// Set up a fake http server
+	serv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			t.Errorf("Expected 'Get' request, got '%s'", r.Method)
+		}
 
-	imageNames, _ := ha.GetImageNames()
-	ha.FetchSpecs(imageNames)
+		if strings.HasPrefix(r.URL.EscapedPath(), "/index.yaml") {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, RepoResponse)
+		} else if r.URL.EscapedPath() == MariaDBPath {
+			response, err := ioutil.ReadFile("testdata" + MariaDBPath)
+			if err != nil {
+				t.Fatal("ERROR: ", err)
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write(response)
+		} else {
+			t.Errorf("Expected '/index.yaml' URL Path, got '%s'", r.URL.EscapedPath())
+		}
+
+	}))
+	url, err := url.Parse(serv.URL)
+	if err != nil {
+		t.Fatal("ERROR: ", err)
+	}
+
+	// Create a helm adapter
+	ha := HelmAdapter{
+		Config: Configuration{
+			URL:    url,
+			Runner: "runner_image",
+		},
+		Log: &logging.Logger{},
+	}
+
+	// Get image names
+	imageNames, err := ha.GetImageNames()
+	if err != nil {
+		t.Fatal("ERROR: ", err)
+	}
+	ft.AssertEqual(t, len(imageNames), 1)
+	ft.AssertEqual(t, imageNames[0], MariaDB)
+	ft.AssertNotNil(t, imageNames)
+
+	// Override Chart URL to point to our http server
+	ha.Charts[MariaDB][0].URLs[0] = url.String() + MariaDBPath
+
+	// Fetch Specs
+	specs, err := ha.FetchSpecs(imageNames)
+	if err != nil {
+		t.Fatal("ERROR: ", err)
+	}
+	ft.AssertEqual(t, len(specs), 1)
+	ft.AssertNotNil(t, specs)
+
+	spec := specs[0]
+	ft.AssertEqual(t, spec.Runtime, 2)
+	ft.AssertEqual(t, spec.Version, "1.0")
+	ft.AssertEqual(t, spec.Image, "runner_image")
+	ft.AssertEqual(t, spec.Metadata["displayName"], "mariadb (Helm)")
 }

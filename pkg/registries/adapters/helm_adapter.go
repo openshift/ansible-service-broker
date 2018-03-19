@@ -111,7 +111,7 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 			Version:     "1.0",
 			Async:       "optional",
 			Bindable:    false,
-			Image:       r.Config.BaseImage,
+			Image:       r.Config.Runner,
 			FQName:      chart.Name,
 			Tags:        chart.Keywords,
 			Description: chart.Description,
