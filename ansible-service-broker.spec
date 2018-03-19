@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.3
+Version: 1.2.4
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,14 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Mar 19 2018 David Zager <david.j.zager@gmail.com> 1.2.4-1
+- Format nits (#836) (jmrodri@gmail.com)
+- APB state support (#809) (maleck13@users.noreply.github.com)
+- Proposal for Helm Chart Registry Adapter (#830) (dzager@redhat.com)
+- pass provision credentials during deprovision (#821)
+  (maleck13@users.noreply.github.com)
+- make headings smaller (#831) (jmrodri@gmail.com)
+
 * Fri Mar 09 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.3-1
 - Add a note to run latest about current user (#829) (ernelson@redhat.com)
 - Default to an open localregistry policy (#827) (ernelson@redhat.com)
