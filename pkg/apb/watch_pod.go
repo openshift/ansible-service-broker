@@ -36,6 +36,22 @@ var (
 
 type updateDescriptionFn func(string)
 
+// ErrorCustomMsg - custom termination msg from pod's 'terminationMessagePath'
+type ErrorCustomMsg struct {
+	msg string
+}
+
+func (e ErrorCustomMsg) Error() string {
+	// returns an Error with a custom message
+	return e.msg
+}
+
+// IsErrorCustomMsg - true if it's a custom message error
+func IsErrorCustomMsg(err error) bool {
+	_, ok := err.(ErrorCustomMsg)
+	return ok
+}
+
 func watchPod(
 	podName string, namespace string, podClient v1.PodInterface,
 	updateDescription updateDescriptionFn,
@@ -123,6 +139,11 @@ func translateExitStatus(podName string, podStatus apiv1.PodStatus) error {
 	status := conds[0].State.Terminated
 	if status == nil {
 		return fmt.Errorf("Pod [ %s ] failed. Unable to determine status - %v", podName, podStatus.Message)
+	}
+
+	// return the termination message if it's not empty
+	if status.Message != "" {
+		return ErrorCustomMsg{msg: status.Message}
 	}
 
 	if status.ExitCode == 8 {

@@ -83,6 +83,8 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 		if err == apb.ErrorPodPullErr {
 			errMsg = err.Error()
+		} else if apb.IsErrorCustomMsg(err) {
+			errMsg = err.Error()
 		}
 
 		jobMsg.State.State = apb.StateFailed
