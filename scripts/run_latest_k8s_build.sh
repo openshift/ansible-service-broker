@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BROKER_URL="https://raw.githubusercontent.com/openshift/ansible-service-broker/master/"
+BROKER_URL=${BROKER_URL:-"https://raw.githubusercontent.com/openshift/ansible-service-broker/master/"}
 TEMPLATE_URL="${BROKER_URL}/templates"
 
 curl ${TEMPLATE_URL}/k8s-template.py -o /tmp/k8s-template.py

@@ -144,15 +144,6 @@ fi
 echo "TLS Cert: tls.crt"
 echo -e "Wrote \n${TLS_KEY_DATA}\n to: ${TLS_KEY}\n"
 
-cluster::deployments scale asb-etcd --replicas 0 -n ${ASB_PROJECT}
-# Wait for asb pod to be destroyed
-kubectl get pods -n ${ASB_PROJECT} | grep etcd
-while [ "$?" -ne 1 ]; do
-  echo "Waiting for etcd deployment to scale down"
-  sleep 5
-  kubectl get pods -n ${ASB_PROJECT} | grep etcd
-done
-
 # Kill any running broker pods
 cluster::deployments scale asb --replicas 0 -n ${ASB_PROJECT}
 
@@ -168,29 +159,13 @@ done
 TERMINATION="reencrypt"
 
 cluster::deployments delete asb -n ${ASB_PROJECT}
-cluster::deployments delete asb-etcd -n ${ASB_PROJECT}
 kubectl delete endpoints asb -n ${ASB_PROJECT}
-cluster::routes delete asb-etcd -n ${ASB_PROJECT}
-kubectl delete service asb-etcd -n ${ASB_PROJECT}
 kubectl delete service asb -n ${ASB_PROJECT}
 
 # Process required changes for local development
 cluster::process ${TEMPLATE_LOCAL_DEV} ${ASB_PROJECT} -p BROKER_IP_ADDR=${BROKER_IP_ADDR} -p TERMINATION=${TERMINATION}
 
-echo "Sleeping for a few seconds to avoid issues with broker not being able to talk to etcd."
-echo "Appears like there is a delay of when we create the asb-etcd route and when it is available for use"
 sleep 5
-
-if [ "$LOCAL_ETCD" == "true" ]; then
-  ETCD_ROUTE="localhost"
-  ETCD_PORT=2379
-else
-  ETCD_ROUTE=`cluster::routes get asb-etcd -n ${ASB_PROJECT} -o=jsonpath=\'\{.spec.host\}\'`
-  ETCD_PORT="$(cluster::etcd-port)"
-fi
-
-echo "etcd route is at: ${ETCD_ROUTE}"
-echo "etcd port is: ${ETCD_PORT}"
 
 if [ -z "$DOCKERHUB_ORG" ]; then
   echo "Please set the environment variable DOCKERHUB_ORG and re-run"
@@ -211,8 +186,7 @@ registry:
       # list to retrieve APBs and this is the most permissive
       - ".*-apb$"
 dao:
-  etcd_host: ${ETCD_ROUTE}
-  etcd_port: ${ETCD_PORT}
+  type: "crd"
 log:
   logfile: /tmp/ansible-service-broker-asb.log
   stdout: true

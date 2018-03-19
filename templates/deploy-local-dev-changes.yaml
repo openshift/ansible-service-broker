@@ -11,76 +11,6 @@ metadata:
   name: ansible-service-broker-local-development
 objects:
 - apiVersion: v1
-  kind: Service
-  metadata:
-    name: asb-etcd
-    namespace: ansible-service-broker
-  spec:
-    ports:
-      - name: etcd-advertise
-        port: 2379
-    selector:
-      app: etcd
-      service: asb-etcd
-
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    name: asb-etcd
-    namespace: ansible-service-broker
-    labels:
-      app: etcd
-      service: asb-etcd
-  spec:
-    strategy:
-      type: Recreate
-    replicas: 1
-    template:
-      metadata:
-        labels:
-          app: etcd
-          service: asb-etcd
-      spec:
-        restartPolicy: Always
-        containers:
-          - image: "quay.io/coreos/etcd:latest"
-            name: main
-            imagePullPolicy: IfNotPresent
-            workingDir: /etcd
-            args:
-              - /usr/local/bin/etcd
-              - --data-dir=/data
-              - --listen-client-urls=http://0.0.0.0:2379
-              - --advertise-client-urls=http://0.0.0.0:2379
-            ports:
-            - containerPort: 2379
-              protocol: TCP
-            env:
-            - name: ETCDCTL_API
-              value: "3"
-            volumeMounts:
-              - mountPath: /data
-                name: etcd
-        volumes:
-          - name: etcd
-            persistentVolumeClaim:
-              claimName: etcd
-
-- apiVersion: v1
-  kind: Route
-  metadata:
-    name: asb-etcd
-    labels:
-      app: etcd
-      service: asb-etcd
-  spec:
-    to:
-      kind: Service
-      name: asb-etcd
-    port:
-      targetPort: ${ETCD_TARGET_PORT}
-
-- apiVersion: v1
   kind: Route
   metadata:
     name: asb-1338
@@ -122,24 +52,6 @@ objects:
         protocol: TCP
 
 parameters:
-- description: Name of the etcd target port to connect to
-  displayname: ETCD_TARGET_PORT
-  name: ETCD_TARGET_PORT
-  value: etcd-advertise
-
-- description: Brokers IP Address
-  displayname: BROKER_IP_ADDR
-  name: BROKER_IP_ADDR
-
-- description: Container Image to use for etcd in format of imagename:tag
-  displayname: etcd Image
-  name: ETCD_IMAGE
-  value: quay.io/coreos/etcd:latest
-
-- description: Path of the etcd binary
-  displayname: etcd path
-  name: ETCD_PATH
-  value: /usr/local/bin/etcd
 
 - description: Route termination policy
   displayname: Termination policy

@@ -23,25 +23,6 @@ objects:
       service: asb
 
 - apiVersion: v1
-  kind: Service
-  metadata:
-    name: asb-etcd
-    labels:
-      app: etcd
-      service: asb-etcd
-    annotations:
-      service.alpha.openshift.io/serving-cert-secret-name: etcd-tls
-  spec:
-    ports:
-      - name: port-2379
-        port: 2379
-        targetPort: 2379
-        protocol: TCP
-    selector:
-      app: etcd
-      service: asb-etcd
-
-- apiVersion: v1
   kind: ServiceAccount
   metadata:
     name: asb
@@ -120,18 +101,6 @@ objects:
     verbs: ["get", "post", "put", "patch", "delete"]
 
 - apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: etcd
-    namespace: "${NAMESPACE}"
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 1Gi
-
-- apiVersion: v1
   kind: DeploymentConfig
   metadata:
     name: asb
@@ -162,8 +131,6 @@ objects:
               mountPath: /etc/tls/private
             - name: asb-auth-volume
               mountPath: /var/run/asb-auth
-            - name: asb-etcd-auth
-              mountPath: /var/run/asb-etcd-auth
           ports:
             - containerPort: 1338
               protocol: TCP
@@ -199,68 +166,6 @@ objects:
           - name: asb-auth-volume
             secret:
               secretName: asb-auth-secret
-          - name: asb-etcd-auth
-            secret:
-              secretName: broker-etcd-auth-secret
-
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    name: asb-etcd
-    labels:
-      app: etcd
-      service: asb-etcd
-  spec:
-    replicas: 1
-    selector:
-      app: etcd
-    strategy:
-      type: Rolling
-    template:
-      metadata:
-        labels:
-          app: etcd
-          service: asb-etcd
-      spec:
-        serviceAccount: asb
-        containers:
-        - image: ${ETCD_IMAGE}
-          name: etcd
-          volumeMounts:
-            - name: etcd
-              mountPath: /data
-            - name: etcd-tls
-              mountPath: /etc/tls/private
-            - name: etcd-auth
-              mountPath: /var/run/etcd-auth-secret
-          imagePullPolicy: IfNotPresent
-          terminationMessagePath: /tmp/termination-log
-          workingDir: /etcd
-          args:
-            - ${ETCD_PATH}
-            - --data-dir=/data
-            - --listen-client-urls=https://0.0.0.0:2379
-            - --advertise-client-urls=https://0.0.0.0:2379
-            - --client-cert-auth
-            - --trusted-ca-file=${ETCD_TRUSTED_CA_FILE}
-            - --cert-file=${ETCD_CERT_FILE}
-            - --key-file=${ETCD_KEY_FILE}
-          ports:
-            - containerPort: 2379
-              protocol: TCP
-          env:
-          - name: ETCDCTL_API
-            value: "3"
-        volumes:
-          - name: etcd
-            persistentVolumeClaim:
-              claimName: etcd
-          - name: etcd-tls
-            secret:
-              secretName: etcd-tls
-          - name: etcd-auth
-            secret:
-              secretName: etcd-auth-secret
 
 - apiVersion: v1
   kind: Secret
@@ -279,23 +184,6 @@ objects:
   data:
     username: ${DOCKERHUB_USER}
     password: ${DOCKERHUB_PASS}
-
-- apiVersion: v1
-  kind: Secret
-  metadata:
-    name: etcd-auth-secret
-    namespace: "${NAMESPACE}"
-  data:
-    ca.crt: ${ETCD_TRUSTED_CA}
-
-- apiVersion: v1
-  kind: Secret
-  metadata:
-    name: broker-etcd-auth-secret
-    namespace: "${NAMESPACE}"
-  data:
-    client.crt: ${BROKER_CLIENT_CERT}
-    client.key: ${BROKER_CLIENT_KEY}
 
 - apiVersion: v1
   kind: ConfigMap
@@ -324,11 +212,6 @@ objects:
             - ".*"
       dao:
         type: "${DAO_TYPE}"
-        etcd_host: asb-etcd.${NAMESPACE}.svc
-        etcd_port: 2379
-        etcd_ca_file: ${BROKER_ETCD_TRUSTED_CA}
-        etcd_client_cert: ${BROKER_CLIENT_CERT_PATH}
-        etcd_client_key: ${BROKER_CLIENT_KEY_PATH}
       log:
         logfile: /var/log/ansible-service-broker/asb.log
         stdout: true
@@ -683,61 +566,6 @@ parameters:
   name: BROKER_IMAGE
   value: ansibleplaybookbundle/origin-ansible-service-broker:latest
 
-- description: Container Image to use for etcd in format of imagename:tag
-  displayname: etcd Image
-  name: ETCD_IMAGE
-  value: quay.io/coreos/etcd:latest
-
-- description: Path of the etcd binary
-  displayname: etcd path
-  name: ETCD_PATH
-  value: /usr/local/bin/etcd
-
-- description: Path of the etcd trusted ca file
-  displayname: etcd trusted ca file path
-  name: ETCD_TRUSTED_CA_FILE
-  value: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
-
-- description: Path of the etcd server cert file
-  displayname: etcd server cert path
-  name: ETCD_CERT_FILE
-  value: /etc/tls/private/tls.crt
-
-- description: Path of the etcd server cert key file
-  displayname: etcd server key path
-  name: ETCD_KEY_FILE
-  value: /etc/tls/private/tls.key
-
-- description: Path of the broker client cert file for etcd
-  displayname: etcd client cert path
-  name: BROKER_CLIENT_CERT_PATH
-  value: /etc/tls/private/tls.crt
-
-- description: Path of the broker client cert key file for etcd
-  displayname: etcd client cert key path
-  name: BROKER_CLIENT_KEY_PATH
-  value: /etc/tls/private/tls.key
-
-- description: Path of the etcd trusted ca file
-  displayname: etcd trusted ca file path
-  name: BROKER_ETCD_TRUSTED_CA
-  value: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
-
-- description: Value of the etcd server ca file
-  displayname: etcd trusted ca
-  name: ETCD_TRUSTED_CA
-  value: "YWRtaW4="
-
-- description: Value of the broker client cert for etcd
-  displayname: broker client cert
-  name: BROKER_CLIENT_CERT
-  value: "YWRtaW4="
-
-- description: Value of the broker client cert key for etcd
-  displayname: broker client cert key
-  name: BROKER_CLIENT_KEY
-  value: "YWRtaW4="
-
 - description: Namespace of the project that is being deploy
   displayname: broker client cert key
   name: NAMESPACE
@@ -850,7 +678,7 @@ parameters:
 - description: Will enable CRD use. Valid values crd | etcd | ""
   displayname: Enable CRD backend storage, will not use etcd.
   name: DAO_TYPE
-  value: "etcd"
+  value: "crd"
 
 ############################################################
 # NOTE: These values MUST be base64 encoded.
