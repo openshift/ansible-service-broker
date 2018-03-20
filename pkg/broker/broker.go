@@ -77,11 +77,11 @@ const (
 type Broker interface {
 	Bootstrap() (*BootstrapResponse, error)
 	Catalog() (*CatalogResponse, error)
-	Provision(uuid.UUID, *ProvisionRequest, bool) (*ProvisionResponse, error)
-	Update(uuid.UUID, *UpdateRequest, bool) (*UpdateResponse, error)
-	Deprovision(apb.ServiceInstance, string, bool, bool) (*DeprovisionResponse, error)
-	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool) (*BindResponse, bool, error)
-	Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*UnbindResponse, bool, error)
+	Provision(uuid.UUID, *ProvisionRequest, bool, UserInfo) (*ProvisionResponse, error)
+	Update(uuid.UUID, *UpdateRequest, bool, UserInfo) (*UpdateResponse, error)
+	Deprovision(apb.ServiceInstance, string, bool, bool, UserInfo) (*DeprovisionResponse, error)
+	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool, UserInfo) (*BindResponse, bool, error)
+	Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool, UserInfo) (*UnbindResponse, bool, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	Recover() (string, error)
 	GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error)
@@ -485,7 +485,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 }
 
 // Provision  - will provision a service
-func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, async bool,
+func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, async bool, userInfo UserInfo,
 ) (*ProvisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	//type ProvisionRequest struct {
@@ -589,6 +589,9 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	log.Debugf("Injecting ServiceInstanceID as parameter: { %s: %s }",
 		serviceInstIDKey, instanceUUID.String())
 	parameters[serviceInstIDKey] = instanceUUID.String()
+	log.Debugf("Injecting requestingUserKey as parameter: { %s: %s }",
+		requestingUserKey, getRequestingUser(userInfo))
+	parameters[requestingUserKey] = getRequestingUser(userInfo)
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
@@ -660,7 +663,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 // Deprovision - will deprovision a service.
 func (a AnsibleBroker) Deprovision(
-	instance apb.ServiceInstance, planID string, skipApbExecution bool, async bool,
+	instance apb.ServiceInstance, planID string, skipApbExecution bool, async bool, userInfo UserInfo,
 ) (*DeprovisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	// Deprovision flow
@@ -796,7 +799,7 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 // Bind - will create a binding between a service. Parameter "async" declares
 // whether the caller is willing to have the operation run asynchronously. The
 // returned bool will be true if the operation actually ran asynchronously.
-func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID, req *BindRequest, async bool,
+func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID, req *BindRequest, async bool, userInfo UserInfo,
 ) (*BindResponse, bool, error) {
 	// binding_id is the id of the binding.
 	// the instanceUUID is the previously provisioned service id.
@@ -835,6 +838,10 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		serviceInstIDKey, instance.ID.String())
 
 	params[serviceInstIDKey] = instance.ID.String()
+
+	log.Debugf("Injecting requestingUserKey as parameter: { %s: %s }",
+		requestingUserKey, getRequestingUser(userInfo))
+	params[requestingUserKey] = getRequestingUser(userInfo)
 
 	// Create a BindingInstance with a reference to the serviceinstance.
 	bindingInstance := &apb.BindInstance{
@@ -984,7 +991,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 // whether the caller is willing to have the operation run asynchronously. The
 // returned bool will be true if the operation actually ran asynchronously.
 func (a AnsibleBroker) Unbind(
-	instance apb.ServiceInstance, bindInstance apb.BindInstance, planID string, skipApbExecution bool, async bool,
+	instance apb.ServiceInstance, bindInstance apb.BindInstance, planID string, skipApbExecution bool, async bool, userInfo UserInfo,
 ) (*UnbindResponse, bool, error) {
 	if planID == "" {
 		errMsg :=
@@ -1086,7 +1093,7 @@ func (a AnsibleBroker) Unbind(
 }
 
 // Update  - will update a service
-func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async bool,
+func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async bool, userInfo UserInfo,
 ) (*UpdateResponse, error) {
 	////////////////////////////////////////////////////////////
 	//type UpdateRequest struct {

@@ -79,7 +79,7 @@ func (m MockBroker) Catalog() (*broker.CatalogResponse, error) {
 	m.called("catalog", true)
 	return nil, m.Err
 }
-func (m MockBroker) Provision(uuid.UUID, *broker.ProvisionRequest, bool) (*broker.ProvisionResponse, error) {
+func (m MockBroker) Provision(uuid.UUID, *broker.ProvisionRequest, bool, broker.UserInfo) (*broker.ProvisionResponse, error) {
 	m.called("provision", true)
 	fmt.Println("provision called")
 	fmt.Println(m.Operation)
@@ -89,11 +89,11 @@ func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest, bool) (*broker.Upda
 	m.called("update", true)
 	return nil, m.Err
 }
-func (m MockBroker) Deprovision(apb.ServiceInstance, string, bool, bool) (*broker.DeprovisionResponse, error) {
+func (m MockBroker) Deprovision(apb.ServiceInstance, string, bool, bool, broker.UserInfo) (*broker.DeprovisionResponse, error) {
 	m.called("deprovision", true)
 	return nil, m.Err
 }
-func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest, bool) (*broker.BindResponse, bool, error) {
+func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest, bool, broker.UserInfo) (*broker.BindResponse, bool, error) {
 	m.called("bind", true)
 	return nil, false, m.Err
 }
