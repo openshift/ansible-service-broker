@@ -86,7 +86,7 @@ func (mp *SubscriberDAO) GetServiceInstance(id string) (*apb.ServiceInstance, er
 	return retOb.(*apb.ServiceInstance), mp.Errs["GetServiceInstance"]
 }
 
-//DeleteBindInstance mock impl
+// DeleteBindInstance mock impl
 func (mp *SubscriberDAO) DeleteBindInstance(id string) error {
 	assert := mp.AssertOn["DeleteBindInstance"]
 	if nil != assert {

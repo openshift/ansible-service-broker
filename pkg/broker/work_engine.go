@@ -33,13 +33,19 @@ type Work interface {
 // WorkEngine - a new engine for doing work.
 type WorkEngine struct {
 	subscribers   map[WorkTopic][]WorkSubscriber
-	jobs          map[string]chan JobMsg
+	jobChannels   map[string]chan JobMsg
 	jobBufferSize int
+	// the number of seconds given to each subscriber to complete its task
+	subscriberTimeout time.Duration
 }
 
 // NewWorkEngine - creates a new work engine
-func NewWorkEngine(bufferSize int) *WorkEngine {
-	return &WorkEngine{jobs: make(map[string]chan JobMsg), subscribers: map[WorkTopic][]WorkSubscriber{}, jobBufferSize: bufferSize}
+func NewWorkEngine(bufferSize int, subscriberTimeout time.Duration) *WorkEngine {
+	return &WorkEngine{
+		jobChannels:       make(map[string]chan JobMsg),
+		subscribers:       map[WorkTopic][]WorkSubscriber{},
+		jobBufferSize:     bufferSize,
+		subscriberTimeout: subscriberTimeout}
 }
 
 // StartNewAsyncJob - Starts a job in an new goroutine, reporting to a specific topic.
@@ -59,44 +65,51 @@ func (engine *WorkEngine) StartNewAsyncJob(
 	return token, nil
 }
 
-func waitForNotify(sub WorkSubscriber, msg JobMsg, signal chan<- struct{}) {
+func waitForNotify(ctx context.Context, sub WorkSubscriber, msg JobMsg, signal chan<- struct{}) {
 	sub.Notify(msg)
-	signal <- struct{}{}
+	// avoid sending on a closed channel if the context is done
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		signal <- struct{}{}
+	}
 }
 
 func (engine *WorkEngine) startJob(token string, work Work, topic WorkTopic) {
 	// create a channel specifically for use with this job
 	jobChannel := make(chan JobMsg, engine.jobBufferSize)
-	engine.jobs[token] = jobChannel
+	engine.jobChannels[token] = jobChannel
 	// ensure we always clean up
 	defer func() {
-		log.Debug("closing channel for job ", token, engine.jobs)
+		log.Debug("closing channel for job ", token)
 		close(jobChannel)
-		delete(engine.jobs, token)
+		delete(engine.jobChannels, token)
 	}()
 
 	go func() {
-		// listen for a new message for the job keyed to this token and hand off to the subscribers async. Wait for them all to be done before accepting
-		// the next message
+		// listen for a new message for the job keyed to this token and hand off to the subscribers async.
+		// Wait for them all to be done before accepting the next message
 		for msg := range jobChannel {
 			wg := &sync.WaitGroup{}
 			// hand off the msg to all subscribers async
 			for _, sub := range engine.subscribers[topic] {
 				go func(msg JobMsg, sub WorkSubscriber) {
 					wg.Add(1)
-					// ensure things don't get locked up. Each subscriber has up tp the configured amount of time to complete its action
-					ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second) //TODO make configurable
+					// ensure things don't get locked up.
+					// Each subscriber has up to the configured amount of time to complete its action
+					ctx, cancel := context.WithTimeout(context.Background(), engine.subscriberTimeout*time.Second)
 					// used to tell us when the subscribers notify method is completed
 					notifySignal := make(chan struct{})
-					//If our subscriber times out or returns normally we will always clean up
+					// If our subscriber times out or returns normally we will always clean up
 					defer func() {
 						wg.Done()
 						close(notifySignal)
 						cancel()
 					}()
 					// notify the subscriber
-					go waitForNotify(sub, msg, notifySignal)
-					//act on whichever happens first the subscriber's notify method completing or the timeout
+					go waitForNotify(ctx, sub, msg, notifySignal)
+					// act on whichever happens first the subscriber's notify method completing or the timeout
 					select {
 					case <-notifySignal:
 						return
@@ -106,7 +119,7 @@ func (engine *WorkEngine) startJob(token string, work Work, topic WorkTopic) {
 					}
 				}(msg, sub)
 			}
-			//ensure we wait until all subs are done before taking on the next message
+			// ensure we wait until all subs are done before taking on the next message
 			wg.Wait()
 		}
 	}()
@@ -148,9 +161,9 @@ func (engine *WorkEngine) AttachSubscriber(
 	return nil
 }
 
-// GetActiveJobs - Get list of active jobs
-func (engine *WorkEngine) GetActiveJobs() map[string]chan JobMsg {
-	return engine.jobs
+// GetActiveJobChannels - Get list of active jobs
+func (engine *WorkEngine) GetActiveJobChannels() map[string]chan JobMsg {
+	return engine.jobChannels
 }
 
 // GetSubscribers - Get list of subscribers to a topic

@@ -88,10 +88,12 @@ func TestJobStateSubscriber(t *testing.T) {
 		{
 			Name: "after successful unbind binding instance should be removed",
 			JobMsg: []broker.JobMsg{
-				{State: apb.JobState{
-					State:  apb.StateSucceeded,
-					Method: apb.JobMethodUnbind,
-				}},
+				{
+					BindingUUID: uID.String(),
+					State: apb.JobState{
+						State:  apb.StateSucceeded,
+						Method: apb.JobMethodUnbind,
+					}},
 			},
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
