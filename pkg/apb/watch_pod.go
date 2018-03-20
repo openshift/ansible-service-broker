@@ -36,7 +36,7 @@ var (
 
 type updateDescriptionFn func(string)
 
-// ErrorCustomMsg - custom termination msg from pod's 'terminationMessagePath'
+// ErrorCustomMsg - An error to propagate the custom error message to the callers
 type ErrorCustomMsg struct {
 	msg string
 }
