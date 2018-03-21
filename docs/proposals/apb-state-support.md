@@ -45,7 +45,7 @@ This module will expose an API to the APB developer for setting key-value pairs.
 
 Under the hood, this APB module would take the key-value pair, and store it in a
 ConfigMap named ```$POD_NAME```. This ConfigMap would live within the
-temporary namespace ```$POD_NAMESPACE``` and be created by the Service Bundle when with the first call to ```asb_set_state```.
+temporary namespace ```$POD_NAMESPACE``` and be created by the Service Bundle on the first call to ```asb_set_state```.
 
 ## Update broker to manage Service Bundle created state ConfigMaps
 
