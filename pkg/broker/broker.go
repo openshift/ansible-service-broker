@@ -713,9 +713,7 @@ func (a AnsibleBroker) Deprovision(
 
 	// Override the lastRequestingUserKey value in the instance.Parameters
 	if instance.Parameters != nil {
-		params := *instance.Parameters
-		params[lastRequestingUserKey] = getLastRequestingUser(userInfo)
-		instance.Parameters = &params
+		(*instance.Parameters)[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 	}
 
 	var token = a.engine.Token()
@@ -1019,9 +1017,7 @@ func (a AnsibleBroker) Unbind(
 
 	// Override the lastRequestingUserKey value in the instance.Parameters
 	if instance.Parameters != nil {
-		params := *instance.Parameters
-		params[lastRequestingUserKey] = getLastRequestingUser(userInfo)
-		instance.Parameters = &params
+		(*instance.Parameters)[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 	}
 
 	params := make(apb.Parameters)
