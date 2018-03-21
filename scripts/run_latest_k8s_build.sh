@@ -14,7 +14,7 @@ function create-broker-resource {
     openssl req -nodes -x509 -newkey rsa:4096 -keyout /tmp/asb-cert/key.pem -out /tmp/asb-cert/cert.pem -days 365 -subj "/CN=asb.ansible-service-broker.svc"
     broker_ca_cert=$(cat /tmp/asb-cert/cert.pem | base64 -w 0)
     kubectl create secret tls asb-tls --cert="/tmp/asb-cert/cert.pem" --key="/tmp/asb-cert/key.pem" -n ansible-service-broker
-    client_token=$(kubectl get secrets -n ansible-service-broker | grep client-token | awk '{ print $1}')
+    client_token=$(kubectl get sa ansibleservicebroker-client -o yaml | grep -w ansibleservicebroker-client-token | grep -o 'ansibleservicebroker-client-token.*$')
     broker_auth='{ "bearer": { "secretRef": { "kind": "Secret", "namespace": "ansible-service-broker", "name": "REPLACE_TOKEN_STRING" } } }'
 
     cat <<EOF > "/tmp/broker-resource.yaml"
