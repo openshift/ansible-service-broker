@@ -32,25 +32,29 @@ not trustworthy or reliable.
 This module will expose an API to the APB developer for setting key-value pairs.
 
 ```
-- name: Save some stuff
+- name: save some state
   asb_set_state:
-    service_name: "{{ service_name }}"
+    key: "{{ value }}"
+
+
+- name: get some state
+  asb_get_state:
+    key: "key"
 
 ```
 
 Under the hood, this APB module would take the key-value pair, and store it in a
 ConfigMap named ```$POD_NAME```. This ConfigMap would live within the
-temporary namespace ```$POD_NAMESPACE``` and be created by the broker before the APB pod was created.
+temporary namespace ```$POD_NAMESPACE``` and be created by the Service Bundle on the first call to ```asb_set_state```.
 
 ## Update broker to manage Service Bundle created state ConfigMaps
 
-To ensure the state is persisted across Service Bundle actions, the broker will create a ConfigMap within the ```$POD_NAMESPACE``` named ```$POD_NAME```.
 After an action was successfully completed (ie the Service Bundle exited with a 0 exit code) and before the sandbox namespace was removed, the broker would copy the ConfigMap back to the broker's namespace and name it ```<ServiceInstanceID>-state```. If a ConfigMap with
 that name was already present, the broker would update and append the values.
 There should only ever be one ConfigMap per ServiceInstance. The ConfigMap would be removed from the broker's namespace
-once the the deprovision action completed successfully.
+once the the deprovision action was invoked for that ServiceInstance.
 
 ## Update broker to pass through initial state to Service Bundle
 
 For every Service Bundle action, except provision as there would be no state at this point, if a ConfigMap (ServiceInstanceID-state) is present,
-in the broker's namespace, its key-value pairs will be passed through to the Service Bundle prefixed with ```state_<key> = value ```
+in the broker's namespace, it will be mounted in the ServiceBundle's pod ready to be accessed via the proposed ```apb_get_state``` or by some other manner beyond the scope of this proposal. 
