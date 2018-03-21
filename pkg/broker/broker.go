@@ -589,9 +589,9 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	log.Debugf("Injecting ServiceInstanceID as parameter: { %s: %s }",
 		serviceInstIDKey, instanceUUID.String())
 	parameters[serviceInstIDKey] = instanceUUID.String()
-	log.Debugf("Injecting requestingUserKey as parameter: { %s: %s }",
-		requestingUserKey, getRequestingUser(userInfo))
-	parameters[requestingUserKey] = getRequestingUser(userInfo)
+	log.Debugf("Injecting lastRequestingUserKey as parameter: { %s: %s }",
+		lastRequestingUserKey, getLastRequestingUser(userInfo))
+	parameters[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 
 	// Build and persist record of service instance
 	serviceInstance := &apb.ServiceInstance{
@@ -708,6 +708,13 @@ func (a AnsibleBroker) Deprovision(
 	if provExtCreds != nil && instance.Parameters != nil {
 		params := *instance.Parameters
 		params[apb.ProvisionCredentialsKey] = provExtCreds.Credentials
+		instance.Parameters = &params
+	}
+
+	// Override the lastRequestingUserKey value in the instance.Parameters
+	if instance.Parameters != nil {
+		params := *instance.Parameters
+		params[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 		instance.Parameters = &params
 	}
 
@@ -839,9 +846,9 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 
 	params[serviceInstIDKey] = instance.ID.String()
 
-	log.Debugf("Injecting requestingUserKey as parameter: { %s: %s }",
-		requestingUserKey, getRequestingUser(userInfo))
-	params[requestingUserKey] = getRequestingUser(userInfo)
+	log.Debugf("Injecting lastRequestingUserKey as parameter: { %s: %s }",
+		lastRequestingUserKey, getLastRequestingUser(userInfo))
+	params[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 
 	// Create a BindingInstance with a reference to the serviceinstance.
 	bindingInstance := &apb.BindInstance{
@@ -1010,6 +1017,13 @@ func (a AnsibleBroker) Unbind(
 		return &UnbindResponse{Operation: jobToken}, false, ErrorUnbindingInProgress
 	}
 
+	// Override the lastRequestingUserKey value in the instance.Parameters
+	if instance.Parameters != nil {
+		params := *instance.Parameters
+		params[lastRequestingUserKey] = getLastRequestingUser(userInfo)
+		instance.Parameters = &params
+	}
+
 	params := make(apb.Parameters)
 	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
 	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
@@ -1162,6 +1176,11 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	if err != nil {
 		log.Debug("Error retrieving instance")
 		return nil, ErrorNotFound
+	}
+
+	// update the lastRequestingUserKey value in the si.Parameters
+	if *si.Parameters != nil {
+		(*si.Parameters)[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 	}
 
 	// copy previous params, since the loaded si is mutated during update
