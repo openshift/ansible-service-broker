@@ -32,7 +32,9 @@ Conduct may be permanently removed from the project team.
 This code of conduct applies both within project spaces and in public spaces
 when an individual is representing the project or its community.
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting a Automation Broker project maintainer, Jesus M. Rodriguez <jesusr@redhat.com>, and/or Todd Sanders <tsanders@redhat.com>.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by
+contacting a Automation Broker project maintainer, Jesus M. Rodriguez <jesusr@redhat.com>,
+and/or Todd Sanders <tsanders@redhat.com>.
 
 This Code of Conduct is adapted from the CNCF Code of Conduct v1.0 ( https://github.com/cncf/foundation/blob/master/code-of-conduct.md ),
 which is based on the Contributor Covenant ( http://contributor-covenant.org ), version 1.2.0, available at http://contributor-covenant.org/version/1/2/0/ ,
