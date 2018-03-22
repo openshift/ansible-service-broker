@@ -52,6 +52,7 @@ type Configuration struct {
 	User       string
 	Pass       string
 	Org        string
+	Runner     string
 	Images     []string
 	Namespaces []string
 	Tag        string

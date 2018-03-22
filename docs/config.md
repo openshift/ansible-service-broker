@@ -121,7 +121,7 @@ registry:
       - ".*-apb$"
 ```
 
-## Local OpenShift Registry
+### Local OpenShift Registry
 Using the local openshift registry will allow you to load APBs from the internal registry. The administrator can configure which namespaces they want to look for published APBs.
 ```yaml
 registry:
@@ -163,6 +163,25 @@ registry:
 ```
 
 There is a limitation when working with the OpenShift Registry right now. We have no capability to search the registry so we require that the user configure the broker with a list of images they would like to source from for when the broker bootstraps. The image name must be the fully qualified name without the registry URL.
+
+### Helm Chart Repository
+
+Using a Helm registry will allow you to consume Helm
+Charts from a Helm Chart Respository. For example:
+
+```yaml
+registry:
+  - name: stable
+    type: helm
+    url: "https://kubernetes-charts.storage.googleapis.com"
+    runner: "docker.io/automationbroker/helm-runner:latest"
+    white_list:
+      - ".*"
+```
+
+**NOTE**: A heavy percentage of helm charts from the stable repository are not
+well suited for OpenShift. For more information see
+[here](https://github.com/ansibleplaybookbundle/helm2bundle/wiki/Known-Issues).
 
 ### Multiple Registries Example
 You can use more then one registry to separate APBs into logical organizations and be able to manage them from the same broker. The main thing here is that the registries must have a unique non-empty name. If there is no unique name the service broker will fail to start with an error message alerting you to the problem.
