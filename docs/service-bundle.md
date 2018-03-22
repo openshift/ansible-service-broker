@@ -131,7 +131,7 @@ Example of JSON document passed to __bind__:
 
 #### Last Request User
 
-The requesting username of the [actions](#actions) _provision_, _deprovision_, _bind_, _unbind_, and _update_ is available in the `_apb_last_requesting_user` parameter. The parameter is set to the `UID` if the requesting `username` is empty (e.g. auto escalation). However, this parameter may be completely empty as it's not a requirement to send the requesting user information. Also, the user info of the latest request will always overwrite the existing value.
+The requesting username of the [actions](#actions) _provision_, _deprovision_, _bind_, _unbind_, and _update_ is available in the `_apb_last_requesting_user` parameter. The parameter is set to the `UID` if the  `username` of the action is empty (e.g. auto escalation). However, this parameter may be completely empty as it's not a requirement to send the requesting user information. The user for the current action may be different from the users that initiated any previous actions on the same resource. The _apb_last_requesting_user will always reflect the username of this current action.
 
 This field was introduced in version 1.2
 
