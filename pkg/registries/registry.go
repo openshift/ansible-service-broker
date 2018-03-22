@@ -233,6 +233,8 @@ func NewRegistry(con *config.Config, asbNamespace string) (Registry, error) {
 		adapter = &adapters.OpenShiftAdapter{Config: c, Log: log}
 	case "local_openshift":
 		adapter = &adapters.LocalOpenShiftAdapter{Config: c, Log: log}
+	case "galaxy":
+		adapter = &adapters.GalaxyAdapter{Config: c, Log: log}
 	default:
 		panic("Unknown registry")
 	}
