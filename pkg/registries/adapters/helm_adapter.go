@@ -36,8 +36,9 @@ import (
 )
 
 const (
-	helmName      = "helm"
-	helmIndexPath = "/index.yaml"
+	helmName          = "helm"
+	helmIndexPath     = "/index.yaml"
+	valuesFilePattern = "*/values.yaml"
 )
 
 // ChartVersions is a list of versioned chart references.
@@ -170,7 +171,11 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	var specs []*apb.Spec
 
 	for _, name := range imageNames {
-		var chartVersions []string
+		var (
+			chartVersions []string
+			values        string
+		)
+
 		charts, ok := r.Charts[name]
 		if !ok {
 			continue
@@ -182,13 +187,15 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 		// Use the latest chart for creating the bundle
 		chart := charts[0]
 
-		resp, err := http.Get(chart.URLs[0])
-		if err != nil {
-			return specs, err
-		}
-		defer resp.Body.Close()
+		if len(chart.URLs) > 0 {
+			resp, err := http.Get(chart.URLs[0])
+			if err != nil {
+				continue
+			}
+			defer resp.Body.Close()
 
-		values := r.loadArchive(resp.Body)
+			values = r.loadArchive(resp.Body)
+		}
 
 		// Convert chart to Bundle Spec
 		spec := &apb.Spec{
@@ -306,7 +313,7 @@ func (r *HelmAdapter) loadArchive(in io.Reader) string {
 			return ""
 		}
 
-		valuesMatch, err := path.Match("*/values.yaml", hdr.Name)
+		valuesMatch, err := path.Match(valuesFilePattern, hdr.Name)
 		if err != nil {
 			return ""
 		}
