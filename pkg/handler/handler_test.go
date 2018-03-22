@@ -85,7 +85,7 @@ func (m MockBroker) Provision(uuid.UUID, *broker.ProvisionRequest, bool, broker.
 	fmt.Println(m.Operation)
 	return &broker.ProvisionResponse{Operation: m.Operation}, m.Err
 }
-func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest, bool) (*broker.UpdateResponse, error) {
+func (m MockBroker) Update(uuid.UUID, *broker.UpdateRequest, bool, broker.UserInfo) (*broker.UpdateResponse, error) {
 	m.called("update", true)
 	return nil, m.Err
 }
@@ -97,7 +97,7 @@ func (m MockBroker) Bind(apb.ServiceInstance, uuid.UUID, *broker.BindRequest, bo
 	m.called("bind", true)
 	return nil, false, m.Err
 }
-func (m MockBroker) Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool) (*broker.UnbindResponse, bool, error) {
+func (m MockBroker) Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool, broker.UserInfo) (*broker.UnbindResponse, bool, error) {
 	m.called("unbind", true)
 	return nil, false, m.Err
 }

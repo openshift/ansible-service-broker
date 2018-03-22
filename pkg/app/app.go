@@ -185,7 +185,7 @@ func CreateApp() App {
 
 	// Initialize Runtime
 	log.Debug("Connecting to Cluster")
-	agnosticruntime.NewRuntime(nil)
+	agnosticruntime.NewRuntime(agnosticruntime.Configuration{})
 	agnosticruntime.Provider.ValidateRuntime()
 	if err != nil {
 		log.Error(err.Error())

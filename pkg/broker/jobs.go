@@ -84,7 +84,7 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 		if err == runtime.ErrorPodPullErr {
 			errMsg = err.Error()
-		} else if apb.IsErrorCustomMsg(err) {
+		} else if runtime.IsErrorCustomMsg(err) {
 			errMsg = err.Error()
 		}
 
