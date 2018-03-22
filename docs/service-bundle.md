@@ -17,11 +17,11 @@ name: example-apb   # The name of the Service Bundle
 description:        # A short description of the Service Bundle
 bindable: True      # Whether this Service Bundle can be bound to other services
 async: optional     # Does this Service Bundle support asynchronous provision
-metadata: 
+metadata:
   documentationUrl: <link to documentation>
   imageUrl: <link to URL of image>
   dependencies:
-  - '<registry>/<organization>/<dependency-name-1>'   
+  - '<registry>/<organization>/<dependency-name-1>'
   - '<registry>/<organization>/<dependency-name-2>'
   displayName: Example App (APB)
   longDescription: A longer description of what this APB does
@@ -79,6 +79,7 @@ Example of JSON document passed to __provision__:
     "_apb_plan_id": "default",
     "_apb_service_class_id": "c23ec213bb8dea1577230c5ce005b9c2",
     "_apb_service_instance_id": "54636ad3-0378-49a1-a494-f97d0a0daf8e",
+    "_apb_last_requesting_user": "admin",
     "mediawiki_admin_pass": "pass",
     "mediawiki_admin_user": "admin",
     "mediawiki_db_schema": "mediawiki",
@@ -118,6 +119,7 @@ Example of JSON document passed to __bind__:
     },
     "_apb_service_class_id": "1dda1477cace09730bd8ed7a6505607e",
     "_apb_service_instance_id": "d6ac6b10-fbff-4944-8e6b-3478313e20d1",
+    "_apb_last_requesting_user": "admin",
     "cluster": "kubernetes",
     "namespace": "default"
 }
@@ -127,12 +129,18 @@ Example of JSON document passed to __bind__:
   provision action for this service instance. Details are below in the Output
   section.
 
+#### Last Request User
+
+The requesting username of the [actions](#actions) _provision_, _deprovision_, _bind_, _unbind_, and _update_ is available in the `_apb_last_requesting_user` parameter. The parameter is set to the `UID` if the  `username` of the action is empty (e.g. auto escalation). However, this parameter may be completely empty as it's not a requirement to send the requesting user information. The user for the current action may be different from the users that initiated any previous actions on the same resource. The _apb_last_requesting_user will always reflect the username of this current action.
+
+This field was introduced in version 1.2
+
 ### Environment Variables
 
 The following environment variables are set by the broker:
 
 * __POD_NAMESPACE__: the namespace in which the service bundle is being run
-* __POD_NAME__: the name of the pod 
+* __POD_NAME__: the name of the pod
 
 ## Output
 
@@ -242,4 +250,3 @@ users:
   user:
     tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 ```
-

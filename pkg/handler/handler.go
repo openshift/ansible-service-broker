@@ -274,8 +274,8 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		return
 	}
 
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
-		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
@@ -293,7 +293,7 @@ func (h handler) provision(w http.ResponseWriter, r *http.Request, params map[st
 		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 	// Ok let's provision this bad boy
-	resp, err := h.broker.Provision(instanceUUID, req, async)
+	resp, err := h.broker.Provision(instanceUUID, req, async, userInfo)
 
 	if err != nil {
 		log.Errorf("provision error %+v", err)
@@ -336,8 +336,8 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 	// ignore the error, if async can't be parsed it will be false
 	async, _ := strconv.ParseBool(r.FormValue("accepts_incomplete"))
 
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
-		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
@@ -355,7 +355,7 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, err := h.broker.Update(instanceUUID, req, async)
+	resp, err := h.broker.Update(instanceUUID, req, async, userInfo)
 
 	if err != nil {
 		switch err {
@@ -419,8 +419,8 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		return
 	}
 
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
-		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
@@ -441,7 +441,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, err := h.broker.Deprovision(serviceInstance, planID, nsDeleted, async)
+	resp, err := h.broker.Deprovision(serviceInstance, planID, nsDeleted, async, userInfo)
 
 	if err != nil {
 		switch err {
@@ -549,8 +549,8 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 		return
 	}
 
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
-		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
@@ -569,7 +569,7 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 	}
 
 	// process binding request
-	resp, ranAsync, err := h.broker.Bind(serviceInstance, bindingUUID, req, async)
+	resp, ranAsync, err := h.broker.Bind(serviceInstance, bindingUUID, req, async, userInfo)
 
 	if err != nil {
 		switch err {
@@ -646,8 +646,8 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		return
 	}
 
+	userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 	if !h.brokerConfig.GetBool("broker.auto_escalate") {
-		userInfo, ok := r.Context().Value(UserInfoContext).(broker.UserInfo)
 		if !ok {
 			log.Debugf("unable to retrieve user info from request context")
 			// if no user, we should error out with bad request.
@@ -666,7 +666,7 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		log.Debugf("Auto Escalate has been set to true, we are escalating permissions")
 	}
 
-	resp, ranAsync, err := h.broker.Unbind(serviceInstance, bindInstance, planID, nsDeleted, async)
+	resp, ranAsync, err := h.broker.Unbind(serviceInstance, bindInstance, planID, nsDeleted, async, userInfo)
 
 	switch {
 	case err == broker.ErrorNotFound: // return 404

@@ -433,3 +433,11 @@ func StateToLastOperation(state apb.State) LastOperationState {
 		return LastOperationStateFailed
 	}
 }
+
+// getLastRequestingUser - return the UID if the username is ""
+func getLastRequestingUser(user UserInfo) string {
+	if user.Username == "" {
+		return user.UID
+	}
+	return user.Username
+}
