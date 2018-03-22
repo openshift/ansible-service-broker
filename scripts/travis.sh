@@ -7,8 +7,6 @@
 #
 action=$1
 
-export GLIDE_TARBALL="https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz"
-
 if [[ "$action" == "before_install" ]]; then
   echo "================================="
   echo "        Before Install           "
@@ -43,9 +41,7 @@ elif [[ "$action" == "install" ]]; then
   cd $TRAVIS_BUILD_DIR
 
   # now install deps
-  wget -O /tmp/glide.tar.gz $GLIDE_TARBALL
-  tar xfv /tmp/glide.tar.gz -C /tmp
-  sudo mv $(find /tmp -name "glide") /usr/bin
+  go get -u github.com/golang/dep/cmd/dep
 
   # install golint
   go get -u github.com/golang/lint/golint
