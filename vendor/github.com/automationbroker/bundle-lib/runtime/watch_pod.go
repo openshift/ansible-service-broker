@@ -38,6 +38,22 @@ var (
 // UpdateDescriptionFn function that will should handle the LastDescription from the bundle.
 type UpdateDescriptionFn func(string)
 
+// ErrorCustomMsg - An error to propagate the custom error message to the callers
+type ErrorCustomMsg struct {
+	msg string
+}
+
+func (e ErrorCustomMsg) Error() string {
+	// returns an Error with a custom message
+	return e.msg
+}
+
+// IsErrorCustomMsg - true if it's a custom message error
+func IsErrorCustomMsg(err error) bool {
+	_, ok := err.(ErrorCustomMsg)
+	return ok
+}
+
 // WatchPod - watches the pod until completion and will update the last
 // description using the UpdateDescriptionFunction
 func WatchPod(podName string, namespace string, podClient v1.PodInterface, updateFunc UpdateDescriptionFn) error {
@@ -124,6 +140,11 @@ func translateExitStatus(podName string, podStatus apiv1.PodStatus) error {
 	status := conds[0].State.Terminated
 	if status == nil {
 		return fmt.Errorf("Pod [ %s ] failed. Unable to determine status - %v", podName, podStatus.Message)
+	}
+
+	// return the termination message if it's not empty
+	if status.Message != "" {
+		return ErrorCustomMsg{msg: status.Message}
 	}
 
 	if status.ExitCode == 8 {

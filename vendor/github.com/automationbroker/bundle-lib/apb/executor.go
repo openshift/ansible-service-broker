@@ -49,6 +49,8 @@ type ExecutorAsync interface {
 	Update(instance *ServiceInstance) <-chan StatusMessage
 }
 
+//go:generate mockery -name=Executor -case=underscore -inpkg -note=Generated
+
 // Executor - Composite executor interface.
 type Executor interface {
 	ExecutorAccessors
