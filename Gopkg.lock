@@ -43,6 +43,7 @@
   packages = [
     "apb",
     "clients",
+    "crd",
     "origin/copy/authorization",
     "origin/copy/user",
     "origin/copy/user/validation",
@@ -917,6 +918,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3375752527d1ec10c10510fa6257b7c86cdc7c75d99038fb2c276e1e18e76ae5"
+  inputs-digest = "623d265946bd684139094ed8f2602800b2ffc14fb8f12910d5cb3a3b1f58529d"
   solver-name = "gps-cdcl"
   solver-version = 1

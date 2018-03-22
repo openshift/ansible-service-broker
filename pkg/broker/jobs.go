@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/runtime"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 )
 
@@ -81,7 +82,7 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 	if err != nil {
 		log.Errorf("broker::%s error occurred. %s", j.method, err.Error())
 
-		if err == apb.ErrorPodPullErr {
+		if err == runtime.ErrorPodPullErr {
 			errMsg = err.Error()
 		} else if apb.IsErrorCustomMsg(err) {
 			errMsg = err.Error()
