@@ -22,7 +22,6 @@
 
 [[constraint]]
   name = "github.com/coreos/etcd"
-  version = "~3.3.0"
 
 [[constraint]]
   name = "github.com/gorilla/handlers"
