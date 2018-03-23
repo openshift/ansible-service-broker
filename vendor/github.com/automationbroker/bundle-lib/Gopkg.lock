@@ -216,12 +216,6 @@
   version = "1.0.0"
 
 [[projects]]
-  name = "github.com/op/go-logging"
-  packages = ["."]
-  revision = "b2cb9fa56473e98db8caba80237377e83fe44db5"
-  version = "v1"
-
-[[projects]]
   branch = "master"
   name = "github.com/openshift/api"
   packages = ["network/v1"]
@@ -559,6 +553,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "79f9b59d40b7665b54720085f509da88c66b4b351f7218f432da30e8668806cd"
+  inputs-digest = "cc2686552015574dcfcc36d2e44db5bb767e3fd769bcf84d47fb4665aa7e5145"
   solver-name = "gps-cdcl"
   solver-version = 1
