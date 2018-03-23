@@ -17,7 +17,7 @@
 package broker
 
 import (
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 )
 
 // DeprovisionWorkSubscriber - Lissten for provision messages

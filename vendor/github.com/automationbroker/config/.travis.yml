@@ -1,0 +1,5 @@
+language: go
+go_import_path: github.com/automationbroker/config
+go:
+  - 1.9.x
+script: "go build github.com/automationbroker/config/... && go test -v ./..."

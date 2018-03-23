@@ -1327,23 +1327,23 @@ func WaitForPodRunningInNamespace(c clientset.Interface, pod *v1.Pod) error {
 	if pod.Status.Phase == v1.PodRunning {
 		return nil
 	}
-	return waitTimeoutForPodRunningInNamespace(c, pod.Name, pod.Namespace, PodStartTimeout)
+	return WaitTimeoutForPodRunningInNamespace(c, pod.Name, pod.Namespace, PodStartTimeout)
 }
 
 // Waits default amount of time (PodStartTimeout) for the specified pod to become running.
 // Returns an error if timeout occurs first, or pod goes in to failed state.
 func WaitForPodNameRunningInNamespace(c clientset.Interface, podName, namespace string) error {
-	return waitTimeoutForPodRunningInNamespace(c, podName, namespace, PodStartTimeout)
+	return WaitTimeoutForPodRunningInNamespace(c, podName, namespace, PodStartTimeout)
 }
 
 // Waits an extended amount of time (slowPodStartTimeout) for the specified pod to become running.
 // The resourceVersion is used when Watching object changes, it tells since when we care
 // about changes to the pod. Returns an error if timeout occurs first, or pod goes in to failed state.
 func waitForPodRunningInNamespaceSlow(c clientset.Interface, podName, namespace string) error {
-	return waitTimeoutForPodRunningInNamespace(c, podName, namespace, slowPodStartTimeout)
+	return WaitTimeoutForPodRunningInNamespace(c, podName, namespace, slowPodStartTimeout)
 }
 
-func waitTimeoutForPodRunningInNamespace(c clientset.Interface, podName, namespace string, timeout time.Duration) error {
+func WaitTimeoutForPodRunningInNamespace(c clientset.Interface, podName, namespace string, timeout time.Duration) error {
 	return wait.PollImmediate(Poll, timeout, podRunning(c, podName, namespace))
 }
 
@@ -4813,14 +4813,17 @@ func (p *E2ETestNodePreparer) CleanupNodes() error {
 // CleanupGCEResources cleans up GCE Service Type=LoadBalancer resources with
 // the given name. The name is usually the UUID of the Service prefixed with an
 // alpha-numeric character ('a') to work around cloudprovider rules.
-func CleanupGCEResources(c clientset.Interface, loadBalancerName, zone string) (retErr error) {
+func CleanupGCEResources(c clientset.Interface, loadBalancerName, region, zone string) (retErr error) {
 	gceCloud, err := GetGCECloud()
 	if err != nil {
 		return err
 	}
-	region, err := gcecloud.GetGCERegion(zone)
-	if err != nil {
-		return fmt.Errorf("error parsing GCE/GKE region from zone %q: %v", zone, err)
+	if region == "" {
+		// Attempt to parse region from zone if no region is given.
+		region, err = gcecloud.GetGCERegion(zone)
+		if err != nil {
+			return fmt.Errorf("error parsing GCE/GKE region from zone %q: %v", zone, err)
+		}
 	}
 	if err := gceCloud.DeleteFirewall(gcecloud.MakeFirewallName(loadBalancerName)); err != nil &&
 		!IsGoogleAPIHTTPErrorCode(err, http.StatusNotFound) {

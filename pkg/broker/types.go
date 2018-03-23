@@ -20,8 +20,8 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/automationbroker/bundle-lib/apb"
 	schema "github.com/lestrrat/go-jsschema"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
 	"github.com/pborman/uuid"
 )
 

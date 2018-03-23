@@ -77,7 +77,9 @@ function config-ip-firewall {
     iptables -w -t nat -A IP-MASQ -m comment --comment "ip-masq: outbound traffic is subject to MASQUERADE (must be last in chain)" -j MASQUERADE
   fi
 
-  if [[ "${ENABLE_METADATA_CONCEALMENT:-}" == "true" ]]; then
+  # If METADATA_CONCEALMENT_NO_FIREWALL is set, don't create a firewall on this
+  # node because we don't expect the daemonset to run on this node.
+  if [[ "${ENABLE_METADATA_CONCEALMENT:-}" == "true" ]] && [[ ! "${METADATA_CONCEALMENT_NO_FIREWALL:-}" == "true" ]]; then
     echo "Add rule for metadata concealment"
     iptables -w -t nat -I PREROUTING -p tcp -d 169.254.169.254 --dport 80 -m comment --comment "metadata-concealment: bridge traffic to metadata server goes to metadata proxy" -j DNAT --to-destination 127.0.0.1:988
   fi
@@ -992,6 +994,14 @@ current-context: kube-scheduler
 EOF
 }
 
+function create-kubescheduler-policy-config {
+  echo "Creating kube-scheduler policy config file"
+  mkdir -p /etc/srv/kubernetes/kube-scheduler
+  cat <<EOF >/etc/srv/kubernetes/kube-scheduler/policy-config
+${SCHEDULER_POLICY_CONFIG}
+EOF
+}
+
 function create-node-problem-detector-kubeconfig {
   echo "Creating node-problem-detector kubeconfig file"
   mkdir -p /var/lib/node-problem-detector
@@ -1395,7 +1405,7 @@ function prepare-etcd-manifest {
     sed -i -e "s@{{ *pillar\.get('storage_backend', '\(.*\)') *}}@\1@g" "${temp_file}"
   fi
   if [[ "${STORAGE_BACKEND:-${default_storage_backend}}" == "etcd3" ]]; then
-    sed -i -e "s@{{ *quota_bytes *}}@--quota-backend-bytes=4294967296@g" "${temp_file}"
+    sed -i -e "s@{{ *quota_bytes *}}@--quota-backend-bytes=${ETCD_QUOTA_BACKEND_BYTES:-4294967296}@g" "${temp_file}"
   else
     sed -i -e "s@{{ *quota_bytes *}}@@g" "${temp_file}"
   fi
@@ -1456,6 +1466,8 @@ function start-etcd-servers {
 #   CLOUD_CONFIG_VOLUME
 #   CLOUD_CONFIG_MOUNT
 #   DOCKER_REGISTRY
+#   FLEXVOLUME_HOSTPATH_MOUNT
+#   FLEXVOLUME_HOSTPATH_VOLUME
 function compute-master-manifest-variables {
   CLOUD_CONFIG_OPT=""
   CLOUD_CONFIG_VOLUME=""
@@ -1468,6 +1480,13 @@ function compute-master-manifest-variables {
   DOCKER_REGISTRY="gcr.io/google_containers"
   if [[ -n "${KUBE_DOCKER_REGISTRY:-}" ]]; then
     DOCKER_REGISTRY="${KUBE_DOCKER_REGISTRY}"
+  fi
+
+  FLEXVOLUME_HOSTPATH_MOUNT=""
+  FLEXVOLUME_HOSTPATH_VOLUME=""
+  if [[ -n "${VOLUME_PLUGIN_DIR:-}" ]]; then
+    FLEXVOLUME_HOSTPATH_MOUNT="{ \"name\": \"flexvolumedir\", \"mountPath\": \"${VOLUME_PLUGIN_DIR}\", \"readOnly\": true},"
+    FLEXVOLUME_HOSTPATH_VOLUME="{ \"name\": \"flexvolumedir\", \"hostPath\": {\"path\": \"${VOLUME_PLUGIN_DIR}\"}},"
   fi
 }
 
@@ -1520,6 +1539,7 @@ function start-kube-apiserver {
   params+=" --secure-port=443"
   params+=" --tls-cert-file=${APISERVER_SERVER_CERT_PATH}"
   params+=" --tls-private-key-file=${APISERVER_SERVER_KEY_PATH}"
+  params+=" --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname"
   if [[ -s "${REQUESTHEADER_CA_CERT_PATH:-}" ]]; then
     params+=" --requestheader-client-ca-file=${REQUESTHEADER_CA_CERT_PATH}"
     params+=" --requestheader-allowed-names=aggregator"
@@ -1546,6 +1566,9 @@ function start-kube-apiserver {
   fi
   if [[ -n "${STORAGE_MEDIA_TYPE:-}" ]]; then
     params+=" --storage-media-type=${STORAGE_MEDIA_TYPE}"
+  fi
+  if [[ -n "${ETCD_COMPACTION_INTERVAL_SEC:-}" ]]; then
+    params+=" --etcd-compaction-interval=${ETCD_COMPACTION_INTERVAL_SEC}s"
   fi
   if [[ -n "${KUBE_APISERVER_REQUEST_TIMEOUT_SEC:-}" ]]; then
     params+=" --request-timeout=${KUBE_APISERVER_REQUEST_TIMEOUT_SEC}s"
@@ -1679,8 +1702,6 @@ function start-kube-apiserver {
       params+=" --advertise-address=${vm_external_ip}"      
       params+=" --ssh-user=${PROXY_SSH_USER}"
       params+=" --ssh-keyfile=/etc/srv/sshproxy/.sshkeyfile"
-    else
-      params+=" --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname",
     fi
   elif [ -n "${MASTER_ADVERTISE_ADDRESS:-}" ]; then
     params="${params} --advertise-address=${MASTER_ADVERTISE_ADDRESS}"
@@ -1828,7 +1849,7 @@ function start-kube-controller-manager {
     params+=" --terminated-pod-gc-threshold=${TERMINATED_POD_GC_THRESHOLD}"
   fi
   if [[ "${ENABLE_IP_ALIASES:-}" == 'true' ]]; then
-    params+=" --cidr-allocator-type=CloudAllocator"
+    params+=" --cidr-allocator-type=${NODE_IPAM_MODE}"
     params+=" --configure-cloud-routes=false"
   fi
   if [[ -n "${FEATURE_GATES:-}" ]]; then
@@ -1871,6 +1892,9 @@ function start-kube-controller-manager {
   sed -i -e "s@{{additional_cloud_config_volume}}@@g" "${src_file}"
   sed -i -e "s@{{pv_recycler_mount}}@${PV_RECYCLER_MOUNT}@g" "${src_file}"
   sed -i -e "s@{{pv_recycler_volume}}@${PV_RECYCLER_VOLUME}@g" "${src_file}"
+  sed -i -e "s@{{flexvolume_hostpath_mount}}@${FLEXVOLUME_HOSTPATH_MOUNT}@g" "${src_file}"
+  sed -i -e "s@{{flexvolume_hostpath}}@${FLEXVOLUME_HOSTPATH_VOLUME}@g" "${src_file}"
+
   cp "${src_file}" /etc/kubernetes/manifests
 }
 
@@ -1893,6 +1917,11 @@ function start-kube-scheduler {
   fi
   if [[ -n "${SCHEDULING_ALGORITHM_PROVIDER:-}"  ]]; then
     params+=" --algorithm-provider=${SCHEDULING_ALGORITHM_PROVIDER}"
+  fi
+  if [[ -n "${SCHEDULER_POLICY_CONFIG:-}" ]]; then
+    create-kubescheduler-policy-config
+    params+=" --use-legacy-policy-config"
+    params+=" --policy-config-file=/etc/srv/kubernetes/kube-scheduler/policy-config"
   fi
   local -r kube_scheduler_docker_tag=$(cat "${KUBE_HOME}/kube-docker-files/kube-scheduler.docker_tag")
 
@@ -2036,6 +2065,12 @@ function update-prometheus-to-sd-parameters {
     # Removes all lines between two patterns (throws away prometheus-to-sd)
     sed -i -e "/# BEGIN_PROMETHEUS_TO_SD/,/# END_PROMETHEUS_TO_SD/d" "$1"
    fi
+}
+
+function update-dashboard-controller {
+  if [ -n "${CUSTOM_KUBE_DASHBOARD_BANNER:-}" ]; then
+    sed -i -e "s@\( \+\)# PLATFORM-SPECIFIC ARGS HERE@\1- --system-banner=${CUSTOM_KUBE_DASHBOARD_BANNER}\n\1- --system-banner-severity=WARNING@" "$1"
+  fi
 }
 
 # Sets up the manifests of coreDNS for k8s addons.
@@ -2203,6 +2238,8 @@ EOF
   fi
   if [[ "${ENABLE_CLUSTER_UI:-}" == "true" ]]; then
     setup-addon-manifests "addons" "dashboard"
+    local -r dashboard_controller_yaml="${dst_dir}/dashboard/dashboard-controller.yaml"
+    update-dashboard-controller ${dashboard_controller_yaml}
   fi
   if [[ "${ENABLE_NODE_PROBLEM_DETECTOR:-}" == "daemonset" ]]; then
     setup-addon-manifests "addons" "node-problem-detector"

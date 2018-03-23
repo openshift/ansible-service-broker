@@ -1,79 +1,96 @@
 package jspointer
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"reflect"
 	"strconv"
-	"strings"
-	"sync"
 
 	"github.com/lestrrat/go-structinfo"
 )
 
-var ctxPool = sync.Pool{
-	New: moreCtx,
+type tokens struct {
+	s         string
+	positions [][2]int
 }
 
-func moreCtx() interface{} {
-	return &matchCtx{}
+func (t *tokens) size() int {
+	return len(t.positions)
 }
 
-func getCtx() *matchCtx {
-	return ctxPool.Get().(*matchCtx)
-}
-
-func releaseCtx(ctx *matchCtx) {
-	ctx.err = nil
-	ctx.set = false
-	ctx.tokens = nil
-	ctx.result = nil
-	ctxPool.Put(ctx)
+func (t *tokens) get(i int) string {
+	p := t.positions[i]
+	return t.s[p[0]:p[1]]
 }
 
 // New creates a new JSON pointer for given path spec. If the path fails
 // to be parsed, an error is returned
 func New(path string) (*JSPointer, error) {
 	var p JSPointer
-	dtokens, err := parse(path)
-	if err != nil {
+
+	if err := p.parse(path); err != nil {
 		return nil, err
 	}
 	p.raw = path
-	p.tokens = dtokens
 	return &p, nil
 }
 
-func parse(s string) ([]string, error) {
+func (p *JSPointer) parse(s string) error {
 	if s == "" {
-		return nil, nil
+		return nil
 	}
 
 	if s[0] != Separator {
-		return nil, ErrInvalidPointer
+		return ErrInvalidPointer
 	}
 
-	prev := 0
-	tokens := []string{}
-	for i := 1; i < len(s); i++ {
-		switch s[i] {
-		case Separator:
-			tokens = append(tokens, s[prev+1:i])
-			prev = i
+	if len(s) < 2 {
+		return ErrInvalidPointer
+	}
+
+	ntokens := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == '/' {
+			ntokens++
 		}
 	}
 
-	if prev != len(s) {
-		tokens = append(tokens, s[prev+1:])
+	positions := make([][2]int, 0, ntokens)
+	start := 1
+	var buf bytes.Buffer
+	buf.WriteByte(s[0])
+	for i := 1; i < len(s); i++ {
+		switch s[i] {
+		case Separator:
+			buf.WriteByte(s[i])
+			positions = append(positions, [2]int{start, buf.Len() - 1})
+			start = i + 1
+		case '~':
+			if len(s) == 1 {
+				buf.WriteByte(s[i])
+			} else {
+				switch s[1] {
+				case '0':
+					buf.WriteByte('~')
+				case '1':
+					buf.WriteByte('/')
+				default:
+					buf.WriteByte(s[i])
+				}
+			}
+		default:
+			buf.WriteByte(s[i])
+		}
 	}
 
-	dtokens := make([]string, 0, len(tokens))
-	for _, t := range tokens {
-		t = strings.Replace(strings.Replace(t, EncodedSlash, "/", -1), EncodedTilde, "~", -1)
-		dtokens = append(dtokens, t)
+	if start < buf.Len() {
+		positions = append(positions, [2]int{start, buf.Len()})
 	}
 
-	return dtokens, nil
+	p.tokens.s = buf.String()
+	p.tokens.positions = positions
+	return nil
 }
 
 // String returns the stringified version of this JSON pointer
@@ -84,11 +101,10 @@ func (p JSPointer) String() string {
 // Get applies the JSON pointer to the given item, and returns
 // the result.
 func (p JSPointer) Get(item interface{}) (interface{}, error) {
-	ctx := getCtx()
-	defer releaseCtx(ctx)
+	var ctx matchCtx
 
 	ctx.raw = p.raw
-	ctx.tokens = p.tokens
+	ctx.tokens = &p.tokens
 	ctx.apply(item)
 	return ctx.result, ctx.err
 }
@@ -96,12 +112,11 @@ func (p JSPointer) Get(item interface{}) (interface{}, error) {
 // Set applies the JSON pointer to the given item, and sets the
 // value accordingly.
 func (p JSPointer) Set(item interface{}, value interface{}) error {
-	ctx := getCtx()
-	defer releaseCtx(ctx)
+	var ctx matchCtx
 
 	ctx.set = true
 	ctx.raw = p.raw
-	ctx.tokens = p.tokens
+	ctx.tokens = &p.tokens
 	ctx.setvalue = value
 	ctx.apply(item)
 	return ctx.err
@@ -113,25 +128,48 @@ type matchCtx struct {
 	result   interface{}
 	set      bool
 	setvalue interface{}
-	tokens   []string
+	tokens   *tokens
 }
 
 func (e ErrNotFound) Error() string {
 	return "match to JSON pointer not found: " + e.Ptr
 }
 
+type JSONGetter interface {
+	JSONGet(tok string) (interface{}, error)
+}
+
 var strType = reflect.TypeOf("")
+var zeroval reflect.Value
 
 func (c *matchCtx) apply(item interface{}) {
-	if len(c.tokens) == 0 {
+	if c.tokens.size() == 0 {
 		c.result = item
 		return
 	}
 
-	lastidx := len(c.tokens) - 1
 	node := item
-	for tidx, token := range c.tokens {
+	lastidx := c.tokens.size() - 1
+	for i := 0; i < c.tokens.size(); i++ {
+		token := c.tokens.get(i)
+
+		if getter, ok := node.(JSONGetter); ok {
+			x, err := getter.JSONGet(token)
+			if err != nil {
+				c.err = ErrNotFound{Ptr: c.raw}
+				return
+			}
+			if i == lastidx {
+				c.result = x
+				return
+			}
+			node = x
+			continue
+		}
 		v := reflect.ValueOf(node)
+
+		// Does this thing implement a JSONGet?
+
 		if v.Kind() == reflect.Ptr {
 			v = v.Elem()
 		}
@@ -144,7 +182,7 @@ func (c *matchCtx) apply(item interface{}) {
 				return
 			}
 			f := v.FieldByName(fn)
-			if tidx == lastidx {
+			if i == lastidx {
 				if c.set {
 					if !f.CanSet() {
 						c.err = ErrCanNotSet
@@ -176,12 +214,12 @@ func (c *matchCtx) apply(item interface{}) {
 				vt = reflect.ValueOf(token)
 			}
 			n := v.MapIndex(vt)
-			if (reflect.Value{}) == n {
+			if zeroval == n {
 				c.err = ErrNotFound{Ptr: c.raw}
 				return
 			}
 
-			if tidx == lastidx {
+			if i == lastidx {
 				if c.set {
 					v.SetMapIndex(vt, reflect.ValueOf(c.setvalue))
 				} else {
@@ -204,7 +242,7 @@ func (c *matchCtx) apply(item interface{}) {
 				return
 			}
 
-			if tidx == lastidx {
+			if i == lastidx {
 				if c.set {
 					m[wantidx] = c.setvalue
 				} else {

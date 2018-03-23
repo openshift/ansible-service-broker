@@ -34,9 +34,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	lbmpb "google.golang.org/grpc/grpclb/grpc_lb_v1/messages"
@@ -482,7 +482,7 @@ func TestDropRequest(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			// Even RPCs should fail, because the 2st backend has
 			// DropForLoadBalancing set to true.
-			if _, err := testC.EmptyCall(context.Background(), &testpb.Empty{}, grpc.FailFast(failfast)); grpc.Code(err) != codes.Unavailable {
+			if _, err := testC.EmptyCall(context.Background(), &testpb.Empty{}, grpc.FailFast(failfast)); status.Code(err) != codes.Unavailable {
 				t.Errorf("%v.EmptyCall(_, _) = _, %v, want _, %s", testC, err, codes.Unavailable)
 			}
 			// Odd RPCs should succeed since they choose the non-drop-request
@@ -574,6 +574,24 @@ func TestBalancerDisconnects(t *testing.T) {
 	t.Fatalf("No RPC sent to second backend after 1 second")
 }
 
+type customGRPCLBBuilder struct {
+	balancer.Builder
+	name string
+}
+
+func (b *customGRPCLBBuilder) Name() string {
+	return b.name
+}
+
+const grpclbCustomFallbackName = "grpclb_with_custom_fallback_timeout"
+
+func init() {
+	balancer.Register(&customGRPCLBBuilder{
+		Builder: grpc.NewLBBuilderWithFallbackTimeout(100 * time.Millisecond),
+		name:    grpclbCustomFallbackName,
+	})
+}
+
 func TestFallback(t *testing.T) {
 	defer leakcheck.Check(t)
 
@@ -612,7 +630,7 @@ func TestFallback(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	cc, err := grpc.DialContext(ctx, r.Scheme()+":///"+beServerName,
-		grpc.WithBalancerBuilder(grpc.NewLBBuilderWithFallbackTimeout(100*time.Millisecond)),
+		grpc.WithBalancerName(grpclbCustomFallbackName),
 		grpc.WithTransportCredentials(&creds), grpc.WithDialer(fakeNameDialer))
 	if err != nil {
 		t.Fatalf("Failed to dial to the backend %v", err)

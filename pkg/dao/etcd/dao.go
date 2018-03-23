@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/coreos/etcd/client"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/clients"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 )

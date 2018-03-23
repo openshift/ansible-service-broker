@@ -19,6 +19,7 @@ package kubelet
 import (
 	"crypto/tls"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
@@ -300,9 +301,11 @@ func makePodSourceConfig(kubeCfg *kubeletconfiginternal.KubeletConfiguration, ku
 	// Restore from the checkpoint path
 	// NOTE: This MUST happen before creating the apiserver source
 	// below, or the checkpoint would override the source of truth.
-	updatechannel := cfg.Channel(kubetypes.ApiserverSource)
+
+	var updatechannel chan<- interface{}
 	if bootstrapCheckpointPath != "" {
 		glog.Infof("Adding checkpoint path: %v", bootstrapCheckpointPath)
+		updatechannel = cfg.Channel(kubetypes.ApiserverSource)
 		err := cfg.Restore(bootstrapCheckpointPath, updatechannel)
 		if err != nil {
 			return nil, err
@@ -311,6 +314,9 @@ func makePodSourceConfig(kubeCfg *kubeletconfiginternal.KubeletConfiguration, ku
 
 	if kubeDeps.KubeClient != nil {
 		glog.Infof("Watching apiserver")
+		if updatechannel == nil {
+			updatechannel = cfg.Channel(kubetypes.ApiserverSource)
+		}
 		config.NewSourceApiserver(kubeDeps.KubeClient, nodeName, updatechannel)
 	}
 	return cfg, nil
@@ -1361,8 +1367,7 @@ func (kl *Kubelet) Run(updates <-chan kubetypes.PodUpdate) {
 
 	if err := kl.initializeModules(); err != nil {
 		kl.recorder.Eventf(kl.nodeRef, v1.EventTypeWarning, events.KubeletSetupFailed, err.Error())
-		glog.Error(err)
-		kl.runtimeState.setInitError(err)
+		glog.Fatal(err)
 	}
 
 	// Start volume manager
@@ -1773,12 +1778,22 @@ func (kl *Kubelet) syncLoop(updates <-chan kubetypes.PodUpdate, handler SyncHand
 	housekeepingTicker := time.NewTicker(housekeepingPeriod)
 	defer housekeepingTicker.Stop()
 	plegCh := kl.pleg.Watch()
+	const (
+		base   = 100 * time.Millisecond
+		max    = 5 * time.Second
+		factor = 2
+	)
+	duration := base
 	for {
 		if rs := kl.runtimeState.runtimeErrors(); len(rs) != 0 {
 			glog.Infof("skipping pod synchronization - %v", rs)
-			time.Sleep(5 * time.Second)
+			// exponential backoff
+			time.Sleep(duration)
+			duration = time.Duration(math.Min(float64(max), factor*float64(duration)))
 			continue
 		}
+		// reset backoff if we have a success
+		duration = base
 
 		kl.syncLoopMonitor.Store(kl.clock.Now())
 		if !kl.syncLoopIteration(updates, handler, syncTicker.C, housekeepingTicker.C, plegCh) {

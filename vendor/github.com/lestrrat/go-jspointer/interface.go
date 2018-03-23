@@ -23,5 +23,5 @@ type ErrNotFound struct {
 // JSPointer represents a JSON pointer
 type JSPointer struct {
 	raw    string
-	tokens []string
+	tokens tokens
 }

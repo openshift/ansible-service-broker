@@ -21,8 +21,9 @@ import (
 
 	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker.io/v1"
 	v1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker.io/v1"
-	"github.com/openshift/ansible-service-broker/pkg/apb"
-	"github.com/openshift/ansible-service-broker/pkg/clients"
+	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/clients"
+	"github.com/automationbroker/bundle-lib/crd"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +31,12 @@ import (
 )
 
 var log = logutil.NewLog()
+
+type arrayErrors []error
+
+func (a arrayErrors) Error() string {
+	return fmt.Sprintf("%#v", a)
+}
 
 const (
 	// instanceLabel for the job state to track which instance created it.
@@ -63,13 +70,13 @@ func (d *Dao) GetSpec(id string) (*apb.Spec, error) {
 		log.Errorf("unable to get bundle from k8s api - %v", err)
 		return nil, err
 	}
-	return bundleToSpec(s.Spec, s.GetName())
+	return crd.ConvertBundleToSpec(s.Spec, s.GetName())
 }
 
 // SetSpec - set spec for an id in the kvp API.
 func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
 	log.Debugf("set spec: %v", id)
-	bundleSpec, err := specToBundle(spec)
+	bundleSpec, err := crd.ConvertSpecToBundle(spec)
 	if err != nil {
 		return err
 	}
@@ -114,7 +121,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 	// capture all the errors and still try to save the correct bundles
 	errs := arrayErrors{}
 	for _, b := range l.Items {
-		spec, err := bundleToSpec(b.Spec, b.GetName())
+		spec, err := crd.ConvertBundleToSpec(b.Spec, b.GetName())
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -149,13 +156,13 @@ func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	return convertServiceInstanceToAPB(servInstance.Spec, spec, servInstance.GetName())
+	return crd.ConvertServiceInstanceToAPB(servInstance.Spec, spec, servInstance.GetName())
 }
 
 // SetServiceInstance - Set service instance for an id in the kvp API.
 func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
 	log.Debugf("set service instance: %v", id)
-	spec, err := convertServiceInstanceToCRD(serviceInstance)
+	spec, err := crd.ConvertServiceInstanceToCRD(serviceInstance)
 	if err != nil {
 		return err
 	}
@@ -198,13 +205,13 @@ func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-	return convertServiceBindingToAPB(bi.Spec, bi.GetName())
+	return crd.ConvertServiceBindingToAPB(bi.Spec, bi.GetName())
 }
 
 // SetBindInstance - Set the bind instance for id in the kvp API.
 func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 	log.Debugf("set binding instance: %v", id)
-	b, err := convertServiceBindingToCRD(bindInstance)
+	b, err := crd.ConvertServiceBindingToCRD(bindInstance)
 	if err != nil {
 		return err
 	}
@@ -233,13 +240,13 @@ func (d *Dao) DeleteBindInstance(id string) error {
 // SetState - Set the Job State in the kvp API for id.
 func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	log.Debugf("set job state for instance: %v token: %v", instanceID, state.Token)
-	j, err := convertJobStateToCRD(&state)
+	j, err := crd.ConvertJobStateToCRD(&state)
 	if err != nil {
 		return "", err
 	}
 	if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
 		js.Spec = j
-		js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", convertStateToCRD(state.State))
+		js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State))
 		_, err := d.client.JobStates(d.namespace).Update(js)
 		if err != nil {
 			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
@@ -253,7 +260,7 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 			Name:      state.Token,
 			Namespace: d.namespace,
 			Labels: map[string]string{jobStateInstanceLabel: instanceID,
-				jobStateLabel: fmt.Sprintf("%v", convertStateToCRD(state.State)),
+				jobStateLabel: fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State)),
 			},
 		},
 		Spec: j,
@@ -274,7 +281,7 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 		log.Errorf("unable to get state for token: %v", err)
 		return apb.JobState{}, err
 	}
-	j, err := convertJobStateToAPB(js.Spec, js.GetName())
+	j, err := crd.ConvertJobStateToAPB(js.Spec, js.GetName())
 	if err != nil {
 		return apb.JobState{}, err
 	}
@@ -290,7 +297,7 @@ func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
 func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
 	log.Debugf("Dao::FindJobStateByState -> [%v]", state)
 	jobStates, err := d.client.JobStates(d.namespace).List(metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("state=%v", convertStateToCRD(state)),
+		LabelSelector: fmt.Sprintf("state=%v", crd.ConvertStateToCRD(state)),
 	})
 	if err != nil {
 		log.Errorf("unable to get job states for the state: %v - %v", state, err)
@@ -300,7 +307,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	rs := []apb.RecoverStatus{}
 	errs := arrayErrors{}
 	for _, js := range jobStates.Items {
-		j, err := convertJobStateToAPB(js.Spec, js.GetName())
+		j, err := crd.ConvertJobStateToAPB(js.Spec, js.GetName())
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -320,7 +327,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState, error) {
 	log.Debugf("Dao::FindJobStateByState -> [%v]", state)
 	jobStates, err := d.client.JobStates(d.namespace).List(metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%v=%v,%v=%v", jobStateInstanceLabel, ID, jobStateLabel, convertStateToCRD(state)),
+		LabelSelector: fmt.Sprintf("%v=%v,%v=%v", jobStateInstanceLabel, ID, jobStateLabel, crd.ConvertStateToCRD(state)),
 	})
 	if err != nil {
 		log.Errorf("unable to get job states for the state: %v - %v", state, err)
@@ -330,7 +337,7 @@ func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState,
 	jss := []apb.JobState{}
 	errs := arrayErrors{}
 	for _, js := range jobStates.Items {
-		job, err := convertJobStateToAPB(js.Spec, js.GetName())
+		job, err := crd.ConvertJobStateToAPB(js.Spec, js.GetName())
 		if err != nil {
 			errs = append(errs, err)
 			continue

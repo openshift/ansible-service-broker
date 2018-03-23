@@ -29,9 +29,39 @@ import (
 
 // NodeAddresses returns the addresses of the specified instance.
 func (az *Cloud) NodeAddresses(name types.NodeName) ([]v1.NodeAddress, error) {
+	addressGetter := func(nodeName types.NodeName) ([]v1.NodeAddress, error) {
+		ip, publicIP, err := az.GetIPForMachineWithRetry(nodeName)
+		if err != nil {
+			glog.V(2).Infof("NodeAddresses(%s) abort backoff", nodeName)
+			return nil, err
+		}
+
+		addresses := []v1.NodeAddress{
+			{Type: v1.NodeInternalIP, Address: ip},
+			{Type: v1.NodeHostName, Address: string(name)},
+		}
+		if len(publicIP) > 0 {
+			addresses = append(addresses, v1.NodeAddress{
+				Type:    v1.NodeExternalIP,
+				Address: publicIP,
+			})
+		}
+		return addresses, nil
+	}
+
 	if az.UseInstanceMetadata {
+		isLocalInstance, err := az.isCurrentInstance(name)
+		if err != nil {
+			return nil, err
+		}
+
+		// Not local instance, get addresses from Azure ARM API.
+		if !isLocalInstance {
+			return addressGetter(name)
+		}
+
 		ipAddress := IPAddress{}
-		err := az.metadata.Object("instance/network/interface/0/ipv4/ipAddress/0", &ipAddress)
+		err = az.metadata.Object("instance/network/interface/0/ipv4/ipAddress/0", &ipAddress)
 		if err != nil {
 			return nil, err
 		}
@@ -48,16 +78,8 @@ func (az *Cloud) NodeAddresses(name types.NodeName) ([]v1.NodeAddress, error) {
 		}
 		return addresses, nil
 	}
-	ip, err := az.GetIPForMachineWithRetry(name)
-	if err != nil {
-		glog.V(2).Infof("NodeAddresses(%s) abort backoff", name)
-		return nil, err
-	}
 
-	return []v1.NodeAddress{
-		{Type: v1.NodeInternalIP, Address: ip},
-		{Type: v1.NodeHostName, Address: string(name)},
-	}, nil
+	return addressGetter(name)
 }
 
 // NodeAddressesByProviderID returns the node addresses of an instances with the specified unique providerID
@@ -111,10 +133,8 @@ func (az *Cloud) InstanceID(name types.NodeName) (string, error) {
 			return "", err
 		}
 		if isLocalInstance {
-			externalInstanceID, err := az.metadata.Text("instance/compute/vmId")
-			if err == nil {
-				return externalInstanceID, nil
-			}
+			nodeName := mapNodeNameToVMName(name)
+			return az.getMachineID(nodeName), nil
 		}
 	}
 
@@ -156,14 +176,13 @@ func (az *Cloud) getVmssInstanceID(name types.NodeName) (string, error) {
 
 func (az *Cloud) getStandardInstanceID(name types.NodeName) (string, error) {
 	var machine compute.VirtualMachine
-	var exists bool
 	var err error
 	az.operationPollRateLimiter.Accept()
-	machine, exists, err = az.getVirtualMachine(name)
+	machine, err = az.getVirtualMachine(name)
 	if err != nil {
 		if az.CloudProviderBackoff {
 			glog.V(2).Infof("InstanceID(%s) backing off", name)
-			machine, exists, err = az.GetVirtualMachineWithRetry(name)
+			machine, err = az.GetVirtualMachineWithRetry(name)
 			if err != nil {
 				glog.V(2).Infof("InstanceID(%s) abort backoff", name)
 				return "", err
@@ -171,8 +190,6 @@ func (az *Cloud) getStandardInstanceID(name types.NodeName) (string, error) {
 		} else {
 			return "", err
 		}
-	} else if !exists {
-		return "", cloudprovider.InstanceNotFound
 	}
 	return *machine.ID, nil
 }
@@ -239,12 +256,10 @@ func (az *Cloud) getVmssInstanceType(name types.NodeName) (string, error) {
 
 // getStandardInstanceType gets instance with standard type.
 func (az *Cloud) getStandardInstanceType(name types.NodeName) (string, error) {
-	machine, exists, err := az.getVirtualMachine(name)
+	machine, err := az.getVirtualMachine(name)
 	if err != nil {
 		glog.Errorf("error: az.InstanceType(%s), az.getVirtualMachine(%s) err=%v", name, name, err)
 		return "", err
-	} else if !exists {
-		return "", cloudprovider.InstanceNotFound
 	}
 	return string(machine.HardwareProfile.VMSize), nil
 }

@@ -28,7 +28,7 @@ import (
 
 	"sync"
 
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/mock"
 )
