@@ -95,20 +95,20 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 
 	// Ensure that response holds data we expect
 	if resp.Header["Www-Authenticate"] == nil {
-		return "", errors.New("Failed to find www-authenticate header from response.")
+		return "", errors.New("failed to find www-authenticate header from response")
 	}
 
 	authChallenge := resp.Header["Www-Authenticate"][0]
 	if strings.Index(authChallenge, "realm=\"") == -1 {
-		return "", errors.New("Failed to find realm in www-authenticate header.")
+		return "", errors.New("failed to find realm in www-authenticate header")
 	}
 	authRealm := strings.Split(strings.Split(authChallenge, "realm=\"")[1], "\"")[0]
 	authOptions := strings.Split(authChallenge, ",")[1]
-	authUrl := fmt.Sprintf("%v?%v", authRealm, authOptions)
+	authURL := fmt.Sprintf("%v?%v", authRealm, authOptions)
 	// Replace any quotes that exist in header from authOptions
-	authUrl = strings.Replace(authUrl, "\"", "", -1)
+	authURL = strings.Replace(authURL, "\"", "", -1)
 
-	req, err = http.NewRequest("GET", authUrl, nil)
+	req, err = http.NewRequest("GET", authURL, nil)
 	if err != nil {
 		return "", err
 	}
