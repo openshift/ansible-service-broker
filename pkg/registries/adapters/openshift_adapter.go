@@ -18,18 +18,17 @@ package adapters
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-
-	b64 "encoding/base64"
+	"strings"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
 )
 
-const openShiftName = "registry.connect.redhat.com"
-const openShiftAuthURL = "https://sso.redhat.com/auth/realms/rhc4tp/protocol/docker-v2/auth?service=docker-registry"
-const openShiftManifestURL = "https://registry.connect.redhat.com/v2/%v/manifests/%v"
+const openShiftName = "openshift"
+const openShiftManifestURL = "%v/v2/%v/manifests/%v"
 
 // OpenShiftAdapter - Docker Hub Adapter
 type OpenShiftAdapter struct {
@@ -83,17 +82,40 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 	}
 	username := r.Config.User
 	password := r.Config.Pass
-	authString := fmt.Sprintf("%v:%v", username, password)
 
-	authString = b64.StdEncoding.EncodeToString([]byte(authString))
-
-	req, err := http.NewRequest("GET", openShiftAuthURL, nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%v/v2/", r.Config.URL), nil)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %v", authString))
-
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Ensure that response holds data we expect
+	if resp.Header["Www-Authenticate"] == nil {
+		return "", errors.New("failed to find www-authenticate header from response")
+	}
+
+	authChallenge := resp.Header["Www-Authenticate"][0]
+	if strings.Index(authChallenge, "realm=\"") == -1 {
+		return "", errors.New("failed to find realm in www-authenticate header")
+	}
+	authRealm := strings.Split(strings.Split(authChallenge, "realm=\"")[1], "\"")[0]
+	authOptions := strings.Split(authChallenge, ",")[1]
+	authURL := fmt.Sprintf("%v?%v", authRealm, authOptions)
+	// Replace any quotes that exist in header from authOptions
+	authURL = strings.Replace(authURL, "\"", "", -1)
+
+	req, err = http.NewRequest("GET", authURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(username, password)
+
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +134,7 @@ func (r OpenShiftAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, imageName, r.Config.Tag), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, r.Config.URL, imageName, r.Config.Tag), nil)
 	if err != nil {
 		return nil, err
 	}
