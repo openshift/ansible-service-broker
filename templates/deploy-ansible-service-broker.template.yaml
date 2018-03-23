@@ -47,7 +47,7 @@ objects:
     name: asb
     namespace: "${NAMESPACE}"
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: asb
@@ -60,7 +60,7 @@ objects:
     name: asb
     namespace: "${NAMESPACE}"
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
     name: asb-auth
@@ -98,7 +98,7 @@ objects:
     resources: ["bundles", "jobstates", "servicebindings", "serviceinstances"]
     verbs: ["*"]
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: asb-auth-bind
@@ -111,7 +111,7 @@ objects:
     name: asb-auth
     apiGroup: rbac.authorization.k8s.io
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
     name: access-asb-role
@@ -364,7 +364,7 @@ objects:
     name: ansibleservicebroker-client
     namespace: "${NAMESPACE}"
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: ansibleservicebroker-client

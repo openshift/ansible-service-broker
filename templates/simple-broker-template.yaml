@@ -45,7 +45,7 @@ objects:
     name: asb
     namespace: ansible-service-broker
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: asb
@@ -58,7 +58,7 @@ objects:
     name: asb
     namespace: ansible-service-broker
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
     name: asb-auth
@@ -92,7 +92,7 @@ objects:
     resources: ["networkpolicies"]
     verbs: ["create", "delete"]
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: asb-auth-bind
@@ -105,7 +105,7 @@ objects:
     name: asb-auth
     apiGroup: rbac.authorization.k8s.io
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
     name: access-asb-role
@@ -308,7 +308,7 @@ objects:
     name: ansibleservicebroker-client
     namespace: ansible-service-broker
 
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: ansibleservicebroker-client
@@ -389,7 +389,7 @@ parameters:
 - description: APB Image Tag
   displayname: APB Image Tag
   name: TAG
-  value: sprint142 
+  value: sprint142
 
 - description: OpenShift User Password
   displayname: OpenShift User Password
