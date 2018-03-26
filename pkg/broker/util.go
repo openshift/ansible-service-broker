@@ -28,11 +28,14 @@ import (
 )
 
 type formItem struct {
-	Key   string        `json:"key,omitempty"`
-	Title string        `json:"title,omitempty"`
-	Type  string        `json:"type,omitempty"`
-	Items []interface{} `json:"items,omitempty"`
+	Key       string        `json:"key,omitempty"`
+	Title     string        `json:"title,omitempty"`
+	Type      string        `json:"type,omitempty"`
+	Items     []interface{} `json:"items,omitempty"`
+	Condition string        `json:"condition,omitempty"`
 }
+
+var condExpression = regexp.MustCompile(`\b(_)([a-zA-Z0-9_-]+)\b`)
 
 // SpecToService converts an apb Spec into a Service usable by the service
 // catalog.
@@ -185,17 +188,26 @@ func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, param
 func createUIFormItem(pd apb.ParameterDescriptor, paramIndex int) (interface{}, int) {
 	var item interface{}
 
-	// if the name is the only key, it defaults to a string instead of a dictionary
-	if pd.DisplayType == "" {
-		item = pd.Name
-	} else {
-		item = formItem{
-			Key:  pd.Name,
-			Type: pd.DisplayType,
-		}
+	item = formItem{
+		Key:       pd.Name,
+		Type:      getDisplayType(pd.DisplayType),
+		Condition: getCondition(pd.DisplayWhen),
 	}
 
 	return item, 1
+}
+
+// string is the default displayType
+func getDisplayType(displayType string) string {
+	if displayType == "" {
+		return "string"
+	}
+	return displayType
+}
+
+// getCondition transforms a DisplayWhen expression into an Angular Schema Form condition
+func getCondition(displayWhen string) string {
+	return condExpression.ReplaceAllString(displayWhen, `model.$2`)
 }
 
 // getType transforms an apb parameter type to a JSON Schema type
