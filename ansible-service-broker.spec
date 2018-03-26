@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.16
+Version: 1.1.17
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Mar 26 2018 David Zager <david.j.zager@gmail.com> 1.1.17-1
+- Bug 1558472 - Update openshift registry to use www-auth redirect header
+  (#852) (dymurray@redhat.com)
+
 * Tue Mar 13 2018 David Zager <david.j.zager@gmail.com> 1.1.16-1
 - Bug 1554239 - overwriting job state that has been finished. (#833)
   (Shawn.Hurley21@gmail.com)
