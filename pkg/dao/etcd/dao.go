@@ -313,6 +313,18 @@ func (d *Dao) DeleteBindInstance(id string) error {
 	return err
 }
 
+// DeleteBinding - Delete the binding instance and remove the assocation with the service instance.
+func (d *Dao) DeleteBinding(bindingInstance apb.BindInstance, serviceInstance apb.ServiceInstance) error {
+	if err := d.DeleteBindInstance(bindingInstance.ID.String()); err != nil {
+		return err
+	}
+	serviceInstance.RemoveBinding(bindingInstance.ID)
+	if err := d.SetServiceInstance(serviceInstance.ID.String(), &serviceInstance); err != nil {
+		return err
+	}
+	return nil
+}
+
 // SetState - Set the Job State in the kvp API for id.
 func (d *Dao) SetState(id string, state apb.JobState) (string, error) {
 	key := stateKey(id, state.Token)

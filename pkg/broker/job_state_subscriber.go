@@ -3,7 +3,7 @@ package broker
 import (
 	"fmt"
 
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 )
 
 // JobStateSubscriber is responsible for handling and persisiting JobState changes
@@ -93,14 +93,9 @@ func (jss *JobStateSubscriber) cleanupAfterUnbind(msg JobMsg) error {
 	if err != nil {
 		return setFailed(fmt.Errorf("Error getting bind instance [ %s ] during cleanup of unbind job : %v", msg.BindingUUID, err))
 	}
-	id := bindInstance.ID.String()
-	if err := jss.dao.DeleteBindInstance(id); err != nil {
-		return setFailed(fmt.Errorf("Error deleting bind instance [ %s ] during cleanup of unbind job : %v", id, err))
+	if err := jss.dao.DeleteBinding(*bindInstance, *svcInstance); err != nil {
+		return setFailed(fmt.Errorf("Error cleaning up binding instance [ %s ] during cleanup of unbind job : %v", bindInstance.ID.String(), err))
 	}
-	svcInstance.RemoveBinding(bindInstance.ID)
-	if err := jss.dao.SetServiceInstance(svcInstance.ID.String(), svcInstance); err != nil {
-		return setFailed(fmt.Errorf("Error setting service instance [ %s ] during clean up of unbind of [ %s ]", svcInstance.ID.String(), id))
-	}
-	log.Info("Clean up of binding instance [ %s ] done. Unbinding successful", id)
+	log.Info("Clean up of binding instance [ %s ] done. Unbinding successful", bindInstance.ID.String())
 	return nil
 }

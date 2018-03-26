@@ -306,7 +306,7 @@ type SubscriberDAO interface {
 	GetServiceInstance(id string) (*apb.ServiceInstance, error)
 	DeleteServiceInstance(id string) error
 	GetBindInstance(id string) (*apb.BindInstance, error)
-	DeleteBindInstance(id string) error
+	DeleteBinding(apb.BindInstance, apb.ServiceInstance) error
 	SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error
 }
 

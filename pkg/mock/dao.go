@@ -86,17 +86,17 @@ func (mp *SubscriberDAO) GetServiceInstance(id string) (*apb.ServiceInstance, er
 	return retOb.(*apb.ServiceInstance), mp.Errs["GetServiceInstance"]
 }
 
-// DeleteBindInstance mock impl
-func (mp *SubscriberDAO) DeleteBindInstance(id string) error {
-	assert := mp.AssertOn["DeleteBindInstance"]
+// DeleteBinding mock impl
+func (mp *SubscriberDAO) DeleteBinding(bindingInst apb.BindInstance, serviceInst apb.ServiceInstance) error {
+	assert := mp.AssertOn["DeleteBinding"]
 	if nil != assert {
-		if err := assert(id); err != nil {
+		if err := assert(bindingInst, serviceInst); err != nil {
 			mp.assertErr = append(mp.assertErr, err)
 			return err
 		}
 	}
-	mp.calls["DeleteBindInstance"]++
-	return mp.Errs["DeleteBindInstance"]
+	mp.calls["DeleteBinding"]++
+	return mp.Errs["DeleteBinding"]
 }
 
 // SetServiceInstance mock iml

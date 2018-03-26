@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/mock"
 	"github.com/pborman/uuid"
@@ -97,22 +97,20 @@ func TestJobStateSubscriber(t *testing.T) {
 			},
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
-				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{}
+				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{ID: uID}
 				dao.Object["GetBindInstance"] = &apb.BindInstance{ID: uID}
-				dao.AssertOn["SetState"] = func(args ...interface{}) error {
-					state := args[1].(apb.JobState)
-					if state.Method != apb.JobMethodUnbind {
-						return fmt.Errorf("expected to have a provision job state but was %v", state.Method)
-					}
-					if state.State != apb.StateSucceeded {
-						return fmt.Errorf("expected the job state to be %v but got %v", apb.StateSucceeded, state.State)
+				dao.AssertOn["DeleteBinding"] = func(args ...interface{}) error {
+
+					bi := args[0].(apb.BindInstance)
+					si := args[1].(apb.ServiceInstance)
+					if si.ID.String() != uID.String() || bi.ID.String() != uID.String() {
+						return fmt.Errorf("expected the service instance to have the id %s ", uID.String())
 					}
 					return nil
 				}
 				expectedCalls := map[string]int{
-					"SetState":           1,
-					"DeleteBindInstance": 1,
-					"SetServiceInstance": 1,
+					"SetState":      1,
+					"DeleteBinding": 1,
 				}
 				return dao, expectedCalls
 			},
@@ -189,7 +187,7 @@ func TestJobStateSubscriber(t *testing.T) {
 				dao := mock.NewSubscriberDAO()
 				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{}
 				dao.Object["GetBindInstance"] = &apb.BindInstance{ID: uID}
-				dao.Errs["DeleteBindInstance"] = errors.New("failed")
+				dao.Errs["DeleteBinding"] = errors.New("failed")
 				calls := 0
 				dao.AssertOn["SetState"] = func(args ...interface{}) error {
 					calls++
@@ -206,8 +204,8 @@ func TestJobStateSubscriber(t *testing.T) {
 					return nil
 				}
 				expectedCalls := map[string]int{
-					"SetState":           2,
-					"DeleteBindInstance": 1,
+					"SetState":      2,
+					"DeleteBinding": 1,
 				}
 				return dao, expectedCalls
 			},

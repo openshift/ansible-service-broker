@@ -1091,6 +1091,10 @@ func (a AnsibleBroker) Unbind(
 		}
 	} else {
 		log.Warning("Broker configured to *NOT* launch and run APB unbind")
+		if err := a.dao.DeleteBinding(bindInstance, serviceInstance); err != nil {
+			log.Errorf("failed to delete binding when launch_apb_on_bind is false: %v", err)
+			return nil, false, err
+		}
 	}
 	return &UnbindResponse{}, false, nil
 }
