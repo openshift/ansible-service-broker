@@ -1,8 +1,0 @@
----
-registry:
-  - type: dockerhub
-    name: dh
-    url: https://registry.hub.docker.com
-    user: shurley
-    pass: changeme
-    org: shurley

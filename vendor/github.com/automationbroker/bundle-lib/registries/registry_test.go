@@ -22,7 +22,6 @@ import (
 
 	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/automationbroker/bundle-lib/registries/adapters"
-	"github.com/automationbroker/config"
 	ft "github.com/stretchr/testify/assert"
 )
 
@@ -330,11 +329,11 @@ func TestFailIsFalse(t *testing.T) {
 }
 
 func TestNewRegistryRHCC(t *testing.T) {
-	c, err := config.CreateConfig("testdata/registry.yaml")
-	if err != nil {
-		ft.True(t, false)
+	c := Config{
+		Type: "rhcc",
+		Name: "rhcc",
 	}
-	reg, err := NewRegistry(c.GetSubConfig("registry.rhcc"), "")
+	reg, err := NewRegistry(c, "")
 	if err != nil {
 		ft.True(t, false)
 	}
@@ -343,11 +342,14 @@ func TestNewRegistryRHCC(t *testing.T) {
 }
 
 func TestNewRegistryDockerHub(t *testing.T) {
-	c, err := config.CreateConfig("testdata/registry.yaml")
-	if err != nil {
-		ft.True(t, false)
+	c := Config{
+		Type: "dockerhub",
+		Name: "dh",
+		URL:  "https://registry.hub.docker.com",
+		User: "shurley",
+		Org:  "shurley",
 	}
-	reg, err := NewRegistry(c.GetSubConfig("registry.dh"), "")
+	reg, err := NewRegistry(c, "")
 	if err != nil {
 		ft.True(t, false)
 	}
@@ -356,11 +358,12 @@ func TestNewRegistryDockerHub(t *testing.T) {
 }
 
 func TestNewRegistryMock(t *testing.T) {
-	c, err := config.CreateConfig("testdata/registry.yaml")
-	if err != nil {
-		ft.True(t, false)
+	c := Config{
+		Type: "mock",
+		Name: "mock",
 	}
-	reg, err := NewRegistry(c.GetSubConfig("registry.mock"), "")
+
+	reg, err := NewRegistry(c, "")
 	if err != nil {
 		ft.True(t, false)
 	}
@@ -376,14 +379,19 @@ func TestPanicOnUnknow(t *testing.T) {
 			ft.True(t, false)
 		}
 	}()
-	c, _ := config.CreateConfig("testdata/registry.yaml")
-	r, err := NewRegistry(c.GetSubConfig("registry.makes-no-sense"), "")
+	c := Config{
+		Type: "makes_no_sense",
+		Name: "dh",
+	}
+	r, err := NewRegistry(c, "")
 	fmt.Printf("%#v\n\n %v\n", r, err)
 }
 
 func TestValidateName(t *testing.T) {
-	c, _ := config.CreateConfig("testdata/registry.yaml")
-	_, err := NewRegistry(c.GetSubConfig("registry.makes_no_sense"), "")
+	c := Config{
+		Type: "dockerhub",
+	}
+	_, err := NewRegistry(c, "")
 	if err == nil {
 		ft.True(t, false)
 	}

@@ -201,7 +201,25 @@ func CreateApp() App {
 
 	log.Debug("Connecting Registry")
 	for _, config := range app.config.GetSubConfigArray("registry") {
-		reg, err := registries.NewRegistry(config, app.config.GetString("openshift.namespace"))
+		c := registries.Config{
+			URL:        config.GetString("url"),
+			User:       config.GetString("user"),
+			Pass:       config.GetString("pass"),
+			Org:        config.GetString("org"),
+			Tag:        config.GetString("tag"),
+			Type:       config.GetString("type"),
+			Name:       config.GetString("name"),
+			Images:     config.GetSliceOfStrings("images"),
+			Namespaces: config.GetSliceOfStrings("namespaces"),
+			Fail:       config.GetBool("fail_on_error"),
+			WhiteList:  config.GetSliceOfStrings("white_list"),
+			BlackList:  config.GetSliceOfStrings("black_list"),
+			AuthType:   config.GetString("auth_type"),
+			AuthName:   config.GetString("auth_name"),
+			Runner:     config.GetString("runner"),
+		}
+
+		reg, err := registries.NewRegistry(c, app.config.GetString("openshift.namespace"))
 		if err != nil {
 			log.Errorf(
 				"Failed to initialize %v Registry err - %v \n", config.GetString("name"), err)
@@ -251,11 +269,25 @@ func CreateApp() App {
 	}
 	log.Debugf("Active work engine topics: %+v", app.engine.GetActiveTopics())
 
-	apb.InitializeSecretsCache(app.config.GetSubConfigArray("secrets"))
+	rules := []apb.AssociationRule{}
+	for _, secretConfig := range app.config.GetSubConfigArray("secrets") {
+		rules = append(rules, apb.AssociationRule{
+			BundleName: secretConfig.GetString("apb_name"),
+			Secret:     secretConfig.GetString("secret"),
+		})
+	}
+	apb.InitializeSecretsCache(rules)
 
 	log.Debug("Creating AnsibleBroker")
 	// Intiialize the cluster config.
-	apb.InitializeClusterConfig(app.config.GetSubConfig("openshift"))
+	clusterConfig := apb.ClusterConfig{
+		PullPolicy:           app.config.GetString("openshift.image_pull_policy"),
+		SandboxRole:          app.config.GetString("openshift.sandbox_role"),
+		Namespace:            app.config.GetString("openshift.namespace"),
+		KeepNamespace:        app.config.GetBool("openshift.keep_namespace"),
+		KeepNamespaceOnError: app.config.GetBool("openshift.keep_namespace_on_error"),
+	}
+	apb.InitializeClusterConfig(clusterConfig)
 	if app.broker, err = broker.NewAnsibleBroker(
 		app.dao, app.registry, *app.engine, app.config.GetSubConfig("broker"), app.config.GetString("openshift.namespace"),
 	); err != nil {
@@ -395,7 +427,15 @@ func initClients(c *config.Config) error {
 
 		log.Debug("Trying to connect to etcd")
 		// Intialize the etcd configuration
-		clients.InitEtcdConfig(c)
+		con := clients.EtcdConfig{
+			EtcdHost:       c.GetString("dao.etcd_host"),
+			EtcdPort:       c.GetInt("dao.etcd_port"),
+			EtcdCaFile:     c.GetString("dao.etcd_ca_file"),
+			EtcdClientKey:  c.GetString("dao.etcd_client_key"),
+			EtcdClientCert: c.GetString("dao.etcd_client_cert"),
+		}
+		clients.InitEtcdConfig(con)
+
 		etcdClient, err := clients.Etcd()
 		if err != nil {
 			return err
