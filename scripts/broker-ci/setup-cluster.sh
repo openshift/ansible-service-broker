@@ -13,6 +13,9 @@ function cluster-setup () {
 dockerhub_org: ansibleplaybookbundle
 broker_tag: latest
 broker_kind: ClusterServiceBroker
+use_ssl: false
+update_cgroup_driver: false
+use_custom_config: false
 EOF
 
     # Multiple gates use this script. Only the broker travis gate
