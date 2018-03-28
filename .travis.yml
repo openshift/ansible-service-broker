@@ -21,23 +21,8 @@ jobs:
     -
       script:
         - ./scripts/travis.sh build
-    -
-      script:
         - ./scripts/travis.sh test
     - stage: "integration"
-      before_install:
-        - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
-        - ./scripts/travis.sh before_install
-      install:
-        - ./scripts/travis.sh install
-      before_script:
-        - ./scripts/travis.sh before_script
-        - ./scripts/travis.sh setup-cluster
-        - ./scripts/travis.sh setup-broker
-      script:
-        - ./scripts/travis.sh ci
-        - ./scripts/broker-ci/gather-logs.sh
-    -
       before_install:
         - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
       before_script:

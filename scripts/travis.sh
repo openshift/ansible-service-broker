@@ -43,9 +43,6 @@ elif [[ "$action" == "install" ]]; then
   # now install deps
   go get -u github.com/golang/dep/cmd/dep
 
-  # install goveralls for coveralls integration
-  go get github.com/mattn/goveralls
-
 elif [[ "$action" == "before_script" ]]; then
   echo "================================="
   echo "          Before Script          "
@@ -94,6 +91,9 @@ elif [[ "$action" == "test" ]]; then
   echo "================================="
   echo "              Test               "
   echo "================================="
+  # install goveralls for coveralls integration
+  go get github.com/mattn/goveralls
+
   make ci-test-coverage
 elif [[ "$action" == "setup-cluster" ]]; then
   echo "================================="
