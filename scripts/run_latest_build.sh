@@ -89,28 +89,11 @@ DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where AP
 ENABLE_BASIC_AUTH="false"
 VARS="-p BROKER_CA_CERT=$(oc get secret -n kube-service-catalog -o go-template='{{ range .items }}{{ if eq .type "kubernetes.io/service-account-token" }}{{ index .data "service-ca.crt" }}{{end}}{{"\n"}}{{end}}' | tail -n 1)"
 
-# Creating openssl certs to use.
-mkdir -p /tmp/etcd-cert
-openssl req -nodes -x509 -newkey rsa:4096 -keyout /tmp/etcd-cert/key.pem -out /tmp/etcd-cert/cert.pem -days 365 -subj "/CN=asb-etcd.ansible-service-broker.svc"
-openssl genrsa -out /tmp/etcd-cert/MyClient1.key 2048 \
-&& openssl req -new -key /tmp/etcd-cert/MyClient1.key -out /tmp/etcd-cert/MyClient1.csr -subj "/CN=client" \
-&& openssl x509 -req -in /tmp/etcd-cert/MyClient1.csr -CA /tmp/etcd-cert/cert.pem -CAkey /tmp/etcd-cert/key.pem -CAcreateserial -out /tmp/etcd-cert/MyClient1.pem -days 1024
-
-ETCD_CA_CERT=$(cat /tmp/etcd-cert/cert.pem | base64)
-BROKER_CLIENT_CERT=$(cat /tmp/etcd-cert/MyClient1.pem | base64)
-BROKER_CLIENT_KEY=$(cat /tmp/etcd-cert/MyClient1.key | base64)
-
 curl -s $TEMPLATE_URL \
   | oc process \
   -n ansible-service-broker \
   -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
   -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" \
-  -p ETCD_TRUSTED_CA_FILE=/var/run/etcd-auth-secret/ca.crt \
-  -p BROKER_CLIENT_CERT_PATH=/var/run/asb-etcd-auth/client.crt \
-  -p BROKER_CLIENT_KEY_PATH=/var/run/asb-etcd-auth/client.key \
-  -p ETCD_TRUSTED_CA="$ETCD_CA_CERT" \
-  -p BROKER_CLIENT_CERT="$BROKER_CLIENT_CERT" \
-  -p BROKER_CLIENT_KEY="$BROKER_CLIENT_KEY" \
   -p NAMESPACE=ansible-service-broker \
   $VARS -f - | oc create -f -
 if [ "$?" -ne 0 ]; then

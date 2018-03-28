@@ -1,6 +1,3 @@
-#
-# TODO: SSL for etcd
-#
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -30,6 +27,10 @@ rules:
   attributeRestrictions: null
   resources: ["networkpolicies"]
   verbs: ["create", "delete"]
+- apiGroups: ["automationbroker.io"]
+  attributeRestrictions: null
+  resources: ["bundles", "jobstates", "servicebindings", "serviceinstances"]
+  verbs: ["*"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -99,50 +100,6 @@ spec:
 
 ---
 apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: etcd
-  namespace: ansible-service-broker
-spec:
-  capacity:
-    storage: "10Gi"
-  accessModes:
-    - "ReadWriteOnce"
-  hostPath:
-    path: "/tmp/etcd"
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: etcd
-  namespace: ansible-service-broker
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-
----
-apiVersion: v1
-kind: Service
-metadata:
-   name: asb-etcd
-   namespace: ansible-service-broker
-   labels:
-     app: etcd
-     service: asb-etcd
-spec:
-  ports:
-    - name: etcd-advertise
-      port: 2379
-  selector:
-    app: etcd
-    service: asb-etcd
-
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: broker-config
@@ -160,8 +117,7 @@ data:
         white_list:
           - ".*-apb$"
     dao:
-      etcd_host: asb-etcd
-      etcd_port: 2379
+      type: "crd"
     log:
       logfile: /var/log/ansible-service-broker/asb.log
       stdout: true
@@ -189,50 +145,6 @@ data:
       auth:
         - type: basic
           enabled: {{ enable_basic_auth }}
-
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: asb-etcd
-  namespace: ansible-service-broker
-  labels:
-    app: etcd
-    service: asb-etcd
-spec:
-  strategy:
-    type: Recreate
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: etcd
-        service: asb-etcd
-    spec:
-      restartPolicy: Always
-      containers:
-        - image: "{{ etcd_image }}"
-          name: main
-          imagePullPolicy: IfNotPresent
-          workingDir: /etcd
-          args:
-            - {{ etcd_path }}
-            - --data-dir=/data
-            - --listen-client-urls=http://0.0.0.0:2379
-            - --advertise-client-urls=http://0.0.0.0:2379
-          ports:
-          - containerPort: 2379
-            protocol: TCP
-          env:
-          - name: ETCDCTL_API
-            value: "3"
-          volumeMounts:
-            - mountPath: /data
-              name: etcd
-      volumes:
-        - name: etcd
-          persistentVolumeClaim:
-            claimName: etcd
 
 ---
 apiVersion: extensions/v1beta1
