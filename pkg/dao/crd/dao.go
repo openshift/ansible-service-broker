@@ -102,10 +102,10 @@ func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
 	for id, spec := range specs {
 		err := d.SetSpec(id, spec)
 		if err != nil {
-			return err
+			log.Warningf("Error loading SPEC '%v'", spec.FQName)
+			log.Debugf("SPEC '%v' error: %v", spec.FQName, err)
 		}
 	}
-
 	return nil
 }
 
