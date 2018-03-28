@@ -9,25 +9,20 @@ env:
 
 jobs:
   include:
-    - stage: "OpenShift and Kubernetes CI"
-      before_install:
-        - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
-        - ./scripts/travis.sh before_install
-      install:
-        - ./scripts/travis.sh install
-      before_script:
-        - ./scripts/travis.sh before_script
+    - stage: "build"
+      script:
         - ./scripts/travis.sh format
+    -
+      script:
         - ./scripts/travis.sh vet
+    -
+      script:
         - ./scripts/travis.sh lint
+    -
+      script:
         - ./scripts/travis.sh build
         - ./scripts/travis.sh test
-        - ./scripts/travis.sh setup-cluster
-        - ./scripts/travis.sh setup-broker
-      script:
-        - ./scripts/travis.sh ci
-        - ./scripts/broker-ci/gather-logs.sh
-    -
+    - stage: "integration"
       before_install:
         - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
       before_script:
