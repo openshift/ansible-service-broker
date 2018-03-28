@@ -9,7 +9,7 @@ env:
 
 jobs:
   include:
-    - stage: "CI"
+    - stage: "build"
       script:
         - ./scripts/travis.sh format
     -
@@ -24,7 +24,7 @@ jobs:
     -
       script:
         - ./scripts/travis.sh test
-    - stage: "CI"
+    - stage: "integration"
       before_install:
         - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
         - ./scripts/travis.sh before_install
