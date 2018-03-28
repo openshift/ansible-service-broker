@@ -9,23 +9,22 @@ env:
 
 jobs:
   include:
-    - stage: "Format"
+    - stage: "CI"
       script:
         - ./scripts/travis.sh format
-    - stage: "Vet"
+    -
       script:
         - ./scripts/travis.sh vet
-    - stage: "Lint"
+    -
       script:
         - ./scripts/travis.sh lint
-    - stage: "Build"
+    -
       script:
         - ./scripts/travis.sh build
-    - stage: "Test"
+    -
       script:
-        - ./scripts/travis.sh build
-
-    - stage: "OpenShift CI"
+        - ./scripts/travis.sh test
+    - stage: "CI"
       before_install:
         - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
         - ./scripts/travis.sh before_install
@@ -38,7 +37,7 @@ jobs:
       script:
         - ./scripts/travis.sh ci
         - ./scripts/broker-ci/gather-logs.sh
-    - stage: "Kubernetes CI"
+    -
       before_install:
         - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
       before_script:
