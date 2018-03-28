@@ -84,6 +84,8 @@ elif [[ "$action" == "build" ]]; then
   echo "================================="
   echo "             Build               "
   echo "================================="
+  # now install deps
+  go get -u github.com/golang/dep/cmd/dep
   make vendor
   make build
   exit $?
