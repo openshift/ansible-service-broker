@@ -22,11 +22,11 @@ jobs:
         - ./scripts/travis.sh lint
         - ./scripts/travis.sh build
         - ./scripts/travis.sh test
-        - ./scripts/travis.sh setup-cluster
-        - ./scripts/travis.sh setup-broker
-      script:
-        - ./scripts/travis.sh ci
-        - ./scripts/broker-ci/gather-logs.sh
+      #   - ./scripts/travis.sh setup-cluster
+      #   - ./scripts/travis.sh setup-broker
+      # script:
+      #   - ./scripts/travis.sh ci
+      #   - ./scripts/broker-ci/gather-logs.sh
     -
       before_install:
         - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
