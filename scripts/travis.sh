@@ -43,9 +43,6 @@ elif [[ "$action" == "install" ]]; then
   # now install deps
   go get -u github.com/golang/dep/cmd/dep
 
-  # install golint
-  go get -u github.com/golang/lint/golint
-
   # install goveralls for coveralls integration
   go get github.com/mattn/goveralls
 
@@ -72,6 +69,9 @@ elif [[ "$action" == "lint" ]]; then
   echo "================================="
   echo "              Lint               "
   echo "================================="
+  # install golint
+  go get -u github.com/golang/lint/golint
+
   make lint
 elif [[ "$action" == "format" ]]; then
   echo "================================="
