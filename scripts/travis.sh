@@ -86,12 +86,15 @@ elif [[ "$action" == "test" ]]; then
   echo "              Test               "
   echo "================================="
   make test
+elif [[ "$action" == "setup-ci" ]]; then
+  echo "================================="
+  echo "            Setup CI            "
+  echo "================================="
+  ./scripts/broker-ci/setup.sh
+  exti $?
 elif [[ "$action" == "ci" ]]; then
   echo "================================="
   echo "            Broker CI            "
   echo "================================="
-  ./scripts/broker-ci/setup.sh
-  if [ $? -eq 0 ]; then
-      make ci LOCAL_CI=false
-  fi
+  make ci LOCAL_CI=false
 fi
