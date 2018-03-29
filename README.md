@@ -65,7 +65,7 @@ Run the following from the root of the cloned git repository.
 
 # Adjust the version to your liking. Follow installation docs
 # at https://github.com/kubernetes/minikube.
-minikube start --kubernetes-version v1.9.3
+minikube start --bootstrapper kubeadm --kubernetes-version v1.9.4
 
 # Install helm and tiller. See documentation for obtaining the helm
 # binary. https://docs.helm.sh/using_helm/#install-helm
