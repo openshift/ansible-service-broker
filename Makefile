@@ -92,7 +92,9 @@ push:
 
 clean: ## Clean up your working environment
 	@rm -f broker
+	@rm -f migration
 	@rm -f build/broker
+	@rm -f build/migration
 	@rm -f adapters.out apb.out app.out auth.out broker.out coverage-all.out coverage.out handler.out registries.out validation.out
 
 really-clean: clean cleanup-ci ## Really clean up the working environment
