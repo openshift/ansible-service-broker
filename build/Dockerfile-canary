@@ -43,6 +43,7 @@ WORKDIR /go/src/github.com/openshift/ansible-service-broker
 
 RUN go build -i -ldflags="-s -w" ./cmd/broker
 RUN mv broker /usr/bin/asbd
+RUN mv migration /usr/bin/migration
 ######################
 # BUILD BROKER SOURCE
 ######################

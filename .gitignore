@@ -33,6 +33,7 @@ etc/mock.config.yaml
 #Compiled binaries
 /broker
 build/broker
+build/migration
 
 # python artifacts
 .python-version

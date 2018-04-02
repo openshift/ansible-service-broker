@@ -150,6 +150,7 @@ cp -r pkg src/github.com/openshift/ansible-service-broker
 %build
 export GOPATH=$(pwd):%{gopath}
 go build -tags "seccomp selinux" -ldflags "-s -w" ./cmd/broker
+go build -tags "seccomp selinux" -ldflags "-s -w" ./cmd/migration
 
 #Build selinux modules
 # create selinux-friendly version from VR and replace it inplace
@@ -178,6 +179,7 @@ rm -rf src
 %install
 install -d -p %{buildroot}%{_bindir}
 install -p -m 755 broker %{buildroot}%{_bindir}/asbd
+install -p -m 755 migration %{buildroot}%{_bindir}/migration
 install -p -m 755 build/entrypoint.sh %{buildroot}%{_bindir}/entrypoint.sh
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 644 etc/example-config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
