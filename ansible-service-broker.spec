@@ -281,6 +281,7 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %files
 %license LICENSE
 %{_bindir}/asbd
+%{_bindir}/migration
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_sysconfdir}/%{name}
 %attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/config.yaml
 %{_unitdir}/%{name}.service

@@ -54,7 +54,7 @@ func main() {
 	}
 	crdDao, err = crd.NewDao(options.MigrationNamespace)
 	if err != nil {
-		panic(fmt.Sprintf("Unable to connect to crd - %v", err))
+		panic(fmt.Sprintf("Unable to create crd client - %v", err))
 	}
 
 	// convert specs to bundles

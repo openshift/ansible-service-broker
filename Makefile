@@ -19,6 +19,8 @@ vendor: ## Install or update project dependencies
 
 broker: $(SOURCES) ## Build the broker
 	go build -i -ldflags="-s -w" ./cmd/broker
+
+migration: $(SOURCES)
 	go build -i -ldflags="-s -w" ./cmd/migration
 
 build: broker ## Build binary from source
