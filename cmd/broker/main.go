@@ -16,9 +16,39 @@
 
 package main
 
-import "github.com/openshift/ansible-service-broker/pkg/app"
+import (
+	"fmt"
+	"os"
+
+	"github.com/automationbroker/bundle-lib/registries"
+	flags "github.com/jessevdk/go-flags"
+	"github.com/openshift/ansible-service-broker/pkg/app"
+	"github.com/openshift/ansible-service-broker/pkg/version"
+)
 
 func main() {
-	app := app.CreateApp()
+
+	var args app.Args
+	var err error
+
+	// Writing directly to stderr because log has not been bootstrapped
+	if args, err = app.CreateArgs(); err != nil {
+		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+			os.Exit(0)
+		} else {
+			os.Exit(1)
+		}
+	}
+
+	if args.Version {
+		fmt.Println(version.Version)
+		os.Exit(0)
+	}
+
+	// To add your custom registries, define an entry in this array.
+	regs := []registries.Registry{}
+
+	// CreateApp passing in the args and registries
+	app := app.CreateApp(args, regs)
 	app.Start()
 }
