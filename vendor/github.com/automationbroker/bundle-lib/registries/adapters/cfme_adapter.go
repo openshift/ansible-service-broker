@@ -17,40 +17,82 @@
 package adapters
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-
 	"github.com/automationbroker/bundle-lib/apb"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
+	"net/http"
+	"regexp"
+	"strings"
 )
 
-// RHCCAdapter - Red Hat Container Catalog Registry
-type RHCCAdapter struct {
+// CFMEAdapter - Red Hat Container Catalog Registry
+type CFMEAdapter struct {
 	Config Configuration
 }
 
-// RHCCImage - RHCC Registry Image that is returned from the RHCC Catalog api.
-type RHCCImage struct {
-	Description  string `json:"description"`
-	IsOfficial   bool   `json:"is_official"`
-	IsTrusted    bool   `json:"is_trusted"`
-	Name         string `json:"name"`
-	ShouldFilter bool   `json:"should_filter"`
-	StarCount    int    `json:"star_count"`
+// CFMEImageResponse - CFME Registry Image Response returned for the CFME Catalog api
+type CFMEImageResponse struct {
+	NumResults int          `json:"count"`
+	Results    []*CFMEImage `json:"resources"`
 }
 
-// RHCCImageResponse - RHCC Registry Image Response returned for the RHCC Catalog api
-type RHCCImageResponse struct {
-	NumResults int          `json:"num_results"`
-	Query      string       `json:"query"`
-	Results    []*RHCCImage `json:"results"`
+// CFMEImage - CFME Registry Image that is returned from the CFME Catalog api.
+type CFMEImage struct {
+	Href string `json:"href"`
 }
 
-// RegistryName - retrieve the registry prefix
-func (r RHCCAdapter) RegistryName() string {
+type CFMEServiceTemplate struct {
+	Id             string          `json:"id"`
+	Name           string          `json:"name"`
+	Description    string          `json:"description"`
+	CFMEConfigInfo *CFMEConfigInfo `json:"config_info"`
+}
+
+type CFMEConfigInfo struct {
+	CFMEProvision map[string]interface{} `json:"provision"`
+}
+
+type CFMEServiceDialog struct {
+	Id                       string                      `json:"id"`
+	Name                     string                      `json:"label"`
+	Description              string                      `json:"description"`
+	CFMEServiceDialogContent []*CFMEServiceDialogContent `json:"content"`
+}
+
+type CFMEServiceDialogContent struct {
+	Id                    string                  `json:"id"`
+	Name                  string                  `json:"label"`
+	Description           string                  `json:"description"`
+	CFMEServiceDialogTabs []*CFMEServiceDialogTab `json:"dialog_tabs"`
+}
+
+type CFMEServiceDialogTab struct {
+	Id                      string                    `json:"id"`
+	Name                    string                    `json:"label"`
+	Description             string                    `json:"description"`
+	CFMEServiceDialogGroups []*CFMEServiceDialogGroup `json:"dialog_groups"`
+}
+
+type CFMEServiceDialogGroup struct {
+	Id                      string                    `json:"id"`
+	Name                    string                    `json:"label"`
+	Description             string                    `json:"description"`
+	CFMEServiceDialogFields []*CFMEServiceDialogField `json:"dialog_fields"`
+}
+
+type CFMEServiceDialogField struct {
+	Id          string `json:"id"`
+	Name        string `json:"label"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+}
+
+// RegistryName - retrieve the registry pr
+func (r CFMEAdapter) RegistryName() string {
 	if r.Config.URL.Host == "" {
 		return r.Config.URL.Path
 	}
@@ -58,68 +100,252 @@ func (r RHCCAdapter) RegistryName() string {
 }
 
 // GetImageNames - retrieve the images from the registry
-func (r RHCCAdapter) GetImageNames() ([]string, error) {
-	imageList, err := r.loadImages("\"*-apb\"")
-	if err != nil {
-		return nil, err
-	}
+func (r CFMEAdapter) GetImageNames() ([]string, error) {
 	imageNames := []string{}
-	for _, image := range imageList.Results {
-		imageNames = append(imageNames, image.Name)
+	imageList, err := r.loadImages()
+	if err != nil {
+		return imageNames, err
 	}
+
+	for _, image := range imageList.Results {
+		imageNames = append(imageNames, image.Href)
+	}
+
 	return imageNames, nil
 }
 
-// FetchSpecs - retrieve the spec from the image names
-func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
-	log.Debug("RHCCAdapter::FetchSpecs")
-	specs := []*apb.Spec{}
+func (r CFMEAdapter) getServiceTemplates(imageNames []string) ([]CFMEServiceTemplate, error) {
+	log.Debug("CFMERegistry::getServiceTemplates")
+	serviceTemplates := []CFMEServiceTemplate{}
 	for _, imageName := range imageNames {
-		log.Debug("%v", imageName)
-		spec, err := r.loadSpec(imageName)
+		req, err := http.NewRequest("GET", string(imageName), nil)
 		if err != nil {
-			log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)
+			return []CFMEServiceTemplate{}, err
 		}
-		if spec != nil {
-			specs = append(specs, spec)
+		req.SetBasicAuth(r.Config.User, r.Config.Pass)
+
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
+		httpClient := &http.Client{Transport: transport}
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return []CFMEServiceTemplate{}, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			return []CFMEServiceTemplate{}, errors.New(resp.Status)
+		}
+		template, err := ioutil.ReadAll(resp.Body)
+
+		templateResp := CFMEServiceTemplate{}
+		err = json.Unmarshal(template, &templateResp)
+		if err != nil {
+			return []CFMEServiceTemplate{}, err
+		}
+		log.Debug("Properly unmarshalled image response")
+
+		serviceTemplates = append(serviceTemplates, templateResp)
 	}
+
+	return serviceTemplates, nil
+}
+
+func (r CFMEAdapter) getServiceDialogs(dialogList []string) ([]CFMEServiceDialog, error) {
+	log.Debug("CFMERegistry::getServiceDialogs")
+	serviceDialogs := []CFMEServiceDialog{}
+	for _, dialogId := range dialogList {
+		req, err := http.NewRequest("GET", fmt.Sprintf("%v/api/service_dialogs/%v", r.Config.URL.String(), dialogId), nil)
+		if err != nil {
+			return []CFMEServiceDialog{}, err
+		}
+		req.SetBasicAuth(r.Config.User, r.Config.Pass)
+
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		httpClient := &http.Client{Transport: transport}
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return []CFMEServiceDialog{}, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			return []CFMEServiceDialog{}, errors.New(resp.Status)
+		}
+		dialog, err := ioutil.ReadAll(resp.Body)
+
+		dialogResp := CFMEServiceDialog{}
+		err = json.Unmarshal(dialog, &dialogResp)
+		if err != nil {
+			return []CFMEServiceDialog{}, err
+		}
+		log.Debug("Properly unmarshalled image response")
+
+		serviceDialogs = append(serviceDialogs, dialogResp)
+	}
+
+	return serviceDialogs, nil
+}
+
+// FetchSpecs - retrieve the spec from the image names
+func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
+	log.Debug("CFMEAdapter::FetchSpecs")
+	var specs []*apb.Spec
+
+	templates, err := r.getServiceTemplates(imageNames)
+	if err != nil {
+		log.Errorf("Failed to retrieve templates: %v", err)
+	}
+
+	for _, template := range templates {
+		log.Debug("%v", template.Name)
+
+		var re = regexp.MustCompile(`[()_,. ]`)
+		normalizedName := strings.ToLower(re.ReplaceAllString(template.Name, `$1-$2`))
+
+		// Convert Service Template to Spec
+		spec := &apb.Spec{
+			Version:     "1.0",
+			FQName:      normalizedName + "-apb",
+			Async:       "optional",
+			Bindable:    false,
+			Image:       "https://docker.io/manageiq/manageiq-apb-runner:latest",
+			Tags:        []string{"iaas"},
+			Description: template.Description,
+			Runtime:     2,
+			Metadata: map[string]interface{}{
+				"displayName":      template.Name + " (APB)",
+				"documentationUrl": r.Config.URL.String(),
+				"dependencies":     "https://docker.io/manageiq/manageiq-apb-runner:latest",
+				"imageUrl":         "https://s3.amazonaws.com/fusor/2017demo/ManageIQ.png",
+			},
+			Plans: []apb.Plan{
+				apb.Plan{
+					Name:        "default",
+					Description: "Default deployment plan for " + normalizedName + "-apb",
+					Metadata: map[string]interface{}{
+						"displayName":     "Default",
+						"longDescription": template.Description,
+						"cost":            "$0.0",
+					},
+					Parameters: []apb.ParameterDescriptor{
+						apb.ParameterDescriptor{
+							Name:         "cfme_user",
+							Title:        "CFME Requestor",
+							Type:         "string",
+							Updatable:    false,
+							Required:     true,
+							DisplayGroup: "CloudForms Credentials",
+						},
+						apb.ParameterDescriptor{
+							Name:         "cfme_password",
+							Title:        "CFME Password",
+							Type:         "string",
+							Updatable:    false,
+							Required:     true,
+							DisplayType:  "password",
+							DisplayGroup: "CloudForms Credentials",
+						},
+						apb.ParameterDescriptor{
+							Name:         "cfme_url",
+							Title:        "CFME URL",
+							Type:         "string",
+							Updatable:    false,
+							Required:     true,
+							Default:      r.Config.URL.String(),
+							DisplayGroup: "CloudForms Credentials",
+						},
+					},
+				},
+			},
+		}
+
+		var dialogIds []string
+		dialogObject := template.CFMEConfigInfo.CFMEProvision
+		for key, value := range dialogObject {
+			if key == "dialog_id" {
+				dialogIds = append(dialogIds, value.(string))
+			}
+		}
+
+		serviceDialogs, err := r.getServiceDialogs(dialogIds)
+		if err != nil {
+			log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
+		}
+
+		for _, serviceDialog := range serviceDialogs {
+			for _, content := range serviceDialog.CFMEServiceDialogContent {
+				for _, tab := range content.CFMEServiceDialogTabs {
+					for _, group := range tab.CFMEServiceDialogGroups {
+						for _, field := range group.CFMEServiceDialogFields {
+							param := apb.ParameterDescriptor{}
+							param.Name = field.Name
+							param.Title = field.Name
+							param.DisplayGroup = tab.Name + "/" + group.Name
+							// FIXME: Cover Types a lot better
+							if field.Type == "DialogFieldCheckBox" {
+								param.Type = "bool"
+							} else {
+								param.Type = "string"
+							}
+							spec.Plans[0].Parameters = append(spec.Plans[0].Parameters, param)
+						}
+					}
+				}
+			}
+		}
+
+		specs = append(specs, spec)
+
+	}
+
 	return specs, nil
 }
 
 // LoadImages - Get all the images for a particular query
-func (r RHCCAdapter) loadImages(Query string) (RHCCImageResponse, error) {
-	log.Debug("RHCCRegistry::LoadImages")
-	log.Debug("Using " + r.Config.URL.String() + " to source APB images using query:" + Query)
+func (r CFMEAdapter) loadImages() (CFMEImageResponse, error) {
+	log.Debug("CFMERegistry::LoadImages")
+	log.Debug("Using " + r.Config.URL.String() + " to source APB images.")
 	req, err := http.NewRequest("GET",
-		fmt.Sprintf("%v/v1/search?q=%v", r.Config.URL.String(), Query), nil)
+		fmt.Sprintf("%v/api/service_templates", r.Config.URL.String()), nil)
 	if err != nil {
-		return RHCCImageResponse{}, err
+		return CFMEImageResponse{}, err
 	}
+	req.SetBasicAuth(r.Config.User, r.Config.Pass)
 
-	resp, err := http.DefaultClient.Do(req)
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	httpClient := &http.Client{Transport: transport}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
-		return RHCCImageResponse{}, err
+		return CFMEImageResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return RHCCImageResponse{}, errors.New(resp.Status)
+		return CFMEImageResponse{}, errors.New(resp.Status)
 	}
 	imageList, err := ioutil.ReadAll(resp.Body)
 
-	imageResp := RHCCImageResponse{}
+	imageResp := CFMEImageResponse{}
 	err = json.Unmarshal(imageList, &imageResp)
 	if err != nil {
-		return RHCCImageResponse{}, err
+		return CFMEImageResponse{}, err
 	}
 	log.Debug("Properly unmarshalled image response")
 
 	return imageResp, nil
 }
 
-func (r RHCCAdapter) loadSpec(imageName string) (*apb.Spec, error) {
-	log.Debug("RHCCAdapter::LoadSpec")
+func (r CFMEAdapter) loadSpec(imageName string) (*apb.Spec, error) {
+	log.Debug("CFMEAdapter::LoadSpec")
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}
