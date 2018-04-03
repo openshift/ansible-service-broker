@@ -20,6 +20,9 @@ vendor: ## Install or update project dependencies
 broker: $(SOURCES) ## Build the broker
 	go build -i -ldflags="-s -w" ./cmd/broker
 
+migration: $(SOURCES)
+	go build -i -ldflags="-s -w" ./cmd/migration
+
 build: broker ## Build binary from source
 	@echo > /dev/null
 
@@ -69,6 +72,7 @@ prep-local: ## Prepares the local dev environment
 
 build-image: ## Build a docker image with the broker binary
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/broker ./cmd/broker
+	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/migration ./cmd/migration
 	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
@@ -88,7 +92,9 @@ push:
 
 clean: ## Clean up your working environment
 	@rm -f broker
+	@rm -f migration
 	@rm -f build/broker
+	@rm -f build/migration
 	@rm -f adapters.out apb.out app.out auth.out broker.out coverage-all.out coverage.out handler.out registries.out validation.out
 
 really-clean: clean cleanup-ci ## Really clean up the working environment
