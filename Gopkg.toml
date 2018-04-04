@@ -77,3 +77,7 @@
 [[constraint]]
   name = "k8s.io/kubernetes"
   version = "1.9.1"
+
+[[override]]
+  name = "github.com/Masterminds/semver"
+  version = "1.4.0"
