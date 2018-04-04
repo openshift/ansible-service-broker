@@ -19,6 +19,7 @@ package broker
 import (
 	"sync"
 	"testing"
+	"time"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
@@ -26,17 +27,25 @@ import (
 var engine *WorkEngine
 
 func init() {
-	engine = NewWorkEngine(10)
+	engine = NewWorkEngine(10, 1)
 }
 
 type mockSubscriber struct {
-	buffer <-chan JobMsg
-	called bool
+	msg        JobMsg
+	called     bool
+	funcToCall func(msg JobMsg)
 }
 
-func (ms *mockSubscriber) Subscribe(buffer <-chan JobMsg) {
-	ms.buffer = buffer
+func (ms *mockSubscriber) Notify(msg JobMsg) {
+	ms.msg = msg
 	ms.called = true
+	if ms.funcToCall != nil {
+		ms.funcToCall(msg)
+	}
+}
+
+func (ms *mockSubscriber) ID() string {
+	return "mock"
 }
 
 type mockWorker struct {
@@ -50,35 +59,17 @@ func (mw *mockWorker) Run(token string, buffer chan<- JobMsg) {
 	mw.wg.Done()
 }
 
-func TestNewWorkEngine(t *testing.T) {
-	we := NewWorkEngine(10)
-	ft.AssertNotNil(t, we)
-	ft.AssertEqual(t, we.bufsz, 10)
-}
-
-func TestGetActiveTopics(t *testing.T) {
-	topics := engine.GetActiveTopics()
-	ft.AssertEqual(t, 0, len(topics))
-	dasub := mockSubscriber{}
-	engine.AttachSubscriber(&dasub, ProvisionTopic)
-
-	// ensure topic is added and buffer passed to subscriber
-	topics = engine.GetActiveTopics()
-	ft.AssertEqual(t, 1, len(topics))
-	_, exists := topics[ProvisionTopic]
-	ft.AssertTrue(t, exists, "topic does not exist")
-}
-
 func TestAttachSubscriber(t *testing.T) {
 	dasub := mockSubscriber{}
+	subsBefore := len(engine.GetSubscribers(ProvisionTopic))
 	err := engine.AttachSubscriber(&dasub, ProvisionTopic)
 	if err != nil {
 		t.Fatal(err)
 	}
-	topics := engine.GetActiveTopics()
-	_, exists := topics[ProvisionTopic]
-	ft.AssertTrue(t, exists, "topic does not exist")
-	ft.AssertTrue(t, dasub.called, "subscribe never called")
+	subsAfter := len(engine.GetSubscribers(ProvisionTopic))
+	if subsAfter != subsBefore+1 {
+		t.Fatal("expected subscribers to increase by one")
+	}
 }
 
 func TestInvalidWorkTopic(t *testing.T) {
@@ -92,22 +83,103 @@ func TestInvalidWorkTopic(t *testing.T) {
 	ft.AssertEqual(t, "invalid work topic", err.Error(), "invalid error")
 }
 
+type mockWork struct {
+	funcToCall func(msg chan<- JobMsg)
+}
+
+func (mw *mockWork) Run(token string, msgBuffer chan<- JobMsg) {
+	mw.funcToCall(msgBuffer)
+}
+
 func TestStartNewJob(t *testing.T) {
-	var wg sync.WaitGroup
-	wg.Add(1) // we're launching 1 goroutine
 
-	// work around to get pointer receivers to update the worker
-	var work Work
-	worker := &mockWorker{wg: &wg}
-	work = worker
+	cases := []struct {
+		Name        string
+		Work        func() Work
+		Subscribers func(wg *sync.WaitGroup) []WorkSubscriber
+		TestTimeout time.Duration
+	}{
+		{
+			Name: "test start new job sends a message and calls all subscribers",
+			Work: func() Work {
+				return &mockWork{
+					funcToCall: func(msg chan<- JobMsg) {
+						msg <- JobMsg{
+							Msg: "test",
+						}
+					},
+				}
+			},
+			Subscribers: func(wg *sync.WaitGroup) []WorkSubscriber {
+				wg.Add(2)
+				return []WorkSubscriber{&mockSubscriber{
+					funcToCall: func(msg JobMsg) {
+						wg.Done()
+					},
+				}, &mockSubscriber{
+					funcToCall: func(msg JobMsg) {
+						wg.Done()
+					},
+				}}
+			},
+			TestTimeout: 1,
+		},
+		{
+			Name: "test start new job sends a message and calls all subscribers even if one timesout",
+			Work: func() Work {
+				return &mockWork{
+					funcToCall: func(msg chan<- JobMsg) {
+						msg <- JobMsg{
+							Msg: "test",
+						}
+					},
+				}
+			},
+			Subscribers: func(wg *sync.WaitGroup) []WorkSubscriber {
+				wg.Add(2)
+				return []WorkSubscriber{&mockSubscriber{
+					funcToCall: func(msg JobMsg) {
+						// force a timeout
+						<-time.Tick(2 * time.Second)
+						wg.Done()
+					},
+				}, &mockSubscriber{
+					funcToCall: func(msg JobMsg) {
+						wg.Done()
+					},
+				}}
+			},
+			TestTimeout: 3,
+		},
+	}
 
-	token, err := engine.StartNewAsyncJob("testtoken", work, ProvisionTopic)
-	ft.AssertNil(t, err)
-	ft.AssertEqual(t, "testtoken", token, "token doesn't match")
+	done := func(wg *sync.WaitGroup) chan struct{} {
+		d := make(chan struct{})
+		go func() {
+			wg.Wait()
+			d <- struct{}{}
+		}()
+		return d
+	}
 
-	// let's wait until it's done
-	wg.Wait()
-
-	// verify we actually called the run method
-	ft.AssertTrue(t, worker.called, "run not called")
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			wg := &sync.WaitGroup{}
+			engine := NewWorkEngine(10, 1)
+			for _, s := range tc.Subscribers(wg) {
+				engine.AttachSubscriber(s, ProvisionTopic)
+			}
+			token := engine.Token()
+			engine.StartNewAsyncJob(token, tc.Work(), ProvisionTopic)
+			select {
+			case <-time.Tick(tc.TestTimeout * time.Second):
+				t.Fatal("test timed out !!")
+			case <-done(wg):
+				// check out channel is gone
+				if _, ok := engine.jobChannels[token]; ok {
+					t.Fatal("there should be no job channel present")
+				}
+			}
+		})
+	}
 }
