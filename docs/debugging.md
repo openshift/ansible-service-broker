@@ -117,6 +117,15 @@ You can verify ASB's connection to the service catalog via the `curl` command be
 ```bash
 curl -k -H "Authorization: Bearer $(oc whoami -t)" https://$(oc get routes --no-headers | awk '{print $2}')/ansible-service-broker/v2/catalog
 ```
+## Forcing a relist
+
+The catalog's inventory of `ServiceClasses` for the Ansible Broker can be
+manually refreshed by using the `relist` feature. To force a relist, run the
+commmand `oc edit clusterservicebroker ansible-service-broker`. This will open
+the document in your `$EDITOR`. Search for the field `relistRequests`; it will
+be an integer number. Incremement this value by one, save and quit the document.
+This will force the Service Catalog to make a `/catalog` request against the
+broker, refreshing all of the available `ServiceClasses.
 
 ## Debugging APBs
 
