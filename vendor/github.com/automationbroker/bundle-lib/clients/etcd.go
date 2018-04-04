@@ -25,7 +25,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/automationbroker/config"
 	"github.com/coreos/etcd/pkg/transport"
 	"github.com/coreos/etcd/version"
 	log "github.com/sirupsen/logrus"
@@ -45,14 +44,8 @@ type EtcdConfig struct {
 var etcdConfig EtcdConfig
 
 // InitEtcdConfig - Initialize the configuration for etcd.
-func InitEtcdConfig(config *config.Config) {
-	etcdConfig = EtcdConfig{
-		EtcdHost:       config.GetString("dao.etcd_host"),
-		EtcdPort:       config.GetInt("dao.etcd_port"),
-		EtcdCaFile:     config.GetString("dao.etcd_ca_file"),
-		EtcdClientKey:  config.GetString("dao.etcd_client_key"),
-		EtcdClientCert: config.GetString("dao.etcd_client_cert"),
-	}
+func InitEtcdConfig(config EtcdConfig) {
+	etcdConfig = config
 }
 
 // GetEtcdVersion - Connects to ETCD cluster and retrieves server/version info

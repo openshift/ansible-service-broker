@@ -8,6 +8,12 @@
   revision = "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
 
 [[projects]]
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  revision = "8d82589cda2d7b5b9167396841975c4535c9bec6"
+  version = "v1.4.1"
+
+[[projects]]
   name = "github.com/NYTimes/gziphandler"
   packages = ["."]
   revision = "2600fb119af974220d3916a5916d6e31176aac1b"
@@ -48,7 +54,7 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "b35c304b256421531dd3f1706c0c926a7518b6cb"
+  revision = "4ca8d7163b8bf9df3b8348d91e1a5d436ba1faee"
   source = "https://github.com/shawn-hurley/bundle-lib.git"
 
 [[projects]]
@@ -920,6 +926,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9ae9b7c55ec3cd2db4c188871a4392f287d5a3aa07dd8e04fbcb39c8e3ad14a1"
+  inputs-digest = "1385dd83c58710d34c8516c72cb6651255dba30a489607db73786da6b99b35fb"
   solver-name = "gps-cdcl"
   solver-version = 1
