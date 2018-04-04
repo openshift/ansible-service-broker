@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/Masterminds/semver"
-  packages = ["."]
-  revision = "15d8430ab86497c5c0da827b748823945e1cf1e1"
-  version = "v1.4.0"
-
-[[projects]]
   name = "github.com/PuerkitoBio/purell"
   packages = ["."]
   revision = "0bcb03f4b4d0a9428594752bd2a3b9aa0a9d4bd4"
@@ -30,6 +24,12 @@
     "pkg/apis/automationbroker.io/v1"
   ]
   revision = "417a1c5029bb8be34758b0e41a6a785f78890c7f"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/automationbroker/config"
+  packages = ["."]
+  revision = "ab30f839b77471fd1d7b796315742518f283eac5"
 
 [[projects]]
   name = "github.com/coreos/etcd"
@@ -214,6 +214,12 @@
   packages = ["."]
   revision = "1df9eeb2bb81f327b96228865c5687bc2194af3f"
   version = "1.0.0"
+
+[[projects]]
+  name = "github.com/op/go-logging"
+  packages = ["."]
+  revision = "b2cb9fa56473e98db8caba80237377e83fe44db5"
+  version = "v1"
 
 [[projects]]
   branch = "master"
@@ -553,6 +559,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "60e20bdacb657f5687c30688847756386ce4b71d4aa39b4c7f64c3a3f1ded70b"
+  inputs-digest = "79f9b59d40b7665b54720085f509da88c66b4b351f7218f432da30e8668806cd"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"reflect"
 
+	"github.com/automationbroker/config"
 	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -186,8 +187,14 @@ type ClusterConfig struct {
 var clusterConfig ClusterConfig
 
 // InitializeClusterConfig - initialize the cluster config.
-func InitializeClusterConfig(config ClusterConfig) {
-	clusterConfig = config
+func InitializeClusterConfig(config *config.Config) {
+	clusterConfig = ClusterConfig{
+		PullPolicy:           config.GetString("image_pull_policy"),
+		SandboxRole:          config.GetString("sandbox_role"),
+		Namespace:            config.GetString("namespace"),
+		KeepNamespace:        config.GetBool("keep_namespace"),
+		KeepNamespaceOnError: config.GetBool("keep_namespace_on_error"),
+	}
 }
 
 const (

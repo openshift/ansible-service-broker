@@ -30,6 +30,7 @@ import (
 	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/automationbroker/bundle-lib/registries/adapters"
+	"github.com/automationbroker/config"
 	log "github.com/sirupsen/logrus"
 
 	yaml "gopkg.in/yaml.v1"
@@ -52,7 +53,6 @@ type Config struct {
 	Tag        string
 	Type       string
 	Name       string
-	Runner     string
 	Images     []string
 	Namespaces []string
 	// Fail will tell the registry that it is ok to fail the bootstrap if
@@ -166,8 +166,24 @@ func (r Registry) RegistryName() string {
 }
 
 // NewRegistry - Create a new registry from the registry config.
-func NewRegistry(configuration Config, asbNamespace string) (Registry, error) {
+func NewRegistry(con *config.Config, asbNamespace string) (Registry, error) {
 	var adapter adapters.Adapter
+	configuration := Config{
+		URL:        con.GetString("url"),
+		User:       con.GetString("user"),
+		Pass:       con.GetString("pass"),
+		Org:        con.GetString("org"),
+		Tag:        con.GetString("tag"),
+		Type:       con.GetString("type"),
+		Name:       con.GetString("name"),
+		Images:     con.GetSliceOfStrings("images"),
+		Namespaces: con.GetSliceOfStrings("namespaces"),
+		Fail:       con.GetBool("fail_on_error"),
+		WhiteList:  con.GetSliceOfStrings("white_list"),
+		BlackList:  con.GetSliceOfStrings("black_list"),
+		AuthType:   con.GetString("auth_type"),
+		AuthName:   con.GetString("auth_name"),
+	}
 	if !configuration.Validate() {
 		return Registry{}, errors.New("unable to validate registry name")
 	}
@@ -193,16 +209,13 @@ func NewRegistry(configuration Config, asbNamespace string) (Registry, error) {
 	if u.Scheme == "" {
 		u.Scheme = "http"
 	}
-	c := adapters.Configuration{
-		URL:        u,
+	c := adapters.Configuration{URL: u,
 		User:       configuration.User,
 		Pass:       configuration.Pass,
 		Org:        configuration.Org,
-		Runner:     configuration.Runner,
 		Images:     configuration.Images,
 		Namespaces: configuration.Namespaces,
-		Tag:        configuration.Tag,
-	}
+		Tag:        configuration.Tag}
 
 	switch strings.ToLower(configuration.Type) {
 	case "rhcc":
@@ -215,8 +228,6 @@ func NewRegistry(configuration Config, asbNamespace string) (Registry, error) {
 		adapter = &adapters.OpenShiftAdapter{Config: c}
 	case "local_openshift":
 		adapter = &adapters.LocalOpenShiftAdapter{Config: c}
-	case "helm":
-		adapter = &adapters.HelmAdapter{Config: c}
 	default:
 		panic("Unknown registry")
 	}

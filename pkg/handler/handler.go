@@ -38,6 +38,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
+	"github.com/openshift/ansible-service-broker/pkg/origin/authorization"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/pborman/uuid"
@@ -876,7 +877,8 @@ func (h handler) validateUser(userInfo broker.UserInfo, namespace string) (bool,
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
-	if covered, _ := validation.Covers(prs, h.clusterRoleRules); !covered {
+	if covered, _ := validation.Covers(
+		authorization.ConvertAPIPolicyRulesToRBACPolicyRules(prs), h.clusterRoleRules); !covered {
 		return false, http.StatusForbidden, fmt.Errorf("User does not have sufficient permissions")
 	}
 	return true, http.StatusOK, nil

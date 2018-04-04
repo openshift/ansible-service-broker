@@ -25,7 +25,7 @@ import (
 	"net/http"
 
 	"github.com/automationbroker/bundle-lib/apb"
-	log "github.com/sirupsen/logrus"
+	logging "github.com/op/go-logging"
 )
 
 const dockerhubName = "docker.io"
@@ -36,6 +36,7 @@ const dockerHubManifestURL = "https://registry.hub.docker.com/v2/%v/manifests/%v
 // DockerHubAdapter - Docker Hub Adapter
 type DockerHubAdapter struct {
 	Config Configuration
+	Log    *logging.Logger
 }
 
 // DockerHubImage - Image from a dockerhub registry.
@@ -58,13 +59,13 @@ func (r DockerHubAdapter) RegistryName() string {
 
 // GetImageNames - retrieve the images
 func (r DockerHubAdapter) GetImageNames() ([]string, error) {
-	log.Debug("DockerHubAdapter::GetImages")
-	log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
-	log.Debug("Loading image list for org: [ %s ]", r.Config.Org)
+	r.Log.Debug("DockerHubAdapter::GetImages")
+	r.Log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
+	r.Log.Debug("Loading image list for org: [ %s ]", r.Config.Org)
 
 	token, err := r.getDockerHubToken()
 	if err != nil {
-		log.Errorf("unable to generate docker hub token - %v", err)
+		r.Log.Errorf("unable to generate docker hub token - %v", err)
 		return nil, err
 	}
 
@@ -82,7 +83,7 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	}
 	// If no results in the fist call then close the channel as nothing will get loaded.
 	if len(imageResp.Results) == 0 {
-		log.Info("canceled retrieval as no items in org")
+		r.Log.Info("canceled retrieval as no items in org")
 		close(channel)
 	}
 	var apbData []string
@@ -97,7 +98,7 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	}
 	// check to see if the context had an error
 	if ctx.Err() != nil {
-		log.Errorf("encountered an error while loading images, we may not have all the apb in the catalog - %v", ctx.Err())
+		r.Log.Errorf("encountered an error while loading images, we may not have all the apb in the catalog - %v", ctx.Err())
 		return apbData, ctx.Err()
 	}
 
@@ -110,7 +111,7 @@ func (r DockerHubAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	for _, imageName := range imageNames {
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
-			log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)
+			r.Log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)
 		}
 		if spec != nil {
 			specs = append(specs, spec)
@@ -168,7 +169,7 @@ func (r DockerHubAdapter) getNextImages(ctx context.Context,
 	cancelFunc context.CancelFunc) (*DockerHubImageResponse, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Errorf("unable to get next images for url: %v - %v", url, err)
+		r.Log.Errorf("unable to get next images for url: %v - %v", url, err)
 		cancelFunc()
 		close(ch)
 		return nil, err
@@ -178,7 +179,7 @@ func (r DockerHubAdapter) getNextImages(ctx context.Context,
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Errorf("unable to get next images for url: %v - %v", url, err)
+		r.Log.Errorf("unable to get next images for url: %v - %v", url, err)
 		cancelFunc()
 		close(ch)
 		return nil, err
@@ -190,23 +191,23 @@ func (r DockerHubAdapter) getNextImages(ctx context.Context,
 	iResp := DockerHubImageResponse{}
 	err = json.Unmarshal(imageList, &iResp)
 	if err != nil {
-		log.Errorf("unable to get next images for url: %v - %v", url, err)
+		r.Log.Errorf("unable to get next images for url: %v - %v", url, err)
 		cancelFunc()
 		close(ch)
 		return &iResp, err
 	}
 	// Keep getting the images
 	if iResp.Next != "" {
-		log.Debugf("getting next page of results - %v", iResp.Next)
+		r.Log.Debugf("getting next page of results - %v", iResp.Next)
 		// Fan out calls to get the next images.
 		go r.getNextImages(ctx, org, token, iResp.Next, ch, cancelFunc)
 	}
 	for _, imageName := range iResp.Results {
-		log.Debugf("Trying to load %v/%v", imageName.Namespace, imageName.Name)
+		r.Log.Debugf("Trying to load %v/%v", imageName.Namespace, imageName.Name)
 		go func(image *DockerHubImage) {
 			select {
 			case <-ctx.Done():
-				log.Debugf(
+				r.Log.Debugf(
 					"loading images failed due to context err - %v name - %v",
 					ctx.Err(), image.Name)
 				return

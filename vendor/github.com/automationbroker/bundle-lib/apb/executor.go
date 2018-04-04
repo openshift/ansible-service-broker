@@ -172,7 +172,7 @@ func (e *executor) executeApb(
 		return executionContext, err
 	}
 
-	secrets := getSecrets(spec)
+	secrets := GetSecrets(spec)
 
 	k8scli, err := clients.Kubernetes()
 	if err != nil {

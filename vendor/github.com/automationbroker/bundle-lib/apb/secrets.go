@@ -22,6 +22,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/automationbroker/bundle-lib/clients"
+	"github.com/automationbroker/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -45,8 +46,8 @@ func (c SecretsConfig) Validate() bool {
 
 // AssociationRule - A rule to associate an apb with a secret
 type AssociationRule struct {
-	BundleName string
-	Secret     string
+	apbName string
+	secret  string
 }
 
 type secretsCache struct {
@@ -57,8 +58,8 @@ type secretsCache struct {
 
 var secrets secretsCache
 
-// getSecrets - Returns a list of secrets to be attached to a specified spec
-func getSecrets(spec *Spec) []string {
+// GetSecrets - Returns a list of secrets to be attached to a specified spec
+func GetSecrets(spec *Spec) []string {
 	secrets.rwSync.RLock()
 	defer secrets.rwSync.RUnlock()
 	keys := []string{}
@@ -92,16 +93,23 @@ func AddSecretsFor(spec *Spec) {
 
 func addSecret(spec *Spec, rule AssociationRule) {
 	secrets.mapping[spec.FQName] = make(map[string]bool)
-	secrets.mapping[spec.FQName][rule.Secret] = true
+	secrets.mapping[spec.FQName][rule.secret] = true
 }
 
 func match(spec *Spec, rule AssociationRule) bool {
-	return spec.FQName == rule.BundleName
+	return spec.FQName == rule.apbName
 }
 
 // InitializeSecretsCache - Generates AssociationRules from config and
 // initializes the global secrets cache
-func InitializeSecretsCache(rules []AssociationRule) {
+func InitializeSecretsCache(secretConfigs []*config.Config) {
+	rules := []AssociationRule{}
+	for _, secretConfig := range secretConfigs {
+		rules = append(rules, AssociationRule{
+			apbName: secretConfig.GetString("apb_name"),
+			secret:  secretConfig.GetString("secret"),
+		})
+	}
 	secrets = secretsCache{
 		mapping: make(map[string]map[string]bool),
 		rwSync:  sync.RWMutex{},
@@ -114,7 +122,7 @@ func InitializeSecretsCache(rules []AssociationRule) {
 func FilterSecrets(inSpecs []*Spec) ([]*Spec, error) {
 	for _, spec := range inSpecs {
 		log.Debugf("Filtering secrets from spec %v", spec.FQName)
-		for _, secret := range getSecrets(spec) {
+		for _, secret := range GetSecrets(spec) {
 			secretKeys, err := getSecretKeys(secret, clusterConfig.Namespace)
 			if err != nil {
 				return nil, err
