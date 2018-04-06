@@ -89,6 +89,9 @@ type CFMEServiceDialogField struct {
 	Name        string `json:"label"`
 	Description string `json:"description"`
 	Type        string `json:"type"`
+	Required    bool   `json:"required"`
+	Values      string `json:"values"`
+	Default     string `json:"default_value"`
 }
 
 // RegistryName - retrieve the registry pr
@@ -205,6 +208,8 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	for _, template := range templates {
 		log.Debug("%v", template.Name)
 
+		dataMap := map[string]string{"template_id": template.Id}
+
 		var re = regexp.MustCompile(`[()_,. ]`)
 		normalizedName := strings.ToLower(re.ReplaceAllString(template.Name, `$1-$2`))
 
@@ -287,9 +292,22 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 							param.Name = field.Name
 							param.Title = field.Name
 							param.DisplayGroup = tab.Name + "/" + group.Name
+							if field.Required == true {
+								param.Required = true
+							}
 							// FIXME: Cover Types a lot better
 							if field.Type == "DialogFieldCheckBox" {
 								param.Type = "bool"
+								if field.Default == "t" {
+									param.Default = true
+								}
+							} else if field.Type == "DialogFieldDropDownList" {
+								param.Type = "enum"
+								param.Default = field.Default
+
+							} else if field.Type == "DialogFieldRadioButton" {
+								param.Type = "enum"
+								param.Default = field.Default
 							} else {
 								param.Type = "string"
 							}
@@ -299,6 +317,22 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 				}
 			}
 		}
+
+		dataMapJson, err := json.Marshal(dataMap)
+		if err != nil {
+			log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
+		}
+
+		dataMapParam := apb.ParameterDescriptor{
+			Name:         "data_map",
+			Title:        "Data Map",
+			Type:         "string",
+			Updatable:    false,
+			Required:     true,
+			Default:      string(dataMapJson),
+			DisplayGroup: "CloudForms Credentials",
+		}
+		spec.Plans[0].Parameters = append(spec.Plans[0].Parameters, dataMapParam)
 
 		specs = append(specs, spec)
 
