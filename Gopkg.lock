@@ -10,8 +10,8 @@
 [[projects]]
   name = "github.com/Masterminds/semver"
   packages = ["."]
-  revision = "15d8430ab86497c5c0da827b748823945e1cf1e1"
-  version = "v1.4.0"
+  revision = "8d82589cda2d7b5b9167396841975c4535c9bec6"
+  version = "v1.4.1"
 
 [[projects]]
   name = "github.com/NYTimes/gziphandler"
@@ -44,20 +44,18 @@
   revision = "417a1c5029bb8be34758b0e41a6a785f78890c7f"
 
 [[projects]]
+  branch = "remove-origin-copy"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "apb",
     "clients",
     "crd",
-    "origin/copy/authorization",
-    "origin/copy/user",
-    "origin/copy/user/validation",
     "registries",
     "registries/adapters",
     "runtime"
   ]
-  revision = "a92094792269bbbff234031d51631a7c2b0d4e03"
-  version = "0.1.1"
+  revision = "4ca8d7163b8bf9df3b8348d91e1a5d436ba1faee"
+  source = "https://github.com/shawn-hurley/bundle-lib.git"
 
 [[projects]]
   branch = "master"
@@ -373,7 +371,11 @@
 [[projects]]
   branch = "master"
   name = "github.com/openshift/api"
-  packages = ["network/v1"]
+  packages = [
+    "authorization/v1",
+    "network/v1",
+    "pkg/serialization"
+  ]
   revision = "dca24d1902afee9d2be02425a2d7c9f910063631"
 
 [[projects]]
@@ -924,6 +926,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4838a53e2d816870cec2f5fe8cfad4c024eed72fa6f8043d871093013c7670c1"
+  inputs-digest = "dc2e10d4cf363e91eb6544cfc9bc5dc3f29b2ff5daa411e7a587799bd6bbe715"
   solver-name = "gps-cdcl"
   solver-version = 1

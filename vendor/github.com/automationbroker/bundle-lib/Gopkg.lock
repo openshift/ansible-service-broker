@@ -218,7 +218,11 @@
 [[projects]]
   branch = "master"
   name = "github.com/openshift/api"
-  packages = ["network/v1"]
+  packages = [
+    "authorization/v1",
+    "network/v1",
+    "pkg/serialization"
+  ]
   revision = "dca24d1902afee9d2be02425a2d7c9f910063631"
 
 [[projects]]
@@ -395,15 +399,11 @@
   branch = "release-1.9"
   name = "k8s.io/apimachinery"
   packages = [
-    "pkg/api/equality",
     "pkg/api/errors",
     "pkg/api/meta",
     "pkg/api/resource",
-    "pkg/api/validation",
-    "pkg/api/validation/path",
     "pkg/apis/meta/v1",
     "pkg/apis/meta/v1/unstructured",
-    "pkg/apis/meta/v1/validation",
     "pkg/apis/meta/v1alpha1",
     "pkg/conversion",
     "pkg/conversion/queryparams",
@@ -440,15 +440,6 @@
     "third_party/forked/golang/reflect"
   ]
   revision = "19e3f5aa3adca672c153d324e6b7d82ff8935f03"
-
-[[projects]]
-  branch = "release-1.9"
-  name = "k8s.io/apiserver"
-  packages = [
-    "pkg/authentication/serviceaccount",
-    "pkg/authentication/user"
-  ]
-  revision = "5343f14b1d39e19add5eb0245eca715d8b37b164"
 
 [[projects]]
   branch = "release-6.0"
@@ -544,15 +535,9 @@
   packages = ["pkg/common"]
   revision = "50ae88d24ede7b8bad68e23c805b5d3da5c8abaf"
 
-[[projects]]
-  name = "k8s.io/kubernetes"
-  packages = ["pkg/apis/rbac"]
-  revision = "d2835416544f298c919e2ead3be3d0864b52323b"
-  version = "v1.9.3"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "60e20bdacb657f5687c30688847756386ce4b71d4aa39b4c7f64c3a3f1ded70b"
+  inputs-digest = "02b62e67f2811a1d7757d5a8640bce6d5d44fe5642ae228690bede0c9fdb24d0"
   solver-name = "gps-cdcl"
   solver-version = 1
