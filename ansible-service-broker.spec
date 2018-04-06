@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.4
+Version: 1.2.5
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -309,6 +309,35 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Apr 06 2018 David Zager <david.j.zager@gmail.com> 1.2.5-1
+- Changes to subscriber pattern (#828) (maleck13@users.noreply.github.com)
+- Add relist docs (#873) (ernelson@redhat.com)
+- Add migration command (#870) (smhurley00@gmail.com)
+- Fix docs - enabling RBAC for minikube (#862) (veverka.kuba@gmail.com)
+- removing config package from bundle lib. bump to new release (#860)
+  (Shawn.Hurley21@gmail.com)
+- make CRD the defaults for all templates (#838) (Shawn.Hurley21@gmail.com)
+- make more than one stage for all the tasks we want to do. (#863)
+  (Shawn.Hurley21@gmail.com)
+- Warn in the logs that a spec failed to load and continue (#855)
+  (rhallise@redhat.com)
+- Make a not to give the developer use cluster-admin (#857)
+  (rhallise@redhat.com)
+- Pull the latest ansible version in travis scripts (#856)
+  (rhallise@redhat.com)
+- Use the correct versions (#854) (Shawn.Hurley21@gmail.com)
+- Use bundle lib (#848) (Shawn.Hurley21@gmail.com)
+- Add dep to travis (#849) (rhallise@redhat.com)
+- make username available for APB in the serviceInstance (#832)
+  (jkim@redhat.com)
+- minor updates to proposal to clarify a few points (#842)
+  (maleck13@users.noreply.github.com)
+- Reformatted (#845) (jmrodri@gmail.com)
+- Create CODE_OF_CONDUCT.md (#841) (jmrodri@gmail.com)
+- Only grab the token the broker sa is using (#844) (rhallise@redhat.com)
+- Display Custom Error Message for the APB via termination-log (#837)
+  (jkim@redhat.com)
+
 * Mon Mar 19 2018 David Zager <david.j.zager@gmail.com> 1.2.4-1
 - Format nits (#836) (jmrodri@gmail.com)
 - APB state support (#809) (maleck13@users.noreply.github.com)
