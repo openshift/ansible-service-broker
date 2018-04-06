@@ -85,13 +85,14 @@ type CFMEServiceDialogGroup struct {
 }
 
 type CFMEServiceDialogField struct {
-	Id          string `json:"id"`
-	Name        string `json:"label"`
-	Description string `json:"description"`
-	Type        string `json:"type"`
-	Required    bool   `json:"required"`
-	Values      string `json:"values"`
-	Default     string `json:"default_value"`
+	Id          string      `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Type        string      `json:"type"`
+	Required    bool        `json:"required"`
+	Values      interface{} `json:"values"`
+	Default     string      `json:"default_value"`
+	Label       string      `json:"label"`
 }
 
 // RegistryName - retrieve the registry pr
@@ -290,7 +291,7 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 						for _, field := range group.CFMEServiceDialogFields {
 							param := apb.ParameterDescriptor{}
 							param.Name = field.Name
-							param.Title = field.Name
+							param.Title = field.Label
 							param.DisplayGroup = tab.Name + "/" + group.Name
 							if field.Required == true {
 								param.Required = true
@@ -301,15 +302,27 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 								if field.Default == "t" {
 									param.Default = true
 								}
-							} else if field.Type == "DialogFieldDropDownList" {
+							} else if field.Type == "DialogFieldDropDownList" ||
+								field.Type == "DialogFieldRadioButton" {
 								param.Type = "enum"
 								param.Default = field.Default
 
-							} else if field.Type == "DialogFieldRadioButton" {
-								param.Type = "enum"
-								param.Default = field.Default
+								valuesJson, err := json.Marshal(field.Values)
+								if err != nil {
+									log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
+								}
+								var valuesArr []([]string)
+								json.Unmarshal([]byte(valuesJson), &valuesArr)
+
+								var enum_values []string
+								for _, v := range valuesArr {
+									enum_values = append(enum_values, v[1])
+								}
+								param.Enum = enum_values
+								dataMap[field.Name] = string(valuesJson)
 							} else {
 								param.Type = "string"
+								param.Default = field.Default
 							}
 							spec.Plans[0].Parameters = append(spec.Plans[0].Parameters, param)
 						}
@@ -326,11 +339,12 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 		dataMapParam := apb.ParameterDescriptor{
 			Name:         "data_map",
 			Title:        "Data Map",
+			Description:  "DO NOT EDIT",
 			Type:         "string",
 			Updatable:    false,
 			Required:     true,
 			Default:      string(dataMapJson),
-			DisplayGroup: "CloudForms Credentials",
+			DisplayGroup: "CloudForms Data Map",
 		}
 		spec.Plans[0].Parameters = append(spec.Plans[0].Parameters, dataMapParam)
 
