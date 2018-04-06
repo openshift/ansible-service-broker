@@ -157,6 +157,15 @@ Our release versions align with
 [openshift/origin](https://github.com/openshift/origin/). For more detailed
 information see our [version document](docs/versioning.md).
 
+## Release Dates
+
+| Kubernetes | OpenShift | Ansible Service Broker | Feature Freeze | Release Date |
+|:----------:|:---------:|:----------------------:|:--------------:|:------------:|
+|    1.9     |    3.9    |       release-1.1      |    2018/1/4    |   2018/3/28   |
+|    1.10    |    3.10   |       release-1.2      |    2018/4/4    |   2018/7/4*  |
+|    1.11    |    3.11   |       release-1.3      |    2018/7/4*   |   2018/10/4* |
+
+
 # Compatibility
 
 ## APB Compatibility Matrix
@@ -215,15 +224,6 @@ make check
 # Get helpful information about our make targets
 make help
 ```
-
-# Release Dates
-
-| Kubernetes | OpenShift | Ansible Service Broker | Feature Freeze | Release Date |
-|:----------:|:---------:|:----------------------:|:--------------:|:------------:|
-|    1.9     |    3.9    |       release-1.1      |     1/4/18     |    3/28/18   |
-|    1.10    |    3.10   |       release-1.2      |     4/4/18     |    7/4/18*   |
-|    1.11    |    3.11   |       release-1.3      |     7/4/18*    |    10/4/18*  |
-
 # License
 
 Ansible Service Broker is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/).
