@@ -213,7 +213,7 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 
 		var re = regexp.MustCompile(`[()_,. ]`)
 		normalizedName := strings.ToLower(re.ReplaceAllString(template.Name, `$1-$2`))
-		dependencies := []string{"https://docker.io/ansibleplaybookbundle/manageiq-runner-apb:latest"}
+		dependencies := []string{"docker.io/ansibleplaybookbundle/manageiq-runner-apb:latest"}
 
 		// Convert Service Template to Spec
 		spec := &apb.Spec{
@@ -308,7 +308,6 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 							} else if field.Type == "DialogFieldDropDownList" ||
 								field.Type == "DialogFieldRadioButton" {
 								param.Type = "enum"
-								param.Default = field.Default
 
 								valuesJson, err := json.Marshal(field.Values)
 								if err != nil {
@@ -321,6 +320,7 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 								for _, v := range valuesArr {
 									enum_values = append(enum_values, v[1])
 								}
+								param.Default = enum_values[0]
 								param.Enum = enum_values
 								dataMap[field.Name] = string(valuesJson)
 							} else {
