@@ -213,6 +213,7 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 
 		var re = regexp.MustCompile(`[()_,. ]`)
 		normalizedName := strings.ToLower(re.ReplaceAllString(template.Name, `$1-$2`))
+		dependencies := []string{"https://docker.io/ansibleplaybookbundle/manageiq-runner-apb:latest"}
 
 		// Convert Service Template to Spec
 		spec := &apb.Spec{
@@ -220,14 +221,14 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 			FQName:      normalizedName + "-apb",
 			Async:       "optional",
 			Bindable:    false,
-			Image:       "https://docker.io/manageiq/manageiq-apb-runner:latest",
+			Image:       dependencies[0],
 			Tags:        []string{"iaas"},
 			Description: template.Description,
 			Runtime:     2,
 			Metadata: map[string]interface{}{
 				"displayName":      template.Name + " (APB)",
 				"documentationUrl": r.Config.URL.String(),
-				"dependencies":     "https://docker.io/manageiq/manageiq-apb-runner:latest",
+				"dependencies":     dependencies,
 				"imageUrl":         "https://s3.amazonaws.com/fusor/2017demo/ManageIQ.png",
 			},
 			Plans: []apb.Plan{
@@ -284,11 +285,13 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 			log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
 		}
 
+		var cfmeParams []string
 		for _, serviceDialog := range serviceDialogs {
 			for _, content := range serviceDialog.CFMEServiceDialogContent {
 				for _, tab := range content.CFMEServiceDialogTabs {
 					for _, group := range tab.CFMEServiceDialogGroups {
 						for _, field := range group.CFMEServiceDialogFields {
+							cfmeParams = append(cfmeParams, field.Name)
 							param := apb.ParameterDescriptor{}
 							param.Name = field.Name
 							param.Title = field.Label
@@ -331,6 +334,12 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 			}
 		}
 
+		cfmeParamsJson, err := json.Marshal(cfmeParams)
+		if err != nil {
+			log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
+		}
+
+		dataMap["cfme_params"] = string(cfmeParamsJson)
 		dataMapJson, err := json.Marshal(dataMap)
 		if err != nil {
 			log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
