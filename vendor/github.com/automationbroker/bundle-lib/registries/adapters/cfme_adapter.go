@@ -50,6 +50,8 @@ type CFMEServiceTemplate struct {
 	Name           string          `json:"name"`
 	Description    string          `json:"description"`
 	CFMEConfigInfo *CFMEConfigInfo `json:"config_info"`
+	Type           string          `json:"type"`
+	CatalogId      string          `json:"service_template_catalog_id"`
 }
 
 type CFMEConfigInfo struct {
@@ -209,7 +211,7 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	for _, template := range templates {
 		log.Debug("%v", template.Name)
 
-		dataMap := map[string]string{"template_id": template.Id}
+		dataMap := map[string]string{"template_id": template.Id, "catalog_id": template.CatalogId, "type": template.Type}
 
 		var re = regexp.MustCompile(`[()_,. ]`)
 		normalizedName := strings.ToLower(re.ReplaceAllString(template.Name, `$1-$2`))
