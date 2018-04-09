@@ -198,7 +198,6 @@ func (r CFMEAdapter) getServiceDialogs(dialogList []string) ([]CFMEServiceDialog
 	return serviceDialogs, nil
 }
 
-// FetchSpecs - retrieve the spec from the image names
 func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	log.Debug("CFMEAdapter::FetchSpecs")
 	var specs []*apb.Spec
@@ -209,158 +208,164 @@ func (r CFMEAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	}
 
 	for _, template := range templates {
-		log.Debug("%v", template.Name)
+		if len(template.CatalogId) == 0 {
+			log.Warningf("Unable to import CFME Service template %v because it is not in a Catalog", template.Name)
+		} else {
 
-		dataMap := map[string]string{"template_id": template.Id, "catalog_id": template.CatalogId, "type": template.Type}
+			dataMap := map[string]string{"template_id": template.Id, "catalog_id": template.CatalogId, "type": template.Type}
 
-		var re = regexp.MustCompile(`[()_,. ]`)
-		normalizedName := strings.ToLower(re.ReplaceAllString(template.Name, `$1-$2`))
-		dependencies := []string{"docker.io/ansibleplaybookbundle/manageiq-runner-apb:latest"}
+			var re = regexp.MustCompile(`[()_,. ]`)
+			normalizedName := strings.ToLower(re.ReplaceAllString(template.Name, `$1-$2`))
+			dependencies := []string{"docker.io/ansibleplaybookbundle/manageiq-runner-apb:latest"}
 
-		// Convert Service Template to Spec
-		spec := &apb.Spec{
-			Version:     "1.0",
-			FQName:      normalizedName + "-apb",
-			Async:       "optional",
-			Bindable:    false,
-			Image:       dependencies[0],
-			Tags:        []string{"iaas"},
-			Description: template.Description,
-			Runtime:     2,
-			Metadata: map[string]interface{}{
-				"displayName":      template.Name + " (APB)",
-				"documentationUrl": r.Config.URL.String(),
-				"dependencies":     dependencies,
-				"imageUrl":         "https://s3.amazonaws.com/fusor/2017demo/ManageIQ.png",
-			},
-			Plans: []apb.Plan{
-				apb.Plan{
-					Name:        "default",
-					Description: "Default deployment plan for " + normalizedName + "-apb",
-					Metadata: map[string]interface{}{
-						"displayName":     "Default",
-						"longDescription": template.Description,
-						"cost":            "$0.0",
-					},
-					Parameters: []apb.ParameterDescriptor{
-						apb.ParameterDescriptor{
-							Name:         "cfme_user",
-							Title:        "CFME Requestor",
-							Type:         "string",
-							Updatable:    false,
-							Required:     true,
-							DisplayGroup: "CloudForms Credentials",
+			if len(template.Description) == 0 {
+				template.Description = template.Name
+			}
+
+			// Convert Service Template to Spec
+			spec := &apb.Spec{
+				Version:     "1.0",
+				FQName:      normalizedName + "-apb",
+				Async:       "optional",
+				Bindable:    false,
+				Image:       dependencies[0],
+				Tags:        []string{"iaas"},
+				Description: template.Description,
+				Runtime:     2,
+				Metadata: map[string]interface{}{
+					"displayName":      template.Name + " (APB)",
+					"documentationUrl": r.Config.URL.String(),
+					"dependencies":     dependencies,
+					"imageUrl":         "https://s3.amazonaws.com/fusor/2017demo/ManageIQ.png",
+				},
+				Plans: []apb.Plan{
+					apb.Plan{
+						Name:        "default",
+						Description: "Default deployment plan for " + normalizedName + "-apb",
+						Metadata: map[string]interface{}{
+							"displayName":     "Default",
+							"longDescription": template.Description,
+							"cost":            "$0.0",
 						},
-						apb.ParameterDescriptor{
-							Name:         "cfme_password",
-							Title:        "CFME Password",
-							Type:         "string",
-							Updatable:    false,
-							Required:     true,
-							DisplayType:  "password",
-							DisplayGroup: "CloudForms Credentials",
-						},
-						apb.ParameterDescriptor{
-							Name:         "cfme_url",
-							Title:        "CFME URL",
-							Type:         "string",
-							Updatable:    false,
-							Required:     true,
-							Default:      r.Config.URL.String(),
-							DisplayGroup: "CloudForms Credentials",
+						Parameters: []apb.ParameterDescriptor{
+							apb.ParameterDescriptor{
+								Name:         "cfme_user",
+								Title:        "CFME Requestor",
+								Type:         "string",
+								Updatable:    false,
+								Required:     true,
+								DisplayGroup: "CloudForms Credentials",
+							},
+							apb.ParameterDescriptor{
+								Name:         "cfme_password",
+								Title:        "CFME Password",
+								Type:         "string",
+								Updatable:    false,
+								Required:     true,
+								DisplayType:  "password",
+								DisplayGroup: "CloudForms Credentials",
+							},
+							apb.ParameterDescriptor{
+								Name:         "cfme_url",
+								Title:        "CFME URL",
+								Type:         "string",
+								Updatable:    false,
+								Required:     true,
+								Default:      r.Config.URL.String(),
+								DisplayGroup: "CloudForms Credentials",
+							},
 						},
 					},
 				},
-			},
-		}
-
-		var dialogIds []string
-		dialogObject := template.CFMEConfigInfo.CFMEProvision
-		for key, value := range dialogObject {
-			if key == "dialog_id" {
-				dialogIds = append(dialogIds, value.(string))
 			}
-		}
 
-		serviceDialogs, err := r.getServiceDialogs(dialogIds)
-		if err != nil {
-			log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
-		}
+			var dialogIds []string
+			dialogObject := template.CFMEConfigInfo.CFMEProvision
+			for key, value := range dialogObject {
+				if key == "dialog_id" {
+					dialogIds = append(dialogIds, value.(string))
+				}
+			}
 
-		var cfmeParams []string
-		for _, serviceDialog := range serviceDialogs {
-			for _, content := range serviceDialog.CFMEServiceDialogContent {
-				for _, tab := range content.CFMEServiceDialogTabs {
-					for _, group := range tab.CFMEServiceDialogGroups {
-						for _, field := range group.CFMEServiceDialogFields {
-							cfmeParams = append(cfmeParams, field.Name)
-							param := apb.ParameterDescriptor{}
-							param.Name = field.Name
-							param.Title = field.Label
-							param.DisplayGroup = tab.Name + "/" + group.Name
-							if field.Required == true {
-								param.Required = true
+			serviceDialogs, err := r.getServiceDialogs(dialogIds)
+			if err != nil {
+				log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
+			}
+
+			var cfmeParams []string
+			for _, serviceDialog := range serviceDialogs {
+				for _, content := range serviceDialog.CFMEServiceDialogContent {
+					for _, tab := range content.CFMEServiceDialogTabs {
+						for _, group := range tab.CFMEServiceDialogGroups {
+							for _, field := range group.CFMEServiceDialogFields {
+								cfmeParams = append(cfmeParams, field.Name)
+								param := apb.ParameterDescriptor{}
+								param.Name = field.Name
+								param.Title = field.Label
+								param.DisplayGroup = tab.Name + "/" + group.Name
+								if field.Required == true {
+									param.Required = true
+								}
+								// FIXME: Cover Types a lot better
+								if field.Type == "DialogFieldCheckBox" {
+									param.Type = "bool"
+									if field.Default == "t" {
+										param.Default = true
+									}
+								} else if field.Type == "DialogFieldDropDownList" ||
+									field.Type == "DialogFieldRadioButton" {
+									param.Type = "enum"
+
+									valuesJson, err := json.Marshal(field.Values)
+									if err != nil {
+										log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
+									}
+									var valuesArr []([]string)
+									json.Unmarshal([]byte(valuesJson), &valuesArr)
+
+									var enum_values []string
+									for _, v := range valuesArr {
+										enum_values = append(enum_values, v[1])
+									}
+									param.Default = enum_values[0]
+									param.Enum = enum_values
+									dataMap[field.Name] = string(valuesJson)
+								} else {
+									param.Type = "string"
+									param.Default = field.Default
+								}
+								spec.Plans[0].Parameters = append(spec.Plans[0].Parameters, param)
 							}
-							// FIXME: Cover Types a lot better
-							if field.Type == "DialogFieldCheckBox" {
-								param.Type = "bool"
-								if field.Default == "t" {
-									param.Default = true
-								}
-							} else if field.Type == "DialogFieldDropDownList" ||
-								field.Type == "DialogFieldRadioButton" {
-								param.Type = "enum"
-
-								valuesJson, err := json.Marshal(field.Values)
-								if err != nil {
-									log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
-								}
-								var valuesArr []([]string)
-								json.Unmarshal([]byte(valuesJson), &valuesArr)
-
-								var enum_values []string
-								for _, v := range valuesArr {
-									enum_values = append(enum_values, v[1])
-								}
-								param.Default = enum_values[0]
-								param.Enum = enum_values
-								dataMap[field.Name] = string(valuesJson)
-							} else {
-								param.Type = "string"
-								param.Default = field.Default
-							}
-							spec.Plans[0].Parameters = append(spec.Plans[0].Parameters, param)
 						}
 					}
 				}
 			}
+
+			cfmeParamsJson, err := json.Marshal(cfmeParams)
+			if err != nil {
+				log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
+			}
+
+			dataMap["cfme_params"] = string(cfmeParamsJson)
+			dataMapJson, err := json.Marshal(dataMap)
+			if err != nil {
+				log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
+			}
+
+			dataMapParam := apb.ParameterDescriptor{
+				Name:         "data_map",
+				Title:        "Data Map",
+				Description:  "DO NOT EDIT",
+				Type:         "string",
+				Updatable:    false,
+				Required:     true,
+				Default:      string(dataMapJson),
+				DisplayGroup: "CloudForms Data Map",
+			}
+			spec.Plans[0].Parameters = append(spec.Plans[0].Parameters, dataMapParam)
+
+			specs = append(specs, spec)
 		}
-
-		cfmeParamsJson, err := json.Marshal(cfmeParams)
-		if err != nil {
-			log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
-		}
-
-		dataMap["cfme_params"] = string(cfmeParamsJson)
-		dataMapJson, err := json.Marshal(dataMap)
-		if err != nil {
-			log.Errorf("Failed to retrieve spec data for image %s - %v", template.Name, err)
-		}
-
-		dataMapParam := apb.ParameterDescriptor{
-			Name:         "data_map",
-			Title:        "Data Map",
-			Description:  "DO NOT EDIT",
-			Type:         "string",
-			Updatable:    false,
-			Required:     true,
-			Default:      string(dataMapJson),
-			DisplayGroup: "CloudForms Data Map",
-		}
-		spec.Plans[0].Parameters = append(spec.Plans[0].Parameters, dataMapParam)
-
-		specs = append(specs, spec)
-
 	}
 
 	return specs, nil
