@@ -27,6 +27,18 @@ import (
 // Parameters - generic string to object or value parameter
 type Parameters map[string]interface{}
 
+// EnsureDefaults returns the sets any expected parameters that are not present with default values
+func (p *Parameters) EnsureDefaults() {
+	if _, ok := (*p)[ProvisionCredentialsKey]; !ok {
+		(*p)[ProvisionCredentialsKey] = struct{}{}
+	}
+}
+
+// Add adds a values to the parameters indexed by key
+func (p *Parameters) Add(key string, val interface{}) {
+	(*p)[key] = val
+}
+
 // SpecManifest - Spec ID to Spec manifest
 type SpecManifest map[string]*Spec
 

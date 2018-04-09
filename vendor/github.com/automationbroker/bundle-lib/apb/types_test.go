@@ -280,6 +280,73 @@ func TestBindInstanceUserParams(t *testing.T) {
 
 }
 
+func TestEnsureDefaults(t *testing.T) {
+	cases := []struct {
+		Name           string
+		ProvidedParams func() Parameters
+		Validate       func(t *testing.T, params Parameters)
+	}{
+		{
+			Name: "test defaults are set",
+			ProvidedParams: func() Parameters {
+				p := Parameters{}
+				p.EnsureDefaults()
+				return p
+			},
+			Validate: func(t *testing.T, actual Parameters) {
+				if _, ok := actual[ProvisionCredentialsKey]; !ok {
+					t.Fatalf("expected the key %s to be present but it was missing", ProvisionCredentialsKey)
+				}
+			},
+		},
+		{
+			Name: "test existing key not overwritten",
+			ProvidedParams: func() Parameters {
+				p := Parameters{ProvisionCredentialsKey: "avalue"}
+				p.EnsureDefaults()
+				return p
+			},
+			Validate: func(t *testing.T, p Parameters) {
+				if v, ok := p[ProvisionCredentialsKey]; ok {
+					if v != "avalue" {
+						t.Fatalf("expected the value for %s to be %v but got %v", ProvisionCredentialsKey, "avalue", v)
+					}
+					return
+				}
+				t.Fatalf("missing key %v from params", ProvisionCredentialsKey)
+			},
+		},
+		{
+			Name: "test default key set if other keys present",
+			ProvidedParams: func() Parameters {
+				p := Parameters{"somekey": "avalue"}
+				p.EnsureDefaults()
+				return p
+			},
+			Validate: func(t *testing.T, p Parameters) {
+				if v, ok := p["somekey"]; ok {
+					if v != "avalue" {
+						t.Fatalf("expected somekey to be set to avalue but was %s", v)
+					}
+				}
+				if v, ok := p[ProvisionCredentialsKey]; ok {
+					if v != struct{}{} {
+						t.Fatalf("expected the default value for %v to be %v but got %v", ProvisionCredentialsKey, struct{}{}, v)
+					}
+					return
+				}
+				t.Fatalf("expected key somekey to be set but it wasnt")
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			tc.Validate(t, tc.ProvidedParams())
+		})
+	}
+}
+
 func TestBindInstanceEqual(t *testing.T) {
 	a := BindInstance{
 		ID:         uuid.NewUUID(),
