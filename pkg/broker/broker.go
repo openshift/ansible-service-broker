@@ -681,7 +681,6 @@ func (a AnsibleBroker) Deprovision(
 		errMsg := "Deprovision request contains an empty plan_id"
 		return nil, errors.New(errMsg)
 	}
-
 	err := a.validateDeprovision(&instance)
 	if err != nil {
 		return nil, err
@@ -714,6 +713,7 @@ func (a AnsibleBroker) Deprovision(
 	// Override the lastRequestingUserKey value in the instance.Parameters
 	if instance.Parameters != nil {
 		(*instance.Parameters)[lastRequestingUserKey] = getLastRequestingUser(userInfo)
+		instance.Parameters.EnsureDefaults()
 	}
 
 	var token = a.engine.Token()
