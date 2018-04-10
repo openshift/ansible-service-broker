@@ -11,9 +11,12 @@ function cluster-setup () {
     cat <<EOF > "catasb/config/my_vars.yml"
 ---
 dockerhub_org: ansibleplaybookbundle
-broker_tag: latest
+broker_tag: release-1.1
 apb_tag: release-1.1
 broker_kind: ClusterServiceBroker
+use_ssl: false
+update_cgroup_driver: false
+use_custom_config: false
 EOF
 
     # Multiple gates use this script. Only the broker travis gate
