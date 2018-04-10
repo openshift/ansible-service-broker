@@ -35,6 +35,7 @@ const (
 	serviceClassIDKey     = "_apb_service_class_id"
 	serviceInstIDKey      = "_apb_service_instance_id"
 	lastRequestingUserKey = "_apb_last_requesting_user"
+	serviceBindingIDKey   = "_apb_service_binding_id"
 )
 
 // WorkTopic - Topic jobs can publish messages to, and subscribers can listen to

@@ -119,6 +119,7 @@ Example of JSON document passed to __bind__:
     },
     "_apb_service_class_id": "1dda1477cace09730bd8ed7a6505607e",
     "_apb_service_instance_id": "d6ac6b10-fbff-4944-8e6b-3478313e20d1",
+    "_apb_service_binding_id": "54636ad3-0378-49a1-a494-f97d0a0daf8e",
     "_apb_last_requesting_user": "admin",
     "cluster": "kubernetes",
     "namespace": "default"
