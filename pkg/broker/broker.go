@@ -835,18 +835,22 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		planParameterKey, plan.Name)
 
 	params[planParameterKey] = plan.Name
+
 	log.Debugf("Injecting ServiceClassID as parameter: { %s: %s }",
 		serviceClassIDKey, req.ServiceID)
-
 	params[serviceClassIDKey] = req.ServiceID
+
 	log.Debugf("Injecting ServiceInstanceID as parameter: { %s: %s }",
 		serviceInstIDKey, instance.ID.String())
-
 	params[serviceInstIDKey] = instance.ID.String()
 
 	log.Debugf("Injecting lastRequestingUserKey as parameter: { %s: %s }",
 		lastRequestingUserKey, getLastRequestingUser(userInfo))
 	params[lastRequestingUserKey] = getLastRequestingUser(userInfo)
+
+	log.Debugf("Injecting ServiceBindingID as parameter: { %s: %s }",
+		serviceBindingIDKey, bindingUUID.String())
+	params[serviceBindingIDKey] = bindingUUID.String()
 
 	// Create a BindingInstance with a reference to the serviceinstance.
 	bindingInstance := &apb.BindInstance{
