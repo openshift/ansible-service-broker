@@ -51,6 +51,12 @@ func init() {
 var crdDao *crd.Dao
 var etcdDao *etcd.Dao
 
+type extCredsMigration struct {
+	ExtCreds  apb.ExtractedCredentials
+	ID        string
+	Namespace string
+}
+
 func main() {
 	con := clients.EtcdConfig{
 		EtcdHost:       options.EtcdHost,
@@ -176,6 +182,95 @@ func main() {
 			}
 		}
 	}
+
+	extCredsSaved := []extCredsMigration{}
+	for _, si := range siSaved {
+		labels := map[string]string{"apbAction": "provision", "apbName": si.Spec.FQName}
+		extcredsJSON, err := etcdDao.GetRaw(fmt.Sprintf("/extracted_credentials/%v", si.ID))
+		if etcdDao.IsNotFoundError(err) {
+			continue
+		}
+		if err != nil {
+			revertExtractedCredentials(extCredsSaved)
+			revertBindInstance(biSaved)
+			revertServiceInstance(siSaved)
+			revertCrdSavedSpecs(crdSavedSpecs)
+			panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
+		}
+
+		ec := apb.ExtractedCredentials{}
+		err = json.Unmarshal([]byte(extcredsJSON), &ec)
+		if err != nil {
+			revertExtractedCredentials(extCredsSaved)
+			revertBindInstance(biSaved)
+			revertServiceInstance(siSaved)
+			revertCrdSavedSpecs(crdSavedSpecs)
+			panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
+		}
+		k8scli, err := clients.Kubernetes()
+		if err != nil {
+			revertExtractedCredentials(extCredsSaved)
+			revertBindInstance(biSaved)
+			revertServiceInstance(siSaved)
+			revertCrdSavedSpecs(crdSavedSpecs)
+			panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
+		}
+		err = k8scli.SaveExtractedCredentialSecret(si.ID.String(), options.MigrationNamespace, ec.Credentials, labels)
+		if err != nil {
+			revertExtractedCredentials(extCredsSaved)
+			revertBindInstance(biSaved)
+			revertServiceInstance(siSaved)
+			revertCrdSavedSpecs(crdSavedSpecs)
+			panic(fmt.Sprintf("Unable to migrate all the binding instances - %v", err))
+		}
+		extCredsSaved = append(extCredsSaved, extCredsMigration{
+			ExtCreds:  ec,
+			ID:        si.ID.String(),
+			Namespace: options.MigrationNamespace,
+		})
+	}
+	for _, bi := range biSaved {
+		labels := map[string]string{"apbAction": "bind"}
+		extcredsJSON, err := etcdDao.GetRaw(fmt.Sprintf("/extracted_credentials/%v", bi.ID))
+		if err != nil {
+			revertExtractedCredentials(extCredsSaved)
+			revertBindInstance(biSaved)
+			revertServiceInstance(siSaved)
+			revertCrdSavedSpecs(crdSavedSpecs)
+			panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
+		}
+
+		ec := apb.ExtractedCredentials{}
+		err = json.Unmarshal([]byte(extcredsJSON), &ec)
+		if err != nil {
+			revertExtractedCredentials(extCredsSaved)
+			revertBindInstance(biSaved)
+			revertServiceInstance(siSaved)
+			revertCrdSavedSpecs(crdSavedSpecs)
+			panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
+		}
+		k8scli, err := clients.Kubernetes()
+		if err != nil {
+			revertExtractedCredentials(extCredsSaved)
+			revertBindInstance(biSaved)
+			revertServiceInstance(siSaved)
+			revertCrdSavedSpecs(crdSavedSpecs)
+			panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
+		}
+		err = k8scli.SaveExtractedCredentialSecret(bi.ID.String(), options.MigrationNamespace, ec.Credentials, labels)
+		if err != nil {
+			revertExtractedCredentials(extCredsSaved)
+			revertBindInstance(biSaved)
+			revertServiceInstance(siSaved)
+			revertCrdSavedSpecs(crdSavedSpecs)
+			panic(fmt.Sprintf("Unable to migrate all the binding instances - %v", err))
+		}
+		extCredsSaved = append(extCredsSaved, extCredsMigration{
+			ExtCreds:  ec,
+			ID:        bi.ID.String(),
+			Namespace: options.MigrationNamespace,
+		})
+	}
 }
 
 func revertCrdSavedSpecs(specs []*apb.Spec) {
@@ -204,4 +299,19 @@ func revertServiceInstance(siSaved []*apb.ServiceInstance) {
 		}
 	}
 	logrus.Infof("reverted service instances")
+}
+
+func revertExtractedCredentials(extCredsSaved []extCredsMigration) {
+	for _, extCred := range extCredsSaved {
+		//no DAO to delete saved state. Going to the CRD Client
+		k8sclient, err := clients.Kubernetes()
+		if err != nil {
+			panic(fmt.Sprintf("revert failed - %v", err))
+		}
+		err = k8sclient.DeleteExtractedCredentialSecret(extCred.ID, extCred.Namespace)
+		if err != nil {
+			panic(fmt.Sprintf("revert failed - %v", err))
+		}
+	}
+	fmt.Printf("reverted extracted credentials")
 }
