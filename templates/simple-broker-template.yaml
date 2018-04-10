@@ -146,7 +146,7 @@ objects:
       spec:
         serviceAccount: asb
         containers:
-        - image: ansibleplaybookbundle/origin-ansible-service-broker:sprint142
+        - image: ansibleplaybookbundle/origin-ansible-service-broker:release-1.1
           name: asb
           imagePullPolicy: IfNotPresent
           volumeMounts:
@@ -389,7 +389,7 @@ parameters:
 - description: APB Image Tag
   displayname: APB Image Tag
   name: TAG
-  value: sprint142 
+  value: release-1.1
 
 - description: OpenShift User Password
   displayname: OpenShift User Password
