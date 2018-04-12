@@ -95,6 +95,7 @@ curl -s $TEMPLATE_URL \
   -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
   -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" \
   -p NAMESPACE=ansible-service-broker \
+  -p ROUTING_SUFFIX="$ROUTING_SUFFIX" \
   $VARS -f - | oc create -f -
 if [ "$?" -ne 0 ]; then
   echo "Error processing template and creating deployment"
