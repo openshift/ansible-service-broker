@@ -45,7 +45,6 @@ APB_NAME=${APB_NAME:-"automation-broker-apb"}
 APB_IMAGE=${APB_IMAGE:-"docker.io/automationbroker/automation-broker-apb:latest"}
 BROKER_NAME=${BROKER_NAME:-"ansible-service-broker"}
 BROKER_NAMESPACE=${BROKER_NAMESPACE:-"ansible-service-broker"}
-HELM=${HELM:-"false"}
 
 version=$(oc version | head -1)
 client_version=$(echo $version | egrep -o 'v[0-9]+(\.[0-9]+)+' | tr -d v.)
@@ -93,7 +92,7 @@ oc run $APB_NAME \
     --restart=Never \
     --attach=true \
     --serviceaccount=$APB_NAME \
-    -- provision -e broker_name=$BROKER_NAME -e broker_helm_enabled=$HELM
+    -- provision -e broker_name=$BROKER_NAME
 if [ "$?" -ne 0 ]; then
   echo "Error deploying broker"
   exit
