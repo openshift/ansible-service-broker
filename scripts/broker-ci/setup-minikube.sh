@@ -2,6 +2,9 @@
 
 set -x
 
+# MINIKUBE_VERSION="latest" -- https://github.com/kubernetes/minikube/issues/2704
+MINIKUBE_VERSION="v0.25.2"
+
 function install-nsenter {
     wget https://www.kernel.org/pub/linux/utils/util-linux/v2.24/util-linux-2.24.1.tar.gz -qO - | tar -xz -C ./
     sudo apt-get install libncurses5-dev libslang2-dev gettext zlib1g-dev libselinux1-dev debhelper lsb-release pkg-config po-debconf autoconf automake autopoint libtool -y
@@ -24,7 +27,7 @@ sudo iptables -I FORWARD -o docker0 -j ACCEPT
 sudo iptables -I FORWARD -i docker0 ! -o docker0 -j ACCEPT
 
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/${MINIKUBE_VERSION}/minikube-linux-amd64
 sudo chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 sudo chmod +x minikube && sudo mv minikube /usr/local/bin/
 
