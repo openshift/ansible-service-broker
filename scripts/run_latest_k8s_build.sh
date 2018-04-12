@@ -1,10 +1,12 @@
 #!/bin/bash
 
+TAG=${TAG:-"latest"}
 APB_NAME=${APB_NAME:-"automation-broker-apb"}
 APB_IMAGE=${APB_IMAGE:-"docker.io/automationbroker/automation-broker-apb:latest"}
 BROKER_NAME=${BROKER_NAME:-"ansible-service-broker"}
 BROKER_IMAGE="docker.io/ansibleplaybookbundle/origin-ansible-service-broker:${TAG}"
 BROKER_NAMESPACE=${BROKER_NAMESPACE:-"ansible-service-broker"}
+HELM=${HELM:-"false"}
 
 function ansible-service-broker {
     if [ "$TAG" == "build" ]; then
@@ -23,7 +25,7 @@ function ansible-service-broker {
         -- provision \
             -e broker_image=$BROKER_IMAGE \
             -e broker_name=$BROKER_NAME \
-            -e broker_dockerhub_tag='canary'
+            -e broker_helm_enabled=$HELM
 }
 
 echo "========================================================================"
