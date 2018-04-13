@@ -6,6 +6,7 @@ APB_IMAGE=${APB_IMAGE:-"docker.io/automationbroker/automation-broker-apb:latest"
 BROKER_NAME=${BROKER_NAME:-"ansible-service-broker"}
 BROKER_IMAGE="docker.io/ansibleplaybookbundle/origin-ansible-service-broker:${TAG}"
 BROKER_NAMESPACE=${BROKER_NAMESPACE:-"ansible-service-broker"}
+HELM=${HELM:-"false"}
 
 function ansible-service-broker {
     if [ "$TAG" == "build" ]; then
@@ -23,7 +24,8 @@ function ansible-service-broker {
         --serviceaccount=$APB_NAME \
         -- provision \
             -e broker_image=$BROKER_IMAGE \
-            -e broker_name=$BROKER_NAME
+            -e broker_name=$BROKER_NAME \
+            -e broker_helm_enabled=$HELM
     kubectl delete pod $APB_NAME --namespace $BROKER_NAMESPACE
     kubectl delete serviceaccount $APB_NAME --namespace $BROKER_NAMESPACE
     kubectl delete clusterrolebinding $APB_NAME
