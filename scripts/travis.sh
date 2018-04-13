@@ -19,7 +19,7 @@ elif [[ "$action" == "install" ]]; then
   echo "           Install               "
   echo "================================="
   # Install ansible
-  sudo pip install ansible==2.3.1 pyOpenSSL==16.2.0
+  sudo pip install ansible==2.4 pyOpenSSL==16.2.0
 
   # dash? wtf is dash? UGH! use a real shell
   sudo rm /bin/sh
