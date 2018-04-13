@@ -2,7 +2,7 @@
 
 A debugging guide for the [Ansible service broker (ASB)](https://github.com/openshift/ansible-service-broker/)
 
-For known issues, visit the [troubleshooting guide](./troublshooting.md)
+For known issues, visit the [troubleshooting guide](./troubleshooting.md)
 
 ## Verify that the ASB Pods are Ready and in the `Running` state
 
