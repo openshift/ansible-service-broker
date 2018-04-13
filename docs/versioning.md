@@ -17,7 +17,7 @@ NOTE: The first official release of the broker,
 targeted OpenShift Origin [release
 v3.7.0](https://github.com/openshift/origin/releases/tag/v3.7.0). Following the
 versioning rules, the version was bumped to `1.1.x` for OpenShift Origin [release
-v3.9.0](https://github.com/openshift/origin/tree/release-3.9) and again to
+v3.9.0](https://github.com/openshift/origin/releases/tag/v3.9.0) and again to
 `1.2.x` for OpenShift Origin release v3.10.0.
 
 # Branching and Tagging
