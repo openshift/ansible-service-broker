@@ -87,7 +87,7 @@ oc new-project ansible-service-broker
 TEMPLATE_URL=${TEMPLATE_URL:-"https://raw.githubusercontent.com/openshift/ansible-service-broker/master/templates/deploy-ansible-service-broker.template.yaml"}
 DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where APBs can be found, default 'ansibleplaybookbundle'
 ENABLE_BASIC_AUTH="false"
-VARS="-p BROKER_CA_CERT=$(oc get secret -n kube-service-catalog -o go-template='{{ range .items }}{{ if eq .type "kubernetes.io/service-account-token" }}{{ index .data "service-ca.crt" }}{{end}}{{"\n"}}{{end}}' | tail -n 1)"
+VARS="-p BROKER_CA_CERT=$(oc get secret -n kube-service-catalog | grep service-account-token | awk '{print $1}' | grep service-catalog-apiserver-token | tail -1 | xargs oc get secret -n kube-service-catalog -o jsonpath='{.data.service-ca\.crt}')"
 
 curl -s $TEMPLATE_URL \
   | oc process \
