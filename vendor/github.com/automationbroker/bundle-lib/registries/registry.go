@@ -217,6 +217,8 @@ func NewRegistry(configuration Config, asbNamespace string) (Registry, error) {
 		adapter = &adapters.LocalOpenShiftAdapter{Config: c}
 	case "helm":
 		adapter = &adapters.HelmAdapter{Config: c}
+	case "cfme":
+		adapter = &adapters.CFMEAdapter{Config: c}
 	default:
 		panic("Unknown registry")
 	}
