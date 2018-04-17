@@ -103,6 +103,11 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 		jobMsg.ExtractedCredentials = *extCreds
 	}
 
+	// pull out dashboard url from exec.
+	if exec.DashboardUrl() != "" {
+		jobMsg.DashboardURL = exec.DashboardUrl()
+	}
+
 	jobMsg.State.State = apb.StateSucceeded
 	jobMsg.State.Description = fmt.Sprintf("%s job completed", j.method)
 	msgBuffer <- jobMsg

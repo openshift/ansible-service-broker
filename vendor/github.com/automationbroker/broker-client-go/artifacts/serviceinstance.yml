@@ -18,6 +18,8 @@ spec:
           properties:
             specId:
               type: string
+            dashboardUrl:
+              type: string
             context:
               type: object
               properties:

@@ -225,8 +225,9 @@ type ServiceInstanceSpec struct {
 	BundleID string  `json:"bundleID"`
 	Context  Context `json:"context"`
 	// Store the parameters as json encoded strings.
-	Parameters string   `json:"parameters"`
-	BindingIDs []string `json:"bindingIDs"`
+	Parameters   string   `json:"parameters"`
+	DashboardURL string   `json:"dashboardUrl"`
+	BindingIDs   []string `json:"bindingIDs"`
 }
 
 // Context is the context for the ServiceInstance.

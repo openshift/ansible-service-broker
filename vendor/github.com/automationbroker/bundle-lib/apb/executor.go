@@ -37,6 +37,7 @@ import (
 type ExecutorAccessors interface {
 	PodName() string
 	LastStatus() StatusMessage
+	DashboardUrl() string
 	ExtractedCredentials() *ExtractedCredentials
 }
 
@@ -59,6 +60,7 @@ type Executor interface {
 
 type executor struct {
 	extractedCredentials *ExtractedCredentials
+	dashboardUrl         string
 	podName              string
 	lastStatus           StatusMessage
 	statusChan           chan StatusMessage
@@ -82,6 +84,11 @@ func (e *executor) PodName() string {
 // LastStatus - Returns the last known status of the APB
 func (e *executor) LastStatus() StatusMessage {
 	return e.lastStatus
+}
+
+// DashboardUrl - Returns the dashboard URL of the APB
+func (e *executor) DashboardUrl() string {
+	return e.dashboardUrl
 }
 
 // ExtractedCredentials - Credentials extracted from the APB while running,
@@ -132,11 +139,16 @@ func (e *executor) actionFinishedWithError(err error) {
 	}
 }
 
-func (e *executor) updateDescription(newDescription string) {
-	status := e.lastStatus
-	status.Description = newDescription
-	e.lastStatus = status
-	e.statusChan <- status
+func (e *executor) updateDescription(newDescription string, dashboardUrl string) {
+	if newDescription != "" {
+		status := e.lastStatus
+		status.Description = newDescription
+		e.lastStatus = status
+		e.statusChan <- status
+	}
+	if dashboardUrl != "" {
+		e.dashboardUrl = dashboardUrl
+	}
 }
 
 // executeApb - Runs an APB Action with a provided set of inputs

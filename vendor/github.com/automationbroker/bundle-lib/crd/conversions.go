@@ -121,8 +121,9 @@ func ConvertServiceInstanceToCRD(si *apb.ServiceInstance) (v1.ServiceInstanceSpe
 			Namespace: si.Context.Namespace,
 			Plateform: si.Context.Platform,
 		},
-		Parameters: string(b),
-		BindingIDs: bindingIDs,
+		Parameters:   string(b),
+		BindingIDs:   bindingIDs,
+		DashboardURL: si.DashboardURL,
 	}, nil
 }
 
@@ -154,8 +155,9 @@ func ConvertServiceInstanceToAPB(si v1.ServiceInstanceSpec, spec *apb.Spec, id s
 			Namespace: si.Context.Namespace,
 			Platform:  si.Context.Plateform,
 		},
-		Parameters: parameters,
-		BindingIDs: bindingIDs,
+		Parameters:   parameters,
+		BindingIDs:   bindingIDs,
+		DashboardURL: si.DashboardURL,
 	}, nil
 }
 
