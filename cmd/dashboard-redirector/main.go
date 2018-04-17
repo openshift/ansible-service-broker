@@ -17,13 +17,11 @@
 package main
 
 import (
-	//"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
-	//"os"
+	"strings"
 
-	//"github.com/automationbroker/bundle-lib/apb"
 	crd "github.com/openshift/ansible-service-broker/pkg/dao/crd"
 
 	"github.com/sirupsen/logrus"
@@ -36,7 +34,7 @@ var options struct {
 
 func init() {
 	flag.IntVar(&options.Port, "port", 1337, "port that the dashboard-redirector should listen on")
-	flag.StringVar(&options.BrokerNamespace, "ansible-service-broker", "", "namespace that the broker resides in")
+	flag.StringVar(&options.BrokerNamespace, "namespace", "ansible-service-broker", "namespace that the broker resides in")
 	flag.Parse()
 }
 
@@ -81,12 +79,12 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	} else {
-		logrus.Info("Got request for service instance %s, looking up dashboard_url", id)
+		logrus.Infof("Got request for service instance %s, looking up dashboard_url", id)
 	}
 
 	si, err := crdDao.GetServiceInstance(id)
 	if err != nil {
-		errMsg = "Something went wrong trying to load service instance [%s] -> %s"
+		errMsg = fmt.Sprintf("Something went wrong trying to load service instance [%s] -> %s", id, err)
 		logrus.Errorf(errMsg, id, err.Error())
 		http.Error(w, errMsg, http.StatusInternalServerError)
 		return
@@ -101,6 +99,13 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logrus.Info("DashboardURL found: %s, 301 redirecting", si.DashboardURL)
-	http.Redirect(w, r, si.DashboardURL, 301)
+	logrus.Infof("DashboardURL found: %s, 301 redirecting", si.DashboardURL)
+	var redirectURL string
+	if !strings.HasPrefix("http", si.DashboardURL) {
+		redirectURL = fmt.Sprintf("http://%s", si.DashboardURL)
+	} else {
+		redirectURL = si.DashboardURL
+	}
+
+	http.Redirect(w, r, redirectURL, 301)
 }
