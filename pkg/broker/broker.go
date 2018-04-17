@@ -655,10 +655,12 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			return nil, err
 		}
 	}
+	dashUrl := fmt.Sprintf("http://dr-1337-ansible-service-broker.172.17.0.1.nip.io/?id=%s", instanceUUID.String())
 	// TODO: What data needs to be sent back on a response?
 	// Not clear what dashboardURL means in an AnsibleApp context
 	// operation should be the task id from the work_engine
-	return &ProvisionResponse{Operation: token}, nil
+
+	return &ProvisionResponse{Operation: token, DashboardURL: dashUrl}, nil
 }
 
 // Deprovision - will deprovision a service.
