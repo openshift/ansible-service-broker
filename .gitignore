@@ -34,6 +34,8 @@ etc/mock.config.yaml
 /broker
 build/broker
 build/migration
+/dashboard-redirector
+build/dashboard-redirector
 
 # python artifacts
 .python-version

@@ -24,6 +24,7 @@ RUN mkdir /var/log/ansible-service-broker \
 COPY entrypoint.sh /usr/bin/
 COPY broker /usr/bin/asbd
 COPY migration /usr/bin/migration
+COPY dashboard-redirector /usr/bin/dashboard-redirector
 
 RUN chown -R ${USER_NAME}:0 /var/log/ansible-service-broker \
  && chown -R ${USER_NAME}:0 /etc/ansible-service-broker \
