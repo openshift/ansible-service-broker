@@ -192,7 +192,6 @@ objects:
       app: ansible-service-broker
       service: dr
   spec:
-    serviceAccount: asb
     replicas: 1
     selector:
       app: ansible-service-broker
@@ -204,6 +203,7 @@ objects:
           app: ansible-service-broker
           service: dr
       spec:
+        serviceAccount: asb
         containers:
         - image: ${BROKER_IMAGE}
           name: dr
