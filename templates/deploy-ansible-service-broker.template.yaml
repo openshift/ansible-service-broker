@@ -192,6 +192,7 @@ objects:
       app: ansible-service-broker
       service: dr
   spec:
+    serviceAccount: asb
     replicas: 1
     selector:
       app: ansible-service-broker
@@ -283,6 +284,7 @@ objects:
         ssl_cert: /etc/tls/private/tls.crt
         auto_escalate: ${AUTO_ESCALATE}
         cluster_url: ${NAMESPACE}
+        dashboard_redirector: http://dr-1337-${NAMESPACE}.${ROUTING_SUFFIX}
         auth:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
@@ -393,6 +395,8 @@ objects:
               description:
                 type: string
               metadata:
+                type: string
+              alpha:
                 type: string
               async:
                 type: string
@@ -576,6 +580,8 @@ objects:
           spec:
             properties:
               specId:
+                type: string
+              dashboardUrl:
                 type: string
               context:
                 type: object
