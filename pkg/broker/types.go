@@ -118,7 +118,7 @@ type ServiceInstance struct {
 	Update map[string]*schema.Schema `json:"update"`
 }
 
-// ServiceBinding - Schema definitions for creating a service binidng.
+// ServiceBinding - Schema definitions for creating a service binding.
 type ServiceBinding struct {
 	Create map[string]*schema.Schema `json:"create"`
 }
