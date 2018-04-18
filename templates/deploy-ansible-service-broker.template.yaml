@@ -139,14 +139,6 @@ objects:
         serviceAccount: asb
         containers:
         - image: ${BROKER_IMAGE}
-          name: dr
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 1337
-              protocol: TCP
-          command:
-            - dashboard-redirector
-        - image: ${BROKER_IMAGE}
           name: asb
           imagePullPolicy: IfNotPresent
           volumeMounts:
@@ -191,6 +183,35 @@ objects:
           - name: asb-auth-volume
             secret:
               secretName: asb-auth-secret
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: dr
+    labels:
+      app: ansible-service-broker
+      service: dr
+  spec:
+    replicas: 1
+    selector:
+      app: ansible-service-broker
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ansible-service-broker
+          service: dr
+      spec:
+        containers:
+        - image: ${BROKER_IMAGE}
+          name: dr
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1337
+              protocol: TCP
+          command:
+            - dashboard-redirector
 
 - apiVersion: v1
   kind: Secret
