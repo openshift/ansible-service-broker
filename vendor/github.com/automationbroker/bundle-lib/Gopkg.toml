@@ -21,7 +21,8 @@
 
 
 [[constraint]]
-  version = "0.1.0"
+  #version = "0.1.0"
+  branch = "add-dashboard-url"
   name = "github.com/automationbroker/broker-client-go"
 
 [[constraint]]

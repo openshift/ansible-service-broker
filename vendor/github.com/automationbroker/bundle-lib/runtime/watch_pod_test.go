@@ -159,14 +159,23 @@ func TestWatchPod(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			var watchErr error
+			var dashURL string
 			podClient, podWatch := tc.PodClient()
 			descriptions := []string{}
 			done := make(chan bool)
 
 			go func() {
-				watchErr = WatchPod("test", "test", podClient, func(d string) {
-					fmt.Printf("NSK: got d -> %v\n", d)
-					descriptions = append(descriptions, d)
+				watchErr = WatchPod("test", "test", podClient, func(newDescription string, newDashURL string) {
+					fmt.Printf("got newDescription -> %v\n", newDescription)
+					fmt.Printf("got newDashURL-> %v\n", newDashURL)
+
+					if newDescription != "" {
+						descriptions = append(descriptions, newDescription)
+					}
+
+					if newDashURL != "" {
+						dashURL = newDashURL
+					}
 				})
 				done <- true
 			}()

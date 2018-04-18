@@ -110,6 +110,7 @@ type Spec struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	Async       string                 `json:"async"`
 	Plans       []Plan                 `json:"plans"`
+	Alpha       map[string]interface{} `json:"alpha,omitempty"`
 }
 
 // GetPlan - retrieves a plan from a spec by name. Will return

@@ -32,6 +32,7 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  branch = "add-dashboard-url"
   name = "github.com/automationbroker/broker-client-go"
   packages = [
     "client/clientset/versioned",
@@ -40,8 +41,7 @@
     "pkg/apis/automationbroker.io",
     "pkg/apis/automationbroker.io/v1"
   ]
-  revision = "8060836020108debcea7bbbb26f018c7e073ea7a"
-  version = "0.1.0"
+  revision = "97a1f8b5fbc89ceb39affe14a6d5738b35d6544d"
 
 [[projects]]
   branch = "add-dashboard-url"
@@ -57,7 +57,7 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "733059a1368325c2ab51cf4509473301b36f9a2e"
+  revision = "501c1c2820d1dd2014dd06aa2e1ace5c72f878ad"
 
 [[projects]]
   branch = "master"

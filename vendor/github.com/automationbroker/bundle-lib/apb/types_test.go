@@ -20,6 +20,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -27,6 +29,17 @@ import (
 	ft "github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 )
+
+const alphaApbTestFile = "alpha_apb.yml"
+
+func loadTestFile(t *testing.T, name string) []byte {
+	path := filepath.Join("testdata", name)
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bytes
+}
 
 const PlanName = "dev"
 const PlanDescription = "Mediawiki123 apb implementation"
@@ -156,6 +169,13 @@ const SpecPlans = `
 ]
 `
 
+var SpecAlpha = map[string]interface{}{"dashboard_redirect": true}
+var SpecAlphaStr = `
+{
+	"dashboard_redirect": true
+}
+`
+
 var SpecJSON = fmt.Sprintf(`
 {
 	"id": "",
@@ -167,12 +187,12 @@ var SpecJSON = fmt.Sprintf(`
 	"image": "%s",
 	"bindable": %t,
 	"async": "%s",
-	"plans": %s
+	"plans": %s,
+	"alpha": %s
 }
-`, SpecDescription, SpecVersion, SpecRuntime, SpecName, SpecImage, SpecBindable, SpecAsync, SpecPlans)
+`, SpecDescription, SpecVersion, SpecRuntime, SpecName, SpecImage, SpecBindable, SpecAsync, SpecPlans, SpecAlphaStr)
 
 func TestSpecLoadJSON(t *testing.T) {
-
 	s := Spec{}
 	err := LoadJSON(SpecJSON, &s)
 	if err != nil {
@@ -187,6 +207,7 @@ func TestSpecLoadJSON(t *testing.T) {
 	ft.Equal(t, s.Bindable, SpecBindable)
 	ft.Equal(t, s.Async, SpecAsync)
 	ft.True(t, reflect.DeepEqual(s.Plans[0].Parameters, expectedPlanParameters))
+	ft.True(t, reflect.DeepEqual(s.Alpha, SpecAlpha))
 }
 
 func EncodedApb() string {
@@ -204,6 +225,7 @@ func TestSpecDumpJSON(t *testing.T) {
 		Bindable:    SpecBindable,
 		Async:       SpecAsync,
 		Plans:       []Plan{p},
+		Alpha:       SpecAlpha,
 	}
 
 	var knownMap interface{}
@@ -400,4 +422,29 @@ func TestBindInstanceNotEqual(t *testing.T) {
 			t.Errorf("bindings were equal for case: %s", key)
 		}
 	}
+}
+
+func TestAlphaParser(t *testing.T) {
+	spec := &Spec{}
+	testYaml := loadTestFile(t, alphaApbTestFile)
+	if err := yaml.Unmarshal(testYaml, spec); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(spec.Alpha) == 0 {
+		t.Error("spec.Alpha should not be empty")
+	}
+
+	var val interface{}
+	var dr, ok bool
+
+	if val, ok = spec.Alpha["dashboard_redirect"]; !ok {
+		t.Error("spec.Alpha should contain dashboard_redirect key")
+	}
+
+	if dr, ok = val.(bool); !ok {
+		t.Error(`spec.Alpha["dashboard_redirect"] should assert to bool`)
+	}
+
+	ft.True(t, dr)
 }
