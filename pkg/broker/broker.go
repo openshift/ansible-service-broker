@@ -91,16 +91,17 @@ type Broker interface {
 
 // Config - Configuration for the broker.
 type Config struct {
-	DevBroker          bool   `yaml:"dev_broker"`
-	LaunchApbOnBind    bool   `yaml:"launch_apb_on_bind"`
-	BootstrapOnStartup bool   `yaml:"bootstrap_on_startup"`
-	Recovery           bool   `yaml:"recovery"`
-	OutputRequest      bool   `yaml:"output_request"`
-	SSLCertKey         string `yaml:"ssl_cert_key"`
-	SSLCert            string `yaml:"ssl_cert"`
-	RefreshInterval    string `yaml:"refresh_interval"`
-	AutoEscalate       bool   `yaml:"auto_escalate"`
-	ClusterURL         string `yaml:"cluster_url"`
+	DevBroker           bool   `yaml:"dev_broker"`
+	LaunchApbOnBind     bool   `yaml:"launch_apb_on_bind"`
+	BootstrapOnStartup  bool   `yaml:"bootstrap_on_startup"`
+	Recovery            bool   `yaml:"recovery"`
+	OutputRequest       bool   `yaml:"output_request"`
+	SSLCertKey          string `yaml:"ssl_cert_key"`
+	SSLCert             string `yaml:"ssl_cert"`
+	RefreshInterval     string `yaml:"refresh_interval"`
+	AutoEscalate        bool   `yaml:"auto_escalate"`
+	ClusterURL          string `yaml:"cluster_url"`
+	DashboardRedirector string `yaml:"dashboard_redirector"`
 }
 
 // DevBroker - Interface for the development broker.
@@ -131,16 +132,17 @@ func NewAnsibleBroker(dao dao.Dao,
 		registry: registry,
 		engine:   &engine,
 		brokerConfig: Config{
-			DevBroker:          brokerConfig.GetBool("dev_broker"),
-			LaunchApbOnBind:    brokerConfig.GetBool("launch_apb_on_bind"),
-			BootstrapOnStartup: brokerConfig.GetBool("bootstrap_on_startup"),
-			Recovery:           brokerConfig.GetBool("recovery"),
-			OutputRequest:      brokerConfig.GetBool("output_request"),
-			SSLCertKey:         brokerConfig.GetString("ssl_cert_key"),
-			SSLCert:            brokerConfig.GetString("ssl_cert"),
-			RefreshInterval:    brokerConfig.GetString("refresh_interval"),
-			AutoEscalate:       brokerConfig.GetBool("auto_escalate"),
-			ClusterURL:         brokerConfig.GetString("cluster_url"),
+			DevBroker:           brokerConfig.GetBool("dev_broker"),
+			LaunchApbOnBind:     brokerConfig.GetBool("launch_apb_on_bind"),
+			BootstrapOnStartup:  brokerConfig.GetBool("bootstrap_on_startup"),
+			Recovery:            brokerConfig.GetBool("recovery"),
+			OutputRequest:       brokerConfig.GetBool("output_request"),
+			SSLCertKey:          brokerConfig.GetString("ssl_cert_key"),
+			SSLCert:             brokerConfig.GetString("ssl_cert"),
+			RefreshInterval:     brokerConfig.GetString("refresh_interval"),
+			AutoEscalate:        brokerConfig.GetBool("auto_escalate"),
+			ClusterURL:          brokerConfig.GetString("cluster_url"),
+			DashboardRedirector: brokerConfig.GetString("dashboard_redirector"),
 		},
 		namespace: namespace,
 	}
@@ -655,12 +657,44 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			return nil, err
 		}
 	}
-	dashUrl := fmt.Sprintf("http://dr-1337-ansible-service-broker.172.17.0.1.nip.io/?id=%s", instanceUUID.String())
-	// TODO: What data needs to be sent back on a response?
-	// Not clear what dashboardURL means in an AnsibleApp context
-	// operation should be the task id from the work_engine
 
-	return &ProvisionResponse{Operation: token, DashboardURL: dashUrl}, nil
+	var response *ProvisionResponse
+
+	dashboardRedirectEnabled := func() bool {
+		var val interface{}
+		var dr bool
+
+		if len(spec.Alpha) == 0 {
+			return false
+		}
+		if val, ok = spec.Alpha["dashboard_redirect"]; !ok {
+			return false
+		}
+		if dr, ok = val.(bool); !ok {
+			return false
+		}
+		if a.brokerConfig.DashboardRedirector == "" {
+			warnMsg := fmt.Sprintf("Attempting to provision %v", spec.FQName) +
+				", which has dashboard redirect enabled, but no dashboard_redirector route was found in the " +
+				"broker's configmap. Deploying without a dashboard_url."
+			log.Warning(warnMsg)
+			return false
+		}
+		return dr
+	}
+
+	if dashboardRedirectEnabled() {
+		drURL := a.brokerConfig.DashboardRedirector
+		if !strings.HasPrefix(drURL, "http") {
+			drURL = fmt.Sprintf("http://%s", drURL)
+		}
+		redirectURL := fmt.Sprintf("%s/?id=%s", drURL, instanceUUID.String())
+		response = &ProvisionResponse{Operation: token, DashboardURL: redirectURL}
+	} else {
+		response = &ProvisionResponse{Operation: token}
+	}
+
+	return response, nil
 }
 
 // Deprovision - will deprovision a service.
