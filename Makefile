@@ -2,6 +2,7 @@ REGISTRY         ?= docker.io
 ORG              ?= ansibleplaybookbundle
 TAG              ?= latest
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker
+PUSH_IMAGE       ?= 0
 VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
@@ -70,13 +71,17 @@ run: broker
 prep-local: ## Prepares the local dev environment
 	@./scripts/prep_local_devel_env.sh
 
-build-image: ## Build a docker image with the broker binary
+build-image: ## Build a docker image with the broker binary, PUSH_IMAGE=1 will push it to docker
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/broker ./cmd/broker
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/migration ./cmd/migration
 	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
+ifneq ($(PUSH_IMAGE),0)
+	docker push ${BROKER_IMAGE}:${TAG}
+else
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
 	@echo "    docker push ${BROKER_IMAGE}:${TAG}"
+endif
 
 release-image:
 	docker build -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
