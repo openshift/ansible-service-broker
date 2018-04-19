@@ -20,7 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	"strings"
+	"net/url"
 
 	crd "github.com/openshift/ansible-service-broker/pkg/dao/crd"
 
@@ -84,7 +84,11 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errMsg = fmt.Sprintf("Something went wrong trying to load service instance [%s] -> %s", id, err)
 		logrus.Errorf(errMsg, id, err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+		if crdDao.IsNotFoundError(err) {
+			http.Error(w, errMsg, http.StatusNotFound)
+		} else {
+			http.Error(w, errMsg, http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -97,13 +101,19 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logrus.Infof("DashboardURL found: %s, 301 redirecting", si.DashboardURL)
-	var redirectURL string
-	if !strings.HasPrefix("http", si.DashboardURL) {
-		redirectURL = fmt.Sprintf("http://%s", si.DashboardURL)
-	} else {
-		redirectURL = si.DashboardURL
+	redirectURL, err := url.Parse(si.DashboardURL)
+	if err != nil {
+		errMsg = fmt.Sprintf("Could not parse DashboardURL on instance %v, error: %s", id, err)
+		logrus.Error(errMsg)
+		http.Error(w, errMsg, http.StatusInternalServerError)
+		return
 	}
 
-	http.Redirect(w, r, redirectURL, 301)
+	logrus.Infof("DashboardURL found: %s, 301 redirecting", si.DashboardURL)
+
+	if redirectURL.Scheme == "" {
+		redirectURL.Scheme = "http"
+	}
+
+	http.Redirect(w, r, redirectURL.String(), 301)
 }
