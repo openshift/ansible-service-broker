@@ -76,9 +76,9 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 		logrus.Error(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
-	} else {
-		logrus.Infof("Got request for service instance %s, looking up dashboard_url", id)
 	}
+
+	logrus.Infof("Got request for service instance %s, looking up dashboard_url", id)
 
 	si, err := crdDao.GetServiceInstance(id)
 	if err != nil {
@@ -91,7 +91,7 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 	logrus.Info("Successfully loaded SI: %+v", si)
 
 	if si.DashboardURL == "" {
-		errMsg = fmt.Sprintf("No DashboardURL set for requested instance! %d", id)
+		errMsg = fmt.Sprintf("No DashboardURL set for requested instance! %v", id)
 		logrus.Infof("%s, returning 404", errMsg)
 		http.Error(w, errMsg, http.StatusNotFound)
 		return

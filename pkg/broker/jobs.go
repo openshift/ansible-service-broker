@@ -104,8 +104,8 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 	}
 
 	// pull out dashboard url from exec.
-	if exec.DashboardUrl() != "" {
-		jobMsg.DashboardURL = exec.DashboardUrl()
+	if exec.DashboardURL() != "" {
+		jobMsg.DashboardURL = exec.DashboardURL()
 	}
 
 	jobMsg.State.State = apb.StateSucceeded

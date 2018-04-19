@@ -42,7 +42,7 @@ func TestApbJobRun(t *testing.T) {
 						Description: "action finished with success",
 					})
 					e.On("ExtractedCredentials").Return(nil)
-					e.On("DashboardUrl").Return("http://foo.example.com")
+					e.On("DashboardURL").Return("http://foo.example.com")
 					return e
 				}(),
 				run: func(exec apb.Executor) <-chan apb.StatusMessage {
@@ -221,7 +221,7 @@ func TestApbJobRun(t *testing.T) {
 						Description: "action finished with success",
 					})
 					e.On("ExtractedCredentials").Return(extCreds)
-					e.On("DashboardUrl").Return("http://foo.example.com")
+					e.On("DashboardURL").Return("http://foo.example.com")
 					return e
 				}(),
 				run: func(exec apb.Executor) <-chan apb.StatusMessage {
