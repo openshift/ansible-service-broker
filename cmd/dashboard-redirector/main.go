@@ -82,13 +82,15 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 
 	si, err := crdDao.GetServiceInstance(id)
 	if err != nil {
-		errMsg = fmt.Sprintf("Something went wrong trying to load service instance [%s] -> %s", id, err)
-		logrus.Errorf(errMsg, id, err.Error())
+		var errMsg string
 		if crdDao.IsNotFoundError(err) {
+			errMsg = fmt.Sprintf("Requested service instance with id %s not found.", id)
 			http.Error(w, errMsg, http.StatusNotFound)
 		} else {
+			errMsg = fmt.Sprintf("Something went wrong trying to load service instance [%s] -> %s", id, err)
 			http.Error(w, errMsg, http.StatusInternalServerError)
 		}
+		logrus.Errorf(errMsg, id, err.Error())
 		return
 	}
 
