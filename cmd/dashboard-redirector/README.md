@@ -4,7 +4,7 @@
 
 Currently, the OSB spec does not allow for the brokers to return a `dashboard_url`
 at the conclusion of an async provision. This is problematic because brokers
-(and bundles, in our case) may not actually know their `dashboard_url` if its
+(and bundles, in our case) may not actually know their `dashboard_url` if it's
 a path that's dynamically determined while the instance is being provisioned.
 
 The issue has been documented in the spec [here](https://github.com/openservicebrokerapi/servicebroker/issues/498).
@@ -12,7 +12,7 @@ The issue has been documented in the spec [here](https://github.com/openserviceb
 As a workaround, our broker runs this "dashboard-redirector" as a simple
 service that accepts a service instance ID, and looks up the service instance
 in our DAO. If the `DashboardURL` is present on the service instance, the
-dashboard-redirector will return a 302 redirect to that location. Otherwise,
+dashboard-redirector will return a 301 redirect to that location. Otherwise,
 the redirector will return a 404.
 
 ## URL Format
