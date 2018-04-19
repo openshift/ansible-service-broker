@@ -94,8 +94,8 @@ func WatchPod(podName string, namespace string, podClient v1.PodInterface, updat
 		case apiv1.PodSucceeded:
 			w.Stop()
 			// Check for dashboard_url
-			dashUrl := pod.Annotations["apb_dashboard_url"]
-			updateFunc("", dashUrl)
+			dashURL := pod.Annotations["apb_dashboard_url"]
+			updateFunc("", dashURL)
 			log.Debugf("Pod [ %s ] completed", podName)
 			return nil
 		default:

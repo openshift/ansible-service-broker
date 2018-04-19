@@ -71,8 +71,8 @@ func (_m *MockExecutor) LastStatus() StatusMessage {
 	return r0
 }
 
-// DashboardUrl provides a mock function with given fields:
-func (_m *MockExecutor) DashboardUrl() string {
+// DashboardURL provides a mock function with given fields:
+func (_m *MockExecutor) DashboardURL() string {
 	ret := _m.Called()
 
 	var r0 string

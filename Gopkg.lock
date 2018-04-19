@@ -32,7 +32,6 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
-  branch = "add-dashboard-url"
   name = "github.com/automationbroker/broker-client-go"
   packages = [
     "client/clientset/versioned",
@@ -41,10 +40,10 @@
     "pkg/apis/automationbroker.io",
     "pkg/apis/automationbroker.io/v1"
   ]
-  revision = "97a1f8b5fbc89ceb39affe14a6d5738b35d6544d"
+  revision = "99aa044d32de771f45a17e3632ccffdc87086063"
+  version = "0.1.1"
 
 [[projects]]
-  branch = "add-dashboard-url"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "apb",
@@ -57,7 +56,8 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "501c1c2820d1dd2014dd06aa2e1ace5c72f878ad"
+  revision = "02293f7f6c59d1e9d77f43389a2ef0636202317f"
+  version = "0.1.3"
 
 [[projects]]
   branch = "master"
@@ -924,6 +924,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8cd2d3c6f371678464a9ed56c0c59b8540e99a3dd9163c9dcefad9f6e92db839"
+  inputs-digest = "861ac495148d900fcb1cab65e126a2265f6b68cf5b8311dbb6f2b4094d2d0214"
   solver-name = "gps-cdcl"
   solver-version = 1
