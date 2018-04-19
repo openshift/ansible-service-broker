@@ -6,10 +6,10 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: dr
+    name: dashboard-redirector
     labels:
       app: ansible-service-broker
-      service: dr
+      service: dashboard-redirector
   spec:
     ports:
       - name: port-1337
@@ -18,7 +18,7 @@ objects:
         protocol: TCP
     selector:
       app: ansible-service-broker
-      service: dr
+      service: dashboard-redirector
 
 - apiVersion: v1
   kind: Service
@@ -187,10 +187,10 @@ objects:
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: dr
+    name: dashboard-redirector
     labels:
       app: ansible-service-broker
-      service: dr
+      service: dashboard-redirector
   spec:
     replicas: 1
     selector:
@@ -201,12 +201,12 @@ objects:
       metadata:
         labels:
           app: ansible-service-broker
-          service: dr
+          service: dashboard-redirector
       spec:
         serviceAccount: asb
         containers:
         - image: ${BROKER_IMAGE}
-          name: dr
+          name: dashboard-redirector
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 1337
@@ -284,7 +284,7 @@ objects:
         ssl_cert: /etc/tls/private/tls.crt
         auto_escalate: ${AUTO_ESCALATE}
         cluster_url: ${NAMESPACE}
-        dashboard_redirector: http://dr-1337-${NAMESPACE}.${ROUTING_SUFFIX}
+        dashboard_redirector: http://dashboard-redirector-1337-${NAMESPACE}.${ROUTING_SUFFIX}
         auth:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
@@ -319,14 +319,14 @@ objects:
 - apiVersion: v1
   kind: Route
   metadata:
-    name: dr-1337
+    name: dashboard-redirector-1337
     labels:
       app: ansible-service-broker
-      service: dr
+      service: dashboard-redirector
   spec:
     to:
       kind: Service
-      name: dr
+      name: dashboard-redirector
     port:
       targetPort: port-1337
 
