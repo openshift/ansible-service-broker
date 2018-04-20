@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.5
+Version: 1.2.6
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -309,6 +309,17 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Apr 19 2018 David Zager <david.j.zager@gmail.com> 1.2.6-1
+- Point to v3.9.0 release of origin (#894) (dzager@redhat.com)
+- link broken - typo fixed (#892)
+  (SaravanaStorageNetwork@users.noreply.github.com)
+- Workaround minikube regression for travis (#890) (dzager@redhat.com)
+- add copyright to migration (#888) (jmrodri@gmail.com)
+- Issue 882 - Simple broker template use release-1.1 (#885) (dzager@redhat.com)
+- expose _apb_service_binding_id to bind role (#883) (pbraun@redhat.com)
+- Fix bug 1564542 (#881) (maleck13@users.noreply.github.com)
+- Add a table to track release dates (#879) (rhallise@redhat.com)
+
 * Fri Apr 06 2018 David Zager <david.j.zager@gmail.com> 1.2.5-1
 - Changes to subscriber pattern (#828) (maleck13@users.noreply.github.com)
 - Add relist docs (#873) (ernelson@redhat.com)
