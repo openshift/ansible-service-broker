@@ -113,6 +113,6 @@ fi
 # Click deploy on mediawiki, after it's redeployed access webui
 #
 
-echo 'NOTE: You are currently logged in as "system:admin", if you intend to use the apb tool, is is required you log in as a user with a token. "developer" is recommended.'
+echo 'NOTE: You are currently logged in as "system:admin", if you intend to use the apb tool, it is required you log in as a user with a token. "developer" is recommended.'
 echo '    oc adm policy add-cluster-role-to-user cluster-admin developer'
 echo '    oc login -u developer'
