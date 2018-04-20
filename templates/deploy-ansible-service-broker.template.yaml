@@ -6,23 +6,6 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: dashboard-redirector
-    labels:
-      app: ansible-service-broker
-      service: dashboard-redirector
-  spec:
-    ports:
-      - name: port-1337
-        port: 1337
-        targetPort: 1337
-        protocol: TCP
-    selector:
-      app: ansible-service-broker
-      service: dashboard-redirector
-
-- apiVersion: v1
-  kind: Service
-  metadata:
     name: asb
     labels:
       app: ansible-service-broker
@@ -34,6 +17,10 @@ objects:
       - name: port-1338
         port: 1338
         targetPort: 1338
+        protocol: TCP
+      - name: port-1337
+        port: 1337
+        targetPort: 1337
         protocol: TCP
     selector:
       app: ansible-service-broker
@@ -139,6 +126,14 @@ objects:
         serviceAccount: asb
         containers:
         - image: ${BROKER_IMAGE}
+          name: dashboard-redirector
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1337
+              protocol: TCP
+          command:
+            - dashboard-redirector
+        - image: ${BROKER_IMAGE}
           name: asb
           imagePullPolicy: IfNotPresent
           volumeMounts:
@@ -183,36 +178,6 @@ objects:
           - name: asb-auth-volume
             secret:
               secretName: asb-auth-secret
-
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    name: dashboard-redirector
-    labels:
-      app: ansible-service-broker
-      service: dashboard-redirector
-  spec:
-    replicas: 1
-    selector:
-      app: ansible-service-broker
-    strategy:
-      type: Rolling
-    template:
-      metadata:
-        labels:
-          app: ansible-service-broker
-          service: dashboard-redirector
-      spec:
-        serviceAccount: asb
-        containers:
-        - image: ${BROKER_IMAGE}
-          name: dashboard-redirector
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 1337
-              protocol: TCP
-          command:
-            - dashboard-redirector
 
 - apiVersion: v1
   kind: Secret
@@ -322,11 +287,11 @@ objects:
     name: dashboard-redirector-1337
     labels:
       app: ansible-service-broker
-      service: dashboard-redirector
+      service: asb
   spec:
     to:
       kind: Service
-      name: dashboard-redirector
+      name: asb
     port:
       targetPort: port-1337
 
