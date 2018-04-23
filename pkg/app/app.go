@@ -42,7 +42,7 @@ import (
 	"github.com/automationbroker/bundle-lib/registries"
 	agnosticruntime "github.com/automationbroker/bundle-lib/runtime"
 	"github.com/automationbroker/config"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
