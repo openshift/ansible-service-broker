@@ -21,13 +21,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/automationbroker/bundle-lib/bundle"
+	"github.com/openshift/ansible-service-broker/pkg/dao"
+
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 
 var engine *WorkEngine
+var mockDao = &dao.MockDao{}
+var testToken = engine.Token()
 
 func init() {
-	engine = NewWorkEngine(10, 1)
+	engine = NewWorkEngine(10, 1, mockDao)
 }
 
 type mockSubscriber struct {
@@ -91,13 +96,22 @@ func (mw *mockWork) Run(token string, msgBuffer chan<- JobMsg) {
 	mw.funcToCall(msgBuffer)
 }
 
+func (mw *mockWork) ID() string {
+	return "id"
+}
+
+func (mw *mockWork) Method() bundle.JobMethod {
+	return bundle.JobMethodBind
+}
+
 func TestStartNewJob(t *testing.T) {
 
 	cases := []struct {
-		Name        string
-		Work        func() Work
-		Subscribers func(wg *sync.WaitGroup) []WorkSubscriber
-		TestTimeout time.Duration
+		Name          string
+		Work          func() Work
+		Subscribers   func(wg *sync.WaitGroup) []WorkSubscriber
+		ConfigureMock func()
+		TestTimeout   time.Duration
 	}{
 		{
 			Name: "test start new job sends a message and calls all subscribers",
@@ -109,6 +123,9 @@ func TestStartNewJob(t *testing.T) {
 						}
 					},
 				}
+			},
+			ConfigureMock: func() {
+				mockDao.On("SetState", "id", bundle.JobState{Token: testToken, State: "not yet started", Podname: "", Method: "bind", Error: "", Description: ""}).Return(testToken, nil)
 			},
 			Subscribers: func(wg *sync.WaitGroup) []WorkSubscriber {
 				wg.Add(2)
@@ -134,6 +151,9 @@ func TestStartNewJob(t *testing.T) {
 						}
 					},
 				}
+			},
+			ConfigureMock: func() {
+				mockDao.On("SetState", "id", bundle.JobState{Token: testToken, State: "not yet started", Podname: "", Method: "bind", Error: "", Description: ""}).Return(testToken, nil)
 			},
 			Subscribers: func(wg *sync.WaitGroup) []WorkSubscriber {
 				wg.Add(2)
@@ -164,19 +184,20 @@ func TestStartNewJob(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
+			tc.ConfigureMock()
 			wg := &sync.WaitGroup{}
-			engine := NewWorkEngine(10, 1)
+			engine := NewWorkEngine(10, 1, mockDao)
 			for _, s := range tc.Subscribers(wg) {
 				engine.AttachSubscriber(s, ProvisionTopic)
 			}
-			token := engine.Token()
-			engine.StartNewAsyncJob(token, tc.Work(), ProvisionTopic)
+
+			engine.StartNewAsyncJob(testToken, tc.Work(), ProvisionTopic)
 			select {
 			case <-time.Tick(tc.TestTimeout * time.Second):
 				t.Fatal("test timed out !!")
 			case <-done(wg):
 				// check out channel is gone
-				if _, ok := engine.jobChannels[token]; ok {
+				if _, ok := engine.jobChannels[testToken]; ok {
 					t.Fatal("there should be no job channel present")
 				}
 			}

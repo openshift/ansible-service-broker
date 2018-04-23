@@ -48,6 +48,17 @@ type apbJob struct {
 	skipExecution bool
 }
 
+func (j *apbJob) ID() string {
+	if (j.method == bundle.JobMethodUnbind || j.method == bundle.JobMethodBind) && j.bindingID != nil {
+		return *j.bindingID
+	}
+	return j.serviceInstanceID
+}
+
+func (j *apbJob) Method() bundle.JobMethod {
+	return j.method
+}
+
 func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 	var (
 		err     error
@@ -138,120 +149,134 @@ func (j *apbJob) createJobMsg(
 	return jobMsg
 }
 
-// ProvisionJob - Job to provision.
-type ProvisionJob struct {
+type workFactory struct {
+}
+
+// NewWorkFactory will return a work factory capable of creating different kinds of work
+func NewWorkFactory() WorkFactory {
+	return &workFactory{}
+}
+
+// NewProvisionJob will setup a Work implementation that will perform the provision work
+func (wf *workFactory) NewProvisionJob(si *bundle.ServiceInstance) Work {
+	return &provisionJob{
+		apbJob: apbJob{
+			executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
+			serviceInstanceID:      si.ID.String(),
+			specID:                 si.Spec.ID,
+			method:                 bundle.JobMethodProvision,
+			metricsJobStartHook:    metrics.ProvisionJobStarted,
+			metricsJobFinishedHook: metrics.ProvisionJobFinished,
+			skipExecution:          false,
+			run: func(exec bundle.Executor) <-chan bundle.StatusMessage {
+				return exec.Provision(si)
+			},
+		},
+		serviceInstance: si,
+	}
+}
+
+// NewDeprovisionJob will setup a Work implementation that will perform the deprovision work
+func (wf *workFactory) NewDeprovisionJob(si *bundle.ServiceInstance, skipExecution bool) Work {
+	return &deprovisionJob{
+		apbJob: apbJob{
+			executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
+			serviceInstanceID:      si.ID.String(),
+			specID:                 si.Spec.ID,
+			method:                 bundle.JobMethodDeprovision,
+			metricsJobStartHook:    metrics.DeprovisionJobStarted,
+			metricsJobFinishedHook: metrics.DeprovisionJobFinished,
+			skipExecution:          skipExecution,
+			run: func(e bundle.Executor) <-chan bundle.StatusMessage {
+				return e.Deprovision(si)
+			},
+		},
+		serviceInstance: si,
+	}
+}
+
+// NewUnbindJob will setup a Work implementation that will perform the unbind work
+func (wf *workFactory) NewUnbindJob(bindingID string, params *bundle.Parameters, si *bundle.ServiceInstance, skipExecution bool) Work {
+	return &unbindJob{
+		apbJob: apbJob{
+			executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
+			serviceInstanceID:      si.ID.String(),
+			specID:                 si.Spec.ID,
+			method:                 bundle.JobMethodUnbind,
+			metricsJobStartHook:    metrics.UnbindJobStarted,
+			metricsJobFinishedHook: metrics.UnbindJobFinished,
+			skipExecution:          skipExecution,
+			run: func(e bundle.Executor) <-chan bundle.StatusMessage {
+				return e.Unbind(si, params, bindingID)
+			},
+		},
+	}
+}
+
+// NewBindJob will setup a Work implementation that will perform the bind work
+func (wf *workFactory) NewBindJob(bindingID string, bindingParams *bundle.Parameters, si *bundle.ServiceInstance) Work {
+	return &bindJob{
+		apbJob: apbJob{
+			executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
+			serviceInstanceID:      si.ID.String(),
+			specID:                 si.Spec.ID,
+			bindingID:              &bindingID,
+			method:                 bundle.JobMethodBind,
+			metricsJobStartHook:    metrics.BindJobStarted,
+			metricsJobFinishedHook: metrics.BindJobFinished,
+			skipExecution:          false,
+			run: func(e bundle.Executor) <-chan bundle.StatusMessage {
+				return e.Bind(si, bindingParams, bindingID)
+			},
+		},
+	}
+}
+
+// NewUpdateJob will setup a Work implementation that will perform the update work
+func (wf *workFactory) NewUpdateJob(si *bundle.ServiceInstance) Work {
+	return &updateJob{
+		apbJob: apbJob{
+			executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
+			serviceInstanceID:      si.ID.String(),
+			specID:                 si.Spec.ID,
+			method:                 bundle.JobMethodUpdate,
+			metricsJobStartHook:    metrics.UpdateJobStarted,
+			metricsJobFinishedHook: metrics.UpdateJobFinished,
+			skipExecution:          false,
+			run: func(exec bundle.Executor) <-chan bundle.StatusMessage {
+				return exec.Update(si)
+			},
+		},
+	}
+}
+
+type provisionJob struct {
+	apbJob
 	serviceInstance *bundle.ServiceInstance
 }
 
-// Run - Run the provision job.
-func (j *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
-	job := apbJob{
-		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
-		serviceInstanceID:      j.serviceInstance.ID.String(),
-		specID:                 j.serviceInstance.Spec.ID,
-		method:                 bundle.JobMethodProvision,
-		metricsJobStartHook:    metrics.ProvisionJobStarted,
-		metricsJobFinishedHook: metrics.ProvisionJobFinished,
-		skipExecution:          false,
-		run: func(exec bundle.Executor) <-chan bundle.StatusMessage {
-			return exec.Provision(j.serviceInstance)
-		},
-	}
-	job.Run(token, msgBuffer)
-}
-
-// DeprovisionJob - Job to deprovision.
-type DeprovisionJob struct {
+type deprovisionJob struct {
+	apbJob
 	serviceInstance *bundle.ServiceInstance
 	skipExecution   bool
 }
 
-// Run - Run the deprovision job.
-func (j *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
-	job := apbJob{
-		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
-		serviceInstanceID:      j.serviceInstance.ID.String(),
-		specID:                 j.serviceInstance.Spec.ID,
-		method:                 bundle.JobMethodDeprovision,
-		metricsJobStartHook:    metrics.DeprovisionJobStarted,
-		metricsJobFinishedHook: metrics.DeprovisionJobFinished,
-		skipExecution:          j.skipExecution,
-		run: func(e bundle.Executor) <-chan bundle.StatusMessage {
-			return e.Deprovision(j.serviceInstance)
-		},
-	}
-	job.Run(token, msgBuffer)
-}
-
-// BindJob - Job to bind.
-type BindJob struct {
+type bindJob struct {
+	apbJob
 	serviceInstance *bundle.ServiceInstance
 	bindingID       string
 	params          *bundle.Parameters
 }
 
-// Run - Run the bind job.
-func (j *BindJob) Run(token string, msgBuffer chan<- JobMsg) {
-	job := apbJob{
-		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
-		serviceInstanceID:      j.serviceInstance.ID.String(),
-		specID:                 j.serviceInstance.Spec.ID,
-		bindingID:              &j.bindingID,
-		method:                 bundle.JobMethodBind,
-		metricsJobStartHook:    metrics.BindJobStarted,
-		metricsJobFinishedHook: metrics.BindJobFinished,
-		skipExecution:          false,
-		run: func(e bundle.Executor) <-chan bundle.StatusMessage {
-			return e.Bind(j.serviceInstance, j.params, j.bindingID)
-		},
-	}
-	job.Run(token, msgBuffer)
-}
-
-// UnbindJob - Job to unbind.
-type UnbindJob struct {
+type unbindJob struct {
+	apbJob
 	serviceInstance *bundle.ServiceInstance
 	bindingID       string
 	params          *bundle.Parameters
 	skipExecution   bool
 }
 
-// Run - Run the unbind job.
-func (j *UnbindJob) Run(token string, msgBuffer chan<- JobMsg) {
-	job := apbJob{
-		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
-		serviceInstanceID:      j.serviceInstance.ID.String(),
-		specID:                 j.serviceInstance.Spec.ID,
-		bindingID:              &j.bindingID,
-		method:                 bundle.JobMethodUnbind,
-		metricsJobStartHook:    metrics.UnbindJobStarted,
-		metricsJobFinishedHook: metrics.UnbindJobFinished,
-		skipExecution:          j.skipExecution,
-		run: func(e bundle.Executor) <-chan bundle.StatusMessage {
-			return e.Unbind(j.serviceInstance, j.params, j.bindingID)
-		},
-	}
-	job.Run(token, msgBuffer)
-}
-
-// UpdateJob - Job to update.
-type UpdateJob struct {
+type updateJob struct {
+	apbJob
 	serviceInstance *bundle.ServiceInstance
-}
-
-// Run - Run the update job.
-func (j *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
-	job := apbJob{
-		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
-		serviceInstanceID:      j.serviceInstance.ID.String(),
-		specID:                 j.serviceInstance.Spec.ID,
-		method:                 bundle.JobMethodUpdate,
-		metricsJobStartHook:    metrics.UpdateJobStarted,
-		metricsJobFinishedHook: metrics.UpdateJobFinished,
-		skipExecution:          false,
-		run: func(e bundle.Executor) <-chan bundle.StatusMessage {
-			return e.Update(j.serviceInstance)
-		},
-	}
-	job.Run(token, msgBuffer)
 }

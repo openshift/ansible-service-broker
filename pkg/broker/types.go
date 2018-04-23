@@ -318,3 +318,12 @@ type WorkSubscriber interface {
 	ID() string
 	Notify(msg JobMsg)
 }
+
+// WorkFactory is a factory for creating Work items
+type WorkFactory interface {
+	NewProvisionJob(si *bundle.ServiceInstance) Work
+	NewDeprovisionJob(si *bundle.ServiceInstance, skipExecution bool) Work
+	NewUnbindJob(bindingID string, params *bundle.Parameters, si *bundle.ServiceInstance, skipExecution bool) Work
+	NewBindJob(bindingID string, bindingParams *bundle.Parameters, si *bundle.ServiceInstance) Work
+	NewUpdateJob(si *bundle.ServiceInstance) Work
+}

@@ -313,3 +313,52 @@ func TestApbJobRun(t *testing.T) {
 		})
 	}
 }
+
+func TestWork(t *testing.T) {
+	cases := []struct {
+		Name     string
+		Work     func() []Work
+		Validate func(t *testing.T, w []Work)
+	}{
+		{
+			Name: "test work returns binding id when unbind or bind work",
+			Work: func() []Work {
+				id := "bindingID"
+				jobs := []Work{&unbindJob{apbJob: apbJob{method: apb.JobMethodUnbind, bindingID: &id}}, &bindJob{apbJob: apbJob{method: apb.JobMethodBind, bindingID: &id}}}
+				return jobs
+			},
+			Validate: func(t *testing.T, w []Work) {
+				for _, work := range w {
+					if work.ID() != "bindingID" {
+						t.Fatalf("expected id to tbe bindingID but got %s ", work.ID())
+					}
+				}
+			},
+		},
+		{
+			Name: "test work returns service instance id when provision update or deprovision work",
+			Work: func() []Work {
+				id := "serviceInstanceID"
+				j := []Work{&provisionJob{apbJob: apbJob{method: apb.JobMethodProvision, serviceInstanceID: id}},
+					&updateJob{apbJob: apbJob{method: apb.JobMethodUpdate, serviceInstanceID: id}}, &deprovisionJob{apbJob: apbJob{method: apb.JobMethodDeprovision, serviceInstanceID: id}}}
+				return j
+			},
+			Validate: func(t *testing.T, work []Work) {
+				for _, w := range work {
+					if w.Method() == apb.JobMethodUnbind || w.Method() == apb.JobMethodBind {
+						t.Fatalf("did not expect an unbind or bind method ")
+					}
+					if w.ID() != "serviceInstanceID" {
+						t.Fatalf("expected id to be serviceInstanceID but got %s ", w.ID())
+					}
+				}
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			tc.Validate(t, tc.Work())
+		})
+	}
+}

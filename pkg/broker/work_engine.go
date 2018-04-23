@@ -19,15 +19,18 @@ package broker
 import (
 	"context"
 	"errors"
-	"sync"
-	"time"
-
+	"github.com/automationbroker/bundle-lib/bundle"
+	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
+	"sync"
+	"time"
 )
 
 // Work - is the interface that wraps the basic run method.
 type Work interface {
+	ID() string
+	Method() bundle.JobMethod
 	Run(token string, msgBuffer chan<- JobMsg)
 }
 
@@ -38,15 +41,17 @@ type WorkEngine struct {
 	jobBufferSize int
 	// the number of seconds given to each subscriber to complete its task
 	subscriberTimeout time.Duration
+	dao               dao.Dao
 }
 
 // NewWorkEngine - creates a new work engine
-func NewWorkEngine(bufferSize int, subscriberTimeout time.Duration) *WorkEngine {
+func NewWorkEngine(bufferSize int, subscriberTimeout time.Duration, dao dao.Dao) *WorkEngine {
 	return &WorkEngine{
 		jobChannels:       make(map[string]chan JobMsg),
 		subscribers:       map[WorkTopic][]WorkSubscriber{},
 		jobBufferSize:     bufferSize,
-		subscriberTimeout: subscriberTimeout}
+		subscriberTimeout: subscriberTimeout,
+		dao:               dao}
 }
 
 // StartNewAsyncJob - Starts a job in an new goroutine, reporting to a specific topic.
@@ -61,7 +66,10 @@ func (engine *WorkEngine) StartNewAsyncJob(
 	if token == "" {
 		token = engine.Token()
 	}
-	go engine.startJob(token, work, topic)
+	if err := engine.setupJob(token, work); err != nil {
+		return token, err
+	}
+	go engine.runJob(token, work, topic)
 
 	return token, nil
 }
@@ -77,7 +85,14 @@ func waitForNotify(ctx context.Context, sub WorkSubscriber, msg JobMsg, signal c
 	}
 }
 
-func (engine *WorkEngine) startJob(token string, work Work, topic WorkTopic) {
+func (engine *WorkEngine) setupJob(token string, work Work) error {
+	if _, err := engine.dao.SetState(work.ID(), bundle.JobState{Token: token, State: bundle.StateNotYetStarted, Method: work.Method()}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (engine *WorkEngine) runJob(token string, work Work, topic WorkTopic) {
 	// create a channel specifically for use with this job
 	jobChannel := make(chan JobMsg, engine.jobBufferSize)
 	engine.jobChannels[token] = jobChannel
@@ -138,8 +153,10 @@ func (engine *WorkEngine) StartNewSyncJob(
 	if token == "" {
 		token = engine.Token()
 	}
-
-	engine.startJob(token, work, topic)
+	if err := engine.setupJob(token, work); err != nil {
+		return err
+	}
+	engine.runJob(token, work, topic)
 	return nil
 }
 
