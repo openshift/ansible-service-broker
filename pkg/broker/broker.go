@@ -152,6 +152,12 @@ func NewAnsibleBroker(dao dao.Dao,
 // GetServiceInstance - retrieve the service instance for a instanceID.
 func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceInstance, error) {
 	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
+
+	dashboardURL := a.getDashboardURL(instance)
+	if dashboardURL != "" {
+		instance.DashboardURL = dashboardURL
+	}
+
 	if err != nil {
 		if a.dao.IsNotFoundError(err) {
 			log.Infof("Could not find a service instance in dao - %v", err)
@@ -659,42 +665,54 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	}
 
 	var response *ProvisionResponse
-
-	dashboardRedirectEnabled := func() bool {
-		var val interface{}
-		var dr bool
-
-		if len(spec.Alpha) == 0 {
-			return false
-		}
-		if val, ok = spec.Alpha["dashboard_redirect"]; !ok {
-			return false
-		}
-		if dr, ok = val.(bool); !ok {
-			return false
-		}
-		if a.brokerConfig.DashboardRedirector == "" {
-			warnMsg := fmt.Sprintf("Attempting to provision %v", spec.FQName) +
-				", which has dashboard redirect enabled, but no dashboard_redirector route was found in the " +
-				"broker's configmap. Deploying without a dashboard_url."
-			log.Warning(warnMsg)
-			return false
-		}
-		return dr
-	}
-
-	if dashboardRedirectEnabled() {
-		drURL := a.brokerConfig.DashboardRedirector
-		if !strings.HasPrefix(drURL, "http") {
-			drURL = fmt.Sprintf("http://%s", drURL)
-		}
-		redirectURL := fmt.Sprintf("%s/?id=%s", drURL, instanceUUID.String())
-		response = &ProvisionResponse{Operation: token, DashboardURL: redirectURL}
+	dashboardURL := a.getDashboardURL(serviceInstance)
+	if dashboardURL != "" {
+		response = &ProvisionResponse{Operation: token, DashboardURL: dashboardURL}
 	} else {
 		response = &ProvisionResponse{Operation: token}
 	}
 
 	return response, nil
+}
+
+// getDashboardURL - will conditionally return a dashboard redirector url or
+// an empty string if the redirector feature is not specified by the APB.
+func (a *AnsibleBroker) getDashboardURL(si *apb.ServiceInstance) string {
+	var val interface{}
+	var drEnabled, ok bool
+	spec := si.Spec
+
+	if len(spec.Alpha) == 0 {
+		return ""
+	}
+
+	val, ok = spec.Alpha["dashboard_redirect"]
+	if !ok {
+		return ""
+	}
+
+	drEnabled, ok = val.(bool)
+	if !ok {
+		return ""
+	}
+
+	if !drEnabled {
+		return ""
+	}
+
+	if a.brokerConfig.DashboardRedirector == "" {
+		log.Warningf("Attempting to provision %v, which has dashboard redirect enabled, "+
+			"but no dashboard_redirector route was found in the broker's configmap. "+
+			"Deploying without a dashboard_url.", spec.FQName)
+		return ""
+	}
+
+	drURL := a.brokerConfig.DashboardRedirector
+	if !strings.HasPrefix(drURL, "http") {
+		drURL = fmt.Sprintf("http://%s", drURL)
+	}
+
+	return fmt.Sprintf("%s/?id=%s", drURL, si.ID)
 }
 
 // Deprovision - will deprovision a service.
