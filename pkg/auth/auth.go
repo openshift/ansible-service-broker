@@ -87,12 +87,12 @@ func (d *FileUserServiceAdapter) buildDB() error {
 	passfile := path.Join(d.filedir, "password")
 	username, uerr := ioutil.ReadFile(userfile)
 	if uerr != nil {
-		log.Error("Error reading username. %v", uerr.Error())
+		log.Errorf("Error reading username. %v", uerr.Error())
 		return uerr
 	}
 	password, perr := ioutil.ReadFile(passfile)
 	if perr != nil {
-		log.Error("Error reading password. %v", perr.Error())
+		log.Errorf("Error reading password. %v", perr.Error())
 		return perr
 	}
 
@@ -158,7 +158,7 @@ func GetProviders(authConfig *config.Config) []Provider {
 		if p.GetBool("enabled") {
 			provider, err := createProvider(p.GetString("type"))
 			if err != nil {
-				log.Warning("Unable to create provider for %v. %v", p, err)
+				log.Warningf("Unable to create provider for %v. %v", p, err)
 				continue
 			}
 			providers = append(providers, provider)

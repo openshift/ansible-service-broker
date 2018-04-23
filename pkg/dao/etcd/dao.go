@@ -88,7 +88,7 @@ func (d *Dao) BatchGetRaw(dir string) (*[]string, error) {
 	specNodes := res.Node.Nodes
 	specCount := len(specNodes)
 
-	log.Debug("Successfully loaded [ %d ] objects from etcd dir [ %s ]", specCount, dir)
+	log.Debugf("Successfully loaded [ %d ] objects from etcd dir [ %s ]", specCount, dir)
 
 	payloads := make([]string, specCount)
 	for i, node := range specNodes {
@@ -146,7 +146,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 		spec := &apb.Spec{}
 		apb.LoadJSON(payload, spec)
 		specs[i] = spec
-		log.Debug("Batch idx [ %d ] -> [ %s ]", i, spec.ID)
+		log.Debugf("Batch idx [ %d ] -> [ %s ]", i, spec.ID)
 	}
 
 	return specs, nil
@@ -178,7 +178,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 	stateNodes := res.Node.Nodes
 	stateCount := len(stateNodes)
 
-	log.Debug("Successfully loaded [ %d ] jobstate objects from etcd dir [ /state/ ]", stateCount)
+	log.Debugf("Successfully loaded [ %d ] jobstate objects from etcd dir [ /state/ ]", stateCount)
 
 	var recoverstatus []apb.RecoverStatus
 	for _, node := range stateNodes {
@@ -256,7 +256,7 @@ func (d *Dao) getJobsForSvcInst(instanceID string) ([]apb.JobState, error) {
 		return []apb.JobState{}, nil
 	}
 
-	log.Debug("Successfully loaded [ %d ] jobs objects from [ %s ]",
+	log.Debugf("Successfully loaded [ %d ] jobs objects from [ %s ]",
 		jobsCount, lookupKey)
 
 	retJobs := []apb.JobState{}

@@ -42,7 +42,7 @@ import (
 	"github.com/automationbroker/bundle-lib/registries"
 	agnosticruntime "github.com/automationbroker/bundle-lib/runtime"
 	"github.com/automationbroker/config"
-	"github.com/jessevdk/go-flags"
+	flags "github.com/jessevdk/go-flags"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -336,7 +336,7 @@ func (a *App) Start() {
 	}
 
 	interval, err := time.ParseDuration(a.config.GetString("broker.refresh_interval"))
-	log.Debug("RefreshInterval: %v", interval.String())
+	log.Debugf("RefreshInterval: %v", interval.String())
 	if err != nil {
 		log.Error(err.Error())
 		log.Error("Not using a refresh interval")
@@ -348,8 +348,8 @@ func (a *App) Start() {
 			for {
 				select {
 				case v := <-ticker.C:
-					log.Info("Broker configured to refresh specs every %v seconds", interval)
-					log.Info("Attempting bootstrap at %v", v.UTC())
+					log.Infof("Broker configured to refresh specs every %v seconds", interval)
+					log.Infof("Attempting bootstrap at %v", v.UTC())
 					if _, err := a.broker.Bootstrap(); err != nil {
 						log.Error("Failed to bootstrap")
 						log.Error(err.Error())

@@ -93,7 +93,7 @@ func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
 
 // DeleteSpec - Delete the spec for a given spec id.
 func (d *Dao) DeleteSpec(specID string) error {
-	log.Debug("Dao::DeleteSpec-> [ %s ]", specID)
+	log.Debugf("Dao::DeleteSpec-> [ %s ]", specID)
 	return d.client.Bundles(d.namespace).Delete(specID, &metav1.DeleteOptions{})
 }
 
