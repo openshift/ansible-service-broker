@@ -58,7 +58,7 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "468e497f1914a3662afc48cae074d891bbfd391f"
+  revision = "52067cc18b253693505f745044aa50cfd6bd1356"
   source = "github.com/shawn-hurley/bundle-lib"
 
 [[projects]]

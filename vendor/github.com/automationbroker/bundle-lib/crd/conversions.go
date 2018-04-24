@@ -241,6 +241,44 @@ func ConvertStateToAPB(s v1alpha1.State) apb.State {
 	return apb.StateFailed
 }
 
+// ConvertJobMethodToCRD - convert apb job method to crd job method
+func ConvertJobMethodToCRD(j apb.JobMethod) v1alpha1.JobMethod {
+	switch j {
+	case apb.JobMethodProvision:
+		return v1alpha1.JobMethodProvision
+	case apb.JobMethodDeprovision:
+		return v1alpha1.JobMethodDeprovision
+	case apb.JobMethodBind:
+		return v1alpha1.JobMethodBind
+	case apb.JobMethodUnbind:
+		return v1alpha1.JobMethodUnbind
+	case apb.JobMethodUpdate:
+		return v1alpha1.JobMethodUpdate
+	}
+	log.Errorf("unable to find the job method - %v", j)
+	// This should never be called as all cases should already be covered.
+	return v1alpha1.JobMethodProvision
+}
+
+// ConvertJobMethodToAPB - convert crd job method to apb job method
+func ConvertJobMethodToAPB(j v1alpha1.JobMethod) apb.JobMethod {
+	switch j {
+	case v1alpha1.JobMethodProvision:
+		return apb.JobMethodProvision
+	case v1alpha1.JobMethodDeprovision:
+		return apb.JobMethodDeprovision
+	case v1alpha1.JobMethodBind:
+		return apb.JobMethodBind
+	case v1alpha1.JobMethodUnbind:
+		return apb.JobMethodUnbind
+	case v1alpha1.JobMethodUpdate:
+		return apb.JobMethodUpdate
+	}
+	// We should have already covered all the cases above
+	log.Errorf("Unable to find job method from - %v", j)
+	return apb.JobMethodProvision
+}
+
 ////////////////////////////////////////////////////////////
 // Internal
 ////////////////////////////////////////////////////////////
@@ -356,24 +394,6 @@ func convertParametersToCRD(param apb.ParameterDescriptor) (v1alpha1.Parameter, 
 	}, nil
 }
 
-func convertJobMethodToCRD(j apb.JobMethod) v1alpha1.JobMethod {
-	switch j {
-	case apb.JobMethodProvision:
-		return v1alpha1.JobMethodProvision
-	case apb.JobMethodDeprovision:
-		return v1alpha1.JobMethodDeprovision
-	case apb.JobMethodBind:
-		return v1alpha1.JobMethodBind
-	case apb.JobMethodUnbind:
-		return v1alpha1.JobMethodUnbind
-	case apb.JobMethodUpdate:
-		return v1alpha1.JobMethodUpdate
-	}
-	log.Errorf("unable to find the job method - %v", j)
-	// This should never be called as all cases should already be covered.
-	return v1alpha1.JobMethodProvision
-}
-
 func convertAsyncTypeToString(a v1alpha1.AsyncType) string {
 	switch a {
 	case v1alpha1.OptionalAsync:
@@ -480,22 +500,4 @@ func convertParametersToAPB(param v1alpha1.Parameter) (apb.ParameterDescriptor, 
 		DisplayType:         param.DisplayType,
 		DisplayGroup:        param.DisplayGroup,
 	}, nil
-}
-
-func convertJobMethodToAPB(j v1alpha1.JobMethod) apb.JobMethod {
-	switch j {
-	case v1alpha1.JobMethodProvision:
-		return apb.JobMethodProvision
-	case v1alpha1.JobMethodDeprovision:
-		return apb.JobMethodDeprovision
-	case v1alpha1.JobMethodBind:
-		return apb.JobMethodBind
-	case v1alpha1.JobMethodUnbind:
-		return apb.JobMethodUnbind
-	case v1alpha1.JobMethodUpdate:
-		return apb.JobMethodUpdate
-	}
-	// We should have already covered all the cases above
-	log.Errorf("Unable to find job method from - %v", j)
-	return apb.JobMethodProvision
 }

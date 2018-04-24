@@ -18,6 +18,7 @@ package dao
 
 import (
 	"fmt"
+	"net/http"
 
 	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker/v1alpha1"
 	v1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker/v1alpha1"
@@ -266,13 +267,13 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 		bi.Status.Jobs[state.Token] = v1.Job{
 			Description:      state.Description,
 			LastModifiedTime: &n,
-			Method:           state.Method,
+			Method:           crd.ConvertJobMethodToCRD(state.Method),
 			Podname:          state.Podname,
 			State:            crd.ConvertStateToCRD(state.State),
 		}
 		bi.Status.LastDescription = state.Description
 		bi.Status.State = crd.ConvertStateToCRD(state.State)
-		_, err := d.client.BundleBindings(d.namespace).Update(bi)
+		_, err = d.client.BundleBindings(d.namespace).Update(bi)
 		if err != nil {
 			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
 			return state.Token, err
@@ -287,13 +288,13 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 		si.Status.Jobs[state.Token] = v1.Job{
 			Description:      state.Description,
 			LastModifiedTime: &n,
-			Method:           state.Method,
+			Method:           crd.ConvertJobMethodToCRD(state.Method),
 			Podname:          state.Podname,
 			State:            crd.ConvertStateToCRD(state.State),
 		}
 		si.Status.LastDescription = state.Description
 		si.Status.State = crd.ConvertStateToCRD(state.State)
-		_, err := d.client.BundleInstances(d.namespace).Update(bi)
+		_, err = d.client.BundleInstances(d.namespace).Update(si)
 		if err != nil {
 			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
 			return state.Token, err
@@ -306,78 +307,149 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 
 // GetState - Retrieve a job state from the kvp API for an ID and Token.
 func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
-	js, err := d.client.JobStates(d.namespace).Get(token, metav1.GetOptions{})
-	if err != nil {
-		log.Errorf("unable to get state for token: %v", err)
-		return apb.JobState{}, err
+	// get the binding based on instance ID //update the job based on the token.
+	var job v1.Job
+	bi, err := d.client.BundleBindings(d.namespace).Get(id, metav1.GetOptions{})
+	if err != nil && !d.IsNotFoundError(err) {
+		log.Errorf("Unable to update the job state: %v - %v", token, err)
+		return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
+	} else if d.IsNotFoundError(err) {
+		si, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{})
+		if err != nil {
+			log.Errorf("Unable to update the job state: %v - %v", token, err)
+			return apb.JobState{}, err
+		}
+		j, ok := si.Status.Jobs[token]
+		if !ok {
+			log.Errorf("Unable to update the job state: %v - %v", token, err)
+			return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
+		}
+		job = j
+	} else {
+		j, ok := bi.Status.Jobs[token]
+		if !ok {
+			log.Errorf("Unable to update the job state: %v - %v", token, err)
+			return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
+		}
+		job = j
 	}
-	j, err := crd.ConvertJobStateToAPB(js.Spec, js.GetName())
-	if err != nil {
-		return apb.JobState{}, err
-	}
-	return *j, nil
+	return apb.JobState{
+		Description: job.Description,
+		Method:      crd.ConvertJobMethodToAPB(job.Method),
+		Podname:     job.Podname,
+		Token:       token,
+		State:       crd.ConvertStateToAPB(job.State),
+	}, nil
 }
 
 // GetStateByKey - Retrieve a job state from the kvp API for a job key
 func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
-	return d.GetState("", key)
+	bi, err := d.client.BundleBindings(d.namespace).Get(key, metav1.GetOptions{})
+	if err != nil {
+		log.Errorf("Unable to update the job state: %v - %v", key, err)
+		return apb.JobState{}, err
+	}
+	for token, j := range bi.Status.Jobs {
+		// Assuming a single bind job happens per binding instance.
+		if j.Method == v1.JobMethodBind {
+			return apb.JobState{
+				Description: j.Description,
+				Method:      crd.ConvertJobMethodToAPB(j.Method),
+				Podname:     j.Podname,
+				Token:       token,
+				State:       crd.ConvertStateToAPB(j.State),
+			}, nil
+		}
+	}
+	return apb.JobState{}, &apierrors.StatusError{ErrStatus: metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+	}}
 }
 
 // FindJobStateByState - Retrieve all the jobs that match the specified state
 func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
-	log.Debugf("Dao::FindJobStateByState -> [%v]", state)
-	jobStates, err := d.client.JobStates(d.namespace).List(metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("state=%v", crd.ConvertStateToCRD(state)),
-	})
+	sis, err := d.client.BundleInstances(d.namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Errorf("unable to get job states for the state: %v - %v", state, err)
 		return nil, err
 	}
+	bis, err := d.client.BundleBindings(d.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		log.Errorf("unable to get job states for the state: %v - %v", state, err)
+		return nil, err
+	}
+	rss := []apb.RecoverStatus{}
 
-	rs := []apb.RecoverStatus{}
-	errs := arrayErrors{}
-	for _, js := range jobStates.Items {
-		j, err := crd.ConvertJobStateToAPB(js.Spec, js.GetName())
-		if err != nil {
-			errs = append(errs, err)
-			continue
+	for _, si := range sis.Items {
+		for token, j := range si.Status.Jobs {
+			if state == crd.ConvertStateToAPB(j.State) {
+				rss = append(rss, apb.RecoverStatus{InstanceID: uuid.Parse(si.GetName()), State: apb.JobState{
+					Description: j.Description,
+					Method:      crd.ConvertJobMethodToAPB(j.Method),
+					Podname:     j.Podname,
+					Token:       token,
+					State:       crd.ConvertStateToAPB(j.State),
+				}})
+			}
 		}
-		rs = append(rs, apb.RecoverStatus{
-			InstanceID: uuid.Parse(js.GetLabels()[jobStateInstanceLabel]),
-			State:      *j,
-		})
 	}
-	if len(errs) > 0 {
-		return rs, errs
+	for _, bi := range bis.Items {
+		for token, j := range bi.Status.Jobs {
+			if state == crd.ConvertStateToAPB(j.State) {
+				rss = append(rss, apb.RecoverStatus{InstanceID: uuid.Parse(bi.GetName()), State: apb.JobState{
+					Description: j.Description,
+					Method:      crd.ConvertJobMethodToAPB(j.Method),
+					Podname:     j.Podname,
+					Token:       token,
+					State:       crd.ConvertStateToAPB(j.State),
+				}})
+			}
+		}
 	}
-	return rs, nil
+	return rss, nil
 }
 
 // GetSvcInstJobsByState - Lookup all jobs of a given state for a specific instance
 func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState, error) {
-	log.Debugf("Dao::FindJobStateByState -> [%v]", state)
-	jobStates, err := d.client.JobStates(d.namespace).List(metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%v=%v,%v=%v", jobStateInstanceLabel, ID, jobStateLabel, crd.ConvertStateToCRD(state)),
-	})
-	if err != nil {
-		log.Errorf("unable to get job states for the state: %v - %v", state, err)
-		return nil, err
-	}
-
-	jss := []apb.JobState{}
-	errs := arrayErrors{}
-	for _, js := range jobStates.Items {
-		job, err := crd.ConvertJobStateToAPB(js.Spec, js.GetName())
+	// get the binding based on instance ID //update the job based on the token.
+	jobs := []apb.JobState{}
+	bi, err := d.client.BundleBindings(d.namespace).Get(ID, metav1.GetOptions{})
+	if err != nil && !d.IsNotFoundError(err) {
+		log.Errorf("Unable to update the job state: %v - %v", ID, err)
+		return []apb.JobState{}, fmt.Errorf("unable to find job state %v", ID)
+	} else if d.IsNotFoundError(err) {
+		si, err := d.client.BundleInstances(d.namespace).Get(ID, metav1.GetOptions{})
 		if err != nil {
-			errs = append(errs, err)
-			continue
+			log.Errorf("Unable to update the job state: %v - %v", ID, err)
+			return []apb.JobState{}, err
 		}
-		jss = append(jss, *job)
+		for token, job := range si.Status.Jobs {
+			if job.State == crd.ConvertStateToCRD(state) {
+				jobs = append(jobs, apb.JobState{
+					Description: job.Description,
+					Method:      crd.ConvertJobMethodToAPB(job.Method),
+					Podname:     job.Podname,
+					Token:       token,
+					State:       crd.ConvertStateToAPB(job.State),
+				})
+			}
+		}
+	} else {
+		for token, job := range bi.Status.Jobs {
+			if job.State == crd.ConvertStateToCRD(state) {
+				jobs = append(jobs, apb.JobState{
+					Description: job.Description,
+					Method:      crd.ConvertJobMethodToAPB(job.Method),
+					Podname:     job.Podname,
+					Token:       token,
+					State:       crd.ConvertStateToAPB(job.State),
+				})
+			}
+		}
 	}
-	if len(errs) > 0 {
-		return jss, errs
-	}
-	return jss, nil
+	return jobs, nil
 }
 
 // IsNotFoundError - Will determine if the error is an apimachinary IsNotFound error.
