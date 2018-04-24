@@ -38,7 +38,7 @@ ENV GOPATH=/go
 ENV BROKER_PATH=${GOPATH}/src/github.com/openshift/ansible-service-broker
 
 RUN mkdir -p ${BROKER_PATH}
-RUN git clone -b $VERSION https://github.com/openshift/ansible-service-broker ${BROKER_PATH}/ansible-service-broker
+RUN git clone -b $VERSION https://github.com/openshift/ansible-service-broker ${BROKER_PATH}
 WORKDIR ${BROKER_PATH}
 
 RUN go build -i -ldflags="-s -w" ./cmd/broker && mv broker /usr/bin/asbd
