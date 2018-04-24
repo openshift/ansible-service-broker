@@ -291,6 +291,7 @@ type JobMsg struct {
 	Msg                  string                   `json:"msg"`
 	State                apb.JobState             `json:"state"`
 	ExtractedCredentials apb.ExtractedCredentials `json:"extracted_credentials"`
+	DashboardURL         string                   `json:"dashboard_url"`
 	BindingUUID          string                   `json:"binding_uuid"`
 	Error                string                   `json:"error"`
 }

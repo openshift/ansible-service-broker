@@ -42,6 +42,7 @@ func TestApbJobRun(t *testing.T) {
 						Description: "action finished with success",
 					})
 					e.On("ExtractedCredentials").Return(nil)
+					e.On("DashboardURL").Return("http://foo.example.com")
 					return e
 				}(),
 				run: func(exec apb.Executor) <-chan apb.StatusMessage {
@@ -220,6 +221,7 @@ func TestApbJobRun(t *testing.T) {
 						Description: "action finished with success",
 					})
 					e.On("ExtractedCredentials").Return(extCreds)
+					e.On("DashboardURL").Return("http://foo.example.com")
 					return e
 				}(),
 				run: func(exec apb.Executor) <-chan apb.StatusMessage {
@@ -291,6 +293,7 @@ func TestApbJobRun(t *testing.T) {
 			}(messages)
 
 			go func() {
+				fmt.Printf("Running test %s", tc.name)
 				tc.testJob.Run(token, msgBuffer)
 			}()
 

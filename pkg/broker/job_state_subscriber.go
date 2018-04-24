@@ -44,6 +44,22 @@ func (jss *JobStateSubscriber) Notify(msg JobMsg) {
 			return
 		}
 	}
+	//TODO: Need to get the service instance
+	//TODO: NOTE: THIS NEEDS TO BREAK OUT TO OWN SUBSCRIBER
+	// Update with dashboard URL.
+	if msg.DashboardURL != "" {
+		instance, err := jss.dao.GetServiceInstance(msg.InstanceUUID)
+		if err != nil {
+			log.Errorf("Error after job succeeded : %v", err)
+			return
+		}
+		instance.DashboardURL = msg.DashboardURL
+		err = jss.dao.SetServiceInstance(msg.InstanceUUID, instance)
+		if err != nil {
+			log.Errorf("Error after job succeeded : %v", err)
+			return
+		}
+	}
 	return
 }
 

@@ -66,7 +66,9 @@ type BundleSpec struct {
 	Async       AsyncType `json:"async"`
 	// Store the metadata as a json encoded string to preserve the genericness
 	Metadata string `json:"metadata"`
-	Plans    []Plan `json:"plans"`
+	// Store the alpha map as a json encoded string to preserve the genericness
+	Alpha string
+	Plans []Plan `json:"plans"`
 }
 
 // Plan - a plan for a bundle spec
@@ -225,8 +227,9 @@ type ServiceInstanceSpec struct {
 	BundleID string  `json:"bundleID"`
 	Context  Context `json:"context"`
 	// Store the parameters as json encoded strings.
-	Parameters string   `json:"parameters"`
-	BindingIDs []string `json:"bindingIDs"`
+	Parameters   string   `json:"parameters"`
+	DashboardURL string   `json:"dashboardUrl"`
+	BindingIDs   []string `json:"bindingIDs"`
 }
 
 // Context is the context for the ServiceInstance.

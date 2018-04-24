@@ -91,16 +91,17 @@ type Broker interface {
 
 // Config - Configuration for the broker.
 type Config struct {
-	DevBroker          bool   `yaml:"dev_broker"`
-	LaunchApbOnBind    bool   `yaml:"launch_apb_on_bind"`
-	BootstrapOnStartup bool   `yaml:"bootstrap_on_startup"`
-	Recovery           bool   `yaml:"recovery"`
-	OutputRequest      bool   `yaml:"output_request"`
-	SSLCertKey         string `yaml:"ssl_cert_key"`
-	SSLCert            string `yaml:"ssl_cert"`
-	RefreshInterval    string `yaml:"refresh_interval"`
-	AutoEscalate       bool   `yaml:"auto_escalate"`
-	ClusterURL         string `yaml:"cluster_url"`
+	DevBroker           bool   `yaml:"dev_broker"`
+	LaunchApbOnBind     bool   `yaml:"launch_apb_on_bind"`
+	BootstrapOnStartup  bool   `yaml:"bootstrap_on_startup"`
+	Recovery            bool   `yaml:"recovery"`
+	OutputRequest       bool   `yaml:"output_request"`
+	SSLCertKey          string `yaml:"ssl_cert_key"`
+	SSLCert             string `yaml:"ssl_cert"`
+	RefreshInterval     string `yaml:"refresh_interval"`
+	AutoEscalate        bool   `yaml:"auto_escalate"`
+	ClusterURL          string `yaml:"cluster_url"`
+	DashboardRedirector string `yaml:"dashboard_redirector"`
 }
 
 // DevBroker - Interface for the development broker.
@@ -131,16 +132,17 @@ func NewAnsibleBroker(dao dao.Dao,
 		registry: registry,
 		engine:   &engine,
 		brokerConfig: Config{
-			DevBroker:          brokerConfig.GetBool("dev_broker"),
-			LaunchApbOnBind:    brokerConfig.GetBool("launch_apb_on_bind"),
-			BootstrapOnStartup: brokerConfig.GetBool("bootstrap_on_startup"),
-			Recovery:           brokerConfig.GetBool("recovery"),
-			OutputRequest:      brokerConfig.GetBool("output_request"),
-			SSLCertKey:         brokerConfig.GetString("ssl_cert_key"),
-			SSLCert:            brokerConfig.GetString("ssl_cert"),
-			RefreshInterval:    brokerConfig.GetString("refresh_interval"),
-			AutoEscalate:       brokerConfig.GetBool("auto_escalate"),
-			ClusterURL:         brokerConfig.GetString("cluster_url"),
+			DevBroker:           brokerConfig.GetBool("dev_broker"),
+			LaunchApbOnBind:     brokerConfig.GetBool("launch_apb_on_bind"),
+			BootstrapOnStartup:  brokerConfig.GetBool("bootstrap_on_startup"),
+			Recovery:            brokerConfig.GetBool("recovery"),
+			OutputRequest:       brokerConfig.GetBool("output_request"),
+			SSLCertKey:          brokerConfig.GetString("ssl_cert_key"),
+			SSLCert:             brokerConfig.GetString("ssl_cert"),
+			RefreshInterval:     brokerConfig.GetString("refresh_interval"),
+			AutoEscalate:        brokerConfig.GetBool("auto_escalate"),
+			ClusterURL:          brokerConfig.GetString("cluster_url"),
+			DashboardRedirector: brokerConfig.GetString("dashboard_redirector"),
 		},
 		namespace: namespace,
 	}
@@ -150,6 +152,12 @@ func NewAnsibleBroker(dao dao.Dao,
 // GetServiceInstance - retrieve the service instance for a instanceID.
 func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceInstance, error) {
 	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
+
+	dashboardURL := a.getDashboardURL(instance)
+	if dashboardURL != "" {
+		instance.DashboardURL = dashboardURL
+	}
+
 	if err != nil {
 		if a.dao.IsNotFoundError(err) {
 			log.Infof("Could not find a service instance in dao - %v", err)
@@ -655,10 +663,56 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 			return nil, err
 		}
 	}
-	// TODO: What data needs to be sent back on a response?
-	// Not clear what dashboardURL means in an AnsibleApp context
-	// operation should be the task id from the work_engine
-	return &ProvisionResponse{Operation: token}, nil
+
+	var response *ProvisionResponse
+	dashboardURL := a.getDashboardURL(serviceInstance)
+	if dashboardURL != "" {
+		response = &ProvisionResponse{Operation: token, DashboardURL: dashboardURL}
+	} else {
+		response = &ProvisionResponse{Operation: token}
+	}
+
+	return response, nil
+}
+
+// getDashboardURL - will conditionally return a dashboard redirector url or
+// an empty string if the redirector feature is not specified by the APB.
+func (a *AnsibleBroker) getDashboardURL(si *apb.ServiceInstance) string {
+	var val interface{}
+	var drEnabled, ok bool
+	spec := si.Spec
+
+	if len(spec.Alpha) == 0 {
+		return ""
+	}
+
+	val, ok = spec.Alpha["dashboard_redirect"]
+	if !ok {
+		return ""
+	}
+
+	drEnabled, ok = val.(bool)
+	if !ok {
+		return ""
+	}
+
+	if !drEnabled {
+		return ""
+	}
+
+	if a.brokerConfig.DashboardRedirector == "" {
+		log.Warningf("Attempting to provision %v, which has dashboard redirect enabled, "+
+			"but no dashboard_redirector route was found in the broker's configmap. "+
+			"Deploying without a dashboard_url.", spec.FQName)
+		return ""
+	}
+
+	drURL := a.brokerConfig.DashboardRedirector
+	if !strings.HasPrefix(drURL, "http") {
+		drURL = fmt.Sprintf("http://%s", drURL)
+	}
+
+	return fmt.Sprintf("%s/?id=%s", drURL, si.ID)
 }
 
 // Deprovision - will deprovision a service.

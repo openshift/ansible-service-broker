@@ -37,6 +37,8 @@ spec:
               type: string
             metadata:
               type: string
+            alpha:
+              type: string
             async:
               type: string
               pattern: '^(optional|required|unsupported)$'

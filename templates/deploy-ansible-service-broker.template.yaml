@@ -18,6 +18,10 @@ objects:
         port: 1338
         targetPort: 1338
         protocol: TCP
+      - name: port-1337
+        port: 1337
+        targetPort: 1337
+        protocol: TCP
     selector:
       app: ansible-service-broker
       service: asb
@@ -121,6 +125,14 @@ objects:
       spec:
         serviceAccount: asb
         containers:
+        - image: ${BROKER_IMAGE}
+          name: dashboard-redirector
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1337
+              protocol: TCP
+          command:
+            - dashboard-redirector
         - image: ${BROKER_IMAGE}
           name: asb
           imagePullPolicy: IfNotPresent
@@ -237,6 +249,7 @@ objects:
         ssl_cert: /etc/tls/private/tls.crt
         auto_escalate: ${AUTO_ESCALATE}
         cluster_url: ${NAMESPACE}
+        dashboard_redirector: http://dashboard-redirector-1337-${NAMESPACE}.${ROUTING_SUFFIX}
         auth:
           - type: basic
             enabled: ${ENABLE_BASIC_AUTH}
@@ -267,6 +280,20 @@ objects:
     annotations:
       kubernetes.io/service-account.name: ansibleservicebroker-client
   type: kubernetes.io/service-account-token
+
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: dashboard-redirector-1337
+    labels:
+      app: ansible-service-broker
+      service: asb
+  spec:
+    to:
+      kind: Service
+      name: asb
+    port:
+      targetPort: port-1337
 
 - apiVersion: v1
   kind: Route
@@ -333,6 +360,8 @@ objects:
               description:
                 type: string
               metadata:
+                type: string
+              alpha:
                 type: string
               async:
                 type: string
@@ -516,6 +545,8 @@ objects:
           spec:
             properties:
               specId:
+                type: string
+              dashboardUrl:
                 type: string
               context:
                 type: object

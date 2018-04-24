@@ -23,6 +23,9 @@ broker: $(SOURCES) ## Build the broker
 migration: $(SOURCES)
 	go build -i -ldflags="-s -w" ./cmd/migration
 
+dashboard-redirector: $(SOURCES)
+	go build -i -ldflags="-s -w" ./cmd/dashboard-redirector
+
 build: broker ## Build binary from source
 	@echo > /dev/null
 
@@ -73,6 +76,7 @@ prep-local: ## Prepares the local dev environment
 build-image: ## Build a docker image with the broker binary
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/broker ./cmd/broker
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/migration ./cmd/migration
+	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/dashboard-redirector ./cmd/dashboard-redirector
 	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
