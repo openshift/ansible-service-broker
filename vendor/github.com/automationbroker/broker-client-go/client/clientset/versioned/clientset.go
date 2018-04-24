@@ -16,7 +16,7 @@ limitations under the License.
 package versioned
 
 import (
-	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker.io/v1"
+	automationbrokerv1alpha1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker/v1alpha1"
 	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -25,27 +25,27 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	AutomationbrokerV1() automationbrokerv1.AutomationbrokerV1Interface
+	AutomationbrokerV1alpha1() automationbrokerv1alpha1.AutomationbrokerV1alpha1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	Automationbroker() automationbrokerv1.AutomationbrokerV1Interface
+	Automationbroker() automationbrokerv1alpha1.AutomationbrokerV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	automationbrokerV1 *automationbrokerv1.AutomationbrokerV1Client
+	automationbrokerV1alpha1 *automationbrokerv1alpha1.AutomationbrokerV1alpha1Client
 }
 
-// AutomationbrokerV1 retrieves the AutomationbrokerV1Client
-func (c *Clientset) AutomationbrokerV1() automationbrokerv1.AutomationbrokerV1Interface {
-	return c.automationbrokerV1
+// AutomationbrokerV1alpha1 retrieves the AutomationbrokerV1alpha1Client
+func (c *Clientset) AutomationbrokerV1alpha1() automationbrokerv1alpha1.AutomationbrokerV1alpha1Interface {
+	return c.automationbrokerV1alpha1
 }
 
 // Deprecated: Automationbroker retrieves the default version of AutomationbrokerClient.
 // Please explicitly pick a version.
-func (c *Clientset) Automationbroker() automationbrokerv1.AutomationbrokerV1Interface {
-	return c.automationbrokerV1
+func (c *Clientset) Automationbroker() automationbrokerv1alpha1.AutomationbrokerV1alpha1Interface {
+	return c.automationbrokerV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -64,7 +64,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.automationbrokerV1, err = automationbrokerv1.NewForConfig(&configShallowCopy)
+	cs.automationbrokerV1alpha1, err = automationbrokerv1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.automationbrokerV1 = automationbrokerv1.NewForConfigOrDie(c)
+	cs.automationbrokerV1alpha1 = automationbrokerv1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -90,7 +90,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.automationbrokerV1 = automationbrokerv1.New(c)
+	cs.automationbrokerV1alpha1 = automationbrokerv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

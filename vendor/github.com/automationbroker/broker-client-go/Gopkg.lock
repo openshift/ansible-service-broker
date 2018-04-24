@@ -257,7 +257,7 @@
   revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
 
 [[projects]]
-  branch = "master"
+  branch = "release-1.9"
   name = "k8s.io/api"
   packages = [
     "admissionregistration/v1alpha1",
@@ -289,7 +289,7 @@
     "storage/v1alpha1",
     "storage/v1beta1"
   ]
-  revision = "b378c47b2dcba7f5c3ef97d8a5a0b3821ec6a001"
+  revision = "53400f2739169693b7f1f64cf856f6d3d780d3db"
 
 [[projects]]
   branch = "release-1.9"

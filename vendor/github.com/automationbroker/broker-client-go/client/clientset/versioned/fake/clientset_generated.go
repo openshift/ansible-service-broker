@@ -17,8 +17,8 @@ package fake
 
 import (
 	clientset "github.com/automationbroker/broker-client-go/client/clientset/versioned"
-	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker.io/v1"
-	fakeautomationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker.io/v1/fake"
+	automationbrokerv1alpha1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker/v1alpha1"
+	fakeautomationbrokerv1alpha1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -59,12 +59,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// AutomationbrokerV1 retrieves the AutomationbrokerV1Client
-func (c *Clientset) AutomationbrokerV1() automationbrokerv1.AutomationbrokerV1Interface {
-	return &fakeautomationbrokerv1.FakeAutomationbrokerV1{Fake: &c.Fake}
+// AutomationbrokerV1alpha1 retrieves the AutomationbrokerV1alpha1Client
+func (c *Clientset) AutomationbrokerV1alpha1() automationbrokerv1alpha1.AutomationbrokerV1alpha1Interface {
+	return &fakeautomationbrokerv1alpha1.FakeAutomationbrokerV1alpha1{Fake: &c.Fake}
 }
 
-// Automationbroker retrieves the AutomationbrokerV1Client
-func (c *Clientset) Automationbroker() automationbrokerv1.AutomationbrokerV1Interface {
-	return &fakeautomationbrokerv1.FakeAutomationbrokerV1{Fake: &c.Fake}
+// Automationbroker retrieves the AutomationbrokerV1alpha1Client
+func (c *Clientset) Automationbroker() automationbrokerv1alpha1.AutomationbrokerV1alpha1Interface {
+	return &fakeautomationbrokerv1alpha1.FakeAutomationbrokerV1alpha1{Fake: &c.Fake}
 }

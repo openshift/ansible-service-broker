@@ -71,20 +71,6 @@ func (_m *MockExecutor) LastStatus() StatusMessage {
 	return r0
 }
 
-// DashboardURL provides a mock function with given fields:
-func (_m *MockExecutor) DashboardURL() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
 // PodName provides a mock function with given fields:
 func (_m *MockExecutor) PodName() string {
 	ret := _m.Called()

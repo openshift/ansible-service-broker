@@ -24,7 +24,7 @@ import (
 	time "time"
 
 	versioned "github.com/automationbroker/broker-client-go/client/clientset/versioned"
-	automationbroker_io "github.com/automationbroker/broker-client-go/client/informers/externalversions/automationbroker.io"
+	automationbroker "github.com/automationbroker/broker-client-go/client/informers/externalversions/automationbroker"
 	internalinterfaces "github.com/automationbroker/broker-client-go/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -123,9 +123,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Automationbroker() automationbroker_io.Interface
+	Automationbroker() automationbroker.Interface
 }
 
-func (f *sharedInformerFactory) Automationbroker() automationbroker_io.Interface {
-	return automationbroker_io.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Automationbroker() automationbroker.Interface {
+	return automationbroker.New(f, f.namespace, f.tweakListOptions)
 }

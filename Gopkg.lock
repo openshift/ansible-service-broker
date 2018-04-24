@@ -10,8 +10,8 @@
 [[projects]]
   name = "github.com/Masterminds/semver"
   packages = ["."]
-  revision = "15d8430ab86497c5c0da827b748823945e1cf1e1"
-  version = "v1.4.0"
+  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
+  version = "v1.4.2"
 
 [[projects]]
   name = "github.com/NYTimes/gziphandler"
@@ -32,18 +32,20 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  branch = "bug-1566924"
   name = "github.com/automationbroker/broker-client-go"
   packages = [
     "client/clientset/versioned",
     "client/clientset/versioned/scheme",
-    "client/clientset/versioned/typed/automationbroker.io/v1",
-    "pkg/apis/automationbroker.io",
-    "pkg/apis/automationbroker.io/v1"
+    "client/clientset/versioned/typed/automationbroker/v1alpha1",
+    "pkg/apis/automationbroker",
+    "pkg/apis/automationbroker/v1alpha1"
   ]
-  revision = "99aa044d32de771f45a17e3632ccffdc87086063"
-  version = "0.1.1"
+  revision = "00b71c26a8a6c6a71b5b8bf9e54c7695337bf643"
+  source = "github.com/shawn-hurley/broker-client-go"
 
 [[projects]]
+  branch = "bug-1566924-0.1"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "apb",
@@ -56,8 +58,8 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "02293f7f6c59d1e9d77f43389a2ef0636202317f"
-  version = "0.1.3"
+  revision = "468e497f1914a3662afc48cae074d891bbfd391f"
+  source = "github.com/shawn-hurley/bundle-lib"
 
 [[projects]]
   branch = "master"
@@ -87,8 +89,8 @@
     "pkg/types",
     "version"
   ]
-  revision = "c9d46ab3799b7f2174268e75f72d01e6d6aac953"
-  version = "v3.3.2"
+  revision = "e348b1aedd9167360c466ae98f7343d3e22281f8"
+  version = "v3.3.3"
 
 [[projects]]
   name = "github.com/coreos/go-semver"
@@ -121,7 +123,7 @@
   branch = "master"
   name = "github.com/dustin/go-humanize"
   packages = ["."]
-  revision = "bb3d318650d48840a39aa21a027c6630e198e626"
+  revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
   name = "github.com/elazarl/go-bindata-assetfs"
@@ -135,8 +137,8 @@
     ".",
     "log"
   ]
-  revision = "26b41036311f2da8242db402557a0dbd09dc83da"
-  version = "v2.6.0"
+  revision = "92cd0815dd1a028a6e69faee9757c7436238e252"
+  version = "v2.6.1"
 
 [[projects]]
   name = "github.com/emicklei/go-restful-swagger12"
@@ -160,25 +162,25 @@
   branch = "master"
   name = "github.com/go-openapi/jsonpointer"
   packages = ["."]
-  revision = "779f45308c19820f1a69e9a4cd965f496e0da10f"
+  revision = "3a0015ad55fa9873f41605d3e8f28cd279c32ab2"
 
 [[projects]]
   branch = "master"
   name = "github.com/go-openapi/jsonreference"
   packages = ["."]
-  revision = "36d33bfe519efae5632669801b180bf1a245da3b"
+  revision = "3fb327e6747da3043567ee86abd02bb6376b6be2"
 
 [[projects]]
   branch = "master"
   name = "github.com/go-openapi/spec"
   packages = ["."]
-  revision = "d8000b5bfbd1147255710505a27c735b6b2ae2ac"
+  revision = "bcff419492eeeb01f76e77d2ebc714dc97b607f5"
 
 [[projects]]
   branch = "master"
   name = "github.com/go-openapi/swag"
   packages = ["."]
-  revision = "ceb469cb0fdf2d792f28d771bc05da6c606f55e5"
+  revision = "811b1089cde9dad18d4d0c2d09fbdbf28dbd27a5"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -276,8 +278,8 @@
 [[projects]]
   name = "github.com/imdario/mergo"
   packages = ["."]
-  revision = "163f41321a19dd09362d4c63cc2489db2015f1f4"
-  version = "0.3.2"
+  revision = "9d5f1277e9a8ed20c3684bda8fde67c05628518c"
+  version = "v0.3.4"
 
 [[projects]]
   name = "github.com/jessevdk/go-flags"
@@ -338,7 +340,7 @@
     "jlexer",
     "jwriter"
   ]
-  revision = "517203d186eb343d3df4068565cc0446b450d2c4"
+  revision = "8b799c424f57fa123fc63a99d6383bc6e4c02578"
 
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
@@ -371,10 +373,10 @@
   version = "v1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/openshift/api"
   packages = ["network/v1"]
-  revision = "dca24d1902afee9d2be02425a2d7c9f910063631"
+  revision = "0d921e363e951d89f583292c60d013c318df64dc"
+  version = "v3.9.0"
 
 [[projects]]
   name = "github.com/pborman/uuid"
@@ -426,7 +428,7 @@
     "internal/bitbucket.org/ww/goautoneg",
     "model"
   ]
-  revision = "e4aa40a9169a88835b849a6efb71e05dc04b88f0"
+  revision = "e5b036cc37a466a0af27d604d1ee500211d16d6a"
 
 [[projects]]
   branch = "master"
@@ -437,7 +439,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "780932d4fbbe0e69b84c34c20f5c8d0981e109ea"
+  revision = "8b1c2da0d56deffdbb9e48d4414b4e674bd8083e"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -448,8 +450,8 @@
 [[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
-  version = "v1.0.0"
+  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/stretchr/objx"
@@ -469,14 +471,14 @@
 [[projects]]
   name = "github.com/ugorji/go"
   packages = ["codec"]
-  revision = "9831f2c3ac1068a78f50999a30db84270f647af6"
-  version = "v1.1"
+  revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
+  version = "v1.1.1"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "80db560fac1fb3e6ac81dbc7f8ae4c061f5257bd"
+  revision = "2b6c08872f4b66da917bb4ce98df4f0307330f78"
 
 [[projects]]
   branch = "master"
@@ -485,6 +487,7 @@
     "context",
     "html",
     "html/atom",
+    "http/httpguts",
     "http2",
     "http2/hpack",
     "idna",
@@ -493,7 +496,7 @@
     "trace",
     "websocket"
   ]
-  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
+  revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
 
 [[projects]]
   branch = "master"
@@ -502,7 +505,7 @@
     "unix",
     "windows"
   ]
-  revision = "1e3c7779a71dac3e6f1a2abb347a6734b72d35e7"
+  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -530,7 +533,7 @@
   branch = "master"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
-  revision = "f8c8703595236ae70fdf8789ecb656ea0bcdcf46"
+  revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -560,14 +563,14 @@
     "tap",
     "transport"
   ]
-  revision = "8e4536a86ab602859c20df5ebfd0bd4228d08655"
-  version = "v1.10.0"
+  revision = "d11072e7ca9811b1100b80ca0269ac831f06d024"
+  version = "v1.11.3"
 
 [[projects]]
   name = "gopkg.in/inf.v0"
   packages = ["."]
-  revision = "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4"
-  version = "v0.9.0"
+  revision = "d2d2541c53f18d2a059457998ce2876cc8e67cbf"
+  version = "v0.9.1"
 
 [[projects]]
   name = "gopkg.in/natefinch/lumberjack.v2"
@@ -584,8 +587,8 @@
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
-  version = "v2.1.1"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [[projects]]
   name = "k8s.io/api"
@@ -684,7 +687,7 @@
     "third_party/forked/golang/netutil",
     "third_party/forked/golang/reflect"
   ]
-  revision = "cb88e003047fb517f284ff8af294451b20f0b403"
+  revision = "4a1945a9cfdfa104d202059c7e64250618d8d009"
 
 [[projects]]
   name = "k8s.io/apiserver"
@@ -898,7 +901,7 @@
     "util/homedir",
     "util/integer"
   ]
-  revision = "cade0e592a3ad56d0a368d799506a4f566628a2f"
+  revision = "65b43df093d1d129e9608582d98ac9bfbba7e486"
 
 [[projects]]
   branch = "master"
@@ -910,7 +913,7 @@
     "pkg/util",
     "pkg/util/proto"
   ]
-  revision = "50ae88d24ede7b8bad68e23c805b5d3da5c8abaf"
+  revision = "1e45fb05b06309c0d807d0930e1a81fe0a1cd4b8"
 
 [[projects]]
   name = "k8s.io/kubernetes"
@@ -918,12 +921,12 @@
     "pkg/apis/rbac",
     "pkg/registry/rbac/validation"
   ]
-  revision = "9f8ebd171479bec0ada837d7ee641dec2f8c6dd1"
-  version = "v1.9.6"
+  revision = "d4ab47518836c750f9949b9e0d387f20fb92260b"
+  version = "v1.10.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "861ac495148d900fcb1cab65e126a2265f6b68cf5b8311dbb6f2b4094d2d0214"
+  inputs-digest = "7a35333e8fb5abfbb0d65fc267c39094c98813e5c6b37630182da4b65cc2703f"
   solver-name = "gps-cdcl"
   solver-version = 1

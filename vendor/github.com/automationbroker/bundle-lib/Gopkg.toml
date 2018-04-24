@@ -21,8 +21,9 @@
 
 
 [[constraint]]
-  version = "0.1.1"
+  branch = "bug-1566924"
   name = "github.com/automationbroker/broker-client-go"
+  source = "github.com/shawn-hurley/broker-client-go"
 
 [[constraint]]
   name = "github.com/coreos/etcd"

@@ -31,28 +31,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/kubernetes/pkg/controller"
-	"k8s.io/kubernetes/pkg/features"
 	volumeutil "k8s.io/kubernetes/pkg/volume/util"
 )
-
-var (
-	pvcProtectionEnabled  = utilfeature.NewFeatureGate()
-	pvcProtectionDisabled = utilfeature.NewFeatureGate()
-)
-
-func init() {
-	if err := pvcProtectionEnabled.Add(map[utilfeature.Feature]utilfeature.FeatureSpec{features.PVCProtection: {Default: true}}); err != nil {
-		panic(err)
-	}
-	if err := pvcProtectionDisabled.Add(map[utilfeature.Feature]utilfeature.FeatureSpec{features.PVCProtection: {Default: false}}); err != nil {
-		panic(err)
-	}
-}
 
 const defaultPVName = "default-pv"
 
@@ -117,8 +101,7 @@ func TestPVProtectionController(t *testing.T) {
 		Resource: "persistentvolumes",
 	}
 	tests := []struct {
-		name     string
-		features utilfeature.FeatureGate
+		name string
 		// Object to insert into fake kubeclient before the test starts.
 		initialObjects []runtime.Object
 		// Optional client reactors.
@@ -133,16 +116,35 @@ func TestPVProtectionController(t *testing.T) {
 		// PV events
 		//
 		{
-			name:            "PV without finalizer -> finalizer is NOT added",
-			updatedPV:       pv(),
-			expectedActions: []clienttesting.Action{},
-			features:        pvcProtectionEnabled,
+			name:      "PV without finalizer -> finalizer is added",
+			updatedPV: pv(),
+			expectedActions: []clienttesting.Action{
+				clienttesting.NewUpdateAction(pvVer, "", withProtectionFinalizer(pv())),
+			},
 		},
 		{
 			name:            "PVC with finalizer -> no action",
 			updatedPV:       withProtectionFinalizer(pv()),
 			expectedActions: []clienttesting.Action{},
-			features:        pvcProtectionEnabled,
+		},
+		{
+			name:      "saving PVC finalizer fails -> controller retries",
+			updatedPV: pv(),
+			reactors: []reaction{
+				{
+					verb:      "update",
+					resource:  "persistentvolumes",
+					reactorfn: generateUpdateErrorFunc(t, 2 /* update fails twice*/),
+				},
+			},
+			expectedActions: []clienttesting.Action{
+				// This fails
+				clienttesting.NewUpdateAction(pvVer, "", withProtectionFinalizer(pv())),
+				// This fails too
+				clienttesting.NewUpdateAction(pvVer, "", withProtectionFinalizer(pv())),
+				// This succeeds
+				clienttesting.NewUpdateAction(pvVer, "", withProtectionFinalizer(pv())),
+			},
 		},
 		{
 			name:      "deleted PV with finalizer -> finalizer is removed",
@@ -150,7 +152,6 @@ func TestPVProtectionController(t *testing.T) {
 			expectedActions: []clienttesting.Action{
 				clienttesting.NewUpdateAction(pvVer, "", deleted(pv())),
 			},
-			features: pvcProtectionEnabled,
 		},
 		{
 			name:      "finalizer removal fails -> controller retries",
@@ -170,21 +171,11 @@ func TestPVProtectionController(t *testing.T) {
 				// Succeeds
 				clienttesting.NewUpdateAction(pvVer, "", deleted(pv())),
 			},
-			features: pvcProtectionEnabled,
 		},
 		{
 			name:            "deleted PVC with finalizer + PV is bound -> finalizer is not removed",
 			updatedPV:       deleted(withProtectionFinalizer(boundPV())),
 			expectedActions: []clienttesting.Action{},
-			features:        pvcProtectionEnabled,
-		},
-		{
-			name:      "PVC protection disabled, deleted PVC with finalizer + PV is bound -> finalizer is removed",
-			updatedPV: deleted(withProtectionFinalizer(boundPV())),
-			expectedActions: []clienttesting.Action{
-				clienttesting.NewUpdateAction(pvVer, "", deleted(boundPV())),
-			},
-			features: pvcProtectionDisabled,
 		},
 	}
 
@@ -219,7 +210,6 @@ func TestPVProtectionController(t *testing.T) {
 
 		// Create the controller
 		ctrl := NewPVProtectionController(pvInformer, client)
-		ctrl.features = test.features
 
 		// Start the test by simulating an event
 		if test.updatedPV != nil {

@@ -19,8 +19,8 @@ package dao
 import (
 	"fmt"
 
-	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker.io/v1"
-	v1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker.io/v1"
+	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker/v1alpha1"
+	v1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker/v1alpha1"
 	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/automationbroker/bundle-lib/crd"
@@ -46,7 +46,7 @@ const (
 
 // Dao - object to interface with the data store.
 type Dao struct {
-	client    automationbrokerv1.AutomationbrokerV1Interface
+	client    automationbrokerv1.AutomationbrokerV1alpha1Interface
 	namespace string
 }
 
@@ -58,7 +58,7 @@ func NewDao(namespace string) (*Dao, error) {
 	if err != nil {
 		return nil, err
 	}
-	dao.client = crdClient.AutomationbrokerV1()
+	dao.client = crdClient.AutomationbrokerV1alpha1()
 	return &dao, nil
 }
 
@@ -148,15 +148,15 @@ func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
 // GetServiceInstance - Retrieve specific service instance from the kvp API.
 func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 	log.Debugf("get service instance: %v", id)
-	servInstance, err := d.client.ServiceInstances(d.namespace).Get(id, metav1.GetOptions{})
+	servInstance, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	spec, err := d.GetSpec(servInstance.Spec.BundleID)
+	spec, err := d.GetSpec(servInstance.Spec.Bundle.Name)
 	if err != nil {
 		return nil, err
 	}
-	return crd.ConvertServiceInstanceToAPB(servInstance.Spec, spec, servInstance.GetName())
+	return crd.ConvertServiceInstanceToAPB(*servInstance, spec, servInstance.GetName())
 }
 
 // SetServiceInstance - Set service instance for an id in the kvp API.
@@ -166,25 +166,27 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 	if err != nil {
 		return err
 	}
-	if si, err := d.client.ServiceInstances(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
+	if si, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
 		log.Debugf("updating service instance: %v", id)
-		si.Spec = spec
-		_, err := d.client.ServiceInstances(d.namespace).Update(si)
+		si.Spec = spec.Spec
+		si.Status = spec.Status
+		_, err := d.client.BundleInstances(d.namespace).Update(si)
 		if err != nil {
 			log.Errorf("unable to update service instance - %v", err)
 			return err
 		}
 		return nil
 	}
-	s := v1.ServiceInstance{
+	s := v1.BundleInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
 			Namespace: d.namespace,
 		},
-		Spec: spec,
+		Spec:   spec.Spec,
+		Status: spec.Status,
 	}
 
-	_, err = d.client.ServiceInstances(d.namespace).Create(&s)
+	_, err = d.client.BundleInstances(d.namespace).Create(&s)
 	if err != nil {
 		log.Errorf("unable to save service instance - %v", err)
 		return err
@@ -195,17 +197,17 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 // DeleteServiceInstance - Delete the service instance for an service instance id.
 func (d *Dao) DeleteServiceInstance(id string) error {
 	log.Debugf("Dao::DeleteServiceInstance -> [ %s ]", id)
-	return d.client.ServiceInstances(d.namespace).Delete(id, &metav1.DeleteOptions{})
+	return d.client.BundleInstances(d.namespace).Delete(id, &metav1.DeleteOptions{})
 }
 
 // GetBindInstance - Retrieve a specific bind instance from the kvp API
 func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
-	log.Debugf("get binding instance: %v", id)
-	bi, err := d.client.ServiceBindings(d.namespace).Get(id, metav1.GetOptions{})
+	log.Debugf("get binidng instance: %v", id)
+	bi, err := d.client.BundleBindings(d.namespace).Get(id, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return crd.ConvertServiceBindingToAPB(bi.Spec, bi.GetName())
+	return crd.ConvertServiceBindingToAPB(*bi, bi.GetName())
 }
 
 // SetBindInstance - Set the bind instance for id in the kvp API.
@@ -215,20 +217,21 @@ func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 	if err != nil {
 		return err
 	}
-	bi := v1.ServiceBinding{
+	bi := v1.BundleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
 			Namespace: d.namespace,
 		},
-		Spec: b,
+		Spec:   b.Spec,
+		Status: b.Status,
 	}
-	_, err = d.client.ServiceBindings(d.namespace).Create(&bi)
+	_, err = d.client.BundleBindings(d.namespace).Create(&bi)
 	if err != nil && apierrors.IsAlreadyExists(err) {
 		// looks like we already have this state, probably created by
 		// another goroutine. Let's try to update the existing one instead.
-		if binding, err := d.client.ServiceBindings(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
-			binding.Spec = b
-			_, err := d.client.ServiceBindings(d.namespace).Update(binding)
+		if binding, err := d.client.BundleBindings(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
+			binding.Spec = b.Spec
+			_, err := d.client.BundleBindings(d.namespace).Update(binding)
 			if err != nil {
 				log.Errorf("Unable to update the service binding, after a failed creation: %v - %v", id, err)
 				return err
@@ -244,65 +247,57 @@ func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 // DeleteBindInstance - Delete the binding instance for an id in the kvp API.
 func (d *Dao) DeleteBindInstance(id string) error {
 	log.Debugf("Dao::DeleteBindInstance -> [ %s ]", id)
-	err := d.client.ServiceBindings(d.namespace).Delete(id, &metav1.DeleteOptions{})
+	err := d.client.BundleBindings(d.namespace).Delete(id, &metav1.DeleteOptions{})
 	return err
-}
-
-func (d *Dao) updateJobState(js *v1.JobState, spec v1.JobStateSpec, state apb.JobState) error {
-	js.Spec = spec
-	js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State))
-	_, err := d.client.JobStates(d.namespace).Update(js)
-	if err != nil {
-		log.Errorf("Unable to update the job state, after a failed creation: %v - %v", state.Token, err)
-		return err
-	}
-
-	return nil
 }
 
 // SetState - Set the Job State in the kvp API for id.
 func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	log.Debugf("set job state for instance: %v token: %v", instanceID, state.Token)
-
-	j, err := crd.ConvertJobStateToCRD(&state)
-	if err != nil {
-		return "", err
-	}
-
-	if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
-		if err := d.updateJobState(js, j, state); err != nil {
+	n := metav1.Now()
+	switch state.Method {
+	case apb.JobMethodBind, apb.JobMethodUnbind:
+		// get the binding based on instance ID //update the job based on the token.
+		bi, err := d.client.BundleBindings(d.namespace).Get(instanceID, metav1.GetOptions{})
+		if err != nil {
+			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
 			return state.Token, err
 		}
-
-		return state.Token, nil
-	}
-
-	// We didn't find an existing JobState, so let's create a new one
-	js := v1.JobState{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      state.Token,
-			Namespace: d.namespace,
-			Labels: map[string]string{jobStateInstanceLabel: instanceID,
-				jobStateLabel: fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State)),
-			},
-		},
-		Spec: j,
-	}
-
-	// Create the actual JobState CRD
-	_, err = d.client.JobStates(d.namespace).Create(&js)
-	if err != nil && apierrors.IsAlreadyExists(err) {
-		// looks like we already have this state, probably created by
-		// another goroutine. Let's try to update the existing one instead.
-		if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
-			if err := d.updateJobState(js, j, state); err != nil {
-				return state.Token, err
-			}
+		bi.Status.Jobs[state.Token] = v1.Job{
+			Description:      state.Description,
+			LastModifiedTime: &n,
+			Method:           state.Method,
+			Podname:          state.Podname,
+			State:            crd.ConvertStateToCRD(state.State),
 		}
-	} else if err != nil {
-		// something else happened, bailing
-		log.Errorf("unable to create the job state - %v", err)
-		return "", err
+		bi.Status.LastDescription = state.Description
+		bi.Status.State = crd.ConvertStateToCRD(state.State)
+		_, err := d.client.BundleBindings(d.namespace).Update(bi)
+		if err != nil {
+			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+			return state.Token, err
+		}
+	case apb.JobMethodUpdate, apb.JobMethodDeprovision, apb.JobMethodProvision:
+		// get the binding based on instance id //update the job based on the token
+		si, err := d.client.BundleInstances(d.namespace).Get(instanceID, metav1.GetOptions{})
+		if err != nil {
+			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+			return state.Token, err
+		}
+		si.Status.Jobs[state.Token] = v1.Job{
+			Description:      state.Description,
+			LastModifiedTime: &n,
+			Method:           state.Method,
+			Podname:          state.Podname,
+			State:            crd.ConvertStateToCRD(state.State),
+		}
+		si.Status.LastDescription = state.Description
+		si.Status.State = crd.ConvertStateToCRD(state.State)
+		_, err := d.client.BundleInstances(d.namespace).Update(bi)
+		if err != nil {
+			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+			return state.Token, err
+		}
 	}
 
 	// looks like we're good
@@ -396,8 +391,5 @@ func (d *Dao) DeleteBinding(bindingInstance apb.BindInstance, serviceInstance ap
 		return err
 	}
 	serviceInstance.RemoveBinding(bindingInstance.ID)
-	if err := d.SetServiceInstance(serviceInstance.ID.String(), &serviceInstance); err != nil {
-		return err
-	}
-	return nil
+	return d.SetServiceInstance(serviceInstance.ID.String(), &serviceInstance)
 }
