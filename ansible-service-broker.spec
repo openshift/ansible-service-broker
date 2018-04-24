@@ -151,6 +151,7 @@ cp -r pkg src/github.com/openshift/ansible-service-broker
 export GOPATH=$(pwd):%{gopath}
 go build -tags "seccomp selinux" -ldflags "-s -w" ./cmd/broker
 go build -tags "seccomp selinux" -ldflags "-s -w" ./cmd/migration
+go build -tags "seccomp selinux" -ldflags "-s -w" ./cmd/dashboard-redirector
 
 #Build selinux modules
 # create selinux-friendly version from VR and replace it inplace
@@ -180,6 +181,7 @@ rm -rf src
 install -d -p %{buildroot}%{_bindir}
 install -p -m 755 broker %{buildroot}%{_bindir}/asbd
 install -p -m 755 migration %{buildroot}%{_bindir}/migration
+install -p -m 755 dashboard-redirector %{buildroot}%{_bindir}/dashboard-redirector
 install -p -m 755 build/entrypoint.sh %{buildroot}%{_bindir}/entrypoint.sh
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 644 etc/example-config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
@@ -282,6 +284,7 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %license LICENSE
 %{_bindir}/asbd
 %{_bindir}/migration
+%{_bindir}/dashboard-redirector
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_sysconfdir}/%{name}
 %attr(640, ansibleservicebroker, ansibleservicebroker) %config %{_sysconfdir}/%{name}/config.yaml
 %{_unitdir}/%{name}.service
