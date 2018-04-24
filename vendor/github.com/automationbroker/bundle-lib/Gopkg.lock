@@ -29,7 +29,7 @@
     "pkg/apis/automationbroker",
     "pkg/apis/automationbroker/v1alpha1"
   ]
-  revision = "00b71c26a8a6c6a71b5b8bf9e54c7695337bf643"
+  revision = "ae758feddead2cdc8fea98f3f3e08bd89e632dc7"
   source = "github.com/shawn-hurley/broker-client-go"
 
 [[projects]]
@@ -554,6 +554,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a8e7200dd0045209548637d5b58fecc58a48a7991ea48fe5cced34d1dc5c945c"
+  inputs-digest = "11adbaedb24295c41909f1764dbdd79747acb0735cd8f2be27a6066a0f0e7a92"
   solver-name = "gps-cdcl"
   solver-version = 1
