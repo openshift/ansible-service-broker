@@ -70,7 +70,7 @@ func TestFileUtils(t *testing.T) {
 		t.Fatal("Failed to test: failed to change work dir.")
 	}
 
-	// recover test environment
+	// recover test enviroment
 	defer RecoverEnv(currentDir, tmpDir)
 
 	t.Run("TestFileExists", func(t *testing.T) {

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 TAG = 0.1
-PREFIX = staging-k8s.gcr.io
+PREFIX = gcr.io/google_containers
 
 all: push
 
@@ -34,8 +34,8 @@ block:
 
 push: image
 	# Push image tagged as latest to repository
-	docker push $(PREFIX)/volume-rbd
+	gcloud docker -- push $(PREFIX)/volume-rbd
 	# Push version tagged image to repository (since this image is already pushed it will simply create or update version tag)
-	docker push $(PREFIX)/volume-rbd:$(TAG)
+	gcloud docker -- push $(PREFIX)/volume-rbd:$(TAG)
 
 clean:

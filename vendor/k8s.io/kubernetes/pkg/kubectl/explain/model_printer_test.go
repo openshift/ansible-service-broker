@@ -24,12 +24,11 @@ import (
 )
 
 func TestModel(t *testing.T) {
-	gvk := schema.GroupVersionKind{
+	schema := resources.LookupResource(schema.GroupVersionKind{
 		Group:   "",
 		Version: "v1",
 		Kind:    "OneKind",
-	}
-	schema := resources.LookupResource(gvk)
+	})
 	if schema == nil {
 		t.Fatal("Couldn't find schema v1.OneKind")
 	}
@@ -39,10 +38,7 @@ func TestModel(t *testing.T) {
 		want string
 	}{
 		{
-			want: `KIND:     OneKind
-VERSION:  v1
-
-DESCRIPTION:
+			want: `DESCRIPTION:
      OneKind has a short description
 
 FIELDS:
@@ -62,10 +58,7 @@ FIELDS:
 			path: []string{},
 		},
 		{
-			want: `KIND:     OneKind
-VERSION:  v1
-
-RESOURCE: field1 <Object>
+			want: `RESOURCE: field1 <Object>
 
 DESCRIPTION:
      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ut lacus ac
@@ -97,10 +90,7 @@ FIELDS:
 			path: []string{"field1"},
 		},
 		{
-			want: `KIND:     OneKind
-VERSION:  v1
-
-FIELD:    string <string>
+			want: `FIELD: string <string>
 
 DESCRIPTION:
      This string must be a string
@@ -108,10 +98,7 @@ DESCRIPTION:
 			path: []string{"field1", "string"},
 		},
 		{
-			want: `KIND:     OneKind
-VERSION:  v1
-
-FIELD:    array <[]integer>
+			want: `FIELD: array <[]integer>
 
 DESCRIPTION:
      This array must be an array of int
@@ -124,7 +111,7 @@ DESCRIPTION:
 
 	for _, test := range tests {
 		buf := bytes.Buffer{}
-		if err := PrintModelDescription(test.path, &buf, schema, gvk, false); err != nil {
+		if err := PrintModelDescription(test.path, &buf, schema, false); err != nil {
 			t.Fatalf("Failed to PrintModelDescription for path %v: %v", test.path, err)
 		}
 		got := buf.String()

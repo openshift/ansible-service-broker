@@ -32,7 +32,6 @@ import (
 	"k8s.io/kubernetes/pkg/util/version"
 
 	testutil "k8s.io/kubernetes/cmd/kubeadm/test"
-	utilpointer "k8s.io/kubernetes/pkg/util/pointer"
 )
 
 const (
@@ -44,7 +43,7 @@ func TestGetStaticPodSpecs(t *testing.T) {
 
 	// Creates a Master Configuration
 	cfg := &kubeadmapi.MasterConfiguration{
-		KubernetesVersion: "v1.9.0",
+		KubernetesVersion: "v1.8.0",
 	}
 
 	// Executes GetStaticPodSpecs
@@ -75,7 +74,7 @@ func TestGetStaticPodSpecs(t *testing.T) {
 
 			// Assert each specs refers to the right pod
 			if spec.Spec.Containers[0].Name != assertion.staticPodName {
-				t.Errorf("getKubeConfigSpecs spec for %s contains pod %s, expects %s", assertion.staticPodName, spec.Spec.Containers[0].Name, assertion.staticPodName)
+				t.Errorf("getKubeConfigSpecs spec for %s contains pod %s, expectes %s", assertion.staticPodName, spec.Spec.Containers[0].Name, assertion.staticPodName)
 			}
 
 		} else {
@@ -116,7 +115,7 @@ func TestCreateStaticPodFilesAndWrappers(t *testing.T) {
 
 		// Creates a Master Configuration
 		cfg := &kubeadmapi.MasterConfiguration{
-			KubernetesVersion: "v1.9.0",
+			KubernetesVersion: "v1.8.0",
 		}
 
 		// Execute createStaticPodFunction
@@ -136,58 +135,6 @@ func TestCreateStaticPodFilesAndWrappers(t *testing.T) {
 	}
 }
 
-func TestCreatePrivilegedContainerForOpenStack(t *testing.T) {
-	// Creates a Master Configuration with OpenStack cloud provider
-	var staticPodNames = []string{
-		kubeadmconstants.KubeAPIServer,
-		kubeadmconstants.KubeControllerManager,
-	}
-	var assertions = []struct {
-		cloudProvider     string
-		privilegedPods    bool
-		expectedPrivilege bool
-	}{
-		{
-			cloudProvider:     "",
-			expectedPrivilege: false,
-		},
-		{
-			cloudProvider:     "aws",
-			expectedPrivilege: false,
-		},
-		{
-			cloudProvider:     "openstack",
-			privilegedPods:    true,
-			expectedPrivilege: true,
-		},
-	}
-
-	for _, assertion := range assertions {
-		cfg := &kubeadmapi.MasterConfiguration{
-			KubernetesVersion: "v1.9.0",
-			CloudProvider:     assertion.cloudProvider,
-			PrivilegedPods:    assertion.privilegedPods,
-		}
-
-		k8sVersion, _ := version.ParseSemantic(cfg.KubernetesVersion)
-		specs := GetStaticPodSpecs(cfg, k8sVersion)
-
-		for _, podname := range staticPodNames {
-			spec, _ := specs[podname]
-			sc := spec.Spec.Containers[0].SecurityContext
-			if assertion.expectedPrivilege == true {
-				if sc == nil || sc.Privileged == nil || *sc.Privileged == false {
-					t.Errorf("GetStaticPodSpecs did not enable privileged containers in %s pod for provider %s", podname, assertion.cloudProvider)
-				}
-			} else {
-				if sc != nil && sc.Privileged != nil && *sc.Privileged == true {
-					t.Errorf("GetStaticPodSpecs enabled privileged containers in %s pod for provider %s", podname, assertion.cloudProvider)
-				}
-			}
-		}
-	}
-}
-
 func TestGetAPIServerCommand(t *testing.T) {
 	var tests = []struct {
 		cfg      *kubeadmapi.MasterConfiguration
@@ -198,12 +145,12 @@ func TestGetAPIServerCommand(t *testing.T) {
 				API:               kubeadmapi.API{BindPort: 123, AdvertiseAddress: "1.2.3.4"},
 				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
 				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.0",
+				KubernetesVersion: "v1.8.0",
 			},
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -224,10 +171,7 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=1.2.3.4",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
 			},
 		},
 		{
@@ -235,12 +179,12 @@ func TestGetAPIServerCommand(t *testing.T) {
 				API:               kubeadmapi.API{BindPort: 123, AdvertiseAddress: "1.2.3.4"},
 				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
 				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.0-beta.0",
+				KubernetesVersion: "v1.8.0-beta.0",
 			},
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -261,10 +205,7 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=1.2.3.4",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
 			},
 		},
 		{
@@ -272,12 +213,12 @@ func TestGetAPIServerCommand(t *testing.T) {
 				API:               kubeadmapi.API{BindPort: 123, AdvertiseAddress: "4.3.2.1"},
 				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
 				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.1",
+				KubernetesVersion: "v1.8.1",
 			},
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -298,10 +239,7 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=4.3.2.1",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
 			},
 		},
 		{
@@ -310,12 +248,12 @@ func TestGetAPIServerCommand(t *testing.T) {
 				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
 				Etcd:              kubeadmapi.Etcd{CertFile: "fiz", KeyFile: "faz"},
 				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.0",
+				KubernetesVersion: "v1.8.0",
 			},
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -336,10 +274,9 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=4.3.2.1",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
+				"--etcd-certfile=fiz",
+				"--etcd-keyfile=faz",
 			},
 		},
 		{
@@ -348,17 +285,12 @@ func TestGetAPIServerCommand(t *testing.T) {
 				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
 				Etcd:              kubeadmapi.Etcd{CertFile: "fiz", KeyFile: "faz"},
 				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.3",
-				AuditPolicyConfiguration: kubeadmapi.AuditPolicyConfiguration{
-					Path:      "/foo/bar",
-					LogDir:    "/foo/baz",
-					LogMaxAge: utilpointer.Int32Ptr(10),
-				}, // ignored without the feature gate
+				KubernetesVersion: "v1.8.3",
 			},
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -379,10 +311,9 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=4.3.2.1",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
+				"--etcd-certfile=fiz",
+				"--etcd-keyfile=faz",
 			},
 		},
 		{
@@ -391,12 +322,12 @@ func TestGetAPIServerCommand(t *testing.T) {
 				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
 				Etcd:              kubeadmapi.Etcd{CertFile: "fiz", KeyFile: "faz"},
 				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.0",
+				KubernetesVersion: "v1.8.0",
 			},
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -417,10 +348,9 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=2001:db8::1",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
+				"--etcd-certfile=fiz",
+				"--etcd-keyfile=faz",
 			},
 		},
 		{
@@ -434,7 +364,7 @@ func TestGetAPIServerCommand(t *testing.T) {
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -455,10 +385,9 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=2001:db8::1",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
+				"--etcd-certfile=fiz",
+				"--etcd-keyfile=faz",
 			},
 		},
 		{
@@ -466,14 +395,13 @@ func TestGetAPIServerCommand(t *testing.T) {
 				API:               kubeadmapi.API{BindPort: 123, AdvertiseAddress: "2001:db8::1"},
 				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
 				FeatureGates:      map[string]bool{features.HighAvailability: true},
-				Etcd:              kubeadmapi.Etcd{Endpoints: []string{"https://8.6.4.1:2379", "https://8.6.4.2:2379"}, CAFile: "fuz", CertFile: "fiz", KeyFile: "faz"},
 				CertificatesDir:   testCertsDir,
 				KubernetesVersion: "v1.9.0-beta.0",
 			},
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -494,129 +422,8 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=2001:db8::1",
-				"--etcd-servers=https://8.6.4.1:2379,https://8.6.4.2:2379",
-				"--etcd-cafile=fuz",
-				"--etcd-certfile=fiz",
-				"--etcd-keyfile=faz",
+				"--etcd-servers=http://127.0.0.1:2379",
 				fmt.Sprintf("--endpoint-reconciler-type=%s", reconcilers.LeaseEndpointReconcilerType),
-			},
-		},
-		{
-			cfg: &kubeadmapi.MasterConfiguration{
-				API:               kubeadmapi.API{BindPort: 123, AdvertiseAddress: "2001:db8::1"},
-				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
-				Etcd:              kubeadmapi.Etcd{Endpoints: []string{"http://127.0.0.1:2379", "http://127.0.0.1:2380"}},
-				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.0-beta.0",
-			},
-			expected: []string{
-				"kube-apiserver",
-				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
-				"--service-cluster-ip-range=bar",
-				"--service-account-key-file=" + testCertsDir + "/sa.pub",
-				"--client-ca-file=" + testCertsDir + "/ca.crt",
-				"--tls-cert-file=" + testCertsDir + "/apiserver.crt",
-				"--tls-private-key-file=" + testCertsDir + "/apiserver.key",
-				"--kubelet-client-certificate=" + testCertsDir + "/apiserver-kubelet-client.crt",
-				"--kubelet-client-key=" + testCertsDir + "/apiserver-kubelet-client.key",
-				fmt.Sprintf("--secure-port=%d", 123),
-				"--allow-privileged=true",
-				"--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname",
-				"--enable-bootstrap-token-auth=true",
-				"--proxy-client-cert-file=/var/lib/certs/front-proxy-client.crt",
-				"--proxy-client-key-file=/var/lib/certs/front-proxy-client.key",
-				"--requestheader-username-headers=X-Remote-User",
-				"--requestheader-group-headers=X-Remote-Group",
-				"--requestheader-extra-headers-prefix=X-Remote-Extra-",
-				"--requestheader-client-ca-file=" + testCertsDir + "/front-proxy-ca.crt",
-				"--requestheader-allowed-names=front-proxy-client",
-				"--authorization-mode=Node,RBAC",
-				"--advertise-address=2001:db8::1",
-				"--etcd-servers=http://127.0.0.1:2379,http://127.0.0.1:2380",
-			},
-		},
-		{
-			cfg: &kubeadmapi.MasterConfiguration{
-				API:               kubeadmapi.API{BindPort: 123, AdvertiseAddress: "2001:db8::1"},
-				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
-				Etcd:              kubeadmapi.Etcd{CAFile: "fuz"},
-				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.0-beta.0",
-			},
-			expected: []string{
-				"kube-apiserver",
-				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
-				"--service-cluster-ip-range=bar",
-				"--service-account-key-file=" + testCertsDir + "/sa.pub",
-				"--client-ca-file=" + testCertsDir + "/ca.crt",
-				"--tls-cert-file=" + testCertsDir + "/apiserver.crt",
-				"--tls-private-key-file=" + testCertsDir + "/apiserver.key",
-				"--kubelet-client-certificate=" + testCertsDir + "/apiserver-kubelet-client.crt",
-				"--kubelet-client-key=" + testCertsDir + "/apiserver-kubelet-client.key",
-				fmt.Sprintf("--secure-port=%d", 123),
-				"--allow-privileged=true",
-				"--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname",
-				"--enable-bootstrap-token-auth=true",
-				"--proxy-client-cert-file=/var/lib/certs/front-proxy-client.crt",
-				"--proxy-client-key-file=/var/lib/certs/front-proxy-client.key",
-				"--requestheader-username-headers=X-Remote-User",
-				"--requestheader-group-headers=X-Remote-Group",
-				"--requestheader-extra-headers-prefix=X-Remote-Extra-",
-				"--requestheader-client-ca-file=" + testCertsDir + "/front-proxy-ca.crt",
-				"--requestheader-allowed-names=front-proxy-client",
-				"--authorization-mode=Node,RBAC",
-				"--advertise-address=2001:db8::1",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
-			},
-		},
-		{
-			cfg: &kubeadmapi.MasterConfiguration{
-				API:               kubeadmapi.API{BindPort: 123, AdvertiseAddress: "2001:db8::1"},
-				Networking:        kubeadmapi.Networking{ServiceSubnet: "bar"},
-				FeatureGates:      map[string]bool{features.HighAvailability: true, features.Auditing: true},
-				CertificatesDir:   testCertsDir,
-				KubernetesVersion: "v1.9.0-beta.0",
-				AuditPolicyConfiguration: kubeadmapi.AuditPolicyConfiguration{
-					LogMaxAge: utilpointer.Int32Ptr(0),
-				},
-			},
-			expected: []string{
-				"kube-apiserver",
-				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
-				"--service-cluster-ip-range=bar",
-				"--service-account-key-file=" + testCertsDir + "/sa.pub",
-				"--client-ca-file=" + testCertsDir + "/ca.crt",
-				"--tls-cert-file=" + testCertsDir + "/apiserver.crt",
-				"--tls-private-key-file=" + testCertsDir + "/apiserver.key",
-				"--kubelet-client-certificate=" + testCertsDir + "/apiserver-kubelet-client.crt",
-				"--kubelet-client-key=" + testCertsDir + "/apiserver-kubelet-client.key",
-				fmt.Sprintf("--secure-port=%d", 123),
-				"--allow-privileged=true",
-				"--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname",
-				"--enable-bootstrap-token-auth=true",
-				"--proxy-client-cert-file=/var/lib/certs/front-proxy-client.crt",
-				"--proxy-client-key-file=/var/lib/certs/front-proxy-client.key",
-				"--requestheader-username-headers=X-Remote-User",
-				"--requestheader-group-headers=X-Remote-Group",
-				"--requestheader-extra-headers-prefix=X-Remote-Extra-",
-				"--requestheader-client-ca-file=" + testCertsDir + "/front-proxy-ca.crt",
-				"--requestheader-allowed-names=front-proxy-client",
-				"--authorization-mode=Node,RBAC",
-				"--advertise-address=2001:db8::1",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
-				fmt.Sprintf("--endpoint-reconciler-type=%s", reconcilers.LeaseEndpointReconcilerType),
-				"--audit-policy-file=/etc/kubernetes/audit/audit.yaml",
-				"--audit-log-path=/var/log/kubernetes/audit/audit.log",
-				"--audit-log-maxage=0",
 			},
 		},
 		{
@@ -630,7 +437,7 @@ func TestGetAPIServerCommand(t *testing.T) {
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -651,10 +458,7 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=1.2.3.4",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
 				"--cloud-provider=gce",
 			},
 		},
@@ -669,7 +473,7 @@ func TestGetAPIServerCommand(t *testing.T) {
 			expected: []string{
 				"kube-apiserver",
 				"--insecure-port=0",
-				"--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
+				"--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota",
 				"--service-cluster-ip-range=bar",
 				"--service-account-key-file=" + testCertsDir + "/sa.pub",
 				"--client-ca-file=" + testCertsDir + "/ca.crt",
@@ -690,10 +494,7 @@ func TestGetAPIServerCommand(t *testing.T) {
 				"--requestheader-allowed-names=front-proxy-client",
 				"--authorization-mode=Node,RBAC",
 				"--advertise-address=1.2.3.4",
-				"--etcd-servers=https://127.0.0.1:2379",
-				"--etcd-cafile=" + testCertsDir + "/etcd/ca.crt",
-				"--etcd-certfile=" + testCertsDir + "/apiserver-etcd-client.crt",
-				"--etcd-keyfile=" + testCertsDir + "/apiserver-etcd-client.key",
+				"--etcd-servers=http://127.0.0.1:2379",
 				"--cloud-provider=aws",
 			},
 		},
@@ -776,7 +577,7 @@ func TestGetControllerManagerCommand(t *testing.T) {
 		},
 		{
 			cfg: &kubeadmapi.MasterConfiguration{
-				Networking:        kubeadmapi.Networking{PodSubnet: "2001:db8::/64"},
+				Networking:        kubeadmapi.Networking{PodSubnet: "2001:101:115::/48"},
 				CertificatesDir:   testCertsDir,
 				KubernetesVersion: "v1.7.0",
 			},
@@ -792,8 +593,8 @@ func TestGetControllerManagerCommand(t *testing.T) {
 				"--use-service-account-credentials=true",
 				"--controllers=*,bootstrapsigner,tokencleaner",
 				"--allocate-node-cidrs=true",
-				"--cluster-cidr=2001:db8::/64",
-				"--node-cidr-mask-size=80",
+				"--cluster-cidr=2001:101:115::/48",
+				"--node-cidr-mask-size=64",
 			},
 		},
 	}
@@ -808,77 +609,6 @@ func TestGetControllerManagerCommand(t *testing.T) {
 	}
 }
 
-func TestCalcNodeCidrSize(t *testing.T) {
-	tests := []struct {
-		name           string
-		podSubnet      string
-		expectedPrefix string
-	}{
-		{
-			name:           "Malformed pod subnet",
-			podSubnet:      "10.10.10/160",
-			expectedPrefix: "24",
-		},
-		{
-			name:           "V4: Always uses 24",
-			podSubnet:      "10.10.10.10/16",
-			expectedPrefix: "24",
-		},
-		{
-			name:           "V6: Use pod subnet size, when not enough space",
-			podSubnet:      "2001:db8::/128",
-			expectedPrefix: "128",
-		},
-		{
-			name:           "V6: Use pod subnet size, when not enough space",
-			podSubnet:      "2001:db8::/113",
-			expectedPrefix: "113",
-		},
-		{
-			name:           "V6: Special case with 256 nodes",
-			podSubnet:      "2001:db8::/112",
-			expectedPrefix: "120",
-		},
-		{
-			name:           "V6: Using /120 for node CIDR",
-			podSubnet:      "2001:db8::/104",
-			expectedPrefix: "120",
-		},
-		{
-			name:           "V6: Using /112 for node CIDR",
-			podSubnet:      "2001:db8::/103",
-			expectedPrefix: "112",
-		},
-		{
-			name:           "V6: Using /112 for node CIDR",
-			podSubnet:      "2001:db8::/96",
-			expectedPrefix: "112",
-		},
-		{
-			name:           "V6: Using /104 for node CIDR",
-			podSubnet:      "2001:db8::/95",
-			expectedPrefix: "104",
-		},
-		{
-			name:           "V6: Largest subnet currently supported",
-			podSubnet:      "2001:db8::/66",
-			expectedPrefix: "80",
-		},
-		{
-			name:           "V6: For /64 pod net, use /80",
-			podSubnet:      "2001:db8::/64",
-			expectedPrefix: "80",
-		},
-	}
-	for _, test := range tests {
-		actualPrefix := calcNodeCidrSize(test.podSubnet)
-		if actualPrefix != test.expectedPrefix {
-			t.Errorf("Case [%s]\nCalc of node CIDR size for pod subnet %q failed: Expected %q, saw %q",
-				test.name, test.podSubnet, test.expectedPrefix, actualPrefix)
-		}
-	}
-
-}
 func TestGetControllerManagerCommandExternalCA(t *testing.T) {
 
 	tests := []struct {

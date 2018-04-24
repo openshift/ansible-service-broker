@@ -48,16 +48,7 @@ func (a *attacherDefaults) GetDeviceMountPath(spec *volume.Spec, mountsDir strin
 // MountDevice is part of the volume.Attacher interface
 func (a *attacherDefaults) MountDevice(spec *volume.Spec, devicePath string, deviceMountPath string, mounter mount.Interface) error {
 	glog.Warning(logPrefix(a.plugin.flexVolumePlugin), "using default MountDevice for volume ", spec.Name, ", device ", devicePath, ", deviceMountPath ", deviceMountPath)
-
-	volSourceFSType, err := getFSType(spec)
-	if err != nil {
-		return err
-	}
-
-	readOnly, err := getReadOnly(spec)
-	if err != nil {
-		return err
-	}
+	volSource, readOnly := getVolumeSource(spec)
 
 	options := make([]string, 0)
 
@@ -69,5 +60,5 @@ func (a *attacherDefaults) MountDevice(spec *volume.Spec, devicePath string, dev
 
 	diskMounter := &mount.SafeFormatAndMount{Interface: mounter, Exec: a.plugin.host.GetExec(a.plugin.GetPluginName())}
 
-	return diskMounter.FormatAndMount(devicePath, deviceMountPath, volSourceFSType, options)
+	return diskMounter.FormatAndMount(devicePath, deviceMountPath, volSource.FSType, options)
 }

@@ -77,6 +77,10 @@ func (cu *cadvisorClient) WatchEvents(request *events.Request) (*events.EventCha
 	return &events.EventChannel{}, nil
 }
 
-func (cu *cadvisorClient) GetDirFsInfo(path string) (cadvisorapiv2.FsInfo, error) {
-	return cu.winStatsClient.GetDirFsInfo(path)
+func (cu *cadvisorClient) HasDedicatedImageFs() (bool, error) {
+	return false, nil
+}
+
+func (c *cadvisorClient) GetFsInfoByFsUUID(uuid string) (cadvisorapiv2.FsInfo, error) {
+	return cadvisorapiv2.FsInfo{}, nil
 }

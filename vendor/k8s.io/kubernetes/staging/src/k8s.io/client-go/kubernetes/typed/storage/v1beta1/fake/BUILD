@@ -11,7 +11,6 @@ go_library(
         "doc.go",
         "fake_storage_client.go",
         "fake_storageclass.go",
-        "fake_volumeattachment.go",
     ],
     importpath = "k8s.io/client-go/kubernetes/typed/storage/v1beta1/fake",
     deps = [

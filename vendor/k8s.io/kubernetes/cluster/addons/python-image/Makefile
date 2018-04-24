@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-IMAGE=staging-k8s.gcr.io/python
+IMAGE=gcr.io/google_containers/python
 VERSION=v1
 
 .PHONY: build push
@@ -21,5 +21,5 @@ build:
 	docker build --pull -t "$(IMAGE):$(VERSION)" .
 
 push:
-	docker push "$(IMAGE):$(VERSION)"
+	gcloud docker -- push "$(IMAGE):$(VERSION)"
 

@@ -10,7 +10,6 @@ go_library(
     srcs = [
         "interface.go",
         "storageclass.go",
-        "volumeattachment.go",
     ],
     importpath = "k8s.io/client-go/informers/storage/v1beta1",
     deps = [

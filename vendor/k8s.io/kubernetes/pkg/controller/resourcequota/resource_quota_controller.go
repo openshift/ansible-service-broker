@@ -148,31 +148,28 @@ func NewResourceQuotaController(options *ResourceQuotaControllerOptions) (*Resou
 		rq.resyncPeriod(),
 	)
 
-	if options.DiscoveryFunc != nil {
-		qm := &QuotaMonitor{
-			informersStarted:  options.InformersStarted,
-			informerFactory:   options.InformerFactory,
-			ignoredResources:  options.IgnoredResourcesFunc(),
-			resourceChanges:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resource_quota_controller_resource_changes"),
-			resyncPeriod:      options.ReplenishmentResyncPeriod,
-			replenishmentFunc: rq.replenishQuota,
-			registry:          rq.registry,
-		}
-
-		rq.quotaMonitor = qm
-
-		// do initial quota monitor setup
-		resources, err := GetQuotableResources(options.DiscoveryFunc)
-		if err != nil {
-			return nil, err
-		}
-		if err = qm.SyncMonitors(resources); err != nil {
-			utilruntime.HandleError(fmt.Errorf("initial monitor sync has error: %v", err))
-		}
-
-		// only start quota once all informers synced
-		rq.informerSyncedFuncs = append(rq.informerSyncedFuncs, qm.IsSynced)
+	qm := &QuotaMonitor{
+		informersStarted:  options.InformersStarted,
+		informerFactory:   options.InformerFactory,
+		ignoredResources:  options.IgnoredResourcesFunc(),
+		resourceChanges:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resource_quota_controller_resource_changes"),
+		resyncPeriod:      options.ReplenishmentResyncPeriod,
+		replenishmentFunc: rq.replenishQuota,
+		registry:          rq.registry,
 	}
+	rq.quotaMonitor = qm
+
+	// do initial quota monitor setup
+	resources, err := GetQuotableResources(options.DiscoveryFunc)
+	if err != nil {
+		return nil, err
+	}
+	if err = qm.syncMonitors(resources); err != nil {
+		utilruntime.HandleError(fmt.Errorf("initial monitor sync has error: %v", err))
+	}
+
+	// only start quota once all informers synced
+	rq.informerSyncedFuncs = append(rq.informerSyncedFuncs, qm.IsSynced)
 
 	return rq, nil
 }
@@ -275,9 +272,7 @@ func (rq *ResourceQuotaController) Run(workers int, stopCh <-chan struct{}) {
 	glog.Infof("Starting resource quota controller")
 	defer glog.Infof("Shutting down resource quota controller")
 
-	if rq.quotaMonitor != nil {
-		go rq.quotaMonitor.Run(stopCh)
-	}
+	go rq.quotaMonitor.Run(stopCh)
 
 	if !controller.WaitForCacheSync("resource quota", stopCh, rq.informerSyncedFuncs...) {
 		return
@@ -311,6 +306,7 @@ func (rq *ResourceQuotaController) syncResourceQuotaFromKey(key string) (err err
 	}
 	if err != nil {
 		glog.Infof("Unable to retrieve resource quota %v from store: %v", key, err)
+		rq.queue.Add(key)
 		return err
 	}
 	return rq.syncResourceQuota(quota)
@@ -448,7 +444,7 @@ func (rq *ResourceQuotaController) Sync(discoveryFunc NamespacedResourcesFunc, p
 			utilruntime.HandleError(fmt.Errorf("failed to sync resource monitors: %v", err))
 			return
 		}
-		if rq.quotaMonitor != nil && !controller.WaitForCacheSync("resource quota", stopCh, rq.quotaMonitor.IsSynced) {
+		if !controller.WaitForCacheSync("resource quota", stopCh, rq.quotaMonitor.IsSynced) {
 			utilruntime.HandleError(fmt.Errorf("timed out waiting for quota monitor sync"))
 		}
 	}, period, stopCh)
@@ -457,14 +453,10 @@ func (rq *ResourceQuotaController) Sync(discoveryFunc NamespacedResourcesFunc, p
 // resyncMonitors starts or stops quota monitors as needed to ensure that all
 // (and only) those resources present in the map are monitored.
 func (rq *ResourceQuotaController) resyncMonitors(resources map[schema.GroupVersionResource]struct{}) error {
-	if rq.quotaMonitor == nil {
-		return nil
-	}
-
-	if err := rq.quotaMonitor.SyncMonitors(resources); err != nil {
+	if err := rq.quotaMonitor.syncMonitors(resources); err != nil {
 		return err
 	}
-	rq.quotaMonitor.StartMonitors()
+	rq.quotaMonitor.startMonitors()
 	return nil
 }
 
@@ -475,7 +467,7 @@ func GetQuotableResources(discoveryFunc NamespacedResourcesFunc) (map[schema.Gro
 	if err != nil {
 		return nil, fmt.Errorf("failed to discover resources: %v", err)
 	}
-	quotableResources := discovery.FilteredBy(discovery.SupportsAllVerbs{Verbs: []string{"create", "list", "watch", "delete"}}, possibleResources)
+	quotableResources := discovery.FilteredBy(discovery.SupportsAllVerbs{Verbs: []string{"create", "list", "delete"}}, possibleResources)
 	quotableGroupVersionResources, err := discovery.GroupVersionResources(quotableResources)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse resources: %v", err)

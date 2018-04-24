@@ -89,7 +89,7 @@ func setupQuotaController(t *testing.T, kubeClient kubernetes.Interface, lister 
 	alwaysStarted := make(chan struct{})
 	close(alwaysStarted)
 	resourceQuotaControllerOptions := &ResourceQuotaControllerOptions{
-		QuotaClient:               kubeClient.CoreV1(),
+		QuotaClient:               kubeClient.Core(),
 		ResourceQuotaInformer:     informerFactory.Core().V1().ResourceQuotas(),
 		ResyncPeriod:              controller.NoResyncPeriodFunc,
 		ReplenishmentResyncPeriod: controller.NoResyncPeriodFunc,
@@ -338,26 +338,6 @@ func TestAddQuota(t *testing.T) {
 			},
 		},
 		{
-			name:             "status, no usage(to validate it works for extended resources)",
-			expectedPriority: true,
-			quota: &v1.ResourceQuota{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "default",
-					Name:      "rq",
-				},
-				Spec: v1.ResourceQuotaSpec{
-					Hard: v1.ResourceList{
-						"requests.example/foobars.example.com": resource.MustParse("4"),
-					},
-				},
-				Status: v1.ResourceQuotaStatus{
-					Hard: v1.ResourceList{
-						"requests.example/foobars.example.com": resource.MustParse("4"),
-					},
-				},
-			},
-		},
-		{
 			name:             "status, mismatch",
 			expectedPriority: true,
 			quota: &v1.ResourceQuota{
@@ -390,12 +370,12 @@ func TestAddQuota(t *testing.T) {
 				},
 				Spec: v1.ResourceQuotaSpec{
 					Hard: v1.ResourceList{
-						"foobars.example.com": resource.MustParse("4"),
+						"count/foobars.example.com": resource.MustParse("4"),
 					},
 				},
 				Status: v1.ResourceQuotaStatus{
 					Hard: v1.ResourceList{
-						"foobars.example.com": resource.MustParse("4"),
+						"count/foobars.example.com": resource.MustParse("4"),
 					},
 				},
 			},

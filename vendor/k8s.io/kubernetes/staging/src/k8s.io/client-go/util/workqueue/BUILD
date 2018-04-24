@@ -13,7 +13,8 @@ go_test(
         "delaying_queue_test.go",
         "rate_limitting_queue_test.go",
     ],
-    embed = [":go_default_library"],
+    importpath = "k8s.io/client-go/util/workqueue",
+    library = ":go_default_library",
     deps = [
         "//vendor/k8s.io/apimachinery/pkg/util/clock:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/wait:go_default_library",
@@ -33,7 +34,7 @@ go_library(
     ],
     importpath = "k8s.io/client-go/util/workqueue",
     deps = [
-        "//vendor/golang.org/x/time/rate:go_default_library",
+        "//vendor/github.com/juju/ratelimit:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/clock:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/runtime:go_default_library",
     ],
@@ -42,6 +43,7 @@ go_library(
 go_test(
     name = "go_default_xtest",
     srcs = ["queue_test.go"],
+    importpath = "k8s.io/client-go/util/workqueue_test",
     deps = ["//vendor/k8s.io/client-go/util/workqueue:go_default_library"],
 )
 

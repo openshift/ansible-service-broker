@@ -30,8 +30,11 @@ import (
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/api/admissionregistration/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/admission"
 	"k8s.io/apiserver/pkg/admission/configuration"
 	genericadmissioninit "k8s.io/apiserver/pkg/admission/initializer"
@@ -65,7 +68,8 @@ func Register(plugins *admission.Plugins) {
 
 // WebhookSource can list dynamic webhook plugins.
 type WebhookSource interface {
-	Webhooks() *v1beta1.ValidatingWebhookConfiguration
+	Run(stopCh <-chan struct{})
+	Webhooks() (*v1beta1.ValidatingWebhookConfiguration, error)
 }
 
 // NewValidatingAdmissionWebhook returns a generic admission webhook plugin.
@@ -127,6 +131,9 @@ func (a *ValidatingAdmissionWebhook) SetServiceResolver(sr config.ServiceResolve
 // SetScheme sets a serializer(NegotiatedSerializer) which is derived from the scheme
 func (a *ValidatingAdmissionWebhook) SetScheme(scheme *runtime.Scheme) {
 	if scheme != nil {
+		a.clientManager.SetNegotiatedSerializer(serializer.NegotiatedSerializerWrapper(runtime.SerializerInfo{
+			Serializer: serializer.NewCodecFactory(scheme).LegacyCodec(admissionv1beta1.SchemeGroupVersion),
+		}))
 		a.convertor.Scheme = scheme
 	}
 }
@@ -134,23 +141,20 @@ func (a *ValidatingAdmissionWebhook) SetScheme(scheme *runtime.Scheme) {
 // WantsExternalKubeClientSet defines a function which sets external ClientSet for admission plugins that need it
 func (a *ValidatingAdmissionWebhook) SetExternalKubeClientSet(client clientset.Interface) {
 	a.namespaceMatcher.Client = client
+	a.hookSource = configuration.NewValidatingWebhookConfigurationManager(client.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations())
 }
 
 // SetExternalKubeInformerFactory implements the WantsExternalKubeInformerFactory interface.
 func (a *ValidatingAdmissionWebhook) SetExternalKubeInformerFactory(f informers.SharedInformerFactory) {
 	namespaceInformer := f.Core().V1().Namespaces()
 	a.namespaceMatcher.NamespaceLister = namespaceInformer.Lister()
-	validatingWebhookConfigurationsInformer := f.Admissionregistration().V1beta1().ValidatingWebhookConfigurations()
-	a.hookSource = configuration.NewValidatingWebhookConfigurationManager(validatingWebhookConfigurationsInformer)
-	a.SetReadyFunc(func() bool {
-		return namespaceInformer.Informer().HasSynced() && validatingWebhookConfigurationsInformer.Informer().HasSynced()
-	})
+	a.SetReadyFunc(namespaceInformer.Informer().HasSynced)
 }
 
 // ValidateInitialization implements the InitializationValidator interface.
 func (a *ValidatingAdmissionWebhook) ValidateInitialization() error {
 	if a.hookSource == nil {
-		return fmt.Errorf("ValidatingAdmissionWebhook admission plugin requires a Kubernetes informer to be provided")
+		return fmt.Errorf("ValidatingAdmissionWebhook admission plugin requires a Kubernetes client to be provided")
 	}
 	if err := a.namespaceMatcher.Validate(); err != nil {
 		return fmt.Errorf("ValidatingAdmissionWebhook.namespaceMatcher is not properly setup: %v", err)
@@ -161,23 +165,35 @@ func (a *ValidatingAdmissionWebhook) ValidateInitialization() error {
 	if err := a.convertor.Validate(); err != nil {
 		return fmt.Errorf("ValidatingAdmissionWebhook.convertor is not properly setup: %v", err)
 	}
+	go a.hookSource.Run(wait.NeverStop)
 	return nil
 }
 
-func (a *ValidatingAdmissionWebhook) loadConfiguration(attr admission.Attributes) *v1beta1.ValidatingWebhookConfiguration {
-	return a.hookSource.Webhooks()
+func (a *ValidatingAdmissionWebhook) loadConfiguration(attr admission.Attributes) (*v1beta1.ValidatingWebhookConfiguration, error) {
+	hookConfig, err := a.hookSource.Webhooks()
+	// if Webhook configuration is disabled, fail open
+	if err == configuration.ErrDisabled {
+		return &v1beta1.ValidatingWebhookConfiguration{}, nil
+	}
+	if err != nil {
+		e := apierrors.NewServerTimeout(attr.GetResource().GroupResource(), string(attr.GetOperation()), 1)
+		e.ErrStatus.Message = fmt.Sprintf("Unable to refresh the Webhook configuration: %v", err)
+		e.ErrStatus.Reason = "LoadingConfiguration"
+		e.ErrStatus.Details.Causes = append(e.ErrStatus.Details.Causes, metav1.StatusCause{
+			Type:    "ValidatingWebhookConfigurationFailure",
+			Message: "An error has occurred while refreshing the ValidatingWebhook configuration, no resources can be created/updated/deleted/connected until a refresh succeeds.",
+		})
+		return nil, e
+	}
+	return hookConfig, nil
 }
 
 // Validate makes an admission decision based on the request attributes.
 func (a *ValidatingAdmissionWebhook) Validate(attr admission.Attributes) error {
-	if rules.IsWebhookConfigurationResource(attr) {
-		return nil
+	hookConfig, err := a.loadConfiguration(attr)
+	if err != nil {
+		return err
 	}
-
-	if !a.WaitForReady() {
-		return admission.NewForbidden(attr, fmt.Errorf("not yet ready to handle request"))
-	}
-	hookConfig := a.loadConfiguration(attr)
 	hooks := hookConfig.Webhooks
 	ctx := context.TODO()
 
@@ -266,7 +282,7 @@ func (a *ValidatingAdmissionWebhook) Validate(attr admission.Attributes) error {
 	return errs[0]
 }
 
-// TODO: factor into a common place along with the mutating webhook version.
+// TODO: factor into a common place along with the validating webhook version.
 func (a *ValidatingAdmissionWebhook) shouldCallHook(h *v1beta1.Webhook, attr admission.Attributes) (bool, *apierrors.StatusError) {
 	var matches bool
 	for _, r := range h.Rules {

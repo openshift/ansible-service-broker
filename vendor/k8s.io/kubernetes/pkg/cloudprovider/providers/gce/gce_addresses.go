@@ -17,7 +17,6 @@ limitations under the License.
 package gce
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/golang/glog"
@@ -25,10 +24,6 @@ import (
 	computealpha "google.golang.org/api/compute/v0.alpha"
 	computebeta "google.golang.org/api/compute/v0.beta"
 	compute "google.golang.org/api/compute/v1"
-
-	"k8s.io/kubernetes/pkg/cloudprovider/providers/gce/cloud"
-	"k8s.io/kubernetes/pkg/cloudprovider/providers/gce/cloud/filter"
-	"k8s.io/kubernetes/pkg/cloudprovider/providers/gce/cloud/meta"
 )
 
 func newAddressMetricContext(request, region string) *metricContext {
@@ -45,81 +40,110 @@ func newAddressMetricContextWithVersion(request, region, version string) *metric
 // ephemeral IP associated with a global forwarding rule.
 func (gce *GCECloud) ReserveGlobalAddress(addr *compute.Address) error {
 	mc := newAddressMetricContext("reserve", "")
-	return mc.Observe(gce.c.GlobalAddresses().Insert(context.Background(), meta.GlobalKey(addr.Name), addr))
+	op, err := gce.service.GlobalAddresses.Insert(gce.projectID, addr).Do()
+	if err != nil {
+		return mc.Observe(err)
+	}
+	return gce.waitForGlobalOp(op, mc)
 }
 
 // DeleteGlobalAddress deletes a global address by name.
 func (gce *GCECloud) DeleteGlobalAddress(name string) error {
 	mc := newAddressMetricContext("delete", "")
-	return mc.Observe(gce.c.GlobalAddresses().Delete(context.Background(), meta.GlobalKey(name)))
+	op, err := gce.service.GlobalAddresses.Delete(gce.projectID, name).Do()
+	if err != nil {
+		return mc.Observe(err)
+	}
+	return gce.waitForGlobalOp(op, mc)
 }
 
 // GetGlobalAddress returns the global address by name.
 func (gce *GCECloud) GetGlobalAddress(name string) (*compute.Address, error) {
 	mc := newAddressMetricContext("get", "")
-	v, err := gce.c.GlobalAddresses().Get(context.Background(), meta.GlobalKey(name))
+	v, err := gce.service.GlobalAddresses.Get(gce.projectID, name).Do()
 	return v, mc.Observe(err)
 }
 
 // ReserveRegionAddress creates a region address
 func (gce *GCECloud) ReserveRegionAddress(addr *compute.Address, region string) error {
 	mc := newAddressMetricContext("reserve", region)
-	return mc.Observe(gce.c.Addresses().Insert(context.Background(), meta.RegionalKey(addr.Name, region), addr))
+	op, err := gce.service.Addresses.Insert(gce.projectID, region, addr).Do()
+	if err != nil {
+		return mc.Observe(err)
+	}
+	return gce.waitForRegionOp(op, region, mc)
 }
 
 // ReserveAlphaRegionAddress creates an Alpha, regional address.
 func (gce *GCECloud) ReserveAlphaRegionAddress(addr *computealpha.Address, region string) error {
-	mc := newAddressMetricContext("reserve", region)
-	return mc.Observe(gce.c.AlphaAddresses().Insert(context.Background(), meta.RegionalKey(addr.Name, region), addr))
+	mc := newAddressMetricContextWithVersion("reserve", region, computeAlphaVersion)
+	op, err := gce.serviceAlpha.Addresses.Insert(gce.projectID, region, addr).Do()
+	if err != nil {
+		return mc.Observe(err)
+	}
+	return gce.waitForRegionOp(op, region, mc)
 }
 
 // ReserveBetaRegionAddress creates a beta region address
 func (gce *GCECloud) ReserveBetaRegionAddress(addr *computebeta.Address, region string) error {
-	mc := newAddressMetricContext("reserve", region)
-	return mc.Observe(gce.c.BetaAddresses().Insert(context.Background(), meta.RegionalKey(addr.Name, region), addr))
+	mc := newAddressMetricContextWithVersion("reserve", region, computeBetaVersion)
+	op, err := gce.serviceBeta.Addresses.Insert(gce.projectID, region, addr).Do()
+	if err != nil {
+		return mc.Observe(err)
+	}
+	return gce.waitForRegionOp(op, region, mc)
 }
 
 // DeleteRegionAddress deletes a region address by name.
 func (gce *GCECloud) DeleteRegionAddress(name, region string) error {
 	mc := newAddressMetricContext("delete", region)
-	return mc.Observe(gce.c.Addresses().Delete(context.Background(), meta.RegionalKey(name, region)))
+	op, err := gce.service.Addresses.Delete(gce.projectID, region, name).Do()
+	if err != nil {
+		return mc.Observe(err)
+	}
+	return gce.waitForRegionOp(op, region, mc)
 }
 
 // GetRegionAddress returns the region address by name
 func (gce *GCECloud) GetRegionAddress(name, region string) (*compute.Address, error) {
 	mc := newAddressMetricContext("get", region)
-	v, err := gce.c.Addresses().Get(context.Background(), meta.RegionalKey(name, region))
+	v, err := gce.service.Addresses.Get(gce.projectID, region, name).Do()
 	return v, mc.Observe(err)
 }
 
 // GetAlphaRegionAddress returns the Alpha, regional address by name.
 func (gce *GCECloud) GetAlphaRegionAddress(name, region string) (*computealpha.Address, error) {
-	mc := newAddressMetricContext("get", region)
-	v, err := gce.c.AlphaAddresses().Get(context.Background(), meta.RegionalKey(name, region))
+	mc := newAddressMetricContextWithVersion("get", region, computeAlphaVersion)
+	v, err := gce.serviceAlpha.Addresses.Get(gce.projectID, region, name).Do()
 	return v, mc.Observe(err)
 }
 
 // GetBetaRegionAddress returns the beta region address by name
 func (gce *GCECloud) GetBetaRegionAddress(name, region string) (*computebeta.Address, error) {
-	mc := newAddressMetricContext("get", region)
-	v, err := gce.c.BetaAddresses().Get(context.Background(), meta.RegionalKey(name, region))
+	mc := newAddressMetricContextWithVersion("get", region, computeBetaVersion)
+	v, err := gce.serviceBeta.Addresses.Get(gce.projectID, region, name).Do()
 	return v, mc.Observe(err)
 }
 
 // GetRegionAddressByIP returns the regional address matching the given IP address.
 func (gce *GCECloud) GetRegionAddressByIP(region, ipAddress string) (*compute.Address, error) {
 	mc := newAddressMetricContext("list", region)
-	addrs, err := gce.c.Addresses().List(context.Background(), region, filter.Regexp("address", ipAddress))
-
+	addrs, err := gce.service.Addresses.List(gce.projectID, region).Filter("address eq " + ipAddress).Do()
+	// Record the metrics for the call.
 	mc.Observe(err)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(addrs) > 1 {
-		glog.Warningf("More than one addresses matching the IP %q: %v", ipAddress, addrNames(addrs))
+	if len(addrs.Items) > 1 {
+		// We don't expect more than one match.
+		addrsToPrint := []compute.Address{}
+		for _, addr := range addrs.Items {
+			addrsToPrint = append(addrsToPrint, *addr)
+		}
+		glog.Errorf("More than one addresses matching the IP %q: %+v", ipAddress, addrsToPrint)
 	}
-	for _, addr := range addrs {
+	for _, addr := range addrs.Items {
 		if addr.Address == ipAddress {
 			return addr, nil
 		}
@@ -130,17 +154,22 @@ func (gce *GCECloud) GetRegionAddressByIP(region, ipAddress string) (*compute.Ad
 // GetBetaRegionAddressByIP returns the beta regional address matching the given IP address.
 func (gce *GCECloud) GetBetaRegionAddressByIP(region, ipAddress string) (*computebeta.Address, error) {
 	mc := newAddressMetricContext("list", region)
-	addrs, err := gce.c.BetaAddresses().List(context.Background(), region, filter.Regexp("address", ipAddress))
-
+	addrs, err := gce.serviceBeta.Addresses.List(gce.projectID, region).Filter("address eq " + ipAddress).Do()
+	// Record the metrics for the call.
 	mc.Observe(err)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(addrs) > 1 {
-		glog.Warningf("More than one addresses matching the IP %q: %v", ipAddress, addrNames(addrs))
+	if len(addrs.Items) > 1 {
+		// We don't expect more than one match.
+		addrsToPrint := []computebeta.Address{}
+		for _, addr := range addrs.Items {
+			addrsToPrint = append(addrsToPrint, *addr)
+		}
+		glog.Errorf("More than one addresses matching the IP %q: %+v", ipAddress, addrsToPrint)
 	}
-	for _, addr := range addrs {
+	for _, addr := range addrs.Items {
 		if addr.Address == ipAddress {
 			return addr, nil
 		}
@@ -151,26 +180,11 @@ func (gce *GCECloud) GetBetaRegionAddressByIP(region, ipAddress string) (*comput
 // TODO(#51665): retire this function once Network Tiers becomes Beta in GCP.
 func (gce *GCECloud) getNetworkTierFromAddress(name, region string) (string, error) {
 	if !gce.AlphaFeatureGate.Enabled(AlphaFeatureNetworkTiers) {
-		return cloud.NetworkTierDefault.ToGCEValue(), nil
+		return NetworkTierDefault.ToGCEValue(), nil
 	}
 	addr, err := gce.GetAlphaRegionAddress(name, region)
 	if err != nil {
 		return handleAlphaNetworkTierGetError(err)
 	}
 	return addr.NetworkTier, nil
-}
-
-func addrNames(items interface{}) []string {
-	var ret []string
-	switch items := items.(type) {
-	case []compute.Address:
-		for _, a := range items {
-			ret = append(ret, a.Name)
-		}
-	case []computebeta.Address:
-		for _, a := range items {
-			ret = append(ret, a.Name)
-		}
-	}
-	return ret
 }

@@ -14,7 +14,7 @@
 
 all: build
 
-REGISTRY ?= staging-k8s.gcr.io
+REGISTRY ?= gcr.io/google-containers
 IMAGE ?= debian-base
 BUILD_IMAGE ?= debian-build
 
@@ -71,7 +71,7 @@ endif
 	rm -rf $(TEMP_DIR)
 
 push: build
-	docker push $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG)
+	gcloud docker -- push $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG)
 
 clean:
 	docker rmi -f $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) || true

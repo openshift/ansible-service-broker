@@ -25,7 +25,6 @@ import (
 	"k8s.io/apiserver/pkg/authorization/authorizerfactory"
 	"k8s.io/apiserver/pkg/authorization/union"
 	"k8s.io/apiserver/plugin/pkg/authorizer/webhook"
-	versionedinformers "k8s.io/client-go/informers"
 	"k8s.io/kubernetes/pkg/auth/authorizer/abac"
 	"k8s.io/kubernetes/pkg/auth/nodeidentifier"
 	informers "k8s.io/kubernetes/pkg/client/informers/informers_generated/internalversion"
@@ -52,8 +51,7 @@ type AuthorizationConfig struct {
 	// TTL for caching of unauthorized responses from the webhook server.
 	WebhookCacheUnauthorizedTTL time.Duration
 
-	InformerFactory          informers.SharedInformerFactory
-	VersionedInformerFactory versionedinformers.SharedInformerFactory
+	InformerFactory informers.SharedInformerFactory
 }
 
 // New returns the right sort of union of multiple authorizer.Authorizer objects
@@ -73,7 +71,6 @@ func (config AuthorizationConfig) New() (authorizer.Authorizer, authorizer.RuleR
 		if authorizerMap[authorizationMode] {
 			return nil, nil, fmt.Errorf("Authorization mode %s specified more than once", authorizationMode)
 		}
-
 		// Keep cases in sync with constant list above.
 		switch authorizationMode {
 		case modes.ModeNode:
@@ -82,7 +79,6 @@ func (config AuthorizationConfig) New() (authorizer.Authorizer, authorizer.RuleR
 				graph,
 				config.InformerFactory.Core().InternalVersion().Pods(),
 				config.InformerFactory.Core().InternalVersion().PersistentVolumes(),
-				config.VersionedInformerFactory.Storage().V1beta1().VolumeAttachments(),
 			)
 			nodeAuthorizer := node.NewAuthorizer(graph, nodeidentifier.NewDefaultNodeIdentifier(), bootstrappolicy.NodeRules())
 			authorizers = append(authorizers, nodeAuthorizer)

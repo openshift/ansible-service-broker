@@ -54,8 +54,6 @@ find_files() {
 # have failed before getting to the "echo" in the block below.
 diff=$(find_files | xargs ${gofmt} -d -s 2>&1) || true
 if [[ -n "${diff}" ]]; then
-  echo "${diff}" >&2
-  echo >&2
-  echo "Run ./hack/update-gofmt.sh" >&2
+  echo "${diff}"
   exit 1
 fi

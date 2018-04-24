@@ -17,6 +17,7 @@ package spec
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"runtime"
@@ -220,10 +221,10 @@ func TestResponseExpansion(t *testing.T) {
 	expected := r
 
 	err = expandResponse(&resp, resolver, basePath)
-	// b, _ := resp.MarshalJSON()
-	// log.Printf(string(b))
-	// b, _ = expected.MarshalJSON()
-	// log.Printf(string(b))
+	b, _ := resp.MarshalJSON()
+	log.Printf(string(b))
+	b, _ = expected.MarshalJSON()
+	log.Printf(string(b))
 	assert.NoError(t, err)
 	assert.Equal(t, expected, resp)
 
@@ -261,10 +262,10 @@ func TestExportedResponseExpansion(t *testing.T) {
 	expected := r
 
 	err = ExpandResponse(&resp, basePath)
-	// b, _ := resp.MarshalJSON()
-	// log.Printf(string(b))
-	// b, _ = expected.MarshalJSON()
-	// log.Printf(string(b))
+	b, _ := resp.MarshalJSON()
+	log.Printf(string(b))
+	b, _ = expected.MarshalJSON()
+	log.Printf(string(b))
 	assert.NoError(t, err)
 	assert.Equal(t, expected, resp)
 
@@ -396,8 +397,8 @@ func TestContinueOnErrorExpansion(t *testing.T) {
 	}
 	err = ExpandSpec(testCase.Input, opts)
 	assert.NoError(t, err)
-	// b, _ := testCase.Input.MarshalJSON()
-	// log.Printf(string(b))
+	b, _ := testCase.Input.MarshalJSON()
+	log.Printf(string(b))
 	assert.Equal(t, testCase.Input, testCase.Expected, "Should continue expanding spec when a definition can't be found.")
 
 	doc, err := jsonDoc("fixtures/expansion/missingItemRef.json")
@@ -1167,25 +1168,6 @@ func TestResolveLocalRef_Response(t *testing.T) {
 			}
 		}
 	}
-}
-
-func TestResolveForTransitiveRefs(t *testing.T) {
-	var spec *Swagger
-	rawSpec, err := ioutil.ReadFile("fixtures/specs/todos.json")
-	assert.NoError(t, err)
-
-	basePath, err := absPath("fixtures/specs/todos.json")
-	assert.NoError(t, err)
-
-	opts := &ExpandOptions{
-		RelativeBase: basePath,
-	}
-
-	err = json.Unmarshal(rawSpec, &spec)
-	assert.NoError(t, err)
-
-	err = ExpandSpec(spec, opts)
-	assert.NoError(t, err)
 }
 
 // PetStoreJSONMessage json raw message for Petstore20

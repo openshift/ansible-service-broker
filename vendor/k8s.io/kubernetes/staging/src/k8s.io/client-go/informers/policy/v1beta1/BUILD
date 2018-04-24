@@ -10,7 +10,6 @@ go_library(
     srcs = [
         "interface.go",
         "poddisruptionbudget.go",
-        "podsecuritypolicy.go",
     ],
     importpath = "k8s.io/client-go/informers/policy/v1beta1",
     deps = [

@@ -38224,6 +38224,7 @@ func (x codecSelfer19781) dectestMammoth2Basic(v *testMammoth2Basic, d *Decoder)
 
 			yyh1.ElemContainerState(yyj1)
 
+			// if indefinite, etc, then expand the slice if necessary
 			var yydb1 bool
 			if yyj1 >= len(yyv1) {
 				z.DecArrayCannotExpand(len(v), yyj1+1)
@@ -38371,7 +38372,7 @@ func (x codecSelfer19781) decSliceTestMammoth2(v *[]TestMammoth2, d *Decoder) {
 		var yyj1 int
 		// var yydn1 bool
 		for ; (yyhl1 && yyj1 < yyl1) || !(yyhl1 || r.CheckBreak()); yyj1++ {
-			if yyj1 == 0 && yyv1 == nil {
+			if yyj1 == 0 && len(yyv1) == 0 {
 				if yyhl1 {
 					yyrl1 = z.DecInferLen(yyl1, z.DecBasicHandle().MaxInitLen, 4880)
 				} else {
@@ -38382,6 +38383,7 @@ func (x codecSelfer19781) decSliceTestMammoth2(v *[]TestMammoth2, d *Decoder) {
 			}
 			yyh1.ElemContainerState(yyj1)
 
+			// if indefinite, etc, then expand the slice if necessary
 			var yydb1 bool
 			if yyj1 >= len(yyv1) {
 				yyv1 = append(yyv1, TestMammoth2{})
@@ -38412,6 +38414,7 @@ func (x codecSelfer19781) decSliceTestMammoth2(v *[]TestMammoth2, d *Decoder) {
 	if yyc1 {
 		*v = yyv1
 	}
+
 }
 
 func (x codecSelfer19781) encArray4int64(v *[4]int64, e *Encoder) {
@@ -38449,6 +38452,7 @@ func (x codecSelfer19781) decArray4int64(v *[4]int64, d *Decoder) {
 
 			yyh1.ElemContainerState(yyj1)
 
+			// if indefinite, etc, then expand the slice if necessary
 			var yydb1 bool
 			if yyj1 >= len(yyv1) {
 				z.DecArrayCannotExpand(len(v), yyj1+1)

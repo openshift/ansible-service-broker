@@ -20,8 +20,6 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	"k8s.io/kubernetes/pkg/volume/util"
 )
 
 type fakeFileInfo struct {
@@ -93,7 +91,6 @@ func TestSearchDisk(t *testing.T) {
 			lun:  "0",
 			io:   &fakeIOHandler{},
 		},
-		deviceUtil: util.NewDeviceHandler(util.NewIOHandler()),
 	}
 	devicePath, error := searchDisk(fakeMounter)
 	// if no disk matches input wwn and lun, exit
@@ -108,7 +105,6 @@ func TestSearchDiskWWID(t *testing.T) {
 			wwids: []string{"3600508b400105e210000900000490000"},
 			io:    &fakeIOHandler{},
 		},
-		deviceUtil: util.NewDeviceHandler(util.NewIOHandler()),
 	}
 	devicePath, error := searchDisk(fakeMounter)
 	// if no disk matches input wwid, exit

@@ -21,38 +21,19 @@ package dockershim
 import (
 	"time"
 
-	"github.com/golang/glog"
-	"golang.org/x/net/context"
-
-	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/runtime/v1alpha2"
-	"k8s.io/kubernetes/pkg/kubelet/winstats"
+	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/v1alpha1/runtime"
 )
 
 // ImageFsInfo returns information of the filesystem that is used to store images.
-func (ds *dockerService) ImageFsInfo(_ context.Context, _ *runtimeapi.ImageFsInfoRequest) (*runtimeapi.ImageFsInfoResponse, error) {
-	info, err := ds.client.Info()
-	if err != nil {
-		glog.Errorf("Failed to get docker info: %v", err)
-		return nil, err
-	}
-
-	statsClient := &winstats.StatsClient{}
-	fsinfo, err := statsClient.GetDirFsInfo(info.DockerRootDir)
-	if err != nil {
-		glog.Errorf("Failed to get dir fsInfo for %q: %v", info.DockerRootDir, err)
-		return nil, err
-	}
-
+func (ds *dockerService) ImageFsInfo() ([]*runtimeapi.FilesystemUsage, error) {
+	// For Windows Stats to work correctly, a file system must be provided. For now, provide a fake filesystem.
 	filesystems := []*runtimeapi.FilesystemUsage{
 		{
 			Timestamp:  time.Now().UnixNano(),
-			UsedBytes:  &runtimeapi.UInt64Value{Value: fsinfo.Usage},
+			UsedBytes:  &runtimeapi.UInt64Value{Value: 0},
 			InodesUsed: &runtimeapi.UInt64Value{Value: 0},
-			FsId: &runtimeapi.FilesystemIdentifier{
-				Mountpoint: info.DockerRootDir,
-			},
 		},
 	}
 
-	return &runtimeapi.ImageFsInfoResponse{ImageFilesystems: filesystems}, nil
+	return filesystems, nil
 }

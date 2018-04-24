@@ -259,7 +259,7 @@ func TestFindCIDRClass(t *testing.T) {
 			},
 		}
 		shaper := &tcShaper{e: &fexec}
-		classAndHandle, found, err := shaper.findCIDRClass(test.cidr)
+		class, handle, found, err := shaper.findCIDRClass(test.cidr)
 		if test.expectErr {
 			if err == nil {
 				t.Errorf("unexpected non-error")
@@ -270,14 +270,14 @@ func TestFindCIDRClass(t *testing.T) {
 			}
 			if test.expectNotFound {
 				if found {
-					t.Errorf("unexpectedly found an interface: %s", classAndHandle)
+					t.Errorf("unexpectedly found an interface: %s %s", class, handle)
 				}
 			} else {
-				if classAndHandle[0][0] != test.expectedClass {
-					t.Errorf("expected class: %s, found %s", test.expectedClass, classAndHandle)
+				if class != test.expectedClass {
+					t.Errorf("expected: %s, found %s", test.expectedClass, class)
 				}
-				if classAndHandle[0][1] != test.expectedHandle {
-					t.Errorf("expected handle: %s, found %s", test.expectedHandle, classAndHandle)
+				if handle != test.expectedHandle {
+					t.Errorf("expected: %s, found %s", test.expectedHandle, handle)
 				}
 			}
 		}

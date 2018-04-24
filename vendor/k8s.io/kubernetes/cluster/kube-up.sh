@@ -34,7 +34,13 @@ source "${KUBE_ROOT}/cluster/kube-util.sh"
 
 DEPRECATED_PROVIDERS=(
   "centos"
+  "libvert-coreos"
   "local"
+  "openstack-heat"
+  "photon-controller"
+  "vagrant"
+  "vsphere"
+  "windows"
 )
 
 for provider in "${DEPRECATED_PROVIDERS[@]}"; do
@@ -63,6 +69,11 @@ echo "... calling verify-prereqs" >&2
 verify-prereqs
 echo "... calling verify-kube-binaries" >&2
 verify-kube-binaries
+
+if [[ "${KUBE_STAGE_IMAGES:-}" == "true" ]]; then
+  echo "... staging images" >&2
+  stage-images
+fi
 
 echo "... calling kube-up" >&2
 kube-up

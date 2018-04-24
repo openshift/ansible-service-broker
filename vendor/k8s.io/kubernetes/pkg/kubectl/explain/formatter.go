@@ -105,10 +105,10 @@ func wrapString(str string, wrap int) []string {
 	l := line{wrap: wrap}
 
 	for _, word := range words {
-		if !l.Add(word) {
+		if l.Add(word) == false {
 			wrapped = append(wrapped, l.String())
 			l = line{wrap: wrap}
-			if !l.Add(word) {
+			if l.Add(word) == false {
 				panic("Couldn't add to empty line.")
 			}
 		}

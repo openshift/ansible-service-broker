@@ -18,26 +18,47 @@ package cmd
 
 import (
 	"bytes"
+	"io"
+	"reflect"
 	"testing"
 
 	rbac "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest/fake"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	cmdtesting "k8s.io/kubernetes/pkg/kubectl/cmd/testing"
 )
+
+type testClusterRolePrinter struct {
+	CachedClusterRole *rbac.ClusterRole
+}
+
+func (t *testClusterRolePrinter) PrintObj(obj runtime.Object, out io.Writer) error {
+	t.CachedClusterRole = obj.(*rbac.ClusterRole)
+	return nil
+}
+
+func (t *testClusterRolePrinter) AfterPrint(output io.Writer, res string) error {
+	return nil
+}
+
+func (t *testClusterRolePrinter) HandledResources() []string {
+	return []string{}
+}
+
+func (t *testClusterRolePrinter) IsGeneric() bool {
+	return true
+}
 
 func TestCreateClusterRole(t *testing.T) {
 	clusterRoleName := "my-cluster-role"
 
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
+	f, tf, _, _ := cmdtesting.NewAPIFactory()
+	printer := &testClusterRolePrinter{}
+	tf.Printer = printer
 	tf.Namespace = "test"
 	tf.Client = &fake.RESTClient{}
-	tf.ClientConfigVal = defaultClientConfig()
+	tf.ClientConfig = defaultClientConfig()
 
 	tests := map[string]struct {
 		verbs               string
@@ -50,7 +71,6 @@ func TestCreateClusterRole(t *testing.T) {
 			verbs:     "get,watch,list",
 			resources: "pods,pods",
 			expectedClusterRole: &rbac.ClusterRole{
-				TypeMeta: v1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
 				ObjectMeta: v1.ObjectMeta{
 					Name: clusterRoleName,
 				},
@@ -68,7 +88,6 @@ func TestCreateClusterRole(t *testing.T) {
 			verbs:     "get,watch,list",
 			resources: "pods,deployments.extensions",
 			expectedClusterRole: &rbac.ClusterRole{
-				TypeMeta: v1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
 				ObjectMeta: v1.ObjectMeta{
 					Name: clusterRoleName,
 				},
@@ -92,7 +111,6 @@ func TestCreateClusterRole(t *testing.T) {
 			verbs:          "get",
 			nonResourceURL: "/logs/,/healthz",
 			expectedClusterRole: &rbac.ClusterRole{
-				TypeMeta: v1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
 				ObjectMeta: v1.ObjectMeta{
 					Name: clusterRoleName,
 				},
@@ -109,7 +127,6 @@ func TestCreateClusterRole(t *testing.T) {
 			nonResourceURL: "/logs/,/healthz",
 			resources:      "pods",
 			expectedClusterRole: &rbac.ClusterRole{
-				TypeMeta: v1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
 				ObjectMeta: v1.ObjectMeta{
 					Name: clusterRoleName,
 				},
@@ -131,9 +148,9 @@ func TestCreateClusterRole(t *testing.T) {
 
 	for name, test := range tests {
 		buf := bytes.NewBuffer([]byte{})
-		cmd := NewCmdCreateClusterRole(tf, buf)
+		cmd := NewCmdCreateClusterRole(f, buf)
 		cmd.Flags().Set("dry-run", "true")
-		cmd.Flags().Set("output", "yaml")
+		cmd.Flags().Set("output", "object")
 		cmd.Flags().Set("verb", test.verbs)
 		cmd.Flags().Set("resource", test.resources)
 		cmd.Flags().Set("non-resource-url", test.nonResourceURL)
@@ -141,21 +158,15 @@ func TestCreateClusterRole(t *testing.T) {
 			cmd.Flags().Set("resource-name", test.resourceNames)
 		}
 		cmd.Run(cmd, []string{clusterRoleName})
-		actual := &rbac.ClusterRole{}
-		if err := runtime.DecodeInto(legacyscheme.Codecs.UniversalDecoder(), buf.Bytes(), actual); err != nil {
-			t.Log(string(buf.Bytes()))
-			t.Fatal(err)
-		}
-		if !equality.Semantic.DeepEqual(test.expectedClusterRole, actual) {
-			t.Errorf("%s:\nexpected:\n%#v\nsaw:\n%#v", name, test.expectedClusterRole, actual)
+		if !reflect.DeepEqual(test.expectedClusterRole, printer.CachedClusterRole) {
+			t.Errorf("%s:\nexpected:\n%#v\nsaw:\n%#v", name, test.expectedClusterRole, printer.CachedClusterRole)
 		}
 	}
 }
 
 func TestClusterRoleValidate(t *testing.T) {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
+	f, tf, _, _ := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.Namespace = "test"
 
 	tests := map[string]struct {
@@ -434,7 +445,7 @@ func TestClusterRoleValidate(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			test.clusterRoleOptions.Mapper, _ = tf.Object()
+			test.clusterRoleOptions.Mapper, _ = f.Object()
 			err := test.clusterRoleOptions.Validate()
 			if test.expectErr && err == nil {
 				t.Errorf("%s: expect error happens, but validate passes.", name)

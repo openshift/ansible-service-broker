@@ -405,30 +405,6 @@ func TestMaps(t *testing.T) {
 	}
 }
 
-func TestMapsWithNilPointer(t *testing.T) {
-	m := map[string]*simpleTest{
-		"a": nil,
-		"b": nil,
-	}
-	n := map[string]*simpleTest{
-		"b": nil,
-		"c": nil,
-	}
-	expect := map[string]*simpleTest{
-		"a": nil,
-		"b": nil,
-		"c": nil,
-	}
-
-	if err := Merge(&m, n, WithOverride); err != nil {
-		t.Fatalf(err.Error())
-	}
-
-	if !reflect.DeepEqual(m, expect) {
-		t.Fatalf("Test failed:\ngot   :\n%#v\n\nwant :\n%#v\n\n", m, expect)
-	}
-}
-
 func TestYAMLMaps(t *testing.T) {
 	thing := loadYAML("testdata/thing.yml")
 	license := loadYAML("testdata/license.yml")
@@ -690,10 +666,10 @@ type structWithUnexportedProperty struct {
 
 func TestUnexportedProperty(t *testing.T) {
 	a := structWithMap{map[string]structWithUnexportedProperty{
-		"key": {"hello"},
+		"key": structWithUnexportedProperty{"hello"},
 	}}
 	b := structWithMap{map[string]structWithUnexportedProperty{
-		"key": {"hi"},
+		"key": structWithUnexportedProperty{"hi"},
 	}}
 	defer func() {
 		if r := recover(); r != nil {

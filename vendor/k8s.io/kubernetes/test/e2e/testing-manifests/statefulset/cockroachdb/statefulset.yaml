@@ -1,13 +1,10 @@
-apiVersion: apps/v1
+apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   name: cockroachdb
 spec:
   serviceName: "cockroachdb"
   replicas: 3
-  selector:
-    matchLabels:
-      app: cockroachdb
   template:
     metadata:
       labels:

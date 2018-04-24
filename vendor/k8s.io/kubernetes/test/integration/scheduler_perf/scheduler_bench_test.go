@@ -17,98 +17,44 @@ limitations under the License.
 package benchmark
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/kubernetes/pkg/kubelet/apis"
 	"k8s.io/kubernetes/test/integration/framework"
 	testutils "k8s.io/kubernetes/test/utils"
 
 	"github.com/golang/glog"
 )
 
-// BenchmarkScheduling benchmarks the scheduling rate when the cluster has
-// various quantities of nodes and scheduled pods.
-func BenchmarkScheduling(b *testing.B) {
-	tests := []struct{ nodes, existingPods, minPods int }{
-		{nodes: 100, existingPods: 0, minPods: 100},
-		{nodes: 100, existingPods: 1000, minPods: 100},
-		{nodes: 1000, existingPods: 0, minPods: 100},
-		{nodes: 1000, existingPods: 1000, minPods: 100},
-	}
-	setupStrategy := testutils.NewSimpleWithControllerCreatePodStrategy("rc1")
-	testStrategy := testutils.NewSimpleWithControllerCreatePodStrategy("rc2")
-	for _, test := range tests {
-		name := fmt.Sprintf("%vNodes/%vPods", test.nodes, test.existingPods)
-		b.Run(name, func(b *testing.B) {
-			benchmarkScheduling(test.nodes, test.existingPods, test.minPods, setupStrategy, testStrategy, b)
-		})
-	}
+// BenchmarkScheduling100Nodes0Pods benchmarks the scheduling rate
+// when the cluster has 100 nodes and 0 scheduled pods
+func BenchmarkScheduling100Nodes0Pods(b *testing.B) {
+	benchmarkScheduling(100, 0, b)
 }
 
-// BenchmarkSchedulingAntiAffinity benchmarks the scheduling rate of pods with
-// PodAntiAffinity rules when the cluster has various quantities of nodes and
-// scheduled pods.
-func BenchmarkSchedulingAntiAffinity(b *testing.B) {
-	tests := []struct{ nodes, existingPods, minPods int }{
-		{nodes: 500, existingPods: 250, minPods: 250},
-		{nodes: 500, existingPods: 5000, minPods: 250},
-	}
-	// The setup strategy creates pods with no affinity rules.
-	setupStrategy := testutils.NewSimpleWithControllerCreatePodStrategy("setup")
-	// The test strategy creates pods with anti-affinity for each other.
-	testBasePod := makeBasePodWithAntiAffinity(
-		map[string]string{"name": "test", "color": "green"},
-		map[string]string{"color": "green"})
-	testStrategy := testutils.NewCustomCreatePodStrategy(testBasePod)
-	for _, test := range tests {
-		name := fmt.Sprintf("%vNodes/%vPods", test.nodes, test.existingPods)
-		b.Run(name, func(b *testing.B) {
-			benchmarkScheduling(test.nodes, test.existingPods, test.minPods, setupStrategy, testStrategy, b)
-		})
-	}
-
+// BenchmarkScheduling100Nodes1000Pods benchmarks the scheduling rate
+// when the cluster has 100 nodes and 1000 scheduled pods
+func BenchmarkScheduling100Nodes1000Pods(b *testing.B) {
+	benchmarkScheduling(100, 1000, b)
 }
 
-// makeBasePodWithAntiAffinity creates a Pod object to be used as a template.
-// The Pod has a PodAntiAffinity requirement against pods with the given labels.
-func makeBasePodWithAntiAffinity(podLabels, affinityLabels map[string]string) *v1.Pod {
-	basePod := &v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "affinity-pod-",
-			Labels:       podLabels,
-		},
-		Spec: testutils.MakePodSpec(),
-	}
-	basePod.Spec.Affinity = &v1.Affinity{
-		PodAntiAffinity: &v1.PodAntiAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
-				{
-					LabelSelector: &metav1.LabelSelector{
-						MatchLabels: affinityLabels,
-					},
-					TopologyKey: apis.LabelHostname,
-				},
-			},
-		},
-	}
-	return basePod
+// BenchmarkScheduling1000Nodes0Pods benchmarks the scheduling rate
+// when the cluster has 1000 nodes and 0 scheduled pods
+func BenchmarkScheduling1000Nodes0Pods(b *testing.B) {
+	benchmarkScheduling(1000, 0, b)
+}
+
+// BenchmarkScheduling1000Nodes1000Pods benchmarks the scheduling rate
+// when the cluster has 1000 nodes and 1000 scheduled pods
+func BenchmarkScheduling1000Nodes1000Pods(b *testing.B) {
+	benchmarkScheduling(1000, 1000, b)
 }
 
 // benchmarkScheduling benchmarks scheduling rate with specific number of nodes
-// and specific number of pods already scheduled.
-// This will schedule numExistingPods pods before the benchmark starts, and at
-// least minPods pods during the benchmark.
-func benchmarkScheduling(numNodes, numExistingPods, minPods int,
-	setupPodStrategy, testPodStrategy testutils.TestPodCreateStrategy,
-	b *testing.B) {
-	if b.N < minPods {
-		b.N = minPods
-	}
+// and specific number of pods already scheduled. Since an operation takes relatively
+// long time, b.N should be small: 10 - 100.
+func benchmarkScheduling(numNodes, numScheduledPods int, b *testing.B) {
 	schedulerConfigFactory, finalFunc := mustSetupScheduler()
 	defer finalFunc()
 	c := schedulerConfigFactory.GetClient()
@@ -124,7 +70,7 @@ func benchmarkScheduling(numNodes, numExistingPods, minPods int,
 	defer nodePreparer.CleanupNodes()
 
 	config := testutils.NewTestPodCreatorConfig()
-	config.AddStrategy("sched-test", numExistingPods, setupPodStrategy)
+	config.AddStrategy("sched-test", numScheduledPods, testutils.NewSimpleWithControllerCreatePodStrategy("rc1"))
 	podCreator := testutils.NewTestPodCreator(c, config)
 	podCreator.CreatePods()
 
@@ -133,7 +79,7 @@ func benchmarkScheduling(numNodes, numExistingPods, minPods int,
 		if err != nil {
 			glog.Fatalf("%v", err)
 		}
-		if len(scheduled) >= numExistingPods {
+		if len(scheduled) >= numScheduledPods {
 			break
 		}
 		time.Sleep(1 * time.Second)
@@ -141,7 +87,7 @@ func benchmarkScheduling(numNodes, numExistingPods, minPods int,
 	// start benchmark
 	b.ResetTimer()
 	config = testutils.NewTestPodCreatorConfig()
-	config.AddStrategy("sched-test", b.N, testPodStrategy)
+	config.AddStrategy("sched-test", b.N, testutils.NewSimpleWithControllerCreatePodStrategy("rc2"))
 	podCreator = testutils.NewTestPodCreator(c, config)
 	podCreator.CreatePods()
 	for {
@@ -151,7 +97,7 @@ func benchmarkScheduling(numNodes, numExistingPods, minPods int,
 		if err != nil {
 			glog.Fatalf("%v", err)
 		}
-		if len(scheduled) >= numExistingPods+b.N {
+		if len(scheduled) >= numScheduledPods+b.N {
 			break
 		}
 		// Note: This might introduce slight deviation in accuracy of benchmark results.

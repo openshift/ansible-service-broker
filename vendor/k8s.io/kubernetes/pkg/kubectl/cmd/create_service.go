@@ -64,8 +64,7 @@ func addPortFlags(cmd *cobra.Command) {
 // NewCmdCreateServiceClusterIP is a command to create a ClusterIP service
 func NewCmdCreateServiceClusterIP(f cmdutil.Factory, cmdOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "clusterip NAME [--tcp=<port>:<targetPort>] [--dry-run]",
-		DisableFlagsInUseLine: true,
+		Use:     "clusterip NAME [--tcp=<port>:<targetPort>] [--dry-run]",
 		Short:   i18n.T("Create a ClusterIP service."),
 		Long:    serviceClusterIPLong,
 		Example: serviceClusterIPExample,
@@ -125,8 +124,7 @@ var (
 // NewCmdCreateServiceNodePort is a macro command for creating a NodePort service
 func NewCmdCreateServiceNodePort(f cmdutil.Factory, cmdOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "nodeport NAME [--tcp=port:targetPort] [--dry-run]",
-		DisableFlagsInUseLine: true,
+		Use:     "nodeport NAME [--tcp=port:targetPort] [--dry-run]",
 		Short:   i18n.T("Create a NodePort service."),
 		Long:    serviceNodePortLong,
 		Example: serviceNodePortExample,
@@ -183,8 +181,7 @@ var (
 // NewCmdCreateServiceLoadBalancer is a macro command for creating a LoadBalancer service
 func NewCmdCreateServiceLoadBalancer(f cmdutil.Factory, cmdOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "loadbalancer NAME [--tcp=port:targetPort] [--dry-run]",
-		DisableFlagsInUseLine: true,
+		Use:     "loadbalancer NAME [--tcp=port:targetPort] [--dry-run]",
 		Short:   i18n.T("Create a LoadBalancer service."),
 		Long:    serviceLoadBalancerLong,
 		Example: serviceLoadBalancerExample,
@@ -222,7 +219,7 @@ func CreateServiceLoadBalancer(f cmdutil.Factory, cmdOut io.Writer, cmd *cobra.C
 	return RunCreateSubcommand(f, cmd, cmdOut, &CreateSubcommandOptions{
 		Name:                name,
 		StructuredGenerator: generator,
-		DryRun:              cmdutil.GetDryRunFlag(cmd),
+		DryRun:              cmdutil.GetFlagBool(cmd, "dry-run"),
 		OutputFormat:        cmdutil.GetFlagString(cmd, "output"),
 	})
 }
@@ -243,8 +240,7 @@ var (
 // NewCmdCreateServiceExternalName is a macro command for creating an ExternalName service
 func NewCmdCreateServiceExternalName(f cmdutil.Factory, cmdOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "externalname NAME --external-name external.name [--dry-run]",
-		DisableFlagsInUseLine: true,
+		Use:     "externalname NAME --external-name external.name [--dry-run]",
 		Short:   i18n.T("Create an ExternalName service."),
 		Long:    serviceExternalNameLong,
 		Example: serviceExternalNameExample,

@@ -20,16 +20,15 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/kubernetes/pkg/apis/core"
+	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 )
-
-var supportedQoSComputeResources = sets.NewString(string(core.ResourceCPU), string(core.ResourceMemory))
 
 // QOSList is a set of (resource name, QoS class) pairs.
 type QOSList map[v1.ResourceName]v1.PodQOSClass
 
 func isSupportedQoSComputeResource(name v1.ResourceName) bool {
-	return supportedQoSComputeResources.Has(string(name))
+	supportedQoSComputeResources := sets.NewString(string(v1.ResourceCPU), string(v1.ResourceMemory))
+	return supportedQoSComputeResources.Has(string(name)) || v1helper.IsHugePageResourceName(name)
 }
 
 // GetPodQOS returns the QoS class of a pod.

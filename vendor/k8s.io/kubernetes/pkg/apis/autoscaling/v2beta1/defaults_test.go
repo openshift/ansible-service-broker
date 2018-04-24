@@ -29,12 +29,11 @@ import (
 	_ "k8s.io/kubernetes/pkg/apis/autoscaling/install"
 	. "k8s.io/kubernetes/pkg/apis/autoscaling/v2beta1"
 	_ "k8s.io/kubernetes/pkg/apis/core/install"
-	utilpointer "k8s.io/kubernetes/pkg/util/pointer"
 )
 
 func TestSetDefaultHPA(t *testing.T) {
 	utilizationDefaultVal := int32(autoscaling.DefaultCPUUtilization)
-	defaultReplicas := utilpointer.Int32Ptr(1)
+	defaultReplicas := newInt32(1)
 	defaultTemplate := []autoscalingv2beta1.MetricSpec{
 		{
 			Type: autoscalingv2beta1.ResourceMetricSourceType,
@@ -65,13 +64,13 @@ func TestSetDefaultHPA(t *testing.T) {
 		{ // MinReplicas update
 			original: &autoscalingv2beta1.HorizontalPodAutoscaler{
 				Spec: autoscalingv2beta1.HorizontalPodAutoscalerSpec{
-					MinReplicas: utilpointer.Int32Ptr(3),
+					MinReplicas: newInt32(3),
 					Metrics:     defaultTemplate,
 				},
 			},
 			expected: &autoscalingv2beta1.HorizontalPodAutoscaler{
 				Spec: autoscalingv2beta1.HorizontalPodAutoscalerSpec{
-					MinReplicas: utilpointer.Int32Ptr(3),
+					MinReplicas: newInt32(3),
 					Metrics:     defaultTemplate,
 				},
 			},
@@ -123,4 +122,10 @@ func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 		return nil
 	}
 	return obj3
+}
+
+func newInt32(val int32) *int32 {
+	p := new(int32)
+	*p = val
+	return p
 }

@@ -26,19 +26,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-const logFlushFreqFlagName = "log-flush-frequency"
-
-var logFlushFreq = pflag.Duration(logFlushFreqFlagName, 5*time.Second, "Maximum number of seconds between log flushes")
+var logFlushFreq = pflag.Duration("log-flush-frequency", 5*time.Second, "Maximum number of seconds between log flushes")
 
 // TODO(thockin): This is temporary until we agree on log dirs and put those into each cmd.
 func init() {
 	flag.Set("logtostderr", "true")
-}
-
-// AddFlags registers this package's flags on arbitrary FlagSets, such that they point to the
-// same value as the global flags.
-func AddFlags(fs *pflag.FlagSet) {
-	fs.AddFlag(pflag.Lookup(logFlushFreqFlagName))
 }
 
 // GlogWriter serves as a bridge between the standard log package and the glog package.
@@ -54,8 +46,8 @@ func (writer GlogWriter) Write(data []byte) (n int, err error) {
 func InitLogs() {
 	log.SetOutput(GlogWriter{})
 	log.SetFlags(0)
-	// The default glog flush interval is 5 seconds.
-	go wait.Forever(glog.Flush, *logFlushFreq)
+	// The default glog flush interval is 30 seconds, which is frighteningly long.
+	go wait.Until(glog.Flush, *logFlushFreq, wait.NeverStop)
 }
 
 // FlushLogs flushes logs immediately.

@@ -72,7 +72,7 @@ type watchChan struct {
 	key               string
 	initialRev        int64
 	recursive         bool
-	internalPred      storage.SelectionPredicate
+	internalFilter    storage.FilterFunc
 	ctx               context.Context
 	cancel            context.CancelFunc
 	incomingEventChan chan *event
@@ -111,14 +111,14 @@ func (w *watcher) createWatchChan(ctx context.Context, key string, rev int64, re
 		key:               key,
 		initialRev:        rev,
 		recursive:         recursive,
-		internalPred:      pred,
+		internalFilter:    storage.SimpleFilter(pred),
 		incomingEventChan: make(chan *event, incomingBufSize),
 		resultChan:        make(chan watch.Event, outgoingBufSize),
 		errChan:           make(chan error, 1),
 	}
 	if pred.Empty() {
 		// The filter doesn't filter out any object.
-		wc.internalPred = storage.Everything
+		wc.internalFilter = nil
 	}
 	wc.ctx, wc.cancel = context.WithCancel(ctx)
 	return wc
@@ -250,15 +250,14 @@ func (wc *watchChan) processEvent(wg *sync.WaitGroup) {
 }
 
 func (wc *watchChan) filter(obj runtime.Object) bool {
-	if wc.internalPred.Empty() {
+	if wc.internalFilter == nil {
 		return true
 	}
-	matched, err := wc.internalPred.Matches(obj)
-	return err == nil && matched
+	return wc.internalFilter(obj)
 }
 
 func (wc *watchChan) acceptAll() bool {
-	return wc.internalPred.Empty()
+	return wc.internalFilter == nil
 }
 
 // transform transforms an event into a result for user if not filtered.

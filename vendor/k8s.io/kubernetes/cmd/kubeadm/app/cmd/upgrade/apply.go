@@ -69,8 +69,7 @@ func NewCmdApply(parentFlags *cmdUpgradeFlags) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use: "apply [version]",
-		DisableFlagsInUseLine: true,
+		Use:   "apply [version]",
 		Short: "Upgrade your Kubernetes cluster to the specified version.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
@@ -81,26 +80,11 @@ func NewCmdApply(parentFlags *cmdUpgradeFlags) *cobra.Command {
 			err = runPreflightChecks(flags.parent.ignorePreflightErrorsSet)
 			kubeadmutil.CheckErr(err)
 
-			// If the version is specified in config file, pick up that value.
-			if flags.parent.cfgPath != "" {
-				cfg, err := upgrade.FetchConfigurationFromFile(flags.parent.cfgPath)
-				kubeadmutil.CheckErr(err)
+			err = cmdutil.ValidateExactArgNumber(args, []string{"version"})
+			kubeadmutil.CheckErr(err)
 
-				if cfg.KubernetesVersion != "" {
-					flags.newK8sVersionStr = cfg.KubernetesVersion
-				}
-			}
-
-			// If the new version is already specified in config file, version arg is optional.
-			if flags.newK8sVersionStr == "" {
-				err = cmdutil.ValidateExactArgNumber(args, []string{"version"})
-				kubeadmutil.CheckErr(err)
-			}
-
-			// If option was specified in both args and config file, args will overwrite the config file.
-			if len(args) == 1 {
-				flags.newK8sVersionStr = args[0]
-			}
+			// It's safe to use args[0] here as the slice has been validated above
+			flags.newK8sVersionStr = args[0]
 
 			// Default the flags dynamically, based on each others' value
 			err = SetImplicitFlags(flags)

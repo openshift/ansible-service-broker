@@ -12,7 +12,8 @@ go_test(
         "handler_apis_test.go",
         "handler_proxy_test.go",
     ],
-    embed = [":go_default_library"],
+    importpath = "k8s.io/kube-aggregator/pkg/apiserver",
+    library = ":go_default_library",
     deps = [
         "//vendor/golang.org/x/net/websocket:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/api/equality:go_default_library",
@@ -24,7 +25,6 @@ go_test(
         "//vendor/k8s.io/apiserver/pkg/endpoints/request:go_default_library",
         "//vendor/k8s.io/client-go/tools/cache:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/apis/apiregistration:go_default_library",
-        "//vendor/k8s.io/kube-aggregator/pkg/apiserver/scheme:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/client/listers/apiregistration/internalversion:go_default_library",
     ],
 )
@@ -41,7 +41,10 @@ go_library(
     importpath = "k8s.io/kube-aggregator/pkg/apiserver",
     deps = [
         "//vendor/github.com/golang/glog:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/api/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apimachinery/announced:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apimachinery/registered:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/labels:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
@@ -57,10 +60,11 @@ go_library(
         "//vendor/k8s.io/apiserver/pkg/endpoints/handlers/responsewriters:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/endpoints/request:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/features:go_default_library",
+        "//vendor/k8s.io/apiserver/pkg/registry/rest:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/server:go_default_library",
-        "//vendor/k8s.io/apiserver/pkg/server/storage:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/util/feature:go_default_library",
         "//vendor/k8s.io/apiserver/pkg/util/proxy:go_default_library",
+        "//vendor/k8s.io/client-go/informers/core/v1:go_default_library",
         "//vendor/k8s.io/client-go/listers/core/v1:go_default_library",
         "//vendor/k8s.io/client-go/pkg/version:go_default_library",
         "//vendor/k8s.io/client-go/rest:go_default_library",
@@ -68,9 +72,8 @@ go_library(
         "//vendor/k8s.io/client-go/transport:go_default_library",
         "//vendor/k8s.io/client-go/util/workqueue:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/apis/apiregistration:go_default_library",
-        "//vendor/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1:go_default_library",
+        "//vendor/k8s.io/kube-aggregator/pkg/apis/apiregistration/install:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1:go_default_library",
-        "//vendor/k8s.io/kube-aggregator/pkg/apiserver/scheme:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/client/clientset_generated/internalclientset:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/client/informers/internalversion:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/client/informers/internalversion/apiregistration/internalversion:go_default_library",
@@ -78,7 +81,7 @@ go_library(
         "//vendor/k8s.io/kube-aggregator/pkg/controllers:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/controllers/openapi:go_default_library",
         "//vendor/k8s.io/kube-aggregator/pkg/controllers/status:go_default_library",
-        "//vendor/k8s.io/kube-aggregator/pkg/registry/apiservice/rest:go_default_library",
+        "//vendor/k8s.io/kube-aggregator/pkg/registry/apiservice/etcd:go_default_library",
     ],
 )
 
@@ -91,9 +94,6 @@ filegroup(
 
 filegroup(
     name = "all-srcs",
-    srcs = [
-        ":package-srcs",
-        "//staging/src/k8s.io/kube-aggregator/pkg/apiserver/scheme:all-srcs",
-    ],
+    srcs = [":package-srcs"],
     tags = ["automanaged"],
 )

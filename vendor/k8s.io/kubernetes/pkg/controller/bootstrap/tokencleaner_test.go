@@ -23,8 +23,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/informers"
-	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	core "k8s.io/client-go/testing"
 	api "k8s.io/kubernetes/pkg/apis/core"
@@ -34,26 +32,24 @@ func init() {
 	spew.Config.DisableMethods = true
 }
 
-func newTokenCleaner() (*TokenCleaner, *fake.Clientset, coreinformers.SecretInformer, error) {
+func newTokenCleaner() (*TokenCleaner, *fake.Clientset, error) {
 	options := DefaultTokenCleanerOptions()
 	cl := fake.NewSimpleClientset()
-	informerFactory := informers.NewSharedInformerFactory(cl, options.SecretResync)
-	secrets := informerFactory.Core().V1().Secrets()
-	tcc, err := NewTokenCleaner(cl, secrets, options)
+	tcc, err := NewTokenCleaner(cl, options)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	return tcc, cl, secrets, nil
+	return tcc, cl, nil
 }
 
 func TestCleanerNoExpiration(t *testing.T) {
-	cleaner, cl, secrets, err := newTokenCleaner()
+	cleaner, cl, err := newTokenCleaner()
 	if err != nil {
 		t.Fatalf("error creating TokenCleaner: %v", err)
 	}
 
 	secret := newTokenSecret("tokenID", "tokenSecret")
-	secrets.Informer().GetIndexer().Add(secret)
+	cleaner.secrets.Add(secret)
 
 	cleaner.evalSecret(secret)
 
@@ -63,14 +59,14 @@ func TestCleanerNoExpiration(t *testing.T) {
 }
 
 func TestCleanerExpired(t *testing.T) {
-	cleaner, cl, secrets, err := newTokenCleaner()
+	cleaner, cl, err := newTokenCleaner()
 	if err != nil {
 		t.Fatalf("error creating TokenCleaner: %v", err)
 	}
 
 	secret := newTokenSecret("tokenID", "tokenSecret")
 	addSecretExpiration(secret, timeString(-time.Hour))
-	secrets.Informer().GetIndexer().Add(secret)
+	cleaner.secrets.Add(secret)
 
 	cleaner.evalSecret(secret)
 
@@ -85,14 +81,14 @@ func TestCleanerExpired(t *testing.T) {
 }
 
 func TestCleanerNotExpired(t *testing.T) {
-	cleaner, cl, secrets, err := newTokenCleaner()
+	cleaner, cl, err := newTokenCleaner()
 	if err != nil {
 		t.Fatalf("error creating TokenCleaner: %v", err)
 	}
 
 	secret := newTokenSecret("tokenID", "tokenSecret")
 	addSecretExpiration(secret, timeString(time.Hour))
-	secrets.Informer().GetIndexer().Add(secret)
+	cleaner.secrets.Add(secret)
 
 	cleaner.evalSecret(secret)
 

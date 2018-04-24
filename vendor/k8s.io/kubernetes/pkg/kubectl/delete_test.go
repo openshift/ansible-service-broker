@@ -64,7 +64,7 @@ func TestReplicationControllerStop(t *testing.T) {
 				},
 			},
 			StopError:       nil,
-			ExpectedActions: []string{"get", "list", "get", "update", "get", "get", "delete"},
+			ExpectedActions: []string{"get", "list", "get", "update", "get", "delete"},
 		},
 		{
 			Name: "NoOverlapping",
@@ -93,7 +93,7 @@ func TestReplicationControllerStop(t *testing.T) {
 				},
 			},
 			StopError:       nil,
-			ExpectedActions: []string{"get", "list", "get", "update", "get", "get", "delete"},
+			ExpectedActions: []string{"get", "list", "get", "update", "get", "delete"},
 		},
 		{
 			Name: "OverlappingError",
@@ -588,7 +588,7 @@ func (c *reaperCoreFake) Pods(namespace string) coreclient.PodInterface {
 	return pods
 }
 
-func newPod() *api.Pod {
+func pod() *api.Pod {
 	return &api.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: metav1.NamespaceDefault, Name: "foo"}}
 }
 
@@ -602,7 +602,7 @@ func TestSimpleStop(t *testing.T) {
 	}{
 		{
 			fake: &reaperFake{
-				Clientset: fake.NewSimpleClientset(newPod()),
+				Clientset: fake.NewSimpleClientset(pod()),
 			},
 			kind: api.Kind("Pod"),
 			actions: []testcore.Action{
@@ -624,7 +624,7 @@ func TestSimpleStop(t *testing.T) {
 		},
 		{
 			fake: &reaperFake{
-				Clientset:   fake.NewSimpleClientset(newPod()),
+				Clientset:   fake.NewSimpleClientset(pod()),
 				noDeletePod: true,
 			},
 			kind: api.Kind("Pod"),

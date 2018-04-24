@@ -17,6 +17,7 @@
 "extenders" : [
 	{
         "urlPrefix": "http://127.0.0.1:12346/scheduler",
+        "apiVersion": "v1beta1",
         "filterVerb": "filter",
         "bindVerb": "bind",
         "prioritizeVerb": "prioritize",
@@ -25,6 +26,5 @@
         "nodeCacheCapable": false
 	}
     ],
-"hardPodAffinitySymmetricWeight" : 10,
-"alwaysCheckAllPredicates" : false
+"hardPodAffinitySymmetricWeight" : 10
 }

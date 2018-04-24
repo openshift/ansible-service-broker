@@ -8,6 +8,7 @@ go_library(
         "health.go",
         "policy.go",
         "postupgrade.go",
+        "postupgrade_v18_19.go",
         "prepull.go",
         "selfhosted.go",
         "staticpods.go",
@@ -39,7 +40,7 @@ go_library(
         "//pkg/api/legacyscheme:go_default_library",
         "//pkg/util/version:go_default_library",
         "//pkg/version:go_default_library",
-        "//vendor/k8s.io/api/apps/v1:go_default_library",
+        "//vendor/k8s.io/api/apps/v1beta2:go_default_library",
         "//vendor/k8s.io/api/core/v1:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/api/errors:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
@@ -48,7 +49,6 @@ go_library(
         "//vendor/k8s.io/apimachinery/pkg/util/errors:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/sets:go_default_library",
         "//vendor/k8s.io/client-go/kubernetes:go_default_library",
-        "//vendor/k8s.io/client-go/util/cert:go_default_library",
     ],
 )
 
@@ -71,11 +71,12 @@ go_test(
     srcs = [
         "compute_test.go",
         "policy_test.go",
-        "postupgrade_test.go",
+        "postupgrade_v18_19_test.go",
         "prepull_test.go",
         "staticpods_test.go",
     ],
-    embed = [":go_default_library"],
+    importpath = "k8s.io/kubernetes/cmd/kubeadm/app/phases/upgrade",
+    library = ":go_default_library",
     deps = [
         "//cmd/kubeadm/app/apis/kubeadm:go_default_library",
         "//cmd/kubeadm/app/apis/kubeadm/v1alpha1:go_default_library",

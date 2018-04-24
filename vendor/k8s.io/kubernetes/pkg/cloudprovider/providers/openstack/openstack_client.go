@@ -23,7 +23,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 )
 
-// NewNetworkV2 creates a ServiceClient that may be used with the neutron v2 API
 func (os *OpenStack) NewNetworkV2() (*gophercloud.ServiceClient, error) {
 	network, err := openstack.NewNetworkV2(os.provider, gophercloud.EndpointOpts{
 		Region: os.region,
@@ -34,7 +33,6 @@ func (os *OpenStack) NewNetworkV2() (*gophercloud.ServiceClient, error) {
 	return network, nil
 }
 
-// NewComputeV2 creates a ServiceClient that may be used with the nova v2 API
 func (os *OpenStack) NewComputeV2() (*gophercloud.ServiceClient, error) {
 	compute, err := openstack.NewComputeV2(os.provider, gophercloud.EndpointOpts{
 		Region: os.region,
@@ -45,7 +43,6 @@ func (os *OpenStack) NewComputeV2() (*gophercloud.ServiceClient, error) {
 	return compute, nil
 }
 
-// NewBlockStorageV1 creates a ServiceClient that may be used with the Cinder v1 API
 func (os *OpenStack) NewBlockStorageV1() (*gophercloud.ServiceClient, error) {
 	storage, err := openstack.NewBlockStorageV1(os.provider, gophercloud.EndpointOpts{
 		Region: os.region,
@@ -56,7 +53,6 @@ func (os *OpenStack) NewBlockStorageV1() (*gophercloud.ServiceClient, error) {
 	return storage, nil
 }
 
-// NewBlockStorageV2 creates a ServiceClient that may be used with the Cinder v2 API
 func (os *OpenStack) NewBlockStorageV2() (*gophercloud.ServiceClient, error) {
 	storage, err := openstack.NewBlockStorageV2(os.provider, gophercloud.EndpointOpts{
 		Region: os.region,
@@ -67,7 +63,6 @@ func (os *OpenStack) NewBlockStorageV2() (*gophercloud.ServiceClient, error) {
 	return storage, nil
 }
 
-// NewBlockStorageV3 creates a ServiceClient that may be used with the Cinder v3 API
 func (os *OpenStack) NewBlockStorageV3() (*gophercloud.ServiceClient, error) {
 	storage, err := openstack.NewBlockStorageV3(os.provider, gophercloud.EndpointOpts{
 		Region: os.region,
@@ -78,7 +73,6 @@ func (os *OpenStack) NewBlockStorageV3() (*gophercloud.ServiceClient, error) {
 	return storage, nil
 }
 
-// NewLoadBalancerV2 creates a ServiceClient that may be used with the Neutron LBaaS v2 API
 func (os *OpenStack) NewLoadBalancerV2() (*gophercloud.ServiceClient, error) {
 	var lb *gophercloud.ServiceClient
 	var err error

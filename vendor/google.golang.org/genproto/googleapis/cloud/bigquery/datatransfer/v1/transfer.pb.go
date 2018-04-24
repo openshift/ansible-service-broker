@@ -16,7 +16,7 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// DEPRECATED. Represents data transfer type.
+// Represents data transfer type.
 type TransferType int32
 
 const (
@@ -126,6 +126,7 @@ func (TransferMessage_MessageSeverity) EnumDescriptor() ([]byte, []int) {
 // When a new transfer configuration is created, the specified
 // `destination_dataset_id` is created when needed and shared with the
 // appropriate data source service account.
+// Next id: 20
 type TransferConfig struct {
 	// The resource name of the transfer config.
 	// Transfer config names have the form
@@ -278,6 +279,7 @@ func (m *TransferConfig) GetDatasetRegion() string {
 }
 
 // Represents a data transfer run.
+// Next id: 27
 type TransferRun struct {
 	// The resource name of the transfer run.
 	// Transfer run names have the form

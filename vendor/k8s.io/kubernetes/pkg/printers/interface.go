@@ -21,7 +21,6 @@ import (
 	"io"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // ResourcePrinter is an interface that knows how to print runtime objects.
@@ -69,7 +68,7 @@ type PrintOptions struct {
 	ShowAll            bool
 	ShowLabels         bool
 	AbsoluteTimestamps bool
-	Kind               schema.GroupKind
+	Kind               string
 	ColumnLabels       []string
 
 	SortBy string

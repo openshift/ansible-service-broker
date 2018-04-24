@@ -8,7 +8,6 @@ load(
 go_library(
     name = "go_default_library",
     srcs = [
-        "cadvisor_e2e.go",
         "node_conformance.go",
         "node_e2e.go",
         "remote.go",

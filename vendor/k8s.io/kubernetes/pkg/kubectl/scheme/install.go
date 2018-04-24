@@ -60,7 +60,6 @@ func init() {
 	scheme.AddToScheme(Scheme)
 
 	// Register external types for Registry
-	Versions = append(Versions, corev1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              corev1.GroupName,
@@ -91,7 +90,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, admissionv1alpha1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              admissionv1alpha1.GroupName,
@@ -105,7 +103,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, admissionregistrationv1alpha1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              admissionregistrationv1alpha1.GroupName,
@@ -119,7 +116,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, appsv1.SchemeGroupVersion, appsv1beta2.SchemeGroupVersion, appsv1beta1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              appsv1.GroupName,
@@ -134,7 +130,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, authenticationv1.SchemeGroupVersion, authenticationv1beta1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              authenticationv1beta1.GroupName,
@@ -149,7 +144,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, authorizationv1.SchemeGroupVersion, authorizationv1beta1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              authorizationv1.GroupName,
@@ -164,7 +158,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, autoscalingv1.SchemeGroupVersion, autoscalingv2beta1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              autoscalingv1.GroupName,
@@ -178,7 +171,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, batchv1.SchemeGroupVersion, batchv1beta1.SchemeGroupVersion, batchv2alpha1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              batchv1.GroupName,
@@ -193,7 +185,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, certificatesv1beta1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              certificatesv1beta1.GroupName,
@@ -207,7 +198,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, extensionsv1beta1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              extensionsv1beta1.GroupName,
@@ -221,7 +211,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, imagepolicyv1alpha1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              imagepolicyv1alpha1.GroupName,
@@ -235,7 +224,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, networkingv1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              networkingv1.GroupName,
@@ -248,7 +236,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, policyv1beta1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              policyv1beta1.GroupName,
@@ -261,7 +248,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, rbacv1.SchemeGroupVersion, rbacv1beta1.SchemeGroupVersion, rbacv1alpha1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              rbacv1.GroupName,
@@ -277,7 +263,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, schedulingv1alpha1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              schedulingv1alpha1.GroupName,
@@ -291,7 +276,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, settingsv1alpha1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              settingsv1alpha1.GroupName,
@@ -304,7 +288,6 @@ func init() {
 		panic(err)
 	}
 
-	Versions = append(Versions, storagev1.SchemeGroupVersion, storagev1beta1.SchemeGroupVersion)
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:              storagev1.GroupName,

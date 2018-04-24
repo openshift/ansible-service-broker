@@ -32,7 +32,6 @@ import (
 	coreclient "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	openapicommon "k8s.io/kube-openapi/pkg/common"
 )
 
 type RequestHeaderAuthenticationOptions struct {
@@ -131,10 +130,6 @@ func (s *DelegatingAuthenticationOptions) Validate() []error {
 }
 
 func (s *DelegatingAuthenticationOptions) AddFlags(fs *pflag.FlagSet) {
-	if s == nil {
-		return
-	}
-
 	fs.StringVar(&s.RemoteKubeConfigFile, "authentication-kubeconfig", s.RemoteKubeConfigFile, ""+
 		"kubeconfig file pointing at the 'core' kubernetes server with enough rights to create "+
 		"tokenaccessreviews.authentication.k8s.io.")
@@ -151,7 +146,7 @@ func (s *DelegatingAuthenticationOptions) AddFlags(fs *pflag.FlagSet) {
 
 }
 
-func (s *DelegatingAuthenticationOptions) ApplyTo(c *server.AuthenticationInfo, servingInfo *server.SecureServingInfo, openAPIConfig *openapicommon.Config) error {
+func (s *DelegatingAuthenticationOptions) ApplyTo(c *server.Config) error {
 	if s == nil {
 		c.Authenticator = nil
 		return nil
@@ -161,7 +156,8 @@ func (s *DelegatingAuthenticationOptions) ApplyTo(c *server.AuthenticationInfo, 
 	if err != nil {
 		return err
 	}
-	if err = c.ApplyClientCert(clientCA.ClientCA, servingInfo); err != nil {
+	c, err = c.ApplyClientCert(clientCA.ClientCA)
+	if err != nil {
 		return fmt.Errorf("unable to load client CA file: %v", err)
 	}
 
@@ -169,7 +165,8 @@ func (s *DelegatingAuthenticationOptions) ApplyTo(c *server.AuthenticationInfo, 
 	if err != nil {
 		return err
 	}
-	if err = c.ApplyClientCert(requestHeader.ClientCAFile, servingInfo); err != nil {
+	c, err = c.ApplyClientCert(requestHeader.ClientCAFile)
+	if err != nil {
 		return fmt.Errorf("unable to load client CA file: %v", err)
 	}
 
@@ -183,8 +180,8 @@ func (s *DelegatingAuthenticationOptions) ApplyTo(c *server.AuthenticationInfo, 
 	}
 
 	c.Authenticator = authenticator
-	if openAPIConfig != nil {
-		openAPIConfig.SecurityDefinitions = securityDefinitions
+	if c.OpenAPIConfig != nil {
+		c.OpenAPIConfig.SecurityDefinitions = securityDefinitions
 	}
 	c.SupportsBasicAuth = false
 

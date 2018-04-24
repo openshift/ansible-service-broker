@@ -18,14 +18,15 @@ package gce
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/golang/glog"
 
 	"k8s.io/api/core/v1"
-	"k8s.io/kubernetes/pkg/cloudprovider/providers/gce/cloud"
 )
 
 type LoadBalancerType string
+type NetworkTier string
 
 const (
 	// ServiceAnnotationLoadBalancerType is annotated on a service with type LoadBalancer
@@ -48,8 +49,12 @@ const (
 	// network tier a GCP LB should use. The valid values are "Standard" and
 	// "Premium" (default).
 	NetworkTierAnnotationKey      = "cloud.google.com/network-tier"
-	NetworkTierAnnotationStandard = cloud.NetworkTierStandard
-	NetworkTierAnnotationPremium  = cloud.NetworkTierPremium
+	NetworkTierAnnotationStandard = "Standard"
+	NetworkTierAnnotationPremium  = "Premium"
+
+	NetworkTierStandard NetworkTier = NetworkTierAnnotationStandard
+	NetworkTierPremium  NetworkTier = NetworkTierAnnotationPremium
+	NetworkTierDefault  NetworkTier = NetworkTierPremium
 )
 
 // GetLoadBalancerAnnotationType returns the type of GCP load balancer which should be assembled.
@@ -92,19 +97,38 @@ func GetLoadBalancerAnnotationBackendShare(service *v1.Service) bool {
 // GetServiceNetworkTier returns the network tier of GCP load balancer
 // which should be assembled, and an error if the specified tier is not
 // supported.
-func GetServiceNetworkTier(service *v1.Service) (cloud.NetworkTier, error) {
+func GetServiceNetworkTier(service *v1.Service) (NetworkTier, error) {
 	l, ok := service.Annotations[NetworkTierAnnotationKey]
 	if !ok {
-		return cloud.NetworkTierDefault, nil
+		return NetworkTierDefault, nil
 	}
 
-	v := cloud.NetworkTier(l)
+	v := NetworkTier(l)
 	switch v {
-	case cloud.NetworkTierStandard:
+	case NetworkTierStandard:
 		fallthrough
-	case cloud.NetworkTierPremium:
+	case NetworkTierPremium:
 		return v, nil
 	default:
-		return cloud.NetworkTierDefault, fmt.Errorf("unsupported network tier: %q", v)
+		return NetworkTierDefault, fmt.Errorf("unsupported network tier: %q", v)
+	}
+}
+
+// ToGCEValue converts NetworkTier to a string that we can populate the
+// NetworkTier field of GCE objects.
+func (n NetworkTier) ToGCEValue() string {
+	return strings.ToUpper(string(n))
+}
+
+// NetworkTierGCEValueToType converts the value of the NetworkTier field of a
+// GCE object to the NetworkTier type.
+func NetworkTierGCEValueToType(s string) NetworkTier {
+	switch s {
+	case "STANDARD":
+		return NetworkTierStandard
+	case "PREMIUM":
+		return NetworkTierPremium
+	default:
+		return NetworkTier(s)
 	}
 }

@@ -80,38 +80,34 @@ func TestPluginCmd(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			inBuf := bytes.NewBuffer([]byte{})
-			outBuf := bytes.NewBuffer([]byte{})
-			errBuf := bytes.NewBuffer([]byte{})
+		inBuf := bytes.NewBuffer([]byte{})
+		outBuf := bytes.NewBuffer([]byte{})
+		errBuf := bytes.NewBuffer([]byte{})
 
-			cmdutil.BehaviorOnFatal(func(str string, code int) {
-				errBuf.Write([]byte(str))
-			})
-
-			runner := &mockPluginRunner{
-				success: test.expectedSuccess,
-			}
-
-			f := cmdtesting.NewTestFactory()
-			defer f.Cleanup()
-
-			cmd := NewCmdForPlugin(f, test.plugin, runner, inBuf, outBuf, errBuf)
-			if cmd == nil {
-				if !test.expectedNilCmd {
-					t.Fatalf("%s: command was unexpectedly not registered", test.name)
-				}
-				return
-			}
-			cmd.Run(cmd, []string{})
-
-			if test.expectedSuccess && outBuf.String() != fmt.Sprintf("ok: %s", test.plugin.Name) {
-				t.Errorf("%s: unexpected output: %q", test.name, outBuf.String())
-			}
-
-			if !test.expectedSuccess && errBuf.String() != fmt.Sprintf("error: oops %s", test.plugin.Name) {
-				t.Errorf("%s: unexpected err output: %q", test.name, errBuf.String())
-			}
+		cmdutil.BehaviorOnFatal(func(str string, code int) {
+			errBuf.Write([]byte(str))
 		})
+
+		runner := &mockPluginRunner{
+			success: test.expectedSuccess,
+		}
+
+		f, _, _, _ := cmdtesting.NewAPIFactory()
+		cmd := NewCmdForPlugin(f, test.plugin, runner, inBuf, outBuf, errBuf)
+		if cmd == nil {
+			if !test.expectedNilCmd {
+				t.Fatalf("%s: command was unexpectedly not registered", test.name)
+			}
+			continue
+		}
+		cmd.Run(cmd, []string{})
+
+		if test.expectedSuccess && outBuf.String() != fmt.Sprintf("ok: %s", test.plugin.Name) {
+			t.Errorf("%s: unexpected output: %q", test.name, outBuf.String())
+		}
+
+		if !test.expectedSuccess && errBuf.String() != fmt.Sprintf("error: oops %s", test.plugin.Name) {
+			t.Errorf("%s: unexpected err output: %q", test.name, errBuf.String())
+		}
 	}
 }

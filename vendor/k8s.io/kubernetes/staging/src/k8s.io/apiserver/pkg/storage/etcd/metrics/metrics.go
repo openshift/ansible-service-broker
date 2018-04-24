@@ -59,13 +59,6 @@ var (
 		},
 		[]string{"operation", "type"},
 	)
-	objectCounts = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "etcd_object_counts",
-			Help: "Number of stored objects at the time of last check split by kind.",
-		},
-		[]string{"resource"},
-	)
 )
 
 var registerMetrics sync.Once
@@ -80,12 +73,7 @@ func Register() {
 		prometheus.MustRegister(cacheAddLatency)
 		prometheus.MustRegister(cacheGetLatency)
 		prometheus.MustRegister(etcdRequestLatenciesSummary)
-		prometheus.MustRegister(objectCounts)
 	})
-}
-
-func UpdateObjectCount(resourcePrefix string, count int64) {
-	objectCounts.WithLabelValues(resourcePrefix).Set(float64(count))
 }
 
 func RecordEtcdRequestLatency(verb, resource string, startTime time.Time) {

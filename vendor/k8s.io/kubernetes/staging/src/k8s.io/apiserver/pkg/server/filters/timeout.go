@@ -30,7 +30,7 @@ import (
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 )
 
-var errConnKilled = fmt.Errorf("killing connection/stream because serving request timed out and response had been started")
+var errConnKilled = fmt.Errorf("kill connection/stream")
 
 // WithTimeoutForNonLongRunningRequests times out non-long-running requests after the time given by timeout.
 func WithTimeoutForNonLongRunningRequests(handler http.Handler, requestContextMapper apirequest.RequestContextMapper, longRunning apirequest.LongRunningRequestCheck, timeout time.Duration) http.Handler {
@@ -129,7 +129,7 @@ type baseTimeoutWriter struct {
 	w http.ResponseWriter
 
 	mu sync.Mutex
-	// if the timeout handler has timeout
+	// if the timeout handler has timedout
 	timedOut bool
 	// if this timeout writer has wrote header
 	wroteHeader bool

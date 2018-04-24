@@ -5,7 +5,6 @@ metadata:
     run: hostname
   name: hostname
 spec:
-  minReadySeconds: 60
   template:
     metadata:
       labels:

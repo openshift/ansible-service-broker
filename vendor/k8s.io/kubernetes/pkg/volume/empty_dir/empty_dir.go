@@ -155,11 +155,19 @@ func (plugin *emptyDirPlugin) ConstructVolumeSpec(volName, mountPath string) (*v
 type mountDetector interface {
 	// GetMountMedium determines what type of medium a given path is backed
 	// by and whether that path is a mount point.  For example, if this
-	// returns (v1.StorageMediumMemory, false, nil), the caller knows that the path is
+	// returns (mediumMemory, false, nil), the caller knows that the path is
 	// on a memory FS (tmpfs on Linux) but is not the root mountpoint of
 	// that tmpfs.
-	GetMountMedium(path string) (v1.StorageMedium, bool, error)
+	GetMountMedium(path string) (storageMedium, bool, error)
 }
+
+type storageMedium int
+
+const (
+	mediumUnknown   storageMedium = 0 // assume anything we don't explicitly handle is this
+	mediumMemory    storageMedium = 1 // memory (e.g. tmpfs on linux)
+	mediumHugepages storageMedium = 2 // hugepages
+)
 
 // EmptyDir volumes are temporary directories exposed to the pod.
 // These do not persist beyond the lifetime of a pod.
@@ -249,7 +257,7 @@ func (ed *emptyDir) setupTmpfs(dir string) error {
 	}
 	// If the directory is a mountpoint with medium memory, there is no
 	// work to do since we are already in the desired state.
-	if isMnt && medium == v1.StorageMediumMemory {
+	if isMnt && medium == mediumMemory {
 		return nil
 	}
 
@@ -272,7 +280,7 @@ func (ed *emptyDir) setupHugepages(dir string) error {
 	}
 	// If the directory is a mountpoint with medium hugepages, there is no
 	// work to do since we are already in the desired state.
-	if isMnt && medium == v1.StorageMediumHugePages {
+	if isMnt && medium == mediumHugepages {
 		return nil
 	}
 
@@ -380,10 +388,10 @@ func (ed *emptyDir) TearDownAt(dir string) error {
 		return err
 	}
 	if isMnt {
-		if medium == v1.StorageMediumMemory {
+		if medium == mediumMemory {
 			ed.medium = v1.StorageMediumMemory
 			return ed.teardownTmpfsOrHugetlbfs(dir)
-		} else if medium == v1.StorageMediumHugePages {
+		} else if medium == mediumHugepages {
 			ed.medium = v1.StorageMediumHugePages
 			return ed.teardownTmpfsOrHugetlbfs(dir)
 		}

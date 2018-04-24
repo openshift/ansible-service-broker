@@ -43,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/apis/example"
 	examplev1 "k8s.io/apiserver/pkg/apis/example/v1"
+	"k8s.io/apiserver/pkg/endpoints/request"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/features"
 	"k8s.io/apiserver/pkg/registry/generic"
@@ -1919,8 +1920,8 @@ func TestFinalizeDelete(t *testing.T) {
 	}
 }
 
-func fakeRequestInfo(resource, apiGroup string) *genericapirequest.RequestInfo {
-	return &genericapirequest.RequestInfo{
+func fakeRequestInfo(resource, apiGroup string) *request.RequestInfo {
+	return &request.RequestInfo{
 		IsResourceRequest: true,
 		Path:              "/api/v1/test",
 		Verb:              "test",

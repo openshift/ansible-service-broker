@@ -33,7 +33,6 @@ import (
 )
 
 var zero time.Time
-var sandboxImage = "k8s.gcr.io/pause-amd64:latest"
 
 func newRealImageGCManager(policy ImageGCPolicy) (*realImageGCManager, *containertest.FakeRuntime, *statstest.StatsProvider) {
 	fakeRuntime := &containertest.FakeRuntime{}
@@ -44,7 +43,6 @@ func newRealImageGCManager(policy ImageGCPolicy) (*realImageGCManager, *containe
 		imageRecords:  make(map[string]*imageRecord),
 		statsProvider: mockStatsProvider,
 		recorder:      &record.FakeRecorder{},
-		sandboxImage:  sandboxImage,
 	}, fakeRuntime, mockStatsProvider
 }
 
@@ -114,7 +112,7 @@ func TestDetectImagesInitialDetect(t *testing.T) {
 	}
 
 	startTime := time.Now().Add(-time.Millisecond)
-	_, err := manager.detectImages(zero)
+	err := manager.detectImages(zero)
 	assert := assert.New(t)
 	require.NoError(t, err)
 	assert.Equal(manager.imageRecordsLen(), 3)
@@ -147,7 +145,7 @@ func TestDetectImagesWithNewImage(t *testing.T) {
 		}},
 	}
 
-	_, err := manager.detectImages(zero)
+	err := manager.detectImages(zero)
 	assert := assert.New(t)
 	require.NoError(t, err)
 	assert.Equal(manager.imageRecordsLen(), 2)
@@ -161,7 +159,7 @@ func TestDetectImagesWithNewImage(t *testing.T) {
 
 	detectedTime := zero.Add(time.Second)
 	startTime := time.Now().Add(-time.Millisecond)
-	_, err = manager.detectImages(detectedTime)
+	err = manager.detectImages(detectedTime)
 	require.NoError(t, err)
 	assert.Equal(manager.imageRecordsLen(), 3)
 	noContainer, ok := manager.getImageRecord(imageID(0))
@@ -178,21 +176,6 @@ func TestDetectImagesWithNewImage(t *testing.T) {
 	assert.Equal(zero, noContainer.lastUsed)
 }
 
-func TestDeleteUnusedImagesExemptSandboxImage(t *testing.T) {
-	manager, fakeRuntime, _ := newRealImageGCManager(ImageGCPolicy{})
-	fakeRuntime.ImageList = []container.Image{
-		{
-			ID:   sandboxImage,
-			Size: 1024,
-		},
-	}
-
-	err := manager.DeleteUnusedImages()
-	assert := assert.New(t)
-	assert.Len(fakeRuntime.ImageList, 1)
-	require.NoError(t, err)
-}
-
 func TestDetectImagesContainerStopped(t *testing.T) {
 	manager, fakeRuntime, _ := newRealImageGCManager(ImageGCPolicy{})
 	fakeRuntime.ImageList = []container.Image{
@@ -207,7 +190,7 @@ func TestDetectImagesContainerStopped(t *testing.T) {
 		}},
 	}
 
-	_, err := manager.detectImages(zero)
+	err := manager.detectImages(zero)
 	assert := assert.New(t)
 	require.NoError(t, err)
 	assert.Equal(manager.imageRecordsLen(), 2)
@@ -216,7 +199,7 @@ func TestDetectImagesContainerStopped(t *testing.T) {
 
 	// Simulate container being stopped.
 	fakeRuntime.AllPodList = []*containertest.FakePod{}
-	_, err = manager.detectImages(time.Now())
+	err = manager.detectImages(time.Now())
 	require.NoError(t, err)
 	assert.Equal(manager.imageRecordsLen(), 2)
 	container1, ok := manager.getImageRecord(imageID(0))
@@ -243,14 +226,14 @@ func TestDetectImagesWithRemovedImages(t *testing.T) {
 		}},
 	}
 
-	_, err := manager.detectImages(zero)
+	err := manager.detectImages(zero)
 	assert := assert.New(t)
 	require.NoError(t, err)
 	assert.Equal(manager.imageRecordsLen(), 2)
 
 	// Simulate both images being removed.
 	fakeRuntime.ImageList = []container.Image{}
-	_, err = manager.detectImages(time.Now())
+	err = manager.detectImages(time.Now())
 	require.NoError(t, err)
 	assert.Equal(manager.imageRecordsLen(), 0)
 }
@@ -291,9 +274,10 @@ func TestDeleteUnusedImagesRemoveAllUnusedImages(t *testing.T) {
 		}},
 	}
 
-	err := manager.DeleteUnusedImages()
+	spaceFreed, err := manager.DeleteUnusedImages()
 	assert := assert.New(t)
 	require.NoError(t, err)
+	assert.EqualValues(3072, spaceFreed)
 	assert.Len(fakeRuntime.ImageList, 1)
 }
 
@@ -313,8 +297,7 @@ func TestFreeSpaceRemoveByLeastRecentlyUsed(t *testing.T) {
 	}
 
 	// Make 1 be more recently used than 0.
-	_, err := manager.detectImages(zero)
-	require.NoError(t, err)
+	require.NoError(t, manager.detectImages(zero))
 	fakeRuntime.AllPodList = []*containertest.FakePod{
 		{Pod: &container.Pod{
 			Containers: []*container.Container{
@@ -322,15 +305,13 @@ func TestFreeSpaceRemoveByLeastRecentlyUsed(t *testing.T) {
 			},
 		}},
 	}
-	_, err = manager.detectImages(time.Now())
-	require.NoError(t, err)
+	require.NoError(t, manager.detectImages(time.Now()))
 	fakeRuntime.AllPodList = []*containertest.FakePod{
 		{Pod: &container.Pod{
 			Containers: []*container.Container{},
 		}},
 	}
-	_, err = manager.detectImages(time.Now())
-	require.NoError(t, err)
+	require.NoError(t, manager.detectImages(time.Now()))
 	require.Equal(t, manager.imageRecordsLen(), 2)
 
 	spaceFreed, err := manager.freeSpace(1024, time.Now())
@@ -354,17 +335,14 @@ func TestFreeSpaceTiesBrokenByDetectedTime(t *testing.T) {
 	}
 
 	// Make 1 more recently detected but used at the same time as 0.
-	_, err := manager.detectImages(zero)
-	require.NoError(t, err)
+	require.NoError(t, manager.detectImages(zero))
 	fakeRuntime.ImageList = []container.Image{
 		makeImage(0, 1024),
 		makeImage(1, 2048),
 	}
-	_, err = manager.detectImages(time.Now())
-	require.NoError(t, err)
+	require.NoError(t, manager.detectImages(time.Now()))
 	fakeRuntime.AllPodList = []*containertest.FakePod{}
-	_, err = manager.detectImages(time.Now())
-	require.NoError(t, err)
+	require.NoError(t, manager.detectImages(time.Now()))
 	require.Equal(t, manager.imageRecordsLen(), 2)
 
 	spaceFreed, err := manager.freeSpace(1024, time.Now())
@@ -470,8 +448,7 @@ func TestGarbageCollectImageNotOldEnough(t *testing.T) {
 
 	fakeClock := clock.NewFakeClock(time.Now())
 	t.Log(fakeClock.Now())
-	_, err := manager.detectImages(fakeClock.Now())
-	require.NoError(t, err)
+	require.NoError(t, manager.detectImages(fakeClock.Now()))
 	require.Equal(t, manager.imageRecordsLen(), 2)
 	// no space freed since one image is in used, and another one is not old enough
 	spaceFreed, err := manager.freeSpace(1024, fakeClock.Now())
@@ -540,22 +517,12 @@ func TestValidateImageGCPolicy(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		if _, err := NewImageGCManager(nil, nil, nil, nil, tc.imageGCPolicy, ""); err != nil {
+		if _, err := NewImageGCManager(nil, nil, nil, nil, tc.imageGCPolicy); err != nil {
 			if err.Error() != tc.expectErr {
 				t.Errorf("[%s:]Expected err:%v, but got:%v", tc.name, tc.expectErr, err.Error())
 			}
 		}
 	}
-}
-
-func TestImageCacheReturnCopiedList(t *testing.T) {
-	cache := &imageCache{}
-	testList := []container.Image{{ID: "1"}, {ID: "2"}}
-	cache.set(testList)
-	list := cache.get()
-	assert.Len(t, list, 2)
-	list[0].ID = "3"
-	assert.Equal(t, cache.get(), testList)
 }
 
 func uint64Ptr(i uint64) *uint64 {

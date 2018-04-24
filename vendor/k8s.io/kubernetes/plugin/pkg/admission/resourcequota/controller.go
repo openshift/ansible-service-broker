@@ -52,7 +52,8 @@ type quotaEvaluator struct {
 	// lockAcquisitionFunc acquires any required locks and returns a cleanup method to defer
 	lockAcquisitionFunc func([]api.ResourceQuota) func()
 
-	ignoredResources map[schema.GroupResource]struct{}
+	// how quota was configured
+	quotaConfiguration quota.Configuration
 
 	// registry that knows how to measure usage for objects
 	registry quota.Registry
@@ -109,7 +110,7 @@ func newAdmissionWaiter(a admission.Attributes) *admissionWaiter {
 // NewQuotaEvaluator configures an admission controller that can enforce quota constraints
 // using the provided registry.  The registry must have the capability to handle group/kinds that
 // are persisted by the server this admission controller is intercepting
-func NewQuotaEvaluator(quotaAccessor QuotaAccessor, ignoredResources map[schema.GroupResource]struct{}, quotaRegistry quota.Registry, lockAcquisitionFunc func([]api.ResourceQuota) func(), config *resourcequotaapi.Configuration, workers int, stopCh <-chan struct{}) Evaluator {
+func NewQuotaEvaluator(quotaAccessor QuotaAccessor, quotaConfiguration quota.Configuration, lockAcquisitionFunc func([]api.ResourceQuota) func(), config *resourcequotaapi.Configuration, workers int, stopCh <-chan struct{}) Evaluator {
 	// if we get a nil config, just create an empty default.
 	if config == nil {
 		config = &resourcequotaapi.Configuration{}
@@ -119,8 +120,8 @@ func NewQuotaEvaluator(quotaAccessor QuotaAccessor, ignoredResources map[schema.
 		quotaAccessor:       quotaAccessor,
 		lockAcquisitionFunc: lockAcquisitionFunc,
 
-		ignoredResources: ignoredResources,
-		registry:         quotaRegistry,
+		quotaConfiguration: quotaConfiguration,
+		registry:           generic.NewRegistry(quotaConfiguration.Evaluators()),
 
 		queue:      workqueue.NewNamed("admission_quota_controller"),
 		work:       map[string][]*admissionWaiter{},
@@ -523,7 +524,7 @@ func (e *quotaEvaluator) Evaluate(a admission.Attributes) error {
 	// is this resource ignored?
 	gvr := a.GetResource()
 	gr := gvr.GroupResource()
-	if _, ok := e.ignoredResources[gr]; ok {
+	if _, ok := e.quotaConfiguration.IgnoredResources()[gr]; ok {
 		return nil
 	}
 

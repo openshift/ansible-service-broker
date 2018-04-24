@@ -29,6 +29,7 @@ func TestNamespaceGenerate(t *testing.T) {
 		params    map[string]interface{}
 		expected  *v1.Namespace
 		expectErr bool
+		index     int
 	}{
 		{
 			params: map[string]interface{}{

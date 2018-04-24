@@ -32,7 +32,6 @@ filegroup(
     name = "all-srcs",
     srcs = [
         ":package-srcs",
-        "//pkg/proxy/apis/kubeproxyconfig/fuzzer:all-srcs",
         "//pkg/proxy/apis/kubeproxyconfig/scheme:all-srcs",
         "//pkg/proxy/apis/kubeproxyconfig/v1alpha1:all-srcs",
         "//pkg/proxy/apis/kubeproxyconfig/validation:all-srcs",

@@ -15,6 +15,5 @@
 	{"name" : "ServiceSpreadingPriority", "weight" : 1},
 	{"name" : "EqualPriority", "weight" : 1}
 	],
-"hardPodAffinitySymmetricWeight" : 10,
-"alwaysCheckAllPredicates" : false
+"hardPodAffinitySymmetricWeight" : 10
 }

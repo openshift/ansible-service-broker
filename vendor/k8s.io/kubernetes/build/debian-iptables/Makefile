@@ -14,7 +14,7 @@
 
 .PHONY:	build push
 
-REGISTRY?="staging-k8s.gcr.io"
+REGISTRY?="gcr.io/google-containers"
 IMAGE=debian-iptables
 TAG=v10
 ARCH?=amd64
@@ -34,7 +34,7 @@ ifeq ($(ARCH),s390x)
 	QEMUARCH=s390x
 endif
 
-BASEIMAGE=k8s.gcr.io/debian-base-$(ARCH):0.3
+BASEIMAGE=gcr.io/google-containers/debian-base-$(ARCH):0.3
 
 build:
 	cp ./* $(TEMP_DIR)
@@ -55,6 +55,6 @@ endif
 	docker build --pull -t $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG) $(TEMP_DIR)
 
 push: build
-	docker push $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG)
+	gcloud docker -- push $(REGISTRY)/$(IMAGE)-$(ARCH):$(TAG)
 
 all: push

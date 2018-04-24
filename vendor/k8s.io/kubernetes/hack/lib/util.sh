@@ -30,13 +30,13 @@ kube::util::wait_for_url() {
   }
 
   local i
-  for i in $(seq 1 "$times"); do
+  for i in $(seq 1 $times); do
     local out
-    if out=$(curl --max-time 1 -gkfs "$url" 2>/dev/null); then
+    if out=$(curl --max-time 1 -gkfs $url 2>/dev/null); then
       kube::log::status "On try ${i}, ${prefix}: ${out}"
       return 0
     fi
-    sleep "${wait}"
+    sleep ${wait}
   done
   kube::log::error "Timed out waiting for ${prefix} to answer at ${url}; tried ${times} waiting ${wait} between each"
   return 1
@@ -148,11 +148,10 @@ kube::util::find-binary-for-platform() {
     "${KUBE_ROOT}/platforms/${platform}/${lookfor}"
   )
   # Also search for binary in bazel build tree.
-  # The bazel go rules place binaries in subtrees like
-  # "bazel-bin/source/path/linux_amd64_pure_stripped/binaryname", so make sure
-  # the platform name is matched in the path.
+  # In some cases we have to name the binary $BINARY_bin, since there was a
+  # directory named $BINARY next to it.
   locations+=($(find "${KUBE_ROOT}/bazel-bin/" -type f -executable \
-    -path "*/${platform/\//_}*/${lookfor}" 2>/dev/null || true) )
+    \( -name "${lookfor}" -o -name "${lookfor}_bin" \) 2>/dev/null || true) )
 
   # List most recently-updated location.
   local -r bin=$( (ls -t "${locations[@]}" 2>/dev/null || true) | head -1 )
@@ -209,7 +208,7 @@ kube::util::gen-docs() {
 # Puts a placeholder for every generated doc. This makes the link checker work.
 kube::util::set-placeholder-gen-docs() {
   local list_file="${KUBE_ROOT}/docs/.generated_docs"
-  if [[ -e "${list_file}" ]]; then
+  if [ -e ${list_file} ]; then
     # remove all of the old docs; we don't want to check them in.
     while read file; do
       if [[ "${list_file}" != "${KUBE_ROOT}/${file}" ]]; then
@@ -244,9 +243,11 @@ kube::util::remove-gen-docs() {
 kube::util::group-version-to-pkg-path() {
   staging_apis=(
   $(
-    cd "${KUBE_ROOT}/staging/src/k8s.io/api" &&
-    find . -name types.go -exec dirname {} \; | sed "s|\./||g" | sort
-  ))
+    pushd ${KUBE_ROOT}/staging/src/k8s.io/api > /dev/null
+      find . -name types.go | xargs -n1 dirname | sed "s|\./||g" | sort
+    popd > /dev/null
+  )
+  )
 
   local group_version="$1"
 
@@ -272,8 +273,14 @@ kube::util::group-version-to-pkg-path() {
     meta/v1)
       echo "vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
       ;;
-    meta/v1beta1)
-      echo "vendor/k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+    meta/v1)
+      echo "../vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
+      ;;
+    meta/v1alpha1)
+      echo "vendor/k8s.io/apimachinery/pkg/apis/meta/v1alpha1"
+      ;;
+    meta/v1alpha1)
+      echo "../vendor/k8s.io/apimachinery/pkg/apis/meta/v1alpha1"
       ;;
     unversioned)
       echo "pkg/api/unversioned"
@@ -438,9 +445,6 @@ kube::util::ensure_godep_version() {
 
   kube::log::status "Installing godep version ${GODEP_VERSION}"
   go install ./vendor/github.com/tools/godep/
-  GP="$(echo $GOPATH | cut -f1 -d:)"
-  hash -r # force bash to clear PATH cache
-  PATH="${GP}/bin:${PATH}"
 
   if [[ "$(godep version 2>/dev/null)" != *"godep ${GODEP_VERSION}"* ]]; then
     kube::log::error "Expected godep ${GODEP_VERSION}, got $(godep version)"
@@ -453,12 +457,7 @@ kube::util::ensure_godep_version() {
 kube::util::ensure_no_staging_repos_in_gopath() {
   kube::util::ensure_single_dir_gopath
   local error=0
-  for repo_file in "${KUBE_ROOT}"/staging/src/k8s.io/*; do
-    if [[ ! -d "$repo_file" ]]; then
-      # not a directory or there were no files
-      continue;
-    fi
-    repo="$(basename "$repo_file")"
+  for repo in $(ls ${KUBE_ROOT}/staging/src/k8s.io); do
     if [ -e "${GOPATH}/src/k8s.io/${repo}" ]; then
       echo "k8s.io/${repo} exists in GOPATH. Remove before running godep-save.sh." 1>&2
       error=1
@@ -470,16 +469,29 @@ kube::util::ensure_no_staging_repos_in_gopath() {
 }
 
 # Installs the specified go package at a particular commit.
+# Optionally specify an additional dependency constraint as "pkg@revision".
 kube::util::go_install_from_commit() {
   local -r pkg=$1
   local -r commit=$2
+  local -r extra_constraint=${3:-}
 
   kube::util::ensure-temp-dir
   mkdir -p "${KUBE_TEMP}/go/src"
-  GOPATH="${KUBE_TEMP}/go" go get -d -u "${pkg}"
+  # TODO(spiffxp): remove this brittle workaround for go getting a package that doesn't exist at HEAD
+  repo=$(echo ${pkg} | cut -d/ -f1-3)
+  git clone "https://${repo}" "${KUBE_TEMP}/go/src/${repo}"
+  # GOPATH="${KUBE_TEMP}/go" go get -d -u "${pkg}"
   (
-    cd "${KUBE_TEMP}/go/src/${pkg}"
+    cd "${KUBE_TEMP}/go/src/${repo}"
+    git fetch # TODO(spiffxp): workaround
     git checkout -q "${commit}"
+    GOPATH="${KUBE_TEMP}/go" go get -d "${pkg}" #TODO(spiffxp): workaround
+    if [[ "${extra_constraint}" =~ ^(.+)@(.+)$ ]]; then
+      (
+        cd "${KUBE_TEMP}/go/src/${BASH_REMATCH[1]}"
+        git checkout -q "${BASH_REMATCH[2]}"
+      )
+    fi
     GOPATH="${KUBE_TEMP}/go" go install "${pkg}"
   )
   PATH="${KUBE_TEMP}/go/bin:${PATH}"

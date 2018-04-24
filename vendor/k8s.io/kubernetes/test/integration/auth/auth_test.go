@@ -100,10 +100,6 @@ func pathWithPrefix(prefix, resource, namespace, name string) string {
 	return testapi.Default.ResourcePathWithPrefix(prefix, resource, namespace, name)
 }
 
-func pathWithSubResource(resource, namespace, name, subresource string) string {
-	return testapi.Default.SubResourcePath(resource, namespace, name, subresource)
-}
-
 func timeoutPath(resource, namespace, name string) string {
 	return addTimeoutFlag(testapi.Default.ResourcePath(resource, namespace, name))
 }
@@ -330,7 +326,7 @@ func getTestRequests(namespace string) []struct {
 		// whenever a service is created, but this test does not run that controller)
 		{"POST", timeoutPath("endpoints", namespace, ""), emptyEndpoints, integration.Code201},
 		// Should return service unavailable when endpoint.subset is empty.
-		{"GET", pathWithSubResource("services", namespace, "a", "proxy") + "/", "", integration.Code503},
+		{"GET", pathWithPrefix("proxy", "services", namespace, "a") + "/", "", integration.Code503},
 		{"PUT", timeoutPath("services", namespace, "a"), aService, integration.Code200},
 		{"GET", path("services", namespace, "a"), "", integration.Code200},
 		{"DELETE", timeoutPath("endpoints", namespace, "a"), "", integration.Code200},
@@ -383,7 +379,7 @@ func getTestRequests(namespace string) []struct {
 		{"DELETE", timeoutPath("foo", namespace, ""), "", integration.Code404},
 
 		// Special verbs on nodes
-		{"GET", pathWithSubResource("nodes", namespace, "a", "proxy"), "", integration.Code404},
+		{"GET", pathWithPrefix("proxy", "nodes", namespace, "a"), "", integration.Code404},
 		{"GET", pathWithPrefix("redirect", "nodes", namespace, "a"), "", integration.Code404},
 		// TODO: test .../watch/..., which doesn't end before the test timeout.
 		// TODO: figure out how to create a node so that it can successfully proxy/redirect.
@@ -504,7 +500,7 @@ func getPreviousResourceVersionKey(url, id string) string {
 func TestAuthModeAlwaysDeny(t *testing.T) {
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authorization.Authorizer = authorizerfactory.NewAlwaysDenyAuthorizer()
+	masterConfig.GenericConfig.Authorizer = authorizerfactory.NewAlwaysDenyAuthorizer()
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 
@@ -553,8 +549,8 @@ func TestAliceNotForbiddenOrUnauthorized(t *testing.T) {
 
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = getTestTokenAuth()
-	masterConfig.GenericConfig.Authorization.Authorizer = allowAliceAuthorizer{}
+	masterConfig.GenericConfig.Authenticator = getTestTokenAuth()
+	masterConfig.GenericConfig.Authorizer = allowAliceAuthorizer{}
 	masterConfig.GenericConfig.AdmissionControl = admit.NewAlwaysAdmit()
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
@@ -623,8 +619,8 @@ func TestAliceNotForbiddenOrUnauthorized(t *testing.T) {
 func TestBobIsForbidden(t *testing.T) {
 	// This file has alice and bob in it.
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = getTestTokenAuth()
-	masterConfig.GenericConfig.Authorization.Authorizer = allowAliceAuthorizer{}
+	masterConfig.GenericConfig.Authenticator = getTestTokenAuth()
+	masterConfig.GenericConfig.Authorizer = allowAliceAuthorizer{}
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 
@@ -667,8 +663,8 @@ func TestUnknownUserIsUnauthorized(t *testing.T) {
 
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = getTestTokenAuth()
-	masterConfig.GenericConfig.Authorization.Authorizer = allowAliceAuthorizer{}
+	masterConfig.GenericConfig.Authenticator = getTestTokenAuth()
+	masterConfig.GenericConfig.Authorizer = allowAliceAuthorizer{}
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 
@@ -729,8 +725,8 @@ func (impersonateAuthorizer) Authorize(a authorizer.Attributes) (authorizer.Deci
 func TestImpersonateIsForbidden(t *testing.T) {
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = getTestTokenAuth()
-	masterConfig.GenericConfig.Authorization.Authorizer = impersonateAuthorizer{}
+	masterConfig.GenericConfig.Authenticator = getTestTokenAuth()
+	masterConfig.GenericConfig.Authorizer = impersonateAuthorizer{}
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 
@@ -876,8 +872,8 @@ func TestAuthorizationAttributeDetermination(t *testing.T) {
 
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = getTestTokenAuth()
-	masterConfig.GenericConfig.Authorization.Authorizer = trackingAuthorizer
+	masterConfig.GenericConfig.Authenticator = getTestTokenAuth()
+	masterConfig.GenericConfig.Authorizer = trackingAuthorizer
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 
@@ -942,8 +938,8 @@ func TestNamespaceAuthorization(t *testing.T) {
 
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = getTestTokenAuth()
-	masterConfig.GenericConfig.Authorization.Authorizer = a
+	masterConfig.GenericConfig.Authenticator = getTestTokenAuth()
+	masterConfig.GenericConfig.Authorizer = a
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 
@@ -1040,8 +1036,8 @@ func TestKindAuthorization(t *testing.T) {
 
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = getTestTokenAuth()
-	masterConfig.GenericConfig.Authorization.Authorizer = a
+	masterConfig.GenericConfig.Authenticator = getTestTokenAuth()
+	masterConfig.GenericConfig.Authorizer = a
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 
@@ -1124,8 +1120,8 @@ func TestReadOnlyAuthorization(t *testing.T) {
 
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = getTestTokenAuth()
-	masterConfig.GenericConfig.Authorization.Authorizer = a
+	masterConfig.GenericConfig.Authenticator = getTestTokenAuth()
+	masterConfig.GenericConfig.Authorizer = a
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 
@@ -1183,8 +1179,8 @@ func TestWebhookTokenAuthenticator(t *testing.T) {
 
 	// Set up a master
 	masterConfig := framework.NewIntegrationTestMasterConfig()
-	masterConfig.GenericConfig.Authentication.Authenticator = authenticator
-	masterConfig.GenericConfig.Authorization.Authorizer = allowAliceAuthorizer{}
+	masterConfig.GenericConfig.Authenticator = authenticator
+	masterConfig.GenericConfig.Authorizer = allowAliceAuthorizer{}
 	_, s, closeFn := framework.RunAMaster(masterConfig)
 	defer closeFn()
 

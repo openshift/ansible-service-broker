@@ -48,16 +48,6 @@ items:
     - create
     - patch
     - update
-  - apiGroups:
-    - storage.k8s.io
-    resources:
-    - volumeattachments
-    verbs:
-    - create
-    - delete
-    - get
-    - list
-    - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
@@ -73,7 +63,6 @@ items:
     resources:
     - certificatesigningrequests
     verbs:
-    - delete
     - get
     - list
     - watch

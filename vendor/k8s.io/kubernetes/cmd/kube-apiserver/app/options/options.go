@@ -42,16 +42,16 @@ import (
 type ServerRunOptions struct {
 	GenericServerRunOptions *genericoptions.ServerRunOptions
 	Etcd                    *genericoptions.EtcdOptions
-	SecureServing           *genericoptions.SecureServingOptionsWithLoopback
+	SecureServing           *genericoptions.SecureServingOptions
 	InsecureServing         *kubeoptions.InsecureServingOptions
 	Audit                   *genericoptions.AuditOptions
 	Features                *genericoptions.FeatureOptions
-	Admission               *kubeoptions.AdmissionOptions
+	Admission               *genericoptions.AdmissionOptions
 	Authentication          *kubeoptions.BuiltInAuthenticationOptions
 	Authorization           *kubeoptions.BuiltInAuthorizationOptions
 	CloudProvider           *kubeoptions.CloudProviderOptions
 	StorageSerialization    *kubeoptions.StorageSerializationOptions
-	APIEnablement           *genericoptions.APIEnablementOptions
+	APIEnablement           *kubeoptions.APIEnablementOptions
 
 	AllowPrivileged           bool
 	EnableLogsHandler         bool
@@ -71,8 +71,6 @@ type ServerRunOptions struct {
 
 	MasterCount            int
 	EndpointReconcilerType string
-
-	ServiceAccountSigningKeyFile string
 }
 
 // NewServerRunOptions creates a new ServerRunOptions object with default parameters
@@ -84,12 +82,12 @@ func NewServerRunOptions() *ServerRunOptions {
 		InsecureServing:      kubeoptions.NewInsecureServingOptions(),
 		Audit:                genericoptions.NewAuditOptions(),
 		Features:             genericoptions.NewFeatureOptions(),
-		Admission:            kubeoptions.NewAdmissionOptions(),
+		Admission:            genericoptions.NewAdmissionOptions(),
 		Authentication:       kubeoptions.NewBuiltInAuthenticationOptions().WithAll(),
 		Authorization:        kubeoptions.NewBuiltInAuthorizationOptions(),
 		CloudProvider:        kubeoptions.NewCloudProviderOptions(),
 		StorageSerialization: kubeoptions.NewStorageSerializationOptions(),
-		APIEnablement:        genericoptions.NewAPIEnablementOptions(),
+		APIEnablement:        kubeoptions.NewAPIEnablementOptions(),
 
 		EnableLogsHandler:      true,
 		EventTTL:               1 * time.Hour,
@@ -115,11 +113,13 @@ func NewServerRunOptions() *ServerRunOptions {
 		},
 		ServiceNodePortRange: kubeoptions.DefaultServiceNodePortRange,
 	}
-	s.ServiceClusterIPRange = kubeoptions.DefaultServiceIPCIDR
-
 	// Overwrite the default for storage data format.
 	s.Etcd.DefaultStorageMediaType = "application/vnd.kubernetes.protobuf"
 
+	// register all admission plugins
+	RegisterAllAdmissionPlugins(s.Admission.Plugins)
+	// Set the default for admission plugins names
+	s.Admission.PluginNames = []string{"AlwaysAdmit"}
 	return &s
 }
 
@@ -129,6 +129,7 @@ func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet) {
 	s.GenericServerRunOptions.AddUniversalFlags(fs)
 	s.Etcd.AddFlags(fs)
 	s.SecureServing.AddFlags(fs)
+	s.SecureServing.AddDeprecatedFlags(fs)
 	s.InsecureServing.AddFlags(fs)
 	s.InsecureServing.AddDeprecatedFlags(fs)
 	s.Audit.AddFlags(fs)
@@ -225,7 +226,7 @@ func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet) {
 		"api-server and calling out to webhook admission plugins. It is expected that this "+
 		"cert includes a signature from the CA in the --requestheader-client-ca-file flag. "+
 		"That CA is published in the 'extension-apiserver-authentication' configmap in "+
-		"the kube-system namespace. Components receiving calls from kube-aggregator should "+
+		"the kube-system namespace. Components recieving calls from kube-aggregator should "+
 		"use that CA to perform their half of the mutual TLS verification.")
 	fs.StringVar(&s.ProxyClientKeyFile, "proxy-client-key-file", s.ProxyClientKeyFile, ""+
 		"Private key for the client certificate used to prove the identity of the aggregator or kube-apiserver "+
@@ -234,8 +235,5 @@ func (s *ServerRunOptions) AddFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&s.EnableAggregatorRouting, "enable-aggregator-routing", s.EnableAggregatorRouting,
 		"Turns on aggregator routing requests to endoints IP rather than cluster IP.")
-
-	fs.StringVar(&s.ServiceAccountSigningKeyFile, "service-account-signing-key-file", s.ServiceAccountSigningKeyFile, ""+
-		"Path to the file that contains the current private key of the service account token issuer. The issuer will sign issued ID tokens with this private key. (Ignored unless alpha TokenRequest is enabled")
 
 }

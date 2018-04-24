@@ -24,9 +24,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest/fake"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	cmdtesting "k8s.io/kubernetes/pkg/kubectl/cmd/testing"
-	"k8s.io/kubernetes/pkg/kubectl/scheme"
 )
 
 func TestCreateSecretGeneric(t *testing.T) {
@@ -37,12 +35,8 @@ func TestCreateSecretGeneric(t *testing.T) {
 		},
 	}
 	secretObject.Name = "my-secret"
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-	ns := legacyscheme.Codecs
-
+	f, tf, codec, ns := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.Client = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Version: "v1"},
 		NegotiatedSerializer: ns,
@@ -58,7 +52,7 @@ func TestCreateSecretGeneric(t *testing.T) {
 	}
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdCreateSecretGeneric(tf, buf)
+	cmd := NewCmdCreateSecretGeneric(f, buf)
 	cmd.Flags().Set("output", "name")
 	cmd.Flags().Set("from-literal", "password=includes,comma")
 	cmd.Flags().Set("from-literal", "username=test_user")
@@ -72,10 +66,8 @@ func TestCreateSecretGeneric(t *testing.T) {
 func TestCreateSecretDockerRegistry(t *testing.T) {
 	secretObject := &v1.Secret{}
 	secretObject.Name = "my-secret"
-	tf := cmdtesting.NewTestFactory()
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-	ns := legacyscheme.Codecs
-
+	f, tf, codec, ns := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.Client = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Version: "v1"},
 		NegotiatedSerializer: ns,
@@ -91,7 +83,7 @@ func TestCreateSecretDockerRegistry(t *testing.T) {
 	}
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdCreateSecretDockerRegistry(tf, buf)
+	cmd := NewCmdCreateSecretDockerRegistry(f, buf)
 	cmd.Flags().Set("docker-username", "test-user")
 	cmd.Flags().Set("docker-password", "test-pass")
 	cmd.Flags().Set("docker-email", "test-email")

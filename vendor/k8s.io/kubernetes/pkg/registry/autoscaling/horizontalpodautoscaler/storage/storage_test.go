@@ -19,7 +19,6 @@ package storage
 import (
 	"testing"
 
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/apis/autoscaling"
 	api "k8s.io/kubernetes/pkg/apis/core"
@@ -28,11 +27,8 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistrytest "k8s.io/apiserver/pkg/registry/generic/testing"
-	"k8s.io/apiserver/pkg/registry/rest"
 	etcdtesting "k8s.io/apiserver/pkg/storage/etcd/testing"
 	"k8s.io/kubernetes/pkg/registry/registrytest"
 )
@@ -170,38 +166,4 @@ func TestCategories(t *testing.T) {
 	registrytest.AssertCategories(t, storage, expected)
 }
 
-func TestUpdateStatus(t *testing.T) {
-	storage, statusStorage, server := newStorage(t)
-	defer server.Terminate(t)
-	defer storage.Store.DestroyFunc()
-	ctx := genericapirequest.NewDefaultContext()
-	key, _ := storage.KeyFunc(ctx, "foo")
-	autoscalerStart := validNewHorizontalPodAutoscaler("foo")
-	err := storage.Storage.Create(ctx, key, autoscalerStart, nil, 0)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	autoscalerIn := &autoscaling.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: metav1.NamespaceDefault,
-		},
-		Status: autoscaling.HorizontalPodAutoscalerStatus{
-			Conditions: []autoscaling.HorizontalPodAutoscalerCondition{
-				{Status: "True"},
-			},
-		},
-	}
-
-	_, _, err = statusStorage.Update(ctx, autoscalerIn.Name, rest.DefaultUpdatedObjectInfo(autoscalerIn), rest.ValidateAllObjectFunc, rest.ValidateAllObjectUpdateFunc)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-	obj, err := storage.Get(ctx, "foo", &metav1.GetOptions{})
-	autosclaerOut := obj.(*autoscaling.HorizontalPodAutoscaler)
-	// only compare the meaningful update b/c we can't compare due to metadata
-	if !apiequality.Semantic.DeepEqual(autoscalerIn.Status, autosclaerOut.Status) {
-		t.Errorf("unexpected object: %s", diff.ObjectDiff(autoscalerIn, autosclaerOut))
-	}
-}
+// TODO TestUpdateStatus

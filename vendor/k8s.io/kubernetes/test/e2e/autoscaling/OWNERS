@@ -1,8 +1,14 @@
 reviewers:
+  - aleksandra-malinowska
+  - bskiba
   - jszczepkowski
-  - sig-autoscaling-maintainers
+  - MaciekPytel
+  - mwielgus
   - wasylkowski
 approvers:
+  - aleksandra-malinowska
+  - bskiba
   - jszczepkowski
-  - sig-autoscaling-maintainers
+  - MaciekPytel
+  - mwielgus
   - wasylkowski

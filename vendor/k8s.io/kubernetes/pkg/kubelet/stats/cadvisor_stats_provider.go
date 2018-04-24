@@ -133,7 +133,7 @@ func (p *cadvisorStatsProvider) ListPodStats() ([]statsapi.PodStats, error) {
 		}
 		podStats.EphemeralStorage = calcEphemeralStorage(podStats.Containers, ephemeralStats, &rootFsInfo)
 		// Lookup the pod-level cgroup's CPU and memory stats
-		podInfo := getCadvisorPodInfoFromPodUID(podUID, allInfos)
+		podInfo := getcadvisorPodInfoFromPodUID(podUID, allInfos)
 		if podInfo != nil {
 			cpu, memory := cadvisorInfoToCPUandMemoryStats(podInfo)
 			podStats.CPU = cpu
@@ -220,16 +220,6 @@ func (p *cadvisorStatsProvider) ImageFsStats() (*statsapi.FsStats, error) {
 	}, nil
 }
 
-// ImageFsDevice returns name of the device where the image filesystem locates,
-// e.g. /dev/sda1.
-func (p *cadvisorStatsProvider) ImageFsDevice() (string, error) {
-	imageFsInfo, err := p.cadvisor.ImagesFsInfo()
-	if err != nil {
-		return "", err
-	}
-	return imageFsInfo.Device, nil
-}
-
 // buildPodRef returns a PodReference that identifies the Pod managing cinfo
 func buildPodRef(containerLabels map[string]string) statsapi.PodReference {
 	podName := kubetypes.GetPodName(containerLabels)
@@ -251,8 +241,8 @@ func isPodManagedContainer(cinfo *cadvisorapiv2.ContainerInfo) bool {
 	return managed
 }
 
-// getCadvisorPodInfoFromPodUID returns a pod cgroup information by matching the podUID with its CgroupName identifier base name
-func getCadvisorPodInfoFromPodUID(podUID types.UID, infos map[string]cadvisorapiv2.ContainerInfo) *cadvisorapiv2.ContainerInfo {
+// getcadvisorPodInfoFromPodUID returns a pod cgroup information by matching the podUID with its CgroupName identifier base name
+func getcadvisorPodInfoFromPodUID(podUID types.UID, infos map[string]cadvisorapiv2.ContainerInfo) *cadvisorapiv2.ContainerInfo {
 	for key, info := range infos {
 		if cm.IsSystemdStyleName(key) {
 			key = cm.RevertFromSystemdToCgroupStyleName(key)

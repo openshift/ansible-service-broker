@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubepod "k8s.io/kubernetes/pkg/kubelet/pod"
-	"k8s.io/kubernetes/test/e2e/common"
 	"k8s.io/kubernetes/test/e2e/framework"
 	testutils "k8s.io/kubernetes/test/utils"
 
@@ -56,18 +55,10 @@ func filterIrrelevantPods(pods []*v1.Pod) []*v1.Pod {
 	return results
 }
 
-func nodeNames(nodes []v1.Node) []string {
-	result := make([]string, 0, len(nodes))
-	for i := range nodes {
-		result = append(result, nodes[i].Name)
-	}
-	return result
-}
-
 var _ = SIGDescribe("Restart [Disruptive]", func() {
 	f := framework.NewDefaultFramework("restart")
 	var ps *testutils.PodStore
-	var originalNodes []v1.Node
+	var originalNodeNames []string
 	var originalPodNames []string
 	var numNodes int
 	var systemNamespace string
@@ -77,15 +68,14 @@ var _ = SIGDescribe("Restart [Disruptive]", func() {
 		// check must be identical to that call.
 		framework.SkipUnlessProviderIs("gce", "gke")
 		ps = testutils.NewPodStore(f.ClientSet, metav1.NamespaceSystem, labels.Everything(), fields.Everything())
-		var err error
-		numNodes, err = framework.NumberOfRegisteredNodes(f.ClientSet)
-		Expect(err).NotTo(HaveOccurred())
+		numNodes = framework.TestContext.CloudConfig.NumNodes
 		systemNamespace = metav1.NamespaceSystem
 
 		By("ensuring all nodes are ready")
-		originalNodes, err = framework.CheckNodesReady(f.ClientSet, numNodes, framework.NodeReadyInitialTimeout)
+		var err error
+		originalNodeNames, err = framework.CheckNodesReady(f.ClientSet, framework.NodeReadyInitialTimeout, numNodes)
 		Expect(err).NotTo(HaveOccurred())
-		framework.Logf("Got the following nodes before restart: %v", nodeNames(originalNodes))
+		framework.Logf("Got the following nodes before restart: %v", originalNodeNames)
 
 		By("ensuring all pods are running and ready")
 		allPods := ps.List()
@@ -109,20 +99,20 @@ var _ = SIGDescribe("Restart [Disruptive]", func() {
 
 	It("should restart all nodes and ensure all nodes and pods recover", func() {
 		By("restarting all of the nodes")
-		err := common.RestartNodes(f.ClientSet, originalNodes)
+		err := restartNodes(f, originalNodeNames)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("ensuring all nodes are ready after the restart")
-		nodesAfter, err := framework.CheckNodesReady(f.ClientSet, numNodes, framework.RestartNodeReadyAgainTimeout)
+		nodeNamesAfter, err := framework.CheckNodesReady(f.ClientSet, framework.RestartNodeReadyAgainTimeout, numNodes)
 		Expect(err).NotTo(HaveOccurred())
-		framework.Logf("Got the following nodes after restart: %v", nodeNames(nodesAfter))
+		framework.Logf("Got the following nodes after restart: %v", nodeNamesAfter)
 
 		// Make sure that we have the same number of nodes. We're not checking
 		// that the names match because that's implementation specific.
 		By("ensuring the same number of nodes exist after the restart")
-		if len(originalNodes) != len(nodesAfter) {
+		if len(originalNodeNames) != len(nodeNamesAfter) {
 			framework.Failf("Had %d nodes before nodes were restarted, but now only have %d",
-				len(originalNodes), len(nodesAfter))
+				len(originalNodeNames), len(nodeNamesAfter))
 		}
 
 		// Make sure that we have the same number of pods. We're not checking
@@ -167,4 +157,42 @@ func waitForNPods(ps *testutils.PodStore, expect int, timeout time.Duration) ([]
 			expect, timeout, errLast)
 	}
 	return podNames, nil
+}
+
+func restartNodes(f *framework.Framework, nodeNames []string) error {
+	// List old boot IDs.
+	oldBootIDs := make(map[string]string)
+	for _, name := range nodeNames {
+		node, err := f.ClientSet.CoreV1().Nodes().Get(name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("error getting node info before reboot: %s", err)
+		}
+		oldBootIDs[name] = node.Status.NodeInfo.BootID
+	}
+	// Reboot the nodes.
+	args := []string{
+		"compute",
+		fmt.Sprintf("--project=%s", framework.TestContext.CloudConfig.ProjectID),
+		"instances",
+		"reset",
+	}
+	args = append(args, nodeNames...)
+	args = append(args, fmt.Sprintf("--zone=%s", framework.TestContext.CloudConfig.Zone))
+	stdout, stderr, err := framework.RunCmd("gcloud", args...)
+	if err != nil {
+		return fmt.Errorf("error restarting nodes: %s\nstdout: %s\nstderr: %s", err, stdout, stderr)
+	}
+	// Wait for their boot IDs to change.
+	for _, name := range nodeNames {
+		if err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
+			node, err := f.ClientSet.CoreV1().Nodes().Get(name, metav1.GetOptions{})
+			if err != nil {
+				return false, fmt.Errorf("error getting node info after reboot: %s", err)
+			}
+			return node.Status.NodeInfo.BootID != oldBootIDs[name], nil
+		}); err != nil {
+			return fmt.Errorf("error waiting for node %s boot ID to change: %s", name, err)
+		}
+	}
+	return nil
 }

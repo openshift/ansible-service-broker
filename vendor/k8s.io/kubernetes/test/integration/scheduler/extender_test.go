@@ -38,19 +38,18 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"k8s.io/kubernetes/pkg/api/testapi"
-	"k8s.io/kubernetes/pkg/scheduler"
-	_ "k8s.io/kubernetes/pkg/scheduler/algorithmprovider"
-	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
-	"k8s.io/kubernetes/pkg/scheduler/factory"
+	"k8s.io/kubernetes/plugin/pkg/scheduler"
+	_ "k8s.io/kubernetes/plugin/pkg/scheduler/algorithmprovider"
+	schedulerapi "k8s.io/kubernetes/plugin/pkg/scheduler/api"
+	"k8s.io/kubernetes/plugin/pkg/scheduler/factory"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/kubernetes/test/integration/framework"
 )
 
 const (
-	filter               = "filter"
-	prioritize           = "prioritize"
-	bind                 = "bind"
-	extendedResourceName = "foo.com/bar"
+	filter     = "filter"
+	prioritize = "prioritize"
+	bind       = "bind"
 )
 
 type fitPredicate func(pod *v1.Pod, node *v1.Node) (bool, error)
@@ -335,7 +334,7 @@ func TestSchedulerExtender(t *testing.T) {
 				FilterVerb:     filter,
 				PrioritizeVerb: prioritize,
 				Weight:         3,
-				EnableHTTPS:    false,
+				EnableHttps:    false,
 			},
 			{
 				URLPrefix:      es2.URL,
@@ -343,20 +342,14 @@ func TestSchedulerExtender(t *testing.T) {
 				PrioritizeVerb: prioritize,
 				BindVerb:       bind,
 				Weight:         4,
-				EnableHTTPS:    false,
-				ManagedResources: []schedulerapi.ExtenderManagedResource{
-					{
-						Name:               extendedResourceName,
-						IgnoredByScheduler: true,
-					},
-				},
+				EnableHttps:    false,
 			},
 			{
 				URLPrefix:        es3.URL,
 				FilterVerb:       filter,
 				PrioritizeVerb:   prioritize,
 				Weight:           10,
-				EnableHTTPS:      false,
+				EnableHttps:      false,
 				NodeCacheCapable: true,
 			},
 		},
@@ -427,17 +420,7 @@ func DoTestPodScheduling(ns *v1.Namespace, t *testing.T, cs clientset.Interface)
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Name: "extender-test-pod"},
 		Spec: v1.PodSpec{
-			Containers: []v1.Container{
-				{
-					Name:  "container",
-					Image: e2e.GetPauseImageName(cs),
-					Resources: v1.ResourceRequirements{
-						Limits: v1.ResourceList{
-							extendedResourceName: *resource.NewQuantity(1, resource.DecimalSI),
-						},
-					},
-				},
-			},
+			Containers: []v1.Container{{Name: "container", Image: e2e.GetPauseImageName(cs)}},
 		},
 	}
 

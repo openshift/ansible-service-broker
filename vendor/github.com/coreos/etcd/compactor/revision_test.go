@@ -21,7 +21,6 @@ import (
 
 	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/pkg/testutil"
-
 	"github.com/jonboulle/clockwork"
 )
 
@@ -29,18 +28,23 @@ func TestRevision(t *testing.T) {
 	fc := clockwork.NewFakeClock()
 	rg := &fakeRevGetter{testutil.NewRecorderStream(), 0}
 	compactable := &fakeCompactable{testutil.NewRecorderStream()}
-	tb := newRevision(fc, 10, rg, compactable)
+	tb := &Revision{
+		clock:     fc,
+		retention: 10,
+		rg:        rg,
+		c:         compactable,
+	}
 
 	tb.Run()
 	defer tb.Stop()
 
-	fc.Advance(revInterval)
+	fc.Advance(checkCompactionInterval)
 	rg.Wait(1)
 	// nothing happens
 
 	rg.SetRev(99) // will be 100
 	expectedRevision := int64(90)
-	fc.Advance(revInterval)
+	fc.Advance(checkCompactionInterval)
 	rg.Wait(1)
 	a, err := compactable.Wait(1)
 	if err != nil {
@@ -57,7 +61,7 @@ func TestRevision(t *testing.T) {
 
 	rg.SetRev(199) // will be 200
 	expectedRevision = int64(190)
-	fc.Advance(revInterval)
+	fc.Advance(checkCompactionInterval)
 	rg.Wait(1)
 	a, err = compactable.Wait(1)
 	if err != nil {
@@ -70,17 +74,22 @@ func TestRevision(t *testing.T) {
 
 func TestRevisionPause(t *testing.T) {
 	fc := clockwork.NewFakeClock()
-	rg := &fakeRevGetter{testutil.NewRecorderStream(), 99} // will be 100
 	compactable := &fakeCompactable{testutil.NewRecorderStream()}
-	tb := newRevision(fc, 10, rg, compactable)
+	rg := &fakeRevGetter{testutil.NewRecorderStream(), 99} // will be 100
+	tb := &Revision{
+		clock:     fc,
+		retention: 10,
+		rg:        rg,
+		c:         compactable,
+	}
 
 	tb.Run()
 	tb.Pause()
 
 	// tb will collect 3 hours of revisions but not compact since paused
-	n := int(time.Hour / revInterval)
+	n := int(time.Hour / checkCompactionInterval)
 	for i := 0; i < 3*n; i++ {
-		fc.Advance(revInterval)
+		fc.Advance(checkCompactionInterval)
 	}
 	// tb ends up waiting for the clock
 
@@ -94,7 +103,7 @@ func TestRevisionPause(t *testing.T) {
 	tb.Resume()
 
 	// unblock clock, will kick off a compaction at hour 3:05
-	fc.Advance(revInterval)
+	fc.Advance(checkCompactionInterval)
 	rg.Wait(1)
 	a, err := compactable.Wait(1)
 	if err != nil {

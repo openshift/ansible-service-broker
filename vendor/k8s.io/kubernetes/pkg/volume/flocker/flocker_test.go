@@ -338,7 +338,7 @@ func (m mockFlockerClient) UpdatePrimaryForDataset(primaryUUID, datasetID string
 }
 
 /*
-TODO: re-enable after refactor
+TODO: reenable after refactor
 func TestSetUpAtInternal(t *testing.T) {
 	const dir = "dir"
 	mockPath := "expected-to-be-set-properly" // package var

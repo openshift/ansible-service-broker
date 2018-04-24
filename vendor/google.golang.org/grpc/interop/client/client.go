@@ -25,7 +25,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/alts"
 	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/interop"
@@ -35,8 +34,7 @@ import (
 
 var (
 	caFile                = flag.String("ca_file", "", "The file containning the CA root cert file")
-	useTLS                = flag.Bool("use_tls", false, "Connection uses TLS if true")
-	useALTS               = flag.Bool("use_alts", false, "Connection uses ALTS if true (this option can only be used on GCP)")
+	useTLS                = flag.Bool("use_tls", false, "Connection uses TLS if true, else plain TCP")
 	testCA                = flag.Bool("use_test_ca", false, "Whether to replace platform root CAs with test CA as the CA root")
 	serviceAccountKeyFile = flag.String("service_account_key_file", "", "Path to service account json key file")
 	oauthScope            = flag.String("oauth_scope", "", "The scope for OAuth2 tokens")
@@ -68,9 +66,6 @@ var (
 
 func main() {
 	flag.Parse()
-	if *useTLS && *useALTS {
-		grpclog.Fatalf("use_tls and use_alts cannot be both set to true")
-	}
 	serverAddr := net.JoinHostPort(*serverHost, strconv.Itoa(*serverPort))
 	var opts []grpc.DialOption
 	if *useTLS {
@@ -109,9 +104,6 @@ func main() {
 		} else if *testCase == "oauth2_auth_token" {
 			opts = append(opts, grpc.WithPerRPCCredentials(oauth.NewOauthAccess(interop.GetToken(*serviceAccountKeyFile, *oauthScope))))
 		}
-	} else if *useALTS {
-		altsTC := alts.NewClientCreds(&alts.ClientOptions{})
-		opts = append(opts, grpc.WithTransportCredentials(altsTC))
 	} else {
 		opts = append(opts, grpc.WithInsecure())
 	}

@@ -5,6 +5,7 @@ reviewers:
   - ixdy
   - jbeda
   - lavalamp
+  - spxtr
   - zmerlynn
   - sttts
   - gmarek
@@ -13,6 +14,7 @@ approvers:
   - cblecker
   - deads2k
   - eparis
+  - fabianofranz
   - fejta
   - ixdy
   - jbeda
@@ -20,8 +22,8 @@ approvers:
   - madhusudancs
   - pwittrock
   - shashidharatd
+  - spxtr
   - zmerlynn
   - sttts
   - gmarek
   - vishh
-  - liggitt

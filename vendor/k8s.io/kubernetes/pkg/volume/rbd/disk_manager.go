@@ -31,23 +31,18 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/util/mount"
 	"k8s.io/kubernetes/pkg/volume"
-	"k8s.io/kubernetes/pkg/volume/util"
 )
 
 // Abstract interface to disk operations.
 type diskManager interface {
 	// MakeGlobalPDName creates global persistent disk path.
 	MakeGlobalPDName(disk rbd) string
-	// MakeGlobalVDPDName creates global block disk path.
-	MakeGlobalVDPDName(disk rbd) string
 	// Attaches the disk to the kubelet's host machine.
 	// If it successfully attaches, the path to the device
 	// is returned. Otherwise, an error will be returned.
 	AttachDisk(disk rbdMounter) (string, error)
 	// Detaches the disk from the kubelet's host machine.
 	DetachDisk(plugin *rbdPlugin, deviceMountPath string, device string) error
-	// Detaches the block disk from the kubelet's host machine.
-	DetachBlockDisk(disk rbdDiskUnmapper, mntPath string) error
 	// Creates a rbd image.
 	CreateImage(provisioner *rbdVolumeProvisioner) (r *v1.RBDPersistentVolumeSource, volumeSizeGB int, err error)
 	// Deletes a rbd image.
@@ -86,7 +81,7 @@ func diskSetUp(manager diskManager, b rbdMounter, volPath string, mounter mount.
 	if (&b).GetAttributes().ReadOnly {
 		options = append(options, "ro")
 	}
-	mountOptions := util.JoinMountOptions(b.mountOptions, options)
+	mountOptions := volume.JoinMountOptions(b.mountOptions, options)
 	err = mounter.Mount(globalPDPath, volPath, "", mountOptions)
 	if err != nil {
 		glog.Errorf("failed to bind mount:%s", globalPDPath)
@@ -120,9 +115,9 @@ func diskTearDown(manager diskManager, c rbdUnmounter, volPath string, mounter m
 	}
 
 	notMnt, mntErr := mounter.IsLikelyNotMountPoint(volPath)
-	if mntErr != nil && !os.IsNotExist(mntErr) {
+	if err != nil && !os.IsNotExist(err) {
 		glog.Errorf("IsLikelyNotMountPoint check failed: %v", mntErr)
-		return mntErr
+		return err
 	}
 	if notMnt {
 		if err := os.Remove(volPath); err != nil {

@@ -30,11 +30,10 @@ import (
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/kubernetes/pkg/util/pointer"
 )
 
 func TestV1beta2StatefulSetSpecConversion(t *testing.T) {
-	replicas := utilpointer.Int32Ptr(2)
+	replicas := newInt32(2)
 	selector := &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
 	v1beta2Template := v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
@@ -105,7 +104,7 @@ func TestV1beta2StatefulSetSpecConversion(t *testing.T) {
 }
 
 func TestV1beta2StatefulSetUpdateStrategyConversion(t *testing.T) {
-	partition := utilpointer.Int32Ptr(2)
+	partition := newInt32(2)
 	v1beta2rollingUpdate := new(v1beta2.RollingUpdateStatefulSetStrategy)
 	v1beta2rollingUpdate.Partition = partition
 	appsrollingUpdate := new(apps.RollingUpdateStatefulSetStrategy)
@@ -261,7 +260,7 @@ func TestV1beta2StatefulSetStatusConversion(t *testing.T) {
 }
 
 func TestV1beta2DeploymentConversion(t *testing.T) {
-	replica := utilpointer.Int32Ptr(2)
+	replica := newInt32(2)
 	rollbackTo := new(extensions.RollbackConfig)
 	rollbackTo.Revision = int64(2)
 	testcases := map[string]struct {
@@ -391,9 +390,9 @@ func TestV1beta2ScaleStatusConversion(t *testing.T) {
 }
 
 func TestV1beta2DeploymentSpecConversion(t *testing.T) {
-	replica := utilpointer.Int32Ptr(2)
-	revisionHistoryLimit := utilpointer.Int32Ptr(2)
-	progressDeadlineSeconds := utilpointer.Int32Ptr(2)
+	replica := newInt32(2)
+	revisionHistoryLimit := newInt32(2)
+	progressDeadlineSeconds := newInt32(2)
 
 	testcases := map[string]struct {
 		deploymentSpec1 *extensions.DeploymentSpec

@@ -12,10 +12,7 @@ go_library(
         "writer.go",
     ],
     importpath = "k8s.io/kubernetes/pkg/util/io",
-    deps = [
-        "//pkg/util/nsenter:go_default_library",
-        "//vendor/github.com/golang/glog:go_default_library",
-    ],
+    deps = ["//vendor/github.com/golang/glog:go_default_library"],
 )
 
 filegroup(

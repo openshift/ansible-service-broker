@@ -42,9 +42,11 @@ type ResumeConfig struct {
 	Resumer func(object *resource.Info) ([]byte, error)
 	Mapper  meta.RESTMapper
 	Typer   runtime.ObjectTyper
+	Encoder runtime.Encoder
 	Infos   []*resource.Info
 
-	Out io.Writer
+	PrintSuccess func(mapper meta.RESTMapper, shortOutput bool, out io.Writer, resource, name string, dryRun bool, operation string)
+	Out          io.Writer
 }
 
 var (
@@ -67,8 +69,7 @@ func NewCmdRolloutResume(f cmdutil.Factory, out io.Writer) *cobra.Command {
 	argAliases := kubectl.ResourceAliases(validArgs)
 
 	cmd := &cobra.Command{
-		Use: "resume RESOURCE",
-		DisableFlagsInUseLine: true,
+		Use:     "resume RESOURCE",
 		Short:   i18n.T("Resume a paused resource"),
 		Long:    resume_long,
 		Example: resume_example,
@@ -98,7 +99,9 @@ func (o *ResumeConfig) CompleteResume(f cmdutil.Factory, cmd *cobra.Command, out
 		return cmdutil.UsageErrorf(cmd, "%s", cmd.Use)
 	}
 
+	o.PrintSuccess = f.PrintSuccess
 	o.Mapper, o.Typer = f.Object()
+	o.Encoder = f.JSONEncoder()
 
 	o.Resumer = f.Resumer
 	o.Out = out
@@ -137,7 +140,7 @@ func (o *ResumeConfig) CompleteResume(f cmdutil.Factory, cmd *cobra.Command, out
 
 func (o ResumeConfig) RunResume() error {
 	allErrs := []error{}
-	for _, patch := range set.CalculatePatches(o.Infos, cmdutil.InternalVersionJSONEncoder(), o.Resumer) {
+	for _, patch := range set.CalculatePatches(o.Infos, o.Encoder, o.Resumer) {
 		info := patch.Info
 
 		if patch.Err != nil {
@@ -146,7 +149,7 @@ func (o ResumeConfig) RunResume() error {
 		}
 
 		if string(patch.Patch) == "{}" || len(patch.Patch) == 0 {
-			cmdutil.PrintSuccess(false, o.Out, info.Object, false, "already resumed")
+			o.PrintSuccess(o.Mapper, false, o.Out, info.Mapping.Resource, info.Name, false, "already resumed")
 			continue
 		}
 
@@ -157,7 +160,7 @@ func (o ResumeConfig) RunResume() error {
 		}
 
 		info.Refresh(obj, true)
-		cmdutil.PrintSuccess(false, o.Out, info.Object, false, "resumed")
+		o.PrintSuccess(o.Mapper, false, o.Out, info.Mapping.Resource, info.Name, false, "resumed")
 	}
 
 	return utilerrors.NewAggregate(allErrs)

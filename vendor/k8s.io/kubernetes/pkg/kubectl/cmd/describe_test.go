@@ -20,22 +20,17 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 
 	"k8s.io/client-go/rest/fake"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	cmdtesting "k8s.io/kubernetes/pkg/kubectl/cmd/testing"
-	"k8s.io/kubernetes/pkg/kubectl/scheme"
 )
 
 // Verifies that schemas that are not in the master tree of Kubernetes can be retrieved via Get.
 func TestDescribeUnknownSchemaObject(t *testing.T) {
 	d := &testDescriber{Output: "test output"}
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-	_, _, codec := cmdtesting.NewExternalScheme()
-	tf.DescriberVal = d
+	f, tf, codec, _ := cmdtesting.NewTestFactory()
+	tf.Describer = d
 	tf.UnstructuredClient = &fake.RESTClient{
 		NegotiatedSerializer: unstructuredSerializer,
 		Resp:                 &http.Response{StatusCode: 200, Header: defaultHeader(), Body: objBody(codec, cmdtesting.NewInternalType("", "", "foo"))},
@@ -43,7 +38,7 @@ func TestDescribeUnknownSchemaObject(t *testing.T) {
 	tf.Namespace = "non-default"
 	buf := bytes.NewBuffer([]byte{})
 	buferr := bytes.NewBuffer([]byte{})
-	cmd := NewCmdDescribe(tf, buf, buferr)
+	cmd := NewCmdDescribe(f, buf, buferr)
 	cmd.Run(cmd, []string{"type", "foo"})
 
 	if d.Name != "foo" || d.Namespace != "" {
@@ -58,11 +53,8 @@ func TestDescribeUnknownSchemaObject(t *testing.T) {
 // Verifies that schemas that are not in the master tree of Kubernetes can be retrieved via Get.
 func TestDescribeUnknownNamespacedSchemaObject(t *testing.T) {
 	d := &testDescriber{Output: "test output"}
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-	_, _, codec := cmdtesting.NewExternalScheme()
-
-	tf.DescriberVal = d
+	f, tf, codec, _ := cmdtesting.NewTestFactory()
+	tf.Describer = d
 	tf.UnstructuredClient = &fake.RESTClient{
 		NegotiatedSerializer: unstructuredSerializer,
 		Resp:                 &http.Response{StatusCode: 200, Header: defaultHeader(), Body: objBody(codec, cmdtesting.NewInternalNamespacedType("", "", "foo", "non-default"))},
@@ -70,7 +62,7 @@ func TestDescribeUnknownNamespacedSchemaObject(t *testing.T) {
 	tf.Namespace = "non-default"
 	buf := bytes.NewBuffer([]byte{})
 	buferr := bytes.NewBuffer([]byte{})
-	cmd := NewCmdDescribe(tf, buf, buferr)
+	cmd := NewCmdDescribe(f, buf, buferr)
 	cmd.Run(cmd, []string{"namespacedtype", "foo"})
 
 	if d.Name != "foo" || d.Namespace != "non-default" {
@@ -84,12 +76,9 @@ func TestDescribeUnknownNamespacedSchemaObject(t *testing.T) {
 
 func TestDescribeObject(t *testing.T) {
 	_, _, rc := testData()
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-
+	f, tf, codec, _ := cmdtesting.NewAPIFactory()
 	d := &testDescriber{Output: "test output"}
-	tf.DescriberVal = d
+	tf.Describer = d
 	tf.UnstructuredClient = &fake.RESTClient{
 		NegotiatedSerializer: unstructuredSerializer,
 		Client: fake.CreateHTTPClient(func(req *http.Request) (*http.Response, error) {
@@ -105,7 +94,7 @@ func TestDescribeObject(t *testing.T) {
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
 	buferr := bytes.NewBuffer([]byte{})
-	cmd := NewCmdDescribe(tf, buf, buferr)
+	cmd := NewCmdDescribe(f, buf, buferr)
 	cmd.Flags().Set("filename", "../../../examples/guestbook/legacy/redis-master-controller.yaml")
 	cmd.Run(cmd, []string{})
 
@@ -120,12 +109,9 @@ func TestDescribeObject(t *testing.T) {
 
 func TestDescribeListObjects(t *testing.T) {
 	pods, _, _ := testData()
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-
+	f, tf, codec, _ := cmdtesting.NewAPIFactory()
 	d := &testDescriber{Output: "test output"}
-	tf.DescriberVal = d
+	tf.Describer = d
 	tf.UnstructuredClient = &fake.RESTClient{
 		NegotiatedSerializer: unstructuredSerializer,
 		Resp:                 &http.Response{StatusCode: 200, Header: defaultHeader(), Body: objBody(codec, pods)},
@@ -134,7 +120,7 @@ func TestDescribeListObjects(t *testing.T) {
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
 	buferr := bytes.NewBuffer([]byte{})
-	cmd := NewCmdDescribe(tf, buf, buferr)
+	cmd := NewCmdDescribe(f, buf, buferr)
 	cmd.Run(cmd, []string{"pods"})
 	if buf.String() != fmt.Sprintf("%s\n\n%s", d.Output, d.Output) {
 		t.Errorf("unexpected output: %s", buf.String())
@@ -143,12 +129,9 @@ func TestDescribeListObjects(t *testing.T) {
 
 func TestDescribeObjectShowEvents(t *testing.T) {
 	pods, _, _ := testData()
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-
+	f, tf, codec, _ := cmdtesting.NewAPIFactory()
 	d := &testDescriber{Output: "test output"}
-	tf.DescriberVal = d
+	tf.Describer = d
 	tf.UnstructuredClient = &fake.RESTClient{
 		NegotiatedSerializer: unstructuredSerializer,
 		Resp:                 &http.Response{StatusCode: 200, Header: defaultHeader(), Body: objBody(codec, pods)},
@@ -157,7 +140,7 @@ func TestDescribeObjectShowEvents(t *testing.T) {
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
 	buferr := bytes.NewBuffer([]byte{})
-	cmd := NewCmdDescribe(tf, buf, buferr)
+	cmd := NewCmdDescribe(f, buf, buferr)
 	cmd.Flags().Set("show-events", "true")
 	cmd.Run(cmd, []string{"pods"})
 	if d.Settings.ShowEvents != true {
@@ -167,12 +150,9 @@ func TestDescribeObjectShowEvents(t *testing.T) {
 
 func TestDescribeObjectSkipEvents(t *testing.T) {
 	pods, _, _ := testData()
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-
+	f, tf, codec, _ := cmdtesting.NewAPIFactory()
 	d := &testDescriber{Output: "test output"}
-	tf.DescriberVal = d
+	tf.Describer = d
 	tf.UnstructuredClient = &fake.RESTClient{
 		NegotiatedSerializer: unstructuredSerializer,
 		Resp:                 &http.Response{StatusCode: 200, Header: defaultHeader(), Body: objBody(codec, pods)},
@@ -181,38 +161,10 @@ func TestDescribeObjectSkipEvents(t *testing.T) {
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
 	buferr := bytes.NewBuffer([]byte{})
-	cmd := NewCmdDescribe(tf, buf, buferr)
+	cmd := NewCmdDescribe(f, buf, buferr)
 	cmd.Flags().Set("show-events", "false")
 	cmd.Run(cmd, []string{"pods"})
 	if d.Settings.ShowEvents != false {
 		t.Errorf("ShowEvents = false expected, got ShowEvents = %v", d.Settings.ShowEvents)
-	}
-}
-
-func TestDescribeHelpMessage(t *testing.T) {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	buf := bytes.NewBuffer([]byte{})
-	buferr := bytes.NewBuffer([]byte{})
-	cmd := NewCmdDescribe(tf, buf, buferr)
-	cmd.SetArgs([]string{"-h"})
-	cmd.SetOutput(buf)
-	_, err := cmd.ExecuteC()
-
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	got := buf.String()
-
-	expected := `describe (-f FILENAME | TYPE [NAME_PREFIX | -l label] | TYPE/NAME)`
-	if !strings.Contains(got, expected) {
-		t.Errorf("Expected to contain: \n %v\nGot:\n %v\n", expected, got)
-	}
-
-	unexpected := `describe (-f FILENAME | TYPE [NAME_PREFIX | -l label] | TYPE/NAME) [flags]`
-	if strings.Contains(got, unexpected) {
-		t.Errorf("Expected not to contain: \n %v\nGot:\n %v\n", unexpected, got)
 	}
 }

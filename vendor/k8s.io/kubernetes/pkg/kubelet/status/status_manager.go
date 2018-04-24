@@ -316,13 +316,26 @@ func (m *manager) updateStatusInternal(pod *v1.Pod, status v1.PodStatus, forceUp
 	}
 
 	// Set ReadyCondition.LastTransitionTime.
-	updateLastTransitionTime(&status, &oldStatus, v1.PodReady)
+	if _, readyCondition := podutil.GetPodCondition(&status, v1.PodReady); readyCondition != nil {
+		// Need to set LastTransitionTime.
+		lastTransitionTime := metav1.Now()
+		_, oldReadyCondition := podutil.GetPodCondition(&oldStatus, v1.PodReady)
+		if oldReadyCondition != nil && readyCondition.Status == oldReadyCondition.Status {
+			lastTransitionTime = oldReadyCondition.LastTransitionTime
+		}
+		readyCondition.LastTransitionTime = lastTransitionTime
+	}
 
 	// Set InitializedCondition.LastTransitionTime.
-	updateLastTransitionTime(&status, &oldStatus, v1.PodInitialized)
-
-	// Set PodScheduledCondition.LastTransitionTime.
-	updateLastTransitionTime(&status, &oldStatus, v1.PodScheduled)
+	if _, initCondition := podutil.GetPodCondition(&status, v1.PodInitialized); initCondition != nil {
+		// Need to set LastTransitionTime.
+		lastTransitionTime := metav1.Now()
+		_, oldInitCondition := podutil.GetPodCondition(&oldStatus, v1.PodInitialized)
+		if oldInitCondition != nil && initCondition.Status == oldInitCondition.Status {
+			lastTransitionTime = oldInitCondition.LastTransitionTime
+		}
+		initCondition.LastTransitionTime = lastTransitionTime
+	}
 
 	// ensure that the start time does not change across updates.
 	if oldStatus.StartTime != nil && !oldStatus.StartTime.IsZero() {
@@ -361,21 +374,6 @@ func (m *manager) updateStatusInternal(pod *v1.Pod, status v1.PodStatus, forceUp
 			format.Pod(pod), status)
 		return false
 	}
-}
-
-// updateLastTransitionTime updates the LastTransitionTime of a pod condition.
-func updateLastTransitionTime(status, oldStatus *v1.PodStatus, conditionType v1.PodConditionType) {
-	_, condition := podutil.GetPodCondition(status, conditionType)
-	if condition == nil {
-		return
-	}
-	// Need to set LastTransitionTime.
-	lastTransitionTime := metav1.Now()
-	_, oldCondition := podutil.GetPodCondition(oldStatus, conditionType)
-	if oldCondition != nil && condition.Status == oldCondition.Status {
-		lastTransitionTime = oldCondition.LastTransitionTime
-	}
-	condition.LastTransitionTime = lastTransitionTime
 }
 
 // deletePodStatus simply removes the given pod from the status cache.

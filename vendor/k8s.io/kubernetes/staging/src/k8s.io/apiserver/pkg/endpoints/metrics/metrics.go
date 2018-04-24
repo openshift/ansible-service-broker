@@ -78,15 +78,15 @@ var (
 		},
 		[]string{"verb", "resource", "subresource", "scope"},
 	)
-	// DroppedRequests is a number of requests dropped with 'Try again later' response"
+	// DroppedRequests is a number of requests dropped with 'Try again later' reponse"
 	DroppedRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "apiserver_dropped_requests",
-			Help: "Number of requests dropped with 'Try again later' response",
+			Help: "Number of requests dropped with 'Try again later' reponse",
 		},
 		[]string{"requestKind"},
 	)
-	// Because of volatality of the base metric this is pre-aggregated one. Instead of reporing current usage all the time
+	// Becasue of volatality of the base metric this is pre-aggregated one. Instead of reporing current usage all the time
 	// it reports maximal usage during the last second.
 	currentInflightRequests = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -105,8 +105,8 @@ const (
 	MutatingKind = "mutating"
 )
 
-func init() {
-	// Register all metrics.
+// Register all metrics.
+func Register() {
 	prometheus.MustRegister(requestCounter)
 	prometheus.MustRegister(longRunningRequestGauge)
 	prometheus.MustRegister(requestLatencies)
@@ -128,7 +128,7 @@ func Record(req *http.Request, requestInfo *request.RequestInfo, contentType str
 	if requestInfo == nil {
 		requestInfo = &request.RequestInfo{Verb: req.Method, Path: req.URL.Path}
 	}
-	scope := CleanScope(requestInfo)
+	scope := cleanScope(requestInfo)
 	if requestInfo.IsResourceRequest {
 		MonitorRequest(req, strings.ToUpper(requestInfo.Verb), requestInfo.Resource, requestInfo.Subresource, contentType, scope, code, responseSizeInBytes, elapsed)
 	} else {
@@ -143,7 +143,7 @@ func RecordLongRunning(req *http.Request, requestInfo *request.RequestInfo, fn f
 		requestInfo = &request.RequestInfo{Verb: req.Method, Path: req.URL.Path}
 	}
 	var g prometheus.Gauge
-	scope := CleanScope(requestInfo)
+	scope := cleanScope(requestInfo)
 	reportedVerb := cleanVerb(strings.ToUpper(requestInfo.Verb), req)
 	if requestInfo.IsResourceRequest {
 		g = longRunningRequestGauge.WithLabelValues(reportedVerb, requestInfo.Resource, requestInfo.Subresource, scope)
@@ -178,7 +178,7 @@ func Reset() {
 }
 
 // InstrumentRouteFunc works like Prometheus' InstrumentHandlerFunc but wraps
-// the go-restful RouteFunction instead of a HandlerFunc plus some Kubernetes endpoint specific information.
+// the go-restful RouteFunction instead of a HandlerFunc
 func InstrumentRouteFunc(verb, resource, subresource, scope string, routeFunc restful.RouteFunction) restful.RouteFunction {
 	return restful.RouteFunction(func(request *restful.Request, response *restful.Response) {
 		now := time.Now()
@@ -202,30 +202,7 @@ func InstrumentRouteFunc(verb, resource, subresource, scope string, routeFunc re
 	})
 }
 
-// InstrumentHandlerFunc works like Prometheus' InstrumentHandlerFunc but adds some Kubernetes endpoint specific information.
-func InstrumentHandlerFunc(verb, resource, subresource, scope string, handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		now := time.Now()
-
-		delegate := &ResponseWriterDelegator{ResponseWriter: w}
-
-		_, cn := w.(http.CloseNotifier)
-		_, fl := w.(http.Flusher)
-		_, hj := w.(http.Hijacker)
-		if cn && fl && hj {
-			w = &fancyResponseWriterDelegator{delegate}
-		} else {
-			w = delegate
-		}
-
-		handler(w, req)
-
-		MonitorRequest(req, verb, resource, subresource, scope, delegate.Header().Get("Content-Type"), delegate.Status(), delegate.ContentLength(), time.Now().Sub(now))
-	}
-}
-
-// CleanScope returns the scope of the request.
-func CleanScope(requestInfo *request.RequestInfo) string {
+func cleanScope(requestInfo *request.RequestInfo) string {
 	if requestInfo.Namespace != "" {
 		return "namespace"
 	}

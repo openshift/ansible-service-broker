@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,7 +129,7 @@ func TestCreateExternalLoadBalancer(t *testing.T) {
 
 	for _, item := range table {
 		controller, cloud, client := newController()
-		err := controller.createLoadBalancerIfNeeded("foo/bar", item.service)
+		err, _ := controller.createLoadBalancerIfNeeded("foo/bar", item.service)
 		if !item.expectErr && err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if item.expectErr && err == nil {
@@ -308,6 +309,7 @@ func TestGetNodeConditionPredicate(t *testing.T) {
 func TestProcessServiceUpdate(t *testing.T) {
 
 	var controller *ServiceController
+	var cloud *fakecloud.FakeCloud
 
 	//A pair of old and new loadbalancer IP address
 	oldLBIP := "192.168.1.1"
@@ -318,7 +320,7 @@ func TestProcessServiceUpdate(t *testing.T) {
 		key        string
 		updateFn   func(*v1.Service) *v1.Service //Manipulate the structure
 		svc        *v1.Service
-		expectedFn func(*v1.Service, error) error //Error comparison function
+		expectedFn func(*v1.Service, error, time.Duration) error //Error comparision function
 	}{
 		{
 			testName: "If updating a valid service",
@@ -326,13 +328,20 @@ func TestProcessServiceUpdate(t *testing.T) {
 			svc:      defaultExternalService(),
 			updateFn: func(svc *v1.Service) *v1.Service {
 
-				controller, _, _ = newController()
+				controller, cloud, _ = newController()
 				controller.cache.getOrCreate("validKey")
 				return svc
 
 			},
-			expectedFn: func(svc *v1.Service, err error) error {
-				return err
+			expectedFn: func(svc *v1.Service, err error, retryDuration time.Duration) error {
+
+				if err != nil {
+					return err
+				}
+				if retryDuration != doNotRetry {
+					return fmt.Errorf("retryDuration Expected=%v Obtained=%v", doNotRetry, retryDuration)
+				}
+				return nil
 			},
 		},
 		{
@@ -349,9 +358,9 @@ func TestProcessServiceUpdate(t *testing.T) {
 				cachedServiceTest.state = svc
 				controller.cache.set(keyExpected, cachedServiceTest)
 
-				keyGot, quit := controller.queue.Get()
+				keyGot, quit := controller.workingQueue.Get()
 				if quit {
-					t.Fatalf("get no queue element")
+					t.Fatalf("get no workingQueue element")
 				}
 				if keyExpected != keyGot.(string) {
 					t.Fatalf("get service key error, expected: %s, got: %s", keyExpected, keyGot.(string))
@@ -363,17 +372,20 @@ func TestProcessServiceUpdate(t *testing.T) {
 				return newService
 
 			},
-			expectedFn: func(svc *v1.Service, err error) error {
+			expectedFn: func(svc *v1.Service, err error, retryDuration time.Duration) error {
 
 				if err != nil {
 					return err
+				}
+				if retryDuration != doNotRetry {
+					return fmt.Errorf("retryDuration Expected=%v Obtained=%v", doNotRetry, retryDuration)
 				}
 
 				keyExpected := svc.GetObjectMeta().GetNamespace() + "/" + svc.GetObjectMeta().GetName()
 
 				cachedServiceGot, exist := controller.cache.get(keyExpected)
 				if !exist {
-					return fmt.Errorf("update service error, queue should contain service: %s", keyExpected)
+					return fmt.Errorf("update service error, workingQueue should contain service: %s", keyExpected)
 				}
 				if cachedServiceGot.state.Spec.LoadBalancerIP != newLBIP {
 					return fmt.Errorf("update LoadBalancerIP error, expected: %s, got: %s", newLBIP, cachedServiceGot.state.Spec.LoadBalancerIP)
@@ -386,8 +398,8 @@ func TestProcessServiceUpdate(t *testing.T) {
 	for _, tc := range testCases {
 		newSvc := tc.updateFn(tc.svc)
 		svcCache := controller.cache.getOrCreate(tc.key)
-		obtErr := controller.processServiceUpdate(svcCache, newSvc, tc.key)
-		if err := tc.expectedFn(newSvc, obtErr); err != nil {
+		obtErr, retryDuration := controller.processServiceUpdate(svcCache, newSvc, tc.key)
+		if err := tc.expectedFn(newSvc, obtErr, retryDuration); err != nil {
 			t.Errorf("%v processServiceUpdate() %v", tc.testName, err)
 		}
 	}
@@ -397,6 +409,7 @@ func TestProcessServiceUpdate(t *testing.T) {
 func TestSyncService(t *testing.T) {
 
 	var controller *ServiceController
+	var cloud *fakecloud.FakeCloud
 
 	testCases := []struct {
 		testName   string
@@ -408,7 +421,7 @@ func TestSyncService(t *testing.T) {
 			testName: "if an invalid service name is synced",
 			key:      "invalid/key/string",
 			updateFn: func() {
-				controller, _, _ = newController()
+				controller, cloud, _ = newController()
 
 			},
 			expectedFn: func(e error) error {
@@ -427,7 +440,7 @@ func TestSyncService(t *testing.T) {
 			testName: "if an invalid service is synced",
 			key: "somethingelse",
 			updateFn: func() {
-				controller, _, _ = newController()
+				controller, cloud, _ = newController()
 				srv := controller.cache.getOrCreate("external-balancer")
 				srv.state = defaultExternalService()
 			},
@@ -441,7 +454,7 @@ func TestSyncService(t *testing.T) {
 			key:      "external-balancer",
 			updateFn: func() {
 				testSvc := defaultExternalService()
-				controller, _, _ = newController()
+				controller, cloud, _ = newController()
 				controller.enqueueService(testSvc)
 				svc := controller.cache.getOrCreate("external-balancer")
 				svc.state = testSvc
@@ -478,21 +491,33 @@ func TestProcessServiceDeletion(t *testing.T) {
 
 	var controller *ServiceController
 	var cloud *fakecloud.FakeCloud
-	// Add a global svcKey name
+	//Add a global svcKey name
 	svcKey := "external-balancer"
 
 	testCases := []struct {
 		testName   string
-		updateFn   func(*ServiceController) // Update function used to manupulate srv and controller values
-		expectedFn func(svcErr error) error // Function to check if the returned value is expected
+		updateFn   func(*ServiceController)                              //Update function used to manupulate srv and controller values
+		expectedFn func(svcErr error, retryDuration time.Duration) error //Function to check if the returned value is expected
 	}{
 		{
-			testName: "If an non-existent service is deleted",
+			testName: "If an non-existant service is deleted",
 			updateFn: func(controller *ServiceController) {
-				// Does not do anything
+				//Does not do anything
 			},
-			expectedFn: func(svcErr error) error {
-				return svcErr
+			expectedFn: func(svcErr error, retryDuration time.Duration) error {
+
+				expectedError := "service external-balancer not in cache even though the watcher thought it was. Ignoring the deletion"
+				if svcErr == nil || svcErr.Error() != expectedError {
+					//cannot be nil or Wrong error message
+					return fmt.Errorf("Expected=%v Obtained=%v", expectedError, svcErr)
+				}
+
+				if retryDuration != doNotRetry {
+					//Retry duration should match
+					return fmt.Errorf("RetryDuration Expected=%v Obtained=%v", doNotRetry, retryDuration)
+				}
+
+				return nil
 			},
 		},
 		{
@@ -504,7 +529,7 @@ func TestProcessServiceDeletion(t *testing.T) {
 				cloud.Err = fmt.Errorf("Error Deleting the Loadbalancer")
 
 			},
-			expectedFn: func(svcErr error) error {
+			expectedFn: func(svcErr error, retryDuration time.Duration) error {
 
 				expectedError := "Error Deleting the Loadbalancer"
 
@@ -512,6 +537,9 @@ func TestProcessServiceDeletion(t *testing.T) {
 					return fmt.Errorf("Expected=%v Obtained=%v", expectedError, svcErr)
 				}
 
+				if retryDuration != minRetryDelay {
+					return fmt.Errorf("RetryDuration Expected=%v Obtained=%v", minRetryDelay, retryDuration)
+				}
 				return nil
 			},
 		},
@@ -526,15 +554,21 @@ func TestProcessServiceDeletion(t *testing.T) {
 				controller.cache.set(svcKey, svc)
 
 			},
-			expectedFn: func(svcErr error) error {
+			expectedFn: func(svcErr error, retryDuration time.Duration) error {
+
 				if svcErr != nil {
 					return fmt.Errorf("Expected=nil Obtained=%v", svcErr)
 				}
 
-				// It should no longer be in the workqueue.
+				if retryDuration != doNotRetry {
+					//Retry duration should match
+					return fmt.Errorf("RetryDuration Expected=%v Obtained=%v", doNotRetry, retryDuration)
+				}
+
+				//It should no longer be in the workqueue.
 				_, exist := controller.cache.get(svcKey)
 				if exist {
-					return fmt.Errorf("delete service error, queue should not contain service: %s any more", svcKey)
+					return fmt.Errorf("delete service error, workingQueue should not contain service: %s any more", svcKey)
 				}
 
 				return nil
@@ -546,8 +580,8 @@ func TestProcessServiceDeletion(t *testing.T) {
 		//Create a new controller.
 		controller, cloud, _ = newController()
 		tc.updateFn(controller)
-		obtainedErr := controller.processServiceDeletion(svcKey)
-		if err := tc.expectedFn(obtainedErr); err != nil {
+		obtainedErr, retryDuration := controller.processServiceDeletion(svcKey)
+		if err := tc.expectedFn(obtainedErr, retryDuration); err != nil {
 			t.Errorf("%v processServiceDeletion() %v", tc.testName, err)
 		}
 	}
@@ -777,21 +811,13 @@ func TestServiceCache(t *testing.T) {
 //Test a utility functions as its not easy to unit test nodeSyncLoop directly
 func TestNodeSlicesEqualForLB(t *testing.T) {
 	numNodes := 10
-	nArray := make([]*v1.Node, numNodes)
-	mArray := make([]*v1.Node, numNodes)
+	nArray := make([]*v1.Node, 10)
+
 	for i := 0; i < numNodes; i++ {
 		nArray[i] = &v1.Node{}
-		nArray[i].Name = fmt.Sprintf("node%d", i)
+		nArray[i].Name = fmt.Sprintf("node1")
 	}
-	for i := 0; i < numNodes; i++ {
-		mArray[i] = &v1.Node{}
-		mArray[i].Name = fmt.Sprintf("node%d", i+1)
-	}
-
 	if !nodeSlicesEqualForLB(nArray, nArray) {
 		t.Errorf("nodeSlicesEqualForLB() Expected=true Obtained=false")
-	}
-	if nodeSlicesEqualForLB(nArray, mArray) {
-		t.Errorf("nodeSlicesEqualForLB() Expected=false Obtained=true")
 	}
 }

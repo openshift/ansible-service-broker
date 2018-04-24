@@ -74,8 +74,6 @@ type proxyHandlingInfo struct {
 	serviceName string
 	// namespace is the namespace the service lives in
 	serviceNamespace string
-	// serviceAvailable indicates this APIService is available or not
-	serviceAvailable bool
 }
 
 func (r *proxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -91,11 +89,6 @@ func (r *proxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		r.localDelegate.ServeHTTP(w, req)
-		return
-	}
-
-	if !handlingInfo.serviceAvailable {
-		http.Error(w, "service unavailable", http.StatusServiceUnavailable)
 		return
 	}
 
@@ -120,8 +113,7 @@ func (r *proxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	location.Scheme = "https"
 	rloc, err := r.serviceResolver.ResolveEndpoint(handlingInfo.serviceNamespace, handlingInfo.serviceName)
 	if err != nil {
-		glog.Errorf("error resolving %s/%s: %v", handlingInfo.serviceNamespace, handlingInfo.serviceName, err)
-		http.Error(w, "service unavailable", http.StatusServiceUnavailable)
+		http.Error(w, fmt.Sprintf("missing route (%s)", err.Error()), http.StatusInternalServerError)
 		return
 	}
 	location.Host = rloc.Host
@@ -213,10 +205,9 @@ func (r *proxyHandler) updateAPIService(apiService *apiregistrationapi.APIServic
 		},
 		serviceName:      apiService.Spec.Service.Name,
 		serviceNamespace: apiService.Spec.Service.Namespace,
-		serviceAvailable: apiregistrationapi.IsAPIServiceConditionTrue(apiService, apiregistrationapi.Available),
 	}
 	newInfo.proxyRoundTripper, newInfo.transportBuildingError = restclient.TransportFor(newInfo.restConfig)
-	if newInfo.transportBuildingError == nil && r.proxyTransport != nil && r.proxyTransport.Dial != nil {
+	if newInfo.transportBuildingError == nil && r.proxyTransport.Dial != nil {
 		switch transport := newInfo.proxyRoundTripper.(type) {
 		case *http.Transport:
 			transport.Dial = r.proxyTransport.Dial

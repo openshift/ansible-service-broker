@@ -168,7 +168,6 @@ func TestAppliesTo(t *testing.T) {
 		user      user.Info
 		namespace string
 		appliesTo bool
-		index     int
 		testCase  string
 	}{
 		{
@@ -177,7 +176,6 @@ func TestAppliesTo(t *testing.T) {
 			},
 			user:      &user.DefaultInfo{Name: "foobar"},
 			appliesTo: true,
-			index:     0,
 			testCase:  "single subject that matches username",
 		},
 		{
@@ -187,7 +185,6 @@ func TestAppliesTo(t *testing.T) {
 			},
 			user:      &user.DefaultInfo{Name: "foobar"},
 			appliesTo: true,
-			index:     1,
 			testCase:  "multiple subjects, one that matches username",
 		},
 		{
@@ -206,7 +203,6 @@ func TestAppliesTo(t *testing.T) {
 			},
 			user:      &user.DefaultInfo{Name: "zimzam", Groups: []string{"foobar"}},
 			appliesTo: true,
-			index:     1,
 			testCase:  "multiple subjects, one that match group",
 		},
 		{
@@ -217,7 +213,6 @@ func TestAppliesTo(t *testing.T) {
 			user:      &user.DefaultInfo{Name: "zimzam", Groups: []string{"foobar"}},
 			namespace: "namespace1",
 			appliesTo: true,
-			index:     1,
 			testCase:  "multiple subjects, one that match group, should ignore namespace",
 		},
 		{
@@ -229,7 +224,6 @@ func TestAppliesTo(t *testing.T) {
 			user:      &user.DefaultInfo{Name: "system:serviceaccount:kube-system:default"},
 			namespace: "default",
 			appliesTo: true,
-			index:     2,
 			testCase:  "multiple subjects with a service account that matches",
 		},
 		{
@@ -249,7 +243,6 @@ func TestAppliesTo(t *testing.T) {
 			user:      &user.DefaultInfo{Name: "foobar", Groups: []string{user.AllAuthenticated}},
 			namespace: "default",
 			appliesTo: true,
-			index:     0,
 			testCase:  "binding to all authenticated and unauthenticated subjects matches authenticated user",
 		},
 		{
@@ -260,18 +253,14 @@ func TestAppliesTo(t *testing.T) {
 			user:      &user.DefaultInfo{Name: "system:anonymous", Groups: []string{user.AllUnauthenticated}},
 			namespace: "default",
 			appliesTo: true,
-			index:     1,
 			testCase:  "binding to all authenticated and unauthenticated subjects matches anonymous user",
 		},
 	}
 
 	for _, tc := range tests {
-		gotIndex, got := appliesTo(tc.user, tc.subjects, tc.namespace)
+		got := appliesTo(tc.user, tc.subjects, tc.namespace)
 		if got != tc.appliesTo {
 			t.Errorf("case %q want appliesTo=%t, got appliesTo=%t", tc.testCase, tc.appliesTo, got)
-		}
-		if gotIndex != tc.index {
-			t.Errorf("case %q want index %d, got %d", tc.testCase, tc.index, gotIndex)
 		}
 	}
 }

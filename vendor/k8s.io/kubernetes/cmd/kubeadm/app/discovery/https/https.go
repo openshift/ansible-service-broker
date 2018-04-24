@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	netutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/kubernetes/cmd/kubeadm/app/discovery/file"
@@ -30,8 +29,7 @@ import (
 // securely to the API Server using the provided CA cert and
 // optionally refreshes the cluster-info information from the cluster-info ConfigMap
 func RetrieveValidatedClusterInfo(httpsURL string) (*clientcmdapi.Cluster, error) {
-	client := &http.Client{Transport: netutil.SetOldTransportDefaults(&http.Transport{})}
-	response, err := client.Get(httpsURL)
+	response, err := http.Get(httpsURL)
 	if err != nil {
 		return nil, err
 	}

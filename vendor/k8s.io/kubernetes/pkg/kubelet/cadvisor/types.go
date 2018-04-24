@@ -42,8 +42,12 @@ type Interface interface {
 	// Get events streamed through passedChannel that fit the request.
 	WatchEvents(request *events.Request) (*events.EventChannel, error)
 
-	// Get filesystem information for the filesystem that contains the given file.
-	GetDirFsInfo(path string) (cadvisorapiv2.FsInfo, error)
+	// HasDedicatedImageFs returns true iff a dedicated image filesystem exists for storing images.
+	HasDedicatedImageFs() (bool, error)
+
+	// GetFsInfoByFsUUID returns the stats of the filesystem with the specified
+	// uuid.
+	GetFsInfoByFsUUID(uuid string) (cadvisorapiv2.FsInfo, error)
 }
 
 // ImageFsInfoProvider informs cAdvisor how to find imagefs for container images.

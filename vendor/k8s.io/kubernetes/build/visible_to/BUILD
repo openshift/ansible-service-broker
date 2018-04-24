@@ -40,8 +40,13 @@ package_group(
         "//hack",
         "//hack/lib",
         "//hack/make-rules",
-        "//test/e2e/...",
-        "//test/integration/...",
+        "//test/e2e",
+        "//test/e2e/framework",
+        "//test/e2e/kubectl",
+        "//test/e2e/workload",
+        "//test/integration/etcd",
+        "//test/integration/framework",
+        "//test/integration/kubectl",
     ],
 )
 
@@ -205,7 +210,7 @@ package_group(
         "//cmd/clicheck",
         "//cmd/hyperkube",
         "//cmd/kube-proxy/app",
-        "//cmd/kube-scheduler/app",
+        "//plugin/cmd/kube-scheduler/app",
     ],
 )
 

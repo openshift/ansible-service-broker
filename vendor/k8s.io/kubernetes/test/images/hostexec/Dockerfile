@@ -22,4 +22,4 @@ CROSS_BUILD_COPY qemu-QEMUARCH-static /usr/bin/
 RUN apk --update add curl netcat-openbsd iproute2 && rm -rf /var/cache/apk/*
 
 # wait forever
-CMD while true; do sleep 1d; done
+CMD rm -f /fifo && mkfifo /fifo && exec cat </fifo

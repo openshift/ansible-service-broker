@@ -25,12 +25,14 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/kubernetes/pkg/controller"
+	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/util/metrics"
 	"k8s.io/kubernetes/pkg/util/slice"
 	volumeutil "k8s.io/kubernetes/pkg/volume/util"
@@ -45,14 +47,18 @@ type Controller struct {
 	pvListerSynced cache.InformerSynced
 
 	queue workqueue.RateLimitingInterface
+	// allows overriding for testing
+	features utilfeature.FeatureGate
 }
 
 // NewPVProtectionController returns a new *Controller.
 func NewPVProtectionController(pvInformer coreinformers.PersistentVolumeInformer, cl clientset.Interface) *Controller {
 	e := &Controller{
-		client: cl,
-		queue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pvprotection"),
+		client:   cl,
+		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pvprotection"),
+		features: utilfeature.DefaultFeatureGate,
 	}
+
 	if cl != nil && cl.CoreV1().RESTClient().GetRateLimiter() != nil {
 		metrics.RegisterMetricAndTrackRateLimiterUsage("persistentvolume_protection_controller", cl.CoreV1().RESTClient().GetRateLimiter())
 	}
@@ -140,25 +146,6 @@ func (c *Controller) processPV(pvName string) error {
 		}
 	}
 
-	if needToAddFinalizer(pv) {
-		// PV is not being deleted -> it should have the finalizer. The
-		// finalizer should be added by admission plugin, this is just to add
-		// the finalizer to old PVs that were created before the admission
-		// plugin was enabled.
-		return c.addFinalizer(pv)
-	}
-	return nil
-}
-
-func (c *Controller) addFinalizer(pv *v1.PersistentVolume) error {
-	pvClone := pv.DeepCopy()
-	pvClone.ObjectMeta.Finalizers = append(pvClone.ObjectMeta.Finalizers, volumeutil.PVProtectionFinalizer)
-	_, err := c.client.CoreV1().PersistentVolumes().Update(pvClone)
-	if err != nil {
-		glog.V(3).Infof("Error adding protection finalizer to PV %s: %v", pv.Name)
-		return err
-	}
-	glog.V(3).Infof("Added protection finalizer to PV %s", pv.Name)
 	return nil
 }
 
@@ -175,6 +162,11 @@ func (c *Controller) removeFinalizer(pv *v1.PersistentVolume) error {
 }
 
 func (c *Controller) isBeingUsed(pv *v1.PersistentVolume) bool {
+	// if PVC protection is disabled - we do not care about PV and PVC binding
+	if !c.features.Enabled(features.PVCProtection) {
+		return false
+	}
+
 	// check if PV is being bound to a PVC by its status
 	// the status will be updated by PV controller
 	if pv.Status.Phase == v1.VolumeBound {
@@ -194,15 +186,11 @@ func (c *Controller) pvAddedUpdated(obj interface{}) {
 	}
 	glog.V(4).Infof("Got event on PV %s", pv.Name)
 
-	if needToAddFinalizer(pv) || isDeletionCandidate(pv) {
+	if isDeletionCandidate(pv) {
 		c.queue.Add(pv.Name)
 	}
 }
 
 func isDeletionCandidate(pv *v1.PersistentVolume) bool {
 	return pv.ObjectMeta.DeletionTimestamp != nil && slice.ContainsString(pv.ObjectMeta.Finalizers, volumeutil.PVProtectionFinalizer, nil)
-}
-
-func needToAddFinalizer(pv *v1.PersistentVolume) bool {
-	return pv.ObjectMeta.DeletionTimestamp == nil && !slice.ContainsString(pv.ObjectMeta.Finalizers, volumeutil.PVProtectionFinalizer, nil)
 }

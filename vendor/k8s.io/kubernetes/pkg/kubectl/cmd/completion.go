@@ -46,7 +46,7 @@ const defaultBoilerPlate = `
 var (
 	completion_long = templates.LongDesc(i18n.T(`
 		Output shell completion code for the specified shell (bash or zsh).
-		The shell code must be evaluated to provide interactive
+		The shell code must be evalutated to provide interactive
 		completion of kubectl commands.  This can be done by sourcing it from
 		the .bash_profile.
 
@@ -97,8 +97,7 @@ func NewCmdCompletion(out io.Writer, boilerPlate string) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use: "completion SHELL",
-		DisableFlagsInUseLine: true,
+		Use:     "completion SHELL",
 		Short:   i18n.T("Output shell completion code for the specified shell (bash or zsh)"),
 		Long:    completion_long,
 		Example: completion_example,
@@ -223,7 +222,7 @@ __kubectl_get_comp_words_by_ref() {
 __kubectl_filedir() {
 	local RET OLD_IFS w qw
 
-	__kubectl_debug "_filedir $@ cur=$cur"
+	__debug "_filedir $@ cur=$cur"
 	if [[ "$1" = \~* ]]; then
 		# somehow does not work. Maybe, zsh does not call this at all
 		eval echo "$1"
@@ -240,7 +239,7 @@ __kubectl_filedir() {
 	fi
 	IFS="$OLD_IFS"
 
-	IFS="," __kubectl_debug "RET=${RET[@]} len=${#RET[@]}"
+	IFS="," __debug "RET=${RET[@]} len=${#RET[@]}"
 
 	for w in ${RET[@]}; do
 		if [[ ! "${w}" = "${cur}"* ]]; then

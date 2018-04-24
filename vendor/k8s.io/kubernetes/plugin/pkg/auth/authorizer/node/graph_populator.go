@@ -19,25 +19,16 @@ package node
 import (
 	"github.com/golang/glog"
 
-	storagev1beta1 "k8s.io/api/storage/v1beta1"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	storageinformers "k8s.io/client-go/informers/storage/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	api "k8s.io/kubernetes/pkg/apis/core"
 	coreinformers "k8s.io/kubernetes/pkg/client/informers/informers_generated/internalversion/core/internalversion"
-	"k8s.io/kubernetes/pkg/features"
 )
 
 type graphPopulator struct {
 	graph *Graph
 }
 
-func AddGraphEventHandlers(
-	graph *Graph,
-	pods coreinformers.PodInformer,
-	pvs coreinformers.PersistentVolumeInformer,
-	attachments storageinformers.VolumeAttachmentInformer,
-) {
+func AddGraphEventHandlers(graph *Graph, pods coreinformers.PodInformer, pvs coreinformers.PersistentVolumeInformer) {
 	g := &graphPopulator{
 		graph: graph,
 	}
@@ -53,14 +44,6 @@ func AddGraphEventHandlers(
 		UpdateFunc: g.updatePV,
 		DeleteFunc: g.deletePV,
 	})
-
-	if utilfeature.DefaultFeatureGate.Enabled(features.CSIPersistentVolume) {
-		attachments.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc:    g.addVolumeAttachment,
-			UpdateFunc: g.updateVolumeAttachment,
-			DeleteFunc: g.deleteVolumeAttachment,
-		})
-	}
 }
 
 func (g *graphPopulator) addPod(obj interface{}) {
@@ -122,32 +105,4 @@ func (g *graphPopulator) deletePV(obj interface{}) {
 		return
 	}
 	g.graph.DeletePV(pv.Name)
-}
-
-func (g *graphPopulator) addVolumeAttachment(obj interface{}) {
-	g.updateVolumeAttachment(nil, obj)
-}
-
-func (g *graphPopulator) updateVolumeAttachment(oldObj, obj interface{}) {
-	attachment := obj.(*storagev1beta1.VolumeAttachment)
-	if oldObj != nil {
-		// skip add if node name is identical
-		oldAttachment := oldObj.(*storagev1beta1.VolumeAttachment)
-		if oldAttachment.Spec.NodeName == attachment.Spec.NodeName {
-			return
-		}
-	}
-	g.graph.AddVolumeAttachment(attachment.Name, attachment.Spec.NodeName)
-}
-
-func (g *graphPopulator) deleteVolumeAttachment(obj interface{}) {
-	if tombstone, ok := obj.(cache.DeletedFinalStateUnknown); ok {
-		obj = tombstone.Obj
-	}
-	attachment, ok := obj.(*api.PersistentVolume)
-	if !ok {
-		glog.Infof("unexpected type %T", obj)
-		return
-	}
-	g.graph.DeleteVolumeAttachment(attachment.Name)
 }

@@ -33,6 +33,7 @@ go_test(
         ":swagger-spec",
         "//api/openapi-spec:swagger-spec",
     ],
+    importpath = "k8s.io/kubernetes/pkg/kubectl/apply/strategy_test",
     deps = [
         ":go_default_library",
         "//pkg/kubectl/apply:go_default_library",

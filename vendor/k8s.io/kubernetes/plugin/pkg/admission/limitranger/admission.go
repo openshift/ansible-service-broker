@@ -41,13 +41,11 @@ import (
 
 const (
 	limitRangerAnnotation = "kubernetes.io/limit-ranger"
-	// PluginName indicates name of admission plugin.
-	PluginName = "LimitRanger"
 )
 
 // Register registers a plugin
 func Register(plugins *admission.Plugins) {
-	plugins.Register(PluginName, func(config io.Reader) (admission.Interface, error) {
+	plugins.Register("LimitRanger", func(config io.Reader) (admission.Interface, error) {
 		return NewLimitRanger(&DefaultLimitRangerActions{})
 	})
 }
@@ -112,18 +110,6 @@ func (l *LimitRanger) runLimitFunc(a admission.Attributes, limitFn func(limitRan
 		name, _ = meta.NewAccessor().Name(obj)
 		if len(name) == 0 {
 			name, _ = meta.NewAccessor().GenerateName(obj)
-		}
-	}
-
-	// ignore all objects marked for deletion
-	oldObj := a.GetOldObject()
-	if oldObj != nil {
-		oldAccessor, err := meta.Accessor(oldObj)
-		if err != nil {
-			return admission.NewForbidden(a, err)
-		}
-		if oldAccessor.GetDeletionTimestamp() != nil {
-			return nil
 		}
 	}
 

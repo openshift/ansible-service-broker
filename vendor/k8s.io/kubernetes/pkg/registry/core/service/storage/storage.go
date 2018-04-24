@@ -30,17 +30,16 @@ import (
 	"k8s.io/kubernetes/pkg/registry/core/service"
 )
 
-type GenericREST struct {
+type REST struct {
 	*genericregistry.Store
 }
 
 // NewREST returns a RESTStorage object that will work against services.
-func NewGenericREST(optsGetter generic.RESTOptionsGetter) (*GenericREST, *StatusREST) {
+func NewREST(optsGetter generic.RESTOptionsGetter) (*REST, *StatusREST) {
 	store := &genericregistry.Store{
 		NewFunc:                  func() runtime.Object { return &api.Service{} },
 		NewListFunc:              func() runtime.Object { return &api.ServiceList{} },
 		DefaultQualifiedResource: api.Resource("services"),
-		ReturnDeletedObject:      true,
 
 		CreateStrategy: service.Strategy,
 		UpdateStrategy: service.Strategy,
@@ -56,25 +55,26 @@ func NewGenericREST(optsGetter generic.RESTOptionsGetter) (*GenericREST, *Status
 
 	statusStore := *store
 	statusStore.UpdateStrategy = service.StatusStrategy
-	return &GenericREST{store}, &StatusREST{store: &statusStore}
+	return &REST{store}, &StatusREST{store: &statusStore}
 }
 
-var (
-	_ rest.ShortNamesProvider = &GenericREST{}
-	_ rest.CategoriesProvider = &GenericREST{}
-)
+// Implement ShortNamesProvider
+var _ rest.ShortNamesProvider = &REST{}
 
 // ShortNames implements the ShortNamesProvider interface. Returns a list of short names for a resource.
-func (r *GenericREST) ShortNames() []string {
+func (r *REST) ShortNames() []string {
 	return []string{"svc"}
 }
 
+// Implement CategoriesProvider
+var _ rest.CategoriesProvider = &REST{}
+
 // Categories implements the CategoriesProvider interface. Returns a list of categories a resource is part of.
-func (r *GenericREST) Categories() []string {
+func (r *REST) Categories() []string {
 	return []string{"all"}
 }
 
-// StatusREST implements the GenericREST endpoint for changing the status of a service.
+// StatusREST implements the REST endpoint for changing the status of a service.
 type StatusREST struct {
 	store *genericregistry.Store
 }

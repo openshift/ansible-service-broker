@@ -23,14 +23,12 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest/fake"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
+	api "k8s.io/kubernetes/pkg/apis/core"
 	cmdtesting "k8s.io/kubernetes/pkg/kubectl/cmd/testing"
-	"k8s.io/kubernetes/pkg/kubectl/scheme"
 )
 
 func TestValidateAnnotationOverwrites(t *testing.T) {
@@ -228,7 +226,7 @@ func TestUpdateAnnotations(t *testing.T) {
 		expectErr   bool
 	}{
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b"},
 				},
@@ -237,41 +235,41 @@ func TestUpdateAnnotations(t *testing.T) {
 			expectErr:   true,
 		},
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b"},
 				},
 			},
 			annotations: map[string]string{"a": "c"},
 			overwrite:   true,
-			expected: &v1.Pod{
+			expected: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "c"},
 				},
 			},
 		},
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b"},
 				},
 			},
 			annotations: map[string]string{"c": "d"},
-			expected: &v1.Pod{
+			expected: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b", "c": "d"},
 				},
 			},
 		},
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b"},
 				},
 			},
 			annotations: map[string]string{"c": "d"},
 			version:     "2",
-			expected: &v1.Pod{
+			expected: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations:     map[string]string{"a": "b", "c": "d"},
 					ResourceVersion: "2",
@@ -279,28 +277,28 @@ func TestUpdateAnnotations(t *testing.T) {
 			},
 		},
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b"},
 				},
 			},
 			annotations: map[string]string{},
 			remove:      []string{"a"},
-			expected: &v1.Pod{
+			expected: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{},
 				},
 			},
 		},
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b", "c": "d"},
 				},
 			},
 			annotations: map[string]string{"e": "f"},
 			remove:      []string{"a"},
-			expected: &v1.Pod{
+			expected: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"c": "d",
@@ -310,14 +308,14 @@ func TestUpdateAnnotations(t *testing.T) {
 			},
 		},
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b", "c": "d"},
 				},
 			},
 			annotations: map[string]string{"e": "f"},
 			remove:      []string{"g"},
-			expected: &v1.Pod{
+			expected: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"a": "b",
@@ -328,13 +326,13 @@ func TestUpdateAnnotations(t *testing.T) {
 			},
 		},
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b", "c": "d"},
 				},
 			},
 			remove: []string{"e"},
-			expected: &v1.Pod{
+			expected: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"a": "b",
@@ -344,11 +342,11 @@ func TestUpdateAnnotations(t *testing.T) {
 			},
 		},
 		{
-			obj: &v1.Pod{
+			obj: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{},
 			},
 			annotations: map[string]string{"a": "b"},
-			expected: &v1.Pod{
+			expected: &api.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"a": "b"},
 				},
@@ -417,44 +415,41 @@ func TestAnnotateErrors(t *testing.T) {
 	}
 
 	for k, testCase := range testCases {
-		t.Run(k, func(t *testing.T) {
-			tf := cmdtesting.NewTestFactory()
-			defer tf.Cleanup()
+		f, tf, _, _ := cmdtesting.NewAPIFactory()
+		tf.Printer = &testPrinter{}
+		tf.Namespace = "test"
+		tf.ClientConfig = defaultClientConfig()
 
-			tf.Namespace = "test"
-			tf.ClientConfigVal = defaultClientConfig()
+		buf := bytes.NewBuffer([]byte{})
+		cmd := NewCmdAnnotate(f, buf)
+		cmd.SetOutput(buf)
 
-			buf := bytes.NewBuffer([]byte{})
-			cmd := NewCmdAnnotate(tf, buf)
-			cmd.SetOutput(buf)
-
-			for k, v := range testCase.flags {
-				cmd.Flags().Set(k, v)
-			}
-			options := &AnnotateOptions{}
-			err := options.Complete(buf, cmd, testCase.args)
-			if err == nil {
-				err = options.Validate()
-			}
-			if !testCase.errFn(err) {
-				t.Errorf("%s: unexpected error: %v", k, err)
-				return
-			}
-			if buf.Len() > 0 {
-				t.Errorf("buffer should be empty: %s", string(buf.Bytes()))
-			}
-		})
+		for k, v := range testCase.flags {
+			cmd.Flags().Set(k, v)
+		}
+		options := &AnnotateOptions{}
+		err := options.Complete(buf, cmd, testCase.args)
+		if err == nil {
+			err = options.Validate()
+		}
+		if !testCase.errFn(err) {
+			t.Errorf("%s: unexpected error: %v", k, err)
+			continue
+		}
+		if tf.Printer.(*testPrinter).Objects != nil {
+			t.Errorf("unexpected print to default printer")
+		}
+		if buf.Len() > 0 {
+			t.Errorf("buffer should be empty: %s", string(buf.Bytes()))
+		}
 	}
 }
 
 func TestAnnotateObject(t *testing.T) {
 	pods, _, _ := testData()
 
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-
+	f, tf, codec, _ := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.UnstructuredClient = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Group: "testgroup", Version: "v1"},
 		NegotiatedSerializer: unstructuredSerializer,
@@ -483,10 +478,10 @@ func TestAnnotateObject(t *testing.T) {
 		}),
 	}
 	tf.Namespace = "test"
-	tf.ClientConfigVal = defaultClientConfig()
+	tf.ClientConfig = defaultClientConfig()
 
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdAnnotate(tf, buf)
+	cmd := NewCmdAnnotate(f, buf)
 	cmd.SetOutput(buf)
 	options := &AnnotateOptions{}
 	args := []string{"pods/foo", "a=b", "c-"}
@@ -496,7 +491,7 @@ func TestAnnotateObject(t *testing.T) {
 	if err := options.Validate(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if err := options.RunAnnotate(tf, cmd); err != nil {
+	if err := options.RunAnnotate(f, cmd); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -504,11 +499,8 @@ func TestAnnotateObject(t *testing.T) {
 func TestAnnotateObjectFromFile(t *testing.T) {
 	pods, _, _ := testData()
 
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-
+	f, tf, codec, _ := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.UnstructuredClient = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Group: "testgroup", Version: "v1"},
 		NegotiatedSerializer: unstructuredSerializer,
@@ -537,13 +529,13 @@ func TestAnnotateObjectFromFile(t *testing.T) {
 		}),
 	}
 	tf.Namespace = "test"
-	tf.ClientConfigVal = defaultClientConfig()
+	tf.ClientConfig = defaultClientConfig()
 
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdAnnotate(tf, buf)
+	cmd := NewCmdAnnotate(f, buf)
 	cmd.SetOutput(buf)
 	options := &AnnotateOptions{}
-	options.Filenames = []string{"../../../test/e2e/testing-manifests/statefulset/cassandra/controller.yaml"}
+	options.Filenames = []string{"../../../examples/storage/cassandra/cassandra-controller.yaml"}
 	args := []string{"a=b", "c-"}
 	if err := options.Complete(buf, cmd, args); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -551,15 +543,13 @@ func TestAnnotateObjectFromFile(t *testing.T) {
 	if err := options.Validate(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if err := options.RunAnnotate(tf, cmd); err != nil {
+	if err := options.RunAnnotate(f, cmd); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
 func TestAnnotateLocal(t *testing.T) {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
+	f, tf, _, _ := cmdtesting.NewAPIFactory()
 	tf.UnstructuredClient = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Group: "testgroup", Version: "v1"},
 		NegotiatedSerializer: unstructuredSerializer,
@@ -569,12 +559,13 @@ func TestAnnotateLocal(t *testing.T) {
 		}),
 	}
 	tf.Namespace = "test"
-	tf.ClientConfigVal = defaultClientConfig()
+	tf.ClientConfig = defaultClientConfig()
 
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdAnnotate(tf, buf)
-	options := &AnnotateOptions{local: true}
-	options.Filenames = []string{"../../../test/e2e/testing-manifests/statefulset/cassandra/controller.yaml"}
+	cmd := NewCmdAnnotate(f, buf)
+	cmd.Flags().Set("local", "true")
+	options := &AnnotateOptions{}
+	options.Filenames = []string{"../../../examples/storage/cassandra/cassandra-controller.yaml"}
 	args := []string{"a=b"}
 	if err := options.Complete(buf, cmd, args); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -582,7 +573,7 @@ func TestAnnotateLocal(t *testing.T) {
 	if err := options.Validate(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if err := options.RunAnnotate(tf, cmd); err != nil {
+	if err := options.RunAnnotate(f, cmd); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -590,10 +581,8 @@ func TestAnnotateLocal(t *testing.T) {
 func TestAnnotateMultipleObjects(t *testing.T) {
 	pods, _, _ := testData()
 
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
+	f, tf, codec, _ := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.UnstructuredClient = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Group: "testgroup", Version: "v1"},
 		NegotiatedSerializer: unstructuredSerializer,
@@ -624,12 +613,13 @@ func TestAnnotateMultipleObjects(t *testing.T) {
 		}),
 	}
 	tf.Namespace = "test"
-	tf.ClientConfigVal = defaultClientConfig()
+	tf.ClientConfig = defaultClientConfig()
 
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdAnnotate(tf, buf)
+	cmd := NewCmdAnnotate(f, buf)
 	cmd.SetOutput(buf)
-	options := &AnnotateOptions{all: true}
+	cmd.Flags().Set("all", "true")
+	options := &AnnotateOptions{}
 	args := []string{"pods", "a=b", "c-"}
 	if err := options.Complete(buf, cmd, args); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -637,7 +627,7 @@ func TestAnnotateMultipleObjects(t *testing.T) {
 	if err := options.Validate(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if err := options.RunAnnotate(tf, cmd); err != nil {
+	if err := options.RunAnnotate(f, cmd); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

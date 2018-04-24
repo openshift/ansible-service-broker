@@ -36,8 +36,8 @@ import (
 	"k8s.io/kubernetes/pkg/util/mount"
 	"k8s.io/kubernetes/pkg/volume"
 	volumetesting "k8s.io/kubernetes/pkg/volume/testing"
-	"k8s.io/kubernetes/pkg/volume/util"
 	"k8s.io/kubernetes/pkg/volume/util/operationexecutor"
+	"k8s.io/kubernetes/pkg/volume/util/volumehelper"
 )
 
 const (
@@ -149,7 +149,7 @@ func Test_Run_Positive_VolumeAttachAndMount(t *testing.T) {
 	}
 
 	volumeSpec := &volume.Spec{Volume: &pod.Spec.Volumes[0]}
-	podName := util.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	generatedVolumeName, err := dsw.AddPodToVolume(
 		podName, pod, volumeSpec, volumeSpec.Name(), "" /* volumeGidValue */)
 
@@ -227,7 +227,7 @@ func Test_Run_Positive_VolumeMountControllerAttachEnabled(t *testing.T) {
 	}
 
 	volumeSpec := &volume.Spec{Volume: &pod.Spec.Volumes[0]}
-	podName := util.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	generatedVolumeName, err := dsw.AddPodToVolume(
 		podName, pod, volumeSpec, volumeSpec.Name(), "" /* volumeGidValue */)
 	dsw.MarkVolumesReportedInUse([]v1.UniqueVolumeName{generatedVolumeName})
@@ -306,7 +306,7 @@ func Test_Run_Positive_VolumeAttachMountUnmountDetach(t *testing.T) {
 	}
 
 	volumeSpec := &volume.Spec{Volume: &pod.Spec.Volumes[0]}
-	podName := util.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	generatedVolumeName, err := dsw.AddPodToVolume(
 		podName, pod, volumeSpec, volumeSpec.Name(), "" /* volumeGidValue */)
 
@@ -396,7 +396,7 @@ func Test_Run_Positive_VolumeUnmountControllerAttachEnabled(t *testing.T) {
 	}
 
 	volumeSpec := &volume.Spec{Volume: &pod.Spec.Volumes[0]}
-	podName := util.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	generatedVolumeName, err := dsw.AddPodToVolume(
 		podName, pod, volumeSpec, volumeSpec.Name(), "" /* volumeGidValue */)
 
@@ -491,7 +491,7 @@ func Test_Run_Positive_VolumeAttachAndMap(t *testing.T) {
 	volumeSpec := &volume.Spec{
 		PersistentVolume: gcepv,
 	}
-	podName := util.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	generatedVolumeName, err := dsw.AddPodToVolume(
 		podName, pod, volumeSpec, volumeSpec.Name(), "" /* volumeGidValue */)
 
@@ -582,7 +582,7 @@ func Test_Run_Positive_BlockVolumeMapControllerAttachEnabled(t *testing.T) {
 	volumeSpec := &volume.Spec{
 		PersistentVolume: gcepv,
 	}
-	podName := util.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	generatedVolumeName, err := dsw.AddPodToVolume(
 		podName, pod, volumeSpec, volumeSpec.Name(), "" /* volumeGidValue */)
 	dsw.MarkVolumesReportedInUse([]v1.UniqueVolumeName{generatedVolumeName})
@@ -674,7 +674,7 @@ func Test_Run_Positive_BlockVolumeAttachMapUnmapDetach(t *testing.T) {
 	volumeSpec := &volume.Spec{
 		PersistentVolume: gcepv,
 	}
-	podName := util.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	generatedVolumeName, err := dsw.AddPodToVolume(
 		podName, pod, volumeSpec, volumeSpec.Name(), "" /* volumeGidValue */)
 
@@ -776,7 +776,7 @@ func Test_Run_Positive_VolumeUnmapControllerAttachEnabled(t *testing.T) {
 	volumeSpec := &volume.Spec{
 		PersistentVolume: gcepv,
 	}
-	podName := util.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	generatedVolumeName, err := dsw.AddPodToVolume(
 		podName, pod, volumeSpec, volumeSpec.Name(), "" /* volumeGidValue */)
 
@@ -835,8 +835,6 @@ func Test_GenerateMapVolumeFunc_Plugin_Not_Found(t *testing.T) {
 		},
 	}
 
-	// Enable BlockVolume feature gate
-	utilfeature.DefaultFeatureGate.Set("BlockVolume=true")
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			volumePluginMgr := &volume.VolumePluginMgr{}
@@ -856,20 +854,14 @@ func Test_GenerateMapVolumeFunc_Plugin_Not_Found(t *testing.T) {
 				},
 				Spec: v1.PodSpec{},
 			}
-			volumeMode := v1.PersistentVolumeBlock
-			tmpSpec := &volume.Spec{PersistentVolume: &v1.PersistentVolume{Spec: v1.PersistentVolumeSpec{VolumeMode: &volumeMode}}}
-			volumeToMount := operationexecutor.VolumeToMount{
-				Pod:        pod,
-				VolumeSpec: tmpSpec}
-			err := oex.MountVolume(waitForAttachTimeout, volumeToMount, asw, false)
+			volumeToMount := operationexecutor.VolumeToMount{Pod: pod, VolumeSpec: &volume.Spec{}}
+			err := oex.MapVolume(waitForAttachTimeout, volumeToMount, asw)
 			// Assert
 			if assert.Error(t, err) {
 				assert.Contains(t, err.Error(), tc.expectedErrMsg)
 			}
 		})
 	}
-	// Rollback feature gate to false.
-	utilfeature.DefaultFeatureGate.Set("BlockVolume=false")
 }
 
 func Test_GenerateUnmapVolumeFunc_Plugin_Not_Found(t *testing.T) {
@@ -890,8 +882,6 @@ func Test_GenerateUnmapVolumeFunc_Plugin_Not_Found(t *testing.T) {
 		},
 	}
 
-	// Enable BlockVolume feature gate
-	utilfeature.DefaultFeatureGate.Set("BlockVolume=true")
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			volumePluginMgr := &volume.VolumePluginMgr{}
@@ -903,20 +893,14 @@ func Test_GenerateUnmapVolumeFunc_Plugin_Not_Found(t *testing.T) {
 				nil,   /* fakeRecorder */
 				false, /* checkNodeCapabilitiesBeforeMount */
 				nil))
-			volumeMode := v1.PersistentVolumeBlock
-			tmpSpec := &volume.Spec{PersistentVolume: &v1.PersistentVolume{Spec: v1.PersistentVolumeSpec{VolumeMode: &volumeMode}}}
-			volumeToUnmount := operationexecutor.MountedVolume{
-				PluginName: "fake-file-plugin",
-				VolumeSpec: tmpSpec}
-			err := oex.UnmountVolume(volumeToUnmount, asw, "" /* podsDir */)
+			volumeToUnmount := operationexecutor.MountedVolume{PluginName: "fake-file-plugin"}
+			err := oex.UnmapVolume(volumeToUnmount, asw)
 			// Assert
 			if assert.Error(t, err) {
 				assert.Contains(t, err.Error(), tc.expectedErrMsg)
 			}
 		})
 	}
-	// Rollback feature gate to false.
-	utilfeature.DefaultFeatureGate.Set("BlockVolume=false")
 }
 
 func Test_GenerateUnmapDeviceFunc_Plugin_Not_Found(t *testing.T) {
@@ -928,17 +912,15 @@ func Test_GenerateUnmapDeviceFunc_Plugin_Not_Found(t *testing.T) {
 		"volumePlugin is nil": {
 			volumePlugins:  []volume.VolumePlugin{},
 			expectErr:      true,
-			expectedErrMsg: "UnmapDevice.FindMapperPluginByName failed",
+			expectedErrMsg: "UnmapDevice.FindMapperPluginBySpec failed",
 		},
 		"blockVolumePlugin is nil": {
 			volumePlugins:  volumetesting.NewFakeFileVolumePlugin(),
 			expectErr:      true,
-			expectedErrMsg: "UnmapDevice.FindMapperPluginByName failed to find BlockVolumeMapper plugin. Volume plugin is nil.",
+			expectedErrMsg: "UnmapDevice.FindMapperPluginBySpec failed to find BlockVolumeMapper plugin. Volume plugin is nil.",
 		},
 	}
 
-	// Enable BlockVolume feature gate
-	utilfeature.DefaultFeatureGate.Set("BlockVolume=true")
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			volumePluginMgr := &volume.VolumePluginMgr{}
@@ -951,18 +933,14 @@ func Test_GenerateUnmapDeviceFunc_Plugin_Not_Found(t *testing.T) {
 				false, /* checkNodeCapabilitiesBeforeMount */
 				nil))
 			var mounter mount.Interface
-			volumeMode := v1.PersistentVolumeBlock
-			tmpSpec := &volume.Spec{PersistentVolume: &v1.PersistentVolume{Spec: v1.PersistentVolumeSpec{VolumeMode: &volumeMode}}}
-			deviceToDetach := operationexecutor.AttachedVolume{VolumeSpec: tmpSpec, PluginName: "fake-file-plugin"}
-			err := oex.UnmountDevice(deviceToDetach, asw, mounter)
+			deviceToDetach := operationexecutor.AttachedVolume{VolumeSpec: &volume.Spec{}}
+			err := oex.UnmapDevice(deviceToDetach, asw, mounter)
 			// Assert
 			if assert.Error(t, err) {
 				assert.Contains(t, err.Error(), tc.expectedErrMsg)
 			}
 		})
 	}
-	// Rollback feature gate to false.
-	utilfeature.DefaultFeatureGate.Set("BlockVolume=false")
 }
 
 func waitForMount(
@@ -971,7 +949,7 @@ func waitForMount(
 	volumeName v1.UniqueVolumeName,
 	asw cache.ActualStateOfWorld) {
 	err := retryWithExponentialBackOff(
-		time.Duration(500*time.Millisecond),
+		time.Duration(5*time.Millisecond),
 		func() (bool, error) {
 			mountedVolumes := asw.GetMountedVolumes()
 			for _, mountedVolume := range mountedVolumes {
@@ -995,7 +973,7 @@ func waitForDetach(
 	volumeName v1.UniqueVolumeName,
 	asw cache.ActualStateOfWorld) {
 	err := retryWithExponentialBackOff(
-		time.Duration(500*time.Millisecond),
+		time.Duration(5*time.Millisecond),
 		func() (bool, error) {
 			if asw.VolumeExists(volumeName) {
 				return false, nil

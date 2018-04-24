@@ -34,7 +34,6 @@ filegroup(
     srcs = [
         ":package-srcs",
         "//staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/install:all-srcs",
-        "//staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1:all-srcs",
         "//staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1:all-srcs",
         "//staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/validation:all-srcs",
     ],

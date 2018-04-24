@@ -26,18 +26,19 @@ import (
 	"k8s.io/kubernetes/pkg/kubectl/cmd/templates"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/kubectl/explain"
+	"k8s.io/kubernetes/pkg/kubectl/scheme"
 	"k8s.io/kubernetes/pkg/kubectl/util/i18n"
 )
 
 var (
 	explainLong = templates.LongDesc(`
 		List the fields for supported resources
-
+		
 		This command describes the fields associated with each supported API resource.
-		Fields are identified via a simple JSONPath identifier:
-
+		Fields are identified via a simple JSONPath identifier: 
+		
 			<type>.<fieldName>[.<fieldName>]
-
+			
 		Add the --recursive flag to display all of the fields at once without descriptions.
 		Information about each field is retrieved from the server in OpenAPI format.`)
 
@@ -52,8 +53,7 @@ var (
 // NewCmdExplain returns a cobra command for swagger docs
 func NewCmdExplain(f cmdutil.Factory, out, cmdErr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "explain RESOURCE",
-		DisableFlagsInUseLine: true,
+		Use:     "explain RESOURCE",
 		Short:   i18n.T("Documentation of resources"),
 		Long:    explainLong + "\n\n" + cmdutil.ValidResourceTypeList(f),
 		Example: explainExamples,
@@ -80,6 +80,7 @@ func RunExplain(f cmdutil.Factory, out, cmdErr io.Writer, cmd *cobra.Command, ar
 
 	recursive := cmdutil.GetFlagBool(cmd, "recursive")
 	apiVersionString := cmdutil.GetFlagString(cmd, "api-version")
+	apiVersion := schema.GroupVersion{}
 
 	mapper, _ := f.Object()
 	// TODO: After we figured out the new syntax to separate group and resource, allow
@@ -103,13 +104,20 @@ func RunExplain(f cmdutil.Factory, out, cmdErr io.Writer, cmd *cobra.Command, ar
 		}
 	}
 
-	if len(apiVersionString) != 0 {
-		apiVersion, err := schema.ParseGroupVersion(apiVersionString)
+	if len(apiVersionString) == 0 {
+		groupMeta, err := scheme.Registry.Group(gvk.Group)
 		if err != nil {
 			return err
 		}
-		gvk = apiVersion.WithKind(gvk.Kind)
+		apiVersion = groupMeta.GroupVersion
+
+	} else {
+		apiVersion, err = schema.ParseGroupVersion(apiVersionString)
+		if err != nil {
+			return err
+		}
 	}
+	gvk = apiVersion.WithKind(gvk.Kind)
 
 	resources, err := f.OpenAPISchema()
 	if err != nil {
@@ -121,5 +129,5 @@ func RunExplain(f cmdutil.Factory, out, cmdErr io.Writer, cmd *cobra.Command, ar
 		return fmt.Errorf("Couldn't find resource for %q", gvk)
 	}
 
-	return explain.PrintModelDescription(fieldsPath, out, schema, gvk, recursive)
+	return explain.PrintModelDescription(fieldsPath, out, schema, recursive)
 }

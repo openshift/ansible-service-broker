@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	azs "github.com/Azure/azure-sdk-for-go/storage"
-	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/golang/glog"
 )
 
@@ -28,33 +27,9 @@ const (
 	useHTTPS = true
 )
 
-// FileClient is the interface for creating file shares, interface for test
-// injection.
-type FileClient interface {
-	createFileShare(accountName, accountKey, name string, sizeGiB int) error
-	deleteFileShare(accountName, accountKey, name string) error
-	resizeFileShare(accountName, accountKey, name string, sizeGiB int) error
-}
-
 // create file share
-func (az *Cloud) createFileShare(accountName, accountKey, name string, sizeGiB int) error {
-	return az.FileClient.createFileShare(accountName, accountKey, name, sizeGiB)
-}
-
-func (az *Cloud) deleteFileShare(accountName, accountKey, name string) error {
-	return az.FileClient.deleteFileShare(accountName, accountKey, name)
-}
-
-func (az *Cloud) resizeFileShare(accountName, accountKey, name string, sizeGiB int) error {
-	return az.FileClient.resizeFileShare(accountName, accountKey, name, sizeGiB)
-}
-
-type azureFileClient struct {
-	env azure.Environment
-}
-
-func (f *azureFileClient) createFileShare(accountName, accountKey, name string, sizeGiB int) error {
-	fileClient, err := f.getFileSvcClient(accountName, accountKey)
+func (az *Cloud) createFileShare(accountName, accountKey, name string, sizeGB int) error {
+	fileClient, err := az.getFileSvcClient(accountName, accountKey)
 	if err != nil {
 		return err
 	}
@@ -67,7 +42,7 @@ func (f *azureFileClient) createFileShare(accountName, accountKey, name string, 
 	if err = share.Create(nil); err != nil {
 		return fmt.Errorf("failed to create file share, err: %v", err)
 	}
-	share.Properties.Quota = sizeGiB
+	share.Properties.Quota = sizeGB
 	if err = share.SetProperties(nil); err != nil {
 		if err := share.Delete(nil); err != nil {
 			glog.Errorf("Error deleting share: %v", err)
@@ -78,38 +53,20 @@ func (f *azureFileClient) createFileShare(accountName, accountKey, name string, 
 }
 
 // delete a file share
-func (f *azureFileClient) deleteFileShare(accountName, accountKey, name string) error {
-	fileClient, err := f.getFileSvcClient(accountName, accountKey)
-	if err != nil {
-		return err
+func (az *Cloud) deleteFileShare(accountName, accountKey, name string) error {
+	fileClient, err := az.getFileSvcClient(accountName, accountKey)
+	if err == nil {
+		share := fileClient.GetShareReference(name)
+		return share.Delete(nil)
 	}
-	return fileClient.GetShareReference(name).Delete(nil)
-}
-
-func (f *azureFileClient) resizeFileShare(accountName, accountKey, name string, sizeGiB int) error {
-	fileClient, err := f.getFileSvcClient(accountName, accountKey)
-	if err != nil {
-		return err
-	}
-	share := fileClient.GetShareReference(name)
-	if share.Properties.Quota >= sizeGiB {
-		glog.Warningf("file share size(%dGi) is already greater or equal than requested size(%dGi), accountName: %s, shareName: %s",
-			share.Properties.Quota, sizeGiB, accountName, name)
-		return nil
-	}
-	share.Properties.Quota = sizeGiB
-	if err = share.SetProperties(nil); err != nil {
-		return fmt.Errorf("failed to set quota on file share %s, err: %v", name, err)
-	}
-	glog.V(4).Infof("resize file share completed, accountName: %s, shareName: %s, sizeGiB: %d", accountName, name, sizeGiB)
 	return nil
 }
 
-func (f *azureFileClient) getFileSvcClient(accountName, accountKey string) (*azs.FileServiceClient, error) {
-	fileClient, err := azs.NewClient(accountName, accountKey, f.env.StorageEndpointSuffix, azs.DefaultAPIVersion, useHTTPS)
+func (az *Cloud) getFileSvcClient(accountName, accountKey string) (*azs.FileServiceClient, error) {
+	client, err := azs.NewClient(accountName, accountKey, az.Environment.StorageEndpointSuffix, azs.DefaultAPIVersion, useHTTPS)
 	if err != nil {
 		return nil, fmt.Errorf("error creating azure client: %v", err)
 	}
-	fc := fileClient.GetFileService()
-	return &fc, nil
+	f := client.GetFileService()
+	return &f, nil
 }

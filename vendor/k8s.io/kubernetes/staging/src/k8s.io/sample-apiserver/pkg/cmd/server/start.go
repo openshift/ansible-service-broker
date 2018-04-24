@@ -24,7 +24,6 @@ import (
 	"github.com/spf13/cobra"
 
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apiserver/pkg/admission"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/sample-apiserver/pkg/admission/plugin/banflunder"
@@ -39,15 +38,16 @@ const defaultEtcdPathPrefix = "/registry/wardle.kubernetes.io"
 
 type WardleServerOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
+	Admission          *genericoptions.AdmissionOptions
 
-	SharedInformerFactory informers.SharedInformerFactory
-	StdOut                io.Writer
-	StdErr                io.Writer
+	StdOut io.Writer
+	StdErr io.Writer
 }
 
 func NewWardleServerOptions(out, errOut io.Writer) *WardleServerOptions {
 	o := &WardleServerOptions{
 		RecommendedOptions: genericoptions.NewRecommendedOptions(defaultEtcdPathPrefix, apiserver.Codecs.LegacyCodec(v1alpha1.SchemeGroupVersion)),
+		Admission:          genericoptions.NewAdmissionOptions(),
 
 		StdOut: out,
 		StdErr: errOut,
@@ -56,10 +56,10 @@ func NewWardleServerOptions(out, errOut io.Writer) *WardleServerOptions {
 	return o
 }
 
-// NewCommandStartWardleServer provides a CLI handler for 'start master' command
-// with a default WardleServerOptions.
-func NewCommandStartWardleServer(defaults *WardleServerOptions, stopCh <-chan struct{}) *cobra.Command {
-	o := *defaults
+// NewCommandStartMaster provides a CLI handler for 'start master' command
+func NewCommandStartWardleServer(out, errOut io.Writer, stopCh <-chan struct{}) *cobra.Command {
+	o := NewWardleServerOptions(out, errOut)
+
 	cmd := &cobra.Command{
 		Short: "Launch a wardle API server",
 		Long:  "Launch a wardle API server",
@@ -79,6 +79,7 @@ func NewCommandStartWardleServer(defaults *WardleServerOptions, stopCh <-chan st
 
 	flags := cmd.Flags()
 	o.RecommendedOptions.AddFlags(flags)
+	o.Admission.AddFlags(flags)
 
 	return cmd
 }
@@ -86,6 +87,7 @@ func NewCommandStartWardleServer(defaults *WardleServerOptions, stopCh <-chan st
 func (o WardleServerOptions) Validate(args []string) error {
 	errors := []error{}
 	errors = append(errors, o.RecommendedOptions.Validate()...)
+	errors = append(errors, o.Admission.Validate()...)
 	return utilerrors.NewAggregate(errors)
 }
 
@@ -93,27 +95,31 @@ func (o *WardleServerOptions) Complete() error {
 	return nil
 }
 
-func (o *WardleServerOptions) Config() (*apiserver.Config, error) {
+func (o WardleServerOptions) Config() (*apiserver.Config, error) {
 	// register admission plugins
-	banflunder.Register(o.RecommendedOptions.Admission.Plugins)
+	banflunder.Register(o.Admission.Plugins)
 
 	// TODO have a "real" external address
 	if err := o.RecommendedOptions.SecureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
 		return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
 	}
 
-	o.RecommendedOptions.ExtraAdmissionInitializers = func(c *genericapiserver.RecommendedConfig) ([]admission.PluginInitializer, error) {
-		client, err := clientset.NewForConfig(c.LoopbackClientConfig)
-		if err != nil {
-			return nil, err
-		}
-		informerFactory := informers.NewSharedInformerFactory(client, c.LoopbackClientConfig.Timeout)
-		o.SharedInformerFactory = informerFactory
-		return []admission.PluginInitializer{wardleinitializer.New(informerFactory)}, nil
+	serverConfig := genericapiserver.NewRecommendedConfig(apiserver.Codecs)
+	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
+		return nil, err
 	}
 
-	serverConfig := genericapiserver.NewRecommendedConfig(apiserver.Codecs)
-	if err := o.RecommendedOptions.ApplyTo(serverConfig, apiserver.Scheme); err != nil {
+	client, err := clientset.NewForConfig(serverConfig.LoopbackClientConfig)
+	if err != nil {
+		return nil, err
+	}
+	informerFactory := informers.NewSharedInformerFactory(client, serverConfig.LoopbackClientConfig.Timeout)
+	admissionInitializer, err := wardleinitializer.New(informerFactory)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := o.Admission.ApplyTo(&serverConfig.Config, serverConfig.SharedInformerFactory, serverConfig.ClientConfig, apiserver.Scheme, admissionInitializer); err != nil {
 		return nil, err
 	}
 

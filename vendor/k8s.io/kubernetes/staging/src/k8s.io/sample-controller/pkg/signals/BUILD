@@ -4,38 +4,9 @@ go_library(
     name = "go_default_library",
     srcs = [
         "signal.go",
+        "signal_posix.go",
     ] + select({
-        "@io_bazel_rules_go//go/platform:android": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:darwin": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:dragonfly": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:freebsd": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:linux": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:nacl": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:netbsd": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:openbsd": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:plan9": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:solaris": [
-            "signal_posix.go",
-        ],
-        "@io_bazel_rules_go//go/platform:windows": [
+        "@io_bazel_rules_go//go/platform:windows_amd64": [
             "signal_windows.go",
         ],
         "//conditions:default": [],

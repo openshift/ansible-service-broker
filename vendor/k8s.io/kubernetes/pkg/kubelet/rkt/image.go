@@ -35,7 +35,6 @@ import (
 	"golang.org/x/net/context"
 	"k8s.io/api/core/v1"
 	"k8s.io/kubernetes/pkg/credentialprovider"
-	credentialprovidersecrets "k8s.io/kubernetes/pkg/credentialprovider/secrets"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/util/parsers"
 )
@@ -55,7 +54,7 @@ func (r *Runtime) PullImage(image kubecontainer.ImageSpec, pullSecrets []v1.Secr
 		return "", err
 	}
 
-	keyring, err := credentialprovidersecrets.MakeDockerKeyring(pullSecrets, r.dockerKeyring)
+	keyring, err := credentialprovider.MakeDockerKeyring(pullSecrets, r.dockerKeyring)
 	if err != nil {
 		return "", err
 	}

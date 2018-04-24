@@ -73,14 +73,7 @@ func (p *IntegrationTestNodePreparer) PrepareNodes() error {
 		},
 	}
 	for i := 0; i < numNodes; i++ {
-		var err error
-		for retry := 0; retry < retries; retry++ {
-			_, err = p.client.CoreV1().Nodes().Create(baseNode)
-			if err == nil || !testutils.IsRetryableAPIError(err) {
-				break
-			}
-		}
-		if err != nil {
+		if _, err := p.client.CoreV1().Nodes().Create(baseNode); err != nil {
 			glog.Fatalf("Error creating node: %v", err)
 		}
 	}

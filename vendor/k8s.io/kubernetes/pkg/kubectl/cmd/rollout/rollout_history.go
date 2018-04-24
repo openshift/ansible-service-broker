@@ -48,8 +48,7 @@ func NewCmdRolloutHistory(f cmdutil.Factory, out io.Writer) *cobra.Command {
 	argAliases := kubectl.ResourceAliases(validArgs)
 
 	cmd := &cobra.Command{
-		Use: "history (TYPE NAME | TYPE/NAME) [flags]",
-		DisableFlagsInUseLine: true,
+		Use:     "history (TYPE NAME | TYPE/NAME) [flags]",
 		Short:   i18n.T("View rollout history"),
 		Long:    history_long,
 		Example: history_example,

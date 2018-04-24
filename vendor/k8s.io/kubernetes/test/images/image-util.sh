@@ -97,7 +97,7 @@ push() {
   fi
   for arch in ${archs}; do
     TAG=$(<${IMAGE}/VERSION)
-    docker push ${REGISTRY}/${IMAGE}-${arch}:${TAG}
+    gcloud docker -- push ${REGISTRY}/${IMAGE}-${arch}:${TAG}
   done
 }
 

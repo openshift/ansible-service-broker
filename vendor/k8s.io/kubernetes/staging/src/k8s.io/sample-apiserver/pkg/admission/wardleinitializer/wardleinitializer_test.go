@@ -31,8 +31,10 @@ import (
 func TestWantsInternalWardleInformerFactory(t *testing.T) {
 	cs := &fake.Clientset{}
 	sf := informers.NewSharedInformerFactory(cs, time.Duration(1)*time.Second)
-	target := wardleinitializer.New(sf)
-
+	target, err := wardleinitializer.New(sf)
+	if err != nil {
+		t.Fatalf("expected to create an instance of initializer but got an error = %s", err.Error())
+	}
 	wantWardleInformerFactory := &wantInternalWardleInformerFactory{}
 	target.Initialize(wantWardleInformerFactory)
 	if wantWardleInformerFactory.sf != sf {

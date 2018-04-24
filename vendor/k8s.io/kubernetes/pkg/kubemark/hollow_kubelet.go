@@ -105,12 +105,11 @@ func GetHollowKubeletConfig(
 	podsPerCore int) (*options.KubeletFlags, *kubeletconfig.KubeletConfiguration) {
 
 	testRootDir := utils.MakeTempDirOrDie("hollow-kubelet.", "")
-	podFilePath := utils.MakeTempDirOrDie("static-pods", testRootDir)
+	manifestFilePath := utils.MakeTempDirOrDie("manifest", testRootDir)
 	glog.Infof("Using %s as root dir for hollow-kubelet", testRootDir)
 
 	// Flags struct
 	f := options.NewKubeletFlags()
-	f.EnableServer = true
 	f.RootDirectory = testRootDir
 	f.HostnameOverride = nodeName
 	f.MinimumGCAge = metav1.Duration{Duration: 1 * time.Minute}
@@ -125,11 +124,11 @@ func GetHollowKubeletConfig(
 		panic(err)
 	}
 
-	c.StaticPodURL = ""
+	c.ManifestURL = ""
 	c.Address = "0.0.0.0" /* bind address */
 	c.Port = int32(kubeletPort)
 	c.ReadOnlyPort = int32(kubeletReadOnlyPort)
-	c.StaticPodPath = podFilePath
+	c.PodManifestPath = manifestFilePath
 	c.FileCheckFrequency.Duration = 20 * time.Second
 	c.HTTPCheckFrequency.Duration = 20 * time.Second
 	c.NodeStatusUpdateFrequency.Duration = 10 * time.Second
@@ -145,6 +144,7 @@ func GetHollowKubeletConfig(
 	c.CPUCFSQuota = true
 	c.EnableControllerAttachDetach = false
 	c.EnableDebuggingHandlers = true
+	c.EnableServer = true
 	c.CgroupsPerQOS = false
 	// hairpin-veth is used to allow hairpin packets. Note that this deviates from
 	// what the "real" kubelet currently does, because there's no way to

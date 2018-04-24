@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
-	"k8s.io/kubernetes/pkg/util/mount"
 )
 
 func TestMakeMountsWindows(t *testing.T) {
@@ -65,8 +64,7 @@ func TestMakeMountsWindows(t *testing.T) {
 		},
 	}
 
-	fm := &mount.FakeMounter{}
-	mounts, _, _ := makeMounts(&pod, "/pod", &container, "fakepodname", "", "", podVolumes, fm)
+	mounts, _ := makeMounts(&pod, "/pod", &container, "fakepodname", "", "", podVolumes)
 
 	expectedMounts := []kubecontainer.Mount{
 		{

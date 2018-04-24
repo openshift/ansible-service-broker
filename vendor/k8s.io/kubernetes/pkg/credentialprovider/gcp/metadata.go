@@ -39,6 +39,7 @@ const (
 	metadataEmail            = metadataUrl + "instance/service-accounts/default/email"
 	storageScopePrefix       = "https://www.googleapis.com/auth/devstorage"
 	cloudPlatformScopePrefix = "https://www.googleapis.com/auth/cloud-platform"
+	googleProductName        = "Google"
 	defaultServiceAccount    = "default/"
 )
 
@@ -120,8 +121,7 @@ func onGCEVM() bool {
 		glog.V(2).Infof("Error while reading product_name: %v", err)
 		return false
 	}
-	name := strings.TrimSpace(string(data))
-	return name == "Google" || name == "Google Compute Engine"
+	return strings.Contains(string(data), googleProductName)
 }
 
 // Enabled implements DockerConfigProvider for all of the Google implementations.

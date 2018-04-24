@@ -19,7 +19,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"k8s.io/apiserver/pkg/util/flag"
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,6 +31,7 @@ import (
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/kubectl/util/i18n"
 
+	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 )
 
@@ -141,7 +141,7 @@ __kubectl_get_containers()
 {
     local template
     template="{{ range .spec.containers  }}{{ .name }} {{ end }}"
-    __kubectl_debug "${FUNCNAME} nouns are ${nouns[*]}"
+    __debug "${FUNCNAME} nouns are ${nouns[*]}"
 
     local len="${#nouns[@]}"
     if [[ ${len} -ne 1 ]]; then
@@ -212,10 +212,6 @@ var (
 	}
 )
 
-func NewDefaultKubectlCommand() *cobra.Command {
-	return NewKubectlCommand(cmdutil.NewFactory(nil), os.Stdin, os.Stdout, os.Stderr)
-}
-
 // NewKubectlCommand creates the `kubectl` command and its nested children.
 func NewKubectlCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 	// Parent command to which all subcommands are added.
@@ -225,8 +221,7 @@ func NewKubectlCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cob
 		Long: templates.LongDesc(`
       kubectl controls the Kubernetes cluster manager.
 
-      Find more information at:
-            https://kubernetes.io/docs/reference/kubectl/overview/`),
+      Find more information at https://github.com/kubernetes/kubernetes.`),
 		Run: runHelp,
 		BashCompletionFunction: bashCompletionFunc,
 	}
@@ -269,7 +264,7 @@ func NewKubectlCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cob
 			Commands: []*cobra.Command{
 				rollout.NewCmdRollout(f, out, err),
 				NewCmdRollingUpdate(f, out),
-				NewCmdScale(f, out, err),
+				NewCmdScale(f, out),
 				NewCmdAutoscale(f, out),
 			},
 		},
@@ -289,7 +284,7 @@ func NewKubectlCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cob
 			Message: "Troubleshooting and Debugging Commands:",
 			Commands: []*cobra.Command{
 				NewCmdDescribe(f, out, err),
-				NewCmdLogs(f, out, err),
+				NewCmdLogs(f, out),
 				NewCmdAttach(f, in, out, err),
 				NewCmdExec(f, in, out, err),
 				NewCmdPortForward(f, out, err),
@@ -341,7 +336,7 @@ func NewKubectlCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cob
 	}
 
 	cmds.AddCommand(alpha)
-	cmds.AddCommand(cmdconfig.NewCmdConfig(f, clientcmd.NewDefaultPathOptions(), out, err))
+	cmds.AddCommand(cmdconfig.NewCmdConfig(clientcmd.NewDefaultPathOptions(), out, err))
 	cmds.AddCommand(NewCmdPlugin(f, in, out, err))
 	cmds.AddCommand(NewCmdVersion(f, out))
 	cmds.AddCommand(NewCmdApiVersions(f, out))
@@ -354,8 +349,8 @@ func runHelp(cmd *cobra.Command, args []string) {
 	cmd.Help()
 }
 
-func printDeprecationWarning(errOut io.Writer, command, alias string) {
-	fmt.Fprintf(errOut, "%s is DEPRECATED and will be removed in a future version. Use %s instead.\n", alias, command)
+func printDeprecationWarning(command, alias string) {
+	glog.Warningf("%s is DEPRECATED and will be removed in a future version. Use %s instead.", alias, command)
 }
 
 // deprecatedAlias is intended to be used to create a "wrapper" command around
@@ -371,4 +366,14 @@ func deprecatedAlias(deprecatedVersion string, cmd *cobra.Command) *cobra.Comman
 	cmd.Short = fmt.Sprintf("%s. This command is deprecated, use %q instead", cmd.Short, originalName)
 	cmd.Hidden = true
 	return cmd
+}
+
+// deprecated is similar to deprecatedAlias, but it is used for deprecations
+// that are not simple aliases; this command is actually a different
+// (deprecated) codepath.
+func deprecated(baseName, to string, parent, cmd *cobra.Command) string {
+	cmd.Long = fmt.Sprintf("Deprecated: all functionality can be found in \"%s %s\"", baseName, to)
+	cmd.Short = fmt.Sprintf("Deprecated: use %s", to)
+	parent.AddCommand(cmd)
+	return cmd.Name()
 }

@@ -32,7 +32,6 @@ var (
 type LogEntry struct {
 	LogName     string
 	TextPayload string
-	Location    string
 	JSONPayload map[string]interface{}
 }
 

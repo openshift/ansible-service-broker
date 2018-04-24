@@ -30,7 +30,6 @@ import (
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"k8s.io/api/core/v1"
@@ -44,8 +43,8 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 	storageutil "k8s.io/kubernetes/pkg/apis/storage/v1/util"
+	kubeletapis "k8s.io/kubernetes/pkg/kubelet/apis"
 	"k8s.io/kubernetes/test/e2e/framework"
-	"k8s.io/kubernetes/test/e2e/storage/utils"
 )
 
 type storageClassTest struct {
@@ -56,7 +55,6 @@ type storageClassTest struct {
 	claimSize      string
 	expectedSize   string
 	pvCheck        func(volume *v1.PersistentVolume) error
-	nodeName       string
 }
 
 const (
@@ -102,11 +100,11 @@ func testDynamicProvisioning(t storageClassTest, client clientset.Interface, cla
 	// Check sizes
 	expectedCapacity := resource.MustParse(t.expectedSize)
 	pvCapacity := pv.Spec.Capacity[v1.ResourceName(v1.ResourceStorage)]
-	Expect(pvCapacity.Value()).To(Equal(expectedCapacity.Value()), "pvCapacity is not equal to expectedCapacity")
+	Expect(pvCapacity.Value()).To(BeNumerically(">=", expectedCapacity.Value()), "pvCapacity is not greater than or equal to expectedCapacity")
 
 	requestedCapacity := resource.MustParse(t.claimSize)
 	claimCapacity := claim.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
-	Expect(claimCapacity.Value()).To(Equal(requestedCapacity.Value()), "claimCapacity is not equal to requestedCapacity")
+	Expect(claimCapacity.Value()).To(BeNumerically(">=", requestedCapacity.Value()), "claimCapacity is not greater than or equal to requestedCapacity")
 
 	// Check PV properties
 	By("checking the PV")
@@ -140,10 +138,10 @@ func testDynamicProvisioning(t storageClassTest, client clientset.Interface, cla
 		// Get entry, get mount options at 6th word, replace brackets with commas
 		command += fmt.Sprintf(" && ( mount | grep 'on /mnt/test' | awk '{print $6}' | sed 's/^(/,/; s/)$/,/' | grep -q ,%s, )", option)
 	}
-	runInPodWithVolume(client, claim.Namespace, claim.Name, t.nodeName, command)
+	runInPodWithVolume(client, claim.Namespace, claim.Name, command)
 
 	By("checking the created volume is readable and retains data")
-	runInPodWithVolume(client, claim.Namespace, claim.Name, t.nodeName, "grep 'hello world' /mnt/test/data")
+	runInPodWithVolume(client, claim.Namespace, claim.Name, "grep 'hello world' /mnt/test/data")
 
 	By(fmt.Sprintf("deleting claim %q/%q", claim.Namespace, claim.Name))
 	framework.ExpectNoError(client.CoreV1().PersistentVolumeClaims(claim.Namespace).Delete(claim.Name, nil))
@@ -231,7 +229,7 @@ func checkGCEPD(volume *v1.PersistentVolume, volumeType string) error {
 	return nil
 }
 
-var _ = utils.SIGDescribe("Dynamic Provisioning", func() {
+var _ = SIGDescribe("Dynamic Provisioning", func() {
 	f := framework.NewDefaultFramework("volume-provisioning")
 
 	// filled in BeforeEach
@@ -251,140 +249,140 @@ var _ = utils.SIGDescribe("Dynamic Provisioning", func() {
 			// that can be used to persist data among pods.
 			tests := []storageClassTest{
 				{
-					name:           "SSD PD on GCE/GKE",
-					cloudProviders: []string{"gce", "gke"},
-					provisioner:    "kubernetes.io/gce-pd",
-					parameters: map[string]string{
+					"SSD PD on GCE/GKE",
+					[]string{"gce", "gke"},
+					"kubernetes.io/gce-pd",
+					map[string]string{
 						"type": "pd-ssd",
 						"zone": cloudZone,
 					},
-					claimSize:    "1.5G",
-					expectedSize: "2G",
-					pvCheck: func(volume *v1.PersistentVolume) error {
+					"1.5G",
+					"2G",
+					func(volume *v1.PersistentVolume) error {
 						return checkGCEPD(volume, "pd-ssd")
 					},
 				},
 				{
-					name:           "HDD PD on GCE/GKE",
-					cloudProviders: []string{"gce", "gke"},
-					provisioner:    "kubernetes.io/gce-pd",
-					parameters: map[string]string{
+					"HDD PD on GCE/GKE",
+					[]string{"gce", "gke"},
+					"kubernetes.io/gce-pd",
+					map[string]string{
 						"type": "pd-standard",
 					},
-					claimSize:    "1.5G",
-					expectedSize: "2G",
-					pvCheck: func(volume *v1.PersistentVolume) error {
+					"1.5G",
+					"2G",
+					func(volume *v1.PersistentVolume) error {
 						return checkGCEPD(volume, "pd-standard")
 					},
 				},
 				// AWS
 				{
-					name:           "gp2 EBS on AWS",
-					cloudProviders: []string{"aws"},
-					provisioner:    "kubernetes.io/aws-ebs",
-					parameters: map[string]string{
+					"gp2 EBS on AWS",
+					[]string{"aws"},
+					"kubernetes.io/aws-ebs",
+					map[string]string{
 						"type": "gp2",
 						"zone": cloudZone,
 					},
-					claimSize:    "1.5Gi",
-					expectedSize: "2Gi",
-					pvCheck: func(volume *v1.PersistentVolume) error {
+					"1.5Gi",
+					"2Gi",
+					func(volume *v1.PersistentVolume) error {
 						return checkAWSEBS(volume, "gp2", false)
 					},
 				},
 				{
-					name:           "io1 EBS on AWS",
-					cloudProviders: []string{"aws"},
-					provisioner:    "kubernetes.io/aws-ebs",
-					parameters: map[string]string{
+					"io1 EBS on AWS",
+					[]string{"aws"},
+					"kubernetes.io/aws-ebs",
+					map[string]string{
 						"type":      "io1",
 						"iopsPerGB": "50",
 					},
-					claimSize:    "3.5Gi",
-					expectedSize: "4Gi", // 4 GiB is minimum for io1
-					pvCheck: func(volume *v1.PersistentVolume) error {
+					"3.5Gi",
+					"4Gi", // 4 GiB is minimum for io1
+					func(volume *v1.PersistentVolume) error {
 						return checkAWSEBS(volume, "io1", false)
 					},
 				},
 				{
-					name:           "sc1 EBS on AWS",
-					cloudProviders: []string{"aws"},
-					provisioner:    "kubernetes.io/aws-ebs",
-					parameters: map[string]string{
+					"sc1 EBS on AWS",
+					[]string{"aws"},
+					"kubernetes.io/aws-ebs",
+					map[string]string{
 						"type": "sc1",
 					},
-					claimSize:    "500Gi", // minimum for sc1
-					expectedSize: "500Gi",
-					pvCheck: func(volume *v1.PersistentVolume) error {
+					"500Gi", // minimum for sc1
+					"500Gi",
+					func(volume *v1.PersistentVolume) error {
 						return checkAWSEBS(volume, "sc1", false)
 					},
 				},
 				{
-					name:           "st1 EBS on AWS",
-					cloudProviders: []string{"aws"},
-					provisioner:    "kubernetes.io/aws-ebs",
-					parameters: map[string]string{
+					"st1 EBS on AWS",
+					[]string{"aws"},
+					"kubernetes.io/aws-ebs",
+					map[string]string{
 						"type": "st1",
 					},
-					claimSize:    "500Gi", // minimum for st1
-					expectedSize: "500Gi",
-					pvCheck: func(volume *v1.PersistentVolume) error {
+					"500Gi", // minimum for st1
+					"500Gi",
+					func(volume *v1.PersistentVolume) error {
 						return checkAWSEBS(volume, "st1", false)
 					},
 				},
 				{
-					name:           "encrypted EBS on AWS",
-					cloudProviders: []string{"aws"},
-					provisioner:    "kubernetes.io/aws-ebs",
-					parameters: map[string]string{
+					"encrypted EBS on AWS",
+					[]string{"aws"},
+					"kubernetes.io/aws-ebs",
+					map[string]string{
 						"encrypted": "true",
 					},
-					claimSize:    "1Gi",
-					expectedSize: "1Gi",
-					pvCheck: func(volume *v1.PersistentVolume) error {
+					"1Gi",
+					"1Gi",
+					func(volume *v1.PersistentVolume) error {
 						return checkAWSEBS(volume, "gp2", true)
 					},
 				},
 				// OpenStack generic tests (works on all OpenStack deployments)
 				{
-					name:           "generic Cinder volume on OpenStack",
-					cloudProviders: []string{"openstack"},
-					provisioner:    "kubernetes.io/cinder",
-					parameters:     map[string]string{},
-					claimSize:      "1.5Gi",
-					expectedSize:   "2Gi",
-					pvCheck:        nil, // there is currently nothing to check on OpenStack
+					"generic Cinder volume on OpenStack",
+					[]string{"openstack"},
+					"kubernetes.io/cinder",
+					map[string]string{},
+					"1.5Gi",
+					"2Gi",
+					nil, // there is currently nothing to check on OpenStack
 				},
 				{
-					name:           "Cinder volume with empty volume type and zone on OpenStack",
-					cloudProviders: []string{"openstack"},
-					provisioner:    "kubernetes.io/cinder",
-					parameters: map[string]string{
+					"Cinder volume with empty volume type and zone on OpenStack",
+					[]string{"openstack"},
+					"kubernetes.io/cinder",
+					map[string]string{
 						"type":         "",
 						"availability": "",
 					},
-					claimSize:    "1.5Gi",
-					expectedSize: "2Gi",
-					pvCheck:      nil, // there is currently nothing to check on OpenStack
+					"1.5Gi",
+					"2Gi",
+					nil, // there is currently nothing to check on OpenStack
 				},
 				// vSphere generic test
 				{
-					name:           "generic vSphere volume",
-					cloudProviders: []string{"vsphere"},
-					provisioner:    "kubernetes.io/vsphere-volume",
-					parameters:     map[string]string{},
-					claimSize:      "1.5Gi",
-					expectedSize:   "1.5Gi",
-					pvCheck:        nil,
+					"generic vSphere volume",
+					[]string{"vsphere"},
+					"kubernetes.io/vsphere-volume",
+					map[string]string{},
+					"1.5Gi",
+					"1.5Gi",
+					nil,
 				},
 				{
-					name:           "Azure disk volume with empty sku and location",
-					cloudProviders: []string{"azure"},
-					provisioner:    "kubernetes.io/azure-disk",
-					parameters:     map[string]string{},
-					claimSize:      "1Gi",
-					expectedSize:   "1Gi",
-					pvCheck:        nil,
+					"Azure disk volume with empty sku and location",
+					[]string{"azure"},
+					"kubernetes.io/azure-disk",
+					map[string]string{},
+					"1Gi",
+					"1Gi",
+					nil,
 				},
 			}
 
@@ -431,15 +429,15 @@ var _ = utils.SIGDescribe("Dynamic Provisioning", func() {
 			framework.SkipUnlessProviderIs("gce", "gke")
 
 			test := storageClassTest{
-				name:           "HDD PD on GCE/GKE",
-				cloudProviders: []string{"gce", "gke"},
-				provisioner:    "kubernetes.io/gce-pd",
-				parameters: map[string]string{
+				"HDD PD on GCE/GKE",
+				[]string{"gce", "gke"},
+				"kubernetes.io/gce-pd",
+				map[string]string{
 					"type": "pd-standard",
 				},
-				claimSize:    "1G",
-				expectedSize: "1G",
-				pvCheck: func(volume *v1.PersistentVolume) error {
+				"1G",
+				"1G",
+				func(volume *v1.PersistentVolume) error {
 					return checkGCEPD(volume, "pd-standard")
 				},
 			}
@@ -465,15 +463,15 @@ var _ = utils.SIGDescribe("Dynamic Provisioning", func() {
 			framework.SkipUnlessProviderIs("gce", "gke")
 
 			test := storageClassTest{
-				name:           "HDD PD on GCE/GKE",
-				cloudProviders: []string{"gce", "gke"},
-				provisioner:    "kubernetes.io/gce-pd",
-				parameters: map[string]string{
+				"HDD PD on GCE/GKE",
+				[]string{"gce", "gke"},
+				"kubernetes.io/gce-pd",
+				map[string]string{
 					"type": "pd-standard",
 				},
-				claimSize:    "1G",
-				expectedSize: "1G",
-				pvCheck: func(volume *v1.PersistentVolume) error {
+				"1G",
+				"1G",
+				func(volume *v1.PersistentVolume) error {
 					return checkGCEPD(volume, "pd-standard")
 				},
 			}
@@ -502,7 +500,7 @@ var _ = utils.SIGDescribe("Dynamic Provisioning", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Get a list of all zones in the project
-			zones, err := gceCloud.ComputeServices().GA.Zones.List(framework.TestContext.CloudConfig.ProjectID).Do()
+			zones, err := gceCloud.GetComputeService().Zones.List(framework.TestContext.CloudConfig.ProjectID).Do()
 			Expect(err).NotTo(HaveOccurred())
 			for _, z := range zones.Items {
 				allZones.Insert(z.Name)
@@ -592,80 +590,6 @@ var _ = utils.SIGDescribe("Dynamic Provisioning", func() {
 			}
 			framework.Logf("0 PersistentVolumes remain.")
 		})
-
-		It("deletion should be idempotent", func() {
-			// This test ensures that deletion of a volume is idempotent.
-			// It creates a PV with Retain policy, deletes underlying AWS / GCE
-			// volume and changes the reclaim policy to Delete.
-			// PV controller should delete the PV even though the underlying volume
-			// is already deleted.
-			framework.SkipUnlessProviderIs("gce", "gke", "aws")
-			By("creating PD")
-			diskName, err := framework.CreatePDWithRetry()
-			framework.ExpectNoError(err)
-
-			By("creating PV")
-			pv := &v1.PersistentVolume{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "volume-idempotent-delete-",
-				},
-				Spec: v1.PersistentVolumeSpec{
-					// Use Retain to keep the PV, the test will change it to Delete
-					// when the time comes.
-					PersistentVolumeReclaimPolicy: v1.PersistentVolumeReclaimRetain,
-					AccessModes: []v1.PersistentVolumeAccessMode{
-						v1.ReadWriteOnce,
-					},
-					Capacity: v1.ResourceList{
-						v1.ResourceName(v1.ResourceStorage): resource.MustParse("1Gi"),
-					},
-					// PV is bound to non-existing PVC, so it's reclaim policy is
-					// executed immediately
-					ClaimRef: &v1.ObjectReference{
-						Kind:       "PersistentVolumeClaim",
-						APIVersion: "v1",
-						UID:        types.UID("01234567890"),
-						Namespace:  ns,
-						Name:       "dummy-claim-name",
-					},
-				},
-			}
-			switch framework.TestContext.Provider {
-			case "aws":
-				pv.Spec.PersistentVolumeSource = v1.PersistentVolumeSource{
-					AWSElasticBlockStore: &v1.AWSElasticBlockStoreVolumeSource{
-						VolumeID: diskName,
-					},
-				}
-			case "gce", "gke":
-				pv.Spec.PersistentVolumeSource = v1.PersistentVolumeSource{
-					GCEPersistentDisk: &v1.GCEPersistentDiskVolumeSource{
-						PDName: diskName,
-					},
-				}
-			}
-			pv, err = c.CoreV1().PersistentVolumes().Create(pv)
-			framework.ExpectNoError(err)
-
-			By("waiting for the PV to get Released")
-			err = framework.WaitForPersistentVolumePhase(v1.VolumeReleased, c, pv.Name, 2*time.Second, framework.PVReclaimingTimeout)
-			framework.ExpectNoError(err)
-
-			By("deleting the PD")
-			err = framework.DeletePVSource(&pv.Spec.PersistentVolumeSource)
-			framework.ExpectNoError(err)
-
-			By("changing the PV reclaim policy")
-			pv, err = c.CoreV1().PersistentVolumes().Get(pv.Name, metav1.GetOptions{})
-			framework.ExpectNoError(err)
-			pv.Spec.PersistentVolumeReclaimPolicy = v1.PersistentVolumeReclaimDelete
-			pv, err = c.CoreV1().PersistentVolumes().Update(pv)
-			framework.ExpectNoError(err)
-
-			By("waiting for the PV to get deleted")
-			err = framework.WaitForPersistentVolumeDeleted(c, pv.Name, 5*time.Second, framework.PVDeletingTimeout)
-			Expect(err).NotTo(HaveOccurred())
-		})
 	})
 
 	Describe("DynamicProvisioner External", func() {
@@ -716,14 +640,6 @@ var _ = utils.SIGDescribe("Dynamic Provisioning", func() {
 				claimSize:    "2Gi",
 				expectedSize: "2Gi",
 			}
-			// gce or gke
-			if getDefaultPluginName() == "kubernetes.io/gce-pd" {
-				// using GB not GiB as e2e test unit since gce-pd returns GB,
-				// or expectedSize may be greater than claimSize.
-				test.claimSize = "2G"
-				test.expectedSize = "2G"
-			}
-
 			claim := newClaim(test, ns, "default")
 			testDynamicProvisioning(test, c, claim, nil)
 		})
@@ -866,7 +782,7 @@ func newClaim(t storageClassTest, ns, suffix string) *v1.PersistentVolumeClaim {
 }
 
 // runInPodWithVolume runs a command in a pod with given claim mounted to /mnt directory.
-func runInPodWithVolume(c clientset.Interface, ns, claimName, nodeName, command string) {
+func runInPodWithVolume(c clientset.Interface, ns, claimName, command string) {
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -903,10 +819,6 @@ func runInPodWithVolume(c clientset.Interface, ns, claimName, nodeName, command 
 				},
 			},
 		},
-	}
-
-	if len(nodeName) != 0 {
-		pod.Spec.NodeName = nodeName
 	}
 	pod, err := c.CoreV1().Pods(ns).Create(pod)
 	framework.ExpectNoError(err, "Failed to create pod: %v", err)
@@ -993,7 +905,7 @@ func startExternalProvisioner(c clientset.Interface, ns string) *v1.Pod {
 			Containers: []v1.Container{
 				{
 					Name:  "nfs-provisioner",
-					Image: "quay.io/kubernetes_incubator/nfs-provisioner:v1.0.9",
+					Image: "quay.io/kubernetes_incubator/nfs-provisioner:v1.0.6",
 					SecurityContext: &v1.SecurityContext{
 						Capabilities: &v1.Capabilities{
 							Add: []v1.Capability{"DAC_READ_SEARCH"},
@@ -1093,8 +1005,16 @@ func deleteProvisionedVolumesAndDisks(c clientset.Interface, pvs []*v1.Persisten
 }
 
 func getRandomCloudZone(c clientset.Interface) string {
-	zones, err := framework.GetClusterZones(c)
-	Expect(err).ToNot(HaveOccurred())
+	nodes, err := c.CoreV1().Nodes().List(metav1.ListOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	// collect values of zone label from all nodes
+	zones := sets.NewString()
+	for _, node := range nodes.Items {
+		if zone, found := node.Labels[kubeletapis.LabelZoneFailureDomain]; found {
+			zones.Insert(zone)
+		}
+	}
 	// return "" in case that no node has zone label
 	zone, _ := zones.PopAny()
 	return zone

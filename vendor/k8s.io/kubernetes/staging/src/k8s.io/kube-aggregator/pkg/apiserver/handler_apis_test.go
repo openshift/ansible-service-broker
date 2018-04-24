@@ -31,7 +31,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"k8s.io/kube-aggregator/pkg/apis/apiregistration"
-	aggregatorscheme "k8s.io/kube-aggregator/pkg/apiserver/scheme"
 	listers "k8s.io/kube-aggregator/pkg/client/listers/apiregistration/internalversion"
 )
 
@@ -243,7 +242,7 @@ func TestAPIs(t *testing.T) {
 		mapper := request.NewRequestContextMapper()
 		indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 		handler := &apisHandler{
-			codecs: aggregatorscheme.Codecs,
+			codecs: Codecs,
 			lister: listers.NewAPIServiceLister(indexer),
 			mapper: mapper,
 		}
@@ -266,7 +265,7 @@ func TestAPIs(t *testing.T) {
 		}
 
 		actual := &metav1.APIGroupList{}
-		if err := runtime.DecodeInto(aggregatorscheme.Codecs.UniversalDecoder(), bytes, actual); err != nil {
+		if err := runtime.DecodeInto(Codecs.UniversalDecoder(), bytes, actual); err != nil {
 			t.Errorf("%s: %v", tc.name, err)
 			continue
 		}
@@ -281,7 +280,7 @@ func TestAPIGroupMissing(t *testing.T) {
 	mapper := request.NewRequestContextMapper()
 	indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	handler := &apiGroupHandler{
-		codecs:    aggregatorscheme.Codecs,
+		codecs:    Codecs,
 		lister:    listers.NewAPIServiceLister(indexer),
 		groupName: "groupName",
 		delegate: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -428,7 +427,7 @@ func TestAPIGroup(t *testing.T) {
 		mapper := request.NewRequestContextMapper()
 		indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 		handler := &apiGroupHandler{
-			codecs:        aggregatorscheme.Codecs,
+			codecs:        Codecs,
 			lister:        listers.NewAPIServiceLister(indexer),
 			groupName:     "foo",
 			contextMapper: mapper,
@@ -457,7 +456,7 @@ func TestAPIGroup(t *testing.T) {
 		}
 
 		actual := &metav1.APIGroup{}
-		if err := runtime.DecodeInto(aggregatorscheme.Codecs.UniversalDecoder(), bytes, actual); err != nil {
+		if err := runtime.DecodeInto(Codecs.UniversalDecoder(), bytes, actual); err != nil {
 			t.Errorf("%s: %v", tc.name, err)
 			continue
 		}

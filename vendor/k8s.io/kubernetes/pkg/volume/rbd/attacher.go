@@ -27,6 +27,7 @@ import (
 	"k8s.io/kubernetes/pkg/util/mount"
 	"k8s.io/kubernetes/pkg/volume"
 	volutil "k8s.io/kubernetes/pkg/volume/util"
+	"k8s.io/kubernetes/pkg/volume/util/volumehelper"
 )
 
 // NewAttacher implements AttachableVolumePlugin.NewAttacher.
@@ -38,7 +39,7 @@ func (plugin *rbdPlugin) newAttacherInternal(manager diskManager) (volume.Attach
 	return &rbdAttacher{
 		plugin:  plugin,
 		manager: manager,
-		mounter: volutil.NewSafeFormatAndMountFromHost(plugin.GetPluginName(), plugin.host),
+		mounter: volumehelper.NewSafeFormatAndMountFromHost(plugin.GetPluginName(), plugin.host),
 	}, nil
 }
 
@@ -51,7 +52,7 @@ func (plugin *rbdPlugin) newDetacherInternal(manager diskManager) (volume.Detach
 	return &rbdDetacher{
 		plugin:  plugin,
 		manager: manager,
-		mounter: volutil.NewSafeFormatAndMountFromHost(plugin.GetPluginName(), plugin.host),
+		mounter: volumehelper.NewSafeFormatAndMountFromHost(plugin.GetPluginName(), plugin.host),
 	}, nil
 }
 
@@ -153,7 +154,7 @@ func (attacher *rbdAttacher) MountDevice(spec *volume.Spec, devicePath string, d
 	if ro {
 		options = append(options, "ro")
 	}
-	mountOptions := volutil.MountOptionFromSpec(spec, options...)
+	mountOptions := volume.MountOptionFromSpec(spec, options...)
 	err = attacher.mounter.FormatAndMount(devicePath, deviceMountPath, fstype, mountOptions)
 	if err != nil {
 		os.Remove(deviceMountPath)

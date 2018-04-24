@@ -40,16 +40,14 @@ const tagOptional = "optional"
 
 // Known values for the tag.
 const (
-	tagValueTrue  = "true"
-	tagValueFalse = "false"
+	tagValueTrue               = "true"
+	tagValueFalse              = "false"
+	tagExtensionPrefix         = "x-kubernetes-"
+	tagPatchStrategy           = "patchStrategy"
+	tagPatchMergeKey           = "patchMergeKey"
+	patchStrategyExtensionName = "patch-strategy"
+	patchMergeKeyExtensionName = "patch-merge-key"
 )
-
-// Used for temporary validation of patch struct tags.
-// TODO: Remove patch struct tag validation because they we are now consuming OpenAPI on server.
-var tempPatchTags = [...]string{
-	"patchMergeKey",
-	"patchStrategy",
-}
 
 func getOpenAPITagValue(comments []string) []string {
 	return types.ExtractCommentTags("+", comments)[tagName]
@@ -157,7 +155,6 @@ type openAPIGen struct {
 	// TargetPackage is the package that will get GetOpenAPIDefinitions function returns all open API definitions.
 	targetPackage string
 	imports       namer.ImportTracker
-	types         []*types.Type
 	context       *generator.Context
 }
 
@@ -172,18 +169,10 @@ func NewOpenAPIGen(sanitizedName string, targetPackage string, context *generato
 	}
 }
 
-const nameTmpl = "schema_$.type|private$"
-
 func (g *openAPIGen) Namers(c *generator.Context) namer.NameSystems {
 	// Have the raw namer for this file track what it imports.
 	return namer.NameSystems{
 		"raw": namer.NewRawNamer(g.targetPackage, g.imports),
-		"private": &namer.NameStrategy{
-			Join: func(pre string, in []string, post string) string {
-				return strings.Join(in, "_")
-			},
-			PrependPackageNames: 4, // enough to fully qualify from k8s.io/api/...
-		},
 	}
 }
 
@@ -192,7 +181,6 @@ func (g *openAPIGen) Filter(c *generator.Context, t *types.Type) bool {
 	if strings.HasPrefix(t.Name.Name, "codecSelfer") {
 		return false
 	}
-	g.types = append(g.types, t)
 	return true
 }
 
@@ -227,17 +215,13 @@ func (g *openAPIGen) Init(c *generator.Context, w io.Writer) error {
 	sw := generator.NewSnippetWriter(w, c, "$", "$")
 	sw.Do("func GetOpenAPIDefinitions(ref $.ReferenceCallback|raw$) map[string]$.OpenAPIDefinition|raw$ {\n", argsFromType(nil))
 	sw.Do("return map[string]$.OpenAPIDefinition|raw${\n", argsFromType(nil))
+	return sw.Error()
+}
 
-	for _, t := range g.types {
-		err := newOpenAPITypeWriter(sw).generateCall(t)
-		if err != nil {
-			return err
-		}
-	}
-
+func (g *openAPIGen) Finalize(c *generator.Context, w io.Writer) error {
+	sw := generator.NewSnippetWriter(w, c, "$", "$")
 	sw.Do("}\n", nil)
-	sw.Do("}\n\n", nil)
-
+	sw.Do("}\n", nil)
 	return sw.Error()
 }
 
@@ -257,6 +241,10 @@ func getJsonTags(m *types.Member) []string {
 		return []string{}
 	}
 	return strings.Split(jsonTag, ",")
+}
+
+func getPatchTags(m *types.Member) (string, string) {
+	return reflect.StructTag(m.Tags).Get(tagPatchMergeKey), reflect.StructTag(m.Tags).Get(tagPatchStrategy)
 }
 
 func getReferableName(m *types.Member) string {
@@ -354,7 +342,7 @@ func (g openAPITypeWriter) generateMembers(t *types.Type, required []string) ([]
 	return required, nil
 }
 
-func (g openAPITypeWriter) generateCall(t *types.Type) error {
+func (g openAPITypeWriter) generate(t *types.Type) error {
 	// Only generate for struct type and ignore the rest
 	switch t.Kind {
 	case types.Struct:
@@ -362,36 +350,31 @@ func (g openAPITypeWriter) generateCall(t *types.Type) error {
 		g.Do("\"$.$\": ", t.Name)
 		if hasOpenAPIDefinitionMethod(t) {
 			g.Do("$.type|raw${}.OpenAPIDefinition(),\n", args)
-		} else {
-			g.Do(nameTmpl+"(ref),\n", args)
-		}
-	}
-	return g.Error()
-}
-
-func (g openAPITypeWriter) generate(t *types.Type) error {
-	// Only generate for struct type and ignore the rest
-	switch t.Kind {
-	case types.Struct:
-		if hasOpenAPIDefinitionMethod(t) {
-			// already invoked directly
 			return nil
 		}
-
-		args := argsFromType(t)
-		g.Do("func "+nameTmpl+"(ref $.ReferenceCallback|raw$) $.OpenAPIDefinition|raw$ {\n", args)
 		if hasOpenAPIDefinitionMethods(t) {
-			g.Do("return $.OpenAPIDefinition|raw${\n"+
+			// Since this generated snippet is part of a map:
+			//
+			//		map[string]common.OpenAPIDefinition: {
+			//			"TYPE_NAME": {
+			//				Schema: spec.Schema{ ... },
+			//			},
+			//		}
+			//
+			// For compliance with gofmt -s it's important we elide the
+			// struct type. The type is implied by the map and will be
+			// removed otherwise.
+			g.Do("{\n"+
 				"Schema: spec.Schema{\n"+
 				"SchemaProps: spec.SchemaProps{\n"+
 				"Type:$.type|raw${}.OpenAPISchemaType(),\n"+
 				"Format:$.type|raw${}.OpenAPISchemaFormat(),\n"+
 				"},\n"+
 				"},\n"+
-				"}\n}\n\n", args)
+				"},\n", args)
 			return nil
 		}
-		g.Do("return $.OpenAPIDefinition|raw${\nSchema: spec.Schema{\nSchemaProps: spec.SchemaProps{\n", args)
+		g.Do("{\nSchema: spec.Schema{\nSchemaProps: spec.SchemaProps{\n", nil)
 		g.generateDescription(t.CommentLines)
 		g.Do("Properties: map[string]$.SpecSchemaType|raw${\n", args)
 		required, err := g.generateMembers(t, []string{})
@@ -403,7 +386,7 @@ func (g openAPITypeWriter) generate(t *types.Type) error {
 			g.Do("Required: []string{\"$.$\"},\n", strings.Join(required, "\",\""))
 		}
 		g.Do("},\n", nil)
-		if err := g.generateStructExtensions(t); err != nil {
+		if err := g.generateExtensions(t.CommentLines); err != nil {
 			return err
 		}
 		g.Do("},\n", nil)
@@ -423,74 +406,70 @@ func (g openAPITypeWriter) generate(t *types.Type) error {
 			}
 			g.Do("\"$.$\",", k)
 		}
-		g.Do("},\n}\n}\n\n", nil)
+		g.Do("},\n},\n", nil)
 	}
 	return nil
 }
 
-func (g openAPITypeWriter) generateStructExtensions(t *types.Type) error {
-	extensions, errors := parseExtensions(t.CommentLines)
-	// Initially, we will only log struct extension errors.
-	if len(errors) > 0 {
-		for e := range errors {
-			glog.V(2).Infof("[%s]: %s\n", t.String(), e)
+func (g openAPITypeWriter) generateExtensions(CommentLines []string) error {
+	tagValues := getOpenAPITagValue(CommentLines)
+	type NameValue struct {
+		Name, Value string
+	}
+	extensions := []NameValue{}
+	for _, val := range tagValues {
+		if strings.HasPrefix(val, tagExtensionPrefix) {
+			parts := strings.SplitN(val, ":", 2)
+			if len(parts) != 2 {
+				return fmt.Errorf("invalid extension value: %v", val)
+			}
+			extensions = append(extensions, NameValue{parts[0], parts[1]})
 		}
 	}
-	// TODO(seans3): Validate struct extensions here.
-	g.emitExtensions(extensions)
-	return nil
-}
-
-func (g openAPITypeWriter) generateMemberExtensions(m *types.Member, parent *types.Type) error {
-	extensions, errors := parseExtensions(m.CommentLines)
-	// Initially, we will only log member extension errors.
-	if len(errors) > 0 {
-		errorPrefix := fmt.Sprintf("[%s] %s:", parent.String(), m.String())
-		for e := range errors {
-			glog.V(2).Infof("%s %s\n", errorPrefix, e)
-		}
+	patchMergeKeyTag, err := getSingleTagsValue(CommentLines, tagPatchMergeKey)
+	if err != nil {
+		return err
 	}
-	// TODO(seans3): Validate member extensions here.
-	// Example: listType extension is only on a Slice.
-	// Example: cross-extension validation - listMapKey only makes sense with listType=map
-	g.emitExtensions(extensions)
-	return nil
-}
-
-func (g openAPITypeWriter) emitExtensions(extensions []extension) {
-	// If any extensions exist, then emit code to create them.
+	if len(patchMergeKeyTag) > 0 {
+		extensions = append(extensions, NameValue{tagExtensionPrefix + patchMergeKeyExtensionName, patchMergeKeyTag})
+	}
+	patchStrategyTag, err := getSingleTagsValue(CommentLines, tagPatchStrategy)
+	if err != nil {
+		return err
+	}
+	if len(patchStrategyTag) > 0 {
+		extensions = append(extensions, NameValue{tagExtensionPrefix + patchStrategyExtensionName, patchStrategyTag})
+	}
 	if len(extensions) == 0 {
-		return
+		return nil
 	}
 	g.Do("VendorExtensible: spec.VendorExtensible{\nExtensions: spec.Extensions{\n", nil)
 	for _, extension := range extensions {
-		g.Do("\"$.$\": ", extension.xName)
-		if extension.hasMultipleValues() {
-			g.Do("[]string{\n", nil)
-		}
-		for _, value := range extension.values {
-			g.Do("\"$.$\",\n", value)
-		}
-		if extension.hasMultipleValues() {
-			g.Do("},\n", nil)
-		}
+		g.Do("\"$.$\": ", extension.Name)
+		g.Do("\"$.$\",\n", extension.Value)
 	}
 	g.Do("},\n},\n", nil)
+	return nil
 }
 
 // TODO(#44005): Move this validation outside of this generator (probably to policy verifier)
 func (g openAPITypeWriter) validatePatchTags(m *types.Member, parent *types.Type) error {
-	// TODO: Remove patch struct tag validation because they we are now consuming OpenAPI on server.
-	for _, tagKey := range tempPatchTags {
-		structTagValue := reflect.StructTag(m.Tags).Get(tagKey)
-		commentTagValue, err := getSingleTagsValue(m.CommentLines, tagKey)
-		if err != nil {
-			return err
-		}
-		if structTagValue != commentTagValue {
-			return fmt.Errorf("Tags in comment and struct should match for member (%s) of (%s)",
-				m.Name, parent.Name.String())
-		}
+	patchMergeKeyStructTag, patchStrategyStructTag := getPatchTags(m)
+	patchMergeKeyCommentTag, err := getSingleTagsValue(m.CommentLines, tagPatchMergeKey)
+	if err != nil {
+		return err
+	}
+	patchStrategyCommentTag, err := getSingleTagsValue(m.CommentLines, tagPatchStrategy)
+	if err != nil {
+		return err
+	}
+	if patchMergeKeyStructTag != patchMergeKeyCommentTag {
+		return fmt.Errorf("patchMergeKey in comment and struct tags should match for member (%s) of (%s)",
+			m.Name, parent.Name.String())
+	}
+	if patchStrategyStructTag != patchStrategyCommentTag {
+		return fmt.Errorf("patchStrategy in comment and struct tags should match for member (%s) of (%s)",
+			m.Name, parent.Name.String())
 	}
 	return nil
 }
@@ -547,7 +526,7 @@ func (g openAPITypeWriter) generateProperty(m *types.Member, parent *types.Type)
 		return err
 	}
 	g.Do("\"$.$\": {\n", name)
-	if err := g.generateMemberExtensions(m, parent); err != nil {
+	if err := g.generateExtensions(m.CommentLines); err != nil {
 		return err
 	}
 	g.Do("SchemaProps: spec.SchemaProps{\n", nil)

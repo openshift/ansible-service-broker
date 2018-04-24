@@ -26,26 +26,22 @@ import (
 
 func TestHPAGenerate(t *testing.T) {
 	tests := []struct {
-		name               string
-		HPAName            string
-		scaleRefKind       string
-		scaleRefName       string
-		scaleRefApiVersion string
-		minReplicas        int32
-		maxReplicas        int32
-		CPUPercent         int32
-		expected           *autoscalingv1.HorizontalPodAutoscaler
-		expectErr          bool
+		name      string
+		params    map[string]interface{}
+		expected  *autoscalingv1.HorizontalPodAutoscaler
+		expectErr bool
 	}{
 		{
-			name:               "valid case",
-			HPAName:            "foo",
-			minReplicas:        1,
-			maxReplicas:        10,
-			CPUPercent:         80,
-			scaleRefKind:       "kind",
-			scaleRefName:       "name",
-			scaleRefApiVersion: "apiVersion",
+			name: "valid case",
+			params: map[string]interface{}{
+				"name":                "foo",
+				"min":                 "1",
+				"max":                 "10",
+				"cpu-percent":         "80",
+				"scaleRef-kind":       "kind",
+				"scaleRef-name":       "name",
+				"scaleRef-apiVersion": "apiVersion",
+			},
 			expected: &autoscalingv1.HorizontalPodAutoscaler{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "foo",
@@ -64,53 +60,79 @@ func TestHPAGenerate(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name:               "'name' is a required parameter",
-			scaleRefKind:       "kind",
-			scaleRefName:       "name",
-			scaleRefApiVersion: "apiVersion",
-			expectErr:          true,
+			name: "'name' is a required parameter",
+			params: map[string]interface{}{
+				"scaleRef-kind":       "kind",
+				"scaleRef-name":       "name",
+				"scaleRef-apiVersion": "apiVersion",
+			},
+			expectErr: true,
 		},
 		{
-			name:               "'max' is a required parameter",
-			HPAName:            "foo",
-			scaleRefKind:       "kind",
-			scaleRefName:       "name",
-			scaleRefApiVersion: "apiVersion",
-			expectErr:          true,
+			name: "'max' is a required parameter",
+			params: map[string]interface{}{
+				"default-name":        "foo",
+				"scaleRef-kind":       "kind",
+				"scaleRef-name":       "name",
+				"scaleRef-apiVersion": "apiVersion",
+			},
+			expectErr: true,
 		},
 		{
-			name:               "'max' must be greater than or equal to 'min'",
-			HPAName:            "foo",
-			minReplicas:        10,
-			maxReplicas:        1,
-			scaleRefKind:       "kind",
-			scaleRefName:       "name",
-			scaleRefApiVersion: "apiVersion",
-			expectErr:          true,
+			name: "'max' must be greater than or equal to 'min'",
+			params: map[string]interface{}{
+				"name":                "foo",
+				"min":                 "10",
+				"max":                 "1",
+				"scaleRef-kind":       "kind",
+				"scaleRef-name":       "name",
+				"scaleRef-apiVersion": "apiVersion",
+			},
+			expectErr: true,
 		},
 		{
-			name:               "'max' must be at least 1",
-			HPAName:            "foo",
-			minReplicas:        1,
-			maxReplicas:        -10,
-			scaleRefKind:       "kind",
-			scaleRefName:       "name",
-			scaleRefApiVersion: "apiVersion",
-			expectErr:          true,
+			name: "cpu-percent must be an integer if specified",
+			params: map[string]interface{}{
+				"name":                "foo",
+				"min":                 "1",
+				"max":                 "10",
+				"cpu-percent":         "",
+				"scaleRef-kind":       "kind",
+				"scaleRef-name":       "name",
+				"scaleRef-apiVersion": "apiVersion",
+			},
+			expectErr: true,
+		},
+		{
+			name: "'min' must be an integer if specified",
+			params: map[string]interface{}{
+				"name":                "foo",
+				"min":                 "foo",
+				"max":                 "10",
+				"cpu-percent":         "60",
+				"scaleRef-kind":       "kind",
+				"scaleRef-name":       "name",
+				"scaleRef-apiVersion": "apiVersion",
+			},
+			expectErr: true,
+		},
+		{
+			name: "'max' must be an integer if specified",
+			params: map[string]interface{}{
+				"name":                "foo",
+				"min":                 "1",
+				"max":                 "bar",
+				"cpu-percent":         "90",
+				"scaleRef-kind":       "kind",
+				"scaleRef-name":       "name",
+				"scaleRef-apiVersion": "apiVersion",
+			},
+			expectErr: true,
 		},
 	}
-
+	generator := HorizontalPodAutoscalerV1{}
 	for _, test := range tests {
-		generator := HorizontalPodAutoscalerGeneratorV1{
-			Name:               test.HPAName,
-			ScaleRefKind:       test.scaleRefKind,
-			ScaleRefName:       test.scaleRefName,
-			ScaleRefApiVersion: test.scaleRefApiVersion,
-			MinReplicas:        test.minReplicas,
-			MaxReplicas:        test.maxReplicas,
-			CPUPercent:         test.CPUPercent,
-		}
-		obj, err := generator.StructuredGenerate()
+		obj, err := generator.Generate(test.params)
 		if test.expectErr && err != nil {
 			continue
 		}

@@ -43,7 +43,7 @@ type AssumeCache interface {
 	Get(objName string) (interface{}, error)
 
 	// List all the objects in the cache
-	List(indexObj interface{}) []interface{}
+	List() []interface{}
 }
 
 type errWrongType struct {
@@ -89,11 +89,7 @@ type assumeCache struct {
 	description string
 
 	// Stores objInfo pointers
-	store cache.Indexer
-
-	// Index function for object
-	indexFunc cache.IndexFunc
-	indexName string
+	store cache.Store
 }
 
 type objInfo struct {
@@ -115,21 +111,9 @@ func objInfoKeyFunc(obj interface{}) (string, error) {
 	return objInfo.name, nil
 }
 
-func (c *assumeCache) objInfoIndexFunc(obj interface{}) ([]string, error) {
-	objInfo, ok := obj.(*objInfo)
-	if !ok {
-		return []string{""}, &errWrongType{"objInfo", obj}
-	}
-	return c.indexFunc(objInfo.latestObj)
-}
-
-func NewAssumeCache(informer cache.SharedIndexInformer, description, indexName string, indexFunc cache.IndexFunc) *assumeCache {
-	c := &assumeCache{
-		description: description,
-		indexFunc:   indexFunc,
-		indexName:   indexName,
-	}
-	c.store = cache.NewIndexer(objInfoKeyFunc, cache.Indexers{indexName: c.objInfoIndexFunc})
+func NewAssumeCache(informer cache.SharedIndexInformer, description string) *assumeCache {
+	// TODO: index by storageclass
+	c := &assumeCache{store: cache.NewStore(objInfoKeyFunc), description: description}
 
 	// Unit tests don't use informers
 	if informer != nil {
@@ -227,18 +211,12 @@ func (c *assumeCache) Get(objName string) (interface{}, error) {
 	return objInfo.latestObj, nil
 }
 
-func (c *assumeCache) List(indexObj interface{}) []interface{} {
+func (c *assumeCache) List() []interface{} {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
 	allObjs := []interface{}{}
-	objs, err := c.store.Index(c.indexName, &objInfo{latestObj: indexObj})
-	if err != nil {
-		glog.Errorf("list index error: %v", err)
-		return nil
-	}
-
-	for _, obj := range objs {
+	for _, obj := range c.store.List() {
 		objInfo, ok := obj.(*objInfo)
 		if !ok {
 			glog.Errorf("list error: %v", &errWrongType{"objInfo", obj})
@@ -302,22 +280,15 @@ type PVAssumeCache interface {
 	AssumeCache
 
 	GetPV(pvName string) (*v1.PersistentVolume, error)
-	ListPVs(storageClassName string) []*v1.PersistentVolume
+	ListPVs() []*v1.PersistentVolume
 }
 
 type pvAssumeCache struct {
 	*assumeCache
 }
 
-func pvStorageClassIndexFunc(obj interface{}) ([]string, error) {
-	if pv, ok := obj.(*v1.PersistentVolume); ok {
-		return []string{pv.Spec.StorageClassName}, nil
-	}
-	return []string{""}, fmt.Errorf("object is not a v1.PersistentVolume: %v", obj)
-}
-
 func NewPVAssumeCache(informer cache.SharedIndexInformer) PVAssumeCache {
-	return &pvAssumeCache{assumeCache: NewAssumeCache(informer, "v1.PersistentVolume", "storageclass", pvStorageClassIndexFunc)}
+	return &pvAssumeCache{assumeCache: NewAssumeCache(informer, "v1.PersistentVolume")}
 }
 
 func (c *pvAssumeCache) GetPV(pvName string) (*v1.PersistentVolume, error) {
@@ -333,12 +304,8 @@ func (c *pvAssumeCache) GetPV(pvName string) (*v1.PersistentVolume, error) {
 	return pv, nil
 }
 
-func (c *pvAssumeCache) ListPVs(storageClassName string) []*v1.PersistentVolume {
-	objs := c.List(&v1.PersistentVolume{
-		Spec: v1.PersistentVolumeSpec{
-			StorageClassName: storageClassName,
-		},
-	})
+func (c *pvAssumeCache) ListPVs() []*v1.PersistentVolume {
+	objs := c.List()
 	pvs := []*v1.PersistentVolume{}
 	for _, obj := range objs {
 		pv, ok := obj.(*v1.PersistentVolume)

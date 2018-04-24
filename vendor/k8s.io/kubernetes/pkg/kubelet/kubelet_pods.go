@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/remotecommand"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
@@ -47,9 +48,10 @@ import (
 	podshelper "k8s.io/kubernetes/pkg/apis/core/pods"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 	v1qos "k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
+	"k8s.io/kubernetes/pkg/apis/core/v1/validation"
 	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/fieldpath"
-	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/runtime/v1alpha2"
+	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/v1alpha1/runtime"
 	"k8s.io/kubernetes/pkg/kubelet/cm"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/envvars"
@@ -62,8 +64,9 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/util/format"
 	utilfile "k8s.io/kubernetes/pkg/util/file"
 	mountutil "k8s.io/kubernetes/pkg/util/mount"
+	"k8s.io/kubernetes/pkg/volume"
 	volumeutil "k8s.io/kubernetes/pkg/volume/util"
-	"k8s.io/kubernetes/pkg/volume/util/volumepathhandler"
+	"k8s.io/kubernetes/pkg/volume/util/volumehelper"
 	volumevalidation "k8s.io/kubernetes/pkg/volume/validation"
 	"k8s.io/kubernetes/third_party/forked/golang/expansion"
 )
@@ -129,7 +132,7 @@ func makeAbsolutePath(goos, path string) string {
 
 // makeBlockVolumes maps the raw block devices specified in the path of the container
 // Experimental
-func (kl *Kubelet) makeBlockVolumes(pod *v1.Pod, container *v1.Container, podVolumes kubecontainer.VolumeMap, blkutil volumepathhandler.BlockVolumePathHandler) ([]kubecontainer.DeviceInfo, error) {
+func (kl *Kubelet) makeBlockVolumes(pod *v1.Pod, container *v1.Container, podVolumes kubecontainer.VolumeMap, blkutil volumeutil.BlockVolumePathHandler) ([]kubecontainer.DeviceInfo, error) {
 	var devices []kubecontainer.DeviceInfo
 	for _, device := range container.VolumeDevices {
 		// check path is absolute
@@ -189,7 +192,7 @@ func makeMounts(pod *v1.Pod, podDir string, container *v1.Container, hostName, h
 			vol.SELinuxLabeled = true
 			relabelVolume = true
 		}
-		hostPath, err := volumeutil.GetPath(vol.Mounter)
+		hostPath, err := volume.GetPath(vol.Mounter)
 		if err != nil {
 			return nil, cleanupAction, err
 		}
@@ -235,7 +238,7 @@ func makeMounts(pod *v1.Pod, podDir string, container *v1.Container, hostName, h
 			hostPath, cleanupAction, err = mounter.PrepareSafeSubpath(mountutil.Subpath{
 				VolumeMountIndex: i,
 				Path:             hostPath,
-				VolumeName:       vol.InnerVolumeSpecName,
+				VolumeName:       mount.Name,
 				VolumePath:       volumePath,
 				PodDir:           podDir,
 				ContainerName:    container.Name,
@@ -289,12 +292,6 @@ func makeMounts(pod *v1.Pod, podDir string, container *v1.Container, hostName, h
 // translateMountPropagation transforms v1.MountPropagationMode to
 // runtimeapi.MountPropagation.
 func translateMountPropagation(mountMode *v1.MountPropagationMode) (runtimeapi.MountPropagation, error) {
-	if runtime.GOOS == "windows" {
-		// Windows containers doesn't support mount propagation, use private for it.
-		// Refer https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation.
-		return runtimeapi.MountPropagation_PROPAGATION_PRIVATE, nil
-	}
-
 	if !utilfeature.DefaultFeatureGate.Enabled(features.MountPropagation) {
 		// mount propagation is disabled, use private as in the old versions
 		return runtimeapi.MountPropagation_PROPAGATION_PRIVATE, nil
@@ -468,7 +465,7 @@ func (kl *Kubelet) GenerateRunContainerOptions(pod *v1.Pod, container *v1.Contai
 		return nil, nil, err
 	}
 	opts.Hostname = hostname
-	podName := volumeutil.GetUniquePodName(pod)
+	podName := volumehelper.GetUniquePodName(pod)
 	volumes := kl.volumeManager.GetMountedVolumesForPod(podName)
 
 	opts.PortMappings = kubecontainer.MakePortMappings(container)
@@ -481,7 +478,7 @@ func (kl *Kubelet) GenerateRunContainerOptions(pod *v1.Pod, container *v1.Contai
 
 	// TODO: remove feature gate check after no longer needed
 	if utilfeature.DefaultFeatureGate.Enabled(features.BlockVolume) {
-		blkutil := volumepathhandler.NewBlockVolumePathHandler()
+		blkutil := volumeutil.NewBlockVolumePathHandler()
 		blkVolumes, err := kl.makeBlockVolumes(pod, container, volumes, blkutil)
 		if err != nil {
 			return nil, nil, err
@@ -837,7 +834,7 @@ func (kl *Kubelet) killPod(pod *v1.Pod, runningPod *kubecontainer.Pod, status *k
 	if runningPod != nil {
 		p = *runningPod
 	} else if status != nil {
-		p = kubecontainer.ConvertPodStatusToRunningPod(kl.getRuntime().Type(), status)
+		p = kubecontainer.ConvertPodStatusToRunningPod(kl.GetRuntime().Type(), status)
 	} else {
 		return fmt.Errorf("one of the two arguments must be non-nil: runningPod, status")
 	}
@@ -1132,6 +1129,22 @@ func (kl *Kubelet) podKiller() {
 	}
 }
 
+// hasHostPortConflicts detects pods with conflicted host ports.
+func hasHostPortConflicts(pods []*v1.Pod) bool {
+	ports := sets.String{}
+	for _, pod := range pods {
+		if errs := validation.AccumulateUniqueHostPorts(pod.Spec.Containers, &ports, field.NewPath("spec", "containers")); len(errs) > 0 {
+			glog.Errorf("Pod %q: HostPort is already allocated, ignoring: %v", format.Pod(pod), errs)
+			return true
+		}
+		if errs := validation.AccumulateUniqueHostPorts(pod.Spec.InitContainers, &ports, field.NewPath("spec", "initContainers")); len(errs) > 0 {
+			glog.Errorf("Pod %q: HostPort is already allocated, ignoring: %v", format.Pod(pod), errs)
+			return true
+		}
+	}
+	return false
+}
+
 // validateContainerLogStatus returns the container ID for the desired container to retrieve logs for, based on the state
 // of the container. The previous flag will only return the logs for the last terminated container, otherwise, the current
 // running container is preferred over a previous termination. If info about the container is not available then a specific
@@ -1152,7 +1165,7 @@ func (kl *Kubelet) validateContainerLogStatus(podName string, podStatus *v1.PodS
 
 	switch {
 	case previous:
-		if lastState.Terminated == nil || lastState.Terminated.ContainerID == "" {
+		if lastState.Terminated == nil {
 			return kubecontainer.ContainerID{}, fmt.Errorf("previous terminated container %q in pod %q not found", containerName, podName)
 		}
 		cID = lastState.Terminated.ContainerID
@@ -1161,21 +1174,9 @@ func (kl *Kubelet) validateContainerLogStatus(podName string, podStatus *v1.PodS
 		cID = cStatus.ContainerID
 
 	case terminated != nil:
-		// in cases where the next container didn't start, terminated.ContainerID will be empty, so get logs from the lastState.Terminated.
-		if terminated.ContainerID == "" {
-			if lastState.Terminated != nil && lastState.Terminated.ContainerID != "" {
-				cID = lastState.Terminated.ContainerID
-			} else {
-				return kubecontainer.ContainerID{}, fmt.Errorf("container %q in pod %q is terminated", containerName, podName)
-			}
-		} else {
-			cID = terminated.ContainerID
-		}
+		cID = terminated.ContainerID
 
 	case lastState.Terminated != nil:
-		if lastState.Terminated.ContainerID == "" {
-			return kubecontainer.ContainerID{}, fmt.Errorf("container %q in pod %q is terminated", containerName, podName)
-		}
 		cID = lastState.Terminated.ContainerID
 
 	case waiting != nil:
@@ -1250,8 +1251,10 @@ func (kl *Kubelet) GetKubeletContainerLogs(podFullName, containerName string, lo
 	return kl.containerRuntime.GetContainerLogs(pod, containerID, logOptions, stdout, stderr)
 }
 
-// getPhase returns the phase of a pod given its container info.
-func getPhase(spec *v1.PodSpec, info []v1.ContainerStatus) v1.PodPhase {
+// GetPhase returns the phase of a pod given its container info.
+// This func is exported to simplify integration with 3rd party kubelet
+// integrations like kubernetes-mesos.
+func GetPhase(spec *v1.PodSpec, info []v1.ContainerStatus) v1.PodPhase {
 	initialized := 0
 	pendingInitialization := 0
 	failedInitialization := 0
@@ -1381,23 +1384,17 @@ func (kl *Kubelet) generateAPIPodStatus(pod *v1.Pod, podStatus *kubecontainer.Po
 	// Assume info is ready to process
 	spec := &pod.Spec
 	allStatus := append(append([]v1.ContainerStatus{}, s.ContainerStatuses...), s.InitContainerStatuses...)
-	s.Phase = getPhase(spec, allStatus)
-	// Check for illegal phase transition
-	if pod.Status.Phase == v1.PodFailed || pod.Status.Phase == v1.PodSucceeded {
-		// API server shows terminal phase; transitions are not allowed
-		if s.Phase != pod.Status.Phase {
-			glog.Errorf("Pod attempted illegal phase transition from %s to %s: %v", pod.Status.Phase, s.Phase, s)
-			// Force back to phase from the API server
-			s.Phase = pod.Status.Phase
-		}
-	}
+	s.Phase = GetPhase(spec, allStatus)
 	kl.probeManager.UpdatePodStatus(pod.UID, s)
 	s.Conditions = append(s.Conditions, status.GeneratePodInitializedCondition(spec, s.InitContainerStatuses, s.Phase))
 	s.Conditions = append(s.Conditions, status.GeneratePodReadyCondition(spec, s.ContainerStatuses, s.Phase))
-	// Status manager will take care of the LastTransitionTimestamp, either preserve
-	// the timestamp from apiserver, or set a new one. When kubelet sees the pod,
-	// `PodScheduled` condition must be true.
-	s.Conditions = append(s.Conditions, v1.PodCondition{
+	// s (the PodStatus we are creating) will not have a PodScheduled condition yet, because converStatusToAPIStatus()
+	// does not create one. If the existing PodStatus has a PodScheduled condition, then copy it into s and make sure
+	// it is set to true. If the existing PodStatus does not have a PodScheduled condition, then create one that is set to true.
+	if _, oldPodScheduled := podutil.GetPodCondition(&pod.Status, v1.PodScheduled); oldPodScheduled != nil {
+		s.Conditions = append(s.Conditions, *oldPodScheduled)
+	}
+	podutil.UpdatePodCondition(&pod.Status, &v1.PodCondition{
 		Type:   v1.PodScheduled,
 		Status: v1.ConditionTrue,
 	})

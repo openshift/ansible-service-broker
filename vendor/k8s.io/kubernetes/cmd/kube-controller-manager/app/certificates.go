@@ -27,7 +27,7 @@ import (
 	"github.com/golang/glog"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	cmoptions "k8s.io/kubernetes/cmd/controller-manager/app/options"
+	"k8s.io/kubernetes/cmd/kube-controller-manager/app/options"
 	"k8s.io/kubernetes/pkg/controller/certificates/approver"
 	"k8s.io/kubernetes/pkg/controller/certificates/cleaner"
 	"k8s.io/kubernetes/pkg/controller/certificates/signer"
@@ -37,7 +37,7 @@ func startCSRSigningController(ctx ControllerContext) (bool, error) {
 	if !ctx.AvailableResources[schema.GroupVersionResource{Group: "certificates.k8s.io", Version: "v1beta1", Resource: "certificatesigningrequests"}] {
 		return false, nil
 	}
-	if ctx.ComponentConfig.ClusterSigningCertFile == "" || ctx.ComponentConfig.ClusterSigningKeyFile == "" {
+	if ctx.Options.ClusterSigningCertFile == "" || ctx.Options.ClusterSigningKeyFile == "" {
 		return false, nil
 	}
 
@@ -52,15 +52,15 @@ func startCSRSigningController(ctx ControllerContext) (bool, error) {
 	// bail out of startController without logging.
 	var keyFileExists, keyUsesDefault, certFileExists, certUsesDefault bool
 
-	_, err := os.Stat(ctx.ComponentConfig.ClusterSigningCertFile)
+	_, err := os.Stat(ctx.Options.ClusterSigningCertFile)
 	certFileExists = !os.IsNotExist(err)
 
-	certUsesDefault = (ctx.ComponentConfig.ClusterSigningCertFile == cmoptions.DefaultClusterSigningCertFile)
+	certUsesDefault = (ctx.Options.ClusterSigningCertFile == options.DefaultClusterSigningCertFile)
 
-	_, err = os.Stat(ctx.ComponentConfig.ClusterSigningKeyFile)
+	_, err = os.Stat(ctx.Options.ClusterSigningKeyFile)
 	keyFileExists = !os.IsNotExist(err)
 
-	keyUsesDefault = (ctx.ComponentConfig.ClusterSigningKeyFile == cmoptions.DefaultClusterSigningKeyFile)
+	keyUsesDefault = (ctx.Options.ClusterSigningKeyFile == options.DefaultClusterSigningKeyFile)
 
 	switch {
 	case (keyFileExists && keyUsesDefault) || (certFileExists && certUsesDefault):
@@ -84,9 +84,9 @@ func startCSRSigningController(ctx ControllerContext) (bool, error) {
 	signer, err := signer.NewCSRSigningController(
 		c,
 		ctx.InformerFactory.Certificates().V1beta1().CertificateSigningRequests(),
-		ctx.ComponentConfig.ClusterSigningCertFile,
-		ctx.ComponentConfig.ClusterSigningKeyFile,
-		ctx.ComponentConfig.ClusterSigningDuration.Duration,
+		ctx.Options.ClusterSigningCertFile,
+		ctx.Options.ClusterSigningKeyFile,
+		ctx.Options.ClusterSigningDuration.Duration,
 	)
 	if err != nil {
 		return false, fmt.Errorf("failed to start certificate controller: %v", err)

@@ -41,12 +41,12 @@ import (
 
 const (
 	annotationPrefix = "podpreset.admission.kubernetes.io"
-	PluginName       = "PodPreset"
+	pluginName       = "PodPreset"
 )
 
 // Register registers a plugin
 func Register(plugins *admission.Plugins) {
-	plugins.Register(PluginName, func(config io.Reader) (admission.Interface, error) {
+	plugins.Register(pluginName, func(config io.Reader) (admission.Interface, error) {
 		return NewPlugin(), nil
 	})
 }
@@ -72,10 +72,10 @@ func NewPlugin() *podPresetPlugin {
 
 func (plugin *podPresetPlugin) ValidateInitialization() error {
 	if plugin.client == nil {
-		return fmt.Errorf("%s requires a client", PluginName)
+		return fmt.Errorf("%s requires a client", pluginName)
 	}
 	if plugin.lister == nil {
-		return fmt.Errorf("%s requires a lister", PluginName)
+		return fmt.Errorf("%s requires a lister", pluginName)
 	}
 	return nil
 }

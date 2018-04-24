@@ -163,8 +163,7 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 				"spec.restartPolicy",
 				"spec.schedulerName",
 				"status.phase",
-				"status.podIP",
-				"status.nominatedNodeName":
+				"status.podIP":
 				return label, value, nil
 			// This is for backwards compatibility with old v1 clients which send spec.host
 			case "spec.host":
@@ -384,7 +383,6 @@ func Convert_core_PodSpec_To_v1_PodSpec(in *core.PodSpec, out *v1.PodSpec, s con
 		out.HostPID = in.SecurityContext.HostPID
 		out.HostNetwork = in.SecurityContext.HostNetwork
 		out.HostIPC = in.SecurityContext.HostIPC
-		out.ShareProcessNamespace = in.SecurityContext.ShareProcessNamespace
 	}
 
 	return nil
@@ -409,7 +407,6 @@ func Convert_v1_PodSpec_To_core_PodSpec(in *v1.PodSpec, out *core.PodSpec, s con
 	out.SecurityContext.HostNetwork = in.HostNetwork
 	out.SecurityContext.HostPID = in.HostPID
 	out.SecurityContext.HostIPC = in.HostIPC
-	out.SecurityContext.ShareProcessNamespace = in.ShareProcessNamespace
 
 	return nil
 }
@@ -454,7 +451,6 @@ func Convert_v1_Secret_To_core_Secret(in *v1.Secret, out *core.Secret, s convers
 
 	return nil
 }
-
 func Convert_core_SecurityContext_To_v1_SecurityContext(in *core.SecurityContext, out *v1.SecurityContext, s conversion.Scope) error {
 	if in.Capabilities != nil {
 		out.Capabilities = new(v1.Capabilities)
@@ -474,7 +470,6 @@ func Convert_core_SecurityContext_To_v1_SecurityContext(in *core.SecurityContext
 		out.SELinuxOptions = nil
 	}
 	out.RunAsUser = in.RunAsUser
-	out.RunAsGroup = in.RunAsGroup
 	out.RunAsNonRoot = in.RunAsNonRoot
 	out.ReadOnlyRootFilesystem = in.ReadOnlyRootFilesystem
 	out.AllowPrivilegeEscalation = in.AllowPrivilegeEscalation
@@ -492,7 +487,6 @@ func Convert_core_PodSecurityContext_To_v1_PodSecurityContext(in *core.PodSecuri
 		out.SELinuxOptions = nil
 	}
 	out.RunAsUser = in.RunAsUser
-	out.RunAsGroup = in.RunAsGroup
 	out.RunAsNonRoot = in.RunAsNonRoot
 	out.FSGroup = in.FSGroup
 	return nil
@@ -509,7 +503,6 @@ func Convert_v1_PodSecurityContext_To_core_PodSecurityContext(in *v1.PodSecurity
 		out.SELinuxOptions = nil
 	}
 	out.RunAsUser = in.RunAsUser
-	out.RunAsGroup = in.RunAsGroup
 	out.RunAsNonRoot = in.RunAsNonRoot
 	out.FSGroup = in.FSGroup
 	return nil

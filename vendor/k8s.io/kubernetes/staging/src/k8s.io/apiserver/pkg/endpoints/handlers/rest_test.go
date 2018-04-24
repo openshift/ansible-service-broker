@@ -40,7 +40,6 @@ import (
 	examplev1 "k8s.io/apiserver/pkg/apis/example/v1"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
-	utiltrace "k8s.io/apiserver/pkg/util/trace"
 )
 
 var (
@@ -348,7 +347,7 @@ func (tc *patchTestCase) Run(t *testing.T) {
 			name,
 			patchType,
 			patch,
-			namer, creater, defaulter, convertor, kind, resource, codec, utiltrace.New("Patch"+name))
+			namer, creater, defaulter, convertor, kind, resource, codec)
 		if len(tc.expectedError) != 0 {
 			if err == nil || err.Error() != tc.expectedError {
 				t.Errorf("%s: expected error %v, but got %v", tc.name, tc.expectedError, err)

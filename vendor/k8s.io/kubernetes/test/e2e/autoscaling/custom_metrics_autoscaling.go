@@ -20,19 +20,18 @@ import (
 	"context"
 	"time"
 
-	gcm "google.golang.org/api/monitoring/v3"
-	as "k8s.io/api/autoscaling/v2beta1"
-	corev1 "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"golang.org/x/oauth2/google"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/test/e2e/framework"
-	"k8s.io/kubernetes/test/e2e/instrumentation/monitoring"
 
 	. "github.com/onsi/ginkgo"
-	"golang.org/x/oauth2/google"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/test/e2e/framework"
+
+	gcm "google.golang.org/api/monitoring/v3"
+	as "k8s.io/api/autoscaling/v2beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/kubernetes/test/e2e/instrumentation/monitoring"
 )
 
 const (
@@ -47,67 +46,15 @@ var _ = SIGDescribe("[HPA] Horizontal pod autoscaling (scale resource: Custom Me
 	})
 
 	f := framework.NewDefaultFramework("horizontal-pod-autoscaling")
+	var kubeClient clientset.Interface
 
-	It("should scale down with Custom Metric of type Pod from Stackdriver [Feature:CustomMetricsAutoscaling]", func() {
-		initialReplicas := 2
-		scaledReplicas := 1
-		// metric should cause scale down
-		metricValue := int64(100)
-		metricTarget := 2 * metricValue
-		deployment := monitoring.SimpleStackdriverExporterDeployment(stackdriverExporterDeployment, f.Namespace.ObjectMeta.Name, int32(initialReplicas), metricValue)
-		customMetricTest(f, f.ClientSet, simplePodsHPA(f.Namespace.ObjectMeta.Name, metricTarget), deployment, nil, initialReplicas, scaledReplicas)
-	})
-
-	It("should scale down with Custom Metric of type Object from Stackdriver [Feature:CustomMetricsAutoscaling]", func() {
-		initialReplicas := 2
-		scaledReplicas := 1
-		// metric should cause scale down
-		metricValue := int64(100)
-		metricTarget := 2 * metricValue
-		deployment := monitoring.SimpleStackdriverExporterDeployment(dummyDeploymentName, f.Namespace.ObjectMeta.Name, int32(initialReplicas), metricValue)
-		pod := monitoring.StackdriverExporterPod(stackdriverExporterPod, f.Namespace.Name, stackdriverExporterPod, monitoring.CustomMetricName, metricValue)
-		customMetricTest(f, f.ClientSet, objectHPA(f.Namespace.ObjectMeta.Name, metricTarget), deployment, pod, initialReplicas, scaledReplicas)
-	})
-
-	It("should scale down with Custom Metric of type Pod from Stackdriver with Prometheus [Feature:CustomMetricsAutoscaling]", func() {
-		initialReplicas := 2
-		scaledReplicas := 1
-		// metric should cause scale down
-		metricValue := int64(100)
-		metricTarget := 2 * metricValue
-		deployment := monitoring.PrometheusExporterDeployment(stackdriverExporterDeployment, f.Namespace.ObjectMeta.Name, int32(initialReplicas), metricValue)
-		customMetricTest(f, f.ClientSet, simplePodsHPA(f.Namespace.ObjectMeta.Name, metricTarget), deployment, nil, initialReplicas, scaledReplicas)
-	})
-
-	It("should scale up with two metrics of type Pod from Stackdriver [Feature:CustomMetricsAutoscaling]", func() {
-		initialReplicas := 1
-		scaledReplicas := 3
-		// metric 1 would cause a scale down, if not for metric 2
-		metric1Value := int64(100)
-		metric1Target := 2 * metric1Value
-		// metric2 should cause a scale up
-		metric2Value := int64(200)
-		metric2Target := int64(0.5 * float64(metric2Value))
-		containers := []monitoring.CustomMetricContainerSpec{
-			{
-				Name:        "stackdriver-exporter-metric1",
-				MetricName:  "metric1",
-				MetricValue: metric1Value,
-			},
-			{
-				Name:        "stackdriver-exporter-metric2",
-				MetricName:  "metric2",
-				MetricValue: metric2Value,
-			},
-		}
-		metricTargets := map[string]int64{"metric1": metric1Target, "metric2": metric2Target}
-		deployment := monitoring.StackdriverExporterDeployment(stackdriverExporterDeployment, f.Namespace.ObjectMeta.Name, int32(initialReplicas), containers)
-		customMetricTest(f, f.ClientSet, podsHPA(f.Namespace.ObjectMeta.Name, stackdriverExporterDeployment, metricTargets), deployment, nil, initialReplicas, scaledReplicas)
+	It("should autoscale with Custom Metrics from Stackdriver [Feature:CustomMetricsAutoscaling]", func() {
+		kubeClient = f.ClientSet
+		testHPA(f, kubeClient)
 	})
 })
 
-func customMetricTest(f *framework.Framework, kubeClient clientset.Interface, hpa *as.HorizontalPodAutoscaler,
-	deployment *extensions.Deployment, pod *corev1.Pod, initialReplicas, scaledReplicas int) {
+func testHPA(f *framework.Framework, kubeClient clientset.Interface) {
 	projectId := framework.TestContext.CloudConfig.ProjectID
 
 	ctx := context.Background()
@@ -145,89 +92,80 @@ func customMetricTest(f *framework.Framework, kubeClient clientset.Interface, hp
 	defer monitoring.CleanupAdapter()
 
 	// Run application that exports the metric
-	err = createDeploymentToScale(f, kubeClient, deployment, pod)
+	err = createDeploymentsToScale(f, kubeClient)
 	if err != nil {
 		framework.Failf("Failed to create stackdriver-exporter pod: %v", err)
 	}
-	defer cleanupDeploymentsToScale(f, kubeClient, deployment, pod)
+	defer cleanupDeploymentsToScale(f, kubeClient)
 
-	// Wait for the deployment to run
-	waitForReplicas(deployment.ObjectMeta.Name, f.Namespace.ObjectMeta.Name, kubeClient, 15*time.Minute, initialReplicas)
-
-	// Autoscale the deployment
-	_, err = kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(f.Namespace.ObjectMeta.Name).Create(hpa)
+	// Autoscale the deployments
+	err = createPodsHPA(f, kubeClient)
 	if err != nil {
-		framework.Failf("Failed to create HPA: %v", err)
+		framework.Failf("Failed to create 'Pods' HPA: %v", err)
+	}
+	err = createObjectHPA(f, kubeClient)
+	if err != nil {
+		framework.Failf("Failed to create 'Objects' HPA: %v", err)
 	}
 
-	waitForReplicas(deployment.ObjectMeta.Name, f.Namespace.ObjectMeta.Name, kubeClient, 15*time.Minute, scaledReplicas)
+	waitForReplicas(stackdriverExporterDeployment, f.Namespace.ObjectMeta.Name, kubeClient, 15*time.Minute, 1)
+	waitForReplicas(dummyDeploymentName, f.Namespace.ObjectMeta.Name, kubeClient, 15*time.Minute, 1)
 }
 
-func createDeploymentToScale(f *framework.Framework, cs clientset.Interface, deployment *extensions.Deployment, pod *corev1.Pod) error {
-	if deployment != nil {
-		_, err := cs.Extensions().Deployments(f.Namespace.ObjectMeta.Name).Create(deployment)
-		if err != nil {
-			return err
-		}
+func createDeploymentsToScale(f *framework.Framework, cs clientset.Interface) error {
+	_, err := cs.Extensions().Deployments(f.Namespace.ObjectMeta.Name).Create(monitoring.StackdriverExporterDeployment(stackdriverExporterDeployment, f.Namespace.Name, 2, 100))
+	if err != nil {
+		return err
 	}
-	if pod != nil {
-		_, err := cs.CoreV1().Pods(f.Namespace.ObjectMeta.Name).Create(pod)
-		if err != nil {
-			return err
-		}
+	_, err = cs.CoreV1().Pods(f.Namespace.ObjectMeta.Name).Create(monitoring.StackdriverExporterPod(stackdriverExporterPod, f.Namespace.Name, stackdriverExporterPod, monitoring.CustomMetricName, 100))
+	if err != nil {
+		return err
 	}
-	return nil
+	_, err = cs.Extensions().Deployments(f.Namespace.ObjectMeta.Name).Create(monitoring.StackdriverExporterDeployment(dummyDeploymentName, f.Namespace.Name, 2, 100))
+	return err
 }
 
-func cleanupDeploymentsToScale(f *framework.Framework, cs clientset.Interface, deployment *extensions.Deployment, pod *corev1.Pod) {
-	if deployment != nil {
-		_ = cs.Extensions().Deployments(f.Namespace.ObjectMeta.Name).Delete(deployment.ObjectMeta.Name, &metav1.DeleteOptions{})
-	}
-	if pod != nil {
-		_ = cs.CoreV1().Pods(f.Namespace.ObjectMeta.Name).Delete(pod.ObjectMeta.Name, &metav1.DeleteOptions{})
-	}
+func cleanupDeploymentsToScale(f *framework.Framework, cs clientset.Interface) {
+	_ = cs.Extensions().Deployments(f.Namespace.ObjectMeta.Name).Delete(stackdriverExporterDeployment, &metav1.DeleteOptions{})
+	_ = cs.CoreV1().Pods(f.Namespace.ObjectMeta.Name).Delete(stackdriverExporterPod, &metav1.DeleteOptions{})
+	_ = cs.Extensions().Deployments(f.Namespace.ObjectMeta.Name).Delete(dummyDeploymentName, &metav1.DeleteOptions{})
 }
 
-func simplePodsHPA(namespace string, metricTarget int64) *as.HorizontalPodAutoscaler {
-	return podsHPA(namespace, stackdriverExporterDeployment, map[string]int64{monitoring.CustomMetricName: metricTarget})
-}
-
-func podsHPA(namespace string, deploymentName string, metricTargets map[string]int64) *as.HorizontalPodAutoscaler {
+func createPodsHPA(f *framework.Framework, cs clientset.Interface) error {
 	var minReplicas int32 = 1
-	metrics := []as.MetricSpec{}
-	for metric, target := range metricTargets {
-		metrics = append(metrics, as.MetricSpec{
-			Type: as.PodsMetricSourceType,
-			Pods: &as.PodsMetricSource{
-				MetricName:         metric,
-				TargetAverageValue: *resource.NewQuantity(target, resource.DecimalSI),
-			},
-		})
-	}
-	return &as.HorizontalPodAutoscaler{
+	_, err := cs.AutoscalingV2beta1().HorizontalPodAutoscalers(f.Namespace.ObjectMeta.Name).Create(&as.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "custom-metrics-pods-hpa",
-			Namespace: namespace,
+			Namespace: f.Namespace.ObjectMeta.Name,
 		},
 		Spec: as.HorizontalPodAutoscalerSpec{
-			Metrics:     metrics,
+			Metrics: []as.MetricSpec{
+				{
+					Type: as.PodsMetricSourceType,
+					Pods: &as.PodsMetricSource{
+						MetricName:         monitoring.CustomMetricName,
+						TargetAverageValue: *resource.NewQuantity(200, resource.DecimalSI),
+					},
+				},
+			},
 			MaxReplicas: 3,
 			MinReplicas: &minReplicas,
 			ScaleTargetRef: as.CrossVersionObjectReference{
 				APIVersion: "extensions/v1beta1",
 				Kind:       "Deployment",
-				Name:       deploymentName,
+				Name:       stackdriverExporterDeployment,
 			},
 		},
-	}
+	})
+	return err
 }
 
-func objectHPA(namespace string, metricTarget int64) *as.HorizontalPodAutoscaler {
+func createObjectHPA(f *framework.Framework, cs clientset.Interface) error {
 	var minReplicas int32 = 1
-	return &as.HorizontalPodAutoscaler{
+	_, err := cs.AutoscalingV2beta1().HorizontalPodAutoscalers(f.Namespace.ObjectMeta.Name).Create(&as.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "custom-metrics-objects-hpa",
-			Namespace: namespace,
+			Namespace: f.Namespace.ObjectMeta.Name,
 		},
 		Spec: as.HorizontalPodAutoscalerSpec{
 			Metrics: []as.MetricSpec{
@@ -239,7 +177,7 @@ func objectHPA(namespace string, metricTarget int64) *as.HorizontalPodAutoscaler
 							Kind: "Pod",
 							Name: stackdriverExporterPod,
 						},
-						TargetValue: *resource.NewQuantity(metricTarget, resource.DecimalSI),
+						TargetValue: *resource.NewQuantity(200, resource.DecimalSI),
 					},
 				},
 			},
@@ -251,13 +189,14 @@ func objectHPA(namespace string, metricTarget int64) *as.HorizontalPodAutoscaler
 				Name:       dummyDeploymentName,
 			},
 		},
-	}
+	})
+	return err
 }
 
 func waitForReplicas(deploymentName, namespace string, cs clientset.Interface, timeout time.Duration, desiredReplicas int) {
 	interval := 20 * time.Second
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
-		deployment, err := cs.ExtensionsV1beta1().Deployments(namespace).Get(deploymentName, metav1.GetOptions{})
+		deployment, err := cs.Extensions().Deployments(namespace).Get(deploymentName, metav1.GetOptions{})
 		if err != nil {
 			framework.Failf("Failed to get replication controller %s: %v", deployment, err)
 		}

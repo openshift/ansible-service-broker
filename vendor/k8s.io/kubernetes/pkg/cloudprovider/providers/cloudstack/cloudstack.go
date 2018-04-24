@@ -17,7 +17,6 @@ limitations under the License.
 package cloudstack
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -182,13 +181,18 @@ func (cs *CSCloud) ProviderName() string {
 	return ProviderName
 }
 
+// ScrubDNS filters DNS settings for pods.
+func (cs *CSCloud) ScrubDNS(nameservers, searches []string) (nsOut, srchOut []string) {
+	return nameservers, searches
+}
+
 // HasClusterID returns true if the cluster has a clusterID
 func (cs *CSCloud) HasClusterID() bool {
 	return true
 }
 
 // GetZone returns the Zone containing the region that the program is running in.
-func (cs *CSCloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
+func (cs *CSCloud) GetZone() (cloudprovider.Zone, error) {
 	zone := cloudprovider.Zone{}
 
 	if cs.zone == "" {
@@ -216,7 +220,7 @@ func (cs *CSCloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
 }
 
 // GetZoneByProviderID returns the Zone, found by using the provider ID.
-func (cs *CSCloud) GetZoneByProviderID(ctx context.Context, providerID string) (cloudprovider.Zone, error) {
+func (cs *CSCloud) GetZoneByProviderID(providerID string) (cloudprovider.Zone, error) {
 	zone := cloudprovider.Zone{}
 
 	instance, count, err := cs.client.VirtualMachine.GetVirtualMachineByID(
@@ -238,7 +242,7 @@ func (cs *CSCloud) GetZoneByProviderID(ctx context.Context, providerID string) (
 }
 
 // GetZoneByNodeName returns the Zone, found by using the node name.
-func (cs *CSCloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) (cloudprovider.Zone, error) {
+func (cs *CSCloud) GetZoneByNodeName(nodeName types.NodeName) (cloudprovider.Zone, error) {
 	zone := cloudprovider.Zone{}
 
 	instance, count, err := cs.client.VirtualMachine.GetVirtualMachineByName(

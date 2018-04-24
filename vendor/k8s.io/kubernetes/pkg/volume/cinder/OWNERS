@@ -2,7 +2,7 @@ approvers:
 - jsafrane
 - anguslees
 - dims
-- FengyunPan2
+- FengyunPan
 reviewers:
 - anguslees
 - rootfs
@@ -10,4 +10,4 @@ reviewers:
 - jsafrane
 - jingxu97
 - msau42
-- FengyunPan2
+- FengyunPan

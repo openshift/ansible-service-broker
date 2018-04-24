@@ -13,7 +13,6 @@ go_library(
         "eviction_expansion.go",
         "generated_expansion.go",
         "poddisruptionbudget.go",
-        "podsecuritypolicy.go",
         "policy_client.go",
     ],
     importpath = "k8s.io/client-go/kubernetes/typed/policy/v1beta1",

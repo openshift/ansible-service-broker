@@ -32,7 +32,7 @@ set -o pipefail
 
 MOUNTER_IMAGE=${1:-}
 MOUNTER_PATH=/home/kubernetes/flexvolume_mounter
-VOLUME_PLUGIN_DIR=/home/kubernetes/flexvolume
+VOLUME_PLUGIN_DIR=/etc/srv/kubernetes/kubelet-plugins/volume/exec
 
 usage() {
   echo "usage: $0 imagename[:tag]"

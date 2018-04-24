@@ -30,6 +30,7 @@ import (
 	"k8s.io/kubernetes/pkg/util/mount"
 	"k8s.io/kubernetes/pkg/volume"
 	volumeutil "k8s.io/kubernetes/pkg/volume/util"
+	"k8s.io/kubernetes/pkg/volume/util/volumehelper"
 )
 
 type awsElasticBlockStoreAttacher struct {
@@ -167,15 +168,19 @@ func (attacher *awsElasticBlockStoreAttacher) WaitForAttach(spec *volume.Spec, d
 		select {
 		case <-ticker.C:
 			glog.V(5).Infof("Checking AWS Volume %q is attached.", volumeID)
-			devicePaths := getDiskByIdPaths(aws.KubernetesVolumeID(volumeSource.VolumeID), partition, devicePath)
-			path, err := verifyDevicePath(devicePaths)
-			if err != nil {
-				// Log error, if any, and continue checking periodically. See issue #11321
-				glog.Errorf("Error verifying AWS Volume (%q) is attached: %v", volumeID, err)
-			} else if path != "" {
-				// A device path has successfully been created for the PD
-				glog.Infof("Successfully found attached AWS Volume %q.", volumeID)
-				return path, nil
+			if devicePath != "" {
+				devicePaths := getDiskByIdPaths(aws.KubernetesVolumeID(volumeSource.VolumeID), partition, devicePath)
+				path, err := verifyDevicePath(devicePaths)
+				if err != nil {
+					// Log error, if any, and continue checking periodically. See issue #11321
+					glog.Errorf("Error verifying AWS Volume (%q) is attached: %v", volumeID, err)
+				} else if path != "" {
+					// A device path has successfully been created for the PD
+					glog.Infof("Successfully found attached AWS Volume %q.", volumeID)
+					return path, nil
+				}
+			} else {
+				glog.V(5).Infof("AWS Volume (%q) is not attached yet", volumeID)
 			}
 		case <-timer.C:
 			return "", fmt.Errorf("Could not find attached AWS Volume %q. Timeout waiting for mount paths to be created.", volumeID)
@@ -218,8 +223,8 @@ func (attacher *awsElasticBlockStoreAttacher) MountDevice(spec *volume.Spec, dev
 		options = append(options, "ro")
 	}
 	if notMnt {
-		diskMounter := volumeutil.NewSafeFormatAndMountFromHost(awsElasticBlockStorePluginName, attacher.host)
-		mountOptions := volumeutil.MountOptionFromSpec(spec, options...)
+		diskMounter := volumehelper.NewSafeFormatAndMountFromHost(awsElasticBlockStorePluginName, attacher.host)
+		mountOptions := volume.MountOptionFromSpec(spec, options...)
 		err = diskMounter.FormatAndMount(devicePath, deviceMountPath, volumeSource.FSType, mountOptions)
 		if err != nil {
 			os.Remove(deviceMountPath)

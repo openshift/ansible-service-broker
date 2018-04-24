@@ -48,6 +48,7 @@ filegroup(
 go_test(
     name = "go_default_xtest",
     srcs = ["defaults_test.go"],
+    importpath = "k8s.io/kubernetes/pkg/apis/storage/v1beta1_test",
     deps = [
         "//pkg/api/legacyscheme:go_default_library",
         "//pkg/apis/storage/install:go_default_library",

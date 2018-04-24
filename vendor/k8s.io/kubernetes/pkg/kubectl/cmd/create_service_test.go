@@ -24,20 +24,14 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest/fake"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	cmdtesting "k8s.io/kubernetes/pkg/kubectl/cmd/testing"
-	"k8s.io/kubernetes/pkg/kubectl/scheme"
 )
 
 func TestCreateService(t *testing.T) {
 	service := &v1.Service{}
 	service.Name = "my-service"
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-	negSer := legacyscheme.Codecs
-
+	f, tf, codec, negSer := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.Client = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Version: "v1"},
 		NegotiatedSerializer: negSer,
@@ -53,7 +47,7 @@ func TestCreateService(t *testing.T) {
 	}
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdCreateServiceClusterIP(tf, buf)
+	cmd := NewCmdCreateServiceClusterIP(f, buf)
 	cmd.Flags().Set("output", "name")
 	cmd.Flags().Set("tcp", "8080:8000")
 	cmd.Run(cmd, []string{service.Name})
@@ -66,12 +60,8 @@ func TestCreateService(t *testing.T) {
 func TestCreateServiceNodePort(t *testing.T) {
 	service := &v1.Service{}
 	service.Name = "my-node-port-service"
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-	negSer := legacyscheme.Codecs
-
+	f, tf, codec, negSer := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.Client = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Version: "v1"},
 		NegotiatedSerializer: negSer,
@@ -87,7 +77,7 @@ func TestCreateServiceNodePort(t *testing.T) {
 	}
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdCreateServiceNodePort(tf, buf)
+	cmd := NewCmdCreateServiceNodePort(f, buf)
 	cmd.Flags().Set("output", "name")
 	cmd.Flags().Set("tcp", "30000:8000")
 	cmd.Run(cmd, []string{service.Name})
@@ -100,12 +90,8 @@ func TestCreateServiceNodePort(t *testing.T) {
 func TestCreateServiceExternalName(t *testing.T) {
 	service := &v1.Service{}
 	service.Name = "my-external-name-service"
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-	negSer := legacyscheme.Codecs
-
+	f, tf, codec, negSer := cmdtesting.NewAPIFactory()
+	tf.Printer = &testPrinter{}
 	tf.Client = &fake.RESTClient{
 		GroupVersion:         schema.GroupVersion{Version: "v1"},
 		NegotiatedSerializer: negSer,
@@ -121,7 +107,7 @@ func TestCreateServiceExternalName(t *testing.T) {
 	}
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdCreateServiceExternalName(tf, buf)
+	cmd := NewCmdCreateServiceExternalName(f, buf)
 	cmd.Flags().Set("output", "name")
 	cmd.Flags().Set("external-name", "name")
 	cmd.Run(cmd, []string{service.Name})

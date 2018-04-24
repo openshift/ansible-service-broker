@@ -24,7 +24,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	imageutil "k8s.io/kubernetes/test/utils/image"
 )
 
 var _ = SIGDescribe("Metadata Concealment", func() {
@@ -46,7 +45,7 @@ var _ = SIGDescribe("Metadata Concealment", func() {
 						Containers: []v1.Container{
 							{
 								Name:  "check-metadata-concealment",
-								Image: imageutil.GetE2EImage(imageutil.CheckMetadataConcealment),
+								Image: "gcr.io/google_containers/check-metadata-concealment:v0.0.2",
 							},
 						},
 						RestartPolicy: v1.RestartPolicyOnFailure,

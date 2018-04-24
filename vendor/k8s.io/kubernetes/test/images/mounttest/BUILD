@@ -8,12 +8,7 @@ load(
 
 go_library(
     name = "go_default_library",
-    srcs = select({
-        "@io_bazel_rules_go//go/platform:linux": [
-            "mt.go",
-        ],
-        "//conditions:default": [],
-    }),
+    srcs = ["mt.go"],
     importpath = "k8s.io/kubernetes/test/images/mounttest",
 )
 
@@ -32,5 +27,6 @@ filegroup(
 
 go_binary(
     name = "mounttest",
-    embed = [":go_default_library"],
+    importpath = "k8s.io/kubernetes/test/images/mounttest",
+    library = ":go_default_library",
 )

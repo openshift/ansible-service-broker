@@ -64,8 +64,7 @@ func NewCmdReplace(f cmdutil.Factory, out io.Writer) *cobra.Command {
 	options := &resource.FilenameOptions{}
 
 	cmd := &cobra.Command{
-		Use: "replace -f FILENAME",
-		DisableFlagsInUseLine: true,
+		Use:     "replace -f FILENAME",
 		Short:   i18n.T("Replace a resource by filename or stdin"),
 		Long:    replaceLong,
 		Example: replaceExample,
@@ -132,12 +131,14 @@ func RunReplace(f cmdutil.Factory, out io.Writer, cmd *cobra.Command, args []str
 		return err
 	}
 
+	mapper := r.Mapper().RESTMapper
+
 	return r.Visit(func(info *resource.Info, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if err := kubectl.CreateOrUpdateAnnotation(cmdutil.GetFlagBool(cmd, cmdutil.ApplyAnnotationsFlag), info, cmdutil.InternalVersionJSONEncoder()); err != nil {
+		if err := kubectl.CreateOrUpdateAnnotation(cmdutil.GetFlagBool(cmd, cmdutil.ApplyAnnotationsFlag), info, f.JSONEncoder()); err != nil {
 			return cmdutil.AddSourceToErr("replacing", info.Source, err)
 		}
 
@@ -154,7 +155,8 @@ func RunReplace(f cmdutil.Factory, out io.Writer, cmd *cobra.Command, args []str
 		}
 
 		info.Refresh(obj, true)
-		cmdutil.PrintSuccess(shortOutput, out, info.Object, false, "replaced")
+		f.PrintObjectSpecificMessage(obj, out)
+		f.PrintSuccess(mapper, shortOutput, out, info.Mapping.Resource, info.Name, false, "replaced")
 		return nil
 	})
 }
@@ -198,6 +200,8 @@ func forceReplace(f cmdutil.Factory, out io.Writer, cmd *cobra.Command, args []s
 		return err
 	}
 
+	mapper := r.Mapper().RESTMapper
+
 	//Replace will create a resource if it doesn't exist already, so ignore not found error
 	ignoreNotFound := true
 	timeout := cmdutil.GetFlagDuration(cmd, "timeout")
@@ -212,9 +216,9 @@ func forceReplace(f cmdutil.Factory, out io.Writer, cmd *cobra.Command, args []s
 	// By default use a reaper to delete all related resources.
 	if cmdutil.GetFlagBool(cmd, "cascade") {
 		glog.Warningf("\"cascade\" is set, kubectl will delete and re-create all resources managed by this resource (e.g. Pods created by a ReplicationController). Consider using \"kubectl rolling-update\" if you want to update a ReplicationController together with its Pods.")
-		err = ReapResult(r, f, out, cmdutil.GetFlagBool(cmd, "cascade"), ignoreNotFound, timeout, gracePeriod, waitForDeletion, shortOutput, false)
+		err = ReapResult(r, f, out, cmdutil.GetFlagBool(cmd, "cascade"), ignoreNotFound, timeout, gracePeriod, waitForDeletion, shortOutput, mapper, false)
 	} else {
-		err = DeleteResult(r, out, ignoreNotFound, gracePeriod, shortOutput)
+		err = DeleteResult(r, f, out, ignoreNotFound, gracePeriod, shortOutput, mapper)
 	}
 	if err != nil {
 		return err
@@ -258,7 +262,7 @@ func forceReplace(f cmdutil.Factory, out io.Writer, cmd *cobra.Command, args []s
 			return err
 		}
 
-		if err := kubectl.CreateOrUpdateAnnotation(cmdutil.GetFlagBool(cmd, cmdutil.ApplyAnnotationsFlag), info, cmdutil.InternalVersionJSONEncoder()); err != nil {
+		if err := kubectl.CreateOrUpdateAnnotation(cmdutil.GetFlagBool(cmd, cmdutil.ApplyAnnotationsFlag), info, f.JSONEncoder()); err != nil {
 			return err
 		}
 
@@ -275,7 +279,8 @@ func forceReplace(f cmdutil.Factory, out io.Writer, cmd *cobra.Command, args []s
 
 		count++
 		info.Refresh(obj, true)
-		cmdutil.PrintSuccess(shortOutput, out, info.Object, false, "replaced")
+		f.PrintObjectSpecificMessage(obj, out)
+		f.PrintSuccess(mapper, shortOutput, out, info.Mapping.Resource, info.Name, false, "replaced")
 		return nil
 	})
 	if err != nil {

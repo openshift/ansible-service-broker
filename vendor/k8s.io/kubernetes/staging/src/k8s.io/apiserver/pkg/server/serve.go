@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"golang.org/x/net/http2"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -40,17 +39,17 @@ const (
 // serveSecurely runs the secure http server. It fails only if certificates cannot
 // be loaded or the initial listen call fails. The actual server loop (stoppable by closing
 // stopCh) runs in a go routine, i.e. serveSecurely does not block.
-func (s *SecureServingInfo) Serve(handler http.Handler, shutdownTimeout time.Duration, stopCh <-chan struct{}) error {
-	if s.Listener == nil {
+func (s *GenericAPIServer) serveSecurely(stopCh <-chan struct{}) error {
+	if s.SecureServingInfo.Listener == nil {
 		return fmt.Errorf("listener must not be nil")
 	}
 
 	secureServer := &http.Server{
-		Addr:           s.Listener.Addr().String(),
-		Handler:        handler,
+		Addr:           s.SecureServingInfo.Listener.Addr().String(),
+		Handler:        s.Handler,
 		MaxHeaderBytes: 1 << 20,
 		TLSConfig: &tls.Config{
-			NameToCertificate: s.SNICerts,
+			NameToCertificate: s.SecureServingInfo.SNICerts,
 			// Can't use SSLv3 because of POODLE and BEAST
 			// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
 			// Can't use TLSv1.1 because of RC4 cipher usage
@@ -60,47 +59,41 @@ func (s *SecureServingInfo) Serve(handler http.Handler, shutdownTimeout time.Dur
 		},
 	}
 
-	if s.MinTLSVersion > 0 {
-		secureServer.TLSConfig.MinVersion = s.MinTLSVersion
+	if s.SecureServingInfo.MinTLSVersion > 0 {
+		secureServer.TLSConfig.MinVersion = s.SecureServingInfo.MinTLSVersion
 	}
-	if len(s.CipherSuites) > 0 {
-		secureServer.TLSConfig.CipherSuites = s.CipherSuites
+	if len(s.SecureServingInfo.CipherSuites) > 0 {
+		secureServer.TLSConfig.CipherSuites = s.SecureServingInfo.CipherSuites
 	}
 
-	if s.Cert != nil {
-		secureServer.TLSConfig.Certificates = []tls.Certificate{*s.Cert}
+	if s.SecureServingInfo.Cert != nil {
+		secureServer.TLSConfig.Certificates = []tls.Certificate{*s.SecureServingInfo.Cert}
 	}
 
 	// append all named certs. Otherwise, the go tls stack will think no SNI processing
 	// is necessary because there is only one cert anyway.
 	// Moreover, if ServerCert.CertFile/ServerCert.KeyFile are not set, the first SNI
 	// cert will become the default cert. That's what we expect anyway.
-	for _, c := range s.SNICerts {
+	for _, c := range s.SecureServingInfo.SNICerts {
 		secureServer.TLSConfig.Certificates = append(secureServer.TLSConfig.Certificates, *c)
 	}
 
-	if s.ClientCA != nil {
+	if s.SecureServingInfo.ClientCA != nil {
 		// Populate PeerCertificates in requests, but don't reject connections without certificates
 		// This allows certificates to be validated by authenticators, while still allowing other auth types
 		secureServer.TLSConfig.ClientAuth = tls.RequestClientCert
 		// Specify allowed CAs for client certificates
-		secureServer.TLSConfig.ClientCAs = s.ClientCA
-	}
-
-	if s.HTTP2MaxStreamsPerConnection > 0 {
-		http2.ConfigureServer(secureServer, &http2.Server{
-			MaxConcurrentStreams: uint32(s.HTTP2MaxStreamsPerConnection),
-		})
+		secureServer.TLSConfig.ClientCAs = s.SecureServingInfo.ClientCA
 	}
 
 	glog.Infof("Serving securely on %s", secureServer.Addr)
-	return RunServer(secureServer, s.Listener, shutdownTimeout, stopCh)
+	err := RunServer(secureServer, s.SecureServingInfo.Listener, s.ShutdownTimeout, stopCh)
+	return err
 }
 
 // RunServer listens on the given port if listener is not given,
 // then spawns a go-routine continuously serving
 // until the stopCh is closed. This function does not block.
-// TODO: make private when insecure serving is gone from the kube-apiserver
 func RunServer(
 	server *http.Server,
 	ln net.Listener,

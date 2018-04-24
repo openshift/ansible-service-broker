@@ -39,8 +39,7 @@ var (
 // RoleBinding is a command to ease creating RoleBindings.
 func NewCmdCreateRoleBinding(f cmdutil.Factory, cmdOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "rolebinding NAME --clusterrole=NAME|--role=NAME [--user=username] [--group=groupname] [--serviceaccount=namespace:serviceaccountname] [--dry-run]",
-		DisableFlagsInUseLine: true,
+		Use:     "rolebinding NAME --clusterrole=NAME|--role=NAME [--user=username] [--group=groupname] [--serviceaccount=namespace:serviceaccountname] [--dry-run]",
 		Short:   i18n.T("Create a RoleBinding for a particular Role or ClusterRole"),
 		Long:    roleBindingLong,
 		Example: roleBindingExample,

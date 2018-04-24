@@ -88,8 +88,7 @@ func NewCmdCanI(f cmdutil.Factory, out, err io.Writer) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use: "can-i VERB [TYPE | TYPE/NAME | NONRESOURCEURL]",
-		DisableFlagsInUseLine: true,
+		Use:     "can-i VERB [TYPE | TYPE/NAME | NONRESOURCEURL]",
 		Short:   "Check whether an action is allowed",
 		Long:    canILong,
 		Example: canIExample,

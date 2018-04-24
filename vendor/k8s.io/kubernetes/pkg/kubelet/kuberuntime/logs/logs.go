@@ -33,7 +33,7 @@ import (
 
 	"k8s.io/api/core/v1"
 	internalapi "k8s.io/kubernetes/pkg/kubelet/apis/cri"
-	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/runtime/v1alpha2"
+	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/v1alpha1/runtime"
 	"k8s.io/kubernetes/pkg/util/tail"
 )
 
@@ -278,7 +278,7 @@ func ReadLogs(path, containerID string, opts *LogOptions, runtimeService interna
 	if err != nil {
 		return fmt.Errorf("failed to tail %d lines of log file %q: %v", opts.tail, path, err)
 	}
-	if _, err := f.Seek(start, io.SeekStart); err != nil {
+	if _, err := f.Seek(start, os.SEEK_SET); err != nil {
 		return fmt.Errorf("failed to seek %d in log file %q: %v", start, path, err)
 	}
 
@@ -303,11 +303,11 @@ func ReadLogs(path, containerID string, opts *LogOptions, runtimeService interna
 			if opts.follow {
 				// Reset seek so that if this is an incomplete line,
 				// it will be read again.
-				if _, err := f.Seek(-int64(len(l)), io.SeekCurrent); err != nil {
+				if _, err := f.Seek(-int64(len(l)), os.SEEK_CUR); err != nil {
 					return fmt.Errorf("failed to reset seek in log file %q: %v", path, err)
 				}
 				if watcher == nil {
-					// Initialize the watcher if it has not been initialized yet.
+					// Intialize the watcher if it has not been initialized yet.
 					if watcher, err = fsnotify.NewWatcher(); err != nil {
 						return fmt.Errorf("failed to create fsnotify watcher: %v", err)
 					}
@@ -330,7 +330,7 @@ func ReadLogs(path, containerID string, opts *LogOptions, runtimeService interna
 			glog.Warningf("Incomplete line in log file %q: %q", path, l)
 		}
 		if parse == nil {
-			// Initialize the log parsing function.
+			// Intialize the log parsing function.
 			parse, err = getParseFunc(l)
 			if err != nil {
 				return fmt.Errorf("failed to get parse function: %v", err)

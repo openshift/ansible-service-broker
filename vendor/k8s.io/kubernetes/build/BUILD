@@ -38,7 +38,7 @@ DOCKERIZED_BINARIES = {
     },
     "kube-scheduler": {
         "base": "@official_busybox//image",
-        "target": "//cmd/kube-scheduler:kube-scheduler",
+        "target": "//plugin/cmd/kube-scheduler:kube-scheduler",
     },
     "kube-proxy": {
         "base": "@debian-iptables-amd64//image",
@@ -62,11 +62,7 @@ DOCKERIZED_BINARIES = {
 
 [docker_bundle(
     name = binary,
-    # TODO(thockin): remove the google_containers name after release 1.10.
-    images = {
-        "k8s.gcr.io/%s:{STABLE_DOCKER_TAG}" % binary: binary + "-internal",
-        "gcr.io/google_containers/%s:{STABLE_DOCKER_TAG}" % binary: binary + "-internal",
-    },
+    images = {"gcr.io/google_containers/%s:{STABLE_DOCKER_TAG}" % binary: binary + "-internal"},
     stamp = True,
 ) for binary in DOCKERIZED_BINARIES.keys()]
 
@@ -131,7 +127,7 @@ release_filegroup(
         "//cmd/hyperkube",
         "//cmd/kube-apiserver",
         "//cmd/kube-controller-manager",
-        "//cmd/kube-scheduler",
+        "//plugin/cmd/kube-scheduler",
         "//vendor/k8s.io/kube-aggregator",
     ],
 )

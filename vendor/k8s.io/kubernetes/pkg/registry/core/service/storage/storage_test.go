@@ -31,7 +31,7 @@ import (
 	"k8s.io/kubernetes/pkg/registry/registrytest"
 )
 
-func newStorage(t *testing.T) (*GenericREST, *StatusREST, *etcdtesting.EtcdTestServer) {
+func newStorage(t *testing.T) (*REST, *StatusREST, *etcdtesting.EtcdTestServer) {
 	etcdStorage, server := registrytest.NewEtcdStorage(t, "")
 	restOptions := generic.RESTOptions{
 		StorageConfig:           etcdStorage,
@@ -39,7 +39,7 @@ func newStorage(t *testing.T) (*GenericREST, *StatusREST, *etcdtesting.EtcdTestS
 		DeleteCollectionWorkers: 1,
 		ResourcePrefix:          "services",
 	}
-	serviceStorage, statusStorage := NewGenericREST(restOptions)
+	serviceStorage, statusStorage := NewREST(restOptions)
 	return serviceStorage, statusStorage, server
 }
 
@@ -125,7 +125,7 @@ func TestDelete(t *testing.T) {
 	storage, _, server := newStorage(t)
 	defer server.Terminate(t)
 	defer storage.Store.DestroyFunc()
-	test := genericregistrytest.New(t, storage.Store).AllowCreateOnUpdate().ReturnDeletedObject()
+	test := genericregistrytest.New(t, storage.Store).AllowCreateOnUpdate()
 	test.TestDelete(validService())
 }
 
@@ -162,7 +162,7 @@ func TestWatch(t *testing.T) {
 		[]fields.Set{
 			{"metadata.name": "foo"},
 		},
-		// not matching fields
+		// not matchin fields
 		[]fields.Set{
 			{"metadata.name": "bar"},
 		},

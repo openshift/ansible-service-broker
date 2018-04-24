@@ -25,9 +25,9 @@ func TestString(t *testing.T) {
 
 		{toParse: `"test"junk`, want: "test"},
 
-		{toParse: `5`, wantError: true},    // not a string
-		{toParse: `"\x"`, wantError: true}, // invalid escape
-		{toParse: `"\ud800"`, want: "�"},   // invalid utf-8 char; return replacement char
+		{toParse: `5`, wantError: true},        // not a string
+		{toParse: `"\x"`, wantError: true},     // invalid escape
+		{toParse: `"\ud800"`, want: "�"},      // invalid utf-8 char; return replacement char
 	} {
 		l := Lexer{Data: []byte(test.toParse)}
 
@@ -269,19 +269,16 @@ func TestJsonNumber(t *testing.T) {
 		{toParse: `"0.12"`, want: json.Number("0.12"), wantValue: 0.12},
 		{toParse: `"25E-4"`, want: json.Number("25E-4"), wantValue: 25E-4},
 
-		{toParse: `"foo"`, want: json.Number("foo"), wantValueError: true},
-		{toParse: `null`, want: json.Number(""), wantValueError: true},
+		{toParse: `"a""`, wantValueError: true},
 
-		{toParse: `"a""`, want: json.Number("a"), wantValueError: true},
-
-		{toParse: `[1]`, want: json.Number(""), wantLexerError: true, wantValueError: true},
-		{toParse: `{}`, want: json.Number(""), wantLexerError: true, wantValueError: true},
-		{toParse: `a`, want: json.Number(""), wantLexerError: true, wantValueError: true},
+		{toParse: `[1]`, wantLexerError: true},
+		{toParse: `{}`, wantLexerError: true},
+		{toParse: `a`, wantLexerError: true},
 	} {
 		l := Lexer{Data: []byte(test.toParse)}
 
 		got := l.JsonNumber()
-		if got != test.want {
+		if got != test.want && !test.wantLexerError && !test.wantValueError {
 			t.Errorf("[%d, %q] JsonNumber() = %v; want %v", i, test.toParse, got, test.want)
 		}
 
@@ -306,7 +303,7 @@ func TestJsonNumber(t *testing.T) {
 		}
 
 		if valueErr != nil && !test.wantValueError {
-			t.Errorf("[%d, %q] JsonNumber() value error: %v", i, test.toParse, valueErr)
+			t.Errorf("[%d, %q] JsonNumber() value error: %v", i, test.toParse, err)
 		} else if valueErr == nil && test.wantValueError {
 			t.Errorf("[%d, %q] JsonNumber() ok; want value error", i, test.toParse)
 		}

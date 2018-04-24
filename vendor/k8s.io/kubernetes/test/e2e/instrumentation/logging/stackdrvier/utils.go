@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -46,9 +45,6 @@ const (
 
 	// PubSub topic with log entries polling interval
 	sdLoggingPollInterval = 100 * time.Millisecond
-
-	// The parallelism level of polling logs process.
-	sdLoggingPollParallelism = 10
 )
 
 type logProviderScope int
@@ -72,7 +68,6 @@ type sdLogProvider struct {
 	logSink      *sd.LogSink
 
 	pollingStopChannel chan struct{}
-	pollingWG          *sync.WaitGroup
 
 	queueCollection utils.LogsQueueCollection
 
@@ -97,8 +92,7 @@ func newSdLogProvider(f *framework.Framework, scope logProviderScope) (*sdLogPro
 		sdService:          sdService,
 		pubsubService:      pubsubService,
 		framework:          f,
-		pollingStopChannel: make(chan struct{}),
-		pollingWG:          &sync.WaitGroup{},
+		pollingStopChannel: make(chan struct{}, 1),
 		queueCollection:    utils.NewLogsQueueCollection(maxQueueSize),
 	}
 	return provider, nil
@@ -134,14 +128,13 @@ func (p *sdLogProvider) Init() error {
 		return fmt.Errorf("failed to wait for sink to become operational: %v", err)
 	}
 
-	p.startPollingLogs()
+	go p.pollLogs()
 
 	return nil
 }
 
 func (p *sdLogProvider) Cleanup() {
-	close(p.pollingStopChannel)
-	p.pollingWG.Wait()
+	p.pollingStopChannel <- struct{}{}
 
 	if p.logSink != nil {
 		projectID := framework.TestContext.CloudConfig.ProjectID
@@ -264,54 +257,44 @@ func (p *sdLogProvider) waitSinkInit() error {
 	})
 }
 
-func (p *sdLogProvider) startPollingLogs() {
-	for i := 0; i < sdLoggingPollParallelism; i++ {
-		p.pollingWG.Add(1)
-		go func() {
-			defer p.pollingWG.Done()
-
-			wait.PollUntil(sdLoggingPollInterval, func() (bool, error) {
-				p.pollLogsOnce()
-				return false, nil
-			}, p.pollingStopChannel)
-		}()
-	}
-}
-
-func (p *sdLogProvider) pollLogsOnce() {
-	messages, err := pullAndAck(p.pubsubService, p.subscription)
-	if err != nil {
-		framework.Logf("Failed to pull messages from PubSub due to %v", err)
-		return
-	}
-
-	for _, msg := range messages {
-		logEntryEncoded, err := base64.StdEncoding.DecodeString(msg.Message.Data)
+func (p *sdLogProvider) pollLogs() {
+	wait.PollUntil(sdLoggingPollInterval, func() (bool, error) {
+		messages, err := pullAndAck(p.pubsubService, p.subscription)
 		if err != nil {
-			framework.Logf("Got a message from pubsub that is not base64-encoded: %s", msg.Message.Data)
-			continue
+			framework.Logf("Failed to pull messages from PubSub due to %v", err)
+			return false, nil
 		}
 
-		var sdLogEntry sd.LogEntry
-		if err := json.Unmarshal(logEntryEncoded, &sdLogEntry); err != nil {
-			framework.Logf("Failed to decode a pubsub message '%s': %v", logEntryEncoded, err)
-			continue
+		for _, msg := range messages {
+			logEntryEncoded, err := base64.StdEncoding.DecodeString(msg.Message.Data)
+			if err != nil {
+				framework.Logf("Got a message from pubsub that is not base64-encoded: %s", msg.Message.Data)
+				continue
+			}
+
+			var sdLogEntry sd.LogEntry
+			if err := json.Unmarshal(logEntryEncoded, &sdLogEntry); err != nil {
+				framework.Logf("Failed to decode a pubsub message '%s': %v", logEntryEncoded, err)
+				continue
+			}
+
+			name, ok := p.tryGetName(sdLogEntry)
+			if !ok {
+				framework.Logf("Received LogEntry with unexpected resource type: %s", sdLogEntry.Resource.Type)
+				continue
+			}
+
+			logEntry, err := convertLogEntry(sdLogEntry)
+			if err != nil {
+				framework.Logf("Failed to parse Stackdriver LogEntry: %v", err)
+				continue
+			}
+
+			p.queueCollection.Push(name, logEntry)
 		}
 
-		name, ok := p.tryGetName(sdLogEntry)
-		if !ok {
-			framework.Logf("Received LogEntry with unexpected resource type: %s", sdLogEntry.Resource.Type)
-			continue
-		}
-
-		logEntry, err := convertLogEntry(sdLogEntry)
-		if err != nil {
-			framework.Logf("Failed to parse Stackdriver LogEntry: %v", err)
-			continue
-		}
-
-		p.queueCollection.Push(name, logEntry)
-	}
+		return false, nil
+	}, p.pollingStopChannel)
 }
 
 func (p *sdLogProvider) tryGetName(sdLogEntry sd.LogEntry) (string, bool) {
@@ -328,8 +311,6 @@ func (p *sdLogProvider) tryGetName(sdLogEntry sd.LogEntry) (string, bool) {
 
 func convertLogEntry(sdLogEntry sd.LogEntry) (entry utils.LogEntry, err error) {
 	entry = utils.LogEntry{LogName: sdLogEntry.LogName}
-	entry.Location = sdLogEntry.Resource.Labels["location"]
-
 	if sdLogEntry.TextPayload != "" {
 		entry.TextPayload = sdLogEntry.TextPayload
 		return

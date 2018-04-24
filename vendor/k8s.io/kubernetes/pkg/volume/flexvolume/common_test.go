@@ -119,7 +119,7 @@ func fakePersistentVolumeSpec() *volume.Spec {
 		},
 		Spec: v1.PersistentVolumeSpec{
 			PersistentVolumeSource: v1.PersistentVolumeSource{
-				FlexVolume: &v1.FlexPersistentVolumeSource{
+				FlexVolume: &v1.FlexVolumeSource{
 					Driver:   "kubernetes.io/fakeAttacher",
 					ReadOnly: false,
 				},

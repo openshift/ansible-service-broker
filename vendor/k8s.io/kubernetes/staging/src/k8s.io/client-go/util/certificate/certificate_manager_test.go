@@ -146,6 +146,46 @@ func TestNewManagerNoRotation(t *testing.T) {
 	}
 }
 
+func TestShouldRotate(t *testing.T) {
+	now := time.Now()
+	tests := []struct {
+		name         string
+		notBefore    time.Time
+		notAfter     time.Time
+		shouldRotate bool
+	}{
+		{"just issued, still good", now.Add(-1 * time.Hour), now.Add(99 * time.Hour), false},
+		{"half way expired, still good", now.Add(-24 * time.Hour), now.Add(24 * time.Hour), false},
+		{"mostly expired, still good", now.Add(-69 * time.Hour), now.Add(31 * time.Hour), false},
+		{"just about expired, should rotate", now.Add(-91 * time.Hour), now.Add(9 * time.Hour), true},
+		{"nearly expired, should rotate", now.Add(-99 * time.Hour), now.Add(1 * time.Hour), true},
+		{"already expired, should rotate", now.Add(-10 * time.Hour), now.Add(-1 * time.Hour), true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			m := manager{
+				cert: &tls.Certificate{
+					Leaf: &x509.Certificate{
+						NotBefore: test.notBefore,
+						NotAfter:  test.notAfter,
+					},
+				},
+				template: &x509.CertificateRequest{},
+				usages:   []certificates.KeyUsage{},
+			}
+			m.setRotationDeadline()
+			if m.shouldRotate() != test.shouldRotate {
+				t.Errorf("Time %v, a certificate issued for (%v, %v) should rotate should be %t.",
+					now,
+					m.cert.Leaf.NotBefore,
+					m.cert.Leaf.NotAfter,
+					test.shouldRotate)
+			}
+		})
+	}
+}
+
 type gaugeMock struct {
 	calls     int
 	lastValue float64
@@ -193,20 +233,20 @@ func TestSetRotationDeadline(t *testing.T) {
 			jitteryDuration = func(float64) time.Duration { return time.Duration(float64(tc.notAfter.Sub(tc.notBefore)) * 0.7) }
 			lowerBound := tc.notBefore.Add(time.Duration(float64(tc.notAfter.Sub(tc.notBefore)) * 0.7))
 
-			deadline := m.nextRotationDeadline()
+			m.setRotationDeadline()
 
-			if !deadline.Equal(lowerBound) {
+			if !m.rotationDeadline.Equal(lowerBound) {
 				t.Errorf("For notBefore %v, notAfter %v, the rotationDeadline %v should be %v.",
 					tc.notBefore,
 					tc.notAfter,
-					deadline,
+					m.rotationDeadline,
 					lowerBound)
 			}
 			if g.calls != 1 {
 				t.Errorf("%d metrics were recorded, wanted %d", g.calls, 1)
 			}
 			if g.lastValue != float64(tc.notAfter.Unix()) {
-				t.Errorf("%f value for metric was recorded, wanted %d", g.lastValue, tc.notAfter.Unix())
+				t.Errorf("%d value for metric was recorded, wanted %d", g.lastValue, tc.notAfter.Unix())
 			}
 		})
 	}
@@ -281,7 +321,7 @@ func TestNewManagerBootstrap(t *testing.T) {
 	}
 	if m, ok := cm.(*manager); !ok {
 		t.Errorf("Expected a '*manager' from 'NewManager'")
-	} else if !m.forceRotation {
+	} else if !m.shouldRotate() {
 		t.Errorf("Expected rotation should happen during bootstrap, but it won't.")
 	}
 }
@@ -320,8 +360,9 @@ func TestNewManagerNoBootstrap(t *testing.T) {
 	if m, ok := cm.(*manager); !ok {
 		t.Errorf("Expected a '*manager' from 'NewManager'")
 	} else {
-		if m.forceRotation {
-			t.Errorf("Expected rotation should not happen during bootstrap, but it won't.")
+		m.setRotationDeadline()
+		if m.shouldRotate() {
+			t.Errorf("Expected rotation should happen during bootstrap, but it won't.")
 		}
 	}
 }
@@ -474,7 +515,8 @@ func TestInitializeCertificateSigningRequestClient(t *testing.T) {
 			if m, ok := certificateManager.(*manager); !ok {
 				t.Errorf("Expected a '*manager' from 'NewManager'")
 			} else {
-				if m.forceRotation {
+				m.setRotationDeadline()
+				if m.shouldRotate() {
 					if success, err := m.rotateCerts(); !success {
 						t.Errorf("Got failure from 'rotateCerts', wanted success.")
 					} else if err != nil {
@@ -572,7 +614,8 @@ func TestInitializeOtherRESTClients(t *testing.T) {
 			if m, ok := certificateManager.(*manager); !ok {
 				t.Errorf("Expected a '*manager' from 'NewManager'")
 			} else {
-				if m.forceRotation {
+				m.setRotationDeadline()
+				if m.shouldRotate() {
 					success, err := certificateManager.(*manager).rotateCerts()
 					if err != nil {
 						t.Errorf("Got error %v, expected none.", err)

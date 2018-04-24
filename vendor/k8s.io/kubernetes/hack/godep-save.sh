@@ -20,6 +20,7 @@ set -o pipefail
 
 KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
 source "${KUBE_ROOT}/hack/lib/init.sh"
+source "${KUBE_ROOT}/hack/lib/util.sh"
 
 kube::log::status "Ensuring prereqs"
 kube::util::ensure_single_dir_gopath
@@ -58,7 +59,6 @@ REQUIRED_BINS=(
   "github.com/onsi/ginkgo/ginkgo"
   "github.com/jteeuwen/go-bindata/go-bindata"
   "github.com/tools/godep"
-  "github.com/client9/misspell/cmd/misspell"
   "./..."
 )
 
@@ -85,14 +85,6 @@ hack/update-bazel.sh >/dev/null
 
 kube::log::status "Updating LICENSES file"
 hack/update-godep-licenses.sh >/dev/null
-
-kube::log::status "Creating OWNERS file"
-rm -f "Godeps/OWNERS" "vendor/OWNERS"
-cat <<__EOF__ > "Godeps/OWNERS"
-approvers:
-- dep-approvers
-__EOF__
-cp "Godeps/OWNERS" "vendor/OWNERS"
 
 # Clean up
 rm -rf "${BACKUP}"

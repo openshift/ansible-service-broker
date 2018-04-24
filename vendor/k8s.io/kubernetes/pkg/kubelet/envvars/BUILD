@@ -22,6 +22,7 @@ go_library(
 go_test(
     name = "go_default_xtest",
     srcs = ["envvars_test.go"],
+    importpath = "k8s.io/kubernetes/pkg/kubelet/envvars_test",
     deps = [
         ":go_default_library",
         "//vendor/k8s.io/api/core/v1:go_default_library",

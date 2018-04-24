@@ -44,12 +44,11 @@ var (
 // NewCmdCreatePodDisruptionBudget is a macro command to create a new pod disruption budget.
 func NewCmdCreatePodDisruptionBudget(f cmdutil.Factory, cmdOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "poddisruptionbudget NAME --selector=SELECTOR --min-available=N [--dry-run]",
-		DisableFlagsInUseLine: true,
-		Aliases:               []string{"pdb"},
-		Short:                 i18n.T("Create a pod disruption budget with the specified name."),
-		Long:                  pdbLong,
-		Example:               pdbExample,
+		Use:     "poddisruptionbudget NAME --selector=SELECTOR --min-available=N [--dry-run]",
+		Aliases: []string{"pdb"},
+		Short:   i18n.T("Create a pod disruption budget with the specified name."),
+		Long:    pdbLong,
+		Example: pdbExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := CreatePodDisruptionBudget(f, cmdOut, cmd, args)
 			cmdutil.CheckErr(err)
@@ -94,7 +93,7 @@ func CreatePodDisruptionBudget(f cmdutil.Factory, cmdOut io.Writer, cmd *cobra.C
 	return RunCreateSubcommand(f, cmd, cmdOut, &CreateSubcommandOptions{
 		Name:                name,
 		StructuredGenerator: generator,
-		DryRun:              cmdutil.GetDryRunFlag(cmd),
+		DryRun:              cmdutil.GetFlagBool(cmd, "dry-run"),
 		OutputFormat:        cmdutil.GetFlagString(cmd, "output"),
 	})
 }

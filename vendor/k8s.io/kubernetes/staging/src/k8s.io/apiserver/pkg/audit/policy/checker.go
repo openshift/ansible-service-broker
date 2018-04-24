@@ -164,11 +164,11 @@ func ruleMatchesResource(r *audit.PolicyRule, attrs authorizer.Attributes) bool 
 
 	apiGroup := attrs.GetAPIGroup()
 	resource := attrs.GetResource()
-	subresource := attrs.GetSubresource()
-	combinedResource := resource
 	// If subresource, the resource in the policy must match "(resource)/(subresource)"
-	if subresource != "" {
-		combinedResource = resource + "/" + subresource
+	//
+	// TODO: consider adding options like "pods/*" to match all subresources.
+	if sr := attrs.GetSubresource(); sr != "" {
+		resource = resource + "/" + sr
 	}
 
 	name := attrs.GetName()
@@ -179,17 +179,8 @@ func ruleMatchesResource(r *audit.PolicyRule, attrs authorizer.Attributes) bool 
 				return true
 			}
 			for _, res := range gr.Resources {
-				if len(gr.ResourceNames) == 0 || hasString(gr.ResourceNames, name) {
-					// match "*"
-					if res == combinedResource || res == "*" {
-						return true
-					}
-					// match "*/subresource"
-					if len(subresource) > 0 && strings.HasPrefix(res, "*/") && subresource == strings.TrimLeft(res, "*/") {
-						return true
-					}
-					// match "resource/*"
-					if strings.HasSuffix(res, "/*") && resource == strings.TrimRight(res, "/*") {
+				if res == resource {
+					if len(gr.ResourceNames) == 0 || hasString(gr.ResourceNames, name) {
 						return true
 					}
 				}

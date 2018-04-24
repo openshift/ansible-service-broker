@@ -9,8 +9,14 @@ load("//pkg/version:def.bzl", "version_x_defs")
 
 go_binary(
     name = "kube-proxy",
-    embed = [":go_default_library"],
-    pure = "on",
+    gc_linkopts = [
+        "-linkmode",
+        "external",
+        "-extldflags",
+        "-static",
+    ],
+    importpath = "k8s.io/kubernetes/cmd/kube-proxy",
+    library = ":go_default_library",
     x_defs = version_x_defs(),
 )
 

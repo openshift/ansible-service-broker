@@ -23,6 +23,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/util/flag"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -55,7 +57,7 @@ var (
 		kubectl config view -o jsonpath='{.users[?(@.name == "e2e")].user.password}'`)
 )
 
-func NewCmdConfigView(f cmdutil.Factory, out, errOut io.Writer, ConfigAccess clientcmd.ConfigAccess) *cobra.Command {
+func NewCmdConfigView(out, errOut io.Writer, ConfigAccess clientcmd.ConfigAccess) *cobra.Command {
 	options := &ViewOptions{ConfigAccess: ConfigAccess}
 	// Default to yaml
 	defaultOutputFormat := "yaml"
@@ -80,8 +82,9 @@ func NewCmdConfigView(f cmdutil.Factory, out, errOut io.Writer, ConfigAccess cli
 			}
 
 			printOpts := cmdutil.ExtractCmdPrintOptions(cmd, false)
-			printer, err := cmdutil.PrinterForOptions(printOpts)
+			printer, err := cmdutil.PrinterForOptions(meta.NewDefaultRESTMapper(nil, nil), latest.Scheme, nil, []runtime.Decoder{latest.Codec}, printOpts)
 			cmdutil.CheckErr(err)
+			printer = printers.NewVersionedPrinter(printer, latest.Scheme, latest.ExternalVersion)
 
 			cmdutil.CheckErr(options.Run(out, printer))
 		},
@@ -91,8 +94,8 @@ func NewCmdConfigView(f cmdutil.Factory, out, errOut io.Writer, ConfigAccess cli
 	cmd.Flags().Set("output", defaultOutputFormat)
 
 	options.Merge.Default(true)
-	mergeFlag := cmd.Flags().VarPF(&options.Merge, "merge", "", "Merge the full hierarchy of kubeconfig files")
-	mergeFlag.NoOptDefVal = "true"
+	f := cmd.Flags().VarPF(&options.Merge, "merge", "", "Merge the full hierarchy of kubeconfig files")
+	f.NoOptDefVal = "true"
 	cmd.Flags().BoolVar(&options.RawByteData, "raw", false, "Display raw byte data")
 	cmd.Flags().BoolVar(&options.Flatten, "flatten", false, "Flatten the resulting kubeconfig file into self-contained output (useful for creating portable kubeconfig files)")
 	cmd.Flags().BoolVar(&options.Minify, "minify", false, "Remove all information not used by current-context from the output")
@@ -119,12 +122,7 @@ func (o ViewOptions) Run(out io.Writer, printer printers.ResourcePrinter) error 
 		clientcmdapi.ShortenConfig(config)
 	}
 
-	convertedObj, err := latest.Scheme.ConvertToVersion(config, latest.ExternalVersion)
-	if err != nil {
-		return err
-	}
-
-	err = printer.PrintObj(convertedObj, out)
+	err = printer.PrintObj(config, out)
 	if err != nil {
 		return err
 	}

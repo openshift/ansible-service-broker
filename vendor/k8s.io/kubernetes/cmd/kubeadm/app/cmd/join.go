@@ -106,11 +106,12 @@ func NewCmdJoin(out io.Writer) *cobra.Command {
 
 	var skipPreFlight bool
 	var cfgPath string
+	var criSocket string
 	var featureGatesString string
 	var ignorePreflightErrors []string
 
 	cmd := &cobra.Command{
-		Use:   "join",
+		Use:   "join [flags]",
 		Short: "Run this on any machine you wish to join an existing cluster",
 		Long:  joinLongDescription,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -128,7 +129,7 @@ func NewCmdJoin(out io.Writer) *cobra.Command {
 			ignorePreflightErrorsSet, err := validation.ValidateIgnorePreflightErrors(ignorePreflightErrors, skipPreFlight)
 			kubeadmutil.CheckErr(err)
 
-			j, err := NewJoin(cfgPath, args, internalcfg, ignorePreflightErrorsSet)
+			j, err := NewJoin(cfgPath, args, internalcfg, ignorePreflightErrorsSet, criSocket)
 			kubeadmutil.CheckErr(err)
 			kubeadmutil.CheckErr(j.Validate(cmd))
 			kubeadmutil.CheckErr(j.Run(out))
@@ -136,7 +137,7 @@ func NewCmdJoin(out io.Writer) *cobra.Command {
 	}
 
 	AddJoinConfigFlags(cmd.PersistentFlags(), cfg, &featureGatesString)
-	AddJoinOtherFlags(cmd.PersistentFlags(), &cfgPath, &skipPreFlight, &ignorePreflightErrors)
+	AddJoinOtherFlags(cmd.PersistentFlags(), &cfgPath, &skipPreFlight, &criSocket, &ignorePreflightErrors)
 
 	return cmd
 }
@@ -168,14 +169,10 @@ func AddJoinConfigFlags(flagSet *flag.FlagSet, cfg *kubeadmapiext.NodeConfigurat
 		featureGatesString, "feature-gates", *featureGatesString,
 		"A set of key=value pairs that describe feature gates for various features. "+
 			"Options are:\n"+strings.Join(features.KnownFeatures(&features.InitFeatureGates), "\n"))
-	flagSet.StringVar(
-		&cfg.CRISocket, "cri-socket", cfg.CRISocket,
-		`Specify the CRI socket to connect to.`,
-	)
 }
 
 // AddJoinOtherFlags adds join flags that are not bound to a configuration file to the given flagset
-func AddJoinOtherFlags(flagSet *flag.FlagSet, cfgPath *string, skipPreFlight *bool, ignorePreflightErrors *[]string) {
+func AddJoinOtherFlags(flagSet *flag.FlagSet, cfgPath *string, skipPreFlight *bool, criSocket *string, ignorePreflightErrors *[]string) {
 	flagSet.StringVar(
 		cfgPath, "config", *cfgPath,
 		"Path to kubeadm config file.")
@@ -189,6 +186,10 @@ func AddJoinOtherFlags(flagSet *flag.FlagSet, cfgPath *string, skipPreFlight *bo
 		"Skip preflight checks which normally run before modifying the system.",
 	)
 	flagSet.MarkDeprecated("skip-preflight-checks", "it is now equivalent to --ignore-preflight-errors=all")
+	flagSet.StringVar(
+		criSocket, "cri-socket", "/var/run/dockershim.sock",
+		`Specify the CRI socket to connect to.`,
+	)
 }
 
 // Join defines struct used by kubeadm join command
@@ -197,7 +198,7 @@ type Join struct {
 }
 
 // NewJoin instantiates Join struct with given arguments
-func NewJoin(cfgPath string, args []string, cfg *kubeadmapi.NodeConfiguration, ignorePreflightErrors sets.String) (*Join, error) {
+func NewJoin(cfgPath string, args []string, cfg *kubeadmapi.NodeConfiguration, ignorePreflightErrors sets.String, criSocket string) (*Join, error) {
 
 	if cfg.NodeName == "" {
 		cfg.NodeName = nodeutil.GetHostname("")
@@ -216,7 +217,7 @@ func NewJoin(cfgPath string, args []string, cfg *kubeadmapi.NodeConfiguration, i
 	fmt.Println("[preflight] Running pre-flight checks.")
 
 	// Then continue with the others...
-	if err := preflight.RunJoinNodeChecks(utilsexec.New(), cfg, ignorePreflightErrors); err != nil {
+	if err := preflight.RunJoinNodeChecks(utilsexec.New(), cfg, criSocket, ignorePreflightErrors); err != nil {
 		return nil, err
 	}
 

@@ -25,8 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/controller/volume/expand/cache"
+	"k8s.io/kubernetes/pkg/controller/volume/expand/util"
 	"k8s.io/kubernetes/pkg/util/goroutinemap/exponentialbackoff"
-	"k8s.io/kubernetes/pkg/volume/util"
 	"k8s.io/kubernetes/pkg/volume/util/operationexecutor"
 )
 
@@ -96,8 +96,6 @@ func markPVCResizeInProgress(pvcWithResizeRequest *cache.PVCWithResizeRequest, k
 		LastTransitionTime: metav1.Now(),
 	}
 	conditions := []v1.PersistentVolumeClaimCondition{progressCondition}
-	newPVC := pvcWithResizeRequest.PVC.DeepCopy()
-	newPVC = util.MergeResizeConditionOnPVC(newPVC, conditions)
 
-	return util.PatchPVCStatus(pvcWithResizeRequest.PVC /*oldPVC*/, newPVC, kubeClient)
+	return util.UpdatePVCCondition(pvcWithResizeRequest.PVC, conditions, kubeClient)
 }

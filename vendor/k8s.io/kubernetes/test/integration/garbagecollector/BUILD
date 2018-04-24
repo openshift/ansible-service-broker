@@ -1,4 +1,9 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_test")
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@io_bazel_rules_go//go:def.bzl",
+    "go_test",
+)
 
 go_test(
     name = "go_default_test",
@@ -8,6 +13,7 @@ go_test(
         "garbage_collector_test.go",
         "main_test.go",
     ],
+    importpath = "k8s.io/kubernetes/test/integration/garbagecollector",
     tags = ["integration"],
     deps = [
         "//cmd/kube-apiserver/app/testing:go_default_library",
@@ -46,5 +52,4 @@ filegroup(
     name = "all-srcs",
     srcs = [":package-srcs"],
     tags = ["automanaged"],
-    visibility = ["//visibility:public"],
 )

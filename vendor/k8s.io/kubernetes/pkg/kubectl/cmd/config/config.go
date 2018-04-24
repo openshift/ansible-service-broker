@@ -31,14 +31,13 @@ import (
 )
 
 // NewCmdConfig creates a command object for the "config" action, and adds all child commands to it.
-func NewCmdConfig(f cmdutil.Factory, pathOptions *clientcmd.PathOptions, out, errOut io.Writer) *cobra.Command {
+func NewCmdConfig(pathOptions *clientcmd.PathOptions, out, errOut io.Writer) *cobra.Command {
 	if len(pathOptions.ExplicitFileFlag) == 0 {
 		pathOptions.ExplicitFileFlag = clientcmd.RecommendedConfigPathFlag
 	}
 
 	cmd := &cobra.Command{
-		Use: "config SUBCOMMAND",
-		DisableFlagsInUseLine: true,
+		Use:   "config SUBCOMMAND",
 		Short: i18n.T("Modify kubeconfig files"),
 		Long: templates.LongDesc(`
 			Modify kubeconfig files using subcommands like "kubectl config set current-context my-context"
@@ -54,7 +53,7 @@ func NewCmdConfig(f cmdutil.Factory, pathOptions *clientcmd.PathOptions, out, er
 	// file paths are common to all sub commands
 	cmd.PersistentFlags().StringVar(&pathOptions.LoadingRules.ExplicitPath, pathOptions.ExplicitFileFlag, pathOptions.LoadingRules.ExplicitPath, "use a particular kubeconfig file")
 
-	cmd.AddCommand(NewCmdConfigView(f, out, errOut, pathOptions))
+	cmd.AddCommand(NewCmdConfigView(out, errOut, pathOptions))
 	cmd.AddCommand(NewCmdConfigSetCluster(out, pathOptions))
 	cmd.AddCommand(NewCmdConfigSetAuthInfo(out, pathOptions))
 	cmd.AddCommand(NewCmdConfigSetContext(out, pathOptions))

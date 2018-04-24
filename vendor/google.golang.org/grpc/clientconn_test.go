@@ -19,9 +19,9 @@
 package grpc
 
 import (
+	"io"
 	"math"
 	"net"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -38,16 +38,6 @@ import (
 	"google.golang.org/grpc/test/leakcheck"
 	"google.golang.org/grpc/testdata"
 )
-
-var (
-	mutableMinConnectTimeout = time.Second * 20
-)
-
-func init() {
-	getMinConnectTimeout = func() time.Duration {
-		return time.Duration(atomic.LoadInt64((*int64)(&mutableMinConnectTimeout)))
-	}
-}
 
 func assertState(wantState connectivity.State, cc *ClientConn) (connectivity.State, bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -149,9 +139,9 @@ func TestDialWaitsForServerSettings(t *testing.T) {
 			return
 		}
 		defer conn.Close()
-		// Sleep for a little bit to make sure that Dial on client
-		// side blocks until settings are received.
-		time.Sleep(500 * time.Millisecond)
+		// Sleep so that if the test were to fail it
+		// will fail more often than not.
+		time.Sleep(100 * time.Millisecond)
 		framer := http2.NewFramer(conn, conn)
 		close(sent)
 		if err := framer.WriteSettings(http2.Setting{}); err != nil {
@@ -160,7 +150,7 @@ func TestDialWaitsForServerSettings(t *testing.T) {
 		}
 		<-dialDone // Close conn only after dial returns.
 	}()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	client, err := DialContext(ctx, server.Addr().String(), WithInsecure(), WithWaitForHandshake(), WithBlock())
 	close(dialDone)
@@ -179,74 +169,102 @@ func TestDialWaitsForServerSettings(t *testing.T) {
 }
 
 func TestCloseConnectionWhenServerPrefaceNotReceived(t *testing.T) {
-	mctBkp := getMinConnectTimeout()
+	mctBkp := minConnectTimeout
 	// Call this only after transportMonitor goroutine has ended.
 	defer func() {
-		atomic.StoreInt64((*int64)(&mutableMinConnectTimeout), int64(mctBkp))
-
+		minConnectTimeout = mctBkp
 	}()
 	defer leakcheck.Check(t)
-	atomic.StoreInt64((*int64)(&mutableMinConnectTimeout), int64(time.Millisecond)*500)
-	lis, err := net.Listen("tcp", "localhost:0")
+	minConnectTimeout = time.Millisecond * 500
+	server, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("Error while listening. Err: %v", err)
 	}
-	var (
-		conn2 net.Conn
-		over  uint32
-	)
-	defer func() {
-		lis.Close()
-		// conn2 shouldn't be closed until the client has
-		// observed a successful test.
-		if conn2 != nil {
-			conn2.Close()
-		}
-	}()
+	defer server.Close()
 	done := make(chan struct{})
+	clientDone := make(chan struct{})
 	go func() { // Launch the server.
-		defer close(done)
-		conn1, err := lis.Accept()
+		defer func() {
+			if done != nil {
+				close(done)
+			}
+		}()
+		conn1, err := server.Accept()
 		if err != nil {
 			t.Errorf("Error while accepting. Err: %v", err)
 			return
 		}
 		defer conn1.Close()
-		// Don't send server settings and the client should close the connection and try again.
-		conn2, err = lis.Accept() // Accept a reconnection request from client.
+		// Don't send server settings and make sure the connection is closed.
+		time.Sleep(time.Millisecond * 1500) // Since the first backoff is for a second.
+		conn1.SetDeadline(time.Now().Add(time.Second))
+		b := make([]byte, 24)
+		for {
+			// Make sure the connection was closed by client.
+			_, err = conn1.Read(b)
+			if err == nil {
+				continue
+			}
+			if err != io.EOF {
+				t.Errorf(" conn1.Read(_) = _, %v, want _, io.EOF", err)
+				return
+			}
+			break
+		}
+
+		conn2, err := server.Accept() // Accept a reconnection request from client.
 		if err != nil {
 			t.Errorf("Error while accepting. Err: %v", err)
 			return
 		}
+		defer conn2.Close()
 		framer := http2.NewFramer(conn2, conn2)
-		if err = framer.WriteSettings(http2.Setting{}); err != nil {
+		if err := framer.WriteSettings(http2.Setting{}); err != nil {
 			t.Errorf("Error while writing settings. Err: %v", err)
 			return
 		}
-		b := make([]byte, 8)
+		time.Sleep(time.Millisecond * 1500) // Since the first backoff is for a second.
+		conn2.SetDeadline(time.Now().Add(time.Millisecond * 500))
 		for {
+			// Make sure the connection stays open and is closed
+			// only by connection timeout.
 			_, err = conn2.Read(b)
 			if err == nil {
 				continue
 			}
-			if atomic.LoadUint32(&over) == 1 {
-				// The connection stayed alive for the timer.
-				// Success.
+			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 				return
 			}
 			t.Errorf("Unexpected error while reading. Err: %v, want timeout error", err)
 			break
 		}
+		close(done)
+		done = nil
+		<-clientDone
+
 	}()
-	client, err := Dial(lis.Addr().String(), WithInsecure())
+	client, err := Dial(server.Addr().String(), WithInsecure())
 	if err != nil {
 		t.Fatalf("Error while dialing. Err: %v", err)
 	}
-	time.Sleep(time.Second * 2) // Let things play out.
-	atomic.StoreUint32(&over, 1)
-	lis.Close()
-	client.Close()
 	<-done
+	// TODO: The code from BEGIN to END should be delete once issue
+	// https://github.com/grpc/grpc-go/issues/1750 is fixed.
+	// BEGIN
+	// Set underlying addrConns state to Shutdown so that no reconnect
+	// attempts take place and thereby resetting minConnectTimeout is
+	// race free.
+	client.mu.Lock()
+	addrConns := client.conns
+	client.mu.Unlock()
+	for ac := range addrConns {
+		ac.mu.Lock()
+		ac.state = connectivity.Shutdown
+		ac.mu.Unlock()
+	}
+	// END
+	client.Close()
+	close(clientDone)
 }
 
 func TestBackoffWhenNoServerPrefaceReceived(t *testing.T) {

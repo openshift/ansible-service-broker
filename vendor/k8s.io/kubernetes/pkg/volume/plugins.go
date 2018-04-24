@@ -33,7 +33,6 @@ import (
 	"k8s.io/kubernetes/pkg/cloudprovider"
 	"k8s.io/kubernetes/pkg/util/io"
 	"k8s.io/kubernetes/pkg/util/mount"
-	"k8s.io/kubernetes/pkg/volume/util/recyclerclient"
 )
 
 const (
@@ -162,7 +161,7 @@ type RecyclableVolumePlugin interface {
 	// Recycle will use the provided recorder to write any events that might be
 	// interesting to user. It's expected that caller will pass these events to
 	// the PV being recycled.
-	Recycle(pvName string, spec *Spec, eventRecorder recyclerclient.RecycleEventRecorder) error
+	Recycle(pvName string, spec *Spec, eventRecorder RecycleEventRecorder) error
 }
 
 // DeletableVolumePlugin is an extended interface of VolumePlugin and is used
@@ -655,7 +654,7 @@ func (pm *VolumePluginMgr) FindCreatablePluginBySpec(spec *Spec) (ProvisionableV
 	return nil, fmt.Errorf("no creatable volume plugin matched")
 }
 
-// FindAttachablePluginBySpec fetches a persistent volume plugin by spec.
+// FindAttachablePluginBySpec fetches a persistent volume plugin by name.
 // Unlike the other "FindPlugin" methods, this does not return error if no
 // plugin is found.  All volumes require a mounter and unmounter, but not
 // every volume will have an attacher/detacher.

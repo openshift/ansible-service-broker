@@ -31,6 +31,7 @@ go_library(
 go_test(
     name = "go_default_xtest",
     srcs = ["conversion_test.go"],
+    importpath = "k8s.io/kubernetes/pkg/apis/rbac/v1alpha1_test",
     deps = [
         "//pkg/api/legacyscheme:go_default_library",
         "//pkg/apis/rbac:go_default_library",

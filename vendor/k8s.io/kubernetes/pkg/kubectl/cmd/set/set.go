@@ -34,8 +34,7 @@ var (
 
 func NewCmdSet(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "set SUBCOMMAND",
-		DisableFlagsInUseLine: true,
+		Use:   "set SUBCOMMAND",
 		Short: i18n.T("Set specific features on objects"),
 		Long:  set_long,
 		Run:   cmdutil.DefaultSubCommandRun(err),

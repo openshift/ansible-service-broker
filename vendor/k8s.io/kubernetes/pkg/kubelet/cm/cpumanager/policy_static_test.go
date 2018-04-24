@@ -93,10 +93,10 @@ func TestStaticPolicyStart(t *testing.T) {
 			defer func() {
 				if err := recover(); err != nil {
 					if !testCase.expPanic {
-						t.Errorf("unexpected panic occurred: %q", err)
+						t.Errorf("unexpected panic occured: %q", err)
 					}
 				} else if testCase.expPanic {
-					t.Error("expected panic doesn't occurred")
+					t.Error("expected panic doesn't occured")
 				}
 			}()
 			policy := NewStaticPolicy(testCase.topo, testCase.numReservedCPUs).(*staticPolicy)

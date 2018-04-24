@@ -26,12 +26,9 @@ import (
 	"k8s.io/kubernetes/plugin/pkg/admission/eventratelimit/apis/eventratelimit/validation"
 )
 
-// PluginName indicates name of admission plugin.
-const PluginName = "EventRateLimit"
-
 // Register registers a plugin
 func Register(plugins *admission.Plugins) {
-	plugins.Register(PluginName,
+	plugins.Register("EventRateLimit",
 		func(config io.Reader) (admission.Interface, error) {
 			// load the configuration provided (if any)
 			configuration, err := LoadConfiguration(config)

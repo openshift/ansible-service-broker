@@ -30,12 +30,9 @@ import (
 	kubeapiserveradmission "k8s.io/kubernetes/pkg/kubeapiserver/admission"
 )
 
-// PluginName indicates name of admission plugin.
-const PluginName = "NamespaceExists"
-
 // Register registers a plugin
 func Register(plugins *admission.Plugins) {
-	plugins.Register(PluginName, func(config io.Reader) (admission.Interface, error) {
+	plugins.Register("NamespaceExists", func(config io.Reader) (admission.Interface, error) {
 		return NewExists(), nil
 	})
 }

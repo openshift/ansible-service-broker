@@ -131,10 +131,10 @@ func TestGetPodQOS(t *testing.T) {
 			expected: v1.PodQOSBurstable,
 		},
 		{
-			pod: newPod("best-effort-hugepages", []v1.Container{
-				newContainer("best-effort", addResource("hugepages-2Mi", "1Gi", getResourceList("0", "0")), addResource("hugepages-2Mi", "1Gi", getResourceList("0", "0"))),
+			pod: newPod("burstable-hugepages", []v1.Container{
+				newContainer("burstable", addResource("hugepages-2Mi", "1Gi", getResourceList("0", "0")), addResource("hugepages-2Mi", "1Gi", getResourceList("0", "0"))),
 			}),
-			expected: v1.PodQOSBestEffort,
+			expected: v1.PodQOSBurstable,
 		},
 	}
 	for id, testCase := range testCases {

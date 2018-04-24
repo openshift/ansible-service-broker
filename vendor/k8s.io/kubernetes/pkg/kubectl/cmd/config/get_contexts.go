@@ -61,8 +61,7 @@ func NewCmdConfigGetContexts(out io.Writer, configAccess clientcmd.ConfigAccess)
 	options := &GetContextsOptions{configAccess: configAccess}
 
 	cmd := &cobra.Command{
-		Use: "get-contexts [(-o|--output=)name)]",
-		DisableFlagsInUseLine: true,
+		Use:     "get-contexts [(-o|--output=)name)]",
 		Short:   i18n.T("Describe one or many contexts"),
 		Long:    getContextsLong,
 		Example: getContextsExample,

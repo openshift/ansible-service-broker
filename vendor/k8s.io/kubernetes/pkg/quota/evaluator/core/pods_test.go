@@ -36,6 +36,32 @@ func TestPodConstraintsFunc(t *testing.T) {
 		required []api.ResourceName
 		err      string
 	}{
+		"init container resource invalid": {
+			pod: &api.Pod{
+				Spec: api.PodSpec{
+					InitContainers: []api.Container{{
+						Resources: api.ResourceRequirements{
+							Requests: api.ResourceList{api.ResourceCPU: resource.MustParse("2m")},
+							Limits:   api.ResourceList{api.ResourceCPU: resource.MustParse("1m")},
+						},
+					}},
+				},
+			},
+			err: `spec.initContainers[0].resources.requests: Invalid value: "2m": must be less than or equal to cpu limit`,
+		},
+		"container resource invalid": {
+			pod: &api.Pod{
+				Spec: api.PodSpec{
+					Containers: []api.Container{{
+						Resources: api.ResourceRequirements{
+							Requests: api.ResourceList{api.ResourceCPU: resource.MustParse("2m")},
+							Limits:   api.ResourceList{api.ResourceCPU: resource.MustParse("1m")},
+						},
+					}},
+				},
+			},
+			err: `spec.containers[0].resources.requests: Invalid value: "2m": must be less than or equal to cpu limit`,
+		},
 		"init container resource missing": {
 			pod: &api.Pod{
 				Spec: api.PodSpec{
@@ -166,23 +192,6 @@ func TestPodEvaluatorUsage(t *testing.T) {
 				generic.ObjectCountQuotaResourceNameFor(schema.GroupResource{Resource: "pods"}): resource.MustParse("1"),
 			},
 		},
-		"init container extended resources": {
-			pod: &api.Pod{
-				Spec: api.PodSpec{
-					InitContainers: []api.Container{{
-						Resources: api.ResourceRequirements{
-							Requests: api.ResourceList{api.ResourceName("example.com/dongle"): resource.MustParse("3")},
-							Limits:   api.ResourceList{api.ResourceName("example.com/dongle"): resource.MustParse("3")},
-						},
-					}},
-				},
-			},
-			usage: api.ResourceList{
-				api.ResourceName("requests.example.com/dongle"): resource.MustParse("3"),
-				api.ResourcePods:                                resource.MustParse("1"),
-				generic.ObjectCountQuotaResourceNameFor(schema.GroupResource{Resource: "pods"}): resource.MustParse("1"),
-			},
-		},
 		"container CPU": {
 			pod: &api.Pod{
 				Spec: api.PodSpec{
@@ -257,23 +266,6 @@ func TestPodEvaluatorUsage(t *testing.T) {
 				generic.ObjectCountQuotaResourceNameFor(schema.GroupResource{Resource: "pods"}): resource.MustParse("1"),
 			},
 		},
-		"container extended resources": {
-			pod: &api.Pod{
-				Spec: api.PodSpec{
-					Containers: []api.Container{{
-						Resources: api.ResourceRequirements{
-							Requests: api.ResourceList{api.ResourceName("example.com/dongle"): resource.MustParse("3")},
-							Limits:   api.ResourceList{api.ResourceName("example.com/dongle"): resource.MustParse("3")},
-						},
-					}},
-				},
-			},
-			usage: api.ResourceList{
-				api.ResourceName("requests.example.com/dongle"): resource.MustParse("3"),
-				api.ResourcePods:                                resource.MustParse("1"),
-				generic.ObjectCountQuotaResourceNameFor(schema.GroupResource{Resource: "pods"}): resource.MustParse("1"),
-			},
-		},
 		"init container maximums override sum of containers": {
 			pod: &api.Pod{
 				Spec: api.PodSpec{
@@ -281,28 +273,24 @@ func TestPodEvaluatorUsage(t *testing.T) {
 						{
 							Resources: api.ResourceRequirements{
 								Requests: api.ResourceList{
-									api.ResourceCPU:                        resource.MustParse("4"),
-									api.ResourceMemory:                     resource.MustParse("100M"),
-									api.ResourceName("example.com/dongle"): resource.MustParse("4"),
+									api.ResourceCPU:    resource.MustParse("4"),
+									api.ResourceMemory: resource.MustParse("100M"),
 								},
 								Limits: api.ResourceList{
-									api.ResourceCPU:                        resource.MustParse("8"),
-									api.ResourceMemory:                     resource.MustParse("200M"),
-									api.ResourceName("example.com/dongle"): resource.MustParse("4"),
+									api.ResourceCPU:    resource.MustParse("8"),
+									api.ResourceMemory: resource.MustParse("200M"),
 								},
 							},
 						},
 						{
 							Resources: api.ResourceRequirements{
 								Requests: api.ResourceList{
-									api.ResourceCPU:                        resource.MustParse("1"),
-									api.ResourceMemory:                     resource.MustParse("50M"),
-									api.ResourceName("example.com/dongle"): resource.MustParse("2"),
+									api.ResourceCPU:    resource.MustParse("1"),
+									api.ResourceMemory: resource.MustParse("50M"),
 								},
 								Limits: api.ResourceList{
-									api.ResourceCPU:                        resource.MustParse("2"),
-									api.ResourceMemory:                     resource.MustParse("100M"),
-									api.ResourceName("example.com/dongle"): resource.MustParse("2"),
+									api.ResourceCPU:    resource.MustParse("2"),
+									api.ResourceMemory: resource.MustParse("100M"),
 								},
 							},
 						},
@@ -311,28 +299,24 @@ func TestPodEvaluatorUsage(t *testing.T) {
 						{
 							Resources: api.ResourceRequirements{
 								Requests: api.ResourceList{
-									api.ResourceCPU:                        resource.MustParse("1"),
-									api.ResourceMemory:                     resource.MustParse("50M"),
-									api.ResourceName("example.com/dongle"): resource.MustParse("1"),
+									api.ResourceCPU:    resource.MustParse("1"),
+									api.ResourceMemory: resource.MustParse("50M"),
 								},
 								Limits: api.ResourceList{
-									api.ResourceCPU:                        resource.MustParse("2"),
-									api.ResourceMemory:                     resource.MustParse("100M"),
-									api.ResourceName("example.com/dongle"): resource.MustParse("1"),
+									api.ResourceCPU:    resource.MustParse("2"),
+									api.ResourceMemory: resource.MustParse("100M"),
 								},
 							},
 						},
 						{
 							Resources: api.ResourceRequirements{
 								Requests: api.ResourceList{
-									api.ResourceCPU:                        resource.MustParse("2"),
-									api.ResourceMemory:                     resource.MustParse("25M"),
-									api.ResourceName("example.com/dongle"): resource.MustParse("2"),
+									api.ResourceCPU:    resource.MustParse("2"),
+									api.ResourceMemory: resource.MustParse("25M"),
 								},
 								Limits: api.ResourceList{
-									api.ResourceCPU:                        resource.MustParse("5"),
-									api.ResourceMemory:                     resource.MustParse("50M"),
-									api.ResourceName("example.com/dongle"): resource.MustParse("2"),
+									api.ResourceCPU:    resource.MustParse("5"),
+									api.ResourceMemory: resource.MustParse("50M"),
 								},
 							},
 						},
@@ -340,14 +324,13 @@ func TestPodEvaluatorUsage(t *testing.T) {
 				},
 			},
 			usage: api.ResourceList{
-				api.ResourceRequestsCPU:                                                         resource.MustParse("4"),
-				api.ResourceRequestsMemory:                                                      resource.MustParse("100M"),
-				api.ResourceLimitsCPU:                                                           resource.MustParse("8"),
-				api.ResourceLimitsMemory:                                                        resource.MustParse("200M"),
-				api.ResourcePods:                                                                resource.MustParse("1"),
-				api.ResourceCPU:                                                                 resource.MustParse("4"),
-				api.ResourceMemory:                                                              resource.MustParse("100M"),
-				api.ResourceName("requests.example.com/dongle"):                                 resource.MustParse("4"),
+				api.ResourceRequestsCPU:    resource.MustParse("4"),
+				api.ResourceRequestsMemory: resource.MustParse("100M"),
+				api.ResourceLimitsCPU:      resource.MustParse("8"),
+				api.ResourceLimitsMemory:   resource.MustParse("200M"),
+				api.ResourcePods:           resource.MustParse("1"),
+				api.ResourceCPU:            resource.MustParse("4"),
+				api.ResourceMemory:         resource.MustParse("100M"),
 				generic.ObjectCountQuotaResourceNameFor(schema.GroupResource{Resource: "pods"}): resource.MustParse("1"),
 			},
 		},

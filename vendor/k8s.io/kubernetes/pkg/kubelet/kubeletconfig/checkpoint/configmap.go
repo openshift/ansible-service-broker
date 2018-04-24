@@ -65,6 +65,7 @@ func (c *configMapCheckpoint) Parse() (*kubeletconfig.KubeletConfiguration, erro
 		return nil, fmt.Errorf(emptyCfgErr)
 	}
 
+	// TODO(mtaufen): Once the KubeletConfiguration type is decomposed, extend this to a key for each sub-object
 	config, ok := c.configMap.Data[configMapConfigKey]
 	if !ok {
 		return nil, fmt.Errorf("key %q not found in ConfigMap", configMapConfigKey)

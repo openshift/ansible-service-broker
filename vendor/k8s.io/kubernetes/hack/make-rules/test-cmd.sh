@@ -34,8 +34,7 @@ function run_kube_apiserver() {
   kube::log::status "Starting kube-apiserver"
 
   # Admission Controllers to invoke prior to persisting objects in cluster
-  ENABLE_ADMISSION_PLUGINS="Initializers,LimitRanger,ResourceQuota"
-  DISABLE_ADMISSION_PLUGINS="ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
+  ADMISSION_CONTROL="Initializers,NamespaceLifecycle,LimitRanger,ResourceQuota"
 
   # Include RBAC (to exercise bootstrapping), and AlwaysAllow to allow all actions
   AUTHORIZATION_MODE="RBAC,AlwaysAllow"
@@ -46,8 +45,7 @@ function run_kube_apiserver() {
     --insecure-port="${API_PORT}" \
     --authorization-mode="${AUTHORIZATION_MODE}" \
     --secure-port="${SECURE_API_PORT}" \
-    --enable-admission-plugins="${ENABLE_ADMISSION_PLUGINS}" \
-    --disable-admission-plugins="${DISABLE_ADMISSION_PLUGINS}" \
+    --admission-control="${ADMISSION_CONTROL}" \
     --etcd-servers="http://${ETCD_HOST}:${ETCD_PORT}" \
     --runtime-config=api/v1 \
     --storage-media-type="${KUBE_TEST_API_STORAGE_TYPE-}" \

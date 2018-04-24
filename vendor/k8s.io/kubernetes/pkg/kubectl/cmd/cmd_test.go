@@ -36,15 +36,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/rest/fake"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"k8s.io/kubernetes/pkg/api/testapi"
 	apitesting "k8s.io/kubernetes/pkg/api/testing"
 	api "k8s.io/kubernetes/pkg/apis/core"
-	"k8s.io/kubernetes/pkg/kubectl/cmd/resource"
 	cmdtesting "k8s.io/kubernetes/pkg/kubectl/cmd/testing"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/kubectl/scheme"
 	"k8s.io/kubernetes/pkg/printers"
+	printersinternal "k8s.io/kubernetes/pkg/printers/internalversion"
 	"k8s.io/kubernetes/pkg/util/strings"
 )
 
@@ -176,17 +175,91 @@ func stringBody(body string) io.ReadCloser {
 	return ioutil.NopCloser(bytes.NewReader([]byte(body)))
 }
 
-func Example_printMultiContainersReplicationControllerWithWide() {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
+// TODO(jlowdermilk): refactor the Factory so we can test client versions properly,
+// with different client/server version skew scenarios.
+// Verify that resource.RESTClients constructed from a factory respect mapping.APIVersion
+//func TestClientVersions(t *testing.T) {
+//	f := cmdutil.NewFactory(nil)
+//
+//	version := testapi.Default.Version()
+//	mapping := &meta.RESTMapping{
+//		APIVersion: version,
+//	}
+//	c, err := f.ClientForMapping(mapping)
+//	if err != nil {
+//		t.Errorf("unexpected error: %v", err)
+//	}
+//	client := c.(*client.RESTClient)
+//	if client.APIVersion() != version {
+//		t.Errorf("unexpected Client APIVersion: %s %v", client.APIVersion, client)
+//	}
+//}
 
-	ns := legacyscheme.Codecs
-
+func Example_printReplicationControllerWithNamespace() {
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
+	p := printers.NewHumanReadablePrinter(nil, nil, printers.PrintOptions{
+		WithNamespace: true,
+		ColumnLabels:  []string{},
+	})
+	printersinternal.AddHandlers(p)
+	tf.Printer = p
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
-	cmd := NewCmdRun(tf, os.Stdin, os.Stdout, os.Stderr)
+	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
+	ctrl := &api.ReplicationController{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "foo",
+			Namespace:         "beep",
+			Labels:            map[string]string{"foo": "bar"},
+			CreationTimestamp: metav1.Time{Time: time.Now().AddDate(-10, 0, 0)},
+		},
+		Spec: api.ReplicationControllerSpec{
+			Replicas: 1,
+			Selector: map[string]string{"foo": "bar"},
+			Template: &api.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"foo": "bar"},
+				},
+				Spec: api.PodSpec{
+					Containers: []api.Container{
+						{
+							Name:  "foo",
+							Image: "someimage",
+						},
+					},
+				},
+			},
+		},
+		Status: api.ReplicationControllerStatus{
+			Replicas:      1,
+			ReadyReplicas: 1,
+		},
+	}
+	mapper, _ := f.Object()
+	err := f.PrintObject(cmd, false, mapper, ctrl, os.Stdout)
+	if err != nil {
+		fmt.Printf("Unexpected error: %v", err)
+	}
+	// Output:
+	// NAMESPACE   NAME      DESIRED   CURRENT   READY     AGE
+	// beep        foo       1         1         1         10y
+}
+
+func Example_printMultiContainersReplicationControllerWithWide() {
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
+	p := printers.NewHumanReadablePrinter(nil, nil, printers.PrintOptions{
+		Wide:         true,
+		ColumnLabels: []string{},
+	})
+	printersinternal.AddHandlers(p)
+	tf.Printer = p
+	tf.Client = &fake.RESTClient{
+		NegotiatedSerializer: ns,
+		Client:               nil,
+	}
+	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	ctrl := &api.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "foo",
@@ -218,8 +291,8 @@ func Example_printMultiContainersReplicationControllerWithWide() {
 			Replicas: 1,
 		},
 	}
-	cmd.Flags().Set("output", "wide")
-	err := cmdutil.PrintObject(cmd, ctrl, os.Stdout)
+	mapper, _ := f.Object()
+	err := f.PrintObject(cmd, false, mapper, ctrl, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
 	}
@@ -229,16 +302,17 @@ func Example_printMultiContainersReplicationControllerWithWide() {
 }
 
 func Example_printReplicationController() {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	ns := legacyscheme.Codecs
-
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
+	p := printers.NewHumanReadablePrinter(nil, nil, printers.PrintOptions{
+		ColumnLabels: []string{},
+	})
+	printersinternal.AddHandlers(p)
+	tf.Printer = p
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
-	cmd := NewCmdRun(tf, os.Stdin, os.Stdout, os.Stderr)
+	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	ctrl := &api.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "foo",
@@ -270,7 +344,8 @@ func Example_printReplicationController() {
 			Replicas: 1,
 		},
 	}
-	err := cmdutil.PrintObject(cmd, ctrl, os.Stdout)
+	mapper, _ := f.Object()
+	err := f.PrintObject(cmd, false, mapper, ctrl, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
 	}
@@ -280,17 +355,19 @@ func Example_printReplicationController() {
 }
 
 func Example_printPodWithWideFormat() {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	ns := legacyscheme.Codecs
-
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
+	p := printers.NewHumanReadablePrinter(nil, nil, printers.PrintOptions{
+		Wide:         true,
+		ColumnLabels: []string{},
+	})
+	printersinternal.AddHandlers(p)
+	tf.Printer = p
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
 	nodeName := "kubernetes-node-abcd"
-	cmd := NewCmdRun(tf, os.Stdin, os.Stdout, os.Stderr)
+	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	pod := &api.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "test1",
@@ -309,8 +386,8 @@ func Example_printPodWithWideFormat() {
 			PodIP: "10.1.1.3",
 		},
 	}
-	cmd.Flags().Set("output", "wide")
-	err := cmdutil.PrintObject(cmd, pod, os.Stdout)
+	mapper, _ := f.Object()
+	err := f.PrintObject(cmd, false, mapper, pod, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
 	}
@@ -320,17 +397,19 @@ func Example_printPodWithWideFormat() {
 }
 
 func Example_printPodWithShowLabels() {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	ns := legacyscheme.Codecs
-
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
+	p := printers.NewHumanReadablePrinter(nil, nil, printers.PrintOptions{
+		ShowLabels:   true,
+		ColumnLabels: []string{},
+	})
+	printersinternal.AddHandlers(p)
+	tf.Printer = p
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
 	nodeName := "kubernetes-node-abcd"
-	cmd := NewCmdRun(tf, os.Stdin, os.Stdout, os.Stderr)
+	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	pod := &api.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "test1",
@@ -352,8 +431,8 @@ func Example_printPodWithShowLabels() {
 			},
 		},
 	}
-	cmd.Flags().Set("show-labels", "true")
-	err := cmdutil.PrintObject(cmd, pod, os.Stdout)
+	mapper, _ := f.Object()
+	err := f.PrintObject(cmd, false, mapper, pod, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
 	}
@@ -454,31 +533,29 @@ func newAllPhasePodList() *api.PodList {
 	}
 }
 
-func Example_printPodShowTerminated() {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	ns := legacyscheme.Codecs
-
+func Example_printPodHideTerminated() {
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
+	p := printers.NewHumanReadablePrinter(nil, nil, printers.PrintOptions{
+		ColumnLabels: []string{},
+	})
+	printersinternal.AddHandlers(p)
+	tf.Printer = p
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
-	cmd := NewCmdRun(tf, os.Stdin, os.Stdout, os.Stderr)
+	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	podList := newAllPhasePodList()
 	// filter pods
-	filterFuncs := tf.DefaultResourceFilterFunc()
+	filterFuncs := f.DefaultResourceFilterFunc()
 	filterOpts := cmdutil.ExtractCmdPrintOptions(cmd, false)
 	_, filteredPodList, errs := cmdutil.FilterResourceList(podList, filterFuncs, filterOpts)
 	if errs != nil {
 		fmt.Printf("Unexpected filter error: %v\n", errs)
 	}
-	printer, err := cmdutil.PrinterForOptions(cmdutil.ExtractCmdPrintOptions(cmd, false))
-	if err != nil {
-		fmt.Printf("Unexpected printer get error: %v\n", errs)
-	}
 	for _, pod := range filteredPodList {
-		err := printer.PrintObj(pod, os.Stdout)
+		mapper, _ := f.Object()
+		err := f.PrintObject(cmd, false, mapper, pod, os.Stdout)
 		if err != nil {
 			fmt.Printf("Unexpected error: %v", err)
 		}
@@ -487,24 +564,25 @@ func Example_printPodShowTerminated() {
 	// NAME      READY     STATUS    RESTARTS   AGE
 	// test1     1/2       Pending   6          10y
 	// test2     1/2       Running   6         10y
-	// test3     1/2       Succeeded   6         10y
-	// test4     1/2       Failed    6         10y
 	// test5     1/2       Unknown   6         10y
 }
 
 func Example_printPodShowAll() {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	ns := legacyscheme.Codecs
-
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
+	p := printers.NewHumanReadablePrinter(nil, nil, printers.PrintOptions{
+		ShowAll:      true,
+		ColumnLabels: []string{},
+	})
+	printersinternal.AddHandlers(p)
+	tf.Printer = p
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
-	cmd := NewCmdRun(tf, os.Stdin, os.Stdout, os.Stderr)
+	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	podList := newAllPhasePodList()
-	err := cmdutil.PrintObject(cmd, podList, os.Stdout)
+	mapper, _ := f.Object()
+	err := f.PrintObject(cmd, false, mapper, podList, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
 	}
@@ -517,17 +595,19 @@ func Example_printPodShowAll() {
 	// test5     1/2       Unknown     6          10y
 }
 
-func Example_printServiceWithLabels() {
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	ns := legacyscheme.Codecs
-
+func Example_printServiceWithNamespacesAndLabels() {
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
+	p := printers.NewHumanReadablePrinter(nil, nil, printers.PrintOptions{
+		WithNamespace: true,
+		ColumnLabels:  []string{"l1"},
+	})
+	printersinternal.AddHandlers(p)
+	tf.Printer = p
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
-	cmd := resource.NewCmdGet(tf, os.Stdout, os.Stderr)
+	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	svc := &api.ServiceList{
 		Items: []api.Service{
 			{
@@ -577,15 +657,15 @@ func Example_printServiceWithLabels() {
 	}
 	ld := strings.NewLineDelimiter(os.Stdout, "|")
 	defer ld.Flush()
-	cmd.Flags().Set("label-columns", "l1")
-	err := cmdutil.PrintObject(cmd, svc, ld)
+	mapper, _ := f.Object()
+	err := f.PrintObject(cmd, false, mapper, svc, ld)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
 	}
 	// Output:
-	// |NAME      TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)           AGE       L1|
-	// |svc1      ClusterIP   10.1.1.1     <none>        53/UDP,53/TCP     10y       value|
-	// |svc2      ClusterIP   10.1.1.2     <none>        80/TCP,8080/TCP   10y       dolla-bill-yall|
+	// |NAMESPACE   NAME      TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)           AGE       L1|
+	// |ns1         svc1      ClusterIP   10.1.1.1     <none>        53/UDP,53/TCP     10y       value|
+	// |ns2         svc2      ClusterIP   10.1.1.2     <none>        80/TCP,8080/TCP   10y       dolla-bill-yall|
 	// ||
 }
 

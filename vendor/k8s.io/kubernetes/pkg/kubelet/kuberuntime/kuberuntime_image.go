@@ -21,8 +21,7 @@ import (
 	"k8s.io/api/core/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/kubernetes/pkg/credentialprovider"
-	credentialprovidersecrets "k8s.io/kubernetes/pkg/credentialprovider/secrets"
-	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/runtime/v1alpha2"
+	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/v1alpha1/runtime"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/util/parsers"
 )
@@ -36,7 +35,7 @@ func (m *kubeGenericRuntimeManager) PullImage(image kubecontainer.ImageSpec, pul
 		return "", err
 	}
 
-	keyring, err := credentialprovidersecrets.MakeDockerKeyring(pullSecrets, m.keyring)
+	keyring, err := credentialprovider.MakeDockerKeyring(pullSecrets, m.keyring)
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +78,7 @@ func (m *kubeGenericRuntimeManager) PullImage(image kubecontainer.ImageSpec, pul
 	return "", utilerrors.NewAggregate(pullErrs)
 }
 
-// GetImageRef gets the ID of the image which has already been in
+// GetImageRef gets the reference (digest or ID) of the image which has already been in
 // the local storage. It returns ("", nil) if the image isn't in the local storage.
 func (m *kubeGenericRuntimeManager) GetImageRef(image kubecontainer.ImageSpec) (string, error) {
 	status, err := m.imageService.ImageStatus(&runtimeapi.ImageSpec{Image: image.Image})
@@ -90,7 +89,12 @@ func (m *kubeGenericRuntimeManager) GetImageRef(image kubecontainer.ImageSpec) (
 	if status == nil {
 		return "", nil
 	}
-	return status.Id, nil
+
+	imageRef := status.Id
+	if len(status.RepoDigests) > 0 {
+		imageRef = status.RepoDigests[0]
+	}
+	return imageRef, nil
 }
 
 // ListImages gets all images currently on the machine.

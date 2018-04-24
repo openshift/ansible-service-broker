@@ -17,7 +17,6 @@ limitations under the License.
 package photon
 
 import (
-	"context"
 	"log"
 	"os"
 	"strconv"
@@ -133,14 +132,14 @@ func TestInstances(t *testing.T) {
 		t.Fatalf("Instances() returned false")
 	}
 
-	externalId, err := i.ExternalID(context.TODO(), NodeName)
+	externalId, err := i.ExternalID(NodeName)
 	if err != nil {
 		t.Fatalf("Instances.ExternalID(%s) failed: %s", testVM, err)
 	}
 	t.Logf("Found ExternalID(%s) = %s\n", testVM, externalId)
 
 	nonExistingVM := types.NodeName(rand.String(15))
-	externalId, err = i.ExternalID(context.TODO(), nonExistingVM)
+	externalId, err = i.ExternalID(nonExistingVM)
 	if err == cloudprovider.InstanceNotFound {
 		t.Logf("VM %s was not found as expected\n", nonExistingVM)
 	} else if err == nil {
@@ -149,13 +148,13 @@ func TestInstances(t *testing.T) {
 		t.Fatalf("Instances.ExternalID did not fail as expected, err: %v", err)
 	}
 
-	instanceId, err := i.InstanceID(context.TODO(), NodeName)
+	instanceId, err := i.InstanceID(NodeName)
 	if err != nil {
 		t.Fatalf("Instances.InstanceID(%s) failed: %s", testVM, err)
 	}
 	t.Logf("Found InstanceID(%s) = %s\n", testVM, instanceId)
 
-	instanceId, err = i.InstanceID(context.TODO(), nonExistingVM)
+	instanceId, err = i.InstanceID(nonExistingVM)
 	if err == cloudprovider.InstanceNotFound {
 		t.Logf("VM %s was not found as expected\n", nonExistingVM)
 	} else if err == nil {
@@ -164,7 +163,7 @@ func TestInstances(t *testing.T) {
 		t.Fatalf("Instances.InstanceID did not fail as expected, err: %v", err)
 	}
 
-	addrs, err := i.NodeAddresses(context.TODO(), NodeName)
+	addrs, err := i.NodeAddresses(NodeName)
 	if err != nil {
 		t.Fatalf("Instances.NodeAddresses(%s) failed: %s", testVM, err)
 	}
@@ -195,17 +194,17 @@ func TestVolumes(t *testing.T) {
 		t.Fatalf("Cannot create a Photon persistent disk: %v", err)
 	}
 
-	err = pc.AttachDisk(context.TODO(), pdID, NodeName)
+	err = pc.AttachDisk(pdID, NodeName)
 	if err != nil {
 		t.Fatalf("Cannot attach persistent disk(%s) to VM(%s): %v", pdID, testVM, err)
 	}
 
-	_, err = pc.DiskIsAttached(context.TODO(), pdID, NodeName)
+	_, err = pc.DiskIsAttached(pdID, NodeName)
 	if err != nil {
 		t.Fatalf("Cannot attach persistent disk(%s) to VM(%s): %v", pdID, testVM, err)
 	}
 
-	err = pc.DetachDisk(context.TODO(), pdID, NodeName)
+	err = pc.DetachDisk(pdID, NodeName)
 	if err != nil {
 		t.Fatalf("Cannot detach persisten disk(%s) from VM(%s): %v", pdID, testVM, err)
 	}

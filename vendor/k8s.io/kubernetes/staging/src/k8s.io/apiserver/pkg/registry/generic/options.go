@@ -17,8 +17,6 @@ limitations under the License.
 package generic
 
 import (
-	"time"
-
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
@@ -32,7 +30,6 @@ type RESTOptions struct {
 	EnableGarbageCollection bool
 	DeleteCollectionWorkers int
 	ResourcePrefix          string
-	CountMetricPollPeriod   time.Duration
 }
 
 // Implement RESTOptionsGetter so that RESTOptions can directly be used when available (i.e. tests)

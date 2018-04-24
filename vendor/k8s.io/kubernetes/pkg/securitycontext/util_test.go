@@ -178,39 +178,56 @@ func TestHasRootRunAsUser(t *testing.T) {
 }
 
 func TestAddNoNewPrivileges(t *testing.T) {
+	var nonRoot int64 = 1000
+	var root int64 = 0
 	pfalse := false
 	ptrue := true
 
 	tests := map[string]struct {
-		sc     *v1.SecurityContext
+		sc     v1.SecurityContext
 		expect bool
 	}{
-		"allowPrivilegeEscalation nil security context nil": {
-			sc:     nil,
-			expect: false,
-		},
-		"allowPrivilegeEscalation nil": {
-			sc: &v1.SecurityContext{
-				AllowPrivilegeEscalation: nil,
+		"allowPrivilegeEscalation nil security context nil": {},
+		"allowPrivilegeEscalation nil nonRoot": {
+			sc: v1.SecurityContext{
+				RunAsUser: &nonRoot,
 			},
-			expect: false,
 		},
-		"allowPrivilegeEscalation false": {
-			sc: &v1.SecurityContext{
+		"allowPrivilegeEscalation nil root": {
+			sc: v1.SecurityContext{
+				RunAsUser: &root,
+			},
+		},
+		"allowPrivilegeEscalation false nonRoot": {
+			sc: v1.SecurityContext{
+				RunAsUser:                &nonRoot,
 				AllowPrivilegeEscalation: &pfalse,
 			},
 			expect: true,
 		},
-		"allowPrivilegeEscalation true": {
-			sc: &v1.SecurityContext{
+		"allowPrivilegeEscalation false root": {
+			sc: v1.SecurityContext{
+				RunAsUser:                &root,
+				AllowPrivilegeEscalation: &pfalse,
+			},
+			expect: true,
+		},
+		"allowPrivilegeEscalation true nonRoot": {
+			sc: v1.SecurityContext{
+				RunAsUser:                &nonRoot,
 				AllowPrivilegeEscalation: &ptrue,
 			},
-			expect: false,
+		},
+		"allowPrivilegeEscalation true root": {
+			sc: v1.SecurityContext{
+				RunAsUser:                &root,
+				AllowPrivilegeEscalation: &ptrue,
+			},
 		},
 	}
 
 	for k, v := range tests {
-		actual := AddNoNewPrivileges(v.sc)
+		actual := AddNoNewPrivileges(&v.sc)
 		if actual != v.expect {
 			t.Errorf("%s failed, expected %t but received %t", k, v.expect, actual)
 		}

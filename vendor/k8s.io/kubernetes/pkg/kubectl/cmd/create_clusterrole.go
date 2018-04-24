@@ -66,8 +66,7 @@ func NewCmdCreateClusterRole(f cmdutil.Factory, cmdOut io.Writer) *cobra.Command
 		},
 	}
 	cmd := &cobra.Command{
-		Use: "clusterrole NAME --verb=verb --resource=resource.group [--resource-name=resourcename] [--dry-run]",
-		DisableFlagsInUseLine: true,
+		Use:     "clusterrole NAME --verb=verb --resource=resource.group [--resource-name=resourcename] [--dry-run]",
 		Short:   clusterRoleLong,
 		Long:    clusterRoleLong,
 		Example: clusterRoleExample,
@@ -173,7 +172,7 @@ func (c *CreateClusterRoleOptions) RunCreateRole() error {
 	}
 
 	if useShortOutput := c.OutputFormat == "name"; useShortOutput || len(c.OutputFormat) == 0 {
-		cmdutil.PrintSuccess(useShortOutput, c.Out, clusterRole, c.DryRun, "created")
+		c.PrintSuccess(c.Mapper, useShortOutput, c.Out, "clusterroles", c.Name, c.DryRun, "created")
 		return nil
 	}
 

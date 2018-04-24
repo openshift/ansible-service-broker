@@ -21,7 +21,6 @@ import (
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/cloudprovider/providers/gce/cloud"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -39,24 +38,24 @@ func TestServiceNetworkTierAnnotationKey(t *testing.T) {
 
 	for testName, testCase := range map[string]struct {
 		annotations  map[string]string
-		expectedTier cloud.NetworkTier
+		expectedTier NetworkTier
 		expectErr    bool
 	}{
 		"Use the default when the annotation does not exist": {
 			annotations:  nil,
-			expectedTier: cloud.NetworkTierDefault,
+			expectedTier: NetworkTierDefault,
 		},
 		"Standard tier": {
 			annotations:  map[string]string{NetworkTierAnnotationKey: "Standard"},
-			expectedTier: cloud.NetworkTierStandard,
+			expectedTier: NetworkTierStandard,
 		},
 		"Premium tier": {
 			annotations:  map[string]string{NetworkTierAnnotationKey: "Premium"},
-			expectedTier: cloud.NetworkTierPremium,
+			expectedTier: NetworkTierPremium,
 		},
 		"Report an error on invalid network tier value": {
 			annotations:  map[string]string{NetworkTierAnnotationKey: "Unknown-tier"},
-			expectedTier: cloud.NetworkTierPremium,
+			expectedTier: NetworkTierPremium,
 			expectErr:    true,
 		},
 	} {

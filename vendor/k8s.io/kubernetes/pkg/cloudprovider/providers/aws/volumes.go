@@ -119,9 +119,10 @@ func (c *Cloud) checkIfAttachedToNode(diskName KubernetesVolumeID, nodeName type
 	info, err := disk.describeVolume()
 
 	if err != nil {
-		glog.Warning("Error describing volume %s with %v", diskName, err)
+		describeError := fmt.Errorf("Error describing volume %s with %v", diskName, err)
+		glog.Warning(describeError)
 		awsDiskInfo.volumeState = "unknown"
-		return awsDiskInfo, false, err
+		return awsDiskInfo, false, describeError
 	}
 
 	awsDiskInfo.volumeState = aws.StringValue(info.State)

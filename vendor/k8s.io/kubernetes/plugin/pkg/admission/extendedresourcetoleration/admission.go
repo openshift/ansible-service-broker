@@ -27,12 +27,9 @@ import (
 	"k8s.io/kubernetes/pkg/apis/core/helper"
 )
 
-// PluginName indicates name of admission plugin.
-const PluginName = "ExtendedResourceToleration"
-
 // Register is called by the apiserver to register the plugin factory.
 func Register(plugins *admission.Plugins) {
-	plugins.Register(PluginName, func(config io.Reader) (admission.Interface, error) {
+	plugins.Register("ExtendedResourceToleration", func(config io.Reader) (admission.Interface, error) {
 		return newExtendedResourceToleration(), nil
 	})
 }

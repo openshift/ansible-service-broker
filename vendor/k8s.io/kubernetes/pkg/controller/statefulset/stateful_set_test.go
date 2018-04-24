@@ -20,7 +20,7 @@ import (
 	"sort"
 	"testing"
 
-	apps "k8s.io/api/apps/v1"
+	apps "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +28,6 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/kubernetes/pkg/controller"
 	"k8s.io/kubernetes/pkg/controller/history"
 )
@@ -574,20 +573,19 @@ func TestGetPodsForStatefulSetRelease(t *testing.T) {
 func newFakeStatefulSetController(initialObjects ...runtime.Object) (*StatefulSetController, *fakeStatefulPodControl) {
 	client := fake.NewSimpleClientset(initialObjects...)
 	informerFactory := informers.NewSharedInformerFactory(client, controller.NoResyncPeriodFunc())
-	fpc := newFakeStatefulPodControl(informerFactory.Core().V1().Pods(), informerFactory.Apps().V1().StatefulSets())
-	ssu := newFakeStatefulSetStatusUpdater(informerFactory.Apps().V1().StatefulSets())
+	fpc := newFakeStatefulPodControl(informerFactory.Core().V1().Pods(), informerFactory.Apps().V1beta1().StatefulSets())
+	ssu := newFakeStatefulSetStatusUpdater(informerFactory.Apps().V1beta1().StatefulSets())
 	ssc := NewStatefulSetController(
 		informerFactory.Core().V1().Pods(),
-		informerFactory.Apps().V1().StatefulSets(),
+		informerFactory.Apps().V1beta1().StatefulSets(),
 		informerFactory.Core().V1().PersistentVolumeClaims(),
-		informerFactory.Apps().V1().ControllerRevisions(),
+		informerFactory.Apps().V1beta1().ControllerRevisions(),
 		client,
 	)
-	ssh := history.NewFakeHistory(informerFactory.Apps().V1().ControllerRevisions())
+	ssh := history.NewFakeHistory(informerFactory.Apps().V1beta1().ControllerRevisions())
 	ssc.podListerSynced = alwaysReady
 	ssc.setListerSynced = alwaysReady
-	recorder := record.NewFakeRecorder(10)
-	ssc.control = NewDefaultStatefulSetControl(fpc, ssu, ssh, recorder)
+	ssc.control = NewDefaultStatefulSetControl(fpc, ssu, ssh)
 
 	return ssc, fpc
 }

@@ -21,7 +21,6 @@ filegroup(
         "//test/list:all-srcs",
         "//test/soak/cauldron:all-srcs",
         "//test/soak/serve_hostnames:all-srcs",
-        "//test/typecheck:all-srcs",
         "//test/utils:all-srcs",
     ],
     tags = ["automanaged"],

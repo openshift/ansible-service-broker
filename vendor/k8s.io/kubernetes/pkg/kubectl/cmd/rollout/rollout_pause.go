@@ -39,12 +39,14 @@ import (
 type PauseConfig struct {
 	resource.FilenameOptions
 
-	Pauser func(info *resource.Info) ([]byte, error)
-	Mapper meta.RESTMapper
-	Typer  runtime.ObjectTyper
-	Infos  []*resource.Info
+	Pauser  func(info *resource.Info) ([]byte, error)
+	Mapper  meta.RESTMapper
+	Typer   runtime.ObjectTyper
+	Encoder runtime.Encoder
+	Infos   []*resource.Info
 
-	Out io.Writer
+	PrintSuccess func(mapper meta.RESTMapper, shortOutput bool, out io.Writer, resource, name string, dryRun bool, operation string)
+	Out          io.Writer
 }
 
 var (
@@ -69,8 +71,7 @@ func NewCmdRolloutPause(f cmdutil.Factory, out io.Writer) *cobra.Command {
 	argAliases := kubectl.ResourceAliases(validArgs)
 
 	cmd := &cobra.Command{
-		Use: "pause RESOURCE",
-		DisableFlagsInUseLine: true,
+		Use:     "pause RESOURCE",
 		Short:   i18n.T("Mark the provided resource as paused"),
 		Long:    pause_long,
 		Example: pause_example,
@@ -100,7 +101,9 @@ func (o *PauseConfig) CompletePause(f cmdutil.Factory, cmd *cobra.Command, out i
 		return cmdutil.UsageErrorf(cmd, "%s", cmd.Use)
 	}
 
+	o.PrintSuccess = f.PrintSuccess
 	o.Mapper, o.Typer = f.Object()
+	o.Encoder = f.JSONEncoder()
 
 	o.Pauser = f.Pauser
 	o.Out = out
@@ -133,7 +136,7 @@ func (o *PauseConfig) CompletePause(f cmdutil.Factory, cmd *cobra.Command, out i
 
 func (o PauseConfig) RunPause() error {
 	allErrs := []error{}
-	for _, patch := range set.CalculatePatches(o.Infos, cmdutil.InternalVersionJSONEncoder(), o.Pauser) {
+	for _, patch := range set.CalculatePatches(o.Infos, o.Encoder, o.Pauser) {
 		info := patch.Info
 		if patch.Err != nil {
 			allErrs = append(allErrs, fmt.Errorf("error: %s %q %v", info.Mapping.Resource, info.Name, patch.Err))
@@ -141,7 +144,7 @@ func (o PauseConfig) RunPause() error {
 		}
 
 		if string(patch.Patch) == "{}" || len(patch.Patch) == 0 {
-			cmdutil.PrintSuccess(false, o.Out, info.Object, false, "already paused")
+			o.PrintSuccess(o.Mapper, false, o.Out, info.Mapping.Resource, info.Name, false, "already paused")
 			continue
 		}
 
@@ -152,7 +155,7 @@ func (o PauseConfig) RunPause() error {
 		}
 
 		info.Refresh(obj, true)
-		cmdutil.PrintSuccess(false, o.Out, info.Object, false, "paused")
+		o.PrintSuccess(o.Mapper, false, o.Out, info.Mapping.Resource, info.Name, false, "paused")
 	}
 
 	return utilerrors.NewAggregate(allErrs)

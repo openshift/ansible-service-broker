@@ -1088,7 +1088,7 @@ func (r *Lexer) JsonNumber() json.Number {
 	}
 	if !r.Ok() {
 		r.errInvalidToken("json.Number")
-		return json.Number("")
+		return json.Number("0")
 	}
 
 	switch r.token.kind {
@@ -1096,12 +1096,9 @@ func (r *Lexer) JsonNumber() json.Number {
 		return json.Number(r.String())
 	case tokenNumber:
 		return json.Number(r.Raw())
-	case tokenNull:
-		r.Null()
-		return json.Number("")
 	default:
 		r.errSyntax()
-		return json.Number("")
+		return json.Number("0")
 	}
 }
 

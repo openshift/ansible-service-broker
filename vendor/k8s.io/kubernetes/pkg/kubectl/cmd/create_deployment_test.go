@@ -26,7 +26,6 @@ import (
 
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/rest/fake"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"k8s.io/kubernetes/pkg/kubectl"
 	cmdtesting "k8s.io/kubernetes/pkg/kubectl/cmd/testing"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
@@ -74,11 +73,7 @@ func Test_generatorFromName(t *testing.T) {
 
 func TestCreateDeployment(t *testing.T) {
 	depName := "jonny-dep"
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	ns := legacyscheme.Codecs
-
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client: fake.CreateHTTPClient(func(req *http.Request) (*http.Response, error) {
@@ -88,16 +83,17 @@ func TestCreateDeployment(t *testing.T) {
 			}, nil
 		}),
 	}
-	tf.ClientConfigVal = &restclient.Config{}
+	tf.ClientConfig = &restclient.Config{}
+	tf.Printer = &testPrinter{}
 	tf.Namespace = "test"
 	buf := bytes.NewBuffer([]byte{})
 
-	cmd := NewCmdCreateDeployment(tf, buf, buf)
+	cmd := NewCmdCreateDeployment(f, buf, buf)
 	cmd.Flags().Set("dry-run", "true")
 	cmd.Flags().Set("output", "name")
 	cmd.Flags().Set("image", "hollywood/jonny.depp:v2")
 	cmd.Run(cmd, []string{depName})
-	expectedOutput := "deployment.extensions/" + depName + "\n"
+	expectedOutput := "deployment/" + depName + "\n"
 	if buf.String() != expectedOutput {
 		t.Errorf("expected output: %s, but got: %s", expectedOutput, buf.String())
 	}
@@ -105,11 +101,7 @@ func TestCreateDeployment(t *testing.T) {
 
 func TestCreateDeploymentNoImage(t *testing.T) {
 	depName := "jonny-dep"
-	tf := cmdtesting.NewTestFactory()
-	defer tf.Cleanup()
-
-	ns := legacyscheme.Codecs
-
+	f, tf, _, ns := cmdtesting.NewAPIFactory()
 	tf.Client = &fake.RESTClient{
 		NegotiatedSerializer: ns,
 		Client: fake.CreateHTTPClient(func(req *http.Request) (*http.Response, error) {
@@ -119,13 +111,14 @@ func TestCreateDeploymentNoImage(t *testing.T) {
 			}, nil
 		}),
 	}
-	tf.ClientConfigVal = &restclient.Config{}
+	tf.ClientConfig = &restclient.Config{}
+	tf.Printer = &testPrinter{}
 	tf.Namespace = "test"
 
 	buf := bytes.NewBuffer([]byte{})
-	cmd := NewCmdCreateDeployment(tf, buf, buf)
+	cmd := NewCmdCreateDeployment(f, buf, buf)
 	cmd.Flags().Set("dry-run", "true")
 	cmd.Flags().Set("output", "name")
-	err := createDeployment(tf, buf, buf, cmd, []string{depName})
+	err := createDeployment(f, buf, buf, cmd, []string{depName})
 	assert.Error(t, err, "at least one image must be specified")
 }

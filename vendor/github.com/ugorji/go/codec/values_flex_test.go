@@ -5,12 +5,7 @@
 
 package codec
 
-import (
-	"strings"
-	"time"
-)
-
-const teststrucflexChanCap = 64
+import "time"
 
 // This file contains values used by tests alone.
 // This is where we may try out different things,
@@ -45,6 +40,10 @@ type SstructbigMapBySlice struct {
 	Sptr      *Sstructbig
 }
 
+type Sinterface interface {
+	Noop()
+}
+
 // small struct for testing that codecgen works for unexported types
 type tLowerFirstLetter struct {
 	I int
@@ -63,7 +62,6 @@ type AnonInTestStrucIntf struct {
 	Ms     map[string]interface{}
 	Nintf  interface{} //don't set this, so we can test for nil
 	T      time.Time
-	Tptr   *time.Time
 }
 
 var testWRepeated512 wrapBytes
@@ -80,8 +78,6 @@ func init() {
 type TestStrucFlex struct {
 	_struct struct{} `codec:",omitempty"` //set omitempty for every field
 	TestStrucCommon
-
-	Chstr chan string
 
 	Mis     map[int]string
 	Mbu64   map[bool]struct{}
@@ -112,21 +108,8 @@ type TestStrucFlex struct {
 	Nteststruc *TestStrucFlex
 }
 
-func emptyTestStrucFlex() *TestStrucFlex {
-	var ts TestStrucFlex
-	// we initialize and start draining the chan, so that we can decode into it without it blocking due to no consumer
-	ts.Chstr = make(chan string, teststrucflexChanCap)
-	go func() {
-		for range ts.Chstr {
-		}
-	}() // drain it
-	return &ts
-}
-
 func newTestStrucFlex(depth, n int, bench, useInterface, useStringKeyOnly bool) (ts *TestStrucFlex) {
 	ts = &TestStrucFlex{
-		Chstr: make(chan string, teststrucflexChanCap),
-
 		Miwu64s: map[int]wrapUint64Slice{
 			5: []wrapUint64{1, 2, 3, 4, 5},
 			3: []wrapUint64{1, 2, 3},
@@ -171,11 +154,6 @@ func newTestStrucFlex(depth, n int, bench, useInterface, useStringKeyOnly bool) 
 		},
 		Ui64array:   [4]uint64{4, 16, 64, 256},
 		ArrStrUi64T: [4]stringUint64T{{"4", 4}, {"3", 3}, {"2", 2}, {"1", 1}},
-	}
-
-	numChanSend := cap(ts.Chstr) / 4 // 8
-	for i := 0; i < numChanSend; i++ {
-		ts.Chstr <- strings.Repeat("A", i+1)
 	}
 
 	ts.Ui64slicearray = []*[4]uint64{&ts.Ui64array, &ts.Ui64array}

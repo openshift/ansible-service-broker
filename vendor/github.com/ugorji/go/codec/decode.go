@@ -16,13 +16,9 @@ import (
 
 // Some tagging information for error messages.
 const (
-	msgBadDesc            = "unrecognized descriptor byte"
+	msgBadDesc            = "Unrecognized descriptor byte"
 	msgDecCannotExpandArr = "cannot expand go array from %v to stream length: %v"
 )
-
-const decDefSliceCap = 8
-const decDefChanCap = 64 // should be large, as cap cannot be expanded
-const decScratchByteArrayLen = cacheLineSize - 8
 
 var (
 	errstrOnlyMapOrArrayCanDecodeIntoStruct = "only encoded map or array can be decoded into a struct"
@@ -1241,7 +1237,7 @@ func (d *Decoder) kSlice(f *codecFnInfo, rv reflect.Value) {
 	// This way, the order can be kept (as order is lost with map).
 	ti := f.ti
 	if f.seq == seqTypeChan && ti.chandir&uint8(reflect.SendDir) == 0 {
-		d.errorf("receive-only channel cannot be decoded")
+		d.errorf("receive-only channel cannot be used for sending byte(s)")
 	}
 	dd := d.d
 	rtelem0 := ti.elem
@@ -1360,17 +1356,14 @@ func (d *Decoder) kSlice(f *codecFnInfo, rv reflect.Value) {
 		if j == 0 && (f.seq == seqTypeSlice || f.seq == seqTypeChan) && rv.IsNil() {
 			if hasLen {
 				rvlen = decInferLen(containerLenS, d.h.MaxInitLen, rtelem0Size)
-			} else if f.seq == seqTypeSlice {
-				rvlen = decDefSliceCap
 			} else {
-				rvlen = decDefChanCap
+				rvlen = 8
 			}
 			if rvCanset {
 				if f.seq == seqTypeSlice {
 					rv = reflect.MakeSlice(ti.rt, rvlen, rvlen)
 					rvChanged = true
 				} else { // chan
-					// xdebugf(">>>>>> haslen = %v, make chan of type '%v' with length: %v", hasLen, ti.rt, rvlen)
 					rv = reflect.MakeChan(ti.rt, rvlen)
 					rvChanged = true
 				}
@@ -1392,7 +1385,6 @@ func (d *Decoder) kSlice(f *codecFnInfo, rv reflect.Value) {
 				fn = d.cf.get(rtelem, true, true)
 			}
 			d.decodeValue(rv9, fn, true)
-			// xdebugf(">>>> rv9 sent on %v during decode: %v, with len=%v, cap=%v", rv.Type(), rv9, rv.Len(), rv.Cap())
 			rv.Send(rv9)
 		} else {
 			// if indefinite, etc, then expand the slice if necessary
@@ -1742,7 +1734,7 @@ type decReaderSwitch struct {
 	esep  bool // has elem separators
 }
 
-// TODO: Uncomment after mid-stack inlining enabled in go 1.11
+// TODO: Uncomment after mid-stack inlining enabled in go 1.10
 //
 // func (z *decReaderSwitch) unreadn1() {
 // 	if z.bytes {
@@ -1807,6 +1799,8 @@ type decReaderSwitch struct {
 // 	}
 // 	return z.ri.readUntil(in, stop)
 // }
+
+const decScratchByteArrayLen = cacheLineSize - 8
 
 // A Decoder reads and decodes an object from an input stream in the codec format.
 type Decoder struct {
@@ -2008,7 +2002,9 @@ func (d *Decoder) naked() *decNaked {
 // Note: we allow nil values in the stream anywhere except for map keys.
 // A nil value in the encoded stream where a map key is expected is treated as an error.
 func (d *Decoder) Decode(v interface{}) (err error) {
-	defer d.deferred(&err)
+	// need to call defer directly, else it seems the recover is not fully handled
+	defer panicToErrs2(d, &d.err, &err)
+	defer d.alwaysAtEnd()
 	d.MustDecode(v)
 	return
 }
@@ -2029,15 +2025,11 @@ func (d *Decoder) MustDecode(v interface{}) {
 	// xprintf(">>>>>>>> >>>>>>>> num decFns: %v\n", d.cf.sn)
 }
 
-func (d *Decoder) deferred(err1 *error) {
-	d.alwaysAtEnd()
-	if recoverPanicToErr {
-		if x := recover(); x != nil {
-			panicValToErr(d, x, err1)
-			panicValToErr(d, x, &d.err)
-		}
-	}
-}
+// // this is not a smart swallow, as it allocates objects and does unnecessary work.
+// func (d *Decoder) swallowViaHammer() {
+// 	var blank interface{}
+// 	d.decodeValueNoFn(reflect.ValueOf(&blank).Elem())
+// }
 
 func (d *Decoder) alwaysAtEnd() {
 	if d.n != nil {
@@ -2047,12 +2039,6 @@ func (d *Decoder) alwaysAtEnd() {
 	}
 	d.codecFnPooler.alwaysAtEnd()
 }
-
-// // this is not a smart swallow, as it allocates objects and does unnecessary work.
-// func (d *Decoder) swallowViaHammer() {
-// 	var blank interface{}
-// 	d.decodeValueNoFn(reflect.ValueOf(&blank).Elem())
-// }
 
 func (d *Decoder) swallow() {
 	// smarter decode that just swallows the content

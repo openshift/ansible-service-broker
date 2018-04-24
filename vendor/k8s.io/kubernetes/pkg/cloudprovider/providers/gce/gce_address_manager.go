@@ -20,10 +20,9 @@ import (
 	"fmt"
 	"net/http"
 
-	compute "google.golang.org/api/compute/v1"
+	computebeta "google.golang.org/api/compute/v0.beta"
 
 	"github.com/golang/glog"
-	"k8s.io/kubernetes/pkg/cloudprovider/providers/gce/cloud"
 )
 
 type addressManager struct {
@@ -32,13 +31,13 @@ type addressManager struct {
 	name        string
 	serviceName string
 	targetIP    string
-	addressType cloud.LbScheme
+	addressType lbScheme
 	region      string
 	subnetURL   string
 	tryRelease  bool
 }
 
-func newAddressManager(svc CloudAddressService, serviceName, region, subnetURL, name, targetIP string, addressType cloud.LbScheme) *addressManager {
+func newAddressManager(svc CloudAddressService, serviceName, region, subnetURL, name, targetIP string, addressType lbScheme) *addressManager {
 	return &addressManager{
 		svc:         svc,
 		logPrefix:   fmt.Sprintf("AddressManager(%q)", name),
@@ -64,7 +63,7 @@ func (am *addressManager) HoldAddress() (string, error) {
 	// calls since it indicates whether a Delete is necessary before Reserve.
 	glog.V(4).Infof("%v: attempting hold of IP %q Type %q", am.logPrefix, am.targetIP, am.addressType)
 	// Get the address in case it was orphaned earlier
-	addr, err := am.svc.GetRegionAddress(am.name, am.region)
+	addr, err := am.svc.GetBetaRegionAddress(am.name, am.region)
 	if err != nil && !isNotFound(err) {
 		return "", err
 	}
@@ -119,7 +118,7 @@ func (am *addressManager) ReleaseAddress() error {
 func (am *addressManager) ensureAddressReservation() (string, error) {
 	// Try reserving the IP with controller-owned address name
 	// If am.targetIP is an empty string, a new IP will be created.
-	newAddr := &compute.Address{
+	newAddr := &computebeta.Address{
 		Name:        am.name,
 		Description: fmt.Sprintf(`{"kubernetes.io/service-name":"%s"}`, am.serviceName),
 		Address:     am.targetIP,
@@ -127,7 +126,7 @@ func (am *addressManager) ensureAddressReservation() (string, error) {
 		Subnetwork:  am.subnetURL,
 	}
 
-	reserveErr := am.svc.ReserveRegionAddress(newAddr, am.region)
+	reserveErr := am.svc.ReserveBetaRegionAddress(newAddr, am.region)
 	if reserveErr == nil {
 		if newAddr.Address != "" {
 			glog.V(4).Infof("%v: successfully reserved IP %q with name %q", am.logPrefix, newAddr.Address, newAddr.Name)
@@ -156,7 +155,7 @@ func (am *addressManager) ensureAddressReservation() (string, error) {
 
 	// Reserving the address failed due to a conflict or bad request. The address manager just checked that no address
 	// exists with the name, so it may belong to the user.
-	addr, err := am.svc.GetRegionAddressByIP(am.region, am.targetIP)
+	addr, err := am.svc.GetBetaRegionAddressByIP(am.region, am.targetIP)
 	if err != nil {
 		return "", fmt.Errorf("failed to get address by IP %q after reservation attempt, err: %q, reservation err: %q", am.targetIP, err, reserveErr)
 	}
@@ -179,7 +178,7 @@ func (am *addressManager) ensureAddressReservation() (string, error) {
 	return addr.Address, nil
 }
 
-func (am *addressManager) validateAddress(addr *compute.Address) error {
+func (am *addressManager) validateAddress(addr *computebeta.Address) error {
 	if am.targetIP != "" && am.targetIP != addr.Address {
 		return fmt.Errorf("address %q does not have the expected IP %q, actual: %q", addr.Name, am.targetIP, addr.Address)
 	}
@@ -190,7 +189,7 @@ func (am *addressManager) validateAddress(addr *compute.Address) error {
 	return nil
 }
 
-func (am *addressManager) isManagedAddress(addr *compute.Address) bool {
+func (am *addressManager) isManagedAddress(addr *computebeta.Address) bool {
 	return addr.Name == am.name
 }
 

@@ -12,10 +12,10 @@ docker_build(
 docker_push(
     name = "push",
     image = ":image",
-    registry = "$(REGISTRY)",
-    repository = "kubemark",
+    registry = "gcr.io",
+    repository = "$(PROJECT)/kubemark",
     stamp = True,
-    tag = "$(IMAGE_TAG)",
+    tag = "latest",
     tags = ["manual"],
 )
 

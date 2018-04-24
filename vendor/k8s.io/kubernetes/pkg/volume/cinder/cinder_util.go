@@ -32,16 +32,14 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	kubeletapis "k8s.io/kubernetes/pkg/kubelet/apis"
 	"k8s.io/kubernetes/pkg/volume"
-	volutil "k8s.io/kubernetes/pkg/volume/util"
 	"k8s.io/utils/exec"
 )
 
-// DiskUtil has utility/helper methods
-type DiskUtil struct{}
+type CinderDiskUtil struct{}
 
-// AttachDisk attaches a disk specified by a volume.CinderPersistenDisk to the current kubelet.
+// Attaches a disk specified by a volume.CinderPersistenDisk to the current kubelet.
 // Mounts the disk to its global path.
-func (util *DiskUtil) AttachDisk(b *cinderVolumeMounter, globalPDPath string) error {
+func (util *CinderDiskUtil) AttachDisk(b *cinderVolumeMounter, globalPDPath string) error {
 	options := []string{}
 	if b.readOnly {
 		options = append(options, "ro")
@@ -100,8 +98,8 @@ func (util *DiskUtil) AttachDisk(b *cinderVolumeMounter, globalPDPath string) er
 	return nil
 }
 
-// DetachDisk unmounts the device and detaches the disk from the kubelet's host machine.
-func (util *DiskUtil) DetachDisk(cd *cinderVolumeUnmounter) error {
+// Unmounts the device and detaches the disk from the kubelet's host machine.
+func (util *CinderDiskUtil) DetachDisk(cd *cinderVolumeUnmounter) error {
 	globalPDPath := makeGlobalPDName(cd.plugin.host, cd.pdName)
 	if err := cd.mounter.Unmount(globalPDPath); err != nil {
 		return err
@@ -126,8 +124,7 @@ func (util *DiskUtil) DetachDisk(cd *cinderVolumeUnmounter) error {
 	return nil
 }
 
-// DeleteVolume uses the cloud entrypoint to delete specified volume
-func (util *DiskUtil) DeleteVolume(cd *cinderVolumeDeleter) error {
+func (util *CinderDiskUtil) DeleteVolume(cd *cinderVolumeDeleter) error {
 	cloud, err := cd.plugin.getCloudProvider()
 	if err != nil {
 		return err
@@ -161,8 +158,7 @@ func getZonesFromNodes(kubeClient clientset.Interface) (sets.String, error) {
 	return zones, nil
 }
 
-// CreateVolume uses the cloud provider entrypoint for creating a volume
-func (util *DiskUtil) CreateVolume(c *cinderVolumeProvisioner) (volumeID string, volumeSizeGB int, volumeLabels map[string]string, fstype string, err error) {
+func (util *CinderDiskUtil) CreateVolume(c *cinderVolumeProvisioner) (volumeID string, volumeSizeGB int, volumeLabels map[string]string, fstype string, err error) {
 	cloud, err := c.plugin.getCloudProvider()
 	if err != nil {
 		return "", 0, nil, "", err
@@ -171,8 +167,8 @@ func (util *DiskUtil) CreateVolume(c *cinderVolumeProvisioner) (volumeID string,
 	capacity := c.options.PVC.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
 	volSizeBytes := capacity.Value()
 	// Cinder works with gigabytes, convert to GiB with rounding up
-	volSizeGB := int(volutil.RoundUpSize(volSizeBytes, 1024*1024*1024))
-	name := volutil.GenerateVolumeName(c.options.ClusterName, c.options.PVName, 255) // Cinder volume name can have up to 255 characters
+	volSizeGB := int(volume.RoundUpSize(volSizeBytes, 1024*1024*1024))
+	name := volume.GenerateVolumeName(c.options.ClusterName, c.options.PVName, 255) // Cinder volume name can have up to 255 characters
 	vtype := ""
 	availability := ""
 	// Apply ProvisionerParameters (case-insensitive). We leave validation of
@@ -204,7 +200,7 @@ func (util *DiskUtil) CreateVolume(c *cinderVolumeProvisioner) (volumeID string,
 		// if we did not get any zones, lets leave it blank and gophercloud will
 		// use zone "nova" as default
 		if len(zones) > 0 {
-			availability = volutil.ChooseZoneForVolume(zones, c.options.PVC.Name)
+			availability = volume.ChooseZoneForVolume(zones, c.options.PVC.Name)
 		}
 	}
 
@@ -228,17 +224,6 @@ func probeAttachedVolume() error {
 	scsiHostRescan()
 
 	executor := exec.New()
-
-	// udevadm settle waits for udevd to process the device creation
-	// events for all hardware devices, thus ensuring that any device
-	// nodes have been created successfully before proceeding.
-	argsSettle := []string{"settle"}
-	cmdSettle := executor.Command("udevadm", argsSettle...)
-	_, errSettle := cmdSettle.CombinedOutput()
-	if errSettle != nil {
-		glog.Errorf("error running udevadm settle %v\n", errSettle)
-	}
-
 	args := []string{"trigger"}
 	cmd := executor.Command("udevadm", args...)
 	_, err := cmd.CombinedOutput()
@@ -251,10 +236,10 @@ func probeAttachedVolume() error {
 }
 
 func scsiHostRescan() {
-	scsiPath := "/sys/class/scsi_host/"
-	if dirs, err := ioutil.ReadDir(scsiPath); err == nil {
+	scsi_path := "/sys/class/scsi_host/"
+	if dirs, err := ioutil.ReadDir(scsi_path); err == nil {
 		for _, f := range dirs {
-			name := scsiPath + f.Name() + "/scan"
+			name := scsi_path + f.Name() + "/scan"
 			data := []byte("- - -")
 			ioutil.WriteFile(name, data, 0666)
 		}

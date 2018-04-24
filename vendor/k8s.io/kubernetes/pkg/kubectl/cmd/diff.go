@@ -44,7 +44,7 @@ var (
 		Diff configurations specified by filename or stdin between their local,
 		last-applied, live and/or "merged" versions.
 
-		LOCAL and LIVE versions are diffed by default. Other available keywords
+		LOCAL and LIVE versions are diffed by default. Other availble keywords
 		are MERGED and LAST.
 
 		Output is always YAML.
@@ -109,8 +109,7 @@ func NewCmdDiff(f cmdutil.Factory, stdout, stderr io.Writer) *cobra.Command {
 		Stderr: stderr,
 	}
 	cmd := &cobra.Command{
-		Use: "diff -f FILENAME",
-		DisableFlagsInUseLine: true,
+		Use:     "diff -f FILENAME",
 		Short:   i18n.T("Diff different versions of configurations"),
 		Long:    diffLong,
 		Example: diffExample,
@@ -316,7 +315,7 @@ func (obj InfoObject) Merged() (map[string]interface{}, error) {
 	}
 
 	if live == nil || last == nil {
-		return local, nil // We probably don't have a live version, merged is local.
+		return local, nil // We probably don't have a live verison, merged is local.
 	}
 
 	elmt, err := obj.Parser.CreateElement(last, local, live)
@@ -439,7 +438,7 @@ func RunDiff(f cmdutil.Factory, diff *DiffProgram, options *DiffOptions, from, t
 		obj := InfoObject{
 			Info:    info,
 			Parser:  parser,
-			Encoder: cmdutil.InternalVersionJSONEncoder(),
+			Encoder: f.JSONEncoder(),
 		}
 
 		return differ.Diff(obj, printer)

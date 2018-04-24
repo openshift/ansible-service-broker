@@ -64,8 +64,7 @@ var (
 // NewCmdCp creates a new Copy command.
 func NewCmdCp(f cmdutil.Factory, cmdOut, cmdErr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "cp <file-spec-src> <file-spec-dest>",
-		DisableFlagsInUseLine: true,
+		Use:     "cp <file-spec-src> <file-spec-dest>",
 		Short:   i18n.T("Copy files and directories to and from containers."),
 		Long:    "Copy files and directories to and from containers.",
 		Example: cpExample,
@@ -385,8 +384,11 @@ func untarAll(reader io.Reader, destFile, prefix string) error {
 }
 
 func getPrefix(file string) string {
-	// tar strips the leading '/' if it's there, so we will too
-	return strings.TrimLeft(file, "/")
+	if file[0] == '/' {
+		// tar strips the leading '/' if it's there, so we will too
+		return file[1:]
+	}
+	return file
 }
 
 func execute(f cmdutil.Factory, cmd *cobra.Command, options *ExecOptions) error {
