@@ -1074,13 +1074,6 @@ func (a AnsibleBroker) Unbind(
 			return nil, false, jerr
 		}
 
-		// if _, err := a.dao.SetState(bindInstance.ID.String(), apb.JobState{
-		//     Token:  token,
-		//     State:  apb.StateInProgress,
-		//     Method: apb.JobMethodUnbind,
-		// }); err != nil {
-		//     log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
-		// }
 		return &UnbindResponse{Operation: token}, true, nil
 
 	} else if a.brokerConfig.LaunchApbOnBind {
