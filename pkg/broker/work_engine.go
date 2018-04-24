@@ -82,7 +82,7 @@ func (engine *WorkEngine) startJob(token string, work Work, topic WorkTopic) {
 	engine.jobChannels[token] = jobChannel
 	// ensure we always clean up
 	defer func() {
-		log.Debug("closing channel for job ", token)
+		log.Debugf("closing channel for job %v", token)
 		close(jobChannel)
 		delete(engine.jobChannels, token)
 	}()

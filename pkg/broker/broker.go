@@ -196,20 +196,20 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	dir := "/spec"
 	specs, err = a.dao.BatchGetSpecs(dir)
 	if err != nil {
-		log.Error("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
+		log.Errorf("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
 		return nil, err
 	}
 	// Save all apb-push sourced specs
 	for _, spec := range specs {
 		if strings.HasPrefix(spec.FQName, "apb-push") {
-			log.Info("Saving apb-push sourced spec to prevent deletion: %v", spec.FQName)
+			log.Infof("Saving apb-push sourced spec to prevent deletion: %v", spec.FQName)
 			pushedSpecs = append(pushedSpecs, spec)
 		}
 	}
 
 	err = a.dao.BatchDeleteSpecs(specs)
 	if err != nil {
-		log.Error("Something went real bad trying to delete batch specs... - %v", err)
+		log.Errorf("Something went real bad trying to delete batch specs... - %v", err)
 		return nil, err
 	}
 	specs = []*apb.Spec{}
@@ -418,7 +418,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// NO, pod failed.
 			if extErr != nil {
 				log.Error("broker::Recover error occurred.")
-				log.Error("%s", extErr.Error())
+				log.Errorf("%s", extErr.Error())
 				return "", extErr
 			}
 
@@ -434,7 +434,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 				err = apb.SetExtractedCredentials(instanceID, extCreds)
 				if err != nil {
 					log.Error("Could not persist extracted credentials")
-					log.Error("%s", err.Error())
+					log.Errorf("%s", err.Error())
 					return "", err
 				}
 			}
@@ -653,7 +653,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		// asyncronously provision and return the token for the lastoperation
 		token, err = a.engine.StartNewAsyncJob(token, pjob, ProvisionTopic)
 		if err != nil {
-			log.Error("Failed to start new job for async provision\n%s", err.Error())
+			log.Errorf("Failed to start new job for async provision\n%s", err.Error())
 			return nil, err
 		}
 	} else {
@@ -777,7 +777,7 @@ func (a AnsibleBroker) Deprovision(
 
 		token, err = a.engine.StartNewAsyncJob(token, dpjob, DeprovisionTopic)
 		if err != nil {
-			log.Error("Failed to start new job for async deprovision\n%s", err.Error())
+			log.Errorf("Failed to start new job for async deprovision\n%s", err.Error())
 			return nil, err
 		}
 		return &DeprovisionResponse{Operation: token}, nil
@@ -1001,7 +1001,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		log.Info("ASYNC binding in progress")
 		token, err = a.engine.StartNewAsyncJob("", bindingJob, BindingTopic)
 		if err != nil {
-			log.Error("Failed to start new job for async binding\n%s", err.Error())
+			log.Errorf("Failed to start new job for async binding\n%s", err.Error())
 			return nil, false, err
 		}
 
@@ -1123,7 +1123,7 @@ func (a AnsibleBroker) Unbind(
 
 		token, jerr = a.engine.StartNewAsyncJob("", unbindJob, UnbindingTopic)
 		if jerr != nil {
-			log.Error("Failed to start new job for async unbind\n%s", jerr.Error())
+			log.Errorf("Failed to start new job for async unbind\n%s", jerr.Error())
 			return nil, false, jerr
 		}
 
@@ -1290,7 +1290,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	fromPlan, ok = spec.GetPlan(fromPlanName)
 	if !ok {
-		log.Error("The plan %s, specified for updating from on instance %s, does not exist.", fromPlanName, si.ID)
+		log.Errorf("The plan %s, specified for updating from on instance %s, does not exist.", fromPlanName, si.ID)
 		return nil, ErrorPlanNotFound
 	}
 
@@ -1309,7 +1309,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 		toPlan, ok = spec.GetPlanFromID(req.PlanID)
 		if !ok {
-			log.Error("Could not find requested PlanID %s in plan name lookup table", req.PlanID)
+			log.Errorf("Could not find requested PlanID %s in plan name lookup table", req.PlanID)
 			return nil, ErrorPlanNotFound
 		}
 	}
@@ -1317,9 +1317,9 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	// If a plan transition has been requested, validate it is possible and then
 	// update the service instance with the desired next plan
 	if fromPlan.Name != toPlan.Name {
-		log.Debug("Validating plan transition from: %s, to: %s", fromPlan.Name, toPlan.Name)
+		log.Debugf("Validating plan transition from: %s, to: %s", fromPlan.Name, toPlan.Name)
 		if ok := a.isValidPlanTransition(fromPlan, toPlan.Name); !ok {
-			log.Error("The current plan, %s, cannot be updated to the requested plan, %s.", fromPlan.Name, toPlan.Name)
+			log.Errorf("The current plan, %s, cannot be updated to the requested plan, %s.", fromPlan.Name, toPlan.Name)
 			return nil, ErrorPlanUpdateNotPossible
 		}
 
@@ -1363,7 +1363,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 		// asyncronously provision and return the token for the lastoperation
 		token, err = a.engine.StartNewAsyncJob(token, ujob, UpdateTopic)
 		if err != nil {
-			log.Error("Failed to start new job for async update\n%s", err.Error())
+			log.Errorf("Failed to start new job for async update\n%s", err.Error())
 			return nil, err
 		}
 	} else {
@@ -1424,7 +1424,7 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 			// the v1.0 ServiceInstance. These new keys should be passed to the APB,
 			// along with any changed values to the existing parameters, so the APB
 			// can make sense of them.
-			log.Notice("Requested update parameter: [%v] with the value of [%v] was found " +
+			log.Noticef("Requested update parameter: [%v] with the value of [%v] was found " +
 				"in an update request, but it did not exist on the previous service instance.")
 		}
 	}
@@ -1511,12 +1511,12 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 		return ErrorNotFound
 	}
 	if err != nil {
-		log.Error("Something went real bad trying to retrieve spec for deletion... - %v", err)
+		log.Errorf("Something went real bad trying to retrieve spec for deletion... - %v", err)
 		return err
 	}
 	err = a.dao.DeleteSpec(spec.ID)
 	if err != nil {
-		log.Error("Something went real bad trying to delete spec... - %v", err)
+		log.Errorf("Something went real bad trying to delete spec... - %v", err)
 		return err
 	}
 	metrics.SpecsUnloaded(apbPushRegName, 1)
@@ -1528,12 +1528,12 @@ func (a AnsibleBroker) RemoveSpecs() error {
 	dir := "/spec"
 	specs, err := a.dao.BatchGetSpecs(dir)
 	if err != nil {
-		log.Error("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
+		log.Errorf("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
 		return err
 	}
 	err = a.dao.BatchDeleteSpecs(specs)
 	if err != nil {
-		log.Error("Something went real bad trying to delete batch specs... - %v", err)
+		log.Errorf("Something went real bad trying to delete batch specs... - %v", err)
 		return err
 	}
 	metrics.SpecsLoadedReset()

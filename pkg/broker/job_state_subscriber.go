@@ -112,6 +112,6 @@ func (jss *JobStateSubscriber) cleanupAfterUnbind(msg JobMsg) error {
 	if err := jss.dao.DeleteBinding(*bindInstance, *svcInstance); err != nil {
 		return setFailed(fmt.Errorf("Error cleaning up binding instance [ %s ] during cleanup of unbind job : %v", bindInstance.ID.String(), err))
 	}
-	log.Info("Clean up of binding instance [ %s ] done. Unbinding successful", bindInstance.ID.String())
+	log.Infof("Clean up of binding instance [ %s ] done. Unbinding successful", bindInstance.ID.String())
 	return nil
 }
