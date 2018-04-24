@@ -41,21 +41,39 @@ HOSTNAME=${PUBLIC_IP}.nip.io
 ROUTING_SUFFIX="${HOSTNAME}"
 ORIGIN_IMAGE=${ORIGIN_IMAGE:-"docker.io/openshift/origin"}
 ORIGIN_VERSION=${ORIGIN_VERSION:-"latest"}
+APB_NAME=${APB_NAME:-"automation-broker-apb"}
+APB_IMAGE=${APB_IMAGE:-"docker.io/automationbroker/automation-broker-apb:latest"}
+BROKER_NAME=${BROKER_NAME:-"ansible-service-broker"}
+BROKER_NAMESPACE=${BROKER_NAMESPACE:-"ansible-service-broker"}
+HELM=${HELM:-"false"}
 
+version=$(oc version | head -1)
+client_version=$(echo $version | egrep -o 'v[0-9]+(\.[0-9]+)+' | tr -d v.)
 if [ "$ORIGIN_VERSION" != "latest" ]; then
-    version=$(oc version | head -1)
-    client_version=$(echo $version | egrep -o 'v[0-9]+(\.[0-9]+)+' | tr -d v.)
     origin_version=$(echo $ORIGIN_VERSION | tr -d v.)
     if (( $origin_version > $client_version )); then
-	echo "WARNING: Using client version: $version with cluster version: $ORIGIN_VERSION"
+        echo "WARNING: Using client version: $version with cluster version: $ORIGIN_VERSION"
     fi
 fi
 
-oc cluster up --image=${ORIGIN_IMAGE} \
-    --version=${ORIGIN_VERSION} \
-    --service-catalog=true \
-    --routing-suffix=${ROUTING_SUFFIX} \
-    --public-hostname=${HOSTNAME}
+if (( $client_version >= 3100 )); then
+    oc cluster up --image=${ORIGIN_IMAGE} \
+        --tag=${ORIGIN_VERSION} \
+        --enable=service-catalog,template-service-broker,router,registry,web-console \
+        --routing-suffix=${ROUTING_SUFFIX} \
+        --public-hostname=${HOSTNAME}
+else
+    oc cluster up --image=${ORIGIN_IMAGE} \
+        --version=${ORIGIN_VERSION} \
+        --service-catalog=true \
+        --routing-suffix=${ROUTING_SUFFIX} \
+        --public-hostname=${HOSTNAME}
+fi
+
+if [ "$?" -ne 0 ]; then
+    echo "Error starting cluster"
+    exit
+fi
 
 #
 # Logging in as system:admin so we can create a clusterrolebinding and
@@ -63,43 +81,26 @@ oc cluster up --image=${ORIGIN_IMAGE} \
 #
 echo 'Logging in as "system:admin" to create broker resources...'
 oc login -u system:admin
-oc new-project ansible-service-broker
+oc new-project $BROKER_NAMESPACE
 
 #
-# A valid dockerhub username/password is required so the broker may
-# authenticate with dockerhub to:
-#
-#  1) inspect the available repositories in an organization
-#  2) read the manifest of each repository to determine metadata about
-#     the images
-#
-# This is how the Ansible Service Broker determines what content to
-# expose to the Service Catalog
-#
-# Note:  dockerhub API requirements require an authenticated user only,
-# the user does not need any special access beyond read access to the
-# organization.
-#
-# By default, the Ansible Service Broker will look at the
-# 'ansibleplaybookbundle' organization, this can be overridden with the
-# parameter DOCKERHUB_ORG being passed into the template.
-#
-TEMPLATE_URL=${TEMPLATE_URL:-"https://raw.githubusercontent.com/openshift/ansible-service-broker/master/templates/deploy-ansible-service-broker.template.yaml"}
-DOCKERHUB_ORG=${DOCKERHUB_ORG:-"ansibleplaybookbundle"} # DocherHub org where APBs can be found, default 'ansibleplaybookbundle'
-ENABLE_BASIC_AUTH="false"
-VARS="-p BROKER_CA_CERT=$(oc get secret -n kube-service-catalog -o go-template='{{ range .items }}{{ if eq .type "kubernetes.io/service-account-token" }}{{ index .data "service-ca.crt" }}{{end}}{{"\n"}}{{end}}' | tail -n 1)"
-
-curl -s $TEMPLATE_URL \
-  | oc process \
-  -n ansible-service-broker \
-  -p DOCKERHUB_ORG="$DOCKERHUB_ORG" \
-  -p ENABLE_BASIC_AUTH="$ENABLE_BASIC_AUTH" \
-  -p NAMESPACE=ansible-service-broker \
-  $VARS -f - | oc create -f -
+# Use the automation-broker-apb to deploy the broker
+oc create serviceaccount $APB_NAME --namespace $BROKER_NAMESPACE
+oc create clusterrolebinding $APB_NAME --clusterrole=cluster-admin --serviceaccount=$BROKER_NAMESPACE:$APB_NAME
+oc run $APB_NAME \
+    --namespace=$BROKER_NAMESPACE \
+    --image=$APB_IMAGE \
+    --restart=Never \
+    --attach=true \
+    --serviceaccount=$APB_NAME \
+    -- provision -e broker_name=$BROKER_NAME -e broker_helm_enabled=$HELM
 if [ "$?" -ne 0 ]; then
-  echo "Error processing template and creating deployment"
+  echo "Error deploying broker"
   exit
 fi
+oc delete pod $APB_NAME --namespace $BROKER_NAMESPACE
+oc delete serviceaccount $APB_NAME --namespace $BROKER_NAMESPACE
+oc delete clusterrolebinding $APB_NAME
 
 #
 # Then login as 'developer'/'developer' to WebUI
