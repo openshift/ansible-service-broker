@@ -72,7 +72,9 @@ type BundleSpec struct {
 	Async       AsyncType `json:"async"`
 	// Store the metadata as a json encoded string to preserve the genericness
 	Metadata string `json:"metadata"`
-	Plans    []Plan `json:"plans"`
+	// Store the alpha map as a json encoded string to preserve the genericness
+	Alpha string
+	Plans []Plan `json:"plans"`
 }
 
 // Status - The status for the bundle
@@ -239,7 +241,7 @@ type BundleInstanceSpec struct {
 
 // Context is the context for the ServiceInstance.
 type Context struct {
-	Plateform string `json:"plateform"`
+	Platform  string `json:"platform"`
 	Namespace string `json:"namespace"`
 }
 

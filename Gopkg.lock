@@ -41,7 +41,7 @@
     "pkg/apis/automationbroker",
     "pkg/apis/automationbroker/v1alpha1"
   ]
-  revision = "00b71c26a8a6c6a71b5b8bf9e54c7695337bf643"
+  revision = "ae758feddead2cdc8fea98f3f3e08bd89e632dc7"
   source = "github.com/shawn-hurley/broker-client-go"
 
 [[projects]]
