@@ -80,7 +80,7 @@ objects:
     verbs: ["create", "delete"]
   - apiGroups: ["automationbroker.io"]
     attributeRestrictions: null
-    resources: ["bundles", "jobstates", "servicebindings", "serviceinstances"]
+    resources: ["bundles", "bundlebindings", "bundleinstances"]
     verbs: ["*"]
 
 - apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -328,239 +328,37 @@ objects:
     name: bundles.automationbroker.io
   spec:
     group: automationbroker.io
-    version: v1
+    version: v1alpha1
     scope: Namespaced
     names:
       plural: bundles
       singular: bundle
       kind: Bundle
-    validation:
-     # openAPIV3Schema is the schema for validating custom objects.
-      openAPIV3Schema:
-        properties:
-          spec:
-            properties:
-              runtime:
-                type: integer
-                minimum: 1
-                maximum: 2
-              version:
-                type: string
-                pattern: '^[\d]+.[\d*]+$'
-              fqName:
-                type: string
-              image:
-                type: string
-              tags:
-                type: array
-                items:
-                  type: string
-              bindable:
-                type: boolean
-              description:
-                type: string
-              metadata:
-                type: string
-              alpha:
-                type: string
-              async:
-                type: string
-                pattern: '^(optional|required|unsupported)$'
-              plans:
-                type: array
-                minItems: 1
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    description:
-                      type: string
-                    metadata:
-                      type: string
-                    free:
-                      type: boolean
-                    bindable:
-                      type: boolean
-                    updatesTo:
-                      type: array
-                      items:
-                        type: string
-                    parameters:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          title:
-                            type: string
-                          type:
-                            type: string
-                          description:
-                            type: string
-                          default:
-                            type: string
-                          deprecateMaxLength:
-                            type: integer
-                          maxLength:
-                            type: integer
-                          minLength:
-                            type: integer
-                          pattern:
-                            type: string
-                          multipleOf:
-                            type: float
-                          maximum:
-                            type: float
-                          exclusiveMaximum:
-                            type: float
-                          minimum:
-                            type: float
-                          exclusiveMinimum:
-                            type: float
-                          enum:
-                            type: array
-                          items:
-                            type: string
-                          required:
-                            type: boolean
-                          updatable:
-                            type: boolean
-                          displayType:
-                            type: string
-                          displayGroup:
-                            type: string
-                    bindParameters:
-                      type: array
-                      properties:
-                        name:
-                          type: string
-                        title:
-                          type: string
-                        type:
-                          type: string
-                        description:
-                          type: string
-                        default:
-                          type: string
-                        deprecateMaxLength:
-                          type: integer
-                        maxLength:
-                          type: integer
-                        minLength:
-                          type: integer
-                        pattern:
-                          type: string
-                        multipleOf:
-                          type: float
-                        maximum:
-                          type: float
-                        exclusiveMaximum:
-                          type: float
-                        minimum:
-                          type: float
-                        exclusiveMinimum:
-                          type: float
-                        enum:
-                          type: array
-                        items:
-                          type: string
-                        required:
-                          type: boolean
-                        updatable:
-                          type: boolean
-                        displayType:
-                          type: string
-                        displayGroup:
-                          type: string
 - apiVersion: apiextensions.k8s.io/v1beta1
   kind: CustomResourceDefinition
   metadata:
-    name: jobstates.automationbroker.io
+    name: bundlebindings.automationbroker.io
   spec:
     group: automationbroker.io
-    version: v1
+    version: v1alpha1
     scope: Namespaced
     names:
-      plural: jobstates
-      singular: jobstate
-      kind: JobState
-    validation:
-     # openAPIV3Schema is the schema for validating custom objects.
-     # Token is the name of the resource
-      openAPIV3Schema:
-        properties:
-          state:
-            type: string
-          podName:
-            type: string
-          method:
-            type: string
-          error:
-            type: string
-          description:
-            type: string
+      plural: bundlebindings
+      singular: bundlebinding
+      kind: BundleBinding
 
 - apiVersion: apiextensions.k8s.io/v1beta1
   kind: CustomResourceDefinition
   metadata:
-    name: servicebindings.automationbroker.io
+    name: bundleinstances.automationbroker.io
   spec:
     group: automationbroker.io
-    version: v1
+    version: v1alpha1
     scope: Namespaced
     names:
-      plural: servicebindings
-      singular: servicebinding
-      kind: ServiceBinding
-    validation:
-     # openAPIV3Schema is the schema for validating custom objects.
-      openAPIV3Schema:
-        serviceInstanceId:
-          type: string
-        parameters:
-          type: string
-        JobToken:
-          type: string
-
-- apiVersion: apiextensions.k8s.io/v1beta1
-  kind: CustomResourceDefinition
-  metadata:
-    name: serviceinstances.automationbroker.io
-  spec:
-    group: automationbroker.io
-    version: v1
-    scope: Namespaced
-    names:
-      plural: serviceinstances
-      singular: serviceinstance
-      kind: ServiceInstance
-    validation:
-     # openAPIV3Schema is the schema for validating custom objects.
-      openAPIV3Schema:
-        properties:
-          spec:
-            properties:
-              specId:
-                type: string
-              dashboardUrl:
-                type: string
-              context:
-                type: object
-                properties:
-                  plateform:
-                    type: string
-                  namespace:
-                    type: string
-              parameters:
-                type: string
-              bindingIds:
-                type: array
-                items:
-                  type: string
+      plural: bundleinstances
+      singular: bundleinstance
+      kind: BundleInstance
 parameters:
 - description: Service Catalog API Version.  Newer service-catalogs use servicecatalog.k8s.io/v1beta1
   displayname: Service Catalog API Version.  Newer service-catalogs use servicecatalog.k8s.io/v1beta1

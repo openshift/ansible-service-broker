@@ -27,7 +27,6 @@ import (
 	crd "github.com/openshift/ansible-service-broker/pkg/dao/crd"
 	etcd "github.com/openshift/ansible-service-broker/pkg/dao/etcd"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var options struct {
@@ -151,7 +150,6 @@ func main() {
 		// Convert all the job states
 		jobStateNodes, err := etcdDao.BatchGetRaw(fmt.Sprintf("/state/%v/job", si.ID.String()))
 		if err != nil && !etcdDao.IsNotFoundError(err) {
-			revertJobState(jsSaved, options.MigrationNamespace)
 			revertBindInstance(biSaved)
 			revertServiceInstance(siSaved)
 			revertCrdSavedSpecs(crdSavedSpecs)
@@ -162,7 +160,6 @@ func main() {
 				js := apb.JobState{}
 				err := json.Unmarshal([]byte(jsStr), &js)
 				if err != nil {
-					revertJobState(jsSaved, options.MigrationNamespace)
 					revertBindInstance(biSaved)
 					revertServiceInstance(siSaved)
 					revertCrdSavedSpecs(crdSavedSpecs)
@@ -170,7 +167,6 @@ func main() {
 				}
 				_, err = crdDao.SetState(si.ID.String(), js)
 				if err != nil {
-					revertJobState(jsSaved, options.MigrationNamespace)
 					revertBindInstance(biSaved)
 					revertServiceInstance(siSaved)
 					revertCrdSavedSpecs(crdSavedSpecs)
@@ -208,18 +204,4 @@ func revertServiceInstance(siSaved []*apb.ServiceInstance) {
 		}
 	}
 	logrus.Infof("reverted service instances")
-}
-func revertJobState(jsSaved []*apb.JobState, ns string) {
-	for _, js := range jsSaved {
-		//no DAO to delete saved state. Going to the CRD Client
-		crdClient, err := clients.CRDClient()
-		if err != nil {
-			panic(fmt.Sprintf("revert failed - %v", err))
-		}
-		err = crdClient.AutomationbrokerV1().JobStates(ns).Delete(js.Token, &metav1.DeleteOptions{})
-		if err != nil {
-			panic(fmt.Sprintf("revert failed - %v", err))
-		}
-	}
-	fmt.Printf("reverted job states")
 }

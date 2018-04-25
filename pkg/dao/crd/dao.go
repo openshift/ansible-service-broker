@@ -170,7 +170,7 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 	if si, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
 		log.Debugf("updating service instance: %v", id)
 		si.Spec = spec.Spec
-		si.Status = spec.Status
+		si.Status.Bindings = spec.Status.Bindings
 		_, err := d.client.BundleInstances(d.namespace).Update(si)
 		if err != nil {
 			log.Errorf("unable to update service instance - %v", err)
@@ -264,12 +264,16 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
 			return state.Token, err
 		}
+		if bi.Status.Jobs == nil {
+			bi.Status.Jobs = map[string]v1.Job{}
+		}
 		bi.Status.Jobs[state.Token] = v1.Job{
 			Description:      state.Description,
 			LastModifiedTime: &n,
 			Method:           crd.ConvertJobMethodToCRD(state.Method),
 			Podname:          state.Podname,
 			State:            crd.ConvertStateToCRD(state.State),
+			Error:            state.Error,
 		}
 		bi.Status.LastDescription = state.Description
 		bi.Status.State = crd.ConvertStateToCRD(state.State)
@@ -285,12 +289,16 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
 			return state.Token, err
 		}
+		if si.Status.Jobs == nil {
+			si.Status.Jobs = map[string]v1.Job{}
+		}
 		si.Status.Jobs[state.Token] = v1.Job{
 			Description:      state.Description,
 			LastModifiedTime: &n,
 			Method:           crd.ConvertJobMethodToCRD(state.Method),
 			Podname:          state.Podname,
 			State:            crd.ConvertStateToCRD(state.State),
+			Error:            state.Error,
 		}
 		si.Status.LastDescription = state.Description
 		si.Status.State = crd.ConvertStateToCRD(state.State)
@@ -319,6 +327,10 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 			log.Errorf("Unable to update the job state: %v - %v", token, err)
 			return apb.JobState{}, err
 		}
+		if si.Status.Jobs == nil {
+			log.Errorf("Unable to update the job state: %v - %v", token, err)
+			return apb.JobState{}, err
+		}
 		j, ok := si.Status.Jobs[token]
 		if !ok {
 			log.Errorf("Unable to update the job state: %v - %v", token, err)
@@ -326,6 +338,10 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 		}
 		job = j
 	} else {
+		if bi.Status.Jobs == nil {
+			log.Errorf("Unable to update the job state: %v - %v", token, err)
+			return apb.JobState{}, err
+		}
 		j, ok := bi.Status.Jobs[token]
 		if !ok {
 			log.Errorf("Unable to update the job state: %v - %v", token, err)
@@ -339,6 +355,7 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 		Podname:     job.Podname,
 		Token:       token,
 		State:       crd.ConvertStateToAPB(job.State),
+		Error:       job.Error,
 	}, nil
 }
 
@@ -358,6 +375,7 @@ func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
 				Podname:     j.Podname,
 				Token:       token,
 				State:       crd.ConvertStateToAPB(j.State),
+				Error:       j.Error,
 			}, nil
 		}
 	}
@@ -391,6 +409,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 					Podname:     j.Podname,
 					Token:       token,
 					State:       crd.ConvertStateToAPB(j.State),
+					Error:       j.Error,
 				}})
 			}
 		}
@@ -404,6 +423,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 					Podname:     j.Podname,
 					Token:       token,
 					State:       crd.ConvertStateToAPB(j.State),
+					Error:       j.Error,
 				}})
 			}
 		}
@@ -433,6 +453,7 @@ func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState,
 					Podname:     job.Podname,
 					Token:       token,
 					State:       crd.ConvertStateToAPB(job.State),
+					Error:       job.Error,
 				})
 			}
 		}
@@ -445,6 +466,7 @@ func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState,
 					Podname:     job.Podname,
 					Token:       token,
 					State:       crd.ConvertStateToAPB(job.State),
+					Error:       job.Error,
 				})
 			}
 		}

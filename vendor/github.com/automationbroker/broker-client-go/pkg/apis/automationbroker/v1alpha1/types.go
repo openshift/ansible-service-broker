@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// LocalObjectRef - reference to an object in the same namespace.
+// LocalObjectReference - reference to an object in the same namespace.
 type LocalObjectReference struct {
 	Name string `json:"name"`
 }
@@ -166,6 +166,7 @@ type Job struct {
 	Podname          string       `json:"podname"`
 	State            State        `json:"state"`
 	Description      string       `json:"description,omitempty"`
+	Error            string       `json:"error,omitempty"`
 	Method           JobMethod    `json:"method"`
 	LastModifiedTime *metav1.Time `json:"lastModifiedTime,omitempty"`
 }
