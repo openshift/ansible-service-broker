@@ -200,7 +200,7 @@ func (d *Dao) DeleteServiceInstance(id string) error {
 
 // GetBindInstance - Retrieve a specific bind instance from the kvp API
 func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
-	log.Debugf("get binidng instance: %v", id)
+	log.Debugf("get binding instance: %v", id)
 	bi, err := d.client.ServiceBindings(d.namespace).Get(id, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -223,7 +223,18 @@ func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 		Spec: b,
 	}
 	_, err = d.client.ServiceBindings(d.namespace).Create(&bi)
-	if err != nil {
+	if err != nil && apierrors.IsAlreadyExists(err) {
+		// looks like we already have this state, probably created by
+		// another goroutine. Let's try to update the existing one instead.
+		if binding, err := d.client.ServiceBindings(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
+			binding.Spec = b
+			_, err := d.client.ServiceBindings(d.namespace).Update(binding)
+			if err != nil {
+				log.Errorf("Unable to update the service binding, after a failed creation: %v - %v", id, err)
+				return err
+			}
+		}
+	} else if err != nil {
 		log.Errorf("unable to save service binding - %v", err)
 		return err
 	}
@@ -237,24 +248,36 @@ func (d *Dao) DeleteBindInstance(id string) error {
 	return err
 }
 
+func (d *Dao) updateJobState(js *v1.JobState, spec v1.JobStateSpec, state apb.JobState) error {
+	js.Spec = spec
+	js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State))
+	_, err := d.client.JobStates(d.namespace).Update(js)
+	if err != nil {
+		log.Errorf("Unable to update the job state, after a failed creation: %v - %v", state.Token, err)
+		return err
+	}
+
+	return nil
+}
+
 // SetState - Set the Job State in the kvp API for id.
 func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	log.Debugf("set job state for instance: %v token: %v", instanceID, state.Token)
+
 	j, err := crd.ConvertJobStateToCRD(&state)
 	if err != nil {
 		return "", err
 	}
+
 	if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
-		js.Spec = j
-		js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State))
-		_, err := d.client.JobStates(d.namespace).Update(js)
-		if err != nil {
-			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+		if err := d.updateJobState(js, j, state); err != nil {
 			return state.Token, err
 		}
+
 		return state.Token, nil
 	}
 
+	// We didn't find an existing JobState, so let's create a new one
 	js := v1.JobState{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      state.Token,
@@ -266,11 +289,23 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 		Spec: j,
 	}
 
+	// Create the actual JobState CRD
 	_, err = d.client.JobStates(d.namespace).Create(&js)
-	if err != nil {
+	if err != nil && apierrors.IsAlreadyExists(err) {
+		// looks like we already have this state, probably created by
+		// another goroutine. Let's try to update the existing one instead.
+		if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
+			if err := d.updateJobState(js, j, state); err != nil {
+				return state.Token, err
+			}
+		}
+	} else if err != nil {
+		// something else happened, bailing
 		log.Errorf("unable to create the job state - %v", err)
 		return "", err
 	}
+
+	// looks like we're good
 	return state.Token, nil
 }
 
