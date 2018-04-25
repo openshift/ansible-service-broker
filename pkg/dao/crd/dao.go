@@ -248,6 +248,18 @@ func (d *Dao) DeleteBindInstance(id string) error {
 	return err
 }
 
+func (d *Dao) updateJobState(js *v1.JobState, spec v1.JobStateSpec, state apb.JobState) error {
+	js.Spec = spec
+	js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State))
+	_, err := d.client.JobStates(d.namespace).Update(js)
+	if err != nil {
+		log.Errorf("Unable to update the job state, after a failed creation: %v - %v", state.Token, err)
+		return err
+	}
+
+	return nil
+}
+
 // SetState - Set the Job State in the kvp API for id.
 func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	log.Debugf("set job state for instance: %v token: %v", instanceID, state.Token)
@@ -258,13 +270,10 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	}
 
 	if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
-		js.Spec = j
-		js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State))
-		_, err := d.client.JobStates(d.namespace).Update(js)
-		if err != nil {
-			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+		if err := d.updateJobState(js, j, state); err != nil {
 			return state.Token, err
 		}
+
 		return state.Token, nil
 	}
 
@@ -286,11 +295,7 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 		// looks like we already have this state, probably created by
 		// another goroutine. Let's try to update the existing one instead.
 		if js, err := d.client.JobStates(d.namespace).Get(state.Token, metav1.GetOptions{}); err == nil {
-			js.Spec = j
-			js.ObjectMeta.Labels[jobStateLabel] = fmt.Sprintf("%v", crd.ConvertStateToCRD(state.State))
-			_, err := d.client.JobStates(d.namespace).Update(js)
-			if err != nil {
-				log.Errorf("Unable to update the job state, after a failed creation: %v - %v", state.Token, err)
+			if err := d.updateJobState(js, j, state); err != nil {
 				return state.Token, err
 			}
 		}
