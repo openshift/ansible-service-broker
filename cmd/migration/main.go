@@ -77,8 +77,14 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Unable to create crd client - %v", err))
 	}
+	k8scli, err := clients.Kubernetes()
+	if err != nil {
+		panic(fmt.Sprintf("Unable to get kubernetes client - %v", err))
+	}
 
+	//
 	// convert specs to bundles
+	//
 	etcdSpecs, err := etcdDao.BatchGetSpecs("/spec")
 	if err != nil && !etcdDao.IsNotFoundError(err) {
 		panic(fmt.Sprintf("Unable to get all specs from etcd - %v", err))
@@ -94,7 +100,9 @@ func main() {
 		crdSavedSpecs = append(crdSavedSpecs, s)
 	}
 
+	//
 	// convert all the service instances
+	//
 	siSaved := []*apb.ServiceInstance{}
 	siJSONStrs, err := etcdDao.BatchGetRaw("/service_instance")
 	if err != nil && !etcdDao.IsNotFoundError(err) {
@@ -121,7 +129,9 @@ func main() {
 		}
 	}
 
+	//
 	// convert all the service bindings
+	//
 	biSaved := []*apb.BindInstance{}
 	biJSONStrs, err := etcdDao.BatchGetRaw("/bind_instance")
 	if err != nil && !etcdDao.IsNotFoundError(err) {
@@ -150,7 +160,9 @@ func main() {
 		}
 	}
 
+	//
 	// convert job states
+	//
 	jsSaved := []*apb.JobState{}
 	for _, si := range siSaved {
 		// Convert all the job states
@@ -183,6 +195,9 @@ func main() {
 		}
 	}
 
+	//
+	// Convert extracted credentials
+	//
 	extCredsSaved := []extCredsMigration{}
 	for _, si := range siSaved {
 		labels := map[string]string{"apbAction": "provision", "apbName": si.Spec.FQName}
@@ -200,14 +215,6 @@ func main() {
 
 		ec := apb.ExtractedCredentials{}
 		err = json.Unmarshal([]byte(extcredsJSON), &ec)
-		if err != nil {
-			revertExtractedCredentials(extCredsSaved)
-			revertBindInstance(biSaved)
-			revertServiceInstance(siSaved)
-			revertCrdSavedSpecs(crdSavedSpecs)
-			panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
-		}
-		k8scli, err := clients.Kubernetes()
 		if err != nil {
 			revertExtractedCredentials(extCredsSaved)
 			revertBindInstance(biSaved)
