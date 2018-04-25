@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.6
+Version: 1.2.7
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,17 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Apr 25 2018 David Zager <david.j.zager@gmail.com> 1.2.7-1
+- Clone into broker path (david.j.zager@gmail.com)
+- Use git clone for canary (#906) (dzager@redhat.com)
+- Build migration into canary image (#905) (dzager@redhat.com)
+- fix statements with formatting (#904) (jmrodri@gmail.com)
+- Bug 1569220 - Add dashboard redirector feature (#897) (ernelson@redhat.com)
+- Update scripts to use the broker apb (#891) (dzager@redhat.com)
+- Bug 1567004 - Delete extracted credentials secret during synchronous unbind.
+  (#899) (derekwhatley@gmail.com)
+- Fix typo in run_latest_build.sh (#903) (marko.luksa@gmail.com)
+
 * Thu Apr 19 2018 David Zager <david.j.zager@gmail.com> 1.2.6-1
 - Point to v3.9.0 release of origin (#894) (dzager@redhat.com)
 - link broken - typo fixed (#892)
