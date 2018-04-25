@@ -17,11 +17,10 @@
 package broker
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
-
-	"encoding/json"
 
 	"github.com/automationbroker/bundle-lib/bundle"
 	schema "github.com/lestrrat/go-jsschema"
@@ -226,52 +225,190 @@ func parametersToSchema(plan bundle.Plan) (Schema, error) {
 		return Schema{}, err
 	}
 	createRequired := extractRequired(plan.Parameters)
+	createDeps := extractDependencies(plan.Parameters, createProperties)
 
 	bindProperties, err := extractProperties(plan.BindParameters)
 	if err != nil {
 		return Schema{}, err
 	}
 	bindRequired := extractRequired(plan.BindParameters)
+	bindDeps := extractDependencies(plan.Parameters, bindProperties)
 
 	updatableProperties, err := extractUpdatable(plan.Parameters)
 	if err != nil {
 		return Schema{}, err
 	}
 	updatableRequired := extractUpdatableRequired(createRequired, updatableProperties)
+	updateDeps := extractDependencies(plan.Parameters, updatableProperties)
 
 	// builds a Schema object for the various methods.
 	s := Schema{
 		ServiceInstance: ServiceInstance{
 			Create: map[string]*schema.Schema{
 				"parameters": {
-					SchemaRef:  schema.SchemaURL,
-					Type:       []schema.PrimitiveType{schema.ObjectType},
-					Properties: createProperties,
-					Required:   createRequired,
+					SchemaRef:    schema.SchemaURL,
+					Type:         []schema.PrimitiveType{schema.ObjectType},
+					Properties:   createProperties,
+					Required:     createRequired,
+					Dependencies: createDeps,
 				},
 			},
 			Update: map[string]*schema.Schema{
 				"parameters": {
-					SchemaRef:  schema.SchemaURL,
-					Type:       []schema.PrimitiveType{schema.ObjectType},
-					Properties: updatableProperties,
-					Required:   updatableRequired,
+					SchemaRef:    schema.SchemaURL,
+					Type:         []schema.PrimitiveType{schema.ObjectType},
+					Properties:   updatableProperties,
+					Required:     updatableRequired,
+					Dependencies: updateDeps,
 				},
 			},
 		},
 		ServiceBinding: ServiceBinding{
 			Create: map[string]*schema.Schema{
 				"parameters": {
-					SchemaRef:  schema.SchemaURL,
-					Type:       []schema.PrimitiveType{schema.ObjectType},
-					Properties: bindProperties,
-					Required:   bindRequired,
+					SchemaRef:    schema.SchemaURL,
+					Type:         []schema.PrimitiveType{schema.ObjectType},
+					Properties:   bindProperties,
+					Required:     bindRequired,
+					Dependencies: bindDeps,
 				},
 			},
 		},
 	}
 
 	return s, nil
+}
+
+func extractDependencies(params []bundle.ParameterDescriptor, props map[string]*schema.Schema) schema.DependencyMap {
+	var removeProps []string
+	depMap := schema.DependencyMap{Schemas: make(map[string]*schema.Schema)}
+
+	for _, param := range params {
+		if len(param.Dependencies) > 0 {
+			// Currently can't handle more than one dependency here due limitations in frontend library
+			// so if multiple dependencies provided accept the first one only
+			dep := param.Dependencies[0]
+			if _, ok := props[dep.Key]; ok {
+				// Fetch property definition from properties and build
+				// out the dependency schema skeleton
+				schemaToProp := make(map[string]*schema.Schema)
+				schemaToProp[param.Name] = props[param.Name]
+				baseSchema := newBaseSchema()
+				baseSchema.Properties = schemaToProp
+				baseSchema.Required = []string{param.Name}
+
+				// Handle the base case where we are not dealing with "oneOf" keyword
+				if len(props[dep.Key].Enum) < 1 {
+					if existingSchema, ok := depMap.Schemas[dep.Key]; ok {
+						mergeMaps(baseSchema.Properties, existingSchema.Properties)
+						existingSchema.Required = append(existingSchema.Required, baseSchema.Required...)
+					} else {
+						depMap.Schemas[dep.Key] = baseSchema
+					}
+					removeProps = append(removeProps, param.Name)
+					continue
+				}
+				// Handle oneOf keyword
+				values, valid := parseDependencyValues(dep.Value, props[dep.Key].Enum)
+				if !valid {
+					fmt.Printf("Invalid value(s) provided for dependency on %s \n", dep.Key)
+					continue
+				}
+				var schema *schema.Schema
+
+				if existingSchema, ok := depMap.Schemas[dep.Key]; ok {
+					schema = existingSchema
+				} else {
+					schema = newBaseSchema()
+				}
+
+				enumSchema := newBaseSchema()
+				enumSchema.Enum = convertToEnums(values)
+
+				baseSchema.Properties[dep.Key] = enumSchema
+				schema.OneOf = append(schema.OneOf, baseSchema)
+				depMap.Schemas[dep.Key] = schema
+				removeProps = append(removeProps, param.Name)
+
+			}
+		}
+	}
+	//  Remove properties now defined in dependencies from original properties to avoid duplication in schema
+	for _, prop := range removeProps {
+		delete(props, prop)
+	}
+	return depMap
+}
+
+func newBaseSchema() *schema.Schema {
+	return &schema.Schema{
+		AdditionalItems:      &schema.AdditionalItems{},
+		AdditionalProperties: &schema.AdditionalProperties{},
+	}
+}
+
+func mergeMaps(from map[string]*schema.Schema, into map[string]*schema.Schema) {
+	for k, v := range from {
+		into[k] = v
+	}
+}
+
+func parseDependencyValues(valReceived interface{}, validateAgainst []interface{}) ([]string, bool) {
+	var values []string
+	var convertedEnums []string
+	var valid = true
+
+	convertedEnums = convertFromEnums(validateAgainst)
+
+	switch v := valReceived.(type) {
+	case string:
+		if contains(v, convertedEnums) {
+			values = append(values, v)
+		}
+	case []interface{}:
+		for _, val := range v {
+			switch str := val.(type) {
+			case string:
+				if contains(str, convertedEnums) {
+					values = append(values, str)
+				}
+			default:
+				valid = false
+				break
+			}
+		}
+	default:
+		valid = false
+	}
+	return values, valid
+}
+
+func contains(value string, values []string) bool {
+	for _, v := range values {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
+func convertToEnums(values []string) []interface{} {
+	var enums []interface{}
+	for _, enumVal := range values {
+		enums = append(enums, enumVal)
+	}
+	return enums
+}
+
+func convertFromEnums(enums []interface{}) []string {
+	values := make([]string, len(enums))
+	for i, e := range enums {
+		switch v := e.(type) {
+		case string:
+			values[i] = v
+		}
+	}
+	return values
 }
 
 func extractProperties(params []bundle.ParameterDescriptor) (map[string]*schema.Schema, error) {
