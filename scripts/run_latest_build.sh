@@ -70,10 +70,7 @@ else
         --public-hostname=${HOSTNAME}
 fi
 
-if [ "$?" -ne 0 ]; then
-    echo "Error starting cluster"
-    exit
-fi
+set -e
 
 #
 # Logging in as system:admin so we can create a clusterrolebinding and
