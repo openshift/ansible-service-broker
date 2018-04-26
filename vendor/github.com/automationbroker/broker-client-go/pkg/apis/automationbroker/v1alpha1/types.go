@@ -83,7 +83,7 @@ type Status string
 const (
 	// ErrorStatus - Bundle error status
 	ErrorStatus Status = "error"
-	// OKStatus - Bundle oke status
+	// OKStatus - Bundle ok status
 	OKStatus Status = "ok"
 )
 

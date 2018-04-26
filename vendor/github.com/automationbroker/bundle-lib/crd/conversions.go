@@ -114,7 +114,7 @@ func ConvertBundleToSpec(spec v1alpha1.BundleSpec, id string) (*apb.Spec, error)
 }
 
 // ConvertServiceInstanceToCRD will take a bundle ServiceInstance and convert
-// it to a ServiceInstanceSpec CRD type.
+// it to a BundleInstance CRD type.
 func ConvertServiceInstanceToCRD(si *apb.ServiceInstance) (v1alpha1.BundleInstance, error) {
 	var b []byte
 	if si.Parameters != nil {
@@ -147,7 +147,7 @@ func ConvertServiceInstanceToCRD(si *apb.ServiceInstance) (v1alpha1.BundleInstan
 	}, nil
 }
 
-// ConvertServiceInstanceToAPB will take a ServiceInstanceSpec its associated
+// ConvertServiceInstanceToAPB will take a BundleInstance, its associated
 // bundle Spec, as well as an id (often the ServiceInstance's name), and will
 // convert those to a bundle ServiceInstance.
 func ConvertServiceInstanceToAPB(si v1alpha1.BundleInstance, spec *apb.Spec, id string) (*apb.ServiceInstance, error) {
@@ -185,7 +185,7 @@ func ConvertServiceInstanceToAPB(si v1alpha1.BundleInstance, spec *apb.Spec, id 
 }
 
 // ConvertServiceBindingToCRD will take a bundle BindInstance and convert it
-// to a ServiceBindingSpec CRD type.
+// to a BundleBinding CRD type.
 func ConvertServiceBindingToCRD(bi *apb.BindInstance) (v1alpha1.BundleBinding, error) {
 	var b []byte
 	if bi.Parameters != nil {
@@ -204,7 +204,7 @@ func ConvertServiceBindingToCRD(bi *apb.BindInstance) (v1alpha1.BundleBinding, e
 	}, nil
 }
 
-// ConvertServiceBindingToAPB accepts a bundle-client-go ServiceBindingSpec
+// ConvertServiceBindingToAPB accepts a bundle-client-go BundleBinding
 // along with its id (which is often the ServiceBinding's name), and will convert
 // these into a bundle BindInstance.
 func ConvertServiceBindingToAPB(bi v1alpha1.BundleBinding, id string) (*apb.BindInstance, error) {
@@ -237,7 +237,7 @@ func ConvertStateToCRD(s apb.State) v1alpha1.State {
 	case apb.StateFailed:
 		return v1alpha1.StateFailed
 	}
-	// all cases should be coverd. we should never hit this code path.
+	// all cases should be covered. we should never hit this code path.
 	log.Errorf("Job state not found: %v", s)
 	return v1alpha1.StateFailed
 }

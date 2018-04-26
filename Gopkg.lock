@@ -32,7 +32,6 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
-  branch = "bug-1566924"
   name = "github.com/automationbroker/broker-client-go"
   packages = [
     "client/clientset/versioned",
@@ -41,11 +40,10 @@
     "pkg/apis/automationbroker",
     "pkg/apis/automationbroker/v1alpha1"
   ]
-  revision = "d7990cc4e10f1594ea234a2146dfb98df7332968"
-  source = "github.com/shawn-hurley/broker-client-go"
+  revision = "6918e8ae55fc54e0b69c5d17afd77d07efd5dc23"
+  version = "0.1.2"
 
 [[projects]]
-  branch = "bug-1566924-0.1"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "apb",
@@ -58,8 +56,8 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "aaa98a67a4846d2fff4dbf2abce535b3ce623eb8"
-  source = "github.com/shawn-hurley/bundle-lib"
+  revision = "f8a781a045ec73cd235f9caac14b83ed96fd22c8"
+  version = "0.1.4"
 
 [[projects]]
   branch = "master"
@@ -926,6 +924,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7a35333e8fb5abfbb0d65fc267c39094c98813e5c6b37630182da4b65cc2703f"
+  inputs-digest = "ec45f8aae9030f4422019e0af5f9a39793f532beb467d9953baf8e8e9316847a"
   solver-name = "gps-cdcl"
   solver-version = 1
