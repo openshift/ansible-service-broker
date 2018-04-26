@@ -203,7 +203,7 @@ func (d *Dao) DeleteServiceInstance(id string) error {
 
 // GetBindInstance - Retrieve a specific bind instance from the kvp API
 func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
-	log.Debugf("get binidng instance: %v", id)
+	log.Debugf("get binding instance: %v", id)
 	bi, err := d.client.BundleBindings(d.namespace).Get(id, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -323,12 +323,8 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 		return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
 	} else if d.IsNotFoundError(err) {
 		si, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{})
-		if err != nil {
-			log.Errorf("Unable to update the job state: %v - %v", token, err)
-			return apb.JobState{}, err
-		}
-		if si.Status.Jobs == nil {
-			log.Errorf("Unable to update the job state: %v - %v", token, err)
+		if err != nil || si.Status.Jobs == nil {
+			log.Errorf("Unable to get the job state: %v - %v", token, err)
 			return apb.JobState{}, err
 		}
 		j, ok := si.Status.Jobs[token]
@@ -363,7 +359,7 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
 	bi, err := d.client.BundleBindings(d.namespace).Get(key, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("Unable to update the job state: %v - %v", key, err)
+		log.Errorf("Unable to get the job state: %v - %v", key, err)
 		return apb.JobState{}, err
 	}
 	for token, j := range bi.Status.Jobs {
