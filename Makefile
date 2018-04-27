@@ -15,6 +15,7 @@ SVC_ACCT_DIR     := /var/run/secrets/kubernetes.io/serviceaccount
 KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token tls.crt tls.key)
 COVERAGE_SVC     := travis-ci
 .DEFAULT_GOAL    := build
+ASB_DEBUG_PORT   := 9000
 
 vendor: ## Install or update project dependencies
 	@dep ensure
@@ -76,16 +77,20 @@ prep-local: ## Prepares the local dev environment
 	@./scripts/prep_local_devel_env.sh
 
 build-dev: ## Build a docker image with the broker binary for development
-	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/broker ./cmd/broker
+	docker run --rm -v ${BUILD_DIR}:/tmp/artifact docker.io/philipgough/dlv:centos cp /go/bin/dlv /tmp/artifact
+	env GOOS=linux go build -i -gcflags="-N -l" -o ${BUILD_DIR}/broker ./cmd/broker
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/migration ./cmd/migration
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/dashboard-redirector ./cmd/dashboard-redirector
-	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE} ${BUILD_DIR}
-	@echo
-	@echo "Remember you need to push your image before calling make deploy"
+	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE} ${BUILD_DIR} --build-arg DEBUG_PORT=${ASB_DEBUG_PORT}
+	@echo ""
+	@echo "Remember you need to push your image before calling make deploy or updating deployment config"
 	@echo "    docker push ${BROKER_IMAGE}"
+	@echo ""
+	@echo "To remotely debug the container, update the deployment config and run the following before connecting the debugger"
+	@echo "    ./scripts/prep_debug_env.sh ${ASB_DEBUG_PORT} <broker-namespace> <broker-deployment-name> "
 
 build-image: ## Build the broker (from canary)
-	docker build -f ${BUILD_DIR}/Dockerfile-canary --build-arg VERSION=${TAG} -t ${BROKER_IMAGE} .
+	docker build -f ${BUILD_DIR}/Dockerfile-canary --build-arg VERSION=${TAG} --build-arg DEBUG_PORT=${ASB_DEBUG_PORT} -t ${BROKER_IMAGE} .
 
 build-apb: ## Build the broker apb
 ifeq ($(TAG),canary)

@@ -125,7 +125,7 @@ image with the broker, there are a few things worth pointing out:
   [deploy-ansible-service-broker template](templates/deploy-ansible-service-broker.template.yaml)
   shows that the `broker-config` is included as `config-volume` in the `asb` container and mounted at
   `/etc/ansible-service-broker`.
-- The entrypoint to the image is [entrypoint.sh](build/entrypoint.sh). This script is what starts
+- The entrypoint to the image is [dev-entrypoint.sh](build/dev-entrypoint.sh). This script is what starts
   the broker when deployed as a container.
 
 Once you have a built Docker image, you can [deploy broker from image](#deploy-broker-from-image)
@@ -139,6 +139,26 @@ are a couple of options for running, testing, and debugging the broker. You can
 [run the broker binary locally](#run-your-broker-locally) **or**, assuming you
 [built a Docker image](#package-your-broker-using-docker), you can
 [deploy your broker](#deploy-broker-from-image) into a running cluster.
+
+## Remotely debugging Your Broker
+
+Both the canary build and the image built via `make build-image` and `make build-dev` support remote debugging.
+To enable debugging of these containers within OpenShift, `DEBUG_ENABLED` must be set as an
+environment variable with a value of `True`.
+
+You need to enable a TCP connection to the service. The easiest way to do this is via port forwarding.
+There is a script provided to automate all required configuration to support this at `scripts/prep_debug_env.sh`.
+
+This script takes three arguments:
+* Debug port. The default value is `9000`.
+* The namespace that the broker is running in. Default value is `automation-broker`
+* The broker deployment name. Default value is `automation-broker`
+
+Running this script automates a number of steps for you:
+* Removes the readiness and liveness probes to allow the debugger to pause.
+* Patches the service object to enable TCP connection.
+* Sets `DEBUG_ENABLED=True`
+* Port forwards the provided port to localhost on the same port.
 
 ## Run Your Broker Locally
 
