@@ -24,12 +24,12 @@
   packages = [
     "client/clientset/versioned",
     "client/clientset/versioned/scheme",
-    "client/clientset/versioned/typed/automationbroker.io/v1",
-    "pkg/apis/automationbroker.io",
-    "pkg/apis/automationbroker.io/v1"
+    "client/clientset/versioned/typed/automationbroker/v1alpha1",
+    "pkg/apis/automationbroker",
+    "pkg/apis/automationbroker/v1alpha1"
   ]
-  revision = "99aa044d32de771f45a17e3632ccffdc87086063"
-  version = "0.1.1"
+  revision = "6918e8ae55fc54e0b69c5d17afd77d07efd5dc23"
+  version = "0.1.2"
 
 [[projects]]
   name = "github.com/coreos/etcd"
@@ -553,6 +553,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6e83e87a4e3fa1016de7759fae9ed217283d6aed16b2d2fb3d4e4021efb95533"
+  inputs-digest = "b6f1dd0226d5ae74573734eede60009efb0166806c9b6da9bcee0ef2973d0f4b"
   solver-name = "gps-cdcl"
   solver-version = 1

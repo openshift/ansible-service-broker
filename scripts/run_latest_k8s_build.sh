@@ -9,7 +9,7 @@ BROKER_NAMESPACE=${BROKER_NAMESPACE:-"ansible-service-broker"}
 HELM=${HELM:-"false"}
 
 function ansible-service-broker {
-    if [ "$TAG" == "build" ]; then
+    if [ "$TAG" == "canary" ]; then
         make build-image TAG="${TAG}"
     fi
 
@@ -23,6 +23,7 @@ function ansible-service-broker {
         --attach=true \
         --serviceaccount=$APB_NAME \
         -- provision \
+            -e broker_image_tag=$TAG \
             -e broker_image=$BROKER_IMAGE \
             -e broker_name=$BROKER_NAME \
             -e broker_helm_enabled=$HELM

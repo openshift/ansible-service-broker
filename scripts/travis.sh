@@ -133,6 +133,6 @@ elif [[ "$action" == "k8s-catalog" ]]; then
   ./scripts/broker-ci/setup-catalog.sh
   exit $?
 elif [[ "$action" == "k8s-broker" ]]; then
-  TAG=build ./scripts/run_latest_k8s_build.sh
+  TAG=canary ./scripts/run_latest_k8s_build.sh
   exit $?
 fi

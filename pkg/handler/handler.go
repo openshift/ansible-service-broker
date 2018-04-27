@@ -754,6 +754,10 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 	}
 
 	resp, err := h.broker.LastOperation(instanceUUID, &req)
+	if err == broker.ErrorNotFound { // return 404
+		writeResponse(w, http.StatusGone, broker.ErrorResponse{Description: "Job not found"})
+		return
+	}
 
 	writeDefaultResponse(w, http.StatusOK, resp, err)
 }

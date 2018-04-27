@@ -16,7 +16,7 @@ limitations under the License.
 package scheme
 
 import (
-	automationbrokerv1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker.io/v1"
+	automationbrokerv1alpha1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -47,6 +47,6 @@ func init() {
 // After this, RawExtensions in Kubernetes types will serialize kube-aggregator types
 // correctly.
 func AddToScheme(scheme *runtime.Scheme) {
-	automationbrokerv1.AddToScheme(scheme)
+	automationbrokerv1alpha1.AddToScheme(scheme)
 
 }

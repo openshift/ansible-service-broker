@@ -21,7 +21,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker.io/v1"
+	v1alpha1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -52,15 +52,13 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=automationbroker.io, Version=v1
-	case v1.SchemeGroupVersion.WithResource("bundles"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Automationbroker().V1().Bundles().Informer()}, nil
-	case v1.SchemeGroupVersion.WithResource("jobstates"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Automationbroker().V1().JobStates().Informer()}, nil
-	case v1.SchemeGroupVersion.WithResource("servicebindings"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Automationbroker().V1().ServiceBindings().Informer()}, nil
-	case v1.SchemeGroupVersion.WithResource("serviceinstances"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Automationbroker().V1().ServiceInstances().Informer()}, nil
+	// Group=automationbroker, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("bundles"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Automationbroker().V1alpha1().Bundles().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("bundlebindings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Automationbroker().V1alpha1().BundleBindings().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("bundleinstances"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Automationbroker().V1alpha1().BundleInstances().Informer()}, nil
 
 	}
 

@@ -1468,6 +1468,9 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 	if err != nil {
 		// not sure what we do with the error if we can't find the state
 		log.Error(fmt.Sprintf("problem reading job state: [%s]. error: [%v]", instanceUUID, err.Error()))
+		if a.dao.IsNotFoundError(err) {
+			return &LastOperationResponse{}, ErrorNotFound
+		}
 	}
 
 	state := StateToLastOperation(jobstate.State)
