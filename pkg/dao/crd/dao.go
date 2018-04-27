@@ -173,7 +173,7 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 		si.Status.Bindings = spec.Status.Bindings
 		_, err := d.client.BundleInstances(d.namespace).Update(si)
 		if err != nil {
-			log.Errorf("unable to update service instance - %v", err)
+			log.Errorf("unable to get service instance - %v", err)
 			return err
 		}
 		return nil
@@ -319,7 +319,7 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 	var job v1.Job
 	bi, err := d.client.BundleBindings(d.namespace).Get(id, metav1.GetOptions{})
 	if err != nil && !d.IsNotFoundError(err) {
-		log.Errorf("Unable to update the job state: %v - %v", token, err)
+		log.Errorf("Unable to get the job state: %v - %v", token, err)
 		return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
 	} else if d.IsNotFoundError(err) {
 		si, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{})
@@ -329,18 +329,18 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 		}
 		j, ok := si.Status.Jobs[token]
 		if !ok {
-			log.Errorf("Unable to update the job state: %v - %v", token, err)
+			log.Errorf("Unable to get the job state: %v - %v", token, err)
 			return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
 		}
 		job = j
 	} else {
 		if bi.Status.Jobs == nil {
-			log.Errorf("Unable to update the job state: %v - %v", token, err)
+			log.Errorf("Unable to get the job state: %v - %v", token, err)
 			return apb.JobState{}, err
 		}
 		j, ok := bi.Status.Jobs[token]
 		if !ok {
-			log.Errorf("Unable to update the job state: %v - %v", token, err)
+			log.Errorf("Unable to get the job state: %v - %v", token, err)
 			return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
 		}
 		job = j
@@ -433,12 +433,12 @@ func (d *Dao) GetSvcInstJobsByState(ID string, state apb.State) ([]apb.JobState,
 	jobs := []apb.JobState{}
 	bi, err := d.client.BundleBindings(d.namespace).Get(ID, metav1.GetOptions{})
 	if err != nil && !d.IsNotFoundError(err) {
-		log.Errorf("Unable to update the job state: %v - %v", ID, err)
+		log.Errorf("Unable to get the job state: %v - %v", ID, err)
 		return []apb.JobState{}, fmt.Errorf("unable to find job state %v", ID)
 	} else if d.IsNotFoundError(err) {
 		si, err := d.client.BundleInstances(d.namespace).Get(ID, metav1.GetOptions{})
 		if err != nil {
-			log.Errorf("Unable to update the job state: %v - %v", ID, err)
+			log.Errorf("Unable to get the job state: %v - %v", ID, err)
 			return []apb.JobState{}, err
 		}
 		for token, job := range si.Status.Jobs {
