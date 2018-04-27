@@ -129,4 +129,11 @@ help: ## Show this help screen
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ''
 
-.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local
+wtf: ## Use this target to help you diagnose development problems
+	@echo ""
+	@echo "Hi, this task helps you get out your frustration when"
+	@echo "writing code.  Please feel free to bop your cubemate"
+	@echo "in the head for some comic relief."
+	@echo ""
+
+.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf
