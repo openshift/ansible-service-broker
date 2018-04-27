@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.7
+Version: 1.2.8
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Apr 27 2018 David Zager <david.j.zager@gmail.com> 1.2.8-1
+- Frustration release target (#910) (jmrodri@gmail.com)
+- Bug 1566924 - renaming crd resources (#907) (smhurley00@gmail.com)
+- Bug 1533425 - protect against simultaneous updates (#898) (jmrodri@gmail.com)
+
 * Wed Apr 25 2018 David Zager <david.j.zager@gmail.com> 1.2.7-1
 - Clone into broker path (david.j.zager@gmail.com)
 - Use git clone for canary (#906) (dzager@redhat.com)
