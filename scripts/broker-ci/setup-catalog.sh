@@ -1,13 +1,11 @@
 #!/bin/bash
 
+# Since helm latest (v2.9) is not working in CI, pull an older version.
+DESIRED_HELM_VERSION="v2.8.2"
+
 # TODO: Replace with Catalog APB
 function setup-helm {
-    helm_version=$(curl https://github.com/kubernetes/helm/releases/latest -s -L -I -o /dev/null -w '%{url_effective}' | xargs basename)
-    curl https://storage.googleapis.com/kubernetes-helm/helm-${helm_version}-linux-amd64.tar.gz -o /tmp/helm.tgz
-    tar -xvf /tmp/helm.tgz
-
-    sudo cp ./linux-amd64/helm /usr/local/bin
-    sudo chmod 775 /usr/local/bin/helm
+    curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | DESIRED_VERSION=$DESIRED_HELM_VERSION bash
     helm init
 }
 
