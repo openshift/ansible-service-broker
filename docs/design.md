@@ -26,7 +26,7 @@ An [OpenServiceBroker](https://github.com/openservicebrokerapi/servicebroker) (O
 * **Ansible Playbook Bundle (APB)**: Containerized application implementing APB spec (forthcoming)
 to be deployed and managed via the Service Broker.
 
-* **Ansible Service Broker (ASB)**: Responsible for AA lifecycle management as well as exposure
+* **Ansible Service Broker (ASB)**: Responsible for APB lifecycle management as well as exposure
 of available APBs found in backing registries.
 
 * **Ansible Playbook Bundle Registry (APBR)**: Container registry of APBs implementing the
@@ -44,7 +44,7 @@ attributes to make it available via the Service Catalog.
 * Delegate specifics to APBs when appropriate. APBs define what
 `bind` or `provision` mean in the context of their domain.
 
-* Shared behavior between apps should be pushed into AA execution environment,
+* Shared behavior between apps should be pushed into APB execution environment,
 or the ServiceBroker.
 
 ## Flow
@@ -65,7 +65,7 @@ Therefore, ASB needs to be bootstrapped so APB spec files can be downloaded and 
 ASB pulls inventory of spec files from local store, converts to Service, sends to Service Catalog
 
 Note: Parameter handling is still a [topic of discussion](https://github.com/openservicebrokerapi/servicebroker/pull/74)
-Configurable parameters for an AA should be defined within the spec file. Parameter
+Configurable parameters for an APB should be defined within the spec file. Parameter
 schema is passed to the Service Catalog via the `/catalog` response as metadata.
 Purpose of this is to inform Catalog Clients of the configuration parameters that
 can be set by a user at provision time.
@@ -83,8 +83,8 @@ for whatever bookkeeping is necessary to make sure it can perform the requested 
 when given this ID. Likely needs to be some kind of GUID.
 
 Puts a record of the instance in its store with whatever bookkeeping
-data is required, then tells the relevant AA to `provision` itself with the
-user provided parameters given to the ASB via the provision request. AA is responsible
+data is required, then tells the relevant APB to `provision` itself with the
+user provided parameters given to the ASB via the provision request. APB is responsible
 for actually instantiating itself and defining what it means to be `provisioned`.
 
 ### Deprovision
@@ -93,8 +93,8 @@ delete == `DELETE /v2/service_instances/:instance_id`
 
 Service Catalog will request a deprovision, ASB must lookout the instances that
 it knows about within its data store, will probably extract some about of
-parameters as to how that was originally provisioned, and run the AA `deprovision`
-action with some amount of parameters as arguments. AA is responsible for taking
+parameters as to how that was originally provisioned, and run the APB `deprovision`
+action with some amount of parameters as arguments. APB is responsible for taking
 itself down.
 
 ## Registry Adapter

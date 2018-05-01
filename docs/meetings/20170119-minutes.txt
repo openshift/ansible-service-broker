@@ -64,8 +64,8 @@ A: Don't mean much to us. CF specific.
 * Decided to use etcd as storage instead of our own store if possible.
 
 * Requirements of an Ansible App Registry, in this case, RHCC
-  -> Registry must allow ASB to query for available AAs and filter non-AAs.
-  -> ASB must be able to retrieve full set of spec files representing the AAs
+  -> Registry must allow ASB to query for available APBs and filter non-APBs.
+  -> ASB must be able to retrieve full set of spec files representing the APBs
   **without** having to pull full images.
 
 [Actions]
