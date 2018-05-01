@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.8
+Version: 1.2.9
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,12 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue May 01 2018 David Zager <david.j.zager@gmail.com> 1.2.9-1
+- Bug 1565545 - Adding migration of extracted credentials (#895)
+  (smhurley00@gmail.com)
+- Update AA to APB in docs (#918) (ernelson@redhat.com)
+- Lock helm version for ci (#915) (dzager@redhat.com)
+
 * Fri Apr 27 2018 David Zager <david.j.zager@gmail.com> 1.2.8-1
 - Frustration release target (#910) (jmrodri@gmail.com)
 - Bug 1566924 - renaming crd resources (#907) (smhurley00@gmail.com)
