@@ -130,7 +130,7 @@ image with the broker, there are a few things worth pointing out:
 
 Once you have a built Docker image, you can [deploy broker from image](#deploy-broker-from-image)
 with `make deploy` **BUT** only after you have pushed your image to the registry
-(ie. `docker push ${REGISTRY}/${ORG}/origin-ansible-service-broker:${TAG}`).
+(i.e. `docker push ${REGISTRY}/${ORG}/origin-ansible-service-broker:${TAG}`).
 
 # Run Your Broker
 

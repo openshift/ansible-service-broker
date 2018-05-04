@@ -60,7 +60,7 @@ postgresql_password: testpassword
 
 Then run:
 ```bash
-./scripts/create_broker_secret.py test ansible-service-broker docker.io/ansibleplaybookbundle/rhscl-postgresql-apb @paramters.yml
+./scripts/create_broker_secret.py test ansible-service-broker docker.io/ansibleplaybookbundle/rhscl-postgresql-apb @parameters.yml
 ```
 
 This will create the exact same secret and update to the broker configuration as the `key=value` method.

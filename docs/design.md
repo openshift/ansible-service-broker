@@ -99,7 +99,7 @@ itself down.
 
 ## Registry Adapter
 
-To enable bootstrapping and APB discoverability, the ASB is designed to
+To enable bootstrapping and ability to discover APBs, the ASB is designed to
 query a registry for available APBs via a Registry Adapter. This is an
 interface that can be implemented. Its most important method, `LoadSpecs() []*Spec`,
 is responsible for returning a slice of `Spec` structs representing the available
@@ -118,7 +118,7 @@ a broker to be bootstrapped from the Docker Hub registry via the standard
 Docker Registry API. First, it will retrieve the list of images that a specified
 registry contains. Next, it will inspect each of the images and [retrieve
 their associated metadata](https://github.com/containers/image). The API queries
-are critical to APB discoverability because it allows the broker to retrieve
+are critical to discover APBs, because it allows the broker to retrieve
 the `com.redhat.apb.spec` label containing an APB's base64
 encoded spec information. The adapter filters any non-apb images
 based on the presence of these labels, decodes each of their specs, and loads

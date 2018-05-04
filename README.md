@@ -192,7 +192,7 @@ Currently, there are two APB runtime versions:
 * APB runtime 2 - all APBs tagged `release-1.1` as well as APBs with label
   `"com.redhat.apb.runtime"="2"`.
 
-You can examime the runtime of a
+You can examine the runtime of a
 particular APB with `docker inspect $APB --format "{{ index
 .Config.Labels \"com.redhat.apb.runtime\" }}"`. An APB without a
 `"com.redhat.apb.runtime"` label is APB runtime 1. For example:
