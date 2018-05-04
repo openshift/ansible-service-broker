@@ -384,46 +384,54 @@ func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
 
 // FindJobStateByState - Retrieve all the jobs that match the specified state
 func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
+
 	sis, err := d.client.BundleInstances(d.namespace).List(metav1.ListOptions{})
 	if err != nil {
-		log.Errorf("unable to get job states for the state: %v - %v", state, err)
+		log.Errorf("unable to get instance jobs for the state: %v - %v", state, err)
 		return nil, err
 	}
+
 	bis, err := d.client.BundleBindings(d.namespace).List(metav1.ListOptions{})
 	if err != nil {
-		log.Errorf("unable to get job states for the state: %v - %v", state, err)
+		log.Errorf("unable to get binding jobs for the state: %v - %v", state, err)
 		return nil, err
 	}
+
+	// build the status information for recovery purposes
 	rss := []apb.RecoverStatus{}
 
 	for _, si := range sis.Items {
 		for token, j := range si.Status.Jobs {
 			if state == crd.ConvertStateToAPB(j.State) {
-				rss = append(rss, apb.RecoverStatus{InstanceID: uuid.Parse(si.GetName()), State: apb.JobState{
-					Description: j.Description,
-					Method:      crd.ConvertJobMethodToAPB(j.Method),
-					Podname:     j.Podname,
-					Token:       token,
-					State:       crd.ConvertStateToAPB(j.State),
-					Error:       j.Error,
-				}})
+				rss = append(rss,
+					apb.RecoverStatus{InstanceID: uuid.Parse(si.GetName()), State: apb.JobState{
+						Description: j.Description,
+						Method:      crd.ConvertJobMethodToAPB(j.Method),
+						Podname:     j.Podname,
+						Token:       token,
+						State:       crd.ConvertStateToAPB(j.State),
+						Error:       j.Error,
+					}})
 			}
 		}
 	}
+
 	for _, bi := range bis.Items {
 		for token, j := range bi.Status.Jobs {
 			if state == crd.ConvertStateToAPB(j.State) {
-				rss = append(rss, apb.RecoverStatus{InstanceID: uuid.Parse(bi.GetName()), State: apb.JobState{
-					Description: j.Description,
-					Method:      crd.ConvertJobMethodToAPB(j.Method),
-					Podname:     j.Podname,
-					Token:       token,
-					State:       crd.ConvertStateToAPB(j.State),
-					Error:       j.Error,
-				}})
+				rss = append(rss,
+					apb.RecoverStatus{InstanceID: uuid.Parse(bi.GetName()), State: apb.JobState{
+						Description: j.Description,
+						Method:      crd.ConvertJobMethodToAPB(j.Method),
+						Podname:     j.Podname,
+						Token:       token,
+						State:       crd.ConvertStateToAPB(j.State),
+						Error:       j.Error,
+					}})
 			}
 		}
 	}
+
 	return rss, nil
 }
 
