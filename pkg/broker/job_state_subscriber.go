@@ -6,12 +6,12 @@ import (
 	"github.com/automationbroker/bundle-lib/apb"
 )
 
-// JobStateSubscriber is responsible for handling and persisiting JobState changes
+// JobStateSubscriber is responsible for handling and persisting JobState changes
 type JobStateSubscriber struct {
 	dao SubscriberDAO
 }
 
-// NewJobStateSubscriber returns a newly initialised JobStateSubscriber
+// NewJobStateSubscriber returns a newly initialized JobStateSubscriber
 func NewJobStateSubscriber(dao SubscriberDAO) *JobStateSubscriber {
 	return &JobStateSubscriber{
 		dao: dao,

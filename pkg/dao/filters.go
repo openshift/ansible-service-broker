@@ -20,7 +20,7 @@ import (
 	"github.com/automationbroker/bundle-lib/apb"
 )
 
-// MapJobStatesWithMethod - takes a slice of JobState stucts and returns a slice containing
+// MapJobStatesWithMethod - takes a slice of JobState structs and returns a slice containing
 // only JobStates that match the specified JobMethod.
 func MapJobStatesWithMethod(jobs []apb.JobState, method apb.JobMethod) []apb.JobState {
 	filteredJobStates := []apb.JobState{}

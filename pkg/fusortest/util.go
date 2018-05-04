@@ -87,7 +87,7 @@ plans:
         type: string
 */ //////////////////////////////////////////////////////////////////////////////
 
-// EncodedApb - Returns a preincoded APB for repeated test usage
+// EncodedApb - Returns a pre-encoded APB for repeated test usage
 func EncodedApb() string {
 	apb := `bmFtZTogbWVkaWF3aWtpMTIzLWFwYgppbWFnZTogYW5zaWJsZXBsYXlib29rYnVuZGxlL21lZGlh
 d2lraTEyMy1hcGIKZGVzY3JpcHRpb246ICJNZWRpYXdpa2kxMjMgYXBiIGltcGxlbWVudGF0aW9u
@@ -242,7 +242,7 @@ func AssertError(t *testing.T, body *bytes.Buffer, msg string) {
 	}
 }
 
-// AssertState - Assert that state contianed in the body is of a certain state.
+// AssertState - Assert that state contained in the body is of a certain state.
 func AssertState(t *testing.T, body *bytes.Buffer, state string) {
 	var resp = make(map[string]string)
 

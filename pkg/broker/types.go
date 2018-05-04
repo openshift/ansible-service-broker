@@ -150,7 +150,7 @@ const (
 	LastOperationStateFailed LastOperationState = "failed"
 )
 
-// LastOperationResponse - Response for the laster operation request.
+// LastOperationResponse - Response for the last operation request.
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#response-1
 type LastOperationResponse struct {
 	State       LastOperationState `json:"state"`
@@ -169,7 +169,7 @@ type ProvisionRequest struct {
 	AcceptsIncomplete bool           `json:"accepts_incomplete,omitempty"`
 }
 
-// ProvisionResponse - Response for provison
+// ProvisionResponse - Response for provision
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#response-2
 type ProvisionResponse struct {
 	DashboardURL string `json:"dashboard_url,omitempty"`

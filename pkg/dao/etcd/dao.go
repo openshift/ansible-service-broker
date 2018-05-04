@@ -313,7 +313,7 @@ func (d *Dao) DeleteBindInstance(id string) error {
 	return err
 }
 
-// DeleteBinding - Delete the binding instance and remove the assocation with the service instance.
+// DeleteBinding - Delete the binding instance and remove the association with the service instance.
 func (d *Dao) DeleteBinding(bindingInstance apb.BindInstance, serviceInstance apb.ServiceInstance) error {
 	if err := d.DeleteBindInstance(bindingInstance.ID.String()); err != nil {
 		return err

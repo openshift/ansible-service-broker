@@ -227,7 +227,7 @@ func (h handler) getinstance(w http.ResponseWriter, r *http.Request, params map[
 	}
 
 	// TODO: typically the methods on the broker return a response this
-	// was an old utility method that I'm repurposing. I think we should
+	// was an old utility method that I'm re-purposing. I think we should
 	// make this consistent with the other methods in the broker.
 	si, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {

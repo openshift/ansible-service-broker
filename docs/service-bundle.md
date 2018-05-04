@@ -219,7 +219,7 @@ by setting environment variables for ``HTTP_PROXY``, ``HTTPS_PROXY``,
 ``NO_PROXY``, ``http_proxy``, ``https_proxy``, and ``no_proxy``.
 
 No action is taken to apply proxy settings to pods that a service bundle
-creates. Each service bundle is repsonsible for configuring its provisioned
+creates. Each service bundle is responsible for configuring its provisioned
 resources to use a proxy as appropriate.
 
 ### Service Account

@@ -73,7 +73,7 @@ const (
 	fqNameRegex = "[/.:-]"
 )
 
-// Broker - A broker is used to to compelete all the tasks that a broker must be able to do.
+// Broker - A broker is used to to complete all the tasks that a broker must be able to do.
 type Broker interface {
 	Bootstrap() (*BootstrapResponse, error)
 	Catalog() (*CatalogResponse, error)
@@ -504,7 +504,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// -> AcceptsIncomplete bool
 	// true indicates both the SC and the requesting client (sc client). If param
 	// is not included in the req, and the broker can only provision an instance of
-	// the request plan asyncronously, broker should reject with a 422
+	// the request plan asynchronously, broker should reject with a 422
 	// NOTE: Spec.Async should indicate what level of async support is available for
 	// a given ansible app
 
@@ -517,7 +517,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// Provision Flow
 	// -> Retrieve Spec from etcd (if missing, 400, this returns err missing)
 	// -> Make entry in /instance, ID'd by instance. Value should be Instance type
-	//    Purpose is to make sure everything neeed to deprovision is available
+	//    Purpose is to make sure everything need to deprovision is available
 	//    in persistence.
 	// -> Provision!
 	////////////////////////////////////////////////////////////
@@ -597,7 +597,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		Parameters: &parameters,
 	}
 
-	// Verify we're not reprovisioning the same instance
+	// Verify we're not re-provisioning the same instance
 	// if err is nil, there is an instance. Let's compare it to the instance
 	// we're being asked to provision.
 	//
@@ -638,7 +638,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	if async {
 		log.Info("ASYNC provisioning in progress")
-		// asyncronously provision and return the token for the lastoperation
+		// asynchronously provision and return the token for the lastoperation
 		token, err = a.engine.StartNewAsyncJob(token, pjob, ProvisionTopic)
 		if err != nil {
 			log.Errorf("Failed to start new job for async provision\n%s", err.Error())
@@ -1157,7 +1157,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	// -> AcceptsIncomplete bool
 	// true indicates both the SC and the requesting client (sc client). If param
 	// is not included in the req, and the broker can only provision an instance of
-	// the request plan asyncronously, broker should reject with a 422
+	// the request plan asynchronously, broker should reject with a 422
 	// NOTE: Spec.Async should indicate what level of async support is available for
 	// a given ansible app
 
@@ -1171,7 +1171,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	// -> Retrieve Spec from etcd (if missing, 400, this returns err missing)
 	// -> Retrieve Instance from etcd (if missing, 400, this returns err missing)
 	// -> Update entry in /instance, ID'd by instance. Value should be Instance type
-	//    Purpose is to make sure everything neeed to deprovision is available
+	//    Purpose is to make sure everything need to deprovision is available
 	//    in persistence.
 	// -> Update!
 	////////////////////////////////////////////////////////////
@@ -1332,7 +1332,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	ujob := &UpdateJob{si}
 	if async {
 		log.Info("ASYNC update in progress")
-		// asyncronously provision and return the token for the lastoperation
+		// asynchronously provision and return the token for the lastoperation
 		token, err = a.engine.StartNewAsyncJob(token, ujob, UpdateTopic)
 		if err != nil {
 			log.Errorf("Failed to start new job for async update\n%s", err.Error())
@@ -1389,7 +1389,7 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 			// Ex: EriksApp v1.0 was deployed at T as an APB by the broker. At T+1,
 			// a EriksApp v2.0 has been released with new features that necessitates
 			// additional parameters in an APB. The v2.0 APB is released and the broker
-			// picks it up via boostrap. The old clusterserviceclass (Spec) is still
+			// picks it up via bootstrap. The old clusterserviceclass (Spec) is still
 			// around, since the v1.0 ServiceInstance is still running. The cluster op
 			// then decides to update the v1.0 ServiceInstance, providing a set of
 			// new credentials on top of those that were originally used to provision
@@ -1472,7 +1472,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	apb.AddSecretsFor(&spec)
 	service, err := SpecToService(&spec)
 	if err != nil {
-		log.Debugf("spec was not added due to issue with transformation to serivce - %v", err)
+		log.Debugf("spec was not added due to issue with transformation to service - %v", err)
 		return nil, err
 	}
 	metrics.SpecsLoaded(apbPushRegName, 1)
