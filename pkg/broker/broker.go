@@ -1471,7 +1471,7 @@ func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
 	apb.AddSecretsFor(&spec)
 	service, err := SpecToService(&spec)
 	if err != nil {
-		log.Debugf("spec was not added due to issue with transformation to serivce - %v", err)
+		log.Debugf("spec was not added due to issue with transformation to service - %v", err)
 		return nil, err
 	}
 	metrics.SpecsLoaded(apbPushRegName, 1)
