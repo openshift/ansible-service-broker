@@ -79,7 +79,7 @@ type Dao interface {
 	// DeleteBindInstance - Delete the binding instance for an id in the kvp API.
 	DeleteBindInstance(string) error
 
-	// DeleteBinding - Delete the binding instance and remove the assocation with the service instance.
+	// DeleteBinding - Delete the binding instance and remove the association with the service instance.
 	DeleteBinding(apb.BindInstance, apb.ServiceInstance) error
 
 	// SetState - Set the Job State in the kvp API for id.

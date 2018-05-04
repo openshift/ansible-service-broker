@@ -119,7 +119,7 @@ func (d FileUserServiceAdapter) FindByLogin(login string) (User, error) {
 }
 
 // ValidateUser - returns true if the given user's credentials match a user
-// in our backend storage. Returns fals otherwise.
+// in our backend storage. Returns false otherwise.
 func (d FileUserServiceAdapter) ValidateUser(username string, password string) bool {
 	user, err := d.FindByLogin(username)
 	if err != nil {

@@ -99,7 +99,7 @@ func (mp *SubscriberDAO) DeleteBinding(bindingInst apb.BindInstance, serviceInst
 	return mp.Errs["DeleteBinding"]
 }
 
-// SetServiceInstance mock iml
+// SetServiceInstance mock impl
 func (mp *SubscriberDAO) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
 	assert := mp.AssertOn["SetServiceInstance"]
 	if nil != assert {

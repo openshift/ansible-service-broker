@@ -281,7 +281,7 @@ func CreateApp() App {
 	apb.InitializeSecretsCache(rules)
 
 	log.Debug("Creating AnsibleBroker")
-	// Intiialize the cluster config.
+	// Initialize the cluster config.
 	clusterConfig := apb.ClusterConfig{
 		PullPolicy:           app.config.GetString("openshift.image_pull_policy"),
 		SandboxRole:          app.config.GetString("openshift.sandbox_role"),
@@ -428,7 +428,7 @@ func initClients(c *config.Config) error {
 	if strings.ToLower(c.GetString("dao.type")) != "crd" {
 
 		log.Debug("Trying to connect to etcd")
-		// Intialize the etcd configuration
+		// Initialize the etcd configuration
 		con := clients.EtcdConfig{
 			EtcdHost:       c.GetString("dao.etcd_host"),
 			EtcdPort:       c.GetInt("dao.etcd_port"),
