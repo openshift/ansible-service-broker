@@ -40,20 +40,20 @@ echo ""
 
 #
 # Use the automation-broker-apb to deploy the broker
-kubectl create namespace $BROKER_NAMESPACE
-kubectl create serviceaccount $APB_NAME --namespace $BROKER_NAMESPACE
-kubectl create clusterrolebinding $APB_NAME --clusterrole=cluster-admin --serviceaccount=$BROKER_NAMESPACE:$APB_NAME
+kubectl create namespace $APB_NAME
+kubectl create serviceaccount $APB_NAME --namespace $APB_NAME
+kubectl create clusterrolebinding $APB_NAME --clusterrole=cluster-admin --serviceaccount=$APB_NAME:$APB_NAME
 kubectl run $APB_NAME \
-    --namespace=$BROKER_NAMESPACE \
+    --namespace=$APB_NAME \
     --image=$APB_IMAGE \
     --restart=Never \
     --attach=true \
     --serviceaccount=$APB_NAME \
-    -- provision -e broker_name=$BROKER_NAME -e broker_helm_enabled=$HELM
+    -- provision -e create_broker_namespace=true -e broker_name=$BROKER_NAME -e broker_helm_enabled=$HELM
 if [ "$?" -ne 0 ]; then
   echo "Error deploying broker"
   exit
 fi
-kubectl delete pod $APB_NAME --namespace $BROKER_NAMESPACE
-kubectl delete serviceaccount $APB_NAME --namespace $BROKER_NAMESPACE
+kubectl delete pod $APB_NAME --namespace $APB_NAME
+kubectl delete serviceaccount $APB_NAME --namespace $APB_NAME
 kubectl delete clusterrolebinding $APB_NAME
