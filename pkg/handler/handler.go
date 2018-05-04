@@ -729,6 +729,11 @@ func (h handler) lastoperation(w http.ResponseWriter, r *http.Request, params ma
 			}
 			return
 		}
+
+		//
+		// Since we have a binding, let's use the binding id as the instance id
+		//
+		instanceUUID = bindingUUID
 	}
 
 	req := broker.LastOperationRequest{}

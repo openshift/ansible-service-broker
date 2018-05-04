@@ -992,17 +992,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 			return nil, false, err
 		}
 
-		stateKey, err := a.dao.SetState(bindingUUID.String(), apb.JobState{
-			Token:  token,
-			State:  apb.StateInProgress,
-			Method: apb.JobMethodBind,
-		})
-		if err != nil {
-			log.Errorf("failed to set initial jobstate for %v, %v", token, err.Error())
-			return nil, false, err
-		}
-
-		bindingInstance.CreateJobKey = stateKey
+		bindingInstance.CreateJobKey = fmt.Sprintf("/state/%s/job/%s", bindingUUID.String(), token)
 		if err := a.dao.SetBindInstance(bindingUUID.String(), bindingInstance); err != nil {
 			return nil, false, err
 		}

@@ -233,13 +233,18 @@ func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
 		if binding, err := d.client.BundleBindings(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
 			binding.Spec = b.Spec
 			_, err := d.client.BundleBindings(d.namespace).Update(binding)
-			if err != nil {
-				log.Errorf("Unable to update the service binding, after a failed creation: %v - %v", id, err)
+
+			if err != nil && apierrors.IsConflict(err) {
+				log.Debugf("Binding %v already exists, skipping update because of conflict.", id)
+			} else if err != nil {
+				log.Errorf("Unable to update the binding %v, after a failed creation. Reason: %v - %v",
+					id, apierrors.ReasonForError(err), err)
+
 				return err
 			}
 		}
 	} else if err != nil {
-		log.Errorf("unable to save service binding - %v", err)
+		log.Errorf("unable to save service binding. Reason: %v - %v", apierrors.ReasonForError(err), err)
 		return err
 	}
 	return nil
@@ -261,7 +266,9 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 		// get the binding based on instance ID //update the job based on the token.
 		bi, err := d.client.BundleBindings(d.namespace).Get(instanceID, metav1.GetOptions{})
 		if err != nil {
-			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+			log.Errorf("Could not find binding %v associated with job state %v - %v",
+				instanceID, state.Token, err)
+
 			return state.Token, err
 		}
 		if bi.Status.Jobs == nil {
@@ -279,14 +286,26 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 		bi.Status.State = crd.ConvertStateToCRD(state.State)
 		_, err = d.client.BundleBindings(d.namespace).Update(bi)
 		if err != nil {
-			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+			if apierrors.IsConflict(err) {
+				// detect if the error was a conflict or not. Conflicts occur
+				// when two things attempt to update the same resource
+				// simultaneously
+				log.Warningf("detected a conflicting update of job state %v on binding %v",
+					state.Token, instanceID)
+			}
+
+			log.Errorf("Unable to update the job state %v on the binding %v. Reason: %v - %v",
+				state.Token, instanceID, apierrors.ReasonForError(err), err)
+
 			return state.Token, err
 		}
 	case apb.JobMethodUpdate, apb.JobMethodDeprovision, apb.JobMethodProvision:
 		// get the binding based on instance id //update the job based on the token
 		si, err := d.client.BundleInstances(d.namespace).Get(instanceID, metav1.GetOptions{})
 		if err != nil {
-			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+			log.Errorf("Could not find instance %v associated with job state %v - %v",
+				instanceID, state.Token, err)
+
 			return state.Token, err
 		}
 		if si.Status.Jobs == nil {
@@ -304,7 +323,9 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 		si.Status.State = crd.ConvertStateToCRD(state.State)
 		_, err = d.client.BundleInstances(d.namespace).Update(si)
 		if err != nil {
-			log.Errorf("Unable to update the job state: %v - %v", state.Token, err)
+			log.Errorf("Unable to update the job state %v on the instance %v: %v",
+				state.Token, instanceID, err)
+
 			return state.Token, err
 		}
 	}
@@ -319,12 +340,15 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 	var job v1.Job
 	bi, err := d.client.BundleBindings(d.namespace).Get(id, metav1.GetOptions{})
 	if err != nil && !d.IsNotFoundError(err) {
-		log.Errorf("Unable to get the job state: %v - %v", token, err)
-		return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
+		log.Errorf("Could not find binding %v associated with job state %v - %v", id, token, err)
+		return apb.JobState{}, fmt.Errorf("Could not find binding %v associated with job state %v",
+			id, token)
 	} else if d.IsNotFoundError(err) {
 		si, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{})
 		if err != nil || si.Status.Jobs == nil {
-			log.Errorf("Unable to get the job state: %v - %v", token, err)
+			log.Errorf("Could not find instance %v associated with job state %v - %v",
+				id, token, err)
+
 			return apb.JobState{}, err
 		}
 		j, ok := si.Status.Jobs[token]
@@ -335,14 +359,15 @@ func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
 		job = j
 	} else {
 		if bi.Status.Jobs == nil {
-			log.Errorf("Unable to get the job state: %v - %v", token, err)
+			log.Errorf("binding %v has no associated job states: %v - %v", id, token, err)
 			return apb.JobState{}, err
 		}
 		j, ok := bi.Status.Jobs[token]
 		if !ok {
-			log.Errorf("Unable to get the job state: %v - %v", token, err)
+			log.Errorf("binding %v does not have job state: %v - %v", id, token, err)
 			return apb.JobState{}, fmt.Errorf("unable to find job state %v", token)
 		}
+
 		job = j
 	}
 	return apb.JobState{
