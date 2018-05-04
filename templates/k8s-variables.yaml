@@ -52,7 +52,7 @@ refresh_interval: "600s"
 # Output broker requests to log
 output_request: "true"
 
-# Recover unfinshed jobs on restart
+# Recover unfinished jobs on restart
 recovery: "true"
 
 # APB ImagePullPolicy

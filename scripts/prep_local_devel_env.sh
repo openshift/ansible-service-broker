@@ -5,7 +5,7 @@ source "$(dirname "${BASH_SOURCE}")/lib/init.sh"
 # This script is intended to allow us to run the broker locally but
 # fake out the environment so it seems like it is running inside the cluster
 #
-# To run the broker locally we address the below isses:
+# To run the broker locally we address the below issues:
 # - Service Catalog needs to talk to route and have it reach the local broker
 #   - Update the asb service & endpoint to point to our local broker
 # - Create a route for etcd so local broker can talk to etcd
