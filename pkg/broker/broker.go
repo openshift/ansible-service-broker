@@ -311,12 +311,9 @@ func addIDForPlan(plans []apb.Plan, FQSpecName string) {
 
 // Recover - Will recover the broker.
 func (a AnsibleBroker) Recover() (string, error) {
-	// At startup we should write a key to etcd.
-	// Then in recovery see if that key exists, which means we are restarting
-	// and need to try to recover.
-
-	// do we have any jobs that wre still running?
-	// get all /state/*/jobs/* == in progress
+	var emptyToken string
+	// do we have any jobs that are still running?
+	// get all in progress jobs
 	// For each job, check the status of each of their containers to update
 	// their status in case any of them finished.
 
@@ -327,17 +324,19 @@ func (a AnsibleBroker) Recover() (string, error) {
 			log.Info("No jobs to recover")
 			return "", nil
 		}
-		return "", err
+		return emptyToken, err
 	}
 
 	/*
-		if job was in progress we know instanceuuid & token. do we have a podname?
-		if no, job never started
-			restart
+		if a job was in progress, we know the instanceuuid & token.
+		do we have a podname?
+
+		if no, the job never started
+			we should restart the job
 		if yes,
-			did it finish?
+			did the job finish?
 				yes
-					* update status
+					* update status to finished
 					* extractCreds if available
 				no
 					* create a monitoring job to update status
@@ -350,16 +349,15 @@ func (a AnsibleBroker) Recover() (string, error) {
 		instanceID := rs.InstanceID.String()
 		instance, err := a.dao.GetServiceInstance(instanceID)
 		if err != nil {
-			return "", err
+			return emptyToken, err
 		}
 
 		// Do we have a podname?
 		if rs.State.Podname == "" {
 			// NO, we do not have a podname
 
-			log.Info(fmt.Sprintf("No podname. Attempting to restart job: %s", instanceID))
-
-			log.Debug(fmt.Sprintf("%v", instance))
+			log.Infof("No podname. Attempting to restart job: %s", instanceID)
+			log.Debugf("%v", instance)
 
 			// Handle bad write of service instance
 			if instance.Spec == nil || instance.Parameters == nil {
@@ -369,7 +367,9 @@ func (a AnsibleBroker) Recover() (string, error) {
 					Method: rs.State.Method,
 				})
 				a.dao.DeleteServiceInstance(instance.ID.String())
-				log.Warning(fmt.Sprintf("incomplete ServiceInstance [%s] record, marking job as failed", instance.ID))
+				log.Warningf("incomplete ServiceInstance [%s] record, marking job as failed",
+					instance.ID)
+
 				// skip to the next item
 				continue
 			}
@@ -394,19 +394,12 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// catalog will try to ping.
 			_, err := a.engine.StartNewAsyncJob(rs.State.Token, job, topic)
 			if err != nil {
-				return "", err
+				return emptyToken, err
 			}
 
-			// HACK: there might be a delay between the first time the state in etcd
-			// is set and the job was already started. But I need the token.
-			a.dao.SetState(instanceID, apb.JobState{
-				Token:  rs.State.Token,
-				State:  apb.StateInProgress,
-				Method: rs.State.Method,
-			})
 		} else {
 			// YES, we have a podname
-			log.Info(fmt.Sprintf("We have a pod to recover: %s", rs.State.Podname))
+			log.Infof("We have a pod to recover: %s", rs.State.Podname)
 
 			// did the pod finish?
 			extCreds, extErr := apb.ExtractCredentials(
@@ -417,9 +410,8 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// NO, pod failed.
 			if extErr != nil {
-				log.Error("broker::Recover error occurred.")
-				log.Errorf("%s", extErr.Error())
-				return "", extErr
+				log.Errorf("broker::Recover error occurred. %s", extErr.Error())
+				return emptyToken, extErr
 			}
 
 			// YES, pod finished we have creds
@@ -433,17 +425,12 @@ func (a AnsibleBroker) Recover() (string, error) {
 				})
 				err = apb.SetExtractedCredentials(instanceID, extCreds)
 				if err != nil {
-					log.Error("Could not persist extracted credentials")
-					log.Errorf("%s", err.Error())
-					return "", err
+					log.Errorf("Could not persist extracted credentials - %s", err.Error())
+					return emptyToken, err
 				}
 			}
 		}
 	}
-
-	// if no pods, do we restart? or just return failed?
-
-	// binding
 
 	log.Info("Recovery complete")
 	return "recover called", nil
