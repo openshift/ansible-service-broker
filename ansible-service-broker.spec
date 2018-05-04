@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.9
+Version: 1.2.10
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,16 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri May 04 2018 David Zager <david.j.zager@gmail.com> 1.2.10-1
+- Spell check a bunch of items (#930) (jmrodri@gmail.com)
+- Add fix for get si npe (#929) (ernelson@redhat.com)
+- Bug 1572470 - use binding id as instance, do not error on conflict (#924)
+  (jmrodri@gmail.com)
+- Bug 1572129 - remove unnecessary SetState (#927) (jmrodri@gmail.com)
+- Run the apb in a different project (#923) (dzager@redhat.com)
+- Remove dashboard-redirector binary (#925) (pgough@redhat.com)
+- Create broker-apb dir, add install yaml (#916) (dzager@redhat.com)
+
 * Tue May 01 2018 David Zager <david.j.zager@gmail.com> 1.2.9-1
 - Bug 1565545 - Adding migration of extracted credentials (#895)
   (smhurley00@gmail.com)
