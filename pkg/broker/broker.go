@@ -153,11 +153,6 @@ func NewAnsibleBroker(dao dao.Dao,
 func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceInstance, error) {
 	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
 
-	dashboardURL := a.getDashboardURL(instance)
-	if dashboardURL != "" {
-		instance.DashboardURL = dashboardURL
-	}
-
 	if err != nil {
 		if a.dao.IsNotFoundError(err) {
 			log.Infof("Could not find a service instance in dao - %v", err)
@@ -166,6 +161,12 @@ func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceIn
 		log.Info("Couldn't find a service instance: ", err)
 		return apb.ServiceInstance{}, err
 	}
+
+	dashboardURL := a.getDashboardURL(instance)
+	if dashboardURL != "" {
+		instance.DashboardURL = dashboardURL
+	}
+
 	return *instance, nil
 
 }
