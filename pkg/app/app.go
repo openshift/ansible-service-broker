@@ -185,33 +185,42 @@ func CreateApp(args Args, regs []registries.Registry) App {
 		os.Exit(1)
 	}
 
-	log.Debug("Connecting Registry")
-	for _, config := range app.config.GetSubConfigArray("registry") {
-		c := registries.Config{
-			URL:        config.GetString("url"),
-			User:       config.GetString("user"),
-			Pass:       config.GetString("pass"),
-			Org:        config.GetString("org"),
-			Tag:        config.GetString("tag"),
-			Type:       config.GetString("type"),
-			Name:       config.GetString("name"),
-			Images:     config.GetSliceOfStrings("images"),
-			Namespaces: config.GetSliceOfStrings("namespaces"),
-			Fail:       config.GetBool("fail_on_error"),
-			WhiteList:  config.GetSliceOfStrings("white_list"),
-			BlackList:  config.GetSliceOfStrings("black_list"),
-			AuthType:   config.GetString("auth_type"),
-			AuthName:   config.GetString("auth_name"),
-			Runner:     config.GetString("runner"),
+	// if we have custom registries, use those instead of those configured in
+	// the configmap
+	if len(regs) > 0 {
+		log.Info("Using the supplied custom registries.")
+		for _, reg := range regs {
+			app.registry = append(app.registry, reg)
 		}
+	} else {
+		log.Debug("Connecting Registry")
+		for _, config := range app.config.GetSubConfigArray("registry") {
+			c := registries.Config{
+				URL:        config.GetString("url"),
+				User:       config.GetString("user"),
+				Pass:       config.GetString("pass"),
+				Org:        config.GetString("org"),
+				Tag:        config.GetString("tag"),
+				Type:       config.GetString("type"),
+				Name:       config.GetString("name"),
+				Images:     config.GetSliceOfStrings("images"),
+				Namespaces: config.GetSliceOfStrings("namespaces"),
+				Fail:       config.GetBool("fail_on_error"),
+				WhiteList:  config.GetSliceOfStrings("white_list"),
+				BlackList:  config.GetSliceOfStrings("black_list"),
+				AuthType:   config.GetString("auth_type"),
+				AuthName:   config.GetString("auth_name"),
+				Runner:     config.GetString("runner"),
+			}
 
-		reg, err := registries.NewRegistry(c, app.config.GetString("openshift.namespace"))
-		if err != nil {
-			log.Errorf(
-				"Failed to initialize %v Registry err - %v \n", config.GetString("name"), err)
-			os.Exit(1)
+			reg, err := registries.NewRegistry(c, app.config.GetString("openshift.namespace"))
+			if err != nil {
+				log.Errorf(
+					"Failed to initialize %v Registry err - %v \n", config.GetString("name"), err)
+				os.Exit(1)
+			}
+			app.registry = append(app.registry, reg)
 		}
-		app.registry = append(app.registry, reg)
 	}
 
 	validateRegistryNames(app.registry)
