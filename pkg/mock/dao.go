@@ -3,7 +3,7 @@ package mock
 import (
 	"fmt"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	apb "github.com/automationbroker/bundle-lib/bundle"
 )
 
 // SubscriberDAO is mock DAO

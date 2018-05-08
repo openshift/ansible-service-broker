@@ -23,23 +23,23 @@ package broker
 import (
 	"fmt"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/runtime"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
 	log "github.com/sirupsen/logrus"
 )
 
 type metricsHookFn func()
-type runFn func(apb.Executor) <-chan apb.StatusMessage
+type runFn func(bundle.Executor) <-chan bundle.StatusMessage
 
 type apbJob struct {
 	serviceInstanceID      string
 	specID                 string
 	bindingID              *string
-	method                 apb.JobMethod
+	method                 bundle.JobMethod
 	metricsJobStartHook    metricsHookFn
 	metricsJobFinishedHook metricsHookFn
-	executor               apb.Executor
+	executor               bundle.Executor
 	run                    runFn
 
 	// NOTE: skipExecution is an artifact of an older time when we did not have
@@ -64,14 +64,14 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 	if j.skipExecution {
 		log.Debugf("skipExecution: True for %s, sending complete msg to channel", j.method)
 		msgBuffer <- j.createJobMsg(
-			"", token, apb.StateSucceeded, fmt.Sprintf("%s job completed", j.method))
+			"", token, bundle.StateSucceeded, fmt.Sprintf("%s job completed", j.method))
 		return
 	}
 
 	for status := range j.run(exec) {
 		podName = exec.PodName()
 		jobMsg = j.createJobMsg(podName, token, status.State, status.Description)
-		if status.State == apb.StateInProgress {
+		if status.State == bundle.StateInProgress {
 			// Only send intermediate messages since the final ones are processed
 			// and messaged separately (otherwise we'll double up).
 			msgBuffer <- jobMsg
@@ -89,7 +89,7 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 			errMsg = err.Error()
 		}
 
-		jobMsg.State.State = apb.StateFailed
+		jobMsg.State.State = bundle.StateFailed
 		// send error message, can't have
 		// an error type in a struct you want marshalled
 		// https://github.com/golang/go/issues/5161
@@ -109,21 +109,21 @@ func (j *apbJob) Run(token string, msgBuffer chan<- JobMsg) {
 		jobMsg.DashboardURL = exec.DashboardURL()
 	}
 
-	jobMsg.State.State = apb.StateSucceeded
+	jobMsg.State.State = bundle.StateSucceeded
 	jobMsg.State.Description = fmt.Sprintf("%s job completed", j.method)
 	msgBuffer <- jobMsg
 }
 
 func (j *apbJob) createJobMsg(
 	podName string, token string,
-	state apb.State, description string,
+	state bundle.State, description string,
 ) JobMsg {
 	jobMsg := JobMsg{
 		PodName:      podName,
 		InstanceUUID: j.serviceInstanceID,
 		JobToken:     token,
 		SpecID:       j.specID,
-		State: apb.JobState{
+		State: bundle.JobState{
 			State:       state,
 			Method:      j.method,
 			Token:       token,
@@ -140,20 +140,20 @@ func (j *apbJob) createJobMsg(
 
 // ProvisionJob - Job to provision.
 type ProvisionJob struct {
-	serviceInstance *apb.ServiceInstance
+	serviceInstance *bundle.ServiceInstance
 }
 
 // Run - Run the provision job.
 func (j *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               apb.NewExecutor(),
+		executor:               bundle.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
-		method:                 apb.JobMethodProvision,
+		method:                 bundle.JobMethodProvision,
 		metricsJobStartHook:    metrics.ProvisionJobStarted,
 		metricsJobFinishedHook: metrics.ProvisionJobFinished,
 		skipExecution:          false,
-		run: func(exec apb.Executor) <-chan apb.StatusMessage {
+		run: func(exec bundle.Executor) <-chan bundle.StatusMessage {
 			return exec.Provision(j.serviceInstance)
 		},
 	}
@@ -162,21 +162,21 @@ func (j *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 // DeprovisionJob - Job to deprovision.
 type DeprovisionJob struct {
-	serviceInstance *apb.ServiceInstance
+	serviceInstance *bundle.ServiceInstance
 	skipExecution   bool
 }
 
 // Run - Run the deprovision job.
 func (j *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               apb.NewExecutor(),
+		executor:               bundle.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
-		method:                 apb.JobMethodDeprovision,
+		method:                 bundle.JobMethodDeprovision,
 		metricsJobStartHook:    metrics.DeprovisionJobStarted,
 		metricsJobFinishedHook: metrics.DeprovisionJobFinished,
 		skipExecution:          j.skipExecution,
-		run: func(e apb.Executor) <-chan apb.StatusMessage {
+		run: func(e bundle.Executor) <-chan bundle.StatusMessage {
 			return e.Deprovision(j.serviceInstance)
 		},
 	}
@@ -185,23 +185,23 @@ func (j *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 // BindJob - Job to bind.
 type BindJob struct {
-	serviceInstance *apb.ServiceInstance
+	serviceInstance *bundle.ServiceInstance
 	bindingID       string
-	params          *apb.Parameters
+	params          *bundle.Parameters
 }
 
 // Run - Run the bind job.
 func (j *BindJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               apb.NewExecutor(),
+		executor:               bundle.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		bindingID:              &j.bindingID,
-		method:                 apb.JobMethodBind,
+		method:                 bundle.JobMethodBind,
 		metricsJobStartHook:    metrics.BindJobStarted,
 		metricsJobFinishedHook: metrics.BindJobFinished,
 		skipExecution:          false,
-		run: func(e apb.Executor) <-chan apb.StatusMessage {
+		run: func(e bundle.Executor) <-chan bundle.StatusMessage {
 			return e.Bind(j.serviceInstance, j.params, j.bindingID)
 		},
 	}
@@ -210,24 +210,24 @@ func (j *BindJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 // UnbindJob - Job to unbind.
 type UnbindJob struct {
-	serviceInstance *apb.ServiceInstance
+	serviceInstance *bundle.ServiceInstance
 	bindingID       string
-	params          *apb.Parameters
+	params          *bundle.Parameters
 	skipExecution   bool
 }
 
 // Run - Run the unbind job.
 func (j *UnbindJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               apb.NewExecutor(),
+		executor:               bundle.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		bindingID:              &j.bindingID,
-		method:                 apb.JobMethodUnbind,
+		method:                 bundle.JobMethodUnbind,
 		metricsJobStartHook:    metrics.UnbindJobStarted,
 		metricsJobFinishedHook: metrics.UnbindJobFinished,
 		skipExecution:          j.skipExecution,
-		run: func(e apb.Executor) <-chan apb.StatusMessage {
+		run: func(e bundle.Executor) <-chan bundle.StatusMessage {
 			return e.Unbind(j.serviceInstance, j.params, j.bindingID)
 		},
 	}
@@ -236,20 +236,20 @@ func (j *UnbindJob) Run(token string, msgBuffer chan<- JobMsg) {
 
 // UpdateJob - Job to update.
 type UpdateJob struct {
-	serviceInstance *apb.ServiceInstance
+	serviceInstance *bundle.ServiceInstance
 }
 
 // Run - Run the update job.
 func (j *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               apb.NewExecutor(),
+		executor:               bundle.NewExecutor(),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
-		method:                 apb.JobMethodUpdate,
+		method:                 bundle.JobMethodUpdate,
 		metricsJobStartHook:    metrics.UpdateJobStarted,
 		metricsJobFinishedHook: metrics.UpdateJobFinished,
 		skipExecution:          false,
-		run: func(e apb.Executor) <-chan apb.StatusMessage {
+		run: func(e bundle.Executor) <-chan bundle.StatusMessage {
 			return e.Update(j.serviceInstance)
 		},
 	}

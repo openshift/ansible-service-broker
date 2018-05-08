@@ -25,7 +25,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/registries"
 	"github.com/automationbroker/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
@@ -78,14 +78,14 @@ type Broker interface {
 	Catalog() (*CatalogResponse, error)
 	Provision(uuid.UUID, *ProvisionRequest, bool, UserInfo) (*ProvisionResponse, error)
 	Update(uuid.UUID, *UpdateRequest, bool, UserInfo) (*UpdateResponse, error)
-	Deprovision(apb.ServiceInstance, string, bool, bool, UserInfo) (*DeprovisionResponse, error)
-	Bind(apb.ServiceInstance, uuid.UUID, *BindRequest, bool, UserInfo) (*BindResponse, bool, error)
-	Unbind(apb.ServiceInstance, apb.BindInstance, string, bool, bool, UserInfo) (*UnbindResponse, bool, error)
+	Deprovision(bundle.ServiceInstance, string, bool, bool, UserInfo) (*DeprovisionResponse, error)
+	Bind(bundle.ServiceInstance, uuid.UUID, *BindRequest, bool, UserInfo) (*BindResponse, bool, error)
+	Unbind(bundle.ServiceInstance, bundle.BindInstance, string, bool, bool, UserInfo) (*UnbindResponse, bool, error)
 	LastOperation(uuid.UUID, *LastOperationRequest) (*LastOperationResponse, error)
 	Recover() (string, error)
-	GetServiceInstance(uuid.UUID) (apb.ServiceInstance, error)
-	GetBindInstance(uuid.UUID) (apb.BindInstance, error)
-	GetBind(apb.ServiceInstance, uuid.UUID) (*BindResponse, error)
+	GetServiceInstance(uuid.UUID) (bundle.ServiceInstance, error)
+	GetBindInstance(uuid.UUID) (bundle.BindInstance, error)
+	GetBind(bundle.ServiceInstance, uuid.UUID) (*BindResponse, error)
 }
 
 // Config - Configuration for the broker.
@@ -105,7 +105,7 @@ type Config struct {
 
 // DevBroker - Interface for the development broker.
 type DevBroker interface {
-	AddSpec(spec apb.Spec) (*CatalogResponse, error)
+	AddSpec(spec bundle.Spec) (*CatalogResponse, error)
 	RemoveSpec(specID string) error
 	RemoveSpecs() error
 }
@@ -149,16 +149,16 @@ func NewAnsibleBroker(dao dao.Dao,
 }
 
 // GetServiceInstance - retrieve the service instance for a instanceID.
-func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceInstance, error) {
+func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (bundle.ServiceInstance, error) {
 	instance, err := a.dao.GetServiceInstance(instanceUUID.String())
 
 	if err != nil {
 		if a.dao.IsNotFoundError(err) {
 			log.Infof("Could not find a service instance in dao - %v", err)
-			return apb.ServiceInstance{}, ErrorNotFound
+			return bundle.ServiceInstance{}, ErrorNotFound
 		}
 		log.Info("Couldn't find a service instance: ", err)
-		return apb.ServiceInstance{}, err
+		return bundle.ServiceInstance{}, err
 	}
 
 	dashboardURL := a.getDashboardURL(instance)
@@ -171,13 +171,13 @@ func (a AnsibleBroker) GetServiceInstance(instanceUUID uuid.UUID) (apb.ServiceIn
 }
 
 // GetBindInstance - retrieve the bind instance for a bindUUID
-func (a AnsibleBroker) GetBindInstance(bindUUID uuid.UUID) (apb.BindInstance, error) {
+func (a AnsibleBroker) GetBindInstance(bindUUID uuid.UUID) (bundle.BindInstance, error) {
 	instance, err := a.dao.GetBindInstance(bindUUID.String())
 	if err != nil {
 		if a.dao.IsNotFoundError(err) {
-			return apb.BindInstance{}, ErrorNotFound
+			return bundle.BindInstance{}, ErrorNotFound
 		}
-		return apb.BindInstance{}, err
+		return bundle.BindInstance{}, err
 	}
 	return *instance, nil
 }
@@ -188,11 +188,11 @@ func (a AnsibleBroker) GetBindInstance(bindUUID uuid.UUID) (apb.BindInstance, er
 func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	log.Info("AnsibleBroker::Bootstrap")
 	var err error
-	var specs []*apb.Spec
+	var specs []*bundle.Spec
 	var imageCount int
 
 	// Remove all non apb-push sourced specs that have been saved.
-	pushedSpecs := []*apb.Spec{}
+	pushedSpecs := []*bundle.Spec{}
 	dir := "/spec"
 	specs, err = a.dao.BatchGetSpecs(dir)
 	if err != nil {
@@ -212,7 +212,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		log.Errorf("Something went real bad trying to delete batch specs... - %v", err)
 		return nil, err
 	}
-	specs = []*apb.Spec{}
+	specs = []*bundle.Spec{}
 	//Metrics calls.
 	metrics.SpecsLoadedReset()
 	metrics.SpecsReset()
@@ -245,7 +245,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	if len(registryErrors) == len(a.registry) {
 		return nil, errors.New("all registries failed on bootstrap")
 	}
-	specManifest := map[string]*apb.Spec{}
+	specManifest := map[string]*bundle.Spec{}
 	planNameManifest := map[string]string{}
 
 	for _, s := range specs {
@@ -265,14 +265,14 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, err
 	}
 
-	apb.AddSecrets(specs)
+	bundle.AddSecrets(specs)
 
 	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
 }
 
 // addNameAndIDForSpec - will create the unique spec name and id
 // and set it for each spec
-func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
+func addNameAndIDForSpec(specs []*bundle.Spec, registryName string) {
 	for _, spec := range specs {
 		// need to make / a hyphen to allow for global uniqueness
 		// but still match spec.
@@ -298,7 +298,7 @@ func addNameAndIDForSpec(specs []*apb.Spec, registryName string) {
 }
 
 // addIDForPlan - for each of the plans create a new ID
-func addIDForPlan(plans []apb.Plan, FQSpecName string) {
+func addIDForPlan(plans []bundle.Plan, FQSpecName string) {
 
 	// need to use the index into the array to actually update the struct.
 	for i, plan := range plans {
@@ -318,7 +318,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 	// For each job, check the status of each of their containers to update
 	// their status in case any of them finished.
 
-	recoverStatuses, err := a.dao.FindJobStateByState(apb.StateInProgress)
+	recoverStatuses, err := a.dao.FindJobStateByState(bundle.StateInProgress)
 	if err != nil {
 		// no jobs or states to recover, this is OK.
 		if a.dao.IsNotFoundError(err) {
@@ -362,9 +362,9 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			// Handle bad write of service instance
 			if instance.Spec == nil || instance.Parameters == nil {
-				a.dao.SetState(instanceID, apb.JobState{
+				a.dao.SetState(instanceID, bundle.JobState{
 					Token:  rs.State.Token,
-					State:  apb.StateFailed,
+					State:  bundle.StateFailed,
 					Method: rs.State.Method,
 				})
 				a.dao.DeleteServiceInstance(instance.ID.String())
@@ -377,13 +377,13 @@ func (a AnsibleBroker) Recover() (string, error) {
 
 			var job Work
 			var topic WorkTopic
-			if rs.State.Method == apb.JobMethodProvision {
+			if rs.State.Method == bundle.JobMethodProvision {
 				job = &ProvisionJob{instance}
 				topic = ProvisionTopic
-			} else if rs.State.Method == apb.JobMethodUpdate {
+			} else if rs.State.Method == bundle.JobMethodUpdate {
 				job = &UpdateJob{instance}
 				topic = UpdateTopic
-			} else if rs.State.Method == apb.JobMethodDeprovision {
+			} else if rs.State.Method == bundle.JobMethodDeprovision {
 				job = &DeprovisionJob{instance, false}
 				topic = DeprovisionTopic
 			} else {
@@ -406,7 +406,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 			log.Infof("We have a pod to recover: %s", rs.State.Podname)
 
 			// did the pod finish?
-			extCreds, extErr := apb.ExtractCredentials(
+			extCreds, extErr := bundle.ExtractCredentials(
 				rs.State.Podname,
 				instance.Context.Namespace,
 				instance.Spec.Runtime,
@@ -421,13 +421,13 @@ func (a AnsibleBroker) Recover() (string, error) {
 			// YES, pod finished we have creds
 			if extCreds != nil {
 				log.Debug("broker::Recover, got ExtractedCredentials!")
-				a.dao.SetState(instanceID, apb.JobState{
+				a.dao.SetState(instanceID, bundle.JobState{
 					Token:   rs.State.Token,
-					State:   apb.StateSucceeded,
+					State:   bundle.StateSucceeded,
 					Podname: rs.State.Podname,
 					Method:  rs.State.Method,
 				})
-				err = apb.SetExtractedCredentials(instanceID, extCreds)
+				err = bundle.SetExtractedCredentials(instanceID, extCreds)
 				if err != nil {
 					log.Errorf("Could not persist extracted credentials - %s", err.Error())
 					return emptyToken, err
@@ -444,7 +444,7 @@ func (a AnsibleBroker) Recover() (string, error) {
 func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	log.Info("AnsibleBroker::Catalog")
 
-	var specs []*apb.Spec
+	var specs []*bundle.Spec
 	var err error
 	var services []Service
 	dir := "/spec"
@@ -455,7 +455,7 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 	}
 
 	log.Debugf("Filtering secret parameters out of specs...")
-	specs, err = apb.FilterSecrets(specs)
+	specs, err = bundle.FilterSecrets(specs)
 	if err != nil {
 		// Should we blow up or warn and continue?
 		log.Errorf("Something went real bad trying to load secrets %v", err)
@@ -546,7 +546,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		* if only support async and no accepts_incomplete=true passed in, 422 Unprocessable entity
 
 	*/
-	var spec *apb.Spec
+	var spec *bundle.Spec
 	var err error
 
 	// Retrieve requested spec
@@ -563,7 +563,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	context := &req.Context
 	parameters := req.Parameters
 	if parameters == nil {
-		parameters = make(apb.Parameters)
+		parameters = make(bundle.Parameters)
 	}
 
 	if req.PlanID == "" {
@@ -593,7 +593,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	parameters[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 
 	// Build and persist record of service instance
-	serviceInstance := &apb.ServiceInstance{
+	serviceInstance := &bundle.ServiceInstance{
 		ID:         instanceUUID,
 		Spec:       spec,
 		Context:    context,
@@ -614,7 +614,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// away from []byte it can still be evaluated.
 	if si != nil && uuid.Equal(si.ID, serviceInstance.ID) {
 		if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
-			alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance.ID.String(), apb.JobMethodProvision)
+			alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance.ID.String(), bundle.JobMethodProvision)
 			if err != nil {
 				return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
 			}
@@ -669,7 +669,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 // getDashboardURL - will conditionally return a dashboard redirector url or
 // an empty string if the redirector feature is not specified by the APB.
-func (a *AnsibleBroker) getDashboardURL(si *apb.ServiceInstance) string {
+func (a *AnsibleBroker) getDashboardURL(si *bundle.ServiceInstance) string {
 	var val interface{}
 	var drEnabled, ok bool
 	spec := si.Spec
@@ -709,7 +709,7 @@ func (a *AnsibleBroker) getDashboardURL(si *apb.ServiceInstance) string {
 
 // Deprovision - will deprovision a service.
 func (a AnsibleBroker) Deprovision(
-	instance apb.ServiceInstance, planID string, skipApbExecution bool, async bool, userInfo UserInfo,
+	instance bundle.ServiceInstance, planID string, skipApbExecution bool, async bool, userInfo UserInfo,
 ) (*DeprovisionResponse, error) {
 	////////////////////////////////////////////////////////////
 	// Deprovision flow
@@ -732,7 +732,7 @@ func (a AnsibleBroker) Deprovision(
 		return nil, err
 	}
 
-	alreadyInProgress, jobToken, err := a.isJobInProgress(instance.ID.String(), apb.JobMethodDeprovision)
+	alreadyInProgress, jobToken, err := a.isJobInProgress(instance.ID.String(), bundle.JobMethodDeprovision)
 	if err != nil {
 		return nil, fmt.Errorf("An error occurred while trying to determine if a deprovision job is already in progress for instance: %s", instance.ID)
 	}
@@ -742,8 +742,8 @@ func (a AnsibleBroker) Deprovision(
 		return &DeprovisionResponse{Operation: jobToken}, ErrorDeprovisionInProgress
 	}
 
-	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
-	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
+	provExtCreds, err := bundle.GetExtractedCredentials(instance.ID.String())
+	if err != nil && err != bundle.ErrExtractedCredentialsNotFound {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, err
 	}
@@ -752,7 +752,7 @@ func (a AnsibleBroker) Deprovision(
 	// if it so chooses.
 	if provExtCreds != nil && instance.Parameters != nil {
 		params := *instance.Parameters
-		params[apb.ProvisionCredentialsKey] = provExtCreds.Credentials
+		params[bundle.ProvisionCredentialsKey] = provExtCreds.Credentials
 		instance.Parameters = &params
 	}
 
@@ -785,7 +785,7 @@ func (a AnsibleBroker) Deprovision(
 	return &DeprovisionResponse{}, nil
 }
 
-func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error {
+func (a AnsibleBroker) validateDeprovision(instance *bundle.ServiceInstance) error {
 	// -> Lookup bindings by instance ID; 400 if any are active, related issue:
 	//    https://github.com/openservicebrokerapi/servicebroker/issues/127
 	if len(instance.BindingIDs) > 0 {
@@ -797,10 +797,10 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 }
 
 func (a AnsibleBroker) isJobInProgress(ID string,
-	method apb.JobMethod) (bool, string, error) {
+	method bundle.JobMethod) (bool, string, error) {
 
-	allJobs, err := a.dao.GetSvcInstJobsByState(ID, apb.StateInProgress)
-	log.Infof("All Jobs for instance: %v in state:  %v - \n%#v", ID, apb.StateInProgress, allJobs)
+	allJobs, err := a.dao.GetSvcInstJobsByState(ID, bundle.StateInProgress)
+	log.Infof("All Jobs for instance: %v in state:  %v - \n%#v", ID, bundle.StateInProgress, allJobs)
 	if err != nil {
 		return false, "", err
 	}
@@ -815,12 +815,12 @@ func (a AnsibleBroker) isJobInProgress(ID string,
 
 // GetBind - will return the binding between a service created via an async
 // binding event.
-func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UUID) (*BindResponse, error) {
+func (a AnsibleBroker) GetBind(instance bundle.ServiceInstance, bindingUUID uuid.UUID) (*BindResponse, error) {
 
 	log.Debug("broker.GetBind: entered GetBind")
 
-	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
-	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
+	provExtCreds, err := bundle.GetExtractedCredentials(instance.ID.String())
+	if err != nil && err != bundle.ErrExtractedCredentialsNotFound {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, err
 	}
@@ -835,9 +835,9 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 		return nil, err
 	}
 
-	bindExtCreds, err := apb.GetExtractedCredentials(bi.ID.String())
+	bindExtCreds, err := bundle.GetExtractedCredentials(bi.ID.String())
 	if err != nil {
-		if err == apb.ErrExtractedCredentialsNotFound {
+		if err == bundle.ErrExtractedCredentialsNotFound {
 			return nil, ErrorNotFound
 		}
 
@@ -851,7 +851,7 @@ func (a AnsibleBroker) GetBind(instance apb.ServiceInstance, bindingUUID uuid.UU
 // Bind - will create a binding between a service. Parameter "async" declares
 // whether the caller is willing to have the operation run asynchronously. The
 // returned bool will be true if the operation actually ran asynchronously.
-func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID, req *BindRequest, async bool, userInfo UserInfo,
+func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UUID, req *BindRequest, async bool, userInfo UserInfo,
 ) (*BindResponse, bool, error) {
 	// binding_id is the id of the binding.
 	// the instanceUUID is the previously provisioned service id.
@@ -861,7 +861,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// GET SERVICE get provision parameters
 	params := req.Parameters
 	if params == nil {
-		params = make(apb.Parameters)
+		params = make(bundle.Parameters)
 	}
 
 	// Inject PlanID into parameters passed to APBs
@@ -900,7 +900,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	params[serviceBindingIDKey] = bindingUUID.String()
 
 	// Create a BindingInstance with a reference to the serviceinstance.
-	bindingInstance := &apb.BindInstance{
+	bindingInstance := &bundle.BindInstance{
 		ID:         bindingUUID,
 		ServiceID:  instance.ID,
 		Parameters: &params,
@@ -915,20 +915,20 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// if binding instance exists, and the parameters are different return: 409.
 	//
 	// return 201 when we're done.
-	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
-	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
+	provExtCreds, err := bundle.GetExtractedCredentials(instance.ID.String())
+	if err != nil && err != bundle.ErrExtractedCredentialsNotFound {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
 		return nil, false, err
 	}
 
 	if existingBI, err := a.dao.GetBindInstance(bindingUUID.String()); err == nil {
 		if existingBI.IsEqual(bindingInstance) {
-			bindExtCreds, err := apb.GetExtractedCredentials(existingBI.ID.String())
+			bindExtCreds, err := bundle.GetExtractedCredentials(existingBI.ID.String())
 			// It's ok if there aren't any bind credentials yet.
-			if err != nil && err != apb.ErrExtractedCredentialsNotFound {
+			if err != nil && err != bundle.ErrExtractedCredentialsNotFound {
 				return nil, false, err
 			}
-			var createJob apb.JobState
+			var createJob bundle.JobState
 			if existingBI.CreateJobKey != "" {
 				createJob, err = a.dao.GetStateByKey(existingBI.CreateJobKey)
 			}
@@ -940,7 +940,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 			// If there is a job in "succeeded" state, or no job at all, or
 			// the referenced job no longer exists (we assume it got
 			// cleaned up eventually), assume everything is complete.
-			case createJob.State == apb.StateSucceeded, existingBI.CreateJobKey == "", a.dao.IsNotFoundError(err):
+			case createJob.State == bundle.StateSucceeded, existingBI.CreateJobKey == "", a.dao.IsNotFoundError(err):
 				log.Debug("already have this binding instance, returning 200")
 				resp, err := NewBindResponse(provExtCreds, bindExtCreds)
 				if err != nil {
@@ -973,7 +973,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 	// Add the DB Credentials. This will allow the apb to use these credentials
 	// if it so chooses.
 	if provExtCreds != nil {
-		params[apb.ProvisionCredentialsKey] = provExtCreds.Credentials
+		params[bundle.ProvisionCredentialsKey] = provExtCreds.Credentials
 	}
 
 	// NOTE: We are currently disabling running an APB on bind via
@@ -983,7 +983,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 
 	metrics.ActionStarted("bind")
 	var (
-		bindExtCreds *apb.ExtractedCredentials
+		bindExtCreds *bundle.ExtractedCredentials
 		token        = a.engine.Token()
 		bindingJob   = &BindJob{&instance, bindingUUID.String(), &params}
 	)
@@ -1018,7 +1018,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 		log.Warning("Broker configured to *NOT* launch and run APB bind")
 		// Create a credentials for the binding using the provision credentials
 		bindExtCreds = provExtCreds
-		err := apb.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
+		err := bundle.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
 		if err != nil {
 			log.Errorf("Unable to create new binding extracted creds from provision creds - %v", err)
 			return nil, false, err
@@ -1038,7 +1038,7 @@ func (a AnsibleBroker) Bind(instance apb.ServiceInstance, bindingUUID uuid.UUID,
 // whether the caller is willing to have the operation run asynchronously. The
 // returned bool will be true if the operation actually ran asynchronously.
 func (a AnsibleBroker) Unbind(
-	instance apb.ServiceInstance, bindInstance apb.BindInstance, planID string, skipApbExecution bool, async bool, userInfo UserInfo,
+	instance bundle.ServiceInstance, bindInstance bundle.BindInstance, planID string, skipApbExecution bool, async bool, userInfo UserInfo,
 ) (*UnbindResponse, bool, error) {
 	if planID == "" {
 		errMsg :=
@@ -1047,7 +1047,7 @@ func (a AnsibleBroker) Unbind(
 		return nil, false, errors.New(errMsg)
 	}
 
-	jobInProgress, jobToken, err := a.isJobInProgress(bindInstance.ID.String(), apb.JobMethodUnbind)
+	jobInProgress, jobToken, err := a.isJobInProgress(bindInstance.ID.String(), bundle.JobMethodUnbind)
 	if err != nil {
 		log.Errorf("An error occurred while trying to determine if a unbind job is already in progress for instance: %s", instance.ID)
 		return nil, false, err
@@ -1062,13 +1062,12 @@ func (a AnsibleBroker) Unbind(
 		(*instance.Parameters)[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 	}
 
-	// retrieve the data we need to generate the unbind parameters
-	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
-	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
+	provExtCreds, err := bundle.GetExtractedCredentials(instance.ID.String())
+	if err != nil && err != bundle.ErrExtractedCredentialsNotFound {
 		return nil, false, err
 	}
-	bindExtCreds, err := apb.GetExtractedCredentials(bindInstance.ID.String())
-	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
+	bindExtCreds, err := bundle.GetExtractedCredentials(bindInstance.ID.String())
+	if err != nil && err != bundle.ErrExtractedCredentialsNotFound {
 		return nil, false, err
 	}
 	// Add the credentials to the parameters so that an APB can choose what
@@ -1085,7 +1084,7 @@ func (a AnsibleBroker) Unbind(
 	}
 
 	// build up unbind parameters
-	params := make(apb.Parameters)
+	params := make(bundle.Parameters)
 	// Fixes BZ1578319 - put last requesting user at the top level
 	// they should be at the top level. We are still keeping the lower level
 	// values as well since others might already be using them.
@@ -1098,10 +1097,10 @@ func (a AnsibleBroker) Unbind(
 	// and binding uuid as well
 
 	if provExtCreds != nil {
-		params[apb.ProvisionCredentialsKey] = provExtCreds.Credentials
+		params[bundle.ProvisionCredentialsKey] = provExtCreds.Credentials
 	}
 	if bindExtCreds != nil {
-		params[apb.BindCredentialsKey] = bindExtCreds.Credentials
+		params[bundle.BindCredentialsKey] = bindExtCreds.Credentials
 	}
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
@@ -1144,7 +1143,7 @@ func (a AnsibleBroker) Unbind(
 			log.Errorf("Failed to delete binding when launch_apb_on_bind is false: %v", err)
 			return nil, false, err
 		}
-		if err := apb.DeleteExtractedCredentials(bindInstance.ID.String()); err != nil {
+		if err := bundle.DeleteExtractedCredentials(bindInstance.ID.String()); err != nil {
 			log.Errorf("Failed to delete extracted credentials secret when launch_apb_on_bind is false: %v", err)
 			return nil, false, err
 		}
@@ -1216,7 +1215,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 
 	var err error
 	var fromPlanName string
-	var fromPlan, toPlan apb.Plan
+	var fromPlan, toPlan bundle.Plan
 
 	si, err := a.dao.GetServiceInstance(instanceUUID.String())
 	if err != nil {
@@ -1230,7 +1229,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	}
 
 	// copy previous params, since the loaded si is mutated during update
-	prevParams := make(apb.Parameters)
+	prevParams := make(bundle.Parameters)
 	for k, v := range *si.Parameters {
 		prevParams[k] = v
 	}
@@ -1248,7 +1247,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	// else, add onto the back of the queue. Ensures update operations are not
 	// trying to execute concurrently.
 	////////////////////////////////////////////////////////////
-	alreadyInProgress, jobToken, err := a.isJobInProgress(si.ID.String(), apb.JobMethodUpdate)
+	alreadyInProgress, jobToken, err := a.isJobInProgress(si.ID.String(), bundle.JobMethodUpdate)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"An error occurred while trying to determine if an update job is already in progress for instance: %s", si.ID)
@@ -1369,7 +1368,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	return &UpdateResponse{Operation: token}, nil
 }
 
-func (a AnsibleBroker) isValidPlanTransition(fromPlan apb.Plan, toPlanName string) bool {
+func (a AnsibleBroker) isValidPlanTransition(fromPlan bundle.Plan, toPlanName string) bool {
 	// Make sure that we can find the plan we're updating from.
 	// This should probably never fail, but cover our tail.
 	for _, validToPlanName := range fromPlan.UpdatesTo {
@@ -1382,9 +1381,9 @@ func (a AnsibleBroker) isValidPlanTransition(fromPlan apb.Plan, toPlanName strin
 
 func (a AnsibleBroker) validateRequestedUpdateParams(
 	reqParams map[string]string,
-	toPlan apb.Plan,
+	toPlan bundle.Plan,
 	prevParams map[string]interface{},
-	si *apb.ServiceInstance,
+	si *bundle.ServiceInstance,
 ) (map[string]string, error) {
 	log.Debugf("Validating update parameters...")
 	log.Debugf("Request Params: %v", reqParams)
@@ -1437,7 +1436,7 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 
 		process:
 
-		if async, provision: it should create a Job that calls apb.Provision. And write the output to etcd.
+		if async, provision: it should create a Job that calls bundle.Provision. And write the output to etcd.
 	*/
 	log.Debugf("service_id: %s", req.ServiceID)
 	log.Debugf("plan_id: %s", req.PlanID)
@@ -1462,15 +1461,15 @@ func (a AnsibleBroker) LastOperation(instanceUUID uuid.UUID, req *LastOperationR
 }
 
 // AddSpec - adding the spec to the catalog for local development
-func (a AnsibleBroker) AddSpec(spec apb.Spec) (*CatalogResponse, error) {
+func (a AnsibleBroker) AddSpec(spec bundle.Spec) (*CatalogResponse, error) {
 	log.Debug("broker::AddSpec")
 	spec.Image = spec.FQName
-	addNameAndIDForSpec([]*apb.Spec{&spec}, apbPushRegName)
+	addNameAndIDForSpec([]*bundle.Spec{&spec}, apbPushRegName)
 	log.Debugf("Generated name for pushed APB: [%s], ID: [%s]", spec.FQName, spec.ID)
 	if err := a.dao.SetSpec(spec.ID, &spec); err != nil {
 		return nil, err
 	}
-	apb.AddSecretsFor(&spec)
+	bundle.AddSecretsFor(&spec)
 	service, err := SpecToService(&spec)
 	if err != nil {
 		log.Debugf("spec was not added due to issue with transformation to service - %v", err)

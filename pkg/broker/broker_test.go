@@ -19,7 +19,7 @@ package broker
 import (
 	"testing"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	apb "github.com/automationbroker/bundle-lib/bundle"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 )
 

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	apb "github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
 	crd "github.com/openshift/ansible-service-broker/pkg/dao/crd"
 	etcd "github.com/openshift/ansible-service-broker/pkg/dao/etcd"

@@ -31,7 +31,7 @@ import (
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/automationbroker/config"
 	"github.com/gorilla/handlers"
@@ -793,7 +793,7 @@ func (h handler) apbAddSpec(w http.ResponseWriter, r *http.Request, params map[s
 	log.Debug("Successfully decoded pushed spec:")
 	log.Debugf("%s", decodedSpecYaml)
 
-	var spec apb.Spec
+	var spec bundle.Spec
 	if err = yaml.Unmarshal([]byte(decodedSpecYaml), &spec); err != nil {
 		log.Errorf("Unable to decode yaml - %v to spec err - %v", decodedSpecYaml, err)
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "Invalid parameter yaml"})

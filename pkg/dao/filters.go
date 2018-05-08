@@ -17,13 +17,13 @@
 package dao
 
 import (
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 )
 
 // MapJobStatesWithMethod - takes a slice of JobState structs and returns a slice containing
 // only JobStates that match the specified JobMethod.
-func MapJobStatesWithMethod(jobs []apb.JobState, method apb.JobMethod) []apb.JobState {
-	filteredJobStates := []apb.JobState{}
+func MapJobStatesWithMethod(jobs []bundle.JobState, method bundle.JobMethod) []bundle.JobState {
+	filteredJobStates := []bundle.JobState{}
 	for _, js := range jobs {
 		if method == js.Method {
 			filteredJobStates = append(filteredJobStates, js)

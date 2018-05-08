@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	apb "github.com/automationbroker/bundle-lib/bundle"
 )
 
 func TestApbJobRun(t *testing.T) {

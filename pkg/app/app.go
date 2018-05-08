@@ -37,7 +37,7 @@ import (
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/automationbroker/bundle-lib/registries"
 	agnosticruntime "github.com/automationbroker/bundle-lib/runtime"
@@ -263,25 +263,25 @@ func CreateApp(args Args, regs []registries.Registry) App {
 		os.Exit(1)
 	}
 
-	rules := []apb.AssociationRule{}
+	rules := []bundle.AssociationRule{}
 	for _, secretConfig := range app.config.GetSubConfigArray("secrets") {
-		rules = append(rules, apb.AssociationRule{
+		rules = append(rules, bundle.AssociationRule{
 			BundleName: secretConfig.GetString("apb_name"),
 			Secret:     secretConfig.GetString("secret"),
 		})
 	}
-	apb.InitializeSecretsCache(rules)
+	bundle.InitializeSecretsCache(rules)
 
 	log.Debug("Creating AnsibleBroker")
 	// Initialize the cluster config.
-	clusterConfig := apb.ClusterConfig{
+	clusterConfig := bundle.ClusterConfig{
 		PullPolicy:           app.config.GetString("openshift.image_pull_policy"),
 		SandboxRole:          app.config.GetString("openshift.sandbox_role"),
 		Namespace:            app.config.GetString("openshift.namespace"),
 		KeepNamespace:        app.config.GetBool("openshift.keep_namespace"),
 		KeepNamespaceOnError: app.config.GetBool("openshift.keep_namespace_on_error"),
 	}
-	apb.InitializeClusterConfig(clusterConfig)
+	bundle.InitializeClusterConfig(clusterConfig)
 	if app.broker, err = broker.NewAnsibleBroker(
 		app.dao, app.registry, *app.engine, app.config.GetSubConfig("broker"), app.config.GetString("openshift.namespace"),
 	); err != nil {
