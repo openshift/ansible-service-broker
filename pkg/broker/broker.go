@@ -1395,31 +1395,11 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 	changedParams := make(map[string]string)
 	for reqParam, reqVal := range reqParams {
 		if prevVal, ok := prevParams[reqParam]; ok {
-			if reqVal != prevVal {
-				changedParams[reqParam] = reqVal
+			if reqVal == prevVal {
+				continue
 			}
-		} else {
-			// A key from the parameters requested for change was NOT found in the
-			// parameters in the broker's last known ServiceInstance for the given
-			// :service_id.
-			//
-			// This is a potentially valid scenario, although I'm not sure
-			// what the implications are for the broader system, so some integration
-			// testing is going to be required here.
-			// Ex: EriksApp v1.0 was deployed at T as an APB by the broker. At T+1,
-			// a EriksApp v2.0 has been released with new features that necessitates
-			// additional parameters in an APB. The v2.0 APB is released and the broker
-			// picks it up via bootstrap. The old clusterserviceclass (Spec) is still
-			// around, since the v1.0 ServiceInstance is still running. The cluster op
-			// then decides to update the v1.0 ServiceInstance, providing a set of
-			// new credentials on top of those that were originally used to provision
-			// the v1.0 ServiceInstance. These new keys should be passed to the APB,
-			// along with any changed values to the existing parameters, so the APB
-			// can make sense of them.
-			log.Infof("Requested update parameter: [%v] with the value of [%v] was found " +
-				"in an update request, but it did not exist on the previous service instance.")
-			changedParams[reqParam] = reqVal
 		}
+		changedParams[reqParam] = reqVal
 	}
 	log.Debugf("Changed Params: %v", changedParams)
 
