@@ -165,9 +165,8 @@ func (r Registry) RegistryName() string {
 	return r.config.Name
 }
 
-// NewRegistry - Create a new registry from the registry config.
-func NewRegistry(configuration Config, asbNamespace string) (Registry, error) {
-	var adapter adapters.Adapter
+// NewCustomRegistry - Create a new registry from the registry config.
+func NewCustomRegistry(configuration Config, adapter adapters.Adapter, asbNamespace string) (Registry, error) {
 	if !configuration.Validate() {
 		return Registry{}, errors.New("unable to validate registry name")
 	}
@@ -193,32 +192,37 @@ func NewRegistry(configuration Config, asbNamespace string) (Registry, error) {
 	if u.Scheme == "" {
 		u.Scheme = "http"
 	}
-	c := adapters.Configuration{
-		URL:        u,
-		User:       configuration.User,
-		Pass:       configuration.Pass,
-		Org:        configuration.Org,
-		Runner:     configuration.Runner,
-		Images:     configuration.Images,
-		Namespaces: configuration.Namespaces,
-		Tag:        configuration.Tag,
-	}
 
-	switch strings.ToLower(configuration.Type) {
-	case "rhcc":
-		adapter = &adapters.RHCCAdapter{Config: c}
-	case "dockerhub":
-		adapter = &adapters.DockerHubAdapter{Config: c}
-	case "mock":
-		adapter = &adapters.MockAdapter{Config: c}
-	case "openshift":
-		adapter = &adapters.OpenShiftAdapter{Config: c}
-	case "local_openshift":
-		adapter = &adapters.LocalOpenShiftAdapter{Config: c}
-	case "helm":
-		adapter = &adapters.HelmAdapter{Config: c}
-	default:
-		panic("Unknown registry")
+	if adapter == nil {
+		c := adapters.Configuration{
+			URL:        u,
+			User:       configuration.User,
+			Pass:       configuration.Pass,
+			Org:        configuration.Org,
+			Runner:     configuration.Runner,
+			Images:     configuration.Images,
+			Namespaces: configuration.Namespaces,
+			Tag:        configuration.Tag,
+		}
+
+		switch strings.ToLower(configuration.Type) {
+		case "rhcc":
+			adapter = &adapters.RHCCAdapter{Config: c}
+		case "dockerhub":
+			adapter = &adapters.DockerHubAdapter{Config: c}
+		case "mock":
+			adapter = &adapters.MockAdapter{Config: c}
+		case "openshift":
+			adapter = &adapters.OpenShiftAdapter{Config: c}
+		case "local_openshift":
+			adapter = &adapters.LocalOpenShiftAdapter{Config: c}
+		case "helm":
+			adapter = &adapters.HelmAdapter{Config: c}
+		default:
+			panic("Unknown registry")
+		}
+	} else {
+		log.Infof("Using custom adapter, %v", adapter.RegistryName())
 	}
 
 	return Registry{
@@ -226,6 +230,11 @@ func NewRegistry(configuration Config, asbNamespace string) (Registry, error) {
 		filter:  createFilter(configuration),
 		config:  configuration,
 	}, nil
+}
+
+// NewRegistry - Create a new registry from the registry config.
+func NewRegistry(configuration Config, asbNamespace string) (Registry, error) {
+	return NewCustomRegistry(configuration, nil, asbNamespace)
 }
 
 func createFilter(config Config) Filter {

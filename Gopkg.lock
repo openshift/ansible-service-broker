@@ -56,8 +56,8 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "f8a781a045ec73cd235f9caac14b83ed96fd22c8"
-  version = "0.1.4"
+  revision = "ee4a23415a7d6356ea4072e9894c53601c66abf2"
+  version = "0.1.5"
 
 [[projects]]
   branch = "master"
