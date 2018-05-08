@@ -1418,6 +1418,7 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 			// can make sense of them.
 			log.Infof("Requested update parameter: [%v] with the value of [%v] was found " +
 				"in an update request, but it did not exist on the previous service instance.")
+			changedParams[reqParam] = reqVal
 		}
 	}
 	log.Debugf("Changed Params: %v", changedParams)
