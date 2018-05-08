@@ -42,13 +42,11 @@ import (
 	"github.com/automationbroker/bundle-lib/registries"
 	agnosticruntime "github.com/automationbroker/bundle-lib/runtime"
 	"github.com/automationbroker/config"
-	"github.com/jessevdk/go-flags"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
-	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -81,7 +79,6 @@ type App struct {
 }
 
 func apiServer(config *config.Config,
-	args Args,
 	providers []auth.Provider) (*genericapiserver.GenericAPIServer, error) {
 
 	log.Debug("calling NewSecureServingOptions")
@@ -136,27 +133,14 @@ func apiServer(config *config.Config,
 	return serverConfig.Complete(s).New("ansible-service-broker", genericapiserver.EmptyDelegate)
 }
 
-// CreateApp - Creates the application
-func CreateApp() App {
+// CreateApp - Creates the application with the given registries if they are
+// passed in, otherwise it will read them from the configuration.
+func CreateApp(args Args, regs []registries.Registry) App {
 	var err error
-	app := App{}
-
-	// Writing directly to stderr because log has not been bootstrapped
-	if app.args, err = CreateArgs(); err != nil {
-		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
-			os.Exit(0)
-		} else {
-			os.Exit(1)
-		}
-	}
-
-	if app.args.Version {
-		fmt.Println(version.Version)
-		os.Exit(0)
-	}
+	app := App{args: args}
 
 	fmt.Println("============================================================")
-	fmt.Println("==           Starting Ansible Service Broker...           ==")
+	fmt.Println("==           Creating Ansible Service Broker...           ==")
 	fmt.Println("============================================================")
 
 	// TODO: Let's take all these validations and delegate them to the client
@@ -201,33 +185,42 @@ func CreateApp() App {
 		os.Exit(1)
 	}
 
-	log.Debug("Connecting Registry")
-	for _, config := range app.config.GetSubConfigArray("registry") {
-		c := registries.Config{
-			URL:        config.GetString("url"),
-			User:       config.GetString("user"),
-			Pass:       config.GetString("pass"),
-			Org:        config.GetString("org"),
-			Tag:        config.GetString("tag"),
-			Type:       config.GetString("type"),
-			Name:       config.GetString("name"),
-			Images:     config.GetSliceOfStrings("images"),
-			Namespaces: config.GetSliceOfStrings("namespaces"),
-			Fail:       config.GetBool("fail_on_error"),
-			WhiteList:  config.GetSliceOfStrings("white_list"),
-			BlackList:  config.GetSliceOfStrings("black_list"),
-			AuthType:   config.GetString("auth_type"),
-			AuthName:   config.GetString("auth_name"),
-			Runner:     config.GetString("runner"),
+	// if we have custom registries, use those instead of those configured in
+	// the configmap
+	if len(regs) > 0 {
+		log.Info("Using the supplied custom registries.")
+		for _, reg := range regs {
+			app.registry = append(app.registry, reg)
 		}
+	} else {
+		log.Debug("Connecting Registry")
+		for _, config := range app.config.GetSubConfigArray("registry") {
+			c := registries.Config{
+				URL:        config.GetString("url"),
+				User:       config.GetString("user"),
+				Pass:       config.GetString("pass"),
+				Org:        config.GetString("org"),
+				Tag:        config.GetString("tag"),
+				Type:       config.GetString("type"),
+				Name:       config.GetString("name"),
+				Images:     config.GetSliceOfStrings("images"),
+				Namespaces: config.GetSliceOfStrings("namespaces"),
+				Fail:       config.GetBool("fail_on_error"),
+				WhiteList:  config.GetSliceOfStrings("white_list"),
+				BlackList:  config.GetSliceOfStrings("black_list"),
+				AuthType:   config.GetString("auth_type"),
+				AuthName:   config.GetString("auth_name"),
+				Runner:     config.GetString("runner"),
+			}
 
-		reg, err := registries.NewRegistry(c, app.config.GetString("openshift.namespace"))
-		if err != nil {
-			log.Errorf(
-				"Failed to initialize %v Registry err - %v \n", config.GetString("name"), err)
-			os.Exit(1)
+			reg, err := registries.NewRegistry(c, app.config.GetString("openshift.namespace"))
+			if err != nil {
+				log.Errorf(
+					"Failed to initialize %v Registry err - %v \n", config.GetString("name"), err)
+				os.Exit(1)
+			}
+			app.registry = append(app.registry, reg)
 		}
-		app.registry = append(app.registry, reg)
 	}
 
 	validateRegistryNames(app.registry)
@@ -318,6 +311,9 @@ func (a *App) Recover() {
 func (a *App) Start() {
 	// TODO: probably return an error or some sort of message such that we can
 	// see if we need to go any further.
+	fmt.Println("============================================================")
+	fmt.Println("==           Starting Ansible Service Broker...           ==")
+	fmt.Println("============================================================")
 
 	if a.config.GetBool("broker.recovery") {
 		log.Info("Initiating Recovery Process")
@@ -365,7 +361,7 @@ func (a *App) Start() {
 	//Retrieve the auth providers if basic auth is configured.
 	providers := auth.GetProviders(a.config)
 
-	genericserver, servererr := apiServer(a.config, a.args, providers)
+	genericserver, servererr := apiServer(a.config, providers)
 	if servererr != nil {
 		log.Errorf("problem creating apiserver. %v", servererr)
 		panic(servererr)
