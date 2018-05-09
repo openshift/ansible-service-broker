@@ -419,3 +419,33 @@ func TestVersionCheck(t *testing.T) {
 	// Test invalid version
 	ft.False(t, isCompatibleVersion("2.5", "3.0", "4.0"))
 }
+
+type fakeAdapter struct{}
+
+func (f fakeAdapter) GetImageNames() ([]string, error) {
+	return []string{}, nil
+}
+
+func (f fakeAdapter) FetchSpecs(names []string) ([]*apb.Spec, error) {
+	return []*apb.Spec{}, nil
+}
+
+func (f fakeAdapter) RegistryName() string {
+	return ""
+}
+
+func TestAdapterWithConfiguration(t *testing.T) {
+	c := Config{
+		Name: "nsa",
+		Type: "custom",
+	}
+
+	f := fakeAdapter{}
+
+	reg, err := NewCustomRegistry(c, f, "")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	ft.Equal(t, reg.adapter, f, "registry uses wrong adapter")
+	ft.Equal(t, reg.config, c, "registrying using wrong config")
+}
