@@ -452,7 +452,7 @@ func (h handler) deprovision(w http.ResponseWriter, r *http.Request, params map[
 			writeResponse(w, http.StatusBadRequest, broker.DeprovisionResponse{})
 			return
 		case broker.ErrorDeprovisionInProgress:
-			writeResponse(w, http.StatusAccepted, broker.DeprovisionResponse{})
+			writeResponse(w, http.StatusAccepted, resp)
 			return
 		default:
 			writeResponse(w, http.StatusInternalServerError, broker.ErrorResponse{Description: err.Error()})
