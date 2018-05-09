@@ -86,7 +86,7 @@ helm install svc-cat/catalog --name catalog --namespace catalog
 until kubectl get pods -n catalog -l app=catalog-catalog-apiserver | grep 2/2; do sleep 1; done
 until kubectl get pods -n catalog -l app=catalog-catalog-controller-manager | grep 1/1; do sleep 1; done
 
-./scripts/run_latest_k8s_build.sh
+./scripts/run_latest_build.sh
 ```
 
 ## Use
@@ -97,33 +97,21 @@ the ``svcat`` command. Learn how to install and use it
 
 # Getting Started on OpenShift
 
-There are a few different ways to quickly get up and running with a cluster + ansible-service-broker:
-
-* `oc cluster up`
-* Alternatively, [you can use minishift and install the broker with our addon, documented here](https://github.com/minishift/minishift-addons/tree/master/add-ons/ansible-service-broker).
-
-Let's walk through an `oc cluster up` based setup.
-
-## Prerequisites
-1. You will need a system setup for local [OpenShift Origin Cluster Management](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md)
-    * Your OpenShift Client binary (`oc`) must be `>=` [v3.7.0-rc.0](https://github.com/openshift/origin/releases/tag/v3.7.0-rc.0)
-
-2. If you are using minishift you should look at the [minishift](https://github.com/openshift/ansible-service-broker/blob/master/docs/minishift.md) documentation to get the ansible service broker deployed and running.
-
-## Deploy an OpenShift Origin Cluster with the Ansible Service Broker
-
 [![Watch the full asciicast](docs/images/run_latest.gif)](https://asciinema.org/a/134509)
 
-1. Download and execute our [run_latest_build.sh](https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh) script
+There are a few different ways to quickly get up and running with a cluster + ansible-service-broker:
 
-    Origin Version 3.7:
+* [`oc cluster up`](https://github.com/openshift/origin/#installation). Make
+  sure the service-catalog is enabled and use
+  [run_latest_build.sh](https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh)
+
     ```
     wget https://raw.githubusercontent.com/openshift/ansible-service-broker/master/scripts/run_latest_build.sh
     chmod +x run_latest_build.sh
     ./run_latest_build.sh
     ```
 
-1. At this point you should have a running cluster with the [service-catalog](https://github.com/kubernetes-incubator/service-catalog/) and the Ansible Service Broker running.
+* Alternatively, [you can use minishift and install the broker with our addon, documented here](https://github.com/minishift/minishift-addons/tree/master/add-ons/ansible-service-broker).
 
 **Provision an instance of MediaWiki and PostgreSQL**
 1. Log into OpenShift Web Console
