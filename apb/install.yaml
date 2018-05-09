@@ -26,18 +26,16 @@ subjects:
   namespace: automation-broker-apb
 
 ---
-apiVersion: batch/v1
-kind: Job
+apiVersion: v1
+kind: Pod
 metadata:
-  name: install-automation-broker-apb
+  name: automation-broker-apb
   namespace: automation-broker-apb
 spec:
-  template:
-    spec:
-      serviceAccount: automation-broker-apb
-      containers:
-        - name: apb
-          image: docker.io/automationbroker/automation-broker-apb:latest
-          args: [ "provision", "-e create_broker_namespace=true" ]
-      restartPolicy: Never
-  backoffLimit: 4
+  serviceAccount: automation-broker-apb
+  containers:
+    - name: apb
+      image: docker.io/automationbroker/automation-broker-apb:latest
+      args: [ "provision", "-e create_broker_namespace=true" ]
+      imagePullPolicy: IfNotPresent
+  restartPolicy: Never

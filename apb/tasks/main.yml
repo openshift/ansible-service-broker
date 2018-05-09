@@ -3,6 +3,7 @@
 - name: 'Determine cluster type'
   command: oc version
   register: oc_version
+  ignore_errors: yes
 
 # These can always be overridden at the command line
 # http://docs.ansible.com/ansible/devel/user_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable

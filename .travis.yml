@@ -5,31 +5,60 @@ dist: trusty
 sudo: required
 group: edge
 env:
-  - CHANGE_MINIKUBE_NONE_USER=true
+  - OPENSHIFT_VERSION=v3.10.0
+  - OPENSHIFT_VERSION=v3.9.0
+  - KUBERNETES_VERSION=v1.10.0
+  - KUBERNETES_VERSION=v1.9.0
+
+matrix:
+  # TODO: re-enable latest when it isn't busted
+  allow_failures:
+    - env: OPENSHIFT_VERSION=v3.10.0
+    - env: KUBERNETES_VERSION=v1.10.0
+
+before_install:
+  - | # Copied from https://github.com/facebook/react/pull/2000
+      git diff --name-only HEAD^ | grep -qvE '(\.md$)|(^(docs|examples))/' || {
+          echo "Only docs were updated, stopping build process."
+          exit 0
+      }
+
+stages:
+  - lint
+  - build
+  - test
 
 jobs:
   include:
-    - stage: "build"
+    - stage: lint
       script:
-        - ./scripts/travis.sh format
-    -
+        - make fmtcheck
+    - script:
+        - make vet
+    - script:
+        - go get -u github.com/golang/lint/golint
+        - make lint
+    - stage: build
       script:
-        - ./scripts/travis.sh vet
-    -
-      script:
-        - ./scripts/travis.sh lint
-    -
-      script:
-        - ./scripts/travis.sh build
-        - ./scripts/travis.sh test
-    - stage: "integration"
-      before_install:
-        - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
-      before_script:
-        - ./scripts/travis.sh setup-minikube
-        - ./scripts/travis.sh k8s-catalog
-        - ./scripts/travis.sh pv-setup
-        - ./scripts/travis.sh k8s-broker
-      script:
-        - ./scripts/travis.sh k8s-ci
-        - ./scripts/broker-ci/gather-logs.sh
+        - go get -u github.com/golang/dep/cmd/dep
+        - make build
+        - go get github.com/mattn/goveralls
+        - make ci-test-coverage
+
+script:
+  - export apb_name="automation-broker-apb:${TRAVIS_BUILD_ID}"
+  - export broker_image="ansible-service-broker:${TRAVIS_BUILD_ID}"
+
+  # Download test shim.
+  - wget -O ${PWD}/apb-test.sh https://raw.githubusercontent.com/ansibleplaybookbundle/apb-test-shim/master/apb-test.sh
+  - SOURCE_ONLY=1 source ${PWD}/apb-test.sh
+  - requirements
+
+  # Setup cluster
+  - setup_cluster
+
+  # Run CI
+  - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make ci
+
+  # Deprovision Broker
+  - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make undeploy
