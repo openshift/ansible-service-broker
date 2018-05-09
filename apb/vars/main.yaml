@@ -1,0 +1,17 @@
+---
+
+kubectl_action_map:
+  provision: create
+  deprovision: delete
+kubectl_action: "{{ kubectl_action_map[apb_action] }}"
+
+state_map:
+  provision: present
+  deprovision: absent
+state: "{{ state_map[apb_action] }}"
+
+broker_tls_name: "{{ broker_name }}-tls"
+
+etcd_name: broker-etcd
+etcd_tls_name: "{{ etcd_name }}-tls"
+etcd_host: "{{ etcd_name }}.{{ broker_namespace }}.svc"

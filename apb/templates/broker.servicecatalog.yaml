@@ -1,0 +1,17 @@
+---
+
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: {{ broker_kind }}
+metadata:
+  name: {{ broker_name }}
+spec:
+  url: https://{{ broker_name }}.{{ broker_namespace }}.svc:1338/{{ broker_name }}/
+  authInfo:
+    bearer:
+      secretRef:
+        kind: Secret
+        namespace: {{ broker_namespace }}
+        name: {{ broker_client_secret }}
+{% if broker_ca_crt is defined %}
+  caBundle: {{ broker_ca_crt }}
+{% endif %}

@@ -1,0 +1,88 @@
+---
+
+- set_fact:
+    broker_etcd_certs_dir: "/tmp/{{ broker_name }}-etcd"
+
+- block:
+    - name: Create ansible-service-broker cert directory
+      file:
+        path: "{{ broker_etcd_certs_dir }}"
+        state: directory
+        mode: 0755
+      check_mode: no
+
+    - name: Create self signing ca cert
+      command: >
+        openssl req -nodes -x509 -newkey rsa:4096
+        -keyout {{ broker_etcd_certs_dir }}/key.pem
+        -out {{ broker_etcd_certs_dir }}/cert.pem
+        -days 365
+        -subj "/CN={{ etcd_host }}"
+      args:
+        creates: '{{ broker_etcd_certs_dir }}/cert.pem'
+
+    - name: Create tls secret
+      when:
+        - cluster == 'kubernetes'
+        - apb_action == 'provision'
+      command: >
+        kubectl create secret tls -n {{ broker_namespace }} {{ etcd_tls_name }}
+        --cert="{{ broker_etcd_certs_dir }}/cert.pem"
+        --key="{{ broker_etcd_certs_dir }}/key.pem"
+      register: tls_command
+      failed_when: tls_command.rc != 0 and 'AlreadyExists' not in tls_command.stderr
+
+    - name: Create self signed client cert
+      command: '{{ item.cmd }}'
+      args:
+        creates: '{{ item.creates }}'
+      with_items:
+      - cmd: openssl genrsa -out {{ broker_etcd_certs_dir }}/client.key 2048
+        creates: '{{ broker_etcd_certs_dir }}/client.key'
+      - cmd: >
+          openssl req -new -key {{ broker_etcd_certs_dir }}/client.key
+          -out {{ broker_etcd_certs_dir }}/client.csr
+          -subj "/CN=client"
+        creates: '{{ broker_etcd_certs_dir }}/client.csr'
+      - cmd: >
+          openssl x509 -req -in {{ broker_etcd_certs_dir }}/client.csr
+          -CA {{ broker_etcd_certs_dir }}/cert.pem
+          -CAkey {{ broker_etcd_certs_dir }}/key.pem
+          -CAcreateserial
+          -out {{ broker_etcd_certs_dir }}/client.pem
+          -days 1024
+        creates: '{{ broker_etcd_certs_dir }}/client.pem'
+
+- name: Read in certs for etcd
+  slurp:
+    src: '{{ broker_etcd_certs_dir }}/{{ item }}'
+  register: asb_etcd_certs
+  with_items:
+  - cert.pem
+  - client.pem
+  - client.key
+
+- set_fact:
+    etcd_ca_cert: "{{ asb_etcd_certs.results.0.content }}"
+    etcd_client_cert: "{{ asb_etcd_certs.results.1.content }}"
+    etcd_client_key: "{{ asb_etcd_certs.results.2.content }}"
+
+- name: 'Set etcd objects state={{ state }}'
+  k8s_raw:
+    state: '{{ state }}'
+    definition: "{{ lookup('template', item) | from_yaml }}"
+  with_items:
+    - etcd-ca.secret.yaml
+    - etcd-auth.secret.yaml
+    - etcd.service.yaml
+
+- name:
+  k8s_raw:
+    state: '{{ state }}'
+    definition: "{{ lookup('template', 'etcd.pvc.yaml') | from_yaml }}"
+  when: etcd_persist_storage | bool
+
+- name: 'Set etcd deployment object state={{ state }}'
+  openshift_raw:
+    state: '{{ state }}'
+    definition: "{{ lookup('template', 'etcd.deployment.yaml') | from_yaml }}"

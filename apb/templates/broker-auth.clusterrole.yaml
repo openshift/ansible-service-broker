@@ -1,0 +1,42 @@
+---
+
+#apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: v1
+kind: ClusterRole
+metadata:
+  name: {{ broker_name }}-auth
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["create", "delete"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["subjectaccessreviews"]
+    verbs: ["create"]
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["tokenreviews"]
+    verbs: ["create"]
+  - apiGroups: ["networking.k8s.io", ""]
+    # attributeRestrictions: null
+    resources: ["networkpolicies"]
+    verbs: ["create", "delete"]
+  - apiGroups: ["automationbroker.io"]
+    # attributeRestrictions: null
+    resources: ["bundles", "bundlebindings", "bundleinstances"]
+    verbs: ["*"]
+{% if cluster == 'openshift' %}
+  - apiGroups: ["authorization.openshift.io"]
+    resources: ["subjectrulesreview"]
+    verbs: ["create"]
+  - apiGroups: ["image.openshift.io", ""]
+    # attributeRestrictions: null
+    resources: ["images"]
+    verbs: ["get", "list"]
+  - apiGroups: ["network.openshift.io", ""]
+    # attributeRestrictions: null
+    resources: ["clusternetworks", "netnamespaces"]
+    verbs: ["get"]
+  - apiGroups: ["network.openshift.io", ""]
+    # attributeRestrictions: null
+    resources: ["netnamespaces"]
+    verbs: ["update"]
+{% endif %}

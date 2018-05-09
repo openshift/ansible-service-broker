@@ -1,0 +1,82 @@
+---
+
+apiVersion: v1
+{% if cluster == 'kubernetes' %}
+kind: Deployment
+{% else %}
+kind: DeploymentConfig
+{% endif %}
+metadata:
+  name: {{ etcd_name }}
+  namespace: {{ broker_namespace }}
+  labels:
+    app: {{ etcd_name }}
+    service: {{ etcd_name }}
+spec:
+  replicas: 1
+{% if cluster == 'kubernetes' %}
+  selector:
+    matchLabels:
+      app: {{ etcd_name }}
+      service: {{ etcd_name }}
+  strategy:
+    type: RollingUpdate
+{% else %}
+  selector:
+    app: {{ etcd_name }}
+    service: {{ etcd_name }}
+  strategy:
+    type: Rolling
+{% endif %}
+{% if broker_node_selector != "" %}
+  nodeSelector: '{{ broker_node_selector }}'
+{% endif %}
+  template:
+    metadata:
+      labels:
+        app: {{ etcd_name }}
+        service: {{ etcd_name }}
+    spec:
+      serviceAccount: {{ broker_name }}
+      containers:
+      - image: {{ etcd_image }}
+        name: etcd
+        imagePullPolicy: IfNotPresent
+        terminationMessagePath: /tmp/termination-log
+        workingDir: /etcd
+        args:
+          - {{ etcd_path }}
+          - --data-dir=/data
+          - --listen-client-urls=https://0.0.0.0:{{ etcd_port }}
+          - --advertise-client-urls=https://{{ etcd_host }}:{{ etcd_port }}
+          - --client-cert-auth
+          - --trusted-ca-file=/var/run/etcd-ca/ca.crt
+          - --cert-file=/etc/tls/private/tls.crt
+          - --key-file=/etc/tls/private/tls.key
+        ports:
+          - containerPort: {{ etcd_port }}
+            protocol: TCP
+        env:
+        - name: ETCDCTL_API
+          value: "3"
+        volumeMounts:
+          - name: etcd
+            mountPath: /data
+          - name: etcd-tls
+            mountPath: /etc/tls/private
+          - name: etcd-ca
+            mountPath: /var/run/etcd-ca
+      volumes:
+        - name: etcd
+{% if etcd_persist_storage | bool %}
+          persistentVolumeClaim:
+            claimName: etcd
+{% else %}
+          emptyDir: {}
+{% endif %}
+        - name: etcd-tls
+          secret:
+            secretName: {{ etcd_tls_name }}
+        - name: etcd-ca
+          secret:
+            secretName: etcd-ca

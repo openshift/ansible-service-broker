@@ -1,0 +1,10 @@
+---
+
+apiVersion: v1
+{% if cluster == 'kubernetes' %}
+kind: Namespace
+{% else %}
+kind: Project
+{% endif %}
+metadata:
+  name: '{{ broker_namespace }}'
