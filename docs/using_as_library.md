@@ -2,13 +2,14 @@
 
 The Automation Broker implements the Open Service Broker API. As a broker it
 provides quite a bit of behavior that might want to be used by other broker
-authors, for example, asynchronous job support, ...
+authors, for example, asynchronous job support, etc.
 
 ## Vendoring
 
-To get the Automation Broker as a dependency, here is an example of the
-`Gopkg.toml` used by `dep`. You can use any of the types supported by the `dep`
-tool: branches, tags, or versions. Here we are using the master branch.
+Here is an excerpt from `Gopkg.toml` used by [golang/dep](https://golang.github.io/dep/)
+that adds the Automation Broker as a dependency. We can use any of the types
+supported by the `dep` tool: branches, tags, or versions. Here we are using the master
+branch.
 
 ```toml
 [[constraint]]
@@ -19,8 +20,8 @@ tool: branches, tags, or versions. Here we are using the master branch.
 ## Extending
 
 Once we have the dependency installed in our project, how do we use it? The
-Automation Broker will do most if not all of the heavy lifting, but allows the
-custom registry adapters to be supplied. We can also have our own
+Automation Broker will do most, if not all, of the heavy lifting, but allows
+the custom registry adapters to be supplied. We can also have our own
 configuration, custom parameters, just about anything we want since we will
 have our own `main.go`.
 
