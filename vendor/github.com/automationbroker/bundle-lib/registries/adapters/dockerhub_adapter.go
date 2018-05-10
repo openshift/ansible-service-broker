@@ -24,7 +24,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -59,8 +59,8 @@ func (r DockerHubAdapter) RegistryName() string {
 // GetImageNames - retrieve the images
 func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	log.Debug("DockerHubAdapter::GetImages")
-	log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
-	log.Debug("Loading image list for org: [ %s ]", r.Config.Org)
+	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
+	log.Debugf("Loading image list for org: [ %s ]", r.Config.Org)
 
 	token, err := r.getDockerHubToken()
 	if err != nil {
@@ -72,7 +72,7 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
-	// Intial call to getNextImages this will fan out to retrieve all the values.
+	// Initial call to getNextImages this will fan out to retrieve all the values.
 	imageResp, err := r.getNextImages(ctx, r.Config.Org, token,
 		fmt.Sprintf(dockerHubRepoImages, r.Config.Org),
 		channel, cancelFunc)
@@ -85,10 +85,10 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 		log.Info("canceled retrieval as no items in org")
 		close(channel)
 	}
-	var apbData []string
+	var bundleData []string
 	counter := 1
 	for imageData := range channel {
-		apbData = append(apbData, imageData)
+		bundleData = append(bundleData, imageData)
 		if counter < imageResp.Count {
 			counter++
 		} else {
@@ -98,15 +98,15 @@ func (r DockerHubAdapter) GetImageNames() ([]string, error) {
 	// check to see if the context had an error
 	if ctx.Err() != nil {
 		log.Errorf("encountered an error while loading images, we may not have all the apb in the catalog - %v", ctx.Err())
-		return apbData, ctx.Err()
+		return bundleData, ctx.Err()
 	}
 
-	return apbData, nil
+	return bundleData, nil
 }
 
 // FetchSpecs - retrieve the spec for the image names.
-func (r DockerHubAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
-	specs := []*apb.Spec{}
+func (r DockerHubAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
+	specs := []*bundle.Spec{}
 	for _, imageName := range imageNames {
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
@@ -218,7 +218,7 @@ func (r DockerHubAdapter) getNextImages(ctx context.Context,
 	return &iResp, nil
 }
 
-func (r DockerHubAdapter) loadSpec(imageName string) (*apb.Spec, error) {
+func (r DockerHubAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}

@@ -406,9 +406,13 @@ func (a AnsibleBroker) Recover() (string, error) {
 			log.Infof("We have a pod to recover: %s", rs.State.Podname)
 
 			// did the pod finish?
-			extCreds, extErr := bundle.ExtractCredentials(
+			extErr := bundle.RecoverExtractCredentials(
 				rs.State.Podname,
 				instance.Context.Namespace,
+				instance.Spec.FQName,
+				instance.ID.String(),
+				rs.State.Method,
+				[]string{instance.Context.Namespace},
 				instance.Spec.Runtime,
 			)
 
@@ -416,22 +420,6 @@ func (a AnsibleBroker) Recover() (string, error) {
 			if extErr != nil {
 				log.Errorf("broker::Recover error occurred. %s", extErr.Error())
 				return emptyToken, extErr
-			}
-
-			// YES, pod finished we have creds
-			if extCreds != nil {
-				log.Debug("broker::Recover, got ExtractedCredentials!")
-				a.dao.SetState(instanceID, bundle.JobState{
-					Token:   rs.State.Token,
-					State:   bundle.StateSucceeded,
-					Podname: rs.State.Podname,
-					Method:  rs.State.Method,
-				})
-				err = bundle.SetExtractedCredentials(instanceID, extCreds)
-				if err != nil {
-					log.Errorf("Could not persist extracted credentials - %s", err.Error())
-					return emptyToken, err
-				}
 			}
 		}
 	}

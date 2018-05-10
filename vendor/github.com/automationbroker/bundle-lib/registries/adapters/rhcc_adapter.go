@@ -23,7 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -71,11 +71,11 @@ func (r RHCCAdapter) GetImageNames() ([]string, error) {
 }
 
 // FetchSpecs - retrieve the spec from the image names
-func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
+func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
 	log.Debug("RHCCAdapter::FetchSpecs")
-	specs := []*apb.Spec{}
+	specs := []*bundle.Spec{}
 	for _, imageName := range imageNames {
-		log.Debug("%v", imageName)
+		log.Debugf("%v", imageName)
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
 			log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)
@@ -118,7 +118,7 @@ func (r RHCCAdapter) loadImages(Query string) (RHCCImageResponse, error) {
 	return imageResp, nil
 }
 
-func (r RHCCAdapter) loadSpec(imageName string) (*apb.Spec, error) {
+func (r RHCCAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	log.Debug("RHCCAdapter::LoadSpec")
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"

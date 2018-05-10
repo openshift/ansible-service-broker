@@ -44,6 +44,10 @@ type Configuration struct {
 	PreCreateSandboxHooks []PreSandboxCreate
 	// PreDestroySandboxHooks - The sandbox hooks that you would like to run.
 	PreDestroySandboxHooks []PreSandboxDestroy
+	// WatchBundle - this is the method that watches the bundle for completion.
+	// The UpdateDescriptionFunc in the default case will call this function when the last description
+	// annotation on the running bundle is changed.
+	WatchBundle WatchRunningBundleFunc
 	ExtractedCredential
 }
 
@@ -53,7 +57,9 @@ type Runtime interface {
 	GetRuntime() string
 	CreateSandbox(string, string, []string, string) (string, error)
 	DestroySandbox(string, string, []string, string, bool, bool)
+	ExtractCredentials(string, string, int) ([]byte, error)
 	ExtractedCredential
+	WatchRunningBundle(string, string, UpdateDescriptionFn) error
 }
 
 // Variables for interacting with runtimes
@@ -64,6 +70,7 @@ type provider struct {
 	preSandboxCreate   []PreSandboxCreate
 	postSandboxDestroy []PostSandboxDestroy
 	preSandboxDestroy  []PreSandboxDestroy
+	watchBundle        WatchRunningBundleFunc
 }
 
 // Abstraction for actions that are different between runtimes
@@ -71,10 +78,6 @@ type coe interface {
 	getRuntime() string
 	shouldJoinNetworks() (bool, PostSandboxCreate, PostSandboxDestroy)
 }
-
-// Different runtimes
-type openshift struct{}
-type kubernetes struct{}
 
 // NewRuntime - Initialize provider variable
 // extCreds - You can pass an ExtractedCredential conforming object this will
@@ -101,7 +104,7 @@ func NewRuntime(config Configuration) {
 			log.Error(err.Error())
 			panic(err.Error())
 		}
-		log.Info("OpenShift version: %v", kubeServerInfo)
+		log.Infof("OpenShift version: %v", kubeServerInfo)
 		cluster = newOpenshift()
 	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
 		cluster = newKubernetes()
@@ -155,7 +158,7 @@ func newKubernetes() coe {
 	return kubernetes{}
 }
 
-// ValidateRuntime - Translate the broker cluster validation check into specfici runtime checks
+// ValidateRuntime - Translate the broker cluster validation check into specific runtime checks
 func (p provider) ValidateRuntime() error {
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
@@ -172,7 +175,7 @@ func (p provider) ValidateRuntime() error {
 		if err != nil && len(body) > 0 {
 			return err
 		}
-		log.Info("Kubernetes version: %v", kubeServerInfo)
+		log.Infof("Kubernetes version: %v", kubeServerInfo)
 	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
 		log.Error("the server could not find the requested resource")
 		return err
@@ -207,7 +210,7 @@ func (p provider) CreateSandbox(podName string,
 		return "", err
 	}
 
-	log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	log.Debugf("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
 
 	subjects := []rbac.Subject{
 		rbac.Subject{
@@ -236,7 +239,7 @@ func (p provider) CreateSandbox(podName string,
 		}
 	}
 
-	// Must create a Network policy to allow for comunication from the APB pod to the target namespace.
+	// Must create a Network policy to allow for communication from the APB pod to the target namespace.
 	networkPolicy := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: podName,
@@ -263,8 +266,8 @@ func (p provider) CreateSandbox(podName string,
 	}
 	log.Debugf("Successfully created network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 
-	log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
-	log.Info("Running post create sandbox fuctions if defined.")
+	log.Infof("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	log.Info("Running post create sandbox functions if defined.")
 	for i, f := range p.postSandboxCreate {
 		log.Debugf("Running post create sandbox function: %v", i+1)
 		err := f(podName, namespace, targets, apbRole)
@@ -313,7 +316,7 @@ func (p provider) DestroySandbox(podName string,
 	}
 	if shouldDeleteNamespace(keepNamespace, keepNamespaceOnError, pod, err) {
 		if configNamespace != namespace {
-			log.Debug("Deleting namespace %s", namespace)
+			log.Debugf("Deleting namespace %s", namespace)
 			k8scli.Client.CoreV1().Namespaces().Delete(namespace, &metav1.DeleteOptions{})
 			// This is keeping track of namespaces.
 		} else {
@@ -344,7 +347,7 @@ func (p provider) DestroySandbox(podName string,
 	}
 
 	log.Debugf("Deleting network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
-	// Must clean up the network policy that allowed comunication from the APB pod to the target namespace.
+	// Must clean up the network policy that allowed communication from the APB pod to the target namespace.
 	err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Delete(podName, &metav1.DeleteOptions{})
 	if err != nil {
 		log.Errorf("unable to delete the network policy object - %v", err)
@@ -368,6 +371,10 @@ func (p provider) DestroySandbox(podName string,
 // GetRuntime - Return a string value of the runtime
 func (p provider) GetRuntime() string {
 	return p.coe.getRuntime()
+}
+
+func (p provider) WatchRunningBundle(podName string, namespace string, updateFunc UpdateDescriptionFn) error {
+	return p.watchBundle(podName, namespace, updateFunc)
 }
 
 func shouldDeleteNamespace(keepNamespace bool,

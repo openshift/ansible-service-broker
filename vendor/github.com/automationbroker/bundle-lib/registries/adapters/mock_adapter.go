@@ -19,12 +19,12 @@ package adapters
 import (
 	"io/ioutil"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 )
 
-// MockFile - Mock file contains fake regitry data
+// MockFile - Mock file contains fake registry data
 var MockFile = "/etc/automationbroker/bundle-lib/mock-registry-data.yaml"
 
 // mockRegistryName - mock registry name
@@ -33,7 +33,7 @@ var mockRegistryName = "mock"
 // MockAdapter - a adapter that is for mocking data
 type MockAdapter struct {
 	Config Configuration
-	specs  map[string]*apb.Spec
+	specs  map[string]*bundle.Spec
 }
 
 // GetImageNames - retrieve the image names
@@ -42,25 +42,25 @@ func (r *MockAdapter) GetImageNames() ([]string, error) {
 
 	specYaml, err := ioutil.ReadFile(MockFile)
 	if err != nil {
-		log.Debug("Failed to read registry data from %s", MockFile)
+		log.Debugf("Failed to read registry data from %s", MockFile)
 		return nil, err
 	}
 
 	var parsedData struct {
-		Apps []*apb.Spec `yaml:"apps"`
+		Apps []*bundle.Spec `yaml:"apps"`
 	}
 
 	err = yaml.Unmarshal(specYaml, &parsedData)
 	if err != nil {
-		log.Error("Failed to ummarshal yaml file")
+		log.Error("Failed to unmarshal yaml file")
 		return nil, err
 	}
 
-	log.Debug("Loaded Specs: %v", parsedData)
+	log.Debugf("Loaded Specs: %v", parsedData)
 
-	log.Info("Loaded [ %d ] specs from %s registry", len(parsedData.Apps), "Mock")
+	log.Infof("Loaded [ %d ] specs from %s registry", len(parsedData.Apps), "Mock")
 	var names []string
-	r.specs = map[string]*apb.Spec{}
+	r.specs = map[string]*bundle.Spec{}
 
 	for _, spec := range parsedData.Apps {
 		r.specs[spec.Image] = spec
@@ -70,8 +70,8 @@ func (r *MockAdapter) GetImageNames() ([]string, error) {
 }
 
 // FetchSpecs - fetch the specs that were retrieved in the get images from the mock registry.
-func (r MockAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
-	specs := []*apb.Spec{}
+func (r MockAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
+	specs := []*bundle.Spec{}
 	for _, name := range imageNames {
 		spec, ok := r.specs[name]
 		if ok {

@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -43,6 +43,7 @@ func (r PartnerRhccAdapter) RegistryName() string {
 }
 
 // GetImageNames - retrieve the images
+<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
 func (r PartnerRhccAdapter) GetImageNames() ([]string, error) {
 	log.Debug("PartnerRhccAdapter::GetImageNames")
 	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
@@ -79,14 +80,28 @@ func (r PartnerRhccAdapter) GetImageNames() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+=======
+func (r OpenShiftAdapter) GetImageNames() ([]string, error) {
+	log.Debug("OpenShiftAdapter::GetImageNames")
+	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
+
+	images := r.Config.Images
+	log.Debugf("Configured to use images: %v", images)
+>>>>>>> first pass:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 
 	return imageList, nil
 }
 
 // FetchSpecs - retrieve the spec for the image names.
+<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
 func (r PartnerRhccAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	log.Debug("PartnerRhccAdapter::FetchSpecs")
 	specs := []*apb.Spec{}
+=======
+func (r OpenShiftAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
+	log.Debug("OpenShiftAdapter::FetchSpecs")
+	specs := []*bundle.Spec{}
+>>>>>>> first pass:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 	for _, imageName := range imageNames {
 		log.Debugf("%v", imageName)
 		spec, err := r.loadSpec(imageName)
@@ -157,8 +172,13 @@ func (r PartnerRhccAdapter) getAuthToken() (string, error) {
 	return tokenResp.Token, nil
 }
 
+<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
 func (r PartnerRhccAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 	log.Debug("PartnerRhccAdapter::LoadSpec")
+=======
+func (r OpenShiftAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
+	log.Debug("OpenShiftAdapter::LoadSpec")
+>>>>>>> first pass:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}

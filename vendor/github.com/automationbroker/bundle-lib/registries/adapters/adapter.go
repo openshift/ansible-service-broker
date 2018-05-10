@@ -25,24 +25,23 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v1"
 )
 
 // Adapter - Adapter will wrap the methods that a registry needs to fully manage images.
 type Adapter interface {
-	// RegistryName will return the registiry prefix for the adapter.
+	// RegistryName will return the registry prefix for the adapter.
 	// Example is docker.io for the dockerhub adapter.
 	RegistryName() string
 	// GetImageNames will return all the image names for the adapter configuration.
 	GetImageNames() ([]string, error)
 	// FetchSpecs will retrieve all the specs for the list of images names.
-	FetchSpecs([]string) ([]*apb.Spec, error)
+	FetchSpecs([]string) ([]*bundle.Spec, error)
 }
 
 // BundleSpecLabel - label on the image that we should use to pull out the abp spec.
-// TODO: needs to remain ansibleapp UNTIL we redo the apps in dockerhub
 const BundleSpecLabel = "com.redhat.apb.spec"
 
 // Configuration - Adapter configuration. Contains the info that the adapter
@@ -59,9 +58,9 @@ type Configuration struct {
 }
 
 // Retrieve the spec from a registry manifest request
-func imageToSpec(req *http.Request, image string) (*apb.Spec, error) {
+func imageToSpec(req *http.Request, image string) (*bundle.Spec, error) {
 	log.Debug("Registry::imageToSpec")
-	spec := &apb.Spec{}
+	spec := &bundle.Spec{}
 	req.Header.Add("Accept", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -72,7 +71,7 @@ func imageToSpec(req *http.Request, image string) (*apb.Spec, error) {
 
 	type label struct {
 		Spec    string `json:"com.redhat.apb.spec"`
-		Runtime string `json:"com.redhat.apb.runtime"`
+		Runtime string `json:"com.redhat.bundle.runtime"`
 	}
 
 	type config struct {
@@ -124,7 +123,7 @@ func imageToSpec(req *http.Request, image string) (*apb.Spec, error) {
 		return nil, nil
 	}
 	if conf.Config.Label.Spec == "" {
-		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skiping")
+		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skipping")
 		return nil, nil
 	}
 

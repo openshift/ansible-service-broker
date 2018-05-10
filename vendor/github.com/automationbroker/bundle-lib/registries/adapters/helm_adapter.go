@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/ghodss/yaml"
 )
 
@@ -165,8 +165,8 @@ func (r *HelmAdapter) GetImageNames() ([]string, error) {
 }
 
 // FetchSpecs - retrieve the spec for the image names.
-func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
-	var specs []*apb.Spec
+func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
+	var specs []*bundle.Spec
 
 	for _, name := range imageNames {
 		var (
@@ -199,7 +199,7 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 		}
 
 		// Convert chart to Bundle Spec
-		spec := &apb.Spec{
+		spec := &bundle.Spec{
 			Runtime:     2,
 			Version:     "1.0",
 			Async:       "optional",
@@ -215,12 +215,12 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 				"dependencies":     chart.Sources,
 				"imageUrl":         chart.Icon,
 			},
-			Plans: []apb.Plan{
-				apb.Plan{
+			Plans: []bundle.Plan{
+				bundle.Plan{
 					Name:        "default",
 					Description: "Default plan for running helm charts",
-					Parameters: []apb.ParameterDescriptor{
-						apb.ParameterDescriptor{
+					Parameters: []bundle.ParameterDescriptor{
+						bundle.ParameterDescriptor{
 							Name:      "repo",
 							Title:     "Helm Chart Repository URL",
 							Type:      "string",
@@ -229,7 +229,7 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 							Updatable: false,
 							Required:  false,
 						},
-						apb.ParameterDescriptor{
+						bundle.ParameterDescriptor{
 							Name:      "chart",
 							Title:     "Helm Chart",
 							Type:      "string",
@@ -238,7 +238,7 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 							Updatable: false,
 							Required:  false,
 						},
-						apb.ParameterDescriptor{
+						bundle.ParameterDescriptor{
 							Name:      "version",
 							Title:     "Helm Chart Version",
 							Type:      "enum",
@@ -247,7 +247,7 @@ func (r *HelmAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 							Updatable: true,
 							Required:  false,
 						},
-						apb.ParameterDescriptor{
+						bundle.ParameterDescriptor{
 							Name:        "values",
 							Title:       "Values",
 							Type:        "string",

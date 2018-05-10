@@ -38,7 +38,8 @@
 
 [[constraint]]
   #version = "~0.1.0"
-  branch = "master"
+  branch = "cherry-pick-fix"
+  source = "github.com/shawn-hurley/bundle-lib"
   name = "github.com/automationbroker/bundle-lib"
 
 [[constraint]]

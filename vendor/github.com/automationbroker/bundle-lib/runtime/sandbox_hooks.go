@@ -1,3 +1,19 @@
+//
+// Copyright (c) 2018 Red Hat, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package runtime
 
 // PreSandboxCreate - The pre sand box creation function will be called
@@ -39,7 +55,7 @@ func (p *provider) addPostCreateSandbox(f PostSandboxCreate) {
 }
 
 // PreSandboxDestroy - The pre sand box destroy function will be called
-// before the sandbox is destoryed. This could mean the namespace is kept around
+// before the sandbox is destroyed. This could mean the namespace is kept around
 // if the apb failed and configuration conditions are met. This function should not
 // expect to panic and should fail gracefully by bubbling up the error. This
 // function should also not delete the namespace or the pod directly. This
@@ -55,7 +71,7 @@ func (p *provider) addPreDestroySandbox(f PreSandboxDestroy) {
 }
 
 // PostSandboxDestroy - The post sand box destroy function will be called
-// after the sandbox is destoryed. This could mean the namespace is kept around
+// after the sandbox is destroyed. This could mean the namespace is kept around
 // if the apb failed and configuration conditions are met. This function should not
 // expect to panic and should fail gracefully by bubbling up the error. This
 // function should also not delete the namespace or the pod directly. This
