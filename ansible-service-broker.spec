@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.10
+Version: 1.2.11
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,13 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu May 10 2018 David Zager <david.j.zager@gmail.com> 1.2.11-1
+- Bug 1550418 - Return op token on depro in progress (#942)
+  (ernelson@redhat.com)
+- bump bundle-lib to 0.1.5 (#937) (jmrodri@gmail.com)
+- Allow Automation Broker to be useful when used as a dependency (#933)
+  (jmrodri@gmail.com)
+
 * Fri May 04 2018 David Zager <david.j.zager@gmail.com> 1.2.10-1
 - Spell check a bunch of items (#930) (jmrodri@gmail.com)
 - Add fix for get si npe (#929) (ernelson@redhat.com)
