@@ -37,9 +37,7 @@
   version = "~1.3.0"
 
 [[constraint]]
-  #version = "~0.1.0"
-  branch = "cherry-pick-fix"
-  source = "github.com/shawn-hurley/bundle-lib"
+  version = "~0.2.0"
   name = "github.com/automationbroker/bundle-lib"
 
 [[constraint]]

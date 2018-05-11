@@ -63,6 +63,7 @@ func sandboxDestroyHook(pod, ns string, targetNS []string) error {
 }
 
 func TestNewRuntime(t *testing.T) {
+	stateManager := state{nsTarget: defaultNamespace, mountLocation: defaultMountLocation}
 	testCases := []struct {
 		name             string
 		config           Configuration
@@ -81,6 +82,7 @@ func TestNewRuntime(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"major":"3", "minor": "2"}`))),
 			},
 			expectedProvider: &provider{
+				state:               stateManager,
 				coe:                 newOpenshift(),
 				ExtractedCredential: defaultExtractedCredential{},
 			},
@@ -94,6 +96,7 @@ func TestNewRuntime(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(""))),
 			},
 			expectedProvider: &provider{
+				state:               stateManager,
 				coe:                 newKubernetes(),
 				ExtractedCredential: defaultExtractedCredential{},
 			},
@@ -107,6 +110,7 @@ func TestNewRuntime(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(""))),
 			},
 			expectedProvider: &provider{
+				state:               stateManager,
 				coe:                 newKubernetes(),
 				ExtractedCredential: defaultExtractedCredential{},
 			},
@@ -120,6 +124,7 @@ func TestNewRuntime(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(""))),
 			},
 			expectedProvider: &provider{
+				state:               stateManager,
 				coe:                 newKubernetes(),
 				ExtractedCredential: defaultExtractedCredential{},
 			},
@@ -134,6 +139,7 @@ func TestNewRuntime(t *testing.T) {
 			},
 			shouldPanic: true,
 			expectedProvider: &provider{
+				state:               stateManager,
 				coe:                 newKubernetes(),
 				ExtractedCredential: defaultExtractedCredential{},
 			},
@@ -149,6 +155,7 @@ func TestNewRuntime(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"major":"3", "minor": "2"}`))),
 			},
 			expectedProvider: &provider{
+				state:               stateManager,
 				coe:                 newOpenshift(),
 				ExtractedCredential: &mocks.ExtractedCredential{},
 			},
@@ -165,6 +172,7 @@ func TestNewRuntime(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"major":"3", "minor": "2"}`))),
 			},
 			expectedProvider: &provider{
+				state:               stateManager,
 				coe:                 newOpenshift(),
 				ExtractedCredential: defaultExtractedCredential{},
 				preSandboxCreate:    []PreSandboxCreate{sandboxCreateHook},
@@ -184,6 +192,7 @@ func TestNewRuntime(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"major":"3", "minor": "2"}`))),
 			},
 			expectedProvider: &provider{
+				state:               stateManager,
 				coe:                 newOpenshift(),
 				ExtractedCredential: defaultExtractedCredential{},
 				postSandboxCreate:   []PostSandboxCreate{sandboxCreateHook},

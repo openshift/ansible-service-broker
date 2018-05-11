@@ -75,7 +75,7 @@ func addPodNetworks(pod, ns string, targetNS []string, apbRole string) error {
 	}
 	_, err = o.JoinNamespacesNetworks(netns, targetNS[0])
 	if err != nil {
-		log.Errorf("Unable to join netns: %v to targetNS: %v", netns.Name, targetNS[0])
+		log.Errorf("Unable to join netns: %v to nsTarget: %v", netns.Name, targetNS[0])
 		return err
 	}
 
@@ -107,7 +107,7 @@ func isolatePodNetworks(pod, ns string, targetNS []string) error {
 	}
 	_, err = o.IsolateNamespacesNetworks(netns, targetNS[0])
 	if err != nil {
-		log.Errorf("Unable to join netns: %v to targetNS: %v", netns.Name, targetNS[0])
+		log.Errorf("Unable to join netns: %v to nsTarget: %v", netns.Name, targetNS[0])
 		return err
 	}
 

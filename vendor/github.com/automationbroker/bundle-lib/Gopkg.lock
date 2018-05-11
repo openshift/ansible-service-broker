@@ -538,10 +538,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-<<<<<<< HEAD
   inputs-digest = "5d6fb38fcbb8024cf35ea517995086b921765de40a3f016f9ac25df44c957921"
-=======
-  inputs-digest = "6e83e87a4e3fa1016de7759fae9ed217283d6aed16b2d2fb3d4e4021efb95533"
->>>>>>> 02293f7... DashboardURL support (#59)
   solver-name = "gps-cdcl"
   solver-version = 1

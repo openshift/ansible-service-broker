@@ -49,6 +49,10 @@ type Configuration struct {
 	// annotation on the running bundle is changed.
 	WatchBundle WatchRunningBundleFunc
 	ExtractedCredential
+	// StateMountLocation this is where on disk the state will be stored for a bundle
+	StateMountLocation string
+	// StateMasterNamespace the namespace where state created by bundles will be copied to between actions
+	StateMasterNamespace string
 }
 
 // Runtime - Abstraction for broker actions
@@ -60,6 +64,7 @@ type Runtime interface {
 	ExtractCredentials(string, string, int) ([]byte, error)
 	ExtractedCredential
 	WatchRunningBundle(string, string, UpdateDescriptionFn) error
+	StateManager
 }
 
 // Variables for interacting with runtimes
@@ -71,6 +76,7 @@ type provider struct {
 	postSandboxDestroy []PostSandboxDestroy
 	preSandboxDestroy  []PreSandboxDestroy
 	watchBundle        WatchRunningBundleFunc
+	state
 }
 
 // Abstraction for actions that are different between runtimes
@@ -119,7 +125,16 @@ func NewRuntime(config Configuration) {
 	} else {
 		c = config.ExtractedCredential
 	}
-	p := &provider{coe: cluster, ExtractedCredential: c}
+	// defaults for state
+	if config.StateMasterNamespace == "" {
+		config.StateMasterNamespace = defaultNamespace
+	}
+	if config.StateMountLocation == "" {
+		config.StateMountLocation = defaultMountLocation
+	}
+
+	defaultStateManager := state{mountLocation: config.StateMountLocation, nsTarget: config.StateMasterNamespace}
+	p := &provider{coe: cluster, ExtractedCredential: c, state: defaultStateManager}
 
 	if len(config.PreCreateSandboxHooks) > 0 {
 		p.preSandboxCreate = config.PreCreateSandboxHooks

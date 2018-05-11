@@ -44,7 +44,6 @@
   version = "0.1.2"
 
 [[projects]]
-  branch = "cherry-pick-fix"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "bundle",
@@ -54,8 +53,8 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "b169ced3d35069194d58b8e9c0f9159ee48f901b"
-  source = "github.com/shawn-hurley/bundle-lib"
+  revision = "7e3b9764291d9f96eded0b09c209157b5da55e23"
+  version = "0.2.0"
 
 [[projects]]
   branch = "master"
@@ -920,6 +919,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b4b7910ac17cb798bacb30c12b87363d1394a1d916062ad08fb756315a5f606a"
+  inputs-digest = "d0fab0452fd95759974e6d4802264390c52e2f24ba55b0d1c3075efd9895b664"
   solver-name = "gps-cdcl"
   solver-version = 1

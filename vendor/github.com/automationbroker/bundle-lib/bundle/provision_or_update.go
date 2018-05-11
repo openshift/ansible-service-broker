@@ -61,8 +61,7 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 		return fmt.Errorf("Project %s does not exist", ns)
 	}
 
-	executionContext, err := e.executeApb(string(method), instance.Spec,
-		instance.Context, instance.Parameters)
+	executionContext, err := e.executeApb(string(method), instance, instance.Parameters)
 	defer runtime.Provider.DestroySandbox(
 		executionContext.PodName,
 		executionContext.Namespace,
@@ -83,6 +82,17 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 			log.Errorf("Provision or Update action failed - %v", err)
 			return err
 		}
+	}
+
+	// pod execution is complete so transfer state back
+	err = e.stateManager.CopyState(
+		executionContext.PodName,
+		e.stateManager.Name(instance.ID.String()),
+		executionContext.Namespace,
+		e.stateManager.MasterNamespace(),
+	)
+	if err != nil {
+		return err
 	}
 
 	if !instance.Spec.Bindable {

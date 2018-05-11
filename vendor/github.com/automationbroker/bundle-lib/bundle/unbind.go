@@ -36,8 +36,7 @@ func (e *executor) Unbind(
 
 	go func() {
 		e.actionStarted()
-		executionContext, err := e.executeApb("unbind", instance.Spec,
-			instance.Context, parameters)
+		executionContext, err := e.executeApb("unbind", instance, parameters)
 		defer runtime.Provider.DestroySandbox(
 			executionContext.PodName,
 			executionContext.Namespace,
@@ -53,6 +52,18 @@ func (e *executor) Unbind(
 		}
 
 		err = runtime.Provider.WatchRunningBundle(executionContext.PodName, executionContext.Namespace, e.updateDescription)
+		if err != nil {
+			log.Errorf("Unbind action failed - %v", err)
+			e.actionFinishedWithError(err)
+			return
+		}
+		// pod execution is complete so transfer state back
+		err = e.stateManager.CopyState(
+			executionContext.PodName,
+			e.stateManager.Name(instance.ID.String()),
+			executionContext.Namespace,
+			e.stateManager.MasterNamespace(),
+		)
 		if err != nil {
 			log.Errorf("Unbind action failed - %v", err)
 			e.actionFinishedWithError(err)

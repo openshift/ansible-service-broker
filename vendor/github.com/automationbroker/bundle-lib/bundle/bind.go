@@ -38,7 +38,7 @@ func (e *executor) Bind(
 	go func() {
 		e.actionStarted()
 		executionContext, err := e.executeApb(
-			"bind", instance.Spec, instance.Context, parameters)
+			"bind", instance, parameters)
 		defer runtime.Provider.DestroySandbox(
 			executionContext.PodName,
 			executionContext.Namespace,
@@ -60,6 +60,16 @@ func (e *executor) Bind(
 				e.actionFinishedWithError(err)
 				return
 			}
+		}
+
+		// pod execution is complete so transfer state back
+		err = e.stateManager.CopyState(
+			executionContext.PodName,
+			e.stateManager.Name(instance.ID.String()),
+			executionContext.Namespace, e.stateManager.MasterNamespace())
+		if err != nil {
+			e.actionFinishedWithError(err)
+			return
 		}
 
 		credBytes, err := runtime.Provider.ExtractCredentials(
