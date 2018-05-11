@@ -44,6 +44,7 @@
   version = "0.1.2"
 
 [[projects]]
+  branch = "bug-1576728"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "apb",
@@ -56,8 +57,8 @@
     "registries/adapters",
     "runtime"
   ]
-  revision = "ee4a23415a7d6356ea4072e9894c53601c66abf2"
-  version = "0.1.5"
+  revision = "4162f5a4f0a5bac5e074b1473b738c4c20779b40"
+  source = "github.com/shawn-hurley/bundle-lib"
 
 [[projects]]
   branch = "master"
@@ -924,6 +925,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ec45f8aae9030f4422019e0af5f9a39793f532beb467d9953baf8e8e9316847a"
+  inputs-digest = "b33df39ec11fc620bb6629c612363cae755b3e4843a7e56a8ce4545f86bd7507"
   solver-name = "gps-cdcl"
   solver-version = 1

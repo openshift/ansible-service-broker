@@ -282,7 +282,18 @@ func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 
 // SetServiceInstance - Set service instance for an id in the kvp API.
 func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
+	serviceInstance.BindingIDs = removeFalseBindings(serviceInstance.BindingIDs)
 	return d.setObject(serviceInstanceKey(id), serviceInstance)
+}
+
+func removeFalseBindings(bindings map[string]bool) map[string]bool {
+	newBindings := map[string]bool{}
+	for k, v := range bindings {
+		if v {
+			newBindings[k] = v
+		}
+	}
+	return newBindings
 }
 
 // DeleteServiceInstance - Delete the service instance for an service instance id.
