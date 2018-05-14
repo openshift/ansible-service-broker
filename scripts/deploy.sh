@@ -24,8 +24,8 @@ ${CMD} logs -n ${APB_NAME} "${APB_NAME}" -f
 EXIT_CODE=$(${CMD} get pod -n ${APB_NAME} "${APB_NAME}" -o go-template="{{ range .status.containerStatuses }}{{.state.terminated.exitCode}}{{ end }}")
 
 echo "${APB_YAML}" | ${CMD} delete -f -
-if [ -n "${EXIT_CODE}" ]; then
-    exit ${EXIT_CODE}
-else
+if [ -z "${EXIT_CODE}" ] || [ "${EXIT_CODE}" == "<no value>" ]; then
     exit 0
+else
+    exit ${EXIT_CODE}
 fi
