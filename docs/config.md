@@ -164,6 +164,27 @@ registry:
 
 There is a limitation when working with the OpenShift Registry right now. We have no capability to search the registry so we require that the user configure the broker with a list of images they would like to source from for when the broker bootstraps. The image name must be the fully qualified name without the registry URL.
 
+### Red Hat Connect Partner Registry
+
+Third-party images in the Red Hat Container Catalog are served from the Red Hat Connect Partner Registry (registry.connect.redhat.com). The `PartnerRhccAdapter` allows the broker to be bootstrapped from this, "Red Hat Connect Partner Registry" to retrieve a list of APBs and load their specs. Note this is an authenticated repository and will require authentication credentials to access.
+
+```yaml
+registry:
+  - name: partner_reg
+    type: partner_rhcc
+    url:  https://registry.connect.redhat.com
+    user: <registry-user>
+    pass: <registry-password>
+    white_list:
+      - ".*-apb$"
+```
+
+The partner registry requires authentication for pulling images.  This can be achieved by running the following command on every node in your existing OpenShift cluster:
+
+```bash
+docker --config=/var/lib/origin/.docker login -u <registry-user> -p <registry-password> registry.connect.redhat.com
+```
+
 ### Multiple Registries Example
 You can use more then one registry to separate APBs into logical organizations and be able to manage them from the same broker. The main thing here is that the registries must have a unique non-empty name. If there is no unique name the service broker will fail to start with an error message alerting you to the problem.
 
