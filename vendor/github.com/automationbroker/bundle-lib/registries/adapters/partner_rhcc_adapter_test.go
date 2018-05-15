@@ -29,7 +29,7 @@ import (
 
 var Images = []string{"satoshi/nakamoto", "foo/bar", "paul/atreides"}
 
-const OpenShiftManifestResponse = `
+const PartnerManifestResponse = `
 {
    "schemaVersion": 1,
    "name": "%v",
@@ -89,15 +89,15 @@ const AuthResponse = `
   "issued_at": "2018-03-27T19:54:19Z"
 }`
 
-func TestOpenShiftName(t *testing.T) {
-	ocpa := OpenShiftAdapter{}
-	ft.Equal(t, ocpa.RegistryName(), "openshift", "openshift name does not match `openshift`")
+func TestPartnerName(t *testing.T) {
+	partnera := PartnerRhccAdapter{}
+	ft.Equal(t, partnera.RegistryName(), "partner_rhcc", "partner_rhcc name does not match `partner_rhcc`")
 }
 
-func TestOpenShiftGetImageNames(t *testing.T) {
-	ocpa := OpenShiftAdapter{}
-	ocpa.Config.Images = Images
-	imagesFound, err := ocpa.GetImageNames()
+func TestPartnerGetImageNames(t *testing.T) {
+	partnera := PartnerRhccAdapter{}
+	partnera.Config.Images = Images
+	imagesFound, err := partnera.GetImageNames()
 	if err != nil {
 		t.Fatal("Error: ", err)
 	}
@@ -122,7 +122,7 @@ func TestOpenShiftFetchSpecs(t *testing.T) {
 		}
 		if strings.Contains(r.URL.EscapedPath(), "manifests/") {
 			name := strings.Split(r.URL.EscapedPath(), "manifests/")[1]
-			fmt.Fprintf(w, fmt.Sprintf(OpenShiftManifestResponse, name))
+			fmt.Fprintf(w, fmt.Sprintf(PartnerManifestResponse, name))
 		}
 
 	}))
@@ -131,7 +131,7 @@ func TestOpenShiftFetchSpecs(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error: ", err)
 	}
-	ocpa := OpenShiftAdapter{
+	partnera := PartnerRhccAdapter{
 		Config: Configuration{
 			URL:    url,
 			User:   "satoshi",
@@ -139,8 +139,8 @@ func TestOpenShiftFetchSpecs(t *testing.T) {
 			Images: Images,
 		},
 	}
-	imageNames, err := ocpa.GetImageNames()
-	specs, err := ocpa.FetchSpecs(imageNames)
+	imageNames, err := partnera.GetImageNames()
+	specs, err := partnera.FetchSpecs(imageNames)
 	if err != nil {
 		t.Fatal("Error: ", err)
 	}

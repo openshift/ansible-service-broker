@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -27,42 +28,67 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const openShiftName = "openshift"
-const openShiftManifestURL = "%v/v2/%v/manifests/%v"
+const partnerName = "partner_rhcc"
+const partnerManifestURL = "%v/v2/%v/manifests/%v"
+const partnerCatalogURL = "%v/v2/_catalog"
 
-// OpenShiftAdapter - Docker Hub Adapter
-type OpenShiftAdapter struct {
+// PartnerRhccAdapter - Partner RHCC Adapter
+type PartnerRhccAdapter struct {
 	Config Configuration
 }
 
-// OpenShiftImage - Image from a OpenShift registry.
-type OpenShiftImage struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-}
-
 // RegistryName - Retrieve the registry name
-func (r OpenShiftAdapter) RegistryName() string {
-	return openShiftName
+func (r PartnerRhccAdapter) RegistryName() string {
+	return partnerName
 }
 
 // GetImageNames - retrieve the images
-func (r OpenShiftAdapter) GetImageNames() ([]string, error) {
-	log.Debug("OpenShiftAdapter::GetImageNames")
-	log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
+func (r PartnerRhccAdapter) GetImageNames() ([]string, error) {
+	log.Debug("PartnerRhccAdapter::GetImageNames")
+	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
 
-	images := r.Config.Images
-	log.Debug("Configured to use images: %v", images)
+	if r.Config.Images != nil {
+		log.Debugf("Configured to use images: %v", r.Config.Images)
+		return r.Config.Images, nil
+	}
+	log.Debugf("Did not find images in config, attempting to discover from %s/v2/_catalog", r.Config.URL)
 
-	return images, nil
+	req, err := http.NewRequest("GET", fmt.Sprintf(partnerCatalogURL, r.Config.URL), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Errorf("Failed to load catalog response at %s - %v", partnerCatalogURL, err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		log.Errorf("Failed to fetch catalog response. Expected a 200 status and got: %v", resp.Status)
+		return nil, errors.New(resp.Status)
+	}
+	imageResp, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var imageList []string
+	err = json.Unmarshal(imageResp, &imageList)
+	if err != nil {
+		return nil, err
+	}
+
+	return imageList, nil
 }
 
 // FetchSpecs - retrieve the spec for the image names.
-func (r OpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
-	log.Debug("OpenShiftAdapter::FetchSpecs")
+func (r PartnerRhccAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
+	log.Debug("PartnerRhccAdapter::FetchSpecs")
 	specs := []*apb.Spec{}
 	for _, imageName := range imageNames {
-		log.Debug("%v", imageName)
+		log.Debugf("%v", imageName)
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
 			log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)
@@ -74,8 +100,8 @@ func (r OpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	return specs, nil
 }
 
-// getOpenShiftToken - will retrieve the docker hub token.
-func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
+// getAuthToken - will retrieve the docker hub token.
+func (r PartnerRhccAdapter) getAuthToken() (string, error) {
 	type TokenResponse struct {
 		Token string `json:"token"`
 	}
@@ -131,19 +157,19 @@ func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 	return tokenResp.Token, nil
 }
 
-func (r OpenShiftAdapter) loadSpec(imageName string) (*apb.Spec, error) {
-	log.Debug("OpenShiftAdapter::LoadSpec")
+func (r PartnerRhccAdapter) loadSpec(imageName string) (*apb.Spec, error) {
+	log.Debug("PartnerRhccAdapter::LoadSpec")
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, r.Config.URL, imageName, r.Config.Tag), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(partnerManifestURL, r.Config.URL, imageName, r.Config.Tag), nil)
 	if err != nil {
 		return nil, err
 	}
-	token, err := r.getOpenShiftAuthToken()
+	token, err := r.getAuthToken()
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-	return imageToSpec(req, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
+	return imageToSpec(req, fmt.Sprintf("%s/%s:%s", r.Config.URL.Hostname(), imageName, r.Config.Tag))
 }

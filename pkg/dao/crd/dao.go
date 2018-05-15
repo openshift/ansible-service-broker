@@ -19,6 +19,7 @@ package dao
 import (
 	"fmt"
 	"net/http"
+	"sync"
 
 	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker/v1alpha1"
 	v1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker/v1alpha1"
@@ -47,13 +48,20 @@ const (
 
 // Dao - object to interface with the data store.
 type Dao struct {
-	client    automationbrokerv1.AutomationbrokerV1alpha1Interface
-	namespace string
+	client       automationbrokerv1.AutomationbrokerV1alpha1Interface
+	namespace    string
+	bundleLock   sync.Mutex
+	bindingLock  sync.Mutex
+	instanceLock sync.Mutex
 }
 
 // NewDao - Create a new Dao object
 func NewDao(namespace string) (*Dao, error) {
-	dao := Dao{namespace: namespace}
+	dao := Dao{namespace: namespace,
+		bundleLock:   sync.Mutex{},
+		bindingLock:  sync.Mutex{},
+		instanceLock: sync.Mutex{},
+	}
 
 	crdClient, err := clients.CRDClient()
 	if err != nil {
@@ -76,6 +84,8 @@ func (d *Dao) GetSpec(id string) (*apb.Spec, error) {
 
 // SetSpec - set spec for an id in the kvp API.
 func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
+	defer d.bundleLock.Unlock()
+	d.bundleLock.Lock()
 	log.Debugf("set spec: %v", id)
 	bundleSpec, err := crd.ConvertSpecToBundle(spec)
 	if err != nil {
@@ -162,6 +172,8 @@ func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 
 // SetServiceInstance - Set service instance for an id in the kvp API.
 func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
+	defer d.instanceLock.Unlock()
+	d.instanceLock.Lock()
 	log.Debugf("set service instance: %v", id)
 	spec, err := crd.ConvertServiceInstanceToCRD(serviceInstance)
 	if err != nil {
@@ -170,7 +182,7 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 	if si, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
 		log.Debugf("updating service instance: %v", id)
 		si.Spec = spec.Spec
-		si.Status.Bindings = spec.Status.Bindings
+		si.Status.Bindings = intersectionOfBindings(serviceInstance.BindingIDs, si.Status.Bindings)
 		_, err := d.client.BundleInstances(d.namespace).Update(si)
 		if err != nil {
 			log.Errorf("unable to get service instance - %v", err)
@@ -195,6 +207,36 @@ func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance
 	return nil
 }
 
+func intersectionOfBindings(bindings map[string]bool, bind []v1.LocalObjectReference) []v1.LocalObjectReference {
+	newBindings := []v1.LocalObjectReference{}
+	alreadyChecked := map[string]bool{}
+	// If one was deleted then we are not adding a binding and do not need to update them.
+	// Because of the sync we can reason that nothing else is updating this
+	deleted := false
+	log.Debugf("\n\nbindings: %#v\nbind: %#v", bindings, bind)
+	for _, b := range bind {
+		if add, ok := bindings[b.Name]; !ok || add {
+			newBindings = append(newBindings, b)
+		} else {
+			deleted = true
+		}
+		alreadyChecked[b.Name] = true
+	}
+	log.Debugf("\n\nnewBindings: %#v\nalreadyChecked: %#v", newBindings, alreadyChecked)
+	// If we did not have a deletion then we need to add the binding.
+	if !deleted {
+		for k, v := range bindings {
+			if _, ok := alreadyChecked[k]; !ok {
+				if v {
+					newBindings = append(newBindings, v1.LocalObjectReference{Name: k})
+				}
+			}
+		}
+	}
+	log.Debugf("\n\nnewBindings: %#v\nalreadyChecked: %#v", newBindings, alreadyChecked)
+	return newBindings
+}
+
 // DeleteServiceInstance - Delete the service instance for an service instance id.
 func (d *Dao) DeleteServiceInstance(id string) error {
 	log.Debugf("Dao::DeleteServiceInstance -> [ %s ]", id)
@@ -213,6 +255,8 @@ func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
 
 // SetBindInstance - Set the bind instance for id in the kvp API.
 func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
+	defer d.instanceLock.Unlock()
+	d.instanceLock.Lock()
 	log.Debugf("set binding instance: %v", id)
 	b, err := crd.ConvertServiceBindingToCRD(bindInstance)
 	if err != nil {
@@ -263,6 +307,8 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 	n := metav1.Now()
 	switch state.Method {
 	case apb.JobMethodBind, apb.JobMethodUnbind:
+		defer d.bindingLock.Unlock()
+		d.bindingLock.Lock()
 		// get the binding based on instance ID //update the job based on the token.
 		bi, err := d.client.BundleBindings(d.namespace).Get(instanceID, metav1.GetOptions{})
 		if err != nil {
@@ -300,6 +346,8 @@ func (d *Dao) SetState(instanceID string, state apb.JobState) (string, error) {
 			return state.Token, err
 		}
 	case apb.JobMethodUpdate, apb.JobMethodDeprovision, apb.JobMethodProvision:
+		defer d.bindingLock.Unlock()
+		d.bindingLock.Lock()
 		// get the binding based on instance id //update the job based on the token
 		si, err := d.client.BundleInstances(d.namespace).Get(instanceID, metav1.GetOptions{})
 		if err != nil {
