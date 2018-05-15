@@ -236,6 +236,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		imageCount += count
 		// this will also update the plan id
 		addNameAndIDForSpec(s, r.RegistryName())
+		metrics.SpecsLoaded(r.RegistryName(), len(s))
 		specs = append(specs, s...)
 	}
 	// Add apb-push sourced specs back to the list
@@ -635,6 +636,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 
 	var token = a.engine.Token()
 	pjob := &ProvisionJob{serviceInstance}
+	metrics.ActionStarted("provision")
 
 	if async {
 		log.Info("ASYNC provisioning in progress")
@@ -760,6 +762,7 @@ func (a AnsibleBroker) Deprovision(
 
 	var token = a.engine.Token()
 	dpjob := &DeprovisionJob{&instance, skipApbExecution}
+	metrics.ActionStarted("deprovision")
 	if async {
 		log.Info("ASYNC deprovision in progress")
 
@@ -1330,6 +1333,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	log.Debugf("PreviousValues: [ %+v ]", req.PreviousValues)
 	log.Debugf("ServiceInstance Parameters: [%v]", *si.Parameters)
 	ujob := &UpdateJob{si}
+	metrics.ActionStarted("update")
 	if async {
 		log.Info("ASYNC update in progress")
 		// asynchronously provision and return the token for the lastoperation
