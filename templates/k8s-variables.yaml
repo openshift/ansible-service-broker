@@ -4,7 +4,7 @@
 
 dockerhub_org: ansibleplaybookbundle
 
-broker_image: "ansibleplaybookbundle/origin-ansible-service-broker:latest"
+broker_image: "ansibleplaybookbundle/origin-ansible-service-broker:release-1.2"
 etcd_image: "quay.io/coreos/etcd:latest"
 
 # Path of the etcd binary
@@ -17,7 +17,7 @@ broker_config: /etc/ansible-service-broker/config.yaml
 # insecure: "true"
 
 # APB Image Tag
-tag: latest
+tag: release-1.2
 
 # OpenShift info
 openshift_pass: admin

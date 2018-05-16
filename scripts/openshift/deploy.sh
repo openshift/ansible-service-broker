@@ -20,7 +20,7 @@ SANDBOX_ROLE="edit"
 BROKER_KIND="${BROKER_KIND:-ClusterServiceBroker}"
 ENABLE_BASIC_AUTH=false
 BROKER_CA_CERT=$(oc get secret --no-headers=true -n kube-service-catalog | grep -m 1 service-catalog-apiserver-token | oc get secret $(awk '{ print $1 }') -n kube-service-catalog -o yaml | grep service-ca.crt | awk '{ print $2 }' | cat)
-TAG="${TAG:-latest}"
+TAG=${TAG:-"release-1.2"}
 
 # load development variables
 asb::load_vars

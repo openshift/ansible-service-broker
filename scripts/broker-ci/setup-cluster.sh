@@ -11,7 +11,7 @@ function cluster-setup () {
     cat <<EOF > "catasb/config/my_vars.yml"
 ---
 dockerhub_org: ansibleplaybookbundle
-broker_tag: latest
+broker_tag: release-1.2
 broker_kind: ClusterServiceBroker
 use_ssl: false
 update_cgroup_driver: false
