@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.11
+Version: 1.2.12
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,16 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed May 16 2018 David Zager <david.j.zager@gmail.com> 1.2.12-1
+- Bug 1572129 - recover deprovision jobs (#953) (jmrodri@gmail.com)
+- update config.md for partner registry adapter (#950) (jkim@redhat.com)
+- Update releases in README (#952) (rhallise@redhat.com)
+- Bug 1576728 - Fixes multiple requests to a CR (#947) (smhurley00@gmail.com)
+- Bug 1577127 - adding back metrics (#948) (smhurley00@gmail.com)
+- Bug 1577144 - fixing logging so it is more clear (#949)
+  (smhurley00@gmail.com)
+- doc to show how to use broker via vendor (#940) (jmrodri@gmail.com)
+
 * Thu May 10 2018 David Zager <david.j.zager@gmail.com> 1.2.11-1
 - Bug 1550418 - Return op token on depro in progress (#942)
   (ernelson@redhat.com)
