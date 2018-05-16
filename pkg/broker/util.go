@@ -100,13 +100,16 @@ func extractBrokerPlanMetadata(apbPlan bundle.Plan) map[string]interface{} {
 
 	instanceFormDefn := createFormDefinition(apbPlan.Parameters)
 	bindingFormDefn := createFormDefinition(apbPlan.BindParameters)
+	updateFormDefn := createUpdateFormDefinition(apbPlan.Parameters)
 
 	metadata["schemas"] = map[string]interface{}{
 		"service_instance": map[string]interface{}{
 			"create": map[string]interface{}{
 				"openshift_form_definition": instanceFormDefn,
 			},
-			"update": map[string]interface{}{},
+			"update": map[string]interface{}{
+				"openshift_form_definition": updateFormDefn,
+			},
 		},
 		"service_binding": map[string]interface{}{
 			"create": map[string]interface{}{
@@ -135,7 +138,20 @@ func initMetadataCopy(original map[string]interface{}) (map[string]interface{}, 
 	return dst, nil
 }
 
-func createFormDefinition(params []bundle.ParameterDescriptor) []interface{} {
+
+func createUpdateFormDefinition(params []apb.ParameterDescriptor) []interface{} {
+	var updateParams []apb.ParameterDescriptor
+
+	for _, param := range params {
+		if param.Updatable {
+			updateParams = append(updateParams, param)
+		}
+	}
+
+	return createFormDefinition(updateParams)
+}
+
+func createFormDefinition(params []apb.ParameterDescriptor) []interface{} {
 	formDefinition := make([]interface{}, 0)
 
 	if params == nil || len(params) == 0 {
@@ -156,6 +172,7 @@ func createFormDefinition(params []bundle.ParameterDescriptor) []interface{} {
 
 		formDefinition = append(formDefinition, item)
 	}
+
 	return formDefinition
 }
 

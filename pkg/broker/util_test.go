@@ -177,7 +177,7 @@ func TestUpdateMetadata(t *testing.T) {
 	verifyInstanceFormDefinition(t, planMetadata, []string{"schemas", "service_instance", "create"})
 
 	updateFormDefnMap := verifyMapPath(t, planMetadata, []string{"schemas", "service_instance", "update"})
-	ft.AssertEqual(t, len(updateFormDefnMap), 0, "schemas.service_instance.update is not empty")
+	ft.AssertEqual(t, len(updateFormDefnMap), 1, "schemas.service_instance.update is not empty")
 
 	verifyBindingFormDefinition(t, planMetadata, []string{"schemas", "service_binding", "create"})
 }
