@@ -76,8 +76,11 @@
   name = "k8s.io/kubernetes"
   version = "1.9.1"
 
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "1.0.4"
+
 [prune]
   unused-packages = true
   go-tests = true
   non-go = true
-
