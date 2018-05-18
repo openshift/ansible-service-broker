@@ -393,7 +393,7 @@ parameters:
 - description: Container Image to use for Ansible Service Broker in format of imagename:tag
   displayname: Ansible Service Broker Image
   name: BROKER_IMAGE
-  value: ansibleplaybookbundle/origin-ansible-service-broker:latest
+  value: ansibleplaybookbundle/origin-ansible-service-broker:release-1.2
 
 - description: Namespace of the project that is being deploy
   displayname: broker client cert key
@@ -413,7 +413,7 @@ parameters:
 - description: APB Image Tag
   displayname: APB Image Tag
   name: TAG
-  value: latest
+  value: release-1.2
 
 - description: OpenShift User Password
   displayname: OpenShift User Password

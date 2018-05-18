@@ -1,8 +1,8 @@
 #!/bin/bash
 
-TAG=${TAG:-"latest"}
+TAG=${TAG:-"release-1.2"}
 APB_NAME=${APB_NAME:-"automation-broker-apb"}
-APB_IMAGE=${APB_IMAGE:-"docker.io/automationbroker/automation-broker-apb:latest"}
+APB_IMAGE=${APB_IMAGE:-"docker.io/automationbroker/automation-broker-apb:release-1.2"}
 BROKER_NAME=${BROKER_NAME:-"ansible-service-broker"}
 BROKER_IMAGE="docker.io/ansibleplaybookbundle/origin-ansible-service-broker:${TAG}"
 BROKER_NAMESPACE=${BROKER_NAMESPACE:-"ansible-service-broker"}
