@@ -1416,7 +1416,7 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 			// the v1.0 ServiceInstance. These new keys should be passed to the APB,
 			// along with any changed values to the existing parameters, so the APB
 			// can make sense of them.
-			log.Noticef("Requested update parameter: [%v] with the value of [%v] was found " +
+			log.Infof("Requested update parameter: [%v] with the value of [%v] was found " +
 				"in an update request, but it did not exist on the previous service instance.")
 		}
 	}
