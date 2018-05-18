@@ -1063,7 +1063,7 @@ func (a AnsibleBroker) Unbind(
 		(*instance.Parameters)[lastRequestingUserKey] = getLastRequestingUser(userInfo)
 	}
 
-	params := make(apb.Parameters)
+	// retrieve the data we need to generate the unbind parameters
 	provExtCreds, err := apb.GetExtractedCredentials(instance.ID.String())
 	if err != nil && err != apb.ErrExtractedCredentialsNotFound {
 		return nil, false, err
@@ -1079,16 +1079,30 @@ func (a AnsibleBroker) Unbind(
 			" something may have gone wrong. Proceeding with unbind.",
 			instance.ID, bindInstance.ID)
 	}
+	serviceInstance, err := a.GetServiceInstance(instance.ID)
+	if err != nil {
+		log.Debugf("Service instance with id %s does not exist", instance.ID.String())
+		return nil, false, err
+	}
+
+	// build up unbind parameters
+	params := make(apb.Parameters)
+	// Fixes BZ1578319 - put last requesting user at the top level
+	// they should be at the top level. We are still keeping the lower level
+	// values as well since others might already be using them.
+	params[lastRequestingUserKey] = getLastRequestingUser(userInfo)
+	params[planParameterKey] = planID
+	params[serviceInstIDKey] = serviceInstance.ID.String()
+	params[serviceBindingIDKey] = bindInstance.ID.String()
+
+	// TODO: feels like we should be passing in service instance id
+	// and binding uuid as well
+
 	if provExtCreds != nil {
 		params[apb.ProvisionCredentialsKey] = provExtCreds.Credentials
 	}
 	if bindExtCreds != nil {
 		params[apb.BindCredentialsKey] = bindExtCreds.Credentials
-	}
-	serviceInstance, err := a.GetServiceInstance(instance.ID)
-	if err != nil {
-		log.Debugf("Service instance with id %s does not exist", instance.ID.String())
-		return nil, false, err
 	}
 	if serviceInstance.Parameters != nil {
 		params["provision_params"] = *serviceInstance.Parameters
