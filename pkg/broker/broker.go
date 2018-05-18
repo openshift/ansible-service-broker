@@ -30,8 +30,8 @@ import (
 	"github.com/automationbroker/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
-	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -65,7 +65,6 @@ var (
 	ErrorNoUpdateRequested = errors.New("no valid updates requested")
 	// ErrorUnbindingInProgress - Error when unbind is called that has an unbinding job in progress
 	ErrorUnbindingInProgress = errors.New("unbinding in progress")
-	log                      = logutil.NewLog()
 )
 
 const (

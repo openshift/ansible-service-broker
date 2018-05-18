@@ -56,7 +56,6 @@ var (
 	// Codecs -k8s codecs for the scheme
 	Codecs = serializer.NewCodecFactory(Scheme)
 	// log - logging object
-	log = logutil.NewLog()
 )
 
 const (

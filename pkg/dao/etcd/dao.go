@@ -24,11 +24,9 @@ import (
 	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/coreos/etcd/client"
-	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
+	log "github.com/sirupsen/logrus"
 )
-
-var log = logutil.NewLog()
 
 // Dao - object to interface with the data store.
 type Dao struct {
@@ -75,7 +73,6 @@ func (d *Dao) GetRaw(key string) (string, error) {
 // GET /spec/manifest [/*ordered ids*/]
 // BatchGet(offset, count)?
 func (d *Dao) BatchGetRaw(dir string) (*[]string, error) {
-	log.Debug("Dao::BatchGetRaw")
 
 	var res *client.Response
 	var err error

@@ -25,10 +25,8 @@ import (
 	"strings"
 
 	"github.com/automationbroker/config"
-	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	log "github.com/sirupsen/logrus"
 )
-
-var log = logutil.NewLog()
 
 // Config - Configuration for authentication
 type Config struct {

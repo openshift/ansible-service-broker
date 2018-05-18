@@ -21,10 +21,7 @@ import (
 	"github.com/automationbroker/config"
 	crd "github.com/openshift/ansible-service-broker/pkg/dao/crd"
 	etcd "github.com/openshift/ansible-service-broker/pkg/dao/etcd"
-	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 )
-
-var log = logutil.NewLog()
 
 // NewDao - Create a new Dao object
 func NewDao(c *config.Config) (Dao, error) {

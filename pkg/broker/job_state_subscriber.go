@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/automationbroker/bundle-lib/apb"
+	log "github.com/sirupsen/logrus"
 )
 
 // JobStateSubscriber is responsible for handling and persisting JobState changes

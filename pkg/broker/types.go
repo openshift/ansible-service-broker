@@ -23,6 +23,7 @@ import (
 	"github.com/automationbroker/bundle-lib/apb"
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/pborman/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
