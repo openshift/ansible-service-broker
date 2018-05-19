@@ -82,6 +82,16 @@ func TestInitializeLog(t *testing.T) {
 		},
 		{
 			Config: LogConfig{
+				LogFile: "testdata/testing.log",
+				Stdout:  false,
+				Level:   "critical",
+				Color:   false,
+			},
+			ShouldError: false,
+			Name:        "logIsCritical",
+		},
+		{
+			Config: LogConfig{
 				LogFile: "",
 				Stdout:  false,
 			},
