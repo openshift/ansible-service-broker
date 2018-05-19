@@ -6,35 +6,44 @@ import (
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 
-	logging "github.com/op/go-logging"
+	"github.com/sirupsen/logrus"
 )
 
 func TestLevelFromString(t *testing.T) {
 	testCases := []struct {
 		LogLevel string
-		Level    logging.Level
+		Level    logrus.Level
 	}{
 		{
+			LogLevel: "panic",
+			Level:    logrus.PanicLevel,
+		}, {
 			LogLevel: "critical",
-			Level:    logging.CRITICAL,
+			Level:    logrus.FatalLevel,
+		}, {
+			LogLevel: "fatal",
+			Level:    logrus.FatalLevel,
 		}, {
 			LogLevel: "error",
-			Level:    logging.ERROR,
+			Level:    logrus.ErrorLevel,
 		}, {
 			LogLevel: "warning",
-			Level:    logging.WARNING,
+			Level:    logrus.WarnLevel,
+		}, {
+			LogLevel: "warn",
+			Level:    logrus.WarnLevel,
 		}, {
 			LogLevel: "notice",
-			Level:    logging.NOTICE,
+			Level:    logrus.InfoLevel,
 		}, {
 			LogLevel: "info",
-			Level:    logging.INFO,
+			Level:    logrus.InfoLevel,
 		}, {
 			LogLevel: "debug",
-			Level:    logging.DEBUG,
+			Level:    logrus.DebugLevel,
 		}, {
 			LogLevel: "nothing",
-			Level:    logging.DEBUG,
+			Level:    logrus.DebugLevel,
 		},
 	}
 
@@ -43,10 +52,6 @@ func TestLevelFromString(t *testing.T) {
 			ft.AssertEqual(t, tc.Level, levelFromString(tc.LogLevel))
 		})
 	}
-}
-
-func TestNewLog(t *testing.T) {
-	ft.AssertNotNil(t, NewLog())
 }
 
 func TestInitializeLog(t *testing.T) {

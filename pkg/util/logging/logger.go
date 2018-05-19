@@ -18,10 +18,10 @@ package logger
 
 import (
 	"errors"
-	"io"
+	"log"
 	"os"
 
-	logging "github.com/op/go-logging"
+	"github.com/sirupsen/logrus"
 )
 
 // LogConfig - The configuration for the logging.
@@ -32,33 +32,15 @@ type LogConfig struct {
 	Color   bool
 }
 
-var backends []logging.Backend
-var logLevel logging.Level
+var logLevel logrus.Level
 
-//InitializeLog - initilize the logging utility
+// InitializeLog - initilize the logrus utility
 func InitializeLog(config LogConfig) error {
 	if config.LogFile == "" && !config.Stdout {
 		return errors.New("Cannot have a blank logfile and not log to stdout")
 	}
 
 	logLevel = levelFromString(config.Level)
-
-	colorFormatter := logging.MustStringFormatter(
-		"%{color}[%{time}] [%{level}] - %{message}%{color:reset}",
-	)
-
-	standardFormatter := logging.MustStringFormatter(
-		"[%{time}] [%{level}] - %{message}",
-	)
-
-	var formattedBackend = func(writer io.Writer, isColored bool) logging.Backend {
-		backend := logging.NewLogBackend(writer, "", 0)
-		formatter := standardFormatter
-		if isColored {
-			formatter = colorFormatter
-		}
-		return logging.NewBackendFormatter(backend, formatter)
-	}
 
 	if config.LogFile != "" {
 		var logFile *os.File
@@ -74,43 +56,30 @@ func InitializeLog(config LogConfig) error {
 				return err
 			}
 		}
-		b := formattedBackend(logFile, false)
-		bl := logging.AddModuleLevel(b)
-		bl.SetLevel(logLevel, "ASB")
-		backends = append(backends, bl)
 	}
 
 	if config.Stdout {
-		b := formattedBackend(os.Stdout, config.Color)
-		bl := logging.AddModuleLevel(b)
-		bl.SetLevel(logLevel, "ASB")
-		backends = append(backends, bl)
+		log.SetOutput(os.Stdout)
 	}
-	logging.SetBackend(backends...)
 	return nil
 }
 
-// NewLog - Creates a new logging object for the module provided.
-func NewLog() *logging.Logger {
-	return logging.MustGetLogger("ASB")
-}
-
-func levelFromString(str string) logging.Level {
-	var level logging.Level
+func levelFromString(str string) logrus.Level {
+	var level logrus.Level
 
 	switch str {
-	case "critical":
-		level = logging.CRITICAL
+	case "panic":
+		level = logrus.PanicLevel
+	case "critical", "fatal":
+		level = logrus.FatalLevel
 	case "error":
-		level = logging.ERROR
-	case "warning":
-		level = logging.WARNING
-	case "notice":
-		level = logging.NOTICE
-	case "info":
-		level = logging.INFO
+		level = logrus.ErrorLevel
+	case "warning", "warn":
+		level = logrus.WarnLevel
+	case "notice", "info":
+		level = logrus.InfoLevel
 	default:
-		level = logging.DEBUG
+		level = logrus.DebugLevel
 	}
 
 	return level
