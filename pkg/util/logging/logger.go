@@ -18,7 +18,6 @@ package logger
 
 import (
 	"errors"
-	"log"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -40,7 +39,7 @@ func InitializeLog(config LogConfig) error {
 		return errors.New("Cannot have a blank logfile and not log to stdout")
 	}
 
-	logLevel = levelFromString(config.Level)
+	logrus.SetLevel(levelFromString(config.Level))
 
 	if config.LogFile != "" {
 		var logFile *os.File
@@ -59,8 +58,17 @@ func InitializeLog(config LogConfig) error {
 	}
 
 	if config.Stdout {
-		log.SetOutput(os.Stdout)
+		logrus.SetOutput(os.Stdout)
 	}
+
+	/*
+		logrus.SetFormatter(&logrus.TextFormatter{
+			ForceColors:            config.Color,
+			DisableLevelTruncation: true,
+			FullTimestamp:          true,
+		})
+	*/
+
 	return nil
 }
 
