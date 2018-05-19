@@ -45,10 +45,6 @@
   name = "github.com/lestrrat/go-jsschema"
 
 [[constraint]]
-  name = "github.com/op/go-logging"
-  version = "~1.0.0"
-
-[[constraint]]
   name = "github.com/pborman/uuid"
   version = "1.0.0"
 
