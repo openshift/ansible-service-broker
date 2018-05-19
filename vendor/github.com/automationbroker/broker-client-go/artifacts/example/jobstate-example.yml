@@ -1,9 +1,0 @@
-apiVersion: "automationbroker.io/v1"
-kind: JobState
-metadata:
-  name: newuidhere
-  namespace: ansible-service-broker
-spec:
-  state: succeeded
-  podName: new-pod-name
-  method: provision
