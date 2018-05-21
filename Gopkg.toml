@@ -75,3 +75,9 @@
 [[constraint]]
   name = "k8s.io/kubernetes"
   version = "1.9.1"
+
+[prune]
+  unused-packages = true
+  go-tests = true
+  non-go = true
+
