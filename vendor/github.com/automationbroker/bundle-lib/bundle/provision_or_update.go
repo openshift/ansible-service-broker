@@ -20,11 +20,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/automationbroker/bundle-lib/runtime"
+	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type executionMethod string
@@ -48,36 +46,49 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 		return errors.New("No image field found on instance.Spec")
 	}
 
-	k8scli, err := clients.Kubernetes()
+	// Create namespace name that will be used to generate a name.
+	ns := fmt.Sprintf("%s-%.4s-", instance.Spec.FQName, method)
+	// Create the podname
+	pn := fmt.Sprintf("bundle-%s", uuid.New())
+	targets := []string{instance.Context.Namespace}
+	labels := map[string]string{
+		"bundle-fqname":   instance.Spec.FQName,
+		"bundle-action":   string(method),
+		"bundle-pod-name": pn,
+	}
+	serviceAccount, namespace, err := runtime.Provider.CreateSandbox(pn, ns, targets, clusterConfig.SandboxRole, labels)
 	if err != nil {
-		log.Error("Something went wrong getting kubernetes client")
+		log.Errorf("Problem executing bundle create sandbox [%s] %v", pn, method)
+		e.actionFinishedWithError(err)
 		return err
 	}
-
-	ns := instance.Context.Namespace
-	log.Infof("Checking if namespace %s exists.", ns)
-	_, err = k8scli.Client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("Project %s does not exist", ns)
+	ec := runtime.ExecutionContext{
+		BundleName: pn,
+		Targets:    targets,
+		Metadata:   labels,
+		Action:     string(method),
+		Image:      instance.Spec.Image,
+		Account:    serviceAccount,
+		Location:   namespace,
 	}
-
-	executionContext, err := e.executeApb(string(method), instance, instance.Parameters)
+	ec, err = e.executeApb(ec, instance, instance.Parameters)
 	defer runtime.Provider.DestroySandbox(
-		executionContext.PodName,
-		executionContext.Namespace,
-		executionContext.Targets,
+		ec.BundleName,
+		ec.Location,
+		ec.Targets,
 		clusterConfig.Namespace,
 		clusterConfig.KeepNamespace,
 		clusterConfig.KeepNamespaceOnError,
 	)
 	if err != nil {
-		log.Errorf("Problem executing apb [%s] provision - err: %v ", executionContext.PodName, err)
+		log.Errorf("Problem executing bundle [%s] %v", ec.BundleName, method)
+		e.actionFinishedWithError(err)
 		return err
 	}
 
 	if instance.Spec.Runtime >= 2 || !instance.Spec.Bindable {
 		log.Debugf("watching pod for serviceinstance %#v", instance.Spec)
-		err := runtime.Provider.WatchRunningBundle(executionContext.PodName, executionContext.Namespace, e.updateDescription)
+		err := runtime.Provider.WatchRunningBundle(ec.BundleName, ec.Location, e.updateDescription)
 		if err != nil {
 			log.Errorf("Provision or Update action failed - %v", err)
 			return err
@@ -86,9 +97,9 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 
 	// pod execution is complete so transfer state back
 	err = e.stateManager.CopyState(
-		executionContext.PodName,
+		ec.BundleName,
 		e.stateManager.Name(instance.ID.String()),
-		executionContext.Namespace,
+		ec.Location,
 		e.stateManager.MasterNamespace(),
 	)
 	if err != nil {
@@ -100,18 +111,18 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 	}
 
 	credBytes, err := runtime.Provider.ExtractCredentials(
-		executionContext.PodName,
-		executionContext.Namespace,
+		ec.BundleName,
+		ec.Location,
 		instance.Spec.Runtime,
 	)
 	if err != nil {
-		log.Errorf("apb::%v error occurred - %v", method, err)
+		log.Errorf("bundle::%v error occurred - %v", method, err)
 		return err
 	}
 
 	creds, err := buildExtractedCredentials(credBytes)
 	if err != nil {
-		log.Errorf("apb::%v error occurred - %v", method, err)
+		log.Errorf("bundle::%v error occurred - %v", method, err)
 		return err
 	}
 

@@ -17,12 +17,19 @@
 package bundle
 
 import (
+	"fmt"
+
 	"github.com/automationbroker/bundle-lib/runtime"
+	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-// Deprovision - runs the apb with the deprovision action.
+const (
+	deprovisionAction = "deprovision"
+)
+
+// Deprovision - runs the abp with the deprovision action.
 func (e *executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 	log.Infof("============================================================")
 	log.Infof("                      DEPROVISIONING                        ")
@@ -42,28 +49,52 @@ func (e *executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 			e.actionFinishedWithError(errors.New("No image field found on instance.Spec"))
 			return
 		}
-
-		// Might need to change up this interface to feed in instance ids
-		executionContext, err := e.executeApb("deprovision", instance, instance.Parameters)
+		// Create namespace name that will be used to generate a name.
+		ns := fmt.Sprintf("%s-%.4s-", instance.Spec.FQName, deprovisionAction)
+		// Create the podname
+		pn := fmt.Sprintf("bundle-%s", uuid.New())
+		targets := []string{instance.Context.Namespace}
+		labels := map[string]string{
+			"bundle-fqname":   instance.Spec.FQName,
+			"bundle-action":   deprovisionAction,
+			"bundle-pod-name": pn,
+		}
+		serviceAccount, namespace, err := runtime.Provider.CreateSandbox(pn, ns, targets, clusterConfig.SandboxRole, labels)
+		if err != nil {
+			log.Errorf("Problem executing bundle create sandbox [%s] deprovision", pn)
+			e.actionFinishedWithError(err)
+			return
+		}
+		ec := runtime.ExecutionContext{
+			BundleName: pn,
+			Targets:    targets,
+			Metadata:   labels,
+			Action:     deprovisionAction,
+			Image:      instance.Spec.Image,
+			Account:    serviceAccount,
+			Location:   namespace,
+		}
+		ec, err = e.executeApb(ec, instance, instance.Parameters)
 		defer func() {
 			if err := e.stateManager.DeleteState(e.stateManager.Name(instance.ID.String())); err != nil {
 				log.Errorf("failed to delete state for instance %s : %v ", instance.ID.String(), err)
 			}
 			runtime.Provider.DestroySandbox(
-				executionContext.PodName,
-				executionContext.Namespace,
-				executionContext.Targets,
+				ec.BundleName,
+				ec.Location,
+				ec.Targets,
 				clusterConfig.Namespace,
 				clusterConfig.KeepNamespace,
 				clusterConfig.KeepNamespaceOnError,
 			)
 		}()
 		if err != nil {
-			log.Errorf("Problem executing apb [%s] deprovision", executionContext.PodName)
+			log.Errorf("Problem executing bundle [%s] deprovision", ec.BundleName)
 			e.actionFinishedWithError(err)
 			return
 		}
-		err = runtime.Provider.WatchRunningBundle(executionContext.PodName, executionContext.Namespace, e.updateDescription)
+
+		err = runtime.Provider.WatchRunningBundle(ec.BundleName, ec.Location, e.updateDescription)
 		if err != nil {
 			log.Errorf("Deprovision action failed - %v", err)
 			e.actionFinishedWithError(err)

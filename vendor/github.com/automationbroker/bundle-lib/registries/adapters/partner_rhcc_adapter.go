@@ -28,9 +28,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
 const partnerName = "partner_rhcc"
 const partnerManifestURL = "%v/v2/%v/manifests/%v"
 const partnerCatalogURL = "%v/v2/_catalog"
+=======
+const openShiftManifestURL = "%v/v2/%v/manifests/%v"
+>>>>>>> update to 0.2.1:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 
 // PartnerRhccAdapter - Partner RHCC Adapter
 type PartnerRhccAdapter struct {
@@ -38,8 +42,13 @@ type PartnerRhccAdapter struct {
 }
 
 // RegistryName - Retrieve the registry name
+<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
 func (r PartnerRhccAdapter) RegistryName() string {
 	return partnerName
+=======
+func (r OpenShiftAdapter) RegistryName() string {
+	return strings.TrimPrefix(r.Config.URL.String(), "https://")
+>>>>>>> update to 0.2.1:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 }
 
 // GetImageNames - retrieve the images
@@ -191,5 +200,18 @@ func (r OpenShiftAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
 	return imageToSpec(req, fmt.Sprintf("%s/%s:%s", r.Config.URL.Hostname(), imageName, r.Config.Tag))
+=======
+	req.Header.Add("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := registryResponseHandler(resp)
+	if err != nil {
+		return nil, fmt.Errorf("OpenShiftAdapter::error handling openshift registery response %s", err)
+	}
+	return imageToSpec(body, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
+>>>>>>> update to 0.2.1:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 }

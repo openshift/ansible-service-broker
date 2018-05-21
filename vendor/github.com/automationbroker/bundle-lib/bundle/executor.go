@@ -19,18 +19,11 @@ package bundle
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
-	"strings"
 	"sync"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/automationbroker/bundle-lib/runtime"
-	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
 )
 
 // ExecutorAccessors - Accessors for Executor state.
@@ -156,140 +149,88 @@ func (e *executor) updateDescription(newDescription string, dashboardURL string)
 
 // executeApb - Runs an APB Action with a provided set of inputs
 func (e *executor) executeApb(
-	action string, instance *ServiceInstance, p *Parameters,
-) (ExecutionContext, error) {
-	spec := instance.Spec
-	context := instance.Context
+	exContext runtime.ExecutionContext, instance *ServiceInstance, parameters *Parameters,
+) (runtime.ExecutionContext, error) {
 	log.Debug("ExecutingApb:")
-	log.Debugf("name:[ %s ]", spec.FQName)
-	log.Debugf("image:[ %s ]", spec.Image)
-	log.Debugf("action:[ %s ]", action)
+	log.Debugf("name:[ %s ]", instance.Spec.FQName)
+	log.Debugf("image:[ %s ]", exContext.Image)
+	log.Debugf("action:[ %s ]", exContext.Action)
 	log.Debugf("pullPolicy:[ %s ]", clusterConfig.PullPolicy)
 	log.Debugf("role:[ %s ]", clusterConfig.SandboxRole)
 
-	executionContext := ExecutionContext{ProxyConfig: GetProxyConfig()}
-
-	extraVars, err := createExtraVars(context, p)
-
-	if err != nil {
-		return executionContext, err
-	}
 	// It's a critical error if a Namespace is not provided to the
 	// broker because its required to know where to execute the pods and
 	// sandbox them based on that Namespace. Should fail fast and loud,
 	// with controlled error handling.
-	if context.Namespace == "" {
-		errStr := "Namespace not found within request context. Cannot perform requested " + action
+	if exContext.Location == "" || len(exContext.Targets) == 0 {
+		errStr := "Namespace not found within request context. Cannot perform requested " + exContext.Action
 		log.Error(errStr)
-		return executionContext, errors.New(errStr)
+		return exContext, errors.New(errStr)
 	}
 
-	pullPolicy, err := checkPullPolicy(clusterConfig.PullPolicy)
+	extraVars, err := createExtraVars(exContext.Targets[0], parameters)
 	if err != nil {
-		return executionContext, err
+		return exContext, err
 	}
 
-	secrets := getSecrets(spec)
+	secrets := getSecrets(instance.Spec)
+	exContext.ProxyConfig = getProxyConfig()
+	exContext.Secrets = secrets
+	exContext.ExtraVars = extraVars
+	exContext.Policy = clusterConfig.PullPolicy
 
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		return executionContext, err
-	}
-
-	executionContext.PodName = fmt.Sprintf("apb-%s", uuid.New())
-	labels := map[string]string{
-		"apb-fqname":   spec.FQName,
-		"apb-action":   action,
-		"apb-pod-name": executionContext.PodName,
-	}
-
-	e.podName = executionContext.PodName
-
-	executionContext.Targets = append(executionContext.Targets, context.Namespace)
-	// Create namespace.
-	namespace := v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:       labels,
-			GenerateName: fmt.Sprintf("%s-%.4s-", spec.FQName, action),
-		},
-	}
-	ns, err := k8scli.Client.CoreV1().Namespaces().Create(&namespace)
-	if err != nil {
-		return executionContext, err
-	}
-	//Sandbox (i.e Namespace) was created.
-	executionContext.Namespace = ns.ObjectMeta.Name
-	err = copySecretsToNamespace(executionContext, clusterConfig, k8scli, secrets)
+	err = runtime.Provider.CopySecretsToNamespace(exContext, clusterConfig.Namespace, secrets)
 	if err != nil {
 		log.Errorf("unable to copy secrets: %v to  new namespace", secrets)
-		return executionContext, err
+		return exContext, err
 	}
-
-	executionContext.ServiceAccount, err = runtime.Provider.CreateSandbox(executionContext.PodName, executionContext.Namespace, executionContext.Targets, clusterConfig.SandboxRole)
-	if err != nil {
-		log.Error(err.Error())
-		return executionContext, err
-	}
-	volumes, volumeMounts := buildVolumeSpecs(secrets)
-	// copy any state present for this APB over to the execution ns
 	stateName := e.stateManager.Name(instance.ID.String())
 	present, err := e.stateManager.StateIsPresent(stateName)
 	if err != nil {
-		return executionContext, err
+		return exContext, err
 	}
 	if present {
 		log.Info("state: present for service instance copying to bundle namespace")
 		// copy from master ns to execution namespace
-		if err := e.stateManager.CopyState(stateName, executionContext.PodName, e.stateManager.MasterNamespace(), executionContext.Namespace); err != nil {
-			return executionContext, err
+		if err := e.stateManager.CopyState(stateName, exContext.BundleName, e.stateManager.MasterNamespace(), exContext.Location); err != nil {
+			return exContext, err
 		}
-		stateVolumeMount, stateVolume, err := e.stateManager.PrepareMount(executionContext.PodName)
-		if err != nil {
-			return executionContext, err
-		}
-		if stateVolume != nil && stateVolumeMount != nil {
-			volumes = append(volumes, *stateVolume)
-			volumeMounts = append(volumeMounts, *stateVolumeMount)
-		}
+		exContext.StateName = stateName
 	}
 
-	pod := &v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   executionContext.PodName,
-			Labels: labels,
-		},
-		Spec: v1.PodSpec{
-			Containers: []v1.Container{
-				{
-					Name:  ApbContainerName,
-					Image: spec.Image,
-					Args: []string{
-						action,
-						"--extra-vars",
-						extraVars,
-					},
-					Env:             e.createPodEnv(executionContext),
-					ImagePullPolicy: pullPolicy,
-					VolumeMounts:    volumeMounts,
-				},
-			},
-			RestartPolicy:      v1.RestartPolicyNever,
-			ServiceAccountName: executionContext.ServiceAccount,
-			Volumes:            volumes,
-		},
+	exContext, err = runtime.Provider.RunBundle(exContext)
+	if err != nil {
+		log.Errorf("error running bundle - %v", err)
+		return exContext, err
 	}
-
-	log.Infof(fmt.Sprintf("Creating pod %q in the %s namespace", pod.Name, executionContext.Namespace))
-	_, err = k8scli.Client.CoreV1().Pods(executionContext.Namespace).Create(pod)
-
-	return executionContext, err
+	return exContext, nil
 }
 
-// GetProxyConfig - Returns a ProxyConfig based on the presence of a proxy
+// TODO: Instead of putting namespace directly as a parameter, we should create a dictionary
+// of apb_metadata and put context and other variables in it so we don't pollute the user
+// parameter space.
+func createExtraVars(targetNamespace string, parameters *Parameters) (string, error) {
+	var paramsCopy Parameters
+	if parameters != nil && *parameters != nil {
+		paramsCopy = *parameters
+	} else {
+		paramsCopy = make(Parameters)
+	}
+
+	if targetNamespace != "" {
+		paramsCopy[NamespaceKey] = targetNamespace
+	}
+
+	paramsCopy[ClusterKey] = runtime.Provider.GetRuntime()
+	extraVars, err := json.Marshal(paramsCopy)
+	return string(extraVars), err
+}
+
+// getProxyConfig - Returns a ProxyConfig based on the presence of a proxy
 // configuration in the broker's environment. HTTP_PROXY, HTTPS_PROXY, and
 // NO_PROXY are the relevant environment variables. If no proxy is found,
 // GetProxyConfig will return nil.
-func GetProxyConfig() *ProxyConfig {
+func getProxyConfig() *runtime.ProxyConfig {
 	httpProxy, httpProxyPresent := os.LookupEnv(httpProxyEnvVar)
 	httpsProxy, httpsProxyPresent := os.LookupEnv(httpsProxyEnvVar)
 	noProxy, noProxyPresent := os.LookupEnv(noProxyEnvVar)
@@ -306,155 +247,9 @@ func GetProxyConfig() *ProxyConfig {
 		return nil
 	}
 
-	return &ProxyConfig{
+	return &runtime.ProxyConfig{
 		HTTPProxy:  httpProxy,
 		HTTPSProxy: httpsProxy,
 		NoProxy:    noProxy,
 	}
-}
-
-func buildVolumeSpecs(secrets []string) ([]v1.Volume, []v1.VolumeMount) {
-	var optional bool
-	var mountName string
-	volumes := []v1.Volume{}
-	volumeMounts := []v1.VolumeMount{}
-
-	for _, secret := range secrets {
-		mountName = "apb-" + secret
-		volumes = append(volumes, v1.Volume{
-			Name: mountName,
-			VolumeSource: v1.VolumeSource{
-				Secret: &v1.SecretVolumeSource{
-					SecretName: secret,
-					Optional:   &optional,
-					// Eventually, we can include: Items: []v1.KeyToPath here to specify specific keys in the secret
-				},
-			},
-		})
-		volumeMounts = append(volumeMounts, v1.VolumeMount{
-			Name:      mountName,
-			MountPath: "/etc/apb-secrets/" + mountName,
-			ReadOnly:  true,
-		})
-	}
-	return volumes, volumeMounts
-}
-
-// TODO: Instead of putting namespace directly as a parameter, we should create a dictionary
-// of apb_metadata and put context and other variables in it so we don't pollute the user
-// parameter space.
-func createExtraVars(context *Context, parameters *Parameters) (string, error) {
-	var paramsCopy Parameters
-	if parameters != nil && *parameters != nil {
-		paramsCopy = *parameters
-	} else {
-		paramsCopy = make(Parameters)
-	}
-
-	if context != nil {
-		paramsCopy[NamespaceKey] = context.Namespace
-	}
-
-	paramsCopy[ClusterKey] = runtime.Provider.GetRuntime()
-	extraVars, err := json.Marshal(paramsCopy)
-	return string(extraVars), err
-}
-
-func (e *executor) createPodEnv(executionContext ExecutionContext) []v1.EnvVar {
-	podEnv := []v1.EnvVar{
-		v1.EnvVar{
-			Name: "POD_NAME",
-			ValueFrom: &v1.EnvVarSource{
-				FieldRef: &v1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
-				},
-			},
-		},
-		v1.EnvVar{
-			Name: "POD_NAMESPACE",
-			ValueFrom: &v1.EnvVarSource{
-				FieldRef: &v1.ObjectFieldSelector{
-					FieldPath: "metadata.namespace",
-				},
-			},
-		},
-		v1.EnvVar{
-			Name:  "BUNDLE_STATE_LOCATION",
-			Value: e.stateManager.MountLocation(),
-		},
-	}
-
-	if executionContext.ProxyConfig != nil {
-		conf := executionContext.ProxyConfig
-
-		log.Info("Proxy configuration present. Applying to APB before execution:")
-		log.Infof("%s=\"%s\"", httpProxyEnvVar, conf.HTTPProxy)
-		log.Infof("%s=\"%s\"", httpsProxyEnvVar, conf.HTTPSProxy)
-		log.Infof("%s=\"%s\"", noProxyEnvVar, conf.NoProxy)
-
-		podEnv = append(podEnv, []v1.EnvVar{
-			v1.EnvVar{
-				Name:  httpProxyEnvVar,
-				Value: conf.HTTPProxy,
-			},
-			v1.EnvVar{
-				Name:  httpsProxyEnvVar,
-				Value: conf.HTTPSProxy,
-			},
-			v1.EnvVar{
-				Name:  noProxyEnvVar,
-				Value: conf.NoProxy,
-			},
-			v1.EnvVar{
-				Name:  strings.ToLower(httpProxyEnvVar),
-				Value: conf.HTTPProxy,
-			},
-			v1.EnvVar{
-				Name:  strings.ToLower(httpsProxyEnvVar),
-				Value: conf.HTTPSProxy,
-			},
-			v1.EnvVar{
-				Name:  strings.ToLower(noProxyEnvVar),
-				Value: conf.NoProxy,
-			}}...)
-	}
-
-	return podEnv
-}
-
-// Verify PullPolicy is acceptable
-func checkPullPolicy(policy string) (v1.PullPolicy, error) {
-	n := map[string]v1.PullPolicy{
-		"always":       v1.PullAlways,
-		"never":        v1.PullNever,
-		"ifnotpresent": v1.PullIfNotPresent,
-	}
-	p := strings.ToLower(policy)
-	value, _ := n[p]
-	if value == "" {
-		return "", fmt.Errorf("ImagePullPolicy: %s not found in [%s, %s, %s,]", policy, v1.PullAlways, v1.PullNever, v1.PullIfNotPresent)
-	}
-
-	return value, nil
-}
-
-func copySecretsToNamespace(
-	executionContext ExecutionContext,
-	clusterConfig ClusterConfig,
-	k8scli *clients.KubernetesClient,
-	secrets []string,
-) error {
-	for _, secrectName := range secrets {
-		secretData, err := k8scli.Client.CoreV1().Secrets(clusterConfig.Namespace).Get(secrectName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		oldMeta := secretData.ObjectMeta
-		secretData.ObjectMeta = metav1.ObjectMeta{Name: oldMeta.Name, Namespace: executionContext.Namespace, Labels: oldMeta.Labels, Annotations: oldMeta.Annotations}
-		_, err = k8scli.Client.CoreV1().Secrets(executionContext.Namespace).Create(secretData)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

@@ -17,9 +17,16 @@
 package bundle
 
 import (
+	"fmt"
+
 	"github.com/automationbroker/bundle-lib/runtime"
+	"github.com/pborman/uuid"
 
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	bindAction = "bind"
 )
 
 // Bind - Will run the APB with the bind action.
@@ -37,24 +44,49 @@ func (e *executor) Bind(
 
 	go func() {
 		e.actionStarted()
-		executionContext, err := e.executeApb(
-			"bind", instance, parameters)
+		// Create namespace name that will be used to generate a name.
+		ns := fmt.Sprintf("%s-%.4s-", instance.Spec.FQName, bindAction)
+		// Create the podname
+		pn := fmt.Sprintf("bundle-%s", uuid.New())
+		targets := []string{instance.Context.Namespace}
+		labels := map[string]string{
+			"bundle-fqname":   instance.Spec.FQName,
+			"bundle-action":   bindAction,
+			"bundle-pod-name": pn,
+		}
+
+		serviceAccount, namespace, err := runtime.Provider.CreateSandbox(pn, ns, targets, clusterConfig.SandboxRole, labels)
+		ec := runtime.ExecutionContext{
+			BundleName: pn,
+			Targets:    targets,
+			Metadata:   labels,
+			Action:     bindAction,
+			Image:      instance.Spec.Image,
+			Account:    serviceAccount,
+			Location:   namespace,
+		}
+		if err != nil {
+			log.Errorf("Problem executing bundle create sandbox [%s] bind", ec.BundleName)
+			e.actionFinishedWithError(err)
+			return
+		}
+		ec, err = e.executeApb(ec, instance, parameters)
 		defer runtime.Provider.DestroySandbox(
-			executionContext.PodName,
-			executionContext.Namespace,
-			executionContext.Targets,
+			ec.BundleName,
+			ec.Location,
+			ec.Targets,
 			clusterConfig.Namespace,
 			clusterConfig.KeepNamespace,
 			clusterConfig.KeepNamespaceOnError,
 		)
 		if err != nil {
-			log.Errorf("Problem executing apb [%s] bind", executionContext.PodName)
+			log.Errorf("Problem executing bundle [%s] bind", ec.BundleName)
 			e.actionFinishedWithError(err)
 			return
 		}
 
 		if instance.Spec.Runtime >= 2 {
-			err := runtime.Provider.WatchRunningBundle(executionContext.PodName, executionContext.Namespace, e.updateDescription)
+			err := runtime.Provider.WatchRunningBundle(ec.BundleName, ec.Location, e.updateDescription)
 			if err != nil {
 				log.Errorf("Bind action failed - %v", err)
 				e.actionFinishedWithError(err)
@@ -64,17 +96,17 @@ func (e *executor) Bind(
 
 		// pod execution is complete so transfer state back
 		err = e.stateManager.CopyState(
-			executionContext.PodName,
+			ec.BundleName,
 			e.stateManager.Name(instance.ID.String()),
-			executionContext.Namespace, e.stateManager.MasterNamespace())
+			ec.Location, e.stateManager.MasterNamespace())
 		if err != nil {
 			e.actionFinishedWithError(err)
 			return
 		}
 
 		credBytes, err := runtime.Provider.ExtractCredentials(
-			executionContext.PodName,
-			executionContext.Namespace,
+			ec.BundleName,
+			ec.Location,
 			instance.Spec.Runtime,
 		)
 		if err != nil {
@@ -90,7 +122,7 @@ func (e *executor) Bind(
 			return
 		}
 
-		labels := map[string]string{"apbAction": "bind", "apbName": instance.Spec.FQName}
+		labels = map[string]string{"bundleAction": "bind", "bundleName": instance.Spec.FQName}
 		err = runtime.Provider.CreateExtractedCredential(bindingID, clusterConfig.Namespace, creds.Credentials, labels)
 		if err != nil {
 			log.Errorf("apb::%v error occurred - %v", executionMethodProvision, err)

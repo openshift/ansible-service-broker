@@ -80,3 +80,7 @@
   unused-packages = true
   go-tests = true
   non-go = true
+
+[prune]
+  go-tests = true
+  non-go = true

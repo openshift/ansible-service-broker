@@ -5,7 +5,6 @@ import (
 
 	"github.com/automationbroker/bundle-lib/clients"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
 	kerror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,7 +26,6 @@ type state struct {
 type StateManager interface {
 	CopyState(fromName, toName, fromNS, toNS string) error
 	DeleteState(name string) error
-	PrepareMount(name string) (*v1.VolumeMount, *v1.Volume, error)
 	StateIsPresent(name string) (bool, error)
 	Name(instanceID string) string
 	MasterNamespace() string
@@ -93,26 +91,6 @@ func (s state) StateIsPresent(stateName string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-// PrepareMount will prepare the volume definitions and mounts
-func (s state) PrepareMount(name string) (*v1.VolumeMount, *v1.Volume, error) {
-	mount := &v1.VolumeMount{
-		Name:      name,
-		MountPath: s.MountLocation(),
-		ReadOnly:  true,
-	}
-	volume := &v1.Volume{
-		Name: name,
-		VolumeSource: v1.VolumeSource{
-			ConfigMap: &v1.ConfigMapVolumeSource{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: name,
-				},
-			},
-		},
-	}
-	return mount, volume, nil
 }
 
 // DeleteState will remove the state object from the broker namespace

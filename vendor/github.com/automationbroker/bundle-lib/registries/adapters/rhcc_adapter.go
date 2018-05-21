@@ -128,6 +128,15 @@ func (r RHCCAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := registryResponseHandler(resp)
+	if err != nil {
+		return nil, fmt.Errorf("RHCCAdapter::error handling openshift registery response %s", err)
+	}
 
-	return imageToSpec(req, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
+	return imageToSpec(body, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
 }
