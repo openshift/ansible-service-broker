@@ -23,7 +23,6 @@ import (
 
 	automationbrokerv1 "github.com/automationbroker/broker-client-go/client/clientset/versioned/typed/automationbroker/v1alpha1"
 	v1 "github.com/automationbroker/broker-client-go/pkg/apis/automationbroker/v1alpha1"
-	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/automationbroker/bundle-lib/crd"
@@ -305,7 +304,7 @@ func (d *Dao) SetState(instanceID string, state bundle.JobState) (string, error)
 	log.Debugf("set job state for instance: %v token: %v", instanceID, state.Token)
 	n := metav1.Now()
 	switch state.Method {
-	case apb.JobMethodBind, apb.JobMethodUnbind:
+	case bundle.JobMethodBind, bundle.JobMethodUnbind:
 		defer d.bindingLock.Unlock()
 		d.bindingLock.Lock()
 		// get the binding based on instance ID //update the job based on the token.
@@ -344,7 +343,7 @@ func (d *Dao) SetState(instanceID string, state bundle.JobState) (string, error)
 
 			return state.Token, err
 		}
-	case apb.JobMethodUpdate, apb.JobMethodDeprovision, apb.JobMethodProvision:
+	case bundle.JobMethodUpdate, bundle.JobMethodDeprovision, bundle.JobMethodProvision:
 		defer d.bindingLock.Unlock()
 		d.bindingLock.Lock()
 		// get the binding based on instance id //update the job based on the token

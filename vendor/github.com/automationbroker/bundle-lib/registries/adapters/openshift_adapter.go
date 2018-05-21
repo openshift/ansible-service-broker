@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -28,89 +27,39 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
-const partnerName = "partner_rhcc"
-const partnerManifestURL = "%v/v2/%v/manifests/%v"
-const partnerCatalogURL = "%v/v2/_catalog"
-=======
 const openShiftManifestURL = "%v/v2/%v/manifests/%v"
->>>>>>> update to 0.2.1:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 
-// PartnerRhccAdapter - Partner RHCC Adapter
-type PartnerRhccAdapter struct {
+// OpenShiftAdapter - Docker Hub Adapter
+type OpenShiftAdapter struct {
 	Config Configuration
 }
 
+// OpenShiftImage - Image from a OpenShift registry.
+type OpenShiftImage struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
 // RegistryName - Retrieve the registry name
-<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
-func (r PartnerRhccAdapter) RegistryName() string {
-	return partnerName
-=======
 func (r OpenShiftAdapter) RegistryName() string {
 	return strings.TrimPrefix(r.Config.URL.String(), "https://")
->>>>>>> update to 0.2.1:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 }
 
 // GetImageNames - retrieve the images
-<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
-func (r PartnerRhccAdapter) GetImageNames() ([]string, error) {
-	log.Debug("PartnerRhccAdapter::GetImageNames")
-	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
-
-	if r.Config.Images != nil {
-		log.Debugf("Configured to use images: %v", r.Config.Images)
-		return r.Config.Images, nil
-	}
-	log.Debugf("Did not find images in config, attempting to discover from %s/v2/_catalog", r.Config.URL)
-
-	req, err := http.NewRequest("GET", fmt.Sprintf(partnerCatalogURL, r.Config.URL), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Errorf("Failed to load catalog response at %s - %v", partnerCatalogURL, err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		log.Errorf("Failed to fetch catalog response. Expected a 200 status and got: %v", resp.Status)
-		return nil, errors.New(resp.Status)
-	}
-	imageResp, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var imageList []string
-	err = json.Unmarshal(imageResp, &imageList)
-	if err != nil {
-		return nil, err
-	}
-=======
 func (r OpenShiftAdapter) GetImageNames() ([]string, error) {
 	log.Debug("OpenShiftAdapter::GetImageNames")
 	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
 
 	images := r.Config.Images
 	log.Debugf("Configured to use images: %v", images)
->>>>>>> first pass:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 
-	return imageList, nil
+	return images, nil
 }
 
 // FetchSpecs - retrieve the spec for the image names.
-<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
-func (r PartnerRhccAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
-	log.Debug("PartnerRhccAdapter::FetchSpecs")
-	specs := []*apb.Spec{}
-=======
 func (r OpenShiftAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
 	log.Debug("OpenShiftAdapter::FetchSpecs")
 	specs := []*bundle.Spec{}
->>>>>>> first pass:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 	for _, imageName := range imageNames {
 		log.Debugf("%v", imageName)
 		spec, err := r.loadSpec(imageName)
@@ -124,8 +73,8 @@ func (r OpenShiftAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error
 	return specs, nil
 }
 
-// getAuthToken - will retrieve the docker hub token.
-func (r PartnerRhccAdapter) getAuthToken() (string, error) {
+// getOpenShiftToken - will retrieve the docker hub token.
+func (r OpenShiftAdapter) getOpenShiftAuthToken() (string, error) {
 	type TokenResponse struct {
 		Token string `json:"token"`
 	}
@@ -181,28 +130,20 @@ func (r PartnerRhccAdapter) getAuthToken() (string, error) {
 	return tokenResp.Token, nil
 }
 
-<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
-func (r PartnerRhccAdapter) loadSpec(imageName string) (*apb.Spec, error) {
-	log.Debug("PartnerRhccAdapter::LoadSpec")
-=======
 func (r OpenShiftAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	log.Debug("OpenShiftAdapter::LoadSpec")
->>>>>>> first pass:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(partnerManifestURL, r.Config.URL, imageName, r.Config.Tag), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(openShiftManifestURL, r.Config.URL, imageName, r.Config.Tag), nil)
 	if err != nil {
 		return nil, err
 	}
-	token, err := r.getAuthToken()
+	token, err := r.getOpenShiftAuthToken()
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-<<<<<<< HEAD:vendor/github.com/automationbroker/bundle-lib/registries/adapters/partner_rhcc_adapter.go
-	return imageToSpec(req, fmt.Sprintf("%s/%s:%s", r.Config.URL.Hostname(), imageName, r.Config.Tag))
-=======
 	req.Header.Add("Accept", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -213,5 +154,4 @@ func (r OpenShiftAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 		return nil, fmt.Errorf("OpenShiftAdapter::error handling openshift registery response %s", err)
 	}
 	return imageToSpec(body, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
->>>>>>> update to 0.2.1:vendor/github.com/automationbroker/bundle-lib/registries/adapters/openshift_adapter.go
 }
