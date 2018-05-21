@@ -17,8 +17,8 @@
 package metrics
 
 import (
-	logging "github.com/op/go-logging"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -88,8 +88,6 @@ var (
 			Name:      "actions_requested",
 			Help:      "How many actions have been made.",
 		}, []string{"action"})
-
-	log = logging.MustGetLogger("metrics")
 )
 
 func init() {

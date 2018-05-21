@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/pborman/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 // Work - is the interface that wraps the basic run method.

@@ -26,6 +26,7 @@ import (
 	"github.com/automationbroker/bundle-lib/apb"
 	"github.com/automationbroker/bundle-lib/runtime"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
+	log "github.com/sirupsen/logrus"
 )
 
 type metricsHookFn func()

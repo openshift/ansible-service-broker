@@ -30,8 +30,8 @@ import (
 	"github.com/automationbroker/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/metrics"
-	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/pborman/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -65,7 +65,6 @@ var (
 	ErrorNoUpdateRequested = errors.New("no valid updates requested")
 	// ErrorUnbindingInProgress - Error when unbind is called that has an unbinding job in progress
 	ErrorUnbindingInProgress = errors.New("unbinding in progress")
-	log                      = logutil.NewLog()
 )
 
 const (
@@ -1417,7 +1416,7 @@ func (a AnsibleBroker) validateRequestedUpdateParams(
 			// the v1.0 ServiceInstance. These new keys should be passed to the APB,
 			// along with any changed values to the existing parameters, so the APB
 			// can make sense of them.
-			log.Noticef("Requested update parameter: [%v] with the value of [%v] was found " +
+			log.Infof("Requested update parameter: [%v] with the value of [%v] was found " +
 				"in an update request, but it did not exist on the previous service instance.")
 		}
 	}

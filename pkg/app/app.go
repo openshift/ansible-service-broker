@@ -48,6 +48,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -55,8 +56,6 @@ var (
 	Scheme = runtime.NewScheme()
 	// Codecs -k8s codecs for the scheme
 	Codecs = serializer.NewCodecFactory(Scheme)
-	// log - logging object
-	log = logutil.NewLog()
 )
 
 const (
@@ -304,7 +303,7 @@ func (a *App) Recover() {
 		log.Error(err.Error())
 	}
 
-	log.Notice(msg)
+	log.Info(msg)
 }
 
 // Start - Will start the application to listen on the specified port.
@@ -328,7 +327,7 @@ func (a *App) Start() {
 			log.Error(err.Error())
 			os.Exit(1)
 		}
-		log.Notice("Broker successfully bootstrapped on startup")
+		log.Info("Broker successfully bootstrapped on startup")
 	}
 
 	interval, err := time.ParseDuration(a.config.GetString("broker.refresh_interval"))
@@ -350,7 +349,7 @@ func (a *App) Start() {
 						log.Error("Failed to bootstrap")
 						log.Error(err.Error())
 					}
-					log.Notice("Broker successfully bootstrapped")
+					log.Info("Broker successfully bootstrapped")
 				case <-ctx.Done():
 					ticker.Stop()
 					return
@@ -402,9 +401,9 @@ func (a *App) Start() {
 	defaultMetrics := routes.DefaultMetrics{}
 	defaultMetrics.Install(genericserver.Handler.NonGoRestfulMux)
 
-	log.Noticef("Listening on https://%s", genericserver.SecureServingInfo.Listener.Addr().String())
+	log.Infof("Listening on https://%s", genericserver.SecureServingInfo.Listener.Addr().String())
 
-	log.Notice("Ansible Service Broker Starting")
+	log.Info("Ansible Service Broker Starting")
 	err = genericserver.PrepareRun().Run(wait.NeverStop)
 	log.Errorf("unable to start ansible service broker - %v", err)
 
@@ -419,7 +418,7 @@ func initClients(c *config.Config) error {
 	// Deliberately forcing the injection of deps here instead of running as a
 	// method on the app. Forces developers at authorship time to think about
 	// dependencies / make sure things are ready.
-	log.Notice("Initializing clients...")
+	log.Info("Initializing clients...")
 
 	if strings.ToLower(c.GetString("dao.type")) != "crd" {
 
