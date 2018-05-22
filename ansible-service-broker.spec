@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.12
+Version: 1.2.13
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue May 22 2018 David Zager <david.j.zager@gmail.com> 1.2.13-1
+- Bug 1578319 - send _apb* parameters to unbind (#959) (jmrodri@gmail.com)
+
 * Wed May 16 2018 David Zager <david.j.zager@gmail.com> 1.2.12-1
 - Bug 1572129 - recover deprovision jobs (#953) (jmrodri@gmail.com)
 - update config.md for partner registry adapter (#950) (jkim@redhat.com)
