@@ -16,7 +16,6 @@ fi
 ARGS="[ \"${ACTION}\", \"-e create_broker_namespace=true\", \"-e wait_for_broker=true\", \"-e broker_image=${BROKER_IMAGE}\" ]"
 APB_YAML=$(sed "s%\(image:\).*%\1 ${APB_IMAGE}%; s%\(args:\).*%\1 ${ARGS}%" ${PROJECT_ROOT}/apb/install.yaml)
 
-echo "${APB_YAML}"
 echo "${APB_YAML}" | ${CMD} create -f -
 sleep 5
 

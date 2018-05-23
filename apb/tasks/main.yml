@@ -4,18 +4,30 @@
   command: oc version
   register: oc_version
   ignore_errors: yes
+  changed_when: False
 
 # These can always be overridden at the command line
 # http://docs.ansible.com/ansible/devel/user_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable
-- name: 'Set facts'
+- name: 'Set cluster fact'
   set_fact:
     cluster: "{{ 'openshift' if 'openshift' in oc_version.stdout else 'kubernetes' }}"
+
+- name: 'Set facts based on cluster type'
+  set_fact:
     broker_auto_escalate: "{{ 'true' if cluster == 'kubernetes' else 'false' }}"
-    broker_local_openshift_enabled: "{{ true if cluster == 'openshift' else false }}"
+    broker_local_openshift_enabled: "{{ 'true' if cluster == 'openshift' else 'false' }}"
+
+- name: Debug important facts
+  debug:
+    msg:
+      - "Cluster: {{ cluster }}"
+      - "broker_auto_escalate {{ broker_auto_escalate }}"
+      - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
 
 - name: 'Check for service catalog'
   command: kubectl api-versions
   register: kapi_versions
+  changed_when: False
   when: apb_action == 'provision'
 
 - name: 'Fail if service-catalog not installed'
