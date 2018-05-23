@@ -239,12 +239,23 @@ func main() {
 	for _, bi := range biSaved {
 		labels := map[string]string{"apbAction": "bind"}
 		extcredsJSON, err := etcdDao.GetRaw(fmt.Sprintf("/extracted_credentials/%v", bi.ID))
-		if err != nil {
+		if err != nil && !etcdDao.IsNotFoundError(err) {
 			revertExtractedCredentials(extCredsSaved)
 			revertBindInstance(biSaved)
 			revertServiceInstance(siSaved)
 			revertCrdSavedSpecs(crdSavedSpecs)
 			panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
+		} else if etcdDao.IsNotFoundError(err) {
+			// We need to get the service instances binding.
+			extcredsJSON, err = etcdDao.GetRaw(fmt.Sprintf("/extracted_credentials/%v", bi.ServiceID))
+			if err != nil {
+				revertExtractedCredentials(extCredsSaved)
+				revertBindInstance(biSaved)
+				revertServiceInstance(siSaved)
+				revertCrdSavedSpecs(crdSavedSpecs)
+				panic(fmt.Sprintf("Unable to migrate all extracted credentials - %v", err))
+			}
+
 		}
 
 		ec := apb.ExtractedCredentials{}
