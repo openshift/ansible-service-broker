@@ -17,7 +17,14 @@ ARGS="[ \"${ACTION}\", \"-e create_broker_namespace=true\", \"-e wait_for_broker
 APB_YAML=$(sed "s%\(image:\).*%\1 ${APB_IMAGE}%; s%\(args:\).*%\1 ${ARGS}%" ${PROJECT_ROOT}/apb/install.yaml)
 
 echo "${APB_YAML}" | ${CMD} create -f -
-sleep 5
+while true; do
+    POD_STATUS=$(${CMD} get pod -n ${APB_NAME} "${APB_NAME}" -o go-template="{{ .status.phase }}")
+    echo "APB Pod Status: ${POD_STATUS}"
+    if [ "${POD_STATUS}" == "Running" ]; then
+        break
+    fi
+    sleep 1
+done
 
 ${CMD} logs -n ${APB_NAME} "${APB_NAME}" -f
 EXIT_CODE=$(${CMD} get pod -n ${APB_NAME} "${APB_NAME}" -o go-template="{{ range .status.containerStatuses }}{{.state.terminated.exitCode}}{{ end }}")
