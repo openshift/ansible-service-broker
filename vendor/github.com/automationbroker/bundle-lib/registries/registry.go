@@ -212,6 +212,8 @@ func NewCustomRegistry(configuration Config, adapter adapters.Adapter, asbNamesp
 			adapter = &adapters.DockerHubAdapter{Config: c}
 		case "mock":
 			adapter = &adapters.MockAdapter{Config: c}
+		case "openshift":
+			adapter = &adapters.OpenShiftAdapter{Config: c}
 		case "partner_rhcc":
 			adapter = &adapters.PartnerRhccAdapter{Config: c}
 		case "local_openshift":
@@ -219,7 +221,8 @@ func NewCustomRegistry(configuration Config, adapter adapters.Adapter, asbNamesp
 		case "helm":
 			adapter = &adapters.HelmAdapter{Config: c}
 		default:
-			panic("Unknown registry")
+			log.Errorf("Unknown registry type - %s", configuration.Type)
+			return Registry{}, errors.New("Unknown registry type")
 		}
 	} else {
 		log.Infof("Using custom adapter, %v", adapter.RegistryName())

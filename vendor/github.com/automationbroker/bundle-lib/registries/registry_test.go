@@ -52,35 +52,40 @@ const PlanFree = true
 const PlanBindable = true
 
 var expectedPlanParameters = []apb.ParameterDescriptor{
-	apb.ParameterDescriptor{
+	{
 		Name:    "postgresql_database",
 		Default: "admin",
 		Type:    "string",
-		Title:   "PostgreSQL Database Name"},
-	apb.ParameterDescriptor{
+		Title:   "PostgreSQL Database Name",
+	},
+	{
 		Name:        "postgresql_password",
 		Default:     "admin",
 		Type:        "string",
 		Description: "A random alphanumeric string if left blank",
-		Title:       "PostgreSQL Password"},
-	apb.ParameterDescriptor{
+		Title:       "PostgreSQL Password",
+	},
+	{
 		Name:                "postgresql_user",
 		Default:             "admin",
 		Title:               "PostgreSQL User",
 		Type:                "string",
-		DeprecatedMaxlength: 63},
-	apb.ParameterDescriptor{
+		DeprecatedMaxlength: 63,
+	},
+	{
 		Name:    "postgresql_version",
 		Default: 9.5,
 		Enum:    []string{"9.5", "9.4"},
 		Type:    "enum",
-		Title:   "PostgreSQL Version"},
-	apb.ParameterDescriptor{
+		Title:   "PostgreSQL Version",
+	},
+	{
 		Name:        "postgresql_email",
 		Pattern:     "\u201c^\\\\S+@\\\\S+$\u201d",
 		Type:        "string",
 		Description: "email address",
-		Title:       "email"},
+		Title:       "email",
+	},
 }
 
 var p = apb.Plan{
@@ -371,20 +376,15 @@ func TestNewRegistryMock(t *testing.T) {
 	ft.True(t, ok)
 }
 
-func TestPanicOnUnknow(t *testing.T) {
-	defer func() {
-		r := recover()
-		fmt.Printf("%v", r)
-		if r == nil {
-			ft.True(t, false)
-		}
-	}()
+func TestUnknownType(t *testing.T) {
 	c := Config{
 		Type: "makes_no_sense",
 		Name: "dh",
 	}
-	r, err := NewRegistry(c, "")
-	fmt.Printf("%#v\n\n %v\n", r, err)
+	_, err := NewRegistry(c, "")
+	if err == nil {
+		t.Fatal("Error: error was nil")
+	}
 }
 
 func TestValidateName(t *testing.T) {

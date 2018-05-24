@@ -27,9 +27,9 @@ import (
 	ft "github.com/stretchr/testify/assert"
 )
 
-var PartnerImages = []string{"satoshi/nakamoto", "foo/bar", "paul/atreides"}
+var Images = []string{"satoshi/nakamoto", "foo/bar", "paul/atreides"}
 
-const PartnerManifestResponse = `
+const OpenShiftManifestResponse = `
 {
    "schemaVersion": 1,
    "name": "%v",
@@ -81,7 +81,7 @@ const PartnerManifestResponse = `
    ]
  }`
 
-const PartnerAuthResponse = `
+const AuthResponse = `
 {
   "token": "ertssGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwiandrIjogeyJrdHkiOiJSU0EiLCJhbGciOiJSUzI1NiIsInVzZSI6InNpZyIsIm4iOiI1TWhlWnh2VU9id0NJRXVYZWJubjlNQ0JFcDlTdWUyME44SHhQTExSWjdYNUl1QTU0a3dpVUQtMXBqZ2tpamgwRXpTZGlxbTdWUExlNGl1eXZEZmJxX1d2QWNNUjVhb3RKbl9EMGllbnA5eVRpR3d5SEVQWG83MERwZ2FsN1ZOc0RCdWdTSF91SThpM3BVaHZLczAxMEwzRVFmRVkwc2hrQVZRY1hEb3JNVmhkZkd2WE84aURMODBqR1BDWmNidXpZc1BQQ0RycWd5UTl6SFctWGVMSURXUlh3YW16TE1pNGZqOXRNcXB6b3FUdkhZUUFGQWdHbTU2Umh0ZDE0SWxaU19yYnZ2aFFLMDVEUDB2MHJtZFU0SXZoTzBTcUJLRjdkN1FIbFppd09nd2ppQzktU3JORkFzSngtSy1PMzBROThpMUhKRjd2MXNCMFE1OTFzYUVZMmM3VWhXTnpqdm5DM2gtYXdtSi1TM2FJSFFGNWNObmtTbTRUN3VZWHEwRW9oMEM2cEdlMUlZSzM1RHlGZjRsZEZXVTNVQmpvUlc0dG1jd2lmNE96ZXg3eWw3NmV5WWRxeXRscXk0bmwxeWZlTXpMSTJlNm5ucWlBdFdEUTY2Y3NSTVZVb1JpdUtvZWdOZldIelRUdUZabU1OdHpNdXpsR1JFbmtJazZnZl84VUNPME9Kd1FZM2luQldGZFc2V2l4RWRwSzFxT1VEVzBjWGRQVWt0NkZhNHJzU0NUTTZvbWNvVkRiU3hWV3Fqa2JtS0ZnU1pnVjdaUUZiM2doa3E5VmhtZVlzbmpfSmc0Skxnc3JpRzlZUWlKOWljYl9TWHNuNUhJQXcyOWhFR3BEMW01Q05IZmt6SVBxbllYWmlfaXAwSGlwWjBiVU9RN3JBYXVkTHktZHlhcyIsImUiOiJBUUFCIn19.eyJqdGkiOiJlZjgxMTgxOS04ZTE3LTRjZTQtYWY2OC0yY2E3M2ZlYzc2N2IiLCJleHAiOjE1MjIxODA3NTksIm5iZiI6MTUyMjE4MDQ1OSwiaWF0IjoxNTIyMTgwNDU5LCJpc3MiOiJodHRwczovL3Nzby5yZWRoYXQuY29tL2F1dGgvcmVhbG1zL3JoYzR0cCIsImF1ZCI6ImRvY2tlci1yZWdpc3RyeSIsInN1YiI6IlF1YWxpdHlBc3N1cmFuY2UiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJkb2NrZXItcmVnaXN0cnkiLCJhY2Nlc3MiOltdfQ.kI0kkiUP-M6epKa9G7pm9-8fUb9oM2aP93bObL5SackVO1pv0dlk6Kqml1X5W3pgV_tabRDRA_Oc5rdCImOXdCz1J8SnSO3wNeX02JgWLC4LWRUnJuNQtqIHdYSD3YdmOcsou5psD2I_gv-QhsaJtb5frCklJ5gU68i0SsUhPr0sf1BDD1oVzHu_US-zNuwXbzxiug4C5oObTLn9vzfz8oE4Hwy-WIRC0LeJxdNIZvyaUyiBEA7fq3p3XlInvsmgv94l-HZiEtOi7Gml_EfDHj4G7pZGNOgfoTHhR8ugiE9rVTEGo9esUNaRW7XhGCQV2CH3IowmtrIAMndToI4yNLPpOi8alCsaomuIunyGDhGqmdT2iKBrFErliN9b7oof73ElqJdjZhWD5_8iWt7ICQFAfomVe_TU8UdXlp5mYRf2VlF-IMk1YbUZh8aMFIJ1lZsmCzM9sZEpv7Y34AI837nDwL1vwWHVaFVLrW3oLtIXVmnvbLYwnNw7Gus6Gxh5mQI_ZGcSXSmOcK-mGFfVJgsJPTVhJI4FAQMsxdJwL8yAM96FCN2h9jcgfk0eQ1T4BRQFNLsy51dH1aUPYW51xR2GnbU6aahwjjYX3CQs6akPsNCnvQc6WaRb0IUwFrkmGBuIennb8W1A2opNRetVk3r1kiTm4zNaYrsF67PwTqg",
   "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwiandrIjogeyJrdHkiOiJSU0EiLCJhbGciOiJSUzI1NiIsInVzZSI6InNpZyIsIm4iOiI1TWhlWnh2VU9id0NJRXVYZWJubjlNQ0JFcDlTdWUyME44SHhQTExSWjdYNUl1QTU0a3dpVUQtMXBqZ2tpamgwRXpTZGlxbTdWUExlNGl1eXZEZmJxX1d2QWNNUjVhb3RKbl9EMGllbnA5eVRpR3d5SEVQWG83MERwZ2FsN1ZOc0RCdWdTSF91SThpM3BVaHZLczAxMEwzRVFmRVkwc2hrQVZRY1hEb3JNVmhkZkd2WE84aURMODBqR1BDWmNidXpZc1BQQ0RycWd5UTl6SFctWGVMSURXUlh3YW16TE1pNGZqOXRNcXB6b3FUdkhZUUFGQWdHbTU2Umh0ZDE0SWxaU19yYnZ2aFFLMDVEUDB2MHJtZFU0SXZoTzBTcUJLRjdkN1FIbFppd09nd2ppQzktU3JORkFzSngtSy1PMzBROThpMUhKRjd2MXNCMFE1OTFzYUVZMmM3VWhXTnpqdm5DM2gtYXdtSi1TM2FJSFFGNWNObmtTbTRUN3VZWHEwRW9oMEM2cEdlMUlZSzM1RHlGZjRsZEZXVTNVQmpvUlc0dG1jd2lmNE96ZXg3eWw3NmV5WWRxeXRscXk0bmwxeWZlTXpMSTJlNm5ucWlBdFdEUTY2Y3NSTVZVb1JpdUtvZWdOZldIelRUdUZabU1OdHpNdXpsR1JFbmtJazZnZl84VUNPME9Kd1FZM2luQldGZFc2V2l4RWRwSzFxT1VEVzBjWGRQVWt0NkZhNHJzU0NUTTZvbWNvVkRiU3hWV3Fqa2JtS0ZnU1pnVjdaUUZiM2doa3E5VmhtZVlzbmpfSmc0Skxnc3JpRzlZUWlKOWljYl9TWHNuNUhJQXcyOWhFR3BEMW01Q05IZmt6SVBxbllYWmlfaXAwSGlwWjBiVU9RN3JBYXVkTHktZHlhcyIsImUiOiJBUUFCIn19.eyJqdGkiOiJlZjgxMTgxOS04ZTE3LTRjZTQtYWY2OC0yY2E3M2ZlYzc2N2IiLCJleHAiOjE1MjIxODA3NTksIm5iZiI6MTUyMjE4MDQ1OSwiaWF0IjoxNTIyMTgwNDU5LCJpc3MiOiJodHRwczovL3Nzby5yZWRoYXQuY29tL2F1dGgvcmVhbG1zL3JoYzR0cCIsImF1ZCI6ImRvY2tlci1yZWdpc3RyeSIsInN1YiI6IlF1YWxpdHlBc3N1cmFuY2UiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJkb2NrZXItcmVnaXN0cnkiLCJhY2Nlc3MiOltdfQ.kI0kkiUP-M6epKa9G7pm9-8fUb9oM2aP93bObL5SackVO1pv0dlk6Kqml1X5W3pgV_tabRDRA_Oc5rdCImOXdCz1J8SnSO3wNeX02JgWLC4LWRUnJuNQtqIHdYSD3YdmOcsou5psD2I_gv-QhsaJtb5frCklJ5gU68i0SsUhPr0sf1BDD1oVzHu_US-zNuwXbzxiug4C5oObTLn9vzfz8oE4Hwy-WIRC0LeJxdNIZvyaUyiBEA7fq3p3XlInvsmgv94l-HZiEtOi7Gml_EfDHj4G7pZGNOgfoTHhR8ugiE9rVTEGo9esUNaRW7XhGCQV2CH3IowmtrIAMndToI4yNLPpOi8alCsaomuIunyGDhGqmdT2iKBrFErliN9b7oof73ElqJdjZhWD5_8iWt7ICQFAfomVe_TU8UdXlp5mYRf2VlF-IMk1YbUZh8aMFIJ1lZsmCzM9sZEpv7Y34AI837nDwL1vwWHVaFVLrW3oLtIXVmnvbLYwnNw7Gus6Gxh5mQI_ZGcSXSmOcK-mGFfVJgsJPTVhJI4FAQMsxdJwL8yAM96FCN2h9jcgfk0eQ1T4BRQFNLsy51dH1aUPYW51xR2GnbU6aahwjjYX3CQs6akPsNCnvQc6WaRb0IUwFrkmGBuIennb8W1A2opNRetVk3r1kiTm4zNaYrsF67PwTqg",
@@ -89,27 +89,48 @@ const PartnerAuthResponse = `
   "issued_at": "2018-03-27T19:54:19Z"
 }`
 
-func TestPartnerName(t *testing.T) {
-	partnera := PartnerRhccAdapter{}
-	ft.Equal(t, partnera.RegistryName(), "partner_rhcc", "partner_rhcc name does not match `partner_rhcc`")
+func TestRegistryName(t *testing.T) {
+	testcases := []struct {
+		urlstr string
+		result string
+	}{
+		{"http://foo.redhat.com", "foo.redhat.com"},
+		{"https://registry.reg-aws.openshift.com:443", "registry.reg-aws.openshift.com:443"},
+		{"ftp://registry.reg-aws.openshift.com", "registry.reg-aws.openshift.com"},
+		{"file:///home/user/awesome", "/home/user/awesome"},
+	}
+
+	for _, testcase := range testcases {
+		url, err := url.Parse(testcase.urlstr)
+		if err != nil {
+			t.Fatal("Error: ", err)
+		}
+
+		ocpa := OpenShiftAdapter{
+			Config: Configuration{
+				URL: url,
+			},
+		}
+		ft.Equal(t, ocpa.RegistryName(), testcase.result, "the registry name returned did not match expected value")
+	}
 }
 
-func TestPartnerGetImageNames(t *testing.T) {
-	partnera := PartnerRhccAdapter{}
-	partnera.Config.Images = PartnerImages
-	imagesFound, err := partnera.GetImageNames()
+func TestOpenShiftGetImageNames(t *testing.T) {
+	ocpa := OpenShiftAdapter{}
+	ocpa.Config.Images = Images
+	imagesFound, err := ocpa.GetImageNames()
 	if err != nil {
 		t.Fatal("Error: ", err)
 	}
-	ft.Equal(t, imagesFound, PartnerImages, "image names returned did not match expected config")
+	ft.Equal(t, imagesFound, Images, "image names returned did not match expected config")
 }
 
-func TestPartnerFetchSpecs(t *testing.T) {
+func TestOpenShiftFetchSpecs(t *testing.T) {
 	authServ := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
 			t.Errorf("Expected `GET` request, got `%s`", r.Method)
 		}
-		fmt.Fprintf(w, PartnerAuthResponse)
+		fmt.Fprintf(w, AuthResponse)
 	}))
 
 	serv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +143,7 @@ func TestPartnerFetchSpecs(t *testing.T) {
 		}
 		if strings.Contains(r.URL.EscapedPath(), "manifests/") {
 			name := strings.Split(r.URL.EscapedPath(), "manifests/")[1]
-			fmt.Fprintf(w, fmt.Sprintf(PartnerManifestResponse, name))
+			fmt.Fprintf(w, fmt.Sprintf(OpenShiftManifestResponse, name))
 		}
 
 	}))
@@ -131,16 +152,16 @@ func TestPartnerFetchSpecs(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error: ", err)
 	}
-	partnera := PartnerRhccAdapter{
+	ocpa := OpenShiftAdapter{
 		Config: Configuration{
 			URL:    url,
 			User:   "satoshi",
 			Pass:   "nakamoto",
-			Images: PartnerImages,
+			Images: Images,
 		},
 	}
-	imageNames, err := partnera.GetImageNames()
-	specs, err := partnera.FetchSpecs(imageNames)
+	imageNames, err := ocpa.GetImageNames()
+	specs, err := ocpa.FetchSpecs(imageNames)
 	if err != nil {
 		t.Fatal("Error: ", err)
 	}
