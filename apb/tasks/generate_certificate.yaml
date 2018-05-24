@@ -69,7 +69,7 @@
             kind='ServiceAccount',
             namespace=broker_namespace,
             resource_name=broker_name + '-client'
-          ).secrets | map(attribute='name') | select('match', 'automation-broker-client-token*') |first
+          ).secrets | map(attribute='name') | select('match', broker_name + '-client-token*') |first
         }}"
 
 - name: Delete tls secret
