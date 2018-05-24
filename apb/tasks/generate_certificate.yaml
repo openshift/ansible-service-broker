@@ -1,66 +1,85 @@
 ---
 
-# TODO: Figure out how to use openssl from ansible
-#- name: Generate a Self Signed OpenSSL certificate
-#  openssl_certificate:
-#    path: /tmp/{{ broker_name }}-cert/cert.pem
-#    privatekey_path: /tmp/{{ broker_name }}-cert/key.pem
-#    subject: "/CN={{ broker_name }}.{{ broker_name }}.svc"
-#    provider: selfsigned
-- when: cluster == 'kubernetes'
-  vars:
-    cert_dir: "/tmp/{{ broker_name }}-cert"
+- when: apb_action == 'provision'
   block:
-    - name: Create directory for cert
-      file:
-        path: "{{ cert_dir }}"
-        state: directory
-        mode: 0755
-      check_mode: no
+    - when: cluster == 'kubernetes'
+      vars:
+        cert_dir: "/tmp/{{ broker_name }}-cert"
+      block:
+        - name: Create directory for cert
+          file:
+            path: "{{ cert_dir }}"
+            state: directory
+            mode: 0755
+          check_mode: no
 
-    - name: Create cert
-      command: >
-        openssl req -nodes -x509 -newkey rsa:4096
-        -keyout {{ cert_dir }}/key.pem
-        -out {{ cert_dir }}/cert.pem
-        -days 365
-        -subj "/CN={{ broker_name }}.{{ broker_namespace }}.svc"
-      args:
-        creates: "{{ cert_dir }}/cert.pem"
+        - name: Create cert
+          command: >
+            openssl req -nodes -x509 -newkey rsa:4096
+            -keyout {{ cert_dir }}/key.pem
+            -out {{ cert_dir }}/cert.pem
+            -days 365
+            -subj "/CN={{ broker_name }}.{{ broker_namespace }}.svc"
+          args:
+            creates: "{{ cert_dir }}/cert.pem"
 
-    - name: Create tls secret
-      command: >
-        kubectl create secret tls -n {{ broker_namespace }} {{ broker_tls_name }}
-        --cert="{{ cert_dir }}/cert.pem"
-        --key="{{ cert_dir }}/key.pem"
-      register: tls_command
-      failed_when: tls_command.rc != 0 and 'AlreadyExists' not in tls_command.stderr
+        - name: Create tls secret
+          k8s:
+            definition:
+              kind: Secret
+              apiVersion: v1
+              type: kubernetes.io/tls
+              metadata:
+                name: '{{ broker_tls_name }}'
+                namespace: '{{ broker_namespace }}'
+              stringData:
+                tls.crt: '{{ lookup("file", cert_dir + "/cert.pem" ) }}'
+                tls.key: '{{ lookup("file", cert_dir + "/key.pem" ) }}'
+
+        - name: Register certificate related facts for broker
+          set_fact:
+            broker_ca_crt: "{{
+              lookup(
+                'k8s',
+                kind='Secret',
+                api_version='v1',
+                namespace=broker_namespace,
+                resource_name=broker_tls_name,
+              ).data['tls.crt']
+            }}"
 
     - name: Register certificate related facts for broker
       set_fact:
-        broker_ca_crt: "{{ lookup('file', cert_dir + '/cert.pem') | b64encode }}"
+        broker_ca_crt: "{{
+          lookup(
+            'k8s',
+            kind='Secret',
+            api_version='v1',
+            namespace=broker_namespace,
+            resource_name=broker_name + '-client'
+          ).data['service-ca.crt']
+        }}"
+      when: cluster == 'openshift'
 
-- when: cluster == 'openshift'
-  block:
-    - name: Get the cluster ca
-      shell: >
-        kubectl get secrets -n {{ broker_namespace }} {{ broker_name }}-client
-        -o yaml | grep service-ca.crt | awk '{ print $2 }'
-      register: cluster_ca
-
-    - name: Register certificate related facts for broker
+    - name: Set broker_client_secret fact
       set_fact:
-        broker_ca_crt: "{{ cluster_ca.stdout }}"
+        broker_client_secret: "{{
+          lookup(
+            'k8s',
+            kind='ServiceAccount',
+            namespace=broker_namespace,
+            resource_name=broker_name + '-client'
+          ).secrets | map(attribute='name') | select('match', 'automation-broker-client-token*') |first
+        }}"
 
-- name: Set broker_client_secret fact
-  set_fact:
-    broker_client_secret: "{{
-      lookup(
-        'k8s',
-        kind='ServiceAccount',
-        namespace=broker_namespace,
-        resource_name=broker_name + '-client'
-      ) | to_json | from_json | json_query(query) | first
-    }}"
-  vars:
-    query: "secrets[?starts_with(name, '{{ broker_name }}-client-token')].name"
+- name: Delete tls secret
+  k8s:
+    state: absent
+    definition:
+      kind: Secret
+      apiVersion: v1
+      type: kubernetes.io/tls
+      metadata:
+        name: '{{ broker_tls_name }}'
+        namespace: '{{ broker_namespace }}'
+  when: apb_action == 'deprovision' and cluster == 'kubernetes'

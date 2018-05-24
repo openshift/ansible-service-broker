@@ -1,21 +1,10 @@
 ---
 
-# TODO: Use this when it will work
-#- name: 'Set broker clusterresourcedefinitions state={{ state }}'
-#  k8s_raw:
-#    state: '{{ state }}'
-#    definition: "{{ lookup('template', item) | from_yaml }}"
-#  with_items:
-#    - bundle.crd.yaml
-#    - bundlebindings.crd.yaml
-#    - bundleinstances.crd.yaml
-
-- name: 'Use kubectl to {{ kubectl_action }} cluster resource definitions'
-  command: kubectl {{ kubectl_action }} -f {{ lookup('fileglob', item) }}
-  register: crd_command
-  failed_when: crd_command.rc != 0 and 'AlreadyExists' not in crd_command.stderr and 'NotFound' not in crd_command.stderr
+- name: 'Set broker clusterresourcedefinitions state={{ state }}'
+  k8s:
+    state: '{{ state }}'
+    definition: "{{ lookup('file', item) | from_yaml }}"
   with_items:
     - bundle.crd.yaml
     - bundlebindings.crd.yaml
     - bundleinstances.crd.yaml
-

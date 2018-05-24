@@ -15,3 +15,13 @@ broker_tls_name: "{{ broker_name }}-tls"
 etcd_name: broker-etcd
 etcd_tls_name: "{{ etcd_name }}-tls"
 etcd_host: "{{ etcd_name }}.{{ broker_namespace }}.svc"
+
+ready_status_query: "status.conditions[?type == 'Ready'].status"
+cluster_service_broker_query: "{{
+  lookup(
+    'k8s',
+    api_version='servicecatalog.k8s.io/v1beta1',
+    kind='ClusterServiceBroker',
+    resource_name=broker_name
+  ) | json_query(ready_status_query) 
+}}"

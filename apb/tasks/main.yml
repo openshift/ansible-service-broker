@@ -1,21 +1,14 @@
 ---
 
-- name: 'Determine cluster type'
-  command: oc version
-  register: oc_version
-  ignore_errors: yes
-  changed_when: False
-
 # These can always be overridden at the command line
 # http://docs.ansible.com/ansible/devel/user_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable
-- name: 'Set cluster fact'
+- name: 'Set facts'
   set_fact:
-    cluster: "{{ 'openshift' if 'openshift' in oc_version.stdout else 'kubernetes' }}"
-
-- name: 'Set facts based on cluster type'
-  set_fact:
-    broker_auto_escalate: "{{ 'true' if cluster == 'kubernetes' else 'false' }}"
-    broker_local_openshift_enabled: "{{ 'true' if cluster == 'openshift' else 'false' }}"
+    cluster: "{{ _cluster_type }}"
+    broker_auto_escalate: "{{ 'true' if _cluster_type == 'kubernetes' else 'false' }}"
+    broker_local_openshift_enabled: "{{ 'true' if _cluster_type == 'openshift' else 'false' }}"
+  vars:
+    _cluster_type: '{{ "openshift" if "openshift" in lookup("k8s", cluster_info="version") else "kubernetes" }}'
 
 - name: Debug important facts
   debug:
@@ -24,88 +17,59 @@
       - "broker_auto_escalate {{ broker_auto_escalate }}"
       - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
 
-- name: 'Check for service catalog'
-  command: kubectl api-versions
-  register: kapi_versions
-  changed_when: False
-  when: apb_action == 'provision'
-
-- name: 'Fail if service-catalog not installed'
-  fail:
-    msg:
-     There is no service catalog api-versions available in this cluster.
-     Please install the service catalog and retry.
-  when: apb_action == 'provision' and 'servicecatalog.k8s.io' not in kapi_versions.stdout
-
 - name: 'Set broker namespace state={{ state }}'
-  openshift_raw:
+  k8s:
     state: '{{ state }}'
     definition: "{{ lookup('template', 'broker.namespace.yaml') | from_yaml }}"
   when: create_broker_namespace
 
-- name: 'Get the broker namespace'
-  set_fact:
-    _broker_namespace: "{{ lookup('k8s', kind='Namespace', resource_name=broker_namespace) }}"
-  failed_when: not _broker_namespace
+- name: Verify preconditions
+  assert:
+    that:
+      - '"servicecatalog.k8s.io" in lookup("k8s", cluster_info="api_groups")'
+      - 'lookup("k8s", kind="Namespace", resource_name=broker_namespace) is defined'
+    msg:
+      - Service Catalog must be installed in the cluster
+      - The broker namespace must exist
   when: apb_action == 'provision'
 
-- name: 'Set broker objects state={{ state }}'
-  k8s_raw:
-    state: '{{ state }}'
-    definition: "{{ lookup('template', item) | from_yaml }}"
-  with_items:
-    - broker.service.yaml
-    - broker.serviceaccount.yaml
-    - broker.clusterrolebinding.yaml
-    - broker.configmap.yaml
-    - broker-auth.clusterrole.yaml
-    - broker-auth.clusterrolebinding.yaml
-    - broker-client.serviceaccount.yaml
-    - broker-client.secret.yaml
-    - broker-client.clusterrolebinding.yaml
-    - broker-access.clusterrole.yaml
-
-- name: 'Broker auth secret state={{ state }}'
-  k8s_raw:
-    state: '{{ state }}'
-    definition: "{{ lookup('template', 'broker-auth.secret.yaml') | from_yaml }}"
-  when: broker_basic_auth_enabled
-
-# Handle how the broker saves state
 - include_tasks: "dao_{{ broker_dao_type }}.yaml"
 
+- name: 'Set broker objects state={{ state }}'
+  k8s:
+    state: '{{ item.state | default(state) }}'
+    definition: "{{ lookup('template', item.name) | from_yaml }}"
+  loop:
+    - name: broker.service.yaml
+    - name: broker.route.yaml
+      state: "{{ state if cluster == 'openshift' else 'absent' }}"
+    - name: broker.serviceaccount.yaml
+    - name: broker.clusterrolebinding.yaml
+    - name: broker.configmap.yaml
+    - name: broker-auth.clusterrole.yaml
+    - name: broker-auth.clusterrolebinding.yaml
+    - name: broker-client.serviceaccount.yaml
+    - name: broker-client.secret.yaml
+    - name: broker-client.clusterrolebinding.yaml
+    - name: broker-access.clusterrole.yaml
+    - name: broker-auth.secret.yaml
+      state: "{{ state if broker_basic_auth_enabled else 'absent' }}"
+
 - include_tasks: "generate_certificate.yaml"
-  when: apb_action == 'provision'
 
-- name: 'Set broker deployment object state={{ state }}'
-  openshift_raw:
-    state: '{{ state }}'
-    definition: "{{ lookup('template', 'broker.deployment.yaml') | from_yaml }}"
+- name: 'Set broker objects state={{ state }}'
+  k8s:
+    state: '{{ item.state | default(state) }}'
+    definition: "{{ lookup('template', item.name) | from_yaml }}"
+  loop:
+    - name: broker.deployment.yaml
+    - name: broker.servicecatalog.yaml
 
-- name: 'Set route state={{ state }}'
-  openshift_raw:
-    state: '{{ state }}'
-    definition: "{{ lookup('template', 'broker.route.yaml') | from_yaml }}"
-  when: cluster == 'openshift'
-
-# Handle the service-catalog cluster object
-# Until we have the dynamic client, we'll have to kubectl create the clusterservicebroker object
-# This is because service catalog specific objects are not in either the kubernetes or openshift
-# client's models.
-- name: 'Template out cluster service broker object'
-  template:
-    src: broker.servicecatalog.yaml
-    dest: /tmp/broker.servicecatalog.yaml
-
-- name: 'Use kubectl to {{ kubectl_action }} cluster service broker object'
-  command: kubectl {{ kubectl_action }} -f /tmp/broker.servicecatalog.yaml
-  register: csb_command
-  failed_when: csb_command.rc != 0 and 'AlreadyExists' not in csb_command.stderr and 'NotFound' not in csb_command.stderr
-
-- name: Wait for clusterservicebroker to become available
-  command: kubectl get clusterservicebrokers {{ broker_name }} -o go-template={%raw%}'{{ range .status.conditions }}{{ if eq .type "Ready" }}{{ .status }}{{ end }}{{ end }}'{%endraw%}
-  register: broker_ready
+- name: Wait for clusterservicebroker to become ready
+  debug:
+    msg: "Broker ready status: {{ cluster_service_broker_query }}"
+  vars:
   retries: 60
   delay: 10
-  until: broker_ready.stdout == 'True'
+  until: cluster_service_broker_query | length > 0 and cluster_service_broker_query | first == "True"
   when: apb_action == 'provision' and wait_for_broker

@@ -22,9 +22,7 @@
         creates: '{{ broker_etcd_certs_dir }}/cert.pem'
 
     - name: Create tls secret
-      when:
-        - cluster == 'kubernetes'
-        - apb_action == 'provision'
+      when: cluster == 'kubernetes' and apb_action == 'provision'
       command: >
         kubectl create secret tls -n {{ broker_namespace }} {{ etcd_tls_name }}
         --cert="{{ broker_etcd_certs_dir }}/cert.pem"
@@ -36,31 +34,31 @@
       command: '{{ item.cmd }}'
       args:
         creates: '{{ item.creates }}'
-      with_items:
-      - cmd: openssl genrsa -out {{ broker_etcd_certs_dir }}/client.key 2048
-        creates: '{{ broker_etcd_certs_dir }}/client.key'
-      - cmd: >
-          openssl req -new -key {{ broker_etcd_certs_dir }}/client.key
-          -out {{ broker_etcd_certs_dir }}/client.csr
-          -subj "/CN=client"
-        creates: '{{ broker_etcd_certs_dir }}/client.csr'
-      - cmd: >
-          openssl x509 -req -in {{ broker_etcd_certs_dir }}/client.csr
-          -CA {{ broker_etcd_certs_dir }}/cert.pem
-          -CAkey {{ broker_etcd_certs_dir }}/key.pem
-          -CAcreateserial
-          -out {{ broker_etcd_certs_dir }}/client.pem
-          -days 1024
-        creates: '{{ broker_etcd_certs_dir }}/client.pem'
+      loop:
+        - cmd: openssl genrsa -out {{ broker_etcd_certs_dir }}/client.key 2048
+          creates: '{{ broker_etcd_certs_dir }}/client.key'
+        - cmd: >
+            openssl req -new -key {{ broker_etcd_certs_dir }}/client.key
+            -out {{ broker_etcd_certs_dir }}/client.csr
+            -subj "/CN=client"
+          creates: '{{ broker_etcd_certs_dir }}/client.csr'
+        - cmd: >
+            openssl x509 -req -in {{ broker_etcd_certs_dir }}/client.csr
+            -CA {{ broker_etcd_certs_dir }}/cert.pem
+            -CAkey {{ broker_etcd_certs_dir }}/key.pem
+            -CAcreateserial
+            -out {{ broker_etcd_certs_dir }}/client.pem
+            -days 1024
+          creates: '{{ broker_etcd_certs_dir }}/client.pem'
 
 - name: Read in certs for etcd
   slurp:
     src: '{{ broker_etcd_certs_dir }}/{{ item }}'
   register: asb_etcd_certs
-  with_items:
-  - cert.pem
-  - client.pem
-  - client.key
+  loop:
+    - cert.pem
+    - client.pem
+    - client.key
 
 - set_fact:
     etcd_ca_cert: "{{ asb_etcd_certs.results.0.content }}"
@@ -68,21 +66,13 @@
     etcd_client_key: "{{ asb_etcd_certs.results.2.content }}"
 
 - name: 'Set etcd objects state={{ state }}'
-  k8s_raw:
-    state: '{{ state }}'
-    definition: "{{ lookup('template', item) | from_yaml }}"
-  with_items:
-    - etcd-ca.secret.yaml
-    - etcd-auth.secret.yaml
-    - etcd.service.yaml
-
-- name:
-  k8s_raw:
-    state: '{{ state }}'
-    definition: "{{ lookup('template', 'etcd.pvc.yaml') | from_yaml }}"
-  when: etcd_persist_storage | bool
-
-- name: 'Set etcd deployment object state={{ state }}'
-  openshift_raw:
-    state: '{{ state }}'
-    definition: "{{ lookup('template', 'etcd.deployment.yaml') | from_yaml }}"
+  k8s:
+    state: '{{ item.state | default(state) }}'
+    definition: "{{ lookup('template', item.name) | from_yaml }}"
+  loop:
+    - name: etcd-ca.secret.yaml
+    - name: etcd-auth.secret.yaml
+    - name: etcd.service.yaml
+    - name: etcd.pvc.yaml
+      state: "{{ state if etcd_persist_storage else 'absent' }}"
+    - name: etcd.deployment.yaml
