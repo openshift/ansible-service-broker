@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.13
+Version: 1.2.14
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu May 24 2018 David Zager <david.j.zager@gmail.com> 1.2.14-1
+- Bug 1581580 - skip if bind instance does not have credentials (#966)
+  (smhurley00@gmail.com)
+
 * Tue May 22 2018 David Zager <david.j.zager@gmail.com> 1.2.13-1
 - Bug 1578319 - send _apb* parameters to unbind (#959) (jmrodri@gmail.com)
 
