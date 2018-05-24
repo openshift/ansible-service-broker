@@ -110,7 +110,16 @@ Let's walk through an `oc cluster up` based setup.
 
 2. If you are using minishift you should look at the [minishift](https://github.com/openshift/ansible-service-broker/blob/master/docs/minishift.md) documentation to get the ansible service broker deployed and running.
 
-## Deploy an OpenShift Origin Cluster with the Ansible Service Broker
+## Deploy a v3.10+ Openshift Origin Cluster with the Ansible Service Broker
+[![Watch the full asciicast](docs/images/oc-enable.gif)](https://asciinema.org/a/qWbzLFt1GyWNYwH1TPsXJGAKr)
+
+* Starting with Origin v3.10  it's as simple as running `oc cluster up --enable=service-catalog,automation-service-broker`.
+  * Running `oc cluster up --enable` will give you a full list of features. You may find it helpful to also add `persistent-volumes`, `registry`, `rhel-imagestreams`, `router`, etc.
+  * You might also want to add a public-hostname and routing-suffix to make it easier to access your provisioned applications as well.
+  * Complete example would look like `oc cluster up --routing-suffix=172.17.0.1.nip.io --public-hostname=172.17.0.1.nip.io --enable=service-catalog,router,registry,web-console,persistent-volumes,rhel-imagestreams,automation-service-broker`
+  * An in depth demo is available at https://youtu.be/IY1RINVsO40
+
+## Deploy a Pre v3.10 OpenShift Origin Cluster with the Ansible Service Broker
 
 [![Watch the full asciicast](docs/images/run_latest.gif)](https://asciinema.org/a/134509)
 
