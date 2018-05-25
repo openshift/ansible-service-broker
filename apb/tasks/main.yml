@@ -37,12 +37,13 @@
 
 - name: 'Set broker objects state={{ state }}'
   k8s:
-    state: '{{ item.state | default(state) }}'
+    state: '{{ state }}'
     definition: "{{ lookup('template', item.name) | from_yaml }}"
+  when: item.apply | default(True)
   loop:
     - name: broker.service.yaml
     - name: broker.route.yaml
-      state: "{{ state if cluster == 'openshift' else 'absent' }}"
+      apply: "{{ True if cluster == 'openshift' else False }}"
     - name: broker.serviceaccount.yaml
     - name: broker.clusterrolebinding.yaml
     - name: broker.configmap.yaml
@@ -53,7 +54,7 @@
     - name: broker-client.clusterrolebinding.yaml
     - name: broker-access.clusterrole.yaml
     - name: broker-auth.secret.yaml
-      state: "{{ state if broker_basic_auth_enabled else 'absent' }}"
+      apply: "{{ True if broker_basic_auth_enabled else False }}"
 
 - include_tasks: "generate_certificate.yaml"
 

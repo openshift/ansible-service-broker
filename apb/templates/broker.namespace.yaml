@@ -1,10 +1,11 @@
 ---
 
-apiVersion: v1
 {% if cluster == 'kubernetes' %}
+apiVersion: v1
 kind: Namespace
 {% else %}
-kind: Project
+apiVersion: project.openshift.io/v1
+kind: ProjectRequest
 {% endif %}
 metadata:
   name: '{{ broker_namespace }}'
