@@ -11,6 +11,7 @@ state_map:
 state: "{{ state_map[apb_action] }}"
 
 broker_tls_name: "{{ broker_name }}-tls"
+broker_tls_cert_dir: "/tmp/{{ broker_name }}-cert"
 
 etcd_name: broker-etcd
 etcd_tls_name: "{{ etcd_name }}-tls"

@@ -14,6 +14,10 @@ metadata:
 {% endif %}
 spec:
   ports:
+    - name: port-1337
+      port: 1337
+      targetPort: 1337
+      protocol: TCP
     - name: port-1338
       port: 1338
       targetPort: 1338

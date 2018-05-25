@@ -3,7 +3,7 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: broker
+  name: broker-redirector
   namespace: {{ broker_namespace }}
   labels:
     app: {{ broker_name }}
@@ -13,6 +13,4 @@ spec:
     kind: Service
     name: {{ broker_name }}
   port:
-    targetPort: port-1338
-  tls:
-    termination: reencrypt
+    targetPort: port-1337

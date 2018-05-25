@@ -34,6 +34,8 @@
   when: apb_action == 'provision'
 
 - include_tasks: "dao_{{ broker_dao_type }}.yaml"
+- include_tasks: "generate_certificate.yaml"
+  when: cluster == 'kubernetes'
 
 - name: 'Set broker objects state={{ state }}'
   k8s:
@@ -43,6 +45,8 @@
   loop:
     - name: broker.service.yaml
     - name: broker.route.yaml
+      apply: "{{ True if cluster == 'openshift' else False }}"
+    - name: broker-redirector.route.yaml
       apply: "{{ True if cluster == 'openshift' else False }}"
     - name: broker.serviceaccount.yaml
     - name: broker.clusterrolebinding.yaml
@@ -55,14 +59,6 @@
     - name: broker-access.clusterrole.yaml
     - name: broker-auth.secret.yaml
       apply: "{{ True if broker_basic_auth_enabled else False }}"
-
-- include_tasks: "generate_certificate.yaml"
-
-- name: 'Set broker objects state={{ state }}'
-  k8s:
-    state: '{{ item.state | default(state) }}'
-    definition: "{{ lookup('template', item.name) | from_yaml }}"
-  loop:
     - name: broker.deployment.yaml
     - name: broker.servicecatalog.yaml
 

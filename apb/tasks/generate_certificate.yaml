@@ -2,84 +2,24 @@
 
 - when: apb_action == 'provision'
   block:
-    - when: cluster == 'kubernetes'
-      vars:
-        cert_dir: "/tmp/{{ broker_name }}-cert"
-      block:
-        - name: Create directory for cert
-          file:
-            path: "{{ cert_dir }}"
-            state: directory
-            mode: 0755
-          check_mode: no
+    - name: Create directory for cert
+      file:
+        path: "{{ broker_tls_cert_dir }}"
+        state: directory
+        mode: 0755
+      check_mode: no
 
-        - name: Create cert
-          command: >
-            openssl req -nodes -x509 -newkey rsa:4096
-            -keyout {{ cert_dir }}/key.pem
-            -out {{ cert_dir }}/cert.pem
-            -days 365
-            -subj "/CN={{ broker_name }}.{{ broker_namespace }}.svc"
-          args:
-            creates: "{{ cert_dir }}/cert.pem"
+    - name: Create cert
+      command: >
+        openssl req -nodes -x509 -newkey rsa:4096
+        -keyout {{ broker_tls_cert_dir }}/key.pem
+        -out {{ broker_tls_cert_dir }}/cert.pem
+        -days 365
+        -subj "/CN={{ broker_name }}.{{ broker_namespace }}.svc"
+      args:
+        creates: "{{ broker_tls_cert_dir }}/cert.pem"
 
-        - name: Create tls secret
-          k8s:
-            definition:
-              kind: Secret
-              apiVersion: v1
-              type: kubernetes.io/tls
-              metadata:
-                name: '{{ broker_tls_name }}'
-                namespace: '{{ broker_namespace }}'
-              stringData:
-                tls.crt: '{{ lookup("file", cert_dir + "/cert.pem" ) }}'
-                tls.key: '{{ lookup("file", cert_dir + "/key.pem" ) }}'
-
-        - name: Register certificate related facts for broker
-          set_fact:
-            broker_ca_crt: "{{
-              lookup(
-                'k8s',
-                kind='Secret',
-                api_version='v1',
-                namespace=broker_namespace,
-                resource_name=broker_tls_name,
-              ).data['tls.crt']
-            }}"
-
-    - name: Register certificate related facts for broker
-      set_fact:
-        broker_ca_crt: "{{
-          lookup(
-            'k8s',
-            kind='Secret',
-            api_version='v1',
-            namespace=broker_namespace,
-            resource_name=broker_name + '-client'
-          ).data['service-ca.crt']
-        }}"
-      when: cluster == 'openshift'
-
-    - name: Set broker_client_secret fact
-      set_fact:
-        broker_client_secret: "{{
-          lookup(
-            'k8s',
-            kind='ServiceAccount',
-            namespace=broker_namespace,
-            resource_name=broker_name + '-client'
-          ).secrets | map(attribute='name') | select('match', broker_name + '-client-token*') |first
-        }}"
-
-- name: Delete tls secret
+- name: 'Set tls secret state={{ state }}'
   k8s:
-    state: absent
-    definition:
-      kind: Secret
-      apiVersion: v1
-      type: kubernetes.io/tls
-      metadata:
-        name: '{{ broker_tls_name }}'
-        namespace: '{{ broker_namespace }}'
-  when: apb_action == 'deprovision' and cluster == 'kubernetes'
+    state: '{{ state }}'
+    definition: "{{ lookup('template', 'broker-tls.secret.yaml') | from_yaml }}"

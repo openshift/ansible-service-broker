@@ -81,6 +81,17 @@ data:
       ssl_cert: /etc/tls/private/tls.crt
       auto_escalate: {{ broker_auto_escalate }}
       cluster_url: {{ broker_namespace }}
+{% if cluster == 'openshift' %}
+      dashboard_redirector: http://{{
+        lookup(
+          'k8s',
+          api_version='route.openshift.io/v1',
+          kind='Route',
+          namespace=broker_namespace,
+          resource_name='broker-redirector'
+        ) | json_query('spec.host')
+      }}
+{% endif %}
       auth:
         - type: basic
           enabled: {{ broker_basic_auth_enabled }}
