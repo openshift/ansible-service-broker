@@ -176,5 +176,9 @@ func (r PartnerRhccAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-	return imageToSpec(req, fmt.Sprintf("%s/%s:%s", r.Config.URL.Hostname(), imageName, r.Config.Tag))
+	registryName := r.Config.URL.Hostname()
+	if r.Config.URL.Port() != "" {
+		registryName = fmt.Sprintf("%s:%s", r.Config.URL.Hostname(), r.Config.URL.Port())
+	}
+	return imageToSpec(req, fmt.Sprintf("%s/%s:%s", registryName, imageName, r.Config.Tag))
 }
