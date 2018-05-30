@@ -614,7 +614,7 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	// away from []byte it can still be evaluated.
 	if si != nil && uuid.Equal(si.ID, serviceInstance.ID) {
 		if reflect.DeepEqual(si.Parameters, serviceInstance.Parameters) {
-			alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance, apb.JobMethodProvision)
+			alreadyInProgress, jobToken, err := a.isJobInProgress(serviceInstance.ID.String(), apb.JobMethodProvision)
 			if err != nil {
 				return nil, fmt.Errorf("An error occurred while trying to determine if a provision job is already in progress for instance: %s", serviceInstance.ID)
 			}
@@ -732,7 +732,7 @@ func (a AnsibleBroker) Deprovision(
 		return nil, err
 	}
 
-	alreadyInProgress, jobToken, err := a.isJobInProgress(&instance, apb.JobMethodDeprovision)
+	alreadyInProgress, jobToken, err := a.isJobInProgress(instance.ID.String(), apb.JobMethodDeprovision)
 	if err != nil {
 		return nil, fmt.Errorf("An error occurred while trying to determine if a deprovision job is already in progress for instance: %s", instance.ID)
 	}
@@ -796,11 +796,11 @@ func (a AnsibleBroker) validateDeprovision(instance *apb.ServiceInstance) error 
 	return nil
 }
 
-func (a AnsibleBroker) isJobInProgress(instance *apb.ServiceInstance,
+func (a AnsibleBroker) isJobInProgress(ID string,
 	method apb.JobMethod) (bool, string, error) {
 
-	allJobs, err := a.dao.GetSvcInstJobsByState(instance.ID.String(), apb.StateInProgress)
-	log.Infof("All Jobs for instance: %v in state:  %v - \n%#v", instance.ID, apb.StateInProgress, allJobs)
+	allJobs, err := a.dao.GetSvcInstJobsByState(ID, apb.StateInProgress)
+	log.Infof("All Jobs for instance: %v in state:  %v - \n%#v", ID, apb.StateInProgress, allJobs)
 	if err != nil {
 		return false, "", err
 	}
@@ -1047,7 +1047,7 @@ func (a AnsibleBroker) Unbind(
 		return nil, false, errors.New(errMsg)
 	}
 
-	jobInProgress, jobToken, err := a.isJobInProgress(&instance, apb.JobMethodUnbind)
+	jobInProgress, jobToken, err := a.isJobInProgress(bindInstance.ID.String(), apb.JobMethodUnbind)
 	if err != nil {
 		log.Errorf("An error occurred while trying to determine if a unbind job is already in progress for instance: %s", instance.ID)
 		return nil, false, err
@@ -1248,7 +1248,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	// else, add onto the back of the queue. Ensures update operations are not
 	// trying to execute concurrently.
 	////////////////////////////////////////////////////////////
-	alreadyInProgress, jobToken, err := a.isJobInProgress(si, apb.JobMethodUpdate)
+	alreadyInProgress, jobToken, err := a.isJobInProgress(si.ID.String(), apb.JobMethodUpdate)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"An error occurred while trying to determine if an update job is already in progress for instance: %s", si.ID)
