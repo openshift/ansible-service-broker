@@ -37,8 +37,6 @@ func (jss *JobStateSubscriber) Notify(msg JobMsg) {
 		id = msg.BindingUUID
 	}
 
-	log.Debugf("message: method: [%v] isNotFound? [%v] state error [%v]", msg.State.Method, msg.State.Error == runtime.ErrorActionNotFound.Error(), msg.State.Error)
-
 	// Bug 1583064 - Should not launch multi unbind sandboxes frequently while
 	// unbind failed.
 	//
