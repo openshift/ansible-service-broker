@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.15
+Version: 1.2.16
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed May 30 2018 David Zager <david.j.zager@gmail.com> 1.2.16-1
+- Bug 1583064 - missing action causes many sandboxes (#971) (jmrodri@gmail.com)
+
 * Wed May 30 2018 David Zager <david.j.zager@gmail.com> 1.2.15-1
 - Bump bundle lib to 0.1.8 (#968) (dzager@redhat.com)
 
