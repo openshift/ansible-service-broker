@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/runtime"
 )
 
 // JobStateSubscriber is responsible for handling and persisting JobState changes
@@ -34,6 +35,26 @@ func (jss *JobStateSubscriber) Notify(msg JobMsg) {
 	if isBinding(msg) {
 		id = msg.BindingUUID
 	}
+
+	// Bug 1583064 - Should not launch multi unbind sandboxes frequently while
+	// unbind failed.
+	//
+	// If the unbind fails we really want to let them know it failed because it
+	// is probably something the APB developer needs to fix. But if the action
+	// is non-existent we really need to prevent the multiple sandboxes.
+	//
+	// if we can't find the action, there is no point in continuing.
+	// marking job as SUCCEEDED but setting the message to be the actual error
+	// string. This will only happen for the optional actions: bind & unbind.
+	if msg.State.Error == runtime.ErrorActionNotFound.Error() {
+		log.Debug("We have an 'action not found' error. Looking to see if this is a bind or an unbind.")
+		if msg.State.Method == apb.JobMethodBind || msg.State.Method == apb.JobMethodUnbind {
+			log.Info("bind or unbind action not found, marking as succeeded.")
+			msg.State.State = apb.StateSucceeded
+			// leave error message as not found
+		}
+	}
+
 	if _, err := jss.dao.SetState(id, msg.State); err != nil {
 		log.Errorf("Error JobStateSubscriber failed to set state after action %v completed with state %s err: %v", msg.State.Method, msg.State.State, err)
 		return
