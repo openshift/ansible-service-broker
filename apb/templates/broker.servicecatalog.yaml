@@ -4,7 +4,7 @@ apiVersion: servicecatalog.k8s.io/v1beta1
 kind: {{ broker_kind }}
 metadata:
   name: {{ broker_name }}
-{% if apb_action != 'deprovision' %}
+{% if state == 'present' %}
 spec:
   url: https://{{ broker_name }}.{{ broker_namespace }}.svc:1338/{{ broker_name }}/
   authInfo:

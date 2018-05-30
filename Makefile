@@ -100,7 +100,7 @@ really-clean: clean cleanup-ci ## Really clean up the working environment
 deploy: build-image build-apb ## Deploy a built broker docker image to a running cluster
 	APB_IMAGE=${APB_IMAGE} BROKER_IMAGE=${BROKER_IMAGE} ACTION="provision" ./scripts/deploy.sh
 
-undeploy: build-image build-apb ## Uninstall a deployed broker from a running cluster
+undeploy: build-apb ## Uninstall a deployed broker from a running cluster
 	APB_IMAGE=${APB_IMAGE} BROKER_IMAGE=${BROKER_IMAGE} ACTION="deprovision" ./scripts/deploy.sh
 
 ## Continuous integration stuff

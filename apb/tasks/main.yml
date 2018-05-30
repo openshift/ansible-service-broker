@@ -31,7 +31,7 @@
     msg:
       - Service Catalog must be installed in the cluster
       - The broker namespace must exist
-  when: apb_action == 'provision'
+  when: state == 'present'
 
 - include_tasks: "dao_{{ broker_dao_type }}.yaml"
 - include_tasks: "generate_certificate.yaml"
@@ -69,4 +69,4 @@
   retries: 60
   delay: 10
   until: cluster_service_broker_query | length > 0 and cluster_service_broker_query | first == "True"
-  when: apb_action == 'provision' and wait_for_broker
+  when: state == 'present' and wait_for_broker

@@ -5,7 +5,7 @@ apiVersion: v1
 kind: Namespace
 {% else %}
 apiVersion: project.openshift.io/v1
-kind: {{ 'Project' if apb_action != 'provision' else 'ProjectRequest' }}
+kind: {{ 'ProjectRequest' if state == 'present' else 'Project' }}
 {% endif %}
 metadata:
   name: {{ broker_namespace }}

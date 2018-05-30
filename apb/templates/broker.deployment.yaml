@@ -54,8 +54,8 @@ spec:
             - containerPort: 1338
               protocol: TCP
           env:
-          - name: BROKER_CONFIG
-            value: /etc/{{ broker_name }}/config.yaml
+            - name: BROKER_CONFIG
+              value: /etc/{{ broker_name }}/config.yaml
           resources: {}
           terminationMessagePath: /tmp/termination-log
           readinessProbe:

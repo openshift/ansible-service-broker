@@ -1,6 +1,6 @@
 ---
 
-- when: apb_action == 'provision'
+- when: state == 'present'
   block:
     - name: Create directory for cert
       file:
@@ -19,7 +19,28 @@
       args:
         creates: "{{ broker_tls_cert_dir }}/cert.pem"
 
-- name: 'Set tls secret state={{ state }}'
+    - name: 'Set tls secret state={{ state }}'
+      k8s:
+        state: '{{ state }}'
+        definition:
+          kind: Secret
+          apiVersion: v1
+          type: kubernetes.io/tls
+          metadata:
+            name: '{{ broker_tls_name }}'
+            namespace: '{{ broker_namespace }}'
+          stringData:
+            tls.crt: '{{ lookup("file", broker_tls_cert_dir + "/cert.pem" ) }}'
+            tls.key: '{{ lookup("file", broker_tls_cert_dir + "/key.pem" ) }}'
+
+- name: Remove tls secret
   k8s:
     state: '{{ state }}'
-    definition: "{{ lookup('template', 'broker-tls.secret.yaml') | from_yaml }}"
+    definition:
+      kind: Secret
+      apiVersion: v1
+      type: kubernetes.io/tls
+      metadata:
+        name: '{{ broker_tls_name }}'
+        namespace: '{{ broker_namespace }}'
+  when: state == 'absent'
