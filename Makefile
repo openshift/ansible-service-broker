@@ -1,7 +1,9 @@
 REGISTRY         ?= docker.io
 ORG              ?= ansibleplaybookbundle
 TAG              ?= latest
-BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker
+BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker:${TAG}
+APB_DIR          ?= apb
+APB_IMAGE        ?= ${REGISTRY}/${ORG}/automation-broker-apb:${TAG}
 VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
@@ -77,22 +79,13 @@ build-image: ## Build a docker image with the broker binary
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/broker ./cmd/broker
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/migration ./cmd/migration
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/dashboard-redirector ./cmd/dashboard-redirector
-	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
+	docker build -f ${BUILD_DIR}/Dockerfile-localdev -t ${BROKER_IMAGE} ${BUILD_DIR}
 	@echo
 	@echo "Remember you need to push your image before calling make deploy"
-	@echo "    docker push ${BROKER_IMAGE}:${TAG}"
+	@echo "    docker push ${BROKER_IMAGE}"
 
-release-image:
-	docker build -t ${BROKER_IMAGE}:${TAG} ${BUILD_DIR}
-	@echo
-	@echo "Remember you need to push your image before calling make deploy"
-	@echo "    make push"
-
-# https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker-latest/
-release: release-image ## Builds docker container using latest rpm from Copr
-
-push:
-	docker push ${BROKER_IMAGE}:${TAG}
+build-apb: ## Build the broker apb
+	docker build -f ${APB_DIR}/Dockerfile -t ${APB_IMAGE} ${APB_DIR}
 
 clean: ## Clean up your working environment
 	@rm -f broker
@@ -104,21 +97,20 @@ clean: ## Clean up your working environment
 really-clean: clean cleanup-ci ## Really clean up the working environment
 	@rm -f $(KUBERNETES_FILES)
 
-deploy: ## Deploy a built broker docker image to a running cluster
-	@./scripts/deploy.sh ${BROKER_IMAGE}:${TAG} ${REGISTRY} ${ORG} ${VARS}
+deploy: build-image build-apb ## Deploy a built broker docker image to a running cluster
+	APB_IMAGE=${APB_IMAGE} BROKER_IMAGE=${BROKER_IMAGE} ACTION="provision" ./scripts/deploy.sh
+
+undeploy: build-apb ## Uninstall a deployed broker from a running cluster
+	APB_IMAGE=${APB_IMAGE} BROKER_IMAGE=${BROKER_IMAGE} ACTION="deprovision" ./scripts/deploy.sh
 
 ## Continuous integration stuff
-
-cleanup-ci: ## Cleanup after ci run
-	./scripts/broker-ci/cleanup-ci.sh
-
-ci: ## Run the CI workflow locally
+ci: deploy ##Run the broker ci
 	@go get github.com/rthallisey/service-broker-ci/cmd/ci
-	@ci
-
-ci-k:
-	@go get github.com/rthallisey/service-broker-ci/cmd/ci
+ifdef KUBERNETES_VERSION
 	@KUBERNETES="k8s" ci --cluster kubernetes
+else
+	@ci
+endif
 
 help: ## Show this help screen
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'
@@ -136,4 +128,4 @@ wtf: ## Use this target to help you diagnose development problems
 	@echo "in the head for some comic relief."
 	@echo ""
 
-.PHONY: run build-image release-image release push clean deploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf
+.PHONY: run build-image clean deploy undeploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf

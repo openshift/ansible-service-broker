@@ -1,0 +1,46 @@
+---
+
+- when: state == 'present'
+  block:
+    - name: Create directory for cert
+      file:
+        path: "{{ broker_tls_cert_dir }}"
+        state: directory
+        mode: 0755
+      check_mode: no
+
+    - name: Create cert
+      command: >
+        openssl req -nodes -x509 -newkey rsa:4096
+        -keyout {{ broker_tls_cert_dir }}/key.pem
+        -out {{ broker_tls_cert_dir }}/cert.pem
+        -days 365
+        -subj "/CN={{ broker_name }}.{{ broker_namespace }}.svc"
+      args:
+        creates: "{{ broker_tls_cert_dir }}/cert.pem"
+
+    - name: 'Set tls secret state={{ state }}'
+      k8s:
+        state: '{{ state }}'
+        definition:
+          kind: Secret
+          apiVersion: v1
+          type: kubernetes.io/tls
+          metadata:
+            name: '{{ broker_tls_name }}'
+            namespace: '{{ broker_namespace }}'
+          stringData:
+            tls.crt: '{{ lookup("file", broker_tls_cert_dir + "/cert.pem" ) }}'
+            tls.key: '{{ lookup("file", broker_tls_cert_dir + "/key.pem" ) }}'
+
+- name: Remove tls secret
+  k8s:
+    state: '{{ state }}'
+    definition:
+      kind: Secret
+      apiVersion: v1
+      type: kubernetes.io/tls
+      metadata:
+        name: '{{ broker_tls_name }}'
+        namespace: '{{ broker_namespace }}'
+  when: state == 'absent'

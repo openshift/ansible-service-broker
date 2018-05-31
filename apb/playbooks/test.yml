@@ -1,0 +1,62 @@
+---
+
+- name: automation-broker-apb test playbook
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  tasks:
+    # Test crd
+    - name: Provision test with CRDs
+      include_role:
+        name: automation-broker-apb
+      vars:
+        apb_action: provision
+        create_broker_namespace: true
+        wait_for_broker: true
+        broker_dao_type: crd
+
+    - name: Deprovision test with CRDs
+      include_role:
+        name: automation-broker-apb
+      vars:
+        apb_action: deprovision
+        create_broker_namespace: true
+        broker_dao_type: crd
+
+    - name: Wait for namespace to be destroyed
+      vars:
+        namespace_lookup: "{{ lookup('k8s', kind='Namespace', resource_name='automation-broker') }}"
+      set_fact:
+        _namespace_status: "{{ namespace_lookup }}"
+      retries: 10
+      delay: 5
+      until:
+        - not namespace_lookup
+
+    # Test etcd
+    - name: Provision test with ETCD
+      include_role:
+        name: automation-broker-apb
+      vars:
+        apb_action: provision
+        create_broker_namespace: true
+        wait_for_broker: true
+        broker_dao_type: etcd
+
+    - name: Deprovision test with ETCD
+      include_role:
+        name: automation-broker-apb
+      vars:
+        apb_action: deprovision
+        create_broker_namespace: true
+        broker_dao_type: etcd
+
+    - name: Wait for namespace to be destroyed
+      vars:
+        namespace_lookup: "{{ lookup('k8s', kind='Namespace', resource_name='automation-broker') }}"
+      set_fact:
+        _namespace_status: "{{ namespace_lookup }}"
+      retries: 10
+      delay: 5
+      until:
+        - not namespace_lookup

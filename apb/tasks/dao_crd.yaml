@@ -1,0 +1,10 @@
+---
+
+- name: 'Set broker clusterresourcedefinitions state={{ state }}'
+  k8s:
+    state: '{{ state }}'
+    definition: "{{ lookup('file', item) | from_yaml }}"
+  with_items:
+    - bundle.crd.yaml
+    - bundlebindings.crd.yaml
+    - bundleinstances.crd.yaml

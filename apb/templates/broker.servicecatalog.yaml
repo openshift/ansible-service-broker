@@ -1,0 +1,44 @@
+---
+
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: {{ broker_kind }}
+metadata:
+  name: {{ broker_name }}
+{% if state == 'present' %}
+spec:
+  url: https://{{ broker_name }}.{{ broker_namespace }}.svc:1338/{{ broker_name }}/
+  authInfo:
+    bearer:
+      secretRef:
+        kind: Secret
+        namespace: {{ broker_namespace }}
+        name: {{
+          lookup(
+            'k8s',
+            kind='ServiceAccount',
+            namespace=broker_namespace,
+            resource_name=broker_name + '-client'
+          ).secrets | map(attribute='name') | select('match', broker_name + '-client-token*') | first
+        }}
+{%   if cluster == 'kubernetes' %}
+  caBundle: {{
+    lookup(
+      'k8s',
+      kind='Secret',
+      api_version='v1',
+      namespace=broker_namespace,
+      resource_name=broker_tls_name
+    ) | json_query('data."tls.crt"')
+  }}
+{%   else %}
+  caBundle: {{
+    lookup(
+      'k8s',
+      kind='Secret',
+      api_version='v1',
+      namespace=broker_namespace,
+      resource_name=broker_name + '-client'
+    ) | json_query('data."service-ca.crt"')
+  }}
+{%   endif %}
+{% endif %}

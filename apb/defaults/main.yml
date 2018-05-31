@@ -1,0 +1,83 @@
+---
+# Install by default
+apb_action: provision
+cluster: "kubernetes"
+
+# Broker configuration values
+broker_name: automation-broker
+broker_namespace: "{{ broker_name }}"
+
+create_broker_namespace: false
+wait_for_broker: false # By default, we do not wait for the broker to be available
+
+# The image to use for the broker
+broker_image_tag: latest
+broker_image: "ansibleplaybookbundle/origin-ansible-service-broker:{{ broker_image_tag }}"
+broker_image_pull_policy: "IfNotPresent"
+broker_probe_initial_delay: 120
+broker_node_selector: ""
+
+# The kind of broker, useful in the case the service-catalog
+# supports namespaced service brokers
+broker_kind: ClusterServiceBroker
+broker_clusterrole: admin
+broker_sandbox_role: edit
+
+# How does broker save state? crd | etcd
+# TODO: Support etcd https://github.com/automationbroker/automation-broker-apb/issues/1
+broker_dao_type: crd
+
+# ETCD configuration (ignored unless dao_type is 'etcd')
+etcd_image: quay.io/coreos/etcd:latest
+etcd_path: /usr/local/bin/etcd
+etcd_port: "2379"
+etcd_persist_storage: "true"
+
+# Whether or not to keep the sandbox namespace
+broker_keep_namespace: "false"
+broker_keep_namespace_on_error: "true"
+
+# Special broker config options
+broker_dev: "true"
+broker_bootstrap_on_startup: "true"
+broker_refresh_interval: "600s"
+broker_launch_apb_on_bind: "false"
+broker_output_request: "true"
+broker_recovery: "true"
+broker_auto_escalate: ""
+broker_client_secret: ""
+
+# Basic auth configuration, disabled by default
+broker_basic_auth_enabled: false
+broker_basic_auth_username: "admin"
+broker_basic_auth_password: "admin"
+
+# Broker dockerhub registry options
+# TODO: Support multiple dockerhub registries
+# https://github.com/automationbroker/automation-broker-apb/issues/2
+broker_dockerhub_enabled: true
+broker_dockerhub_name: dh
+broker_dockerhub_url: https://registry.hub.docker.com
+broker_dockerhub_org: ansibleplaybookbundle
+broker_dockerhub_tag: latest
+broker_dockerhub_white_list: [ ".*-apb$" ]
+
+# Broker local openshift registry options
+# TODO: Support multiple local openshift registries
+# https://github.com/automationbroker/automation-broker-apb/issues/2
+broker_local_openshift_enabled: ""
+broker_local_openshift_name: localregistry
+broker_local_openshift_namespaces: [ "openshift" ]
+# NOTE TO ADMINS: The default whitelist policy here will pass *all* APBs
+# found in the local openshift registry. If this is not desired,
+# manipulate the following regex to only match APBs you wish to be made available.
+broker_local_openshift_white_list: [ ".*" ]
+
+# Broker helm registry options
+# TODO: Support multiple helm type registries
+# https://github.com/automationbroker/automation-broker-apb/issues/2
+broker_helm_enabled: false
+broker_helm_name: stable
+broker_helm_url: https://kubernetes-charts.storage.googleapis.com
+broker_helm_runner: docker.io/automationbroker/helm-runner:latest
+broker_helm_white_list: [ ".*" ]

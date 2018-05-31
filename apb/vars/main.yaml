@@ -1,0 +1,28 @@
+---
+
+kubectl_action_map:
+  provision: create
+  deprovision: delete
+kubectl_action: "{{ kubectl_action_map[apb_action] }}"
+
+state_map:
+  provision: present
+  deprovision: absent
+state: "{{ state_map[apb_action] }}"
+
+broker_tls_name: "{{ broker_name }}-tls"
+broker_tls_cert_dir: "/tmp/{{ broker_name }}-cert"
+
+etcd_name: broker-etcd
+etcd_tls_name: "{{ etcd_name }}-tls"
+etcd_host: "{{ etcd_name }}.{{ broker_namespace }}.svc"
+
+ready_status_query: "status.conditions[?type == 'Ready'].status"
+cluster_service_broker_query: "{{
+  lookup(
+    'k8s',
+    api_version='servicecatalog.k8s.io/v1beta1',
+    kind='ClusterServiceBroker',
+    resource_name=broker_name
+  ) | json_query(ready_status_query) 
+}}"

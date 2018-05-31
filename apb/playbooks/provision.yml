@@ -1,0 +1,10 @@
+---
+
+- name: automation-broker-apb provision
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  roles:
+  - role: automation-broker-apb
+  vars:
+    apb_action: provision
