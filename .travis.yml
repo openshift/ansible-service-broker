@@ -5,9 +5,9 @@ dist: trusty
 sudo: required
 group: edge
 env:
-  - OPENSHIFT_VERSION=v3.10.0
+  #- OPENSHIFT_VERSION=v3.10.0
   - OPENSHIFT_VERSION=v3.9.0
-  - KUBERNETES_VERSION=v1.10.0
+  #- KUBERNETES_VERSION=v1.10.0
   - KUBERNETES_VERSION=v1.9.0
 
 matrix:
@@ -56,6 +56,9 @@ script:
 
   # Setup cluster
   - setup_cluster
+
+  # Provision Broker
+  - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make deploy
 
   # Run CI
   - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make ci
