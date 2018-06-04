@@ -94,8 +94,8 @@ func (engine *WorkEngine) startJob(token string, work Work, topic WorkTopic) {
 			wg := &sync.WaitGroup{}
 			// hand off the msg to all subscribers async
 			for _, sub := range engine.subscribers[topic] {
+				wg.Add(1)
 				go func(msg JobMsg, sub WorkSubscriber) {
-					wg.Add(1)
 					// ensure things don't get locked up.
 					// Each subscriber has up to the configured amount of time to complete its action
 					ctx, cancel := context.WithTimeout(context.Background(), engine.subscriberTimeout*time.Second)
