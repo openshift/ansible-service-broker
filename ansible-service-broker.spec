@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.16
+Version: 1.2.17
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Jun 04 2018 David Zager <david.j.zager@gmail.com> 1.2.17-1
+- Bug 1585649 - wait group should be added to before go function is kicked off
+  (#976) (smhurley00@gmail.com)
+
 * Wed May 30 2018 David Zager <david.j.zager@gmail.com> 1.2.16-1
 - Bug 1583064 - missing action causes many sandboxes (#971) (jmrodri@gmail.com)
 
