@@ -4,6 +4,11 @@ go:
 dist: trusty
 sudo: required
 group: edge
+branches:
+  only:
+  - master
+  - /^release-.*$/
+
 env:
   #- OPENSHIFT_VERSION=v3.10.0
   - OPENSHIFT_VERSION=v3.9.0
