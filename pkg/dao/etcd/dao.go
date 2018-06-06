@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/coreos/etcd/client"
 	"github.com/pborman/uuid"
@@ -96,8 +96,8 @@ func (d *Dao) BatchGetRaw(dir string) (*[]string, error) {
 }
 
 // GetSpec - Retrieve the spec for the kvp API.
-func (d *Dao) GetSpec(id string) (*apb.Spec, error) {
-	spec := &apb.Spec{}
+func (d *Dao) GetSpec(id string) (*bundle.Spec, error) {
+	spec := &bundle.Spec{}
 	if err := d.getObject(specKey(id), spec); err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (d *Dao) GetSpec(id string) (*apb.Spec, error) {
 }
 
 // SetSpec - set spec for an id in the kvp API.
-func (d *Dao) SetSpec(id string, spec *apb.Spec) error {
+func (d *Dao) SetSpec(id string, spec *bundle.Spec) error {
 	return d.setObject(specKey(id), spec)
 }
 
@@ -117,7 +117,7 @@ func (d *Dao) DeleteSpec(specID string) error {
 }
 
 // BatchSetSpecs - set specs based on SpecManifest in the kvp API.
-func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
+func (d *Dao) BatchSetSpecs(specs bundle.SpecManifest) error {
 	for id, spec := range specs {
 		err := d.SetSpec(id, spec)
 		if err != nil {
@@ -129,19 +129,19 @@ func (d *Dao) BatchSetSpecs(specs apb.SpecManifest) error {
 }
 
 // BatchGetSpecs - Retrieve all the specs for dir.
-func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
+func (d *Dao) BatchGetSpecs(dir string) ([]*bundle.Spec, error) {
 	payloads, err := d.BatchGetRaw(dir)
 
 	if client.IsKeyNotFound(err) {
-		return []*apb.Spec{}, nil
+		return []*bundle.Spec{}, nil
 	} else if err != nil {
-		return []*apb.Spec{}, err
+		return []*bundle.Spec{}, err
 	}
 
-	specs := make([]*apb.Spec, len(*payloads))
+	specs := make([]*bundle.Spec, len(*payloads))
 	for i, payload := range *payloads {
-		spec := &apb.Spec{}
-		apb.LoadJSON(payload, spec)
+		spec := &bundle.Spec{}
+		bundle.LoadJSON(payload, spec)
 		specs[i] = spec
 		log.Debugf("Batch idx [ %d ] -> [ %s ]", i, spec.ID)
 	}
@@ -150,7 +150,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*apb.Spec, error) {
 }
 
 // BatchDeleteSpecs - set specs based on SpecManifest in the kvp API.
-func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
+func (d *Dao) BatchDeleteSpecs(specs []*bundle.Spec) error {
 	for _, spec := range specs {
 		err := d.DeleteSpec(spec.ID)
 		if err != nil {
@@ -161,7 +161,7 @@ func (d *Dao) BatchDeleteSpecs(specs []*apb.Spec) error {
 }
 
 // FindJobStateByState - Retrieve all the jobs that match the specified state
-func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) {
+func (d *Dao) FindJobStateByState(state bundle.State) ([]bundle.RecoverStatus, error) {
 	log.Debug("Dao::FindByState")
 
 	var res *client.Response
@@ -177,12 +177,12 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 
 	log.Debugf("Successfully loaded [ %d ] jobstate objects from etcd dir [ /state/ ]", stateCount)
 
-	var recoverstatus []apb.RecoverStatus
+	var recoverstatus []bundle.RecoverStatus
 	for _, node := range stateNodes {
 		k := fmt.Sprintf("%s/job", node.Key)
 
-		status := apb.RecoverStatus{InstanceID: uuid.Parse(stateKeyID(node.Key))}
-		jobstate := apb.JobState{}
+		status := bundle.RecoverStatus{InstanceID: uuid.Parse(stateKeyID(node.Key))}
+		jobstate := bundle.JobState{}
 		nodes, e := d.kapi.Get(context.Background(), k, opts)
 		if e != nil {
 			// if key is invalid do we keep it?
@@ -192,7 +192,7 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 		}
 
 		for _, n := range nodes.Node.Nodes {
-			apb.LoadJSON(n.Value, &jobstate)
+			bundle.LoadJSON(n.Value, &jobstate)
 			if jobstate.State == state {
 				log.Debug(fmt.Sprintf(
 					"Found! jobstate [%v] matched given state: [%v].", jobstate, state))
@@ -212,8 +212,8 @@ func (d *Dao) FindJobStateByState(state apb.State) ([]apb.RecoverStatus, error) 
 
 // GetSvcInstJobsByState - Lookup all jobs of a given state for a specific instance
 func (d *Dao) GetSvcInstJobsByState(
-	instanceID string, reqState apb.State,
-) ([]apb.JobState, error) {
+	instanceID string, reqState bundle.State,
+) ([]bundle.JobState, error) {
 	log.Debug("Dao::GetSvcInstJobsByState")
 	allStates, err := d.getJobsForSvcInst(instanceID)
 
@@ -223,7 +223,7 @@ func (d *Dao) GetSvcInstJobsByState(
 		return allStates, nil
 	}
 
-	filtStates := []apb.JobState{}
+	filtStates := []bundle.JobState{}
 	for _, state := range allStates {
 		if state.State == reqState {
 			filtStates = append(filtStates, state)
@@ -235,7 +235,7 @@ func (d *Dao) GetSvcInstJobsByState(
 	return filtStates, nil
 }
 
-func (d *Dao) getJobsForSvcInst(instanceID string) ([]apb.JobState, error) {
+func (d *Dao) getJobsForSvcInst(instanceID string) ([]bundle.JobState, error) {
 	log.Debug("Dao::getJobsForSvcInst")
 
 	var res *client.Response
@@ -250,16 +250,16 @@ func (d *Dao) getJobsForSvcInst(instanceID string) ([]apb.JobState, error) {
 	jobNodes := res.Node.Nodes
 	jobsCount := len(jobNodes)
 	if jobsCount == 0 {
-		return []apb.JobState{}, nil
+		return []bundle.JobState{}, nil
 	}
 
 	log.Debugf("Successfully loaded [ %d ] jobs objects from [ %s ]",
 		jobsCount, lookupKey)
 
-	retJobs := []apb.JobState{}
+	retJobs := []bundle.JobState{}
 	for _, node := range jobNodes {
-		js := apb.JobState{}
-		err := apb.LoadJSON(node.Value, &js)
+		js := bundle.JobState{}
+		err := bundle.LoadJSON(node.Value, &js)
 		if err != nil {
 			return nil, fmt.Errorf("An error occurred trying to parse job state of [ %s ]\n%s", node.Key, err.Error())
 		}
@@ -269,8 +269,8 @@ func (d *Dao) getJobsForSvcInst(instanceID string) ([]apb.JobState, error) {
 }
 
 // GetServiceInstance - Retrieve specific service instance from the kvp API.
-func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
-	spec := &apb.ServiceInstance{}
+func (d *Dao) GetServiceInstance(id string) (*bundle.ServiceInstance, error) {
+	spec := &bundle.ServiceInstance{}
 	if err := d.getObject(serviceInstanceKey(id), spec); err != nil {
 		return nil, err
 	}
@@ -278,8 +278,7 @@ func (d *Dao) GetServiceInstance(id string) (*apb.ServiceInstance, error) {
 }
 
 // SetServiceInstance - Set service instance for an id in the kvp API.
-func (d *Dao) SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error {
-	serviceInstance.BindingIDs = removeFalseBindings(serviceInstance.BindingIDs)
+func (d *Dao) SetServiceInstance(id string, serviceInstance *bundle.ServiceInstance) error {
 	return d.setObject(serviceInstanceKey(id), serviceInstance)
 }
 
@@ -301,8 +300,8 @@ func (d *Dao) DeleteServiceInstance(id string) error {
 }
 
 // GetBindInstance - Retrieve a specific bind instance from the kvp API
-func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
-	spec := &apb.BindInstance{}
+func (d *Dao) GetBindInstance(id string) (*bundle.BindInstance, error) {
+	spec := &bundle.BindInstance{}
 	if err := d.getObject(bindInstanceKey(id), spec); err != nil {
 		return nil, err
 	}
@@ -310,7 +309,7 @@ func (d *Dao) GetBindInstance(id string) (*apb.BindInstance, error) {
 }
 
 // SetBindInstance - Set the bind instance for id in the kvp API.
-func (d *Dao) SetBindInstance(id string, bindInstance *apb.BindInstance) error {
+func (d *Dao) SetBindInstance(id string, bindInstance *bundle.BindInstance) error {
 	return d.setObject(bindInstanceKey(id), bindInstance)
 }
 
@@ -322,7 +321,7 @@ func (d *Dao) DeleteBindInstance(id string) error {
 }
 
 // DeleteBinding - Delete the binding instance and remove the association with the service instance.
-func (d *Dao) DeleteBinding(bindingInstance apb.BindInstance, serviceInstance apb.ServiceInstance) error {
+func (d *Dao) DeleteBinding(bindingInstance bundle.BindInstance, serviceInstance bundle.ServiceInstance) error {
 	if err := d.DeleteBindInstance(bindingInstance.ID.String()); err != nil {
 		return err
 	}
@@ -334,21 +333,21 @@ func (d *Dao) DeleteBinding(bindingInstance apb.BindInstance, serviceInstance ap
 }
 
 // SetState - Set the Job State in the kvp API for id.
-func (d *Dao) SetState(id string, state apb.JobState) (string, error) {
+func (d *Dao) SetState(id string, state bundle.JobState) (string, error) {
 	key := stateKey(id, state.Token)
 	return key, d.setObject(key, state)
 }
 
 // GetState - Retrieve a job state from the kvp API for an ID and Token.
-func (d *Dao) GetState(id string, token string) (apb.JobState, error) {
+func (d *Dao) GetState(id string, token string) (bundle.JobState, error) {
 	return d.GetStateByKey(stateKey(id, token))
 }
 
 // GetStateByKey - Retrieve a job state from the kvp API for a job key
-func (d *Dao) GetStateByKey(key string) (apb.JobState, error) {
-	state := apb.JobState{}
+func (d *Dao) GetStateByKey(key string) (bundle.JobState, error) {
+	state := bundle.JobState{}
 	if err := d.getObject(key, &state); err != nil {
-		return apb.JobState{State: apb.StateFailed}, err
+		return bundle.JobState{State: bundle.StateFailed}, err
 	}
 	return state, nil
 }
@@ -363,12 +362,12 @@ func (d *Dao) getObject(key string, data interface{}) error {
 	if err != nil {
 		return err
 	}
-	apb.LoadJSON(raw, data)
+	bundle.LoadJSON(raw, data)
 	return nil
 }
 
 func (d *Dao) setObject(key string, data interface{}) error {
-	payload, err := apb.DumpJSON(data)
+	payload, err := bundle.DumpJSON(data)
 	if err != nil {
 		return err
 	}

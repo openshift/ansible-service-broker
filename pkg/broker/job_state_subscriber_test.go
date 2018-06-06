@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	apb "github.com/automationbroker/bundle-lib/bundle"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/mock"
 	"github.com/pborman/uuid"

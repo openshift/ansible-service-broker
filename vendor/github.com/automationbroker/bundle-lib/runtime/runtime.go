@@ -44,26 +44,48 @@ type Configuration struct {
 	PreCreateSandboxHooks []PreSandboxCreate
 	// PreDestroySandboxHooks - The sandbox hooks that you would like to run.
 	PreDestroySandboxHooks []PreSandboxDestroy
+	// WatchBundle - this is the method that watches the bundle for completion.
+	// The UpdateDescriptionFunc in the default case will call this function when the last description
+	// annotation on the running bundle is changed.
+	WatchBundle WatchRunningBundleFunc
+	// RunBundle - This is the method that will run the bundle.
+	RunBundle RunBundleFunc
+	// CopySecretsToNamespace - This is the method that is used to copy
+	// secrets from a namespace to the executionContext namespace.
+	CopySecretsToNamespace CopySecretsToNamespaceFunc
 	ExtractedCredential
+	// StateMountLocation this is where on disk the state will be stored for a bundle
+	StateMountLocation string
+	// StateMasterNamespace the namespace where state created by bundles will be copied to between actions
+	StateMasterNamespace string
 }
 
 // Runtime - Abstraction for broker actions
 type Runtime interface {
 	ValidateRuntime() error
 	GetRuntime() string
-	CreateSandbox(string, string, []string, string) (string, error)
+	CreateSandbox(string, string, []string, string, map[string]string) (string, string, error)
 	DestroySandbox(string, string, []string, string, bool, bool)
+	ExtractCredentials(string, string, int) ([]byte, error)
 	ExtractedCredential
+	WatchRunningBundle(string, string, UpdateDescriptionFn) error
+	RunBundle(ExecutionContext) (ExecutionContext, error)
+	CopySecretsToNamespace(ExecutionContext, string, []string) error
+	StateManager
 }
 
 // Variables for interacting with runtimes
 type provider struct {
 	coe
 	ExtractedCredential
-	postSandboxCreate  []PostSandboxCreate
-	preSandboxCreate   []PreSandboxCreate
-	postSandboxDestroy []PostSandboxDestroy
-	preSandboxDestroy  []PreSandboxDestroy
+	postSandboxCreate      []PostSandboxCreate
+	preSandboxCreate       []PreSandboxCreate
+	postSandboxDestroy     []PostSandboxDestroy
+	preSandboxDestroy      []PreSandboxDestroy
+	watchBundle            WatchRunningBundleFunc
+	runBundle              RunBundleFunc
+	copySecretsToNamespace CopySecretsToNamespaceFunc
+	state
 }
 
 // Abstraction for actions that are different between runtimes
@@ -71,10 +93,6 @@ type coe interface {
 	getRuntime() string
 	shouldJoinNetworks() (bool, PostSandboxCreate, PostSandboxDestroy)
 }
-
-// Different runtimes
-type openshift struct{}
-type kubernetes struct{}
 
 // NewRuntime - Initialize provider variable
 // extCreds - You can pass an ExtractedCredential conforming object this will
@@ -101,7 +119,7 @@ func NewRuntime(config Configuration) {
 			log.Error(err.Error())
 			panic(err.Error())
 		}
-		log.Info("OpenShift version: %v", kubeServerInfo)
+		log.Infof("OpenShift version: %v", kubeServerInfo)
 		cluster = newOpenshift()
 	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
 		cluster = newKubernetes()
@@ -116,7 +134,41 @@ func NewRuntime(config Configuration) {
 	} else {
 		c = config.ExtractedCredential
 	}
-	p := &provider{coe: cluster, ExtractedCredential: c}
+	// defaults for state
+	if config.StateMasterNamespace == "" {
+		config.StateMasterNamespace = defaultNamespace
+	}
+	if config.StateMountLocation == "" {
+		config.StateMountLocation = defaultMountLocation
+	}
+
+	defaultStateManager := state{mountLocation: config.StateMountLocation, nsTarget: config.StateMasterNamespace}
+	var w WatchRunningBundleFunc
+	if config.WatchBundle != nil {
+		w = config.WatchBundle
+	} else {
+		w = defaultWatchRunningBundle
+	}
+	var r RunBundleFunc
+	if config.RunBundle != nil {
+		r = config.RunBundle
+	} else {
+		r = defaultRunBundle
+	}
+	var s CopySecretsToNamespaceFunc
+	if config.CopySecretsToNamespace != nil {
+		s = config.CopySecretsToNamespace
+	} else {
+		s = defaultCopySecretsToNamespace
+	}
+
+	p := &provider{coe: cluster,
+		ExtractedCredential:    c,
+		watchBundle:            w,
+		runBundle:              r,
+		copySecretsToNamespace: s,
+		state: defaultStateManager,
+	}
 
 	if len(config.PreCreateSandboxHooks) > 0 {
 		p.preSandboxCreate = config.PreCreateSandboxHooks
@@ -155,7 +207,7 @@ func newKubernetes() coe {
 	return kubernetes{}
 }
 
-// ValidateRuntime - Translate the broker cluster validation check into specfici runtime checks
+// ValidateRuntime - Translate the broker cluster validation check into specific runtime checks
 func (p provider) ValidateRuntime() error {
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
@@ -172,7 +224,7 @@ func (p provider) ValidateRuntime() error {
 		if err != nil && len(body) > 0 {
 			return err
 		}
-		log.Info("Kubernetes version: %v", kubeServerInfo)
+		log.Infof("Kubernetes version: %v", kubeServerInfo)
 	case kapierrors.IsNotFound(err) || kapierrors.IsUnauthorized(err) || kapierrors.IsForbidden(err):
 		log.Error("the server could not find the requested resource")
 		return err
@@ -182,11 +234,47 @@ func (p provider) ValidateRuntime() error {
 	return nil
 }
 
+func isNamespaceInTargets(ns string, targets []string) bool {
+	for _, tns := range targets {
+		if tns == ns {
+			return true
+		}
+	}
+	return false
+}
+
 // CreateSandbox - Translate the broker CreateSandbox call into cluster resource calls
 func (p provider) CreateSandbox(podName string,
 	namespace string,
 	targets []string,
-	apbRole string) (string, error) {
+	apbRole string,
+	metadata map[string]string,
+) (string, string, error) {
+	k8scli, err := clients.Kubernetes()
+	if err != nil {
+		return "", "", err
+	}
+	err = validateTargets(targets)
+	if err != nil {
+		return "", "", fmt.Errorf("unable to get target namespaces: %v", err)
+	}
+
+	// If Location is in the targets then we should not create the namespace.
+	if !isNamespaceInTargets(namespace, targets) {
+		// Create namespace.
+		ns := &apicorev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels:       metadata,
+				GenerateName: namespace,
+			},
+		}
+		ns, err = k8scli.Client.CoreV1().Namespaces().Create(ns)
+		if err != nil {
+			return "", "", err
+		}
+		//Sandbox (i.e Namespace) was created.
+		namespace = ns.ObjectMeta.Name
+	}
 
 	for i, f := range p.preSandboxCreate {
 		log.Debugf("Running pre create sandbox function: %v", i+1)
@@ -197,17 +285,13 @@ func (p provider) CreateSandbox(podName string,
 			log.Warningf("Pre create sandbox function failed with err: %v", err)
 		}
 	}
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		return "", err
-	}
 
 	err = k8scli.CreateServiceAccount(podName, namespace)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	log.Debug("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	log.Debugf("Trying to create apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
 
 	subjects := []rbac.Subject{
 		rbac.Subject{
@@ -226,17 +310,20 @@ func (p provider) CreateSandbox(podName string,
 	// targetNamespace and namespace are the same
 	err = k8scli.CreateRoleBinding(podName, subjects, namespace, namespace, roleRef)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	for _, target := range targets {
-		err = k8scli.CreateRoleBinding(podName, subjects, namespace, target, roleRef)
-		if err != nil {
-			return "", err
+		// It could be the case that we already added the rolebinding as target and namespace are equal.
+		if target != namespace {
+			err = k8scli.CreateRoleBinding(podName, subjects, namespace, target, roleRef)
+			if err != nil {
+				return "", "", err
+			}
 		}
 	}
 
-	// Must create a Network policy to allow for comunication from the APB pod to the target namespace.
+	// Must create a Network policy to allow for communication from the APB pod to the target namespace.
 	networkPolicy := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: podName,
@@ -259,12 +346,12 @@ func (p provider) CreateSandbox(podName string,
 	_, err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Create(networkPolicy)
 	if err != nil {
 		log.Errorf("unable to create network policy object - %v", err)
-		return "", err
+		return "", "", err
 	}
 	log.Debugf("Successfully created network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 
-	log.Info("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
-	log.Info("Running post create sandbox fuctions if defined.")
+	log.Infof("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
+	log.Info("Running post create sandbox functions if defined.")
 	for i, f := range p.postSandboxCreate {
 		log.Debugf("Running post create sandbox function: %v", i+1)
 		err := f(podName, namespace, targets, apbRole)
@@ -275,7 +362,21 @@ func (p provider) CreateSandbox(podName string,
 		}
 	}
 
-	return podName, nil
+	return podName, namespace, nil
+}
+
+func validateTargets(targets []string) error {
+	k8scli, err := clients.Kubernetes()
+	if err != nil {
+		return err
+	}
+	for _, ns := range targets {
+		_, err = k8scli.Client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DestroySandbox - Translate the broker DestorySandbox call into cluster resource calls
@@ -313,7 +414,7 @@ func (p provider) DestroySandbox(podName string,
 	}
 	if shouldDeleteNamespace(keepNamespace, keepNamespaceOnError, pod, err) {
 		if configNamespace != namespace {
-			log.Debug("Deleting namespace %s", namespace)
+			log.Debugf("Deleting namespace %s", namespace)
 			k8scli.Client.CoreV1().Namespaces().Delete(namespace, &metav1.DeleteOptions{})
 			// This is keeping track of namespaces.
 		} else {
@@ -344,7 +445,7 @@ func (p provider) DestroySandbox(podName string,
 	}
 
 	log.Debugf("Deleting network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
-	// Must clean up the network policy that allowed comunication from the APB pod to the target namespace.
+	// Must clean up the network policy that allowed communication from the APB pod to the target namespace.
 	err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Delete(podName, &metav1.DeleteOptions{})
 	if err != nil {
 		log.Errorf("unable to delete the network policy object - %v", err)
@@ -368,6 +469,18 @@ func (p provider) DestroySandbox(podName string,
 // GetRuntime - Return a string value of the runtime
 func (p provider) GetRuntime() string {
 	return p.coe.getRuntime()
+}
+
+func (p provider) WatchRunningBundle(podName string, namespace string, updateFunc UpdateDescriptionFn) error {
+	return p.watchBundle(podName, namespace, updateFunc)
+}
+
+func (p provider) CopySecretsToNamespace(ec ExecutionContext, cn string, secrets []string) error {
+	return p.copySecretsToNamespace(ec, cn, secrets)
+}
+
+func (p provider) RunBundle(ec ExecutionContext) (ExecutionContext, error) {
+	return p.runBundle(ec)
 }
 
 func shouldDeleteNamespace(keepNamespace bool,

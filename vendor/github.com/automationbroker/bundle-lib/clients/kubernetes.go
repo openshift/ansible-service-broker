@@ -209,7 +209,7 @@ func newKubernetes() (*KubernetesClient, error) {
 	// library
 	clientConfig, err := rest.InClusterConfig()
 	if err != nil {
-		log.Warning("Failed to create a InternalClientSet: %v.", err)
+		log.Warningf("Failed to create a InternalClientSet: %v.", err)
 
 		log.Debug("Checking for a local Cluster Config")
 		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
@@ -279,7 +279,7 @@ func (k KubernetesClient) DeleteRoleBinding(roleBindingName string, namespace st
 	return nil
 }
 
-// GetSecretData - Returns the data insdie of a given secret.
+// GetSecretData - Returns the data inside of a given secret.
 func GetSecretData(secretName, namespace string) (map[string][]byte, error) {
 	k8scli, err := Kubernetes()
 	if err != nil {

@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	apb "github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/config"
 	"github.com/gorilla/mux"
 	"github.com/openshift/ansible-service-broker/pkg/auth"

@@ -23,7 +23,7 @@ import (
 
 	"encoding/json"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	schema "github.com/lestrrat/go-jsschema"
 )
 
@@ -36,7 +36,7 @@ type formItem struct {
 
 // SpecToService converts an apb Spec into a Service usable by the service
 // catalog.
-func SpecToService(spec *apb.Spec) (Service, error) {
+func SpecToService(spec *bundle.Spec) (Service, error) {
 	plans, err := toBrokerPlans(spec.Plans)
 	if err != nil {
 		return Service{}, err
@@ -59,7 +59,7 @@ func SpecToService(spec *apb.Spec) (Service, error) {
 	return retSvc, nil
 }
 
-func toBrokerPlans(apbPlans []apb.Plan) ([]Plan, error) {
+func toBrokerPlans(apbPlans []bundle.Plan) ([]Plan, error) {
 	brokerPlans := make([]Plan, len(apbPlans))
 	i := 0
 	for _, plan := range apbPlans {
@@ -82,7 +82,7 @@ func toBrokerPlans(apbPlans []apb.Plan) ([]Plan, error) {
 	return brokerPlans, nil
 }
 
-func planUpdatable(apbPlans []apb.Plan) bool {
+func planUpdatable(apbPlans []bundle.Plan) bool {
 	for _, plan := range apbPlans {
 		if len(plan.UpdatesTo) > 0 {
 			return true
@@ -91,7 +91,7 @@ func planUpdatable(apbPlans []apb.Plan) bool {
 	return false
 }
 
-func extractBrokerPlanMetadata(apbPlan apb.Plan) map[string]interface{} {
+func extractBrokerPlanMetadata(apbPlan bundle.Plan) map[string]interface{} {
 	metadata, err := initMetadataCopy(apbPlan.Metadata)
 
 	if err != nil {
@@ -135,7 +135,7 @@ func initMetadataCopy(original map[string]interface{}) (map[string]interface{}, 
 	return dst, nil
 }
 
-func createFormDefinition(params []apb.ParameterDescriptor) []interface{} {
+func createFormDefinition(params []bundle.ParameterDescriptor) []interface{} {
 	formDefinition := make([]interface{}, 0)
 
 	if params == nil || len(params) == 0 {
@@ -159,7 +159,7 @@ func createFormDefinition(params []apb.ParameterDescriptor) []interface{} {
 	return formDefinition
 }
 
-func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, paramIndex int) (formItem, int) {
+func createUIFormGroup(params []bundle.ParameterDescriptor, groupName string, paramIndex int) (formItem, int) {
 	items := []interface{}{}
 
 	for paramIndex < len(params) {
@@ -182,7 +182,7 @@ func createUIFormGroup(params []apb.ParameterDescriptor, groupName string, param
 	return group, len(items)
 }
 
-func createUIFormItem(pd apb.ParameterDescriptor, paramIndex int) (interface{}, int) {
+func createUIFormItem(pd bundle.ParameterDescriptor, paramIndex int) (interface{}, int) {
 	var item interface{}
 
 	// if the name is the only key, it defaults to a string instead of a dictionary
@@ -219,7 +219,7 @@ func getType(paramType string) (schema.PrimitiveTypes, error) {
 	return nil, fmt.Errorf("Could not find the parameter type for: %v", paramType)
 }
 
-func parametersToSchema(plan apb.Plan) (Schema, error) {
+func parametersToSchema(plan bundle.Plan) (Schema, error) {
 	// parametersToSchema converts the apb parameters into a JSON Schema format.
 	createProperties, err := extractProperties(plan.Parameters)
 	if err != nil {
@@ -274,7 +274,7 @@ func parametersToSchema(plan apb.Plan) (Schema, error) {
 	return s, nil
 }
 
-func extractProperties(params []apb.ParameterDescriptor) (map[string]*schema.Schema, error) {
+func extractProperties(params []bundle.ParameterDescriptor) (map[string]*schema.Schema, error) {
 	properties := make(map[string]*schema.Schema)
 
 	for _, pd := range params {
@@ -300,7 +300,7 @@ func extractProperties(params []apb.ParameterDescriptor) (map[string]*schema.Sch
 	return properties, nil
 }
 
-func setStringValidators(pd apb.ParameterDescriptor, prop *schema.Schema) {
+func setStringValidators(pd bundle.ParameterDescriptor, prop *schema.Schema) {
 	if prop.Type[0] != schema.StringType {
 		return
 	}
@@ -334,7 +334,7 @@ func setStringValidators(pd apb.ParameterDescriptor, prop *schema.Schema) {
 	}
 }
 
-func setNumberValidators(pd apb.ParameterDescriptor, prop *schema.Schema) {
+func setNumberValidators(pd bundle.ParameterDescriptor, prop *schema.Schema) {
 	if prop.Type[0] != schema.NumberType && prop.Type[0] != schema.IntegerType {
 		return
 	}
@@ -366,7 +366,7 @@ func setNumberValidators(pd apb.ParameterDescriptor, prop *schema.Schema) {
 	}
 }
 
-func setEnum(pd apb.ParameterDescriptor, prop *schema.Schema) {
+func setEnum(pd bundle.ParameterDescriptor, prop *schema.Schema) {
 	if len(pd.Enum) > 0 {
 		prop.Enum = make([]interface{}, len(pd.Enum))
 		for i, v := range pd.Enum {
@@ -375,7 +375,7 @@ func setEnum(pd apb.ParameterDescriptor, prop *schema.Schema) {
 	}
 }
 
-func extractRequired(params []apb.ParameterDescriptor) []string {
+func extractRequired(params []bundle.ParameterDescriptor) []string {
 	req := make([]string, 0, len(params))
 	for _, param := range params {
 		if param.Required {
@@ -385,7 +385,7 @@ func extractRequired(params []apb.ParameterDescriptor) []string {
 	return req
 }
 
-func extractUpdatable(params []apb.ParameterDescriptor) (map[string]*schema.Schema, error) {
+func extractUpdatable(params []bundle.ParameterDescriptor) (map[string]*schema.Schema, error) {
 	upd := make(map[string]*schema.Schema)
 	for _, v := range params {
 		t, err := getType(v.Type)
@@ -421,13 +421,13 @@ func extractUpdatableRequired(required []string, updatableProperties map[string]
 }
 
 // StateToLastOperation converts apb State objects into LastOperationStates.
-func StateToLastOperation(state apb.State) LastOperationState {
+func StateToLastOperation(state bundle.State) LastOperationState {
 	switch state {
-	case apb.StateInProgress:
+	case bundle.StateInProgress:
 		return LastOperationStateInProgress
-	case apb.StateSucceeded:
+	case bundle.StateSucceeded:
 		return LastOperationStateSucceeded
-	case apb.StateFailed:
+	case bundle.StateFailed:
 		return LastOperationStateFailed
 	default:
 		return LastOperationStateFailed

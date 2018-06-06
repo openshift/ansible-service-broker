@@ -172,7 +172,7 @@ func reduceChunks(chunks <-chan []string) <-chan matchSetT {
 	out := make(chan matchSetT)
 	go func() {
 		matchSet := make(matchSetT)
-		// Read and process chunks as they complete until input chan is cloesd
+		// Read and process chunks as they complete until input chan is closed
 		for chunk := range chunks {
 			for _, match := range chunk {
 				matchSet[match] = true

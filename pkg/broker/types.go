@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
@@ -161,13 +161,13 @@ type LastOperationResponse struct {
 // ProvisionRequest - Request for provision
 // Defined here https://github.com/openservicebrokerapi/servicebroker/blob/v2.12/spec.md#request-2
 type ProvisionRequest struct {
-	OrganizationID    uuid.UUID      `json:"organization_guid"`
-	PlanID            string         `json:"plan_id"`
-	ServiceID         string         `json:"service_id"`
-	SpaceID           uuid.UUID      `json:"space_guid"`
-	Context           apb.Context    `json:"context"`
-	Parameters        apb.Parameters `json:"parameters,omitempty"`
-	AcceptsIncomplete bool           `json:"accepts_incomplete,omitempty"`
+	OrganizationID    uuid.UUID         `json:"organization_guid"`
+	PlanID            string            `json:"plan_id"`
+	ServiceID         string            `json:"service_id"`
+	SpaceID           uuid.UUID         `json:"space_guid"`
+	Context           bundle.Context    `json:"context"`
+	Parameters        bundle.Parameters `json:"parameters,omitempty"`
+	AcceptsIncomplete bool              `json:"accepts_incomplete,omitempty"`
 }
 
 // ProvisionResponse - Response for provision
@@ -189,8 +189,8 @@ type UpdateRequest struct {
 		OrganizationID uuid.UUID `json:"organization_id,omitempty"`
 		SpaceID        uuid.UUID `json:"space_id,omitempty"`
 	} `json:"previous_values,omitempty"`
-	Context           apb.Context `json:"context"`
-	AcceptsIncomplete bool        `json:"accepts_incomplete,omitempty"`
+	Context           bundle.Context `json:"context"`
+	AcceptsIncomplete bool           `json:"accepts_incomplete,omitempty"`
 }
 
 // UpdateResponse - Response for an update for a service instance.
@@ -211,7 +211,7 @@ type BindRequest struct {
 		AppID uuid.UUID `json:"app_guid,omitempty"`
 		Route string    `json:"route,omitempty"`
 	} `json:"bind_resource,omitempty"`
-	Parameters apb.Parameters `json:"parameters,omitempty"`
+	Parameters bundle.Parameters `json:"parameters,omitempty"`
 }
 
 // BindResponse - Response for a bind
@@ -225,7 +225,7 @@ type BindResponse struct {
 }
 
 // NewBindResponse - creates a BindResponse based on available credentials.
-func NewBindResponse(pCreds, bCreds *apb.ExtractedCredentials) (*BindResponse, error) {
+func NewBindResponse(pCreds, bCreds *bundle.ExtractedCredentials) (*BindResponse, error) {
 	// Can't bind to anything if we have nothing to return to the catalog
 	if pCreds == nil && bCreds == nil {
 		log.Errorf("No extracted credentials found from provision or bind instance ID")
@@ -268,10 +268,10 @@ type BootstrapResponse struct {
 
 // ServiceInstanceResponse - The response for a get service instance request
 type ServiceInstanceResponse struct {
-	ServiceID    string         `json:"service_id"`
-	PlanID       string         `json:"plan_id"`
-	DashboardURL string         `json:"dashboard_url,omitempty"`
-	Parameters   apb.Parameters `json:"parameters,omitempty"`
+	ServiceID    string            `json:"service_id"`
+	PlanID       string            `json:"plan_id"`
+	DashboardURL string            `json:"dashboard_url,omitempty"`
+	Parameters   bundle.Parameters `json:"parameters,omitempty"`
 }
 
 // UserInfo - holds information about the user that created a resource.
@@ -285,16 +285,16 @@ type UserInfo struct {
 
 // JobMsg - Message to be returned from the various jobs
 type JobMsg struct {
-	InstanceUUID         string                   `json:"instance_uuid"`
-	JobToken             string                   `json:"job_token"`
-	SpecID               string                   `json:"spec_id"`
-	PodName              string                   `json:"podname"`
-	Msg                  string                   `json:"msg"`
-	State                apb.JobState             `json:"state"`
-	ExtractedCredentials apb.ExtractedCredentials `json:"extracted_credentials"`
-	DashboardURL         string                   `json:"dashboard_url"`
-	BindingUUID          string                   `json:"binding_uuid"`
-	Error                string                   `json:"error"`
+	InstanceUUID         string                      `json:"instance_uuid"`
+	JobToken             string                      `json:"job_token"`
+	SpecID               string                      `json:"spec_id"`
+	PodName              string                      `json:"podname"`
+	Msg                  string                      `json:"msg"`
+	State                bundle.JobState             `json:"state"`
+	ExtractedCredentials bundle.ExtractedCredentials `json:"extracted_credentials"`
+	DashboardURL         string                      `json:"dashboard_url"`
+	BindingUUID          string                      `json:"binding_uuid"`
+	Error                string                      `json:"error"`
 }
 
 // Render - Display the job message.
@@ -305,12 +305,12 @@ func (jm JobMsg) Render() string {
 
 // SubscriberDAO defines the interface subscribers use when persisting state
 type SubscriberDAO interface {
-	SetState(id string, state apb.JobState) (string, error)
-	GetServiceInstance(id string) (*apb.ServiceInstance, error)
+	SetState(id string, state bundle.JobState) (string, error)
+	GetServiceInstance(id string) (*bundle.ServiceInstance, error)
 	DeleteServiceInstance(id string) error
-	GetBindInstance(id string) (*apb.BindInstance, error)
-	DeleteBinding(apb.BindInstance, apb.ServiceInstance) error
-	SetServiceInstance(id string, serviceInstance *apb.ServiceInstance) error
+	GetBindInstance(id string) (*bundle.BindInstance, error)
+	DeleteBinding(bundle.BindInstance, bundle.ServiceInstance) error
+	SetServiceInstance(id string, serviceInstance *bundle.ServiceInstance) error
 }
 
 // WorkSubscriber - Defines how a Subscriber can be notified of changes

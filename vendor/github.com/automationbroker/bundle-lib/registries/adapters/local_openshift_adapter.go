@@ -19,7 +19,7 @@ package adapters
 import (
 	"strings"
 
-	"github.com/automationbroker/bundle-lib/apb"
+	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v1"
@@ -41,7 +41,7 @@ func (r LocalOpenShiftAdapter) RegistryName() string {
 // GetImageNames - retrieve the images
 func (r LocalOpenShiftAdapter) GetImageNames() ([]string, error) {
 	log.Debug("LocalOpenShiftAdapter::GetImageNames")
-	log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
+	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
 
 	openshiftClient, err := clients.Openshift()
 	if err != nil {
@@ -59,9 +59,9 @@ func (r LocalOpenShiftAdapter) GetImageNames() ([]string, error) {
 }
 
 // FetchSpecs - retrieve the spec for the image names.
-func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
+func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
 	log.Debug("LocalOpenShiftAdapter::FetchSpecs")
-	specList := []*apb.Spec{}
+	specList := []*bundle.Spec{}
 	registryIP, err := r.getServiceIP("docker-registry", "default")
 	if err != nil {
 		log.Errorf("Failed get docker-registry service information.")
@@ -106,10 +106,10 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 			continue
 		} else if len(nsList) < 3 {
 			// Image does not have any registry prefix. May be a product of S2I
-			// Expecting openshift/foo-apb
+			// Expecting openshift/foo-bundle
 			namespace = nsList[0]
 		} else {
-			// Expecting format: 172.30.1.1:5000/openshift/foo-apb
+			// Expecting format: 172.30.1.1:5000/openshift/foo-bundle
 			namespace = nsList[1]
 		}
 		for _, ns := range r.Config.Namespaces {
@@ -130,9 +130,9 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, err
 	return specList, nil
 }
 
-func (r LocalOpenShiftAdapter) loadSpec(yamlSpec []byte) (*apb.Spec, error) {
+func (r LocalOpenShiftAdapter) loadSpec(yamlSpec []byte) (*bundle.Spec, error) {
 	log.Debug("LocalOpenShiftAdapter::LoadSpec")
-	spec := &apb.Spec{}
+	spec := &bundle.Spec{}
 
 	err := yaml.Unmarshal(yamlSpec, spec)
 	if err != nil {
