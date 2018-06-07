@@ -15,7 +15,7 @@ file loaded on startup and contains:
 The Registry section will allow you to define the registries that the broker should look at
 for APBs. All the registry config options are defined below
 
-| field         | description                                                                                                                      | Required |
+| field         | description                                                                                                                      | required |
 |---------------|----------------------------------------------------------------------------------------------------------------------------------|----------|
 | name          | The name of the registry. Used by the broker to identify APBs from this registry.                                                |     Y    |
 | auth_type     | How the broker should read the credentials                                                                                       |     N    |
@@ -206,32 +206,32 @@ registry:
 
 ## DAO Configuration
 
-| field  | description | Required |
-|--------|-------------|----------|
-| etcd_host | The url of the etcd host. | Y |
-| etcd_port | The port to use when communicating with `etcd_host` | Y |
+| field     | description                                         | required |
+|-----------|-----------------------------------------------------|----------|
+| etcd_host | The url of the etcd host.                           |     Y    |
+| etcd_port | The port to use when communicating with `etcd_host` |     Y    |
 
 ## Log Configuration
 
-| field  | description | Required |
-|--------|-------------|----------|
-| logfile | Where to write the broker's logs | Y |
-| stdout | Write logs to stdout | Y |
-| level | Level of the log output | Y |
-| color | Color the logs | Y |
+| field   | description                      | required |
+|---------|----------------------------------|----------|
+| logfile | Where to write the broker's logs |     Y    |
+| stdout  | Write logs to stdout             |     Y    |
+| level   | Level of the log output          |     Y    |
+| color   | Color the logs                   |     Y    |
 
 ## OpenShift Configuration
 
-| field  | description | Required |
-|--------|-------------|----------|
-| host | OpenShift host  | N |
-| ca_file | Location of the certificate authority file | N |
-| bearer_token_file | Location of bearer token to be used | N |
-| image_pull_policy | When to pull the image | Y |
-| namespace | The namespace that the broker has been deployed to. Important for things like passing parameter values via secret | Y |
-| sandbox_role | Role to give to apb sandbox environment | Y |
-| keep_namespace | Always keep namespace after apb execution | N |
-| keep_namespace_on_error | Keep namespace after apb execution has an error | N |
+| field                   | description                                                                                                       | required |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------|----------|
+| host                    | OpenShift host                                                                                                    |     N    |
+| ca_file                 | Location of the certificate authority file                                                                        |     N    |
+| bearer_token_file       | Location of bearer token to be used                                                                               |     N    |
+| image_pull_policy       | When to pull the image                                                                                            |     Y    |
+| namespace               | The namespace that the broker has been deployed to. Important for things like passing parameter values via secret |     Y    |
+| sandbox_role            | Role to give to apb sandbox environment                                                                           |     Y    |
+| keep_namespace          | Always keep namespace after apb execution                                                                         |     N    |
+| keep_namespace_on_error | Keep namespace after apb execution has an error                                                                   |     N    |
 
 ## Broker Configuration
 The broker config section will tell the broker what functionality should be enabled
@@ -240,28 +240,28 @@ enable the full functionality.
 
 *Note: with the absence of async bind, setting launch_apb_on_bind to true can cause the bind action to timeout and will span a retry. The broker will handle with with 409 Conflicts because it is the same bind request with different parameters.*
 
-**field**|**description**|**default value**|**required**
-:-----:|:-----:|:-----:|:-----:
-dev_broker|Allow development routes to be accessible|false|N
-launch_apb_on_bind|Allow bind be be no op|false|N
-bootstrap_on_startup|Allow the broker attempt to bootstrap itself on start up. Will retrieve the APBs from configured registries|false|N
-recovery|Allow the broker to attempt to recover itself by dealing with pending jobs noted in etcd|false|N
-output_request|Allow the broker to output the requests to the log file as they come in for easier debugging|false|N
-ssl_cert_key|Tells the broker where to find the tls key file. If not set the [apiserver](https://github.com/kubernetes/apiserver) will attempt to create one.|""|N
-ssl_cert|Tells the broker where to find the tls crt file. If not set the [apiserver](https://github.com/kubernetes/apiserver) will attempt to create one.|""|N
-refresh_interval|The interval to query registries for new image specs|"600s"|N
-auto_escalate|Allows the broker to escalate the permissions of a user while running the APB [read more](administration.md)|false|N
-cluster_url|Sets the prefix for the url that the broker is expecting|ansible-service-broker|N
+| field                | description                                                                                                                                      | default value          | required |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|----------|
+| dev_broker           | Allow development routes to be accessible                                                                                                        | false                  |     N    |
+| launch_apb_on_bind   | Allow bind be be no op                                                                                                                           | false                  |     N    |
+| bootstrap_on_startup | Allow the broker attempt to bootstrap itself on start up. Will retrieve the APBs from configured registries                                      | false                  |     N    |
+| recovery             | Allow the broker to attempt to recover itself by dealing with pending jobs noted in etcd                                                         | false                  |     N    |
+| output_request       | Allow the broker to output the requests to the log file as they come in for easier debugging                                                     | false                  |     N    |
+| ssl_cert_key         | Tells the broker where to find the tls key file. If not set the [apiserver](https://github.com/kubernetes/apiserver) will attempt to create one. | ""                     |     N    |
+| ssl_cert             | Tells the broker where to find the tls crt file. If not set the [apiserver](https://github.com/kubernetes/apiserver) will attempt to create one. | ""                     |     N    |
+| refresh_interval     | The interval to query registries for new image specs                                                                                             | "600s"                 |     N    |
+| auto_escalate        | Allows the broker to escalate the permissions of a user while running the APB [read more](administration.md)                                     | false                  |     N    |
+| cluster_url          | Sets the prefix for the url that the broker is expecting                                                                                         | ansible-service-broker |     N    |
 
 ## Secrets Configuration
 The secrets config section will create associations between secrets in the broker's namespace and apbs the broker runs.
 The broker will use these rules to mount secrets into running apbs, allowing the user to use secrets to pass parameters
 without exposing them to the catalog or users. The config section is a list where each entry has the following structure:
 
-| field         | description                                                                                                                 | Required |
+| field         | description                                                                                                                 | required |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------|----------|
 | title         | The title of the rule. This is just for display/output purposes.                                                            |     Y    |
-| apb_name      | The name of the APB to associate with the specified secret. This is the fully qualified name (registry_name-image). |     Y    |
+| apb_name      | The name of the APB to associate with the specified secret. This is the fully qualified name (registry_name-image).         |     Y    |
 | secret        | The name of the secret to pull parameters from.                                                                             |     Y    |
 
 You can use the script in scripts/create_broker_secret.py to create and format this configuration section.
