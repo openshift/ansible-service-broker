@@ -51,10 +51,11 @@
     "crd",
     "registries",
     "registries/adapters",
+    "registries/adapters/oauth",
     "runtime"
   ]
-  revision = "d8153c4f6bb94d63d932b7e0e7aa23e20b588277"
-  version = "0.2.1"
+  revision = "d86f8bb04dd1f8ac69cd58bae38716ed8180a065"
+  version = "0.2.3"
 
 [[projects]]
   branch = "master"

@@ -1,3 +1,19 @@
+//
+// Copyright (c) 2018 Red Hat, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package runtime
 
 import (
@@ -43,7 +59,10 @@ type ExecutionContext struct {
 	Policy      string
 	ProxyConfig *ProxyConfig
 	Metadata    map[string]string
-	StateName   string
+	// StateName the name of the configmap that holds the state for the bundle
+	StateName string
+	// StateLocation the location in the pod that the state will be mounted
+	StateLocation string
 }
 
 // RunBundleFunc - method that defines how to run a bundle
@@ -173,6 +192,13 @@ func createPodEnv(executionContext ExecutionContext) []v1.EnvVar {
 				},
 			},
 		},
+	}
+
+	if executionContext.StateName != "" {
+		podEnv = append(podEnv, v1.EnvVar{
+			Name:  "BUNDLE_STATE_LOCATION",
+			Value: executionContext.StateLocation,
+		})
 	}
 
 	if executionContext.ProxyConfig != nil {

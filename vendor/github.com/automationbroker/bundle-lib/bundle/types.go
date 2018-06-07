@@ -309,7 +309,7 @@ func (si *ServiceInstance) AddBinding(bindingUUID uuid.UUID) {
 // RemoveBinding - Remove binding ID from service instance
 func (si *ServiceInstance) RemoveBinding(bindingUUID uuid.UUID) {
 	if si.BindingIDs != nil {
-		delete(si.BindingIDs, bindingUUID.String())
+		si.BindingIDs[bindingUUID.String()] = false
 	}
 }
 

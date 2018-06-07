@@ -59,17 +59,24 @@ type executor struct {
 	statusChan           chan StatusMessage
 	mutex                sync.Mutex
 	stateManager         runtime.StateManager
+	skipCreateNS         bool
+}
+
+// ExecutorConfig - configuration for the executor.
+type ExecutorConfig struct {
+	// This will tell the executor to use the context namespace as the
+	// namespace for the bundle to be created in.
+	SkipCreateNS bool
 }
 
 // NewExecutor - Creates a new Executor for running an APB.
-func NewExecutor() Executor {
-	exec := &executor{
-		statusChan: make(chan StatusMessage),
-		lastStatus: StatusMessage{State: StateNotYetStarted},
+func NewExecutor(config ExecutorConfig) Executor {
+	return &executor{
+		statusChan:   make(chan StatusMessage),
+		lastStatus:   StatusMessage{State: StateNotYetStarted},
+		skipCreateNS: config.SkipCreateNS,
+		stateManager: runtime.Provider,
 	}
-
-	exec.stateManager = runtime.Provider
-	return exec
 }
 
 // PodName - Returns the name of the pod running the APB
@@ -184,18 +191,19 @@ func (e *executor) executeApb(
 		log.Errorf("unable to copy secrets: %v to  new namespace", secrets)
 		return exContext, err
 	}
-	stateName := e.stateManager.Name(instance.ID.String())
-	present, err := e.stateManager.StateIsPresent(stateName)
+	masterStateName := e.stateManager.MasterName(instance.ID.String())
+	present, err := e.stateManager.StateIsPresent(masterStateName)
 	if err != nil {
 		return exContext, err
 	}
 	if present {
 		log.Info("state: present for service instance copying to bundle namespace")
 		// copy from master ns to execution namespace
-		if err := e.stateManager.CopyState(stateName, exContext.BundleName, e.stateManager.MasterNamespace(), exContext.Location); err != nil {
+		if err := e.stateManager.CopyState(masterStateName, exContext.BundleName, e.stateManager.MasterNamespace(), exContext.Location); err != nil {
 			return exContext, err
 		}
-		exContext.StateName = stateName
+		exContext.StateName = exContext.BundleName
+		exContext.StateLocation = e.stateManager.MountLocation()
 	}
 
 	exContext, err = runtime.Provider.RunBundle(exContext)
