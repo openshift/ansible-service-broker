@@ -146,7 +146,7 @@ type ProvisionJob struct {
 // Run - Run the provision job.
 func (j *ProvisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               bundle.NewExecutor(),
+		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		method:                 bundle.JobMethodProvision,
@@ -169,7 +169,7 @@ type DeprovisionJob struct {
 // Run - Run the deprovision job.
 func (j *DeprovisionJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               bundle.NewExecutor(),
+		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		method:                 bundle.JobMethodDeprovision,
@@ -193,7 +193,7 @@ type BindJob struct {
 // Run - Run the bind job.
 func (j *BindJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               bundle.NewExecutor(),
+		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		bindingID:              &j.bindingID,
@@ -219,7 +219,7 @@ type UnbindJob struct {
 // Run - Run the unbind job.
 func (j *UnbindJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               bundle.NewExecutor(),
+		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		bindingID:              &j.bindingID,
@@ -242,7 +242,7 @@ type UpdateJob struct {
 // Run - Run the update job.
 func (j *UpdateJob) Run(token string, msgBuffer chan<- JobMsg) {
 	job := apbJob{
-		executor:               bundle.NewExecutor(),
+		executor:               bundle.NewExecutor(bundle.ExecutorConfig{}),
 		serviceInstanceID:      j.serviceInstance.ID.String(),
 		specID:                 j.serviceInstance.Spec.ID,
 		method:                 bundle.JobMethodUpdate,

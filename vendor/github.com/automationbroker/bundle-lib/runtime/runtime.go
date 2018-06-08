@@ -105,11 +105,9 @@ func NewRuntime(config Configuration) {
 		log.Error(err.Error())
 		panic(err.Error())
 	}
-
 	// Identify which cluster we're using
 	restclient := k8scli.Client.CoreV1().RESTClient()
 	body, err := restclient.Get().AbsPath("/version/openshift").Do().Raw()
-
 	var cluster coe
 	switch {
 	case err == nil:

@@ -21,15 +21,24 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 
 	"github.com/automationbroker/bundle-lib/bundle"
+	"github.com/automationbroker/bundle-lib/registries/adapters/oauth"
 	log "github.com/sirupsen/logrus"
 )
+
+// NewRHCCAdapter - creates and returns a *RHCCAdapter ready to use.
+func NewRHCCAdapter(config Configuration) *RHCCAdapter {
+	return &RHCCAdapter{
+		Config: config,
+		client: oauth.NewClient(config.User, config.Pass, config.SkipVerifyTLS, config.URL),
+	}
+}
 
 // RHCCAdapter - Red Hat Container Catalog Registry
 type RHCCAdapter struct {
 	Config Configuration
+	client *oauth.Client
 }
 
 // RHCCImage - RHCC Registry Image that is returned from the RHCC Catalog api.
@@ -59,6 +68,7 @@ func (r RHCCAdapter) RegistryName() string {
 
 // GetImageNames - retrieve the images from the registry
 func (r RHCCAdapter) GetImageNames() ([]string, error) {
+	r.client.Getv2()
 	imageList, err := r.loadImages("\"*-apb\"")
 	if err != nil {
 		return nil, err
@@ -88,16 +98,18 @@ func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
 }
 
 // LoadImages - Get all the images for a particular query
-func (r RHCCAdapter) loadImages(Query string) (RHCCImageResponse, error) {
+func (r RHCCAdapter) loadImages(query string) (RHCCImageResponse, error) {
 	log.Debug("RHCCRegistry::LoadImages")
-	log.Debug("Using " + r.Config.URL.String() + " to source APB images using query:" + Query)
-	req, err := http.NewRequest("GET",
-		fmt.Sprintf("%v/v1/search?q=%v", r.Config.URL.String(), Query), nil)
+	req, err := r.client.NewRequest("/v1/search")
 	if err != nil {
 		return RHCCImageResponse{}, err
 	}
+	q := req.URL.Query()
+	q.Set("q", query)
+	req.URL.RawQuery = q.Encode()
+	log.Debug("Using " + req.URL.String() + " to source APB images ")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := r.client.Do(req)
 	if err != nil {
 		return RHCCImageResponse{}, err
 	}
@@ -123,13 +135,12 @@ func (r RHCCAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}
-	req, err := http.NewRequest("GET",
-		fmt.Sprintf("%v/v2/%v/manifests/%v", r.Config.URL.String(), imageName, r.Config.Tag), nil)
+	req, err := r.client.NewRequest(fmt.Sprintf("/v2/%v/manifests/%v", imageName, r.Config.Tag))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := r.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
