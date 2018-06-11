@@ -105,12 +105,7 @@ undeploy: build-apb ## Uninstall a deployed broker from a running cluster
 
 ## Continuous integration stuff
 ci: ##Run the broker ci
-	@go get github.com/rthallisey/service-broker-ci/cmd/ci
-ifdef KUBERNETES_VERSION
-	@KUBERNETES="k8s" ci --cluster kubernetes
-else
-	@ci
-endif
+	APB_IMAGE=${APB_IMAGE} BROKER_IMAGE=${BROKER_IMAGE} ACTION="test" ./scripts/deploy.sh
 
 help: ## Show this help screen
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'
