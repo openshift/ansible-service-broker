@@ -138,9 +138,8 @@ func initMetadataCopy(original map[string]interface{}) (map[string]interface{}, 
 	return dst, nil
 }
 
-
-func createUpdateFormDefinition(params []apb.ParameterDescriptor) []interface{} {
-	var updateParams []apb.ParameterDescriptor
+func createUpdateFormDefinition(params []bundle.ParameterDescriptor) []interface{} {
+	var updateParams []bundle.ParameterDescriptor
 
 	for _, param := range params {
 		if param.Updatable {
@@ -151,7 +150,7 @@ func createUpdateFormDefinition(params []apb.ParameterDescriptor) []interface{} 
 	return createFormDefinition(updateParams)
 }
 
-func createFormDefinition(params []apb.ParameterDescriptor) []interface{} {
+func createFormDefinition(params []bundle.ParameterDescriptor) []interface{} {
 	formDefinition := make([]interface{}, 0)
 
 	if params == nil || len(params) == 0 {
