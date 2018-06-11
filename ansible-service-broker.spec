@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.0
+Version: 1.3.1
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,31 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Sun Jun 10 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.3.1-1
+- Bug 1585649 - wait group should be added to before go function is kicked off (#977) (smhurley00@gmail.com)
+- Bug 1583064 - missing action causes many sandboxes (#972) (jmrodri@gmail.com)
+- Bug 1581580 - skip if bind instance does not have credentials (#964) (smhurley00@gmail.com)
+- Bug 1578319 - send _apb* parameters to unbind (#960) (jmrodri@gmail.com)
+- Bug 1572129 - recover deprovision jobs (#953) (jmrodri@gmail.com)
+- Bug 1576728 - Fixes multiple requests to a CR (#947) (smhurley00@gmail.com)
+- Bug 1577127 - adding back metrics (#948) (smhurley00@gmail.com)
+- Bug 1577144 - fixing logging so it is more clear (#949)
+- Bump bundle-lib to 0.2.3 (#981) (jmrodri@gmail.com)
+- reformat tables to be readable without rendering (#980) (jmrodri@gmail.com)
+- remove coverage badge (jmrodri@gmail.com)
+- Bundle lib 0.2 (#946) (smhurley00@gmail.com)
+- Travis should run only for master/release branches (#978) (dzager@redhat.com)
+- Make ci should not do deployment (#975) (dzager@redhat.com)
+- Add Broker APB source to project (#939) (dzager@redhat.com)
+- add v3.10 install method to README (#967) (jmontleo@redhat.com)
+- Add requested parameters when not in existing service instance (#935) (dzager@redhat.com)
+- Switch from go-logging to logrus (#961) (jmrodri@gmail.com)
+- dep prune vendor (#962) (jmrodri@gmail.com)
+- Bump version for next release (#955) (dzager@redhat.com)
+- update config.md for partner registry adapter (#950) (jkim@redhat.com)
+- Update releases in README (#952) (rhallise@redhat.com) (smhurley00@gmail.com)
+- doc to show how to use broker via vendor (#940) (jmrodri@gmail.com)
+
 * Thu May 10 2018 David Zager <david.j.zager@gmail.com> 1.2.11-1
 - Bug 1550418 - Return op token on depro in progress (#942)
   (ernelson@redhat.com)
