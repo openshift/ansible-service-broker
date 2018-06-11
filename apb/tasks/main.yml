@@ -65,7 +65,6 @@
 - name: Wait for clusterservicebroker to become ready
   debug:
     msg: "Broker ready status: {{ cluster_service_broker_query }}"
-  vars:
   retries: 60
   delay: 10
   until: cluster_service_broker_query | length > 0 and cluster_service_broker_query | first == "True"
