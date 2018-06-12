@@ -7,7 +7,6 @@ import (
 
 	apb "github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/runtime"
-	log "github.com/sirupsen/logrus"
 )
 
 func TestApbJobRun(t *testing.T) {
@@ -392,7 +391,6 @@ func TestApbJobRun(t *testing.T) {
 				}
 
 				second := messages[1]
-				log.Infof("second: %#v", second)
 				if second.State.State != apb.StateFailed ||
 					second.State.Error != runtime.ErrorPodPullErr.Error() {
 					return fmt.Errorf("unexpected second message contents")
@@ -449,7 +447,6 @@ func TestApbJobRun(t *testing.T) {
 				}
 
 				second := messages[1]
-				log.Infof("second: %#v", second)
 				if second.State.State != apb.StateFailed ||
 					second.State.Error != "" {
 					return fmt.Errorf("unexpected second message contents")
