@@ -85,7 +85,7 @@ build-dev: ## Build a docker image with the broker binary for development
 	@echo "    docker push ${BROKER_IMAGE}"
 
 build-image: ## Build the broker (from canary)
-	docker build -f ${BUILD_DIR}/Dockerfile-canary --build-arg VERSION=${TAG} -t ${BROKER_IMAGE} ${BUILD_DIR}
+	docker build -f ${BUILD_DIR}/Dockerfile-canary --build-arg VERSION=${TAG} -t ${BROKER_IMAGE} .
 
 build-apb: ## Build the broker apb
 ifeq ($(TAG),canary)
