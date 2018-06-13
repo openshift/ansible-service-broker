@@ -8,6 +8,7 @@ branches:
   only:
   - master
   - /^release-.*$/
+  - /^ansible-service-broker-([0-9.-]+)$/
 
 env:
   #- OPENSHIFT_VERSION=v3.10.0
@@ -32,6 +33,7 @@ stages:
   - lint
   - build
   - test
+  - deploy
 
 jobs:
   include:
@@ -49,6 +51,12 @@ jobs:
         - make build
         - go get github.com/mattn/goveralls
         - make ci-test-coverage
+    - stage: deploy
+      if: repo=openshift/ansible-service-broker
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - if [ $TRAVIS_BRANCH == "master" ]; then export TAG="canary"; else TAG=$TRAVIS_BRANCH; fi
+        - PUBLISH=1 make publish
 
 script:
   - export apb_name="automation-broker-apb:${TRAVIS_BUILD_ID}"
