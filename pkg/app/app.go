@@ -226,7 +226,7 @@ func CreateApp(args Args, regs []registries.Registry) App {
 
 	log.Debug("Initializing WorkEngine")
 	stateSubscriber := broker.NewJobStateSubscriber(app.dao)
-	app.engine = broker.NewWorkEngine(MsgBufferSize, SubscriberTimeout)
+	app.engine = broker.NewWorkEngine(MsgBufferSize, SubscriberTimeout, app.dao)
 	err = app.engine.AttachSubscriber(
 		stateSubscriber,
 		broker.ProvisionTopic)
@@ -282,8 +282,11 @@ func CreateApp(args Args, regs []registries.Registry) App {
 		KeepNamespaceOnError: app.config.GetBool("openshift.keep_namespace_on_error"),
 	}
 	bundle.InitializeClusterConfig(clusterConfig)
+	brokerNS := app.config.GetString("openshift.namespace")
+	// initialize the work factory
+	workFactory := broker.NewWorkFactory()
 	if app.broker, err = broker.NewAnsibleBroker(
-		app.dao, app.registry, *app.engine, app.config.GetSubConfig("broker"), app.config.GetString("openshift.namespace"),
+		app.dao, app.registry, *app.engine, app.config.GetSubConfig("broker"), brokerNS, workFactory,
 	); err != nil {
 		log.Error("Failed to create AnsibleBroker\n")
 		log.Error(err.Error())

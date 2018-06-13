@@ -33,6 +33,7 @@ func NewDao(c *config.Config) (Dao, error) {
 }
 
 // Dao - object to interface with the data store.
+//go:generate mockery -name=Dao -case=underscore -inpkg -note=Generated
 type Dao interface {
 	// GetSpec - Retrieve the spec for the kvp API.
 	GetSpec(string) (*bundle.Spec, error)

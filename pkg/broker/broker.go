@@ -117,6 +117,7 @@ type AnsibleBroker struct {
 	engine       *WorkEngine
 	brokerConfig Config
 	namespace    string
+	workFactory  WorkFactory
 }
 
 // NewAnsibleBroker - Creates a new ansible broker
@@ -124,7 +125,8 @@ func NewAnsibleBroker(dao dao.Dao,
 	registry []registries.Registry,
 	engine WorkEngine,
 	brokerConfig *config.Config,
-	namespace string) (*AnsibleBroker, error) {
+	namespace string,
+	workFactory WorkFactory) (*AnsibleBroker, error) {
 
 	broker := &AnsibleBroker{
 		dao:      dao,
@@ -143,7 +145,8 @@ func NewAnsibleBroker(dao dao.Dao,
 			ClusterURL:          brokerConfig.GetString("cluster_url"),
 			DashboardRedirector: brokerConfig.GetString("dashboard_redirector"),
 		},
-		namespace: namespace,
+		namespace:   namespace,
+		workFactory: workFactory,
 	}
 	return broker, nil
 }
@@ -378,13 +381,13 @@ func (a AnsibleBroker) Recover() (string, error) {
 			var job Work
 			var topic WorkTopic
 			if rs.State.Method == bundle.JobMethodProvision {
-				job = &ProvisionJob{instance}
+				job = a.workFactory.NewProvisionJob(instance)
 				topic = ProvisionTopic
 			} else if rs.State.Method == bundle.JobMethodUpdate {
-				job = &UpdateJob{instance}
+				job = a.workFactory.NewUpdateJob(instance)
 				topic = UpdateTopic
 			} else if rs.State.Method == bundle.JobMethodDeprovision {
-				job = &DeprovisionJob{instance, false}
+				job = a.workFactory.NewDeprovisionJob(instance, false)
 				topic = DeprovisionTopic
 			} else {
 				log.Warningf(
@@ -625,9 +628,8 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 	}
 
 	var token = a.engine.Token()
-	pjob := &ProvisionJob{serviceInstance}
+	pjob := a.workFactory.NewProvisionJob(serviceInstance)
 	metrics.ActionStarted("provision")
-
 	if async {
 		log.Info("ASYNC provisioning in progress")
 		// asynchronously provision and return the token for the lastoperation
@@ -751,7 +753,7 @@ func (a AnsibleBroker) Deprovision(
 	}
 
 	var token = a.engine.Token()
-	dpjob := &DeprovisionJob{&instance, skipApbExecution}
+	dpjob := a.workFactory.NewDeprovisionJob(&instance, skipApbExecution)
 	metrics.ActionStarted("deprovision")
 	if async {
 		log.Info("ASYNC deprovision in progress")
@@ -973,7 +975,7 @@ func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UU
 	var (
 		bindExtCreds *bundle.ExtractedCredentials
 		token        = a.engine.Token()
-		bindingJob   = &BindJob{&instance, bindingUUID.String(), &params}
+		bindingJob   = a.workFactory.NewBindJob(bindingUUID.String(), &params, &instance)
 	)
 
 	if async && a.brokerConfig.LaunchApbOnBind {
@@ -1098,8 +1100,7 @@ func (a AnsibleBroker) Unbind(
 	var (
 		token     = a.engine.Token()
 		jerr      error
-		unbindJob = &UnbindJob{
-			&serviceInstance, bindInstance.ID.String(), &params, skipApbExecution}
+		unbindJob = a.workFactory.NewUnbindJob(bindInstance.ID.String(), &params, &serviceInstance, skipApbExecution)
 	)
 	if async && a.brokerConfig.LaunchApbOnBind {
 		// asynchronous mode, required that the launch apb config
@@ -1335,7 +1336,7 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	log.Debugf("toPlanName: [%s]", toPlan.Name)
 	log.Debugf("PreviousValues: [ %+v ]", req.PreviousValues)
 	log.Debugf("ServiceInstance Parameters: [%v]", *si.Parameters)
-	ujob := &UpdateJob{si}
+	ujob := a.workFactory.NewUpdateJob(si)
 	metrics.ActionStarted("update")
 	if async {
 		log.Info("ASYNC update in progress")
