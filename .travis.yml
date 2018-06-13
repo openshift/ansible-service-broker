@@ -51,12 +51,6 @@ jobs:
         - make build
         - go get github.com/mattn/goveralls
         - make ci-test-coverage
-    - stage: deploy
-      if: repo=openshift/ansible-service-broker
-      script:
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - if [ $TRAVIS_BRANCH == "master" ]; then export TAG="canary"; else TAG=$TRAVIS_BRANCH; fi
-        - PUBLISH=1 make publish
 
 script:
   - export apb_name="automation-broker-apb:${TRAVIS_BUILD_ID}"
@@ -78,3 +72,14 @@ script:
 
   # Deprovision Broker
   - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make undeploy
+
+deploy:
+  provider: script
+  on:
+    repo: openshift/ansible-service-broker
+    tags: true
+    all_branches: true
+  script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - if [ $TRAVIS_BRANCH == "master" ]; then export TAG="canary"; else TAG=$TRAVIS_BRANCH; fi
+    - PUBLISH=1 make publish
