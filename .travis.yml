@@ -8,6 +8,7 @@ branches:
   only:
   - master
   - /^release-.*$/
+  - /^ansible-service-broker-([0-9.-]+)$/
 
 env:
   #- OPENSHIFT_VERSION=v3.10.0
@@ -32,6 +33,7 @@ stages:
   - lint
   - build
   - test
+  - deploy
 
 jobs:
   include:
@@ -70,3 +72,14 @@ script:
 
   # Deprovision Broker
   - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make undeploy
+
+deploy:
+  provider: script
+  on:
+    repo: openshift/ansible-service-broker
+    tags: true
+    all_branches: true
+  script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - if [ $TRAVIS_BRANCH == "master" ]; then export TAG="canary"; else TAG=$TRAVIS_BRANCH; fi
+    - PUBLISH=1 make publish

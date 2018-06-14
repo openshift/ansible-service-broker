@@ -3,7 +3,7 @@ ORG              ?= ansibleplaybookbundle
 TAG              ?= latest
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker:${TAG}
 APB_DIR          ?= apb
-APB_IMAGE        ?= ${REGISTRY}/${ORG}/automation-broker-apb:${TAG}
+APB_IMAGE        ?= ${REGISTRY}/automationbroker/automation-broker-apb:${TAG}
 VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
@@ -75,7 +75,7 @@ run: broker
 prep-local: ## Prepares the local dev environment
 	@./scripts/prep_local_devel_env.sh
 
-build-image: ## Build a docker image with the broker binary
+build-dev: ## Build a docker image with the broker binary for development
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/broker ./cmd/broker
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/migration ./cmd/migration
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/dashboard-redirector ./cmd/dashboard-redirector
@@ -84,8 +84,25 @@ build-image: ## Build a docker image with the broker binary
 	@echo "Remember you need to push your image before calling make deploy"
 	@echo "    docker push ${BROKER_IMAGE}"
 
+build-image: ## Build the broker (from canary)
+	docker build -f ${BUILD_DIR}/Dockerfile-canary --build-arg VERSION=${TAG} -t ${BROKER_IMAGE} .
+
 build-apb: ## Build the broker apb
-	docker build -f ${APB_DIR}/Dockerfile -t ${APB_IMAGE} ${APB_DIR}
+ifeq ($(TAG),canary)
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+else ifneq (,$(findstring release,$(TAG)))
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+else
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+endif
+
+publish: build-image build-apb
+ifdef PUBLISH
+	docker push ${BROKER_IMAGE}
+	docker push ${APB_IMAGE}
+else
+	@echo "Must set PUBLISH, here be dragons"
+endif
 
 clean: ## Clean up your working environment
 	@rm -f broker
@@ -97,7 +114,7 @@ clean: ## Clean up your working environment
 really-clean: clean cleanup-ci ## Really clean up the working environment
 	@rm -f $(KUBERNETES_FILES)
 
-deploy: build-image build-apb ## Deploy a built broker docker image to a running cluster
+deploy: build-dev build-apb ## Deploy a built broker docker image to a running cluster
 	APB_IMAGE=${APB_IMAGE} BROKER_IMAGE=${BROKER_IMAGE} ACTION="provision" ./scripts/deploy.sh
 
 undeploy: build-apb ## Uninstall a deployed broker from a running cluster
