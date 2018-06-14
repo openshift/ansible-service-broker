@@ -42,6 +42,6 @@ curl \
     -H "Content-type: application/json" \
     -H "Accept: application/json" \
     -H "X-Broker-API-Originating-Identity: " \
-    "https://asb-openshift-automation-service-broker.$HOSTNAME.nip.io/openshift-automation-service-broker/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID"
+    "https://broker-automation-broker.$HOSTNAME.nip.io/automation-broker/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID"
 
 

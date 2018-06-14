@@ -13,4 +13,4 @@ curl \
     -H "Authorization: bearer $(oc whoami -t)" \
     -H "Content-type: application/json" \
     -H "Accept: application/json" \
-    "https://asb-openshift-automation-service-broker.$HOSTNAME.nip.io/openshift-automation-service-broker/v2/catalog"
+    "https://broker-automation-broker.$HOSTNAME.nip.io/automation-broker/v2/catalog"
