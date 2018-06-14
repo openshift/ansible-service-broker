@@ -57,7 +57,6 @@ jobs:
         provider: script
         on:
           repo: openshift/ansible-service-broker
-          tags: true
           all_branches: true
           condition: "$TRAVIS_BRANCH =~ ^master$|^release-[0-9.]+$|^ansible-service-broker-[0-9.-]+$"
         script:
