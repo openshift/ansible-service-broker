@@ -5,6 +5,7 @@
   gather_facts: false
   connection: local
   vars:
+    test_namespace: broker-test
     ready_status_query: "status.conditions[?type == 'Ready'].status"
     available_status_query: "status.conditions[?type == 'Available'].status"
     mediawiki_query: "{{
@@ -12,7 +13,7 @@
         'k8s',
         api_version='servicecatalog.k8s.io/v1beta1',
         kind='ServiceInstance',
-        namespace='broker-test',
+        namespace=test_namespace,
         resource_name='mediawiki'
       ) | json_query(ready_status_query)
     }}"
@@ -21,7 +22,7 @@
         'k8s',
         api_version='servicecatalog.k8s.io/v1beta1',
         kind='ServiceInstance',
-        namespace='broker-test',
+        namespace=test_namespace,
         resource_name='postgresql'
       ) | json_query(ready_status_query)
     }}"
@@ -30,19 +31,21 @@
         'k8s',
         api_version='servicecatalog.k8s.io/v1beta1',
         kind='ServiceBinding',
-        namespace='broker-test',
+        namespace=test_namespace,
         resource_name='mediawiki-postgresql-binding'
       ) | json_query(ready_status_query)
     }}"
-    mediawiki_deployment_query: "{{
+    mediawiki_deployment: "{{
       lookup(
         'k8s',
         api_version='apps/v1' if cluster == 'kubernetes' else 'apps.openshift.io/v1',
         kind='Deployment' if cluster == 'kubernetes' else 'DeploymentConfig',
-        namespace='broker-test',
+        namespace=test_namespace,
         resource_name='mediawiki'
-      ) | json_query(available_status_query)
+      )
     }}"
+    mediawiki_revision: "{{ mediawiki_deployment | json_query('status.latestVersion') }}"
+    mediawiki_deployment_query: "{{ mediawiki_deployment | json_query(available_status_query) }}"
 
   tasks:
     # Test crd
@@ -62,7 +65,7 @@
           apiVersion: "{{ 'v1' if cluster == 'kubernetes' else 'project.openshift.io/v1' }}"
           kind: "{{ 'Namespace' if cluster == 'kubernetes' else 'ProjectRequest' }}"
           metadata:
-            name: broker-test
+            name: "{{ test_namespace }}"
 
     - name: Provision mediawiki
       k8s:
@@ -72,7 +75,7 @@
           kind: ServiceInstance
           metadata:
             name: mediawiki
-            namespace: broker-test
+            namespace: "{{ test_namespace }}"
           spec:
             clusterServiceClassExternalName: dh-mediawiki-apb
             clusterServicePlanExternalName: default
@@ -87,7 +90,7 @@
     - name: Wait for mediawiki service instance
       debug:
         msg: "Instance ready status: {{ mediawiki_query }}"
-      retries: 10
+      retries: 15
       delay: 10
       until: mediawiki_query | length > 0 and mediawiki_query | first == "True"
 
@@ -99,7 +102,7 @@
           kind: ServiceInstance
           metadata:
             name: postgresql
-            namespace: broker-test
+            namespace: "{{ test_namespace }}"
           spec:
             clusterServiceClassExternalName: dh-postgresql-apb
             clusterServicePlanExternalName: dev
@@ -113,7 +116,7 @@
     - name: Wait for postgresql service instance
       debug:
         msg: "Instance ready status: {{ postgresql_query }}"
-      retries: 10
+      retries: 15
       delay: 10
       until: postgresql_query | length > 0 and postgresql_query | first == "True"
 
@@ -125,7 +128,7 @@
           kind: ServiceBinding
           metadata:
             name: mediawiki-postgresql-binding
-            namespace: broker-test
+            namespace: "{{ test_namespace }}"
           spec:
             instanceRef:
               name: postgresql
@@ -134,7 +137,7 @@
     - name: Wait for mediawiki-postgresql binding instance
       debug:
         msg: "Binding ready status: {{ binding_query }}"
-      retries: 10
+      retries: 15
       delay: 10
       until: binding_query | length > 0 and binding_query | first == "True"
 
@@ -146,7 +149,7 @@
           kind: "{{ 'Deployment' if cluster == 'kubernetes' else 'DeploymentConfig' }}"
           metadata:
             name: mediawiki
-            namespace: broker-test
+            namespace: "{{ test_namespace }}"
           spec:
             template:
               spec:
@@ -158,27 +161,19 @@
 
     - name: Wait for mediawiki deployment(config)
       debug:
-        msg: "Deployment(config) ready status: {{ mediawiki_deployment_query }}"
-      retries: 10
+        msg:
+          - "Deployment(config): {{ mediawiki_deployment }}"
+          - "Deployment(config) latestVersion: {{ mediawiki_revision }}"
+          - "Deployment(config) ready status: {{ mediawiki_deployment_query }}"
+      retries: 15
       delay: 10
-      until: mediawiki_deployment_query | length > 0 and mediawiki_deployment_query | first == "True"
-
-    - set_fact:
-        mediawiki_url: "{{
-          lookup(
-            'k8s',
-            api_version='v1',
-            kind='Endpoints',
-            namespace='broker-test',
-            resource_name='mediawiki'
-          )
-        }}"
+      until: mediawiki_revision == "2" and mediawiki_deployment_query | length > 0 and mediawiki_deployment_query | first == "True"
 
     - name: "Verify mediawiki"
       uri:
-        url: "http://{{ mediawiki_url | json_query('subsets[0].addresses[0].ip') }}:{{ mediawiki_url | json_query('subsets[0].ports[0].port') }}"
+        url: "http://mediawiki.{{ test_namespace }}.svc.cluster.local:8080/index.php/Main_Page"
         return_content: yes
-      retries: 10
+      retries: 15
       delay: 10
       register: webpage
       until:
@@ -193,12 +188,12 @@
           kind: ServiceBinding
           metadata:
             name: mediawiki-postgresql-binding
-            namespace: broker-test
+            namespace: "{{ test_namespace }}"
 
     - name: Wait for mediawiki-postgresql binding instance to be removed
       debug:
         msg: "Binding ready status: {{ binding_query }}"
-      retries: 10
+      retries: 15
       delay: 10
       until: not binding_query
 
@@ -210,12 +205,12 @@
           kind: ServiceInstance
           metadata:
             name: postgresql
-            namespace: broker-test
+            namespace: "{{ test_namespace }}"
 
     - name: Wait for postgresql service instance to be removed
       debug:
         msg: "Instance ready status: {{ postgresql_query }}"
-      retries: 10
+      retries: 15
       delay: 10
       until: not postgresql_query
 
@@ -227,12 +222,12 @@
           kind: ServiceInstance
           metadata:
             name: mediawiki
-            namespace: broker-test
+            namespace: "{{ test_namespace }}"
 
     - name: Wait for mediawiki service instance to be removed
       debug:
         msg: "Instance ready status: {{ mediawiki_query }}"
-      retries: 10
+      retries: 15
       delay: 10
       until: not mediawiki_query
 
@@ -243,11 +238,11 @@
           apiVersion: "{{ 'v1' if cluster == 'kubernetes' else 'project.openshift.io/v1' }}"
           kind: "{{ 'Namespace' if cluster == 'kubernetes' else 'Project' }}"
           metadata:
-            name: broker-test
+            name: "{{ test_namespace }}"
 
     - name: Wait for test namespace to be destroyed
       vars:
-        namespace_lookup: "{{ lookup('k8s', kind='Namespace', resource_name='broker-test') }}"
+        namespace_lookup: "{{ lookup('k8s', kind='Namespace', resource_name=test_namespace) }}"
       set_fact:
         _namespace_status: "{{ namespace_lookup }}"
       retries: 10
