@@ -47,7 +47,7 @@ func TestAddIdForPlan(t *testing.T) {
 }
 
 func TestNewAnsibleBroker(t *testing.T) {
-	_, err := NewAnsibleBroker(&mocks.Dao{}, []registries.Registry{}, *NewWorkEngine(20, 2*time.Minute), &config.Config{}, "new-space")
+	_, err := NewAnsibleBroker(&mocks.Dao{}, []registries.Registry{}, *NewWorkEngine(20, 2*time.Minute, &mocks.Dao{}), &config.Config{}, "new-space", NewWorkFactory())
 	if err != nil {
 		t.Fail()
 	}
@@ -203,7 +203,7 @@ func TestGetServiceInstance(t *testing.T) {
 				brokerConfig: tc.config,
 				registry:     nil,
 				namespace:    "test1",
-				engine:       NewWorkEngine(20, 2*time.Minute),
+				engine:       NewWorkEngine(20, 2*time.Minute, mockDao),
 				dao:          tc.dao,
 			}
 
