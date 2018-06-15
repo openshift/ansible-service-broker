@@ -170,7 +170,8 @@ func CreateApp(args Args, regs []registries.Registry) App {
 
 	// Initialize Runtime
 	log.Debug("Connecting to Cluster")
-	agnosticruntime.NewRuntime(agnosticruntime.Configuration{})
+	brokerNS := app.config.GetString("openshift.namespace")
+	agnosticruntime.NewRuntime(agnosticruntime.Configuration{StateMasterNamespace: brokerNS})
 	agnosticruntime.Provider.ValidateRuntime()
 	if err != nil {
 		log.Error(err.Error())
@@ -277,12 +278,12 @@ func CreateApp(args Args, regs []registries.Registry) App {
 	clusterConfig := bundle.ClusterConfig{
 		PullPolicy:           app.config.GetString("openshift.image_pull_policy"),
 		SandboxRole:          app.config.GetString("openshift.sandbox_role"),
-		Namespace:            app.config.GetString("openshift.namespace"),
+		Namespace:            brokerNS,
 		KeepNamespace:        app.config.GetBool("openshift.keep_namespace"),
 		KeepNamespaceOnError: app.config.GetBool("openshift.keep_namespace_on_error"),
 	}
 	bundle.InitializeClusterConfig(clusterConfig)
-	brokerNS := app.config.GetString("openshift.namespace")
+
 	// initialize the work factory
 	workFactory := broker.NewWorkFactory()
 	if app.broker, err = broker.NewAnsibleBroker(
