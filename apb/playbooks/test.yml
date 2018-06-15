@@ -44,8 +44,10 @@
         resource_name='mediawiki'
       )
     }}"
-    mediawiki_revision: "{{ mediawiki_deployment | json_query('status.latestVersion') }}"
-    mediawiki_deployment_query: "{{ mediawiki_deployment | json_query(available_status_query) }}"
+    mediawiki_ready: "{{ mediawiki_deployment | json_query('status.readyReplicas') }}"
+    mediawiki_replicas: "{{ mediawiki_deployment | json_query('status.replicas') }}"
+    mediawiki_updated: "{{ mediawiki_deployment | json_query('status.updatedReplicas') }}"
+    mediawiki_available: "{{ mediawiki_deployment | json_query(available_status_query) }}"
 
   tasks:
     # Test crd
@@ -159,15 +161,20 @@
                       - secretRef:
                           name: mediawiki-postgresql-binding
 
-    - name: Wait for mediawiki deployment(config)
+    - name: Wait for mediawiki deployment(config) to be updated
       debug:
-        msg:
-          - "Deployment(config): {{ mediawiki_deployment }}"
-          - "Deployment(config) latestVersion: {{ mediawiki_revision }}"
-          - "Deployment(config) ready status: {{ mediawiki_deployment_query }}"
+        msg: "Waiting for mediawiki"
       retries: 15
       delay: 10
-      until: mediawiki_revision == "2" and mediawiki_deployment_query | length > 0 and mediawiki_deployment_query | first == "True"
+      until: mediawiki_replicas == "1" and mediawiki_ready == "1" and mediawiki_updated == "1"
+
+    - name: Wait for mediawiki deployment(config) to be available
+      debug:
+        msg:
+          - "Deployment(config) ready status: {{ mediawiki_available }}"
+      retries: 15
+      delay: 10
+      until: mediawiki_available | length > 0 and mediawiki_available | first == "True"
 
     - name: "Verify mediawiki"
       uri:
