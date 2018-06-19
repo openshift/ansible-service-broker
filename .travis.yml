@@ -52,7 +52,7 @@ jobs:
         - go get github.com/mattn/goveralls
         - make ci-test-coverage
     - stage: deploy on tag
-      if: (type = push) AND (repo = openshift/ansible-service-broker) AND (tag =~ ^ansible-service-broker-[0-9.-]+$)
+      if: tag =~ ^ansible-service-broker-[0-9.-]+$
       script:
         - export TAG=$TRAVIS_TAG
         - PUBLISH=1 make publish
