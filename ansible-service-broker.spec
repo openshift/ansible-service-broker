@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.2
+Version: 1.3.3
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Jun 19 2018 David Zager <david.j.zager@gmail.com> 1.3.3-1
+- Use travis_tag on tag builds (#993) (dzager@redhat.com)
+- Add hostname to test scripts (#985) (alay1431@gmail.com)
+
 * Tue Jun 19 2018 David Zager <david.j.zager@gmail.com> 1.3.2-1
 - Pass in namespace to runtime (#991) (maleck13@users.noreply.github.com)
 - adding unit tests for broker package (#983) (smhurley00@gmail.com)
