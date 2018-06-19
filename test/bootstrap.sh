@@ -1,5 +1,12 @@
 #!/bin/bash -e
 
+if [ -z "$1" ]
+then
+      HOSTNAME='172.17.0.1'
+else
+      HOSTNAME=$1
+fi
+
 curl \
     -k \
     -X POST \
@@ -8,4 +15,4 @@ curl \
     -H "Accept: application/json" \
     -H "X-Broker-API-Originating-Identity: " \
     -d "$req" \
-    "https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/bootstrap"
+    "https://broker-automation-broker.$HOSTNAME.nip.io/automation-broker/v2/bootstrap"

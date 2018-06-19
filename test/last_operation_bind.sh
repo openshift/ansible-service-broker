@@ -6,6 +6,14 @@ OPERATION="$3"
 PLAN_UUID="$4"
 SERVICE_UUID="$5"
 
+if [ -z "$6" ]
+then
+      HOSTNAME='172.17.0.1'
+else
+      HOSTNAME=$6
+fi
+
+
 validate_param() {
   if [ "$1" = "" ]
   then
@@ -27,4 +35,4 @@ curl \
     -H "Content-type: application/json" \
     -H "Accept: application/json" \
     -H "X-Broker-API-Originating-Identity: " \
-    "https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID/last_operation?operation=$OPERATION&service_id=$SERVICE_UUID&plan_id=$PLAN_UUID"
+    "https://broker-automation-broker.$HOSTNAME.nip.io/automation-broker/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID/last_operation?operation=$OPERATION&service_id=$SERVICE_UUID&plan_id=$PLAN_UUID"

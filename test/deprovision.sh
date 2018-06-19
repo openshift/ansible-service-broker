@@ -2,6 +2,13 @@
 
 INSTANCE_ID=$1
 
+if [ -z "$2" ]
+then
+      HOSTNAME='172.17.0.1'
+else
+      HOSTNAME=$2
+fi
+
 if [ "$INSTANCE_ID" = "" ]
 then
   echo "Usage: $0 <instance uuid>"
@@ -15,4 +22,4 @@ curl \
     -H "Content-type: application/json" \
     -H "Accept: application/json" \
     -H "X-Broker-API-Originating-Identity: " \
-    "https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/service_instances/$INSTANCE_ID"
+    "https://broker-automation-broker.$HOSTNAME.nip.io/automation-broker/v2/service_instances/$INSTANCE_ID"

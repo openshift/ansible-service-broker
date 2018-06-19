@@ -4,6 +4,13 @@ INSTANCE_ID="$1"
 BINDING_ID="$2"
 PLAN_UUID="$3"
 
+if [ -z "$4" ]
+then
+      HOSTNAME='172.17.0.1'
+else
+      HOSTNAME=$4
+fi
+
 validate_param() {
   if [ "$1" = "" ]
   then
@@ -33,6 +40,4 @@ curl \
     -H "Content-type: application/json" \
     -H "Accept: application/json" \
     -H "X-Broker-API-Originating-Identity: " \
-    "https://asb-1338-ansible-service-broker.172.17.0.1.nip.io/ansible-service-broker/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID?accepts_incomplete=true&plan_id=$PLAN_UUID"
-
-
+    "https://broker-automation-broker.$HOSTNAME.nip.io/automation-broker/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID?accepts_incomplete=true&plan_id=$PLAN_UUID"
