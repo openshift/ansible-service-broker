@@ -51,11 +51,16 @@ jobs:
         - make build
         - go get github.com/mattn/goveralls
         - make ci-test-coverage
-    - stage: deploy
+    - stage: deploy on tag
+      if: (repo = openshift/ansible-service-broker) AND (tag =~ ^ansible-service-broker-[0-9.-]+$)
+      script:
+        - export TAG=$TRAVIS_TAG
+        - PUBLISH=1 make publish
+    - stage: deploy branch
       if: (type = push) AND (repo = openshift/ansible-service-broker)
       script:
         # Only run on master branch, release- branches, and ansible-service-broker tags
-        - if [[ ! $TRAVIS_BRANCH =~ ^master$|^release-[0-9.]+$|^ansible-service-broker-[0-9.-]+$ ]]; then exit 0; fi
+        - if [[ ! $TRAVIS_BRANCH =~ ^master$|^release-[0-9.]+$ ]]; then exit 0; fi
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - if [ $TRAVIS_BRANCH == "master" ]; then export TAG="canary"; else TAG=$TRAVIS_BRANCH; fi
         - PUBLISH=1 make publish
