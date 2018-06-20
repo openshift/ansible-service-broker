@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.3
+Version: 1.3.4
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Jun 20 2018 David Zager <david.j.zager@gmail.com> 1.3.4-1
+- Login for deploy on tag (#994) (dzager@redhat.com)
+
 * Tue Jun 19 2018 David Zager <david.j.zager@gmail.com> 1.3.3-1
 - Use travis_tag on tag builds (#993) (dzager@redhat.com)
 - Add hostname to test scripts (#985) (alay1431@gmail.com)
