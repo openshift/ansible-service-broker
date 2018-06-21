@@ -59,6 +59,7 @@
     - name: broker-access.clusterrole.yaml
     - name: broker-auth.secret.yaml
       apply: "{{ True if broker_basic_auth_enabled else False }}"
+    - name: broker-user-auth.clusterrole.yaml
     - name: broker.deployment.yaml
     - name: broker.servicecatalog.yaml
 
