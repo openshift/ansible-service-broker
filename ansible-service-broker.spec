@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.1
+Version: 1.3.4
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -312,6 +312,24 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Jun 20 2018 David Zager <david.j.zager@gmail.com> 1.3.4-1
+- Login for deploy on tag (#994) (dzager@redhat.com)
+
+* Tue Jun 19 2018 David Zager <david.j.zager@gmail.com> 1.3.3-1
+- Use travis_tag on tag builds (#993) (dzager@redhat.com)
+- Add hostname to test scripts (#985) (alay1431@gmail.com)
+
+* Tue Jun 19 2018 David Zager <david.j.zager@gmail.com> 1.3.2-1
+- Pass in namespace to runtime (#991) (maleck13@users.noreply.github.com)
+- adding unit tests for broker package (#983) (smhurley00@gmail.com)
+- Remove tag from deployment (#988) (dzager@redhat.com)
+- Fix deployment stage (#987) (dzager@redhat.com)
+- Tie together container images of broker & broker-apb (#986)
+  (dzager@redhat.com)
+- ensure initial state set when job started. reduce repition in job
+  definitions. Allow jobs to be mocked out at broker level (#909)
+  (maleck13@users.noreply.github.com)
+
 * Sun Jun 10 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.3.1-1
 - Bug 1585649 - wait group should be added to before go function is kicked off (#977) (smhurley00@gmail.com)
 - Bug 1583064 - missing action causes many sandboxes (#972) (jmrodri@gmail.com)

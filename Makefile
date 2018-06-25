@@ -1,6 +1,6 @@
 REGISTRY         ?= docker.io
 ORG              ?= ansibleplaybookbundle
-TAG              ?= latest
+TAG              ?= $(shell git rev-parse --short HEAD)
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker:${TAG}
 APB_DIR          ?= apb
 APB_IMAGE        ?= ${REGISTRY}/automationbroker/automation-broker-apb:${TAG}

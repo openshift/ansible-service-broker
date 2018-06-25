@@ -6,13 +6,14 @@ import (
 	"time"
 
 	apb "github.com/automationbroker/bundle-lib/bundle"
+	"github.com/automationbroker/bundle-lib/runtime"
 )
 
 func TestApbJobRun(t *testing.T) {
 	timeoutSecs := 5
 	serviceInstanceID := "16235516-9e5e-4c68-a541-33bda63413ee"
 	specID := "a7fc708e-52cf-427e-88b2-2b750b607a27"
-	//bindingID := "20c6ec16-c5bd-433a-815c-63cf0e2d2c9d"
+	bindingID := "20c6ec16-c5bd-433a-815c-63cf0e2d2c9d"
 	token := "4ac9529c-6a01-4daf-9e10-8b557e4885ae"
 	podName := "apb-8f9268c2-1aaa-48f1-918d-eae920986c9f"
 	extCreds := &apb.ExtractedCredentials{
@@ -267,6 +268,188 @@ func TestApbJobRun(t *testing.T) {
 					if testVal != expectedVal {
 						return fmt.Errorf("expected credential val not the same as the one from jobMsg")
 					}
+				}
+
+				return nil
+			},
+		},
+		{
+			name: "job message should use binding uuid",
+			testJob: &apbJob{
+				serviceInstanceID: serviceInstanceID,
+				bindingID:         &bindingID,
+				specID:            specID,
+				method:            apb.JobMethodBind,
+				skipExecution:     false,
+				executor: func() apb.Executor {
+					e := &apb.MockExecutor{}
+					e.On("PodName").Return(podName)
+					e.On("LastStatus").Return(apb.StatusMessage{
+						State:       apb.StateSucceeded,
+						Description: "action finished with success",
+					})
+					e.On("ExtractedCredentials").Return(extCreds)
+					e.On("DashboardURL").Return("http://foo.example.com")
+					return e
+				}(),
+				run: func(exec apb.Executor) <-chan apb.StatusMessage {
+					statusChan := make(chan apb.StatusMessage)
+					go func() {
+						// Initial message sent from executor.actionStarted
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateInProgress,
+							Description: "action started",
+						}
+						// Final status sent by executor.actionFinishedWithSuccess
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateSucceeded,
+							Description: "action finished with success",
+						}
+						close(statusChan)
+					}()
+					return statusChan
+				},
+			},
+			expectedMsgCount: 2,
+			validate: func(messages []JobMsg) error {
+				if len(messages) != 2 {
+					return fmt.Errorf("expected 2 job messages")
+				}
+
+				first := messages[0]
+				if first.State.State != apb.StateInProgress {
+					return fmt.Errorf("unexpected first message contents")
+				}
+
+				second := messages[1]
+				if second.State.State != apb.StateSucceeded {
+					return fmt.Errorf("unexpected fourth message contents")
+				}
+				if first.BindingUUID != bindingID && second.BindingUUID != bindingID {
+					return fmt.Errorf("Binding id is not valid expected: %v - got: %v", bindingID, first.BindingUUID)
+				}
+
+				for expectedKey, expectedVal := range extCreds.Credentials {
+					testVal, ok := second.ExtractedCredentials.Credentials[expectedKey]
+
+					if !ok {
+						return fmt.Errorf("expected credential key missing from final jobMsg")
+					}
+					if testVal != expectedVal {
+						return fmt.Errorf("expected credential val not the same as the one from jobMsg")
+					}
+				}
+
+				return nil
+			},
+		},
+		{
+			name: "should send failed jobMsg when error reported on executor pod pull error",
+			testJob: &apbJob{
+				serviceInstanceID: serviceInstanceID,
+				specID:            specID,
+				method:            apb.JobMethodProvision,
+				skipExecution:     false,
+				executor: func() apb.Executor {
+					e := &apb.MockExecutor{}
+					e.On("PodName").Return(podName)
+					e.On("LastStatus").Return(apb.StatusMessage{
+						State:       apb.StateFailed,
+						Error:       runtime.ErrorPodPullErr,
+						Description: "action finished with error",
+					})
+					e.On("ExtractedCredentials").Return(nil)
+					return e
+				}(),
+				run: func(exec apb.Executor) <-chan apb.StatusMessage {
+					statusChan := make(chan apb.StatusMessage)
+					go func() {
+						// Initial message sent from executor.actionStarted
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateInProgress,
+							Description: "action started",
+						}
+						// Final status sent by executor.actionFinishedWithSuccess
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateFailed,
+							Error:       runtime.ErrorPodPullErr,
+							Description: "action finished with error",
+						}
+						close(statusChan)
+					}()
+					return statusChan
+				},
+			},
+			expectedMsgCount: 2,
+			validate: func(messages []JobMsg) error {
+				if len(messages) != 2 {
+					return fmt.Errorf("expected 2 job messages")
+				}
+				first := messages[0]
+				if first.State.State != apb.StateInProgress {
+					return fmt.Errorf("unexpected first message contents")
+				}
+
+				second := messages[1]
+				if second.State.State != apb.StateFailed ||
+					second.State.Error != runtime.ErrorPodPullErr.Error() {
+					return fmt.Errorf("unexpected second message contents")
+				}
+
+				return nil
+			},
+		},
+		{
+			name: "should send failed jobMsg when error reported on executor pod pull error",
+			testJob: &apbJob{
+				serviceInstanceID: serviceInstanceID,
+				specID:            specID,
+				method:            apb.JobMethodProvision,
+				skipExecution:     false,
+				executor: func() apb.Executor {
+					e := &apb.MockExecutor{}
+					e.On("PodName").Return(podName)
+					e.On("LastStatus").Return(apb.StatusMessage{
+						State:       apb.StateFailed,
+						Error:       runtime.ErrorCustomMsg{},
+						Description: "action finished with error",
+					})
+					e.On("ExtractedCredentials").Return(nil)
+					return e
+				}(),
+				run: func(exec apb.Executor) <-chan apb.StatusMessage {
+					statusChan := make(chan apb.StatusMessage)
+					go func() {
+						// Initial message sent from executor.actionStarted
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateInProgress,
+							Description: "action started",
+						}
+						// Final status sent by executor.actionFinishedWithSuccess
+						statusChan <- apb.StatusMessage{
+							State:       apb.StateFailed,
+							Error:       runtime.ErrorCustomMsg{},
+							Description: "action finished with error",
+						}
+						close(statusChan)
+					}()
+					return statusChan
+				},
+			},
+			expectedMsgCount: 2,
+			validate: func(messages []JobMsg) error {
+				if len(messages) != 2 {
+					return fmt.Errorf("expected 2 job messages")
+				}
+				first := messages[0]
+				if first.State.State != apb.StateInProgress {
+					return fmt.Errorf("unexpected first message contents")
+				}
+
+				second := messages[1]
+				if second.State.State != apb.StateFailed ||
+					second.State.Error != "" {
+					return fmt.Errorf("unexpected second message contents")
 				}
 
 				return nil

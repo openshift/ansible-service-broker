@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	apb "github.com/automationbroker/bundle-lib/bundle"
+	"github.com/automationbroker/bundle-lib/runtime"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/mock"
 	"github.com/pborman/uuid"
@@ -206,6 +207,78 @@ func TestJobStateSubscriber(t *testing.T) {
 				expectedCalls := map[string]int{
 					"SetState":      2,
 					"DeleteBinding": 1,
+				}
+				return dao, expectedCalls
+			},
+		},
+		{
+			Name: "Message state error action not found and bind",
+			JobMsg: []broker.JobMsg{{
+				State: apb.JobState{
+					State:  apb.StateFailed,
+					Method: apb.JobMethodBind,
+					Error:  runtime.ErrorActionNotFound.Error(),
+				},
+			}},
+			DAO: func() (*mock.SubscriberDAO, map[string]int) {
+				dao := mock.NewSubscriberDAO()
+				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{}
+				dao.Object["GetBindInstance"] = &apb.BindInstance{ID: uID}
+				dao.Errs["DeleteBinding"] = errors.New("failed")
+				calls := 0
+				dao.AssertOn["SetState"] = func(args ...interface{}) error {
+					calls++
+					state := args[1].(apb.JobState)
+					if state.Method != apb.JobMethodBind {
+						return fmt.Errorf("expected to have a unbind job state")
+					}
+					if calls == 1 && state.State != apb.StateSucceeded {
+						return fmt.Errorf("expected the job state to be %v but got %v", apb.StateSucceeded, state.State)
+					} else if calls == 2 && state.State != apb.StateFailed {
+						return fmt.Errorf("expected the job state to be %v but got %v", apb.StateFailed, state.State)
+					}
+
+					return nil
+				}
+				expectedCalls := map[string]int{
+					"SetState": 1,
+				}
+				return dao, expectedCalls
+			},
+		},
+		{
+			Name: "Message state set dashboard url",
+			JobMsg: []broker.JobMsg{{
+				State: apb.JobState{
+					State:  apb.StateSucceeded,
+					Method: apb.JobMethodProvision,
+				},
+				DashboardURL: "https://google.com",
+			}},
+			DAO: func() (*mock.SubscriberDAO, map[string]int) {
+				dao := mock.NewSubscriberDAO()
+				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{}
+				dao.Object["GetBindInstance"] = &apb.BindInstance{ID: uID}
+				dao.Errs["DeleteBinding"] = errors.New("failed")
+				calls := 0
+				dao.AssertOn["SetState"] = func(args ...interface{}) error {
+					calls++
+					state := args[1].(apb.JobState)
+					if state.Method != apb.JobMethodProvision {
+						return fmt.Errorf("expected to have a unbind job state")
+					}
+					if calls == 1 && state.State != apb.StateSucceeded {
+						return fmt.Errorf("expected the job state to be %v but got %v", apb.StateSucceeded, state.State)
+					} else if calls == 2 && state.State != apb.StateFailed {
+						return fmt.Errorf("expected the job state to be %v but got %v", apb.StateFailed, state.State)
+					}
+
+					return nil
+				}
+				expectedCalls := map[string]int{
+					"SetState":           1,
+					"GetServiceInstance": 1,
+					"SetServiceInstance": 1,
 				}
 				return dao, expectedCalls
 			},
