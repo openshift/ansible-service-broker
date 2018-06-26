@@ -36,6 +36,7 @@ build/broker
 build/migration
 /dashboard-redirector
 build/dashboard-redirector
+build/dlv
 
 # python artifacts
 .python-version
