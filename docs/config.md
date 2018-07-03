@@ -121,7 +121,7 @@ registry:
       - ".*-apb$"
 ```
 
-## Local OpenShift Registry
+### Local OpenShift Registry
 Using the local openshift registry will allow you to load APBs from the internal registry. The administrator can configure which namespaces they want to look for published APBs.
 ```yaml
 registry:
@@ -132,6 +132,25 @@ registry:
     white_list:
       - ".*-apb$"
 ```
+
+### Helm Chart Repository
+
+Using a Helm registry will allow you to consume Helm
+Charts from a Helm Chart Respository. For example:
+
+```yaml
+registry:
+  - name: stable
+    type: helm
+    url: "https://kubernetes-charts.storage.googleapis.com"
+    runner: "docker.io/automationbroker/helm-runner:latest"
+    white_list:
+      - ".*"
+```
+
+**NOTE**: A heavy percentage of helm charts from the stable repository are not
+well suited for OpenShift. For more information see
+[here](https://github.com/ansibleplaybookbundle/helm2bundle/wiki/Known-Issues).
 
 ### Red Hat Container Catalog (RHCC) Registry
 Using the RHCC (Red Hat Container Catalog) registry will allow you to load APBs that are published to this type of [registry](https://access.redhat.com/containers).
