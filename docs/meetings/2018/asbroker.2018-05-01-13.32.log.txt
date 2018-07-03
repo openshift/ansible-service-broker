@@ -1,0 +1,276 @@
+13:32:00 <jmrodri> #startmeeting asbroker community meeting 20180501
+13:32:00 <brokerbot> Meeting started Tue May  1 13:32:00 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+13:32:00 <brokerbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+13:32:00 <brokerbot> The meeting name has been set to 'asbroker_community_meeting_20180501'
+13:32:01 <brokerbot> jmrodri: Error: "startmeeting" is not a valid command.
+13:32:22 <jmrodri> #topic attendance
+13:32:22 <brokerbot> jmrodri: Error: "topic" is not a valid command.
+13:32:22 <ernelson> brokerbot: apologies, please don't boot me
+13:32:23 <brokerbot> ernelson: Error: "apologies," is not a valid command.
+13:32:27 <rhallisey> lol
+13:32:30 <rhallisey> o/
+13:32:42 <jmrodri> here
+13:32:50 <leifmadsen> ola
+13:32:50 <dymurray> hey
+13:32:52 <ernelson> here
+13:33:07 <shurley> jhello
+13:33:11 <shurley> hello
+13:33:20 <jmrodri> So we'll get started, say hello etc for attendance
+13:33:27 <maleck13> hello
+13:33:39 <jmrodri> I'll be running the meeting today, in a prep for next week :) rhallisey will be guiding me through this process so bear with me :)
+13:33:48 <leifmadsen> you will be judged
+13:33:54 <jmrodri> and I think the bot might be configured wrong so hopefully it won't ignore me soon :)
+13:33:55 <rhallisey> haha
+13:33:59 <jmrodri> leifmadsen: hahaha :)
+13:34:05 <leifmadsen> :)
+13:34:20 <jmrodri> Okay I think we have everyone that is planning on attending (or at least announcing themselves)
+13:34:24 <jmrodri> Next up is news
+13:34:27 <jmrodri> #topic news
+13:34:27 <brokerbot> jmrodri: Error: "topic" is not a valid command.
+13:34:42 <jmrodri> This week is Kubecon (I believe it's in Europe)
+13:35:06 <ernelson> copenhagen!
+13:35:10 <leifmadsen> wish I was there :)
+13:35:12 <jmrodri> and next week is the Red Hat Summit in San Francisco, CA
+13:35:13 <rhallisey> mhrivnak, is representing
+13:35:14 <jmrodri> USA
+13:35:19 <jmrodri> ernelson: ooh copenhagen :)
+13:35:25 <jmrodri> nice
+13:35:38 <jmrodri> Any other news folks have?
+13:35:51 <jmrodri> If not, moving on to the bugs/issues triage
+13:35:56 <jmrodri> #topic bugs/issues triage
+13:35:56 <brokerbot> jmrodri: Error: "topic" is not a valid command.
+13:36:09 <jmrodri> #info https://github.com/openshift/ansible-servicered hat summ-broker/issues/917
+13:36:09 <brokerbot> jmrodri: Error: "info" is not a valid command.
+13:36:38 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/30
+13:36:38 <brokerbot> jmrodri: Error: "link" is not a valid command.
+13:36:50 <jmrodri> maleck13: shurley you want to talk about that?
+13:37:10 <maleck13> so basically currently the tests require you have .kube/config
+13:37:44 <maleck13> and a solution I am advocating is to allow the client to be passed as a dependency in the constructor
+13:38:05 <maleck13> speaking with shurley we said it should prob be done everywhere if we wanted to do it
+13:38:13 <maleck13> wanted to get ppls thoughts on this approach
+13:38:14 <shurley> So 1st things first to complete remove the need for kubeconfig
+13:38:23 <shurley> we would have to get rid of the clients package
+13:38:42 <shurley> so I think that it might be worth starting there and see if that is a goal.
+13:39:09 <jmrodri> this sounds like a lot of refactoring to remove a required config?
+13:39:10 <maleck13> we may not need to remove the clients package if we have methods that return the interface types
+13:39:12 <shurley> the whole pass the thing to a struct  is a possible way around the removal of clients
+13:39:22 <jmrodri> won't I need a config at some point?
+13:39:50 <shurley> how, the idea is its a singleton that always runs the code that need either to look like its in cluster
+13:39:56 <shurley> or if you have a kube config
+13:40:02 <jmrodri> are we going down the path we did with the logger? wherre everything had a log passed in?
+13:40:07 <shurley> I don’t see how adding methods changes that
+13:40:09 <ron1> I'm porting a helm chart to apb. The helm chart has several yaml values/parameters defined. I'm having difficulty getting my apb to nicely process a yaml-formatted string parameter in my j2 template. Any tricks/samples?
+13:41:35 <shurley> jmrodri: > this sounds like a lot of refactoring to remove a required config? can you elaborate?
+13:41:36 <maleck13> shurley: I may be missing something
+13:41:41 <rhallisey> so what is the path of least resistance ?
+13:41:59 <jmrodri> ron1: someone will help out in a little bit. We're having the communit irc meeting right now, feel free to watch or participate
+13:42:19 <rhallisey> ron1, we'll ping you after
+13:42:29 <rhallisey> about $question
+13:42:44 <shurley> maleck13: this is the only way to get the kubernetes client right now https://github.com/automationbroker/bundle-lib/blob/master/clients/kubernetes.go#L52
+13:42:52 <jmrodri> shurley: sure, removing clients package, changing signatures to take in an interface, to get around the .kube/config requirement?
+13:43:20 <jmrodri> shurley: maybe I'm not understanding the scope of the work being suggested by this issue.
+13:43:32 <shurley> we run it once, and only once at the first call to get the client, this is the method that runs to get the client https://github.com/automationbroker/bundle-lib/blob/master/clients/kubernetes.go#L206
+13:43:38 <shurley> that is what needs the kube config
+13:43:50 <shurley> OR to look like it is in cluster
+13:44:12 <ernelson> I have the same concerns with jmrodri, I don't want this to turn into injecting into every signature all the way down. It sounds like that's not the case, just my concern
+13:44:32 <ernelson> is the effort here to mock out a config?
+13:44:33 <maleck13> ernelson: correct the approach would be only to do this in constructors
+13:44:47 <jmrodri> if it isn't an injection down a series of method, i.e. it's localized I'd be okay.
+13:44:56 <shurley> maleck13: The problem I see, is we tried this, w/ logging
+13:45:02 <shurley> I then had to rip it all out
+13:45:08 <shurley> it was very painful
+13:45:10 <jmrodri> maleck13: how many constructors are we talking about? because that's what we did with the logger. Every thing that needed a logger had to have it passed into them.
+13:45:18 <ernelson> shurley: so our soln there were pkg level defaults
+13:45:30 <ernelson> can we leverage that in some way?
+13:45:37 <maleck13> jmrodri: right ok
+13:46:08 <shurley> I think as we move towards only runtime being the place that needs the clients, then it because eaiser
+13:46:14 <maleck13> my goal really is to aid writing simple unit tests that don't require a kube config. I don't want to make it difficult to work in the lib in order to achieve that though
+13:46:24 <maleck13> shurley: +1
+13:46:36 <shurley> So I am not saying its not a good idea
+13:46:51 <ernelson> sounds like the problem may lessen
+13:46:53 <ernelson> naturally
+13:47:13 <rhallisey> shurley, +1 to runtime only having clients
+13:47:18 <shurley> I am just, um, terrified of having to rip something like that our again :)
+13:47:24 <jmrodri> maleck13: agreed, definitely don't want to make it difficult to work in the lib, and tests are important. I know there are times I skip the test because writing it will require quite a bit of effort to get a decent test :(
+13:47:34 <jmrodri> shurley: +1
+13:47:59 <shurley> maleck13: what do you think of finding all the places in bundle lib that still use the client
+13:48:04 <jmrodri> so is there a short term fix for this now? is there a way to pass in a fake config to the client? or does it assume it exists somewhere?
+13:48:10 <shurley> we move those to the runtime package
+13:48:19 <maleck13> I can take on doing a poc of what this would look like in the runtime? Wondering what next steps are?
+13:49:07 <shurley> jmrodri: two workarounds are have a kube config
+13:49:08 <maleck13> shurley: sorry missed that before my last reply. Yes identify the places that need to change would be good
+13:49:17 <jmrodri> How about I create an action for shurley and maleck13 (with the help of the rest of us) to come up with something to move this forward?
+13:49:49 <shurley> or do what the travis script does and create two empty files on disk and pass in env args
+13:50:00 <jmrodri> I'm going to have to move us forward to get through the other issues, if that's okay?
+13:50:01 <shurley> maleck13: jmrodri I am good w/ that
+13:50:07 <rhallisey> shurley, does this only apply to bundle lib?
+13:50:14 <rhallisey> moving clients to runtime?
+13:50:14 <maleck13> I am happy to work with shurley to figure it out. The issue is prob a good place for the discussion etc
+13:50:22 <shurley> +1
+13:50:29 <jmrodri> #action maleck13 shurley investigate all the places clients are used and move to runtime
+13:50:29 <brokerbot> jmrodri: Error: "action" is not a valid command.
+13:50:42 * jmrodri will punch that bot by the end of this meeting :)
+13:50:54 <jmrodri> #info https://github.com/automationbroker/bundle-lib/issues/30
+13:50:54 <brokerbot> jmrodri: Error: "info" is not a valid command.
+13:51:07 <shurley> rhallisey: does bring up a good point, that I think the broekr uses k8s client for some stuff
+13:51:08 <jmrodri> #info Incorrect version check in run_latest_build.sh
+13:51:08 <brokerbot> jmrodri: Error: "info" is not a valid command.
+13:51:19 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/912
+13:51:19 <brokerbot> jmrodri: Error: "link" is not a valid command.
+13:51:31 <rhallisey> shurley, https://github.com/openshift/ansible-service-broker/blob/master/pkg/app/app.go#L110
+13:51:41 <rhallisey> shurley, let's talk after
+13:51:50 <rhallisey> if needed
+13:51:53 <jmrodri> so issue 912
+13:52:16 <jmrodri> we were doing a quick version comparison to support newer and older oc commands in the script
+13:52:17 <dzager> for the run_latest_build.sh issue, I think that we should remove the `oc cluster up`. Bring up the cluster yourself and then run_latest_build.sh
+13:52:26 <jmrodri> the version check failed recently.
+13:52:44 <jmrodri> dzager: so the idea would be that you setup your cluster, then run the script?
+13:52:51 <dzager> jmrodri: +1
+13:52:51 <rhallisey> ya it fails with anything >10
+13:53:07 <rhallisey> dzager, we should add that in open discussion
+13:53:32 <shurley> I agree w/ dzager
+13:53:47 <shurley> that would unify the experiences for k8s and oc
+13:54:06 <jmrodri> so the suggested fix for this script is to require the user to setup their cluster THEN run the script?
+13:54:24 <dzager> yes
+13:54:47 <dzager> I don't want to implement semantic versioning comparisons in bash :)
+13:54:53 <ernelson> +1, get rid of the oc cluster up
+13:55:00 <ernelson> BYOC
+13:55:01 <dzager> I mean...copy it from somewhere else on github
+13:55:13 <jmrodri> I'd like to run that change by jmatthews since he was a big proponent for this script, and I think requiring them to create the cluster might undermine the reason for the script
+13:55:34 <jmrodri> but I'm not opposed to removing the oc cluster up from the script.
+13:55:50 <dymurray> BYOC I like that
+13:55:55 <rhallisey> jmrodri, ML thread?
+13:55:56 <jmrodri> #action dzager work with jmatthews to determine if that is a feasible change
+13:55:56 <brokerbot> jmrodri: Error: "action" is not a valid command.
+13:56:11 <leifmadsen> what about providing enough documentation to get a cluster vs running it from the script itself?
+13:56:25 <leifmadsen> seems like there should be enough info to help someone have a cluster rather than doing everything for them
+13:57:01 <rhallisey> leifmadsen, agreed.  We just need to decide on what we what the script to become
+13:57:11 <jmrodri> leifmadsen: agreed. I think we started with that initially. Then we thought why not move that into a script.
+13:57:18 <maleck13> leifmadsen: yeah linking to minishift or oc cluster up would be a good compromise
+13:57:23 <rhallisey> dzager, can you create the thread on upstream list?
+13:57:26 <jmrodri> then the oc command started to evolve, and that's where the keeping up problem occurred
+13:57:27 <leifmadsen> yea that always seems like a good idea until it's not :)
+13:57:36 <shurley> I say we point to OC, minishift, minikube, local_cluster_up
+13:57:40 <shurley> and let them decide
+13:57:44 <jmrodri> leifmadsen: :)
+13:57:47 <leifmadsen> I have a lot of automation now for getting VMs onto a KVM based host, and then running openshift-ansible to get you a cluster
+13:57:52 <dzager> rhallisey: I can create a thread
+13:58:04 <leifmadsen> I can get everything running in like 2 Ansible commands
+13:58:14 <leifmadsen> I should add them to a script so it's just 1 command
+13:58:16 <leifmadsen> oh wait...
+13:58:17 <dzager> when you say upstream list, rhallisey, I take that to mean an issue
+13:58:29 <jmrodri> okay, sounds like we have a potential solution for this. mailing list thread, and BYOC in the script and documentation updates
+13:58:41 <jmrodri> dzager: ansible-service-broker mailing list :)
+13:58:49 <dzager> jmrodri: +1
+13:58:54 <dymurray> +1
+13:58:59 <ernelson> should have some error handling up front that asserts there is a cluster available, and points people in the right direction if there is not, as well
+13:59:02 <jmrodri> we ran out of time for this segement, but I think we should finish up the other issuees
+13:59:34 <jmrodri> #info Ansible ServiceInstance CRD colliding with Service Catalog #link https://github.com/openshift/ansible-service-broker/issues/914
+13:59:34 <brokerbot> jmrodri: Error: "info" is not a valid command.
+13:59:36 <rhallisey> jmrodri, +1. Only 1 feature there
+13:59:48 <jmrodri> okay I think we fixed this issue.
+13:59:49 <ernelson> this is fixed?
+14:00:09 <jmrodri> yep, looks like it. Can we close?
+14:00:40 <dzager> jmrodri: +1 from me. I just didn't want to be the guy that closed it 2 minutes after he opened it.
+14:00:40 <ernelson> jmrodri: +1
+14:00:47 <jmrodri> I'll close it
+14:01:08 <jmrodri> #info What is the meaning of AA in the documentation, other acronyms are explained #link https://github.com/openshift/ansible-service-broker/issues/917
+14:01:08 <brokerbot> jmrodri: Error: "info" is not a valid command.
+14:01:22 <ernelson> AnsibleApp back from the dead :)
+14:01:24 <jmrodri> I'm going to get that AA means AnsibleApp :)
+14:01:35 <dymurray> haha :)
+14:01:44 <ernelson> we just need to audit the docs and update them
+14:01:53 <jmrodri> okay so this is a documentation update. Anyone want to volunteer?
+14:02:19 <ernelson> jmrodri: o/
+14:02:27 <ernelson> I'll take it, I wrote that doc long ago
+14:02:29 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/917
+14:02:40 <rhallisey> jmrodri, no spaces
+14:02:41 <jmrodri> #action ernelson update design.md doc to not use AA :)
+14:02:41 <brokerbot> jmrodri: Error: "action" is not a valid command.
+14:02:50 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/917
+14:02:50 <brokerbot> jmrodri: Error: "link" is not a valid command.
+14:03:11 <jmrodri> #info Why is `from` failing in the ES-APB within OpenShift REST client
+14:03:11 <brokerbot> jmrodri: Error: "info" is not a valid command.
+14:03:19 <leifmadsen> ok, so this will be quick
+14:03:19 <jmrodri> #link https://github.com/ansibleplaybookbundle/es-apb/issues/6
+14:03:19 <brokerbot> jmrodri: Error: "link" is not a valid command.
+14:04:04 <jmrodri> leifmadsen: thoughts on this?
+14:04:21 <leifmadsen> so first:  I can't reproduce this as of this morning. I spent some time with a colleague tracing it to an issue in openshift-restclient and it seemed to be an issue with how `from` was being called, as the key was missing. However, it "just works" this morning, but the ASB container is still v3.9, and not changed in a month. So I have no idea what changed to "fix" this swagger_type issue.
+14:04:44 <leifmadsen> I had it in at least 3 separate full teardown/setup environments, but the one from yesterday, Origin 3.9, works
+14:05:05 <leifmadsen> second: I guess there is no second
+14:06:02 <dymurray> This seems like it would be dependent upon apb-base no?
+14:06:17 <leifmadsen> yea, I'm not sure where the rest client is pulled in
+14:06:22 <leifmadsen> that seemed to be where the bug was
+14:06:35 <leifmadsen> at least, that's where the error msg was coming from
+14:06:38 <fabianvf> leifmadsen: yeah we've had issues with the imagestreams in the Ansible client before
+14:06:40 <dymurray> I'm wondering if one of the rebuilds during the ansible module merges was busted
+14:06:56 <leifmadsen> SO!
+14:07:13 <leifmadsen> there was talk when I filed this issue about maybe getting ES-APB into a nightly test or something
+14:07:21 <leifmadsen> it seems to be a good candidate for catching ImageStream issues
+14:07:39 <dzager> leifmadsen: there is a shim for that https://github.com/ansibleplaybookbundle/apb-test-shim
+14:08:05 <rhallisey> leifmadsen, what are the next steps for this.   Should we wait until it shows up again?
+14:08:09 <dzager> I'm not sure if that is what you are wanting but that has a .travis.yml example that lets you test your apb against k8s/openshift clusters
+14:08:46 <dzager> although the latest oc changes have been making life a pain in travis
+14:08:49 <leifmadsen> dzager: not sure... there seems to be a .travis.yml already in es-apb, but not sure if this is run on a cron or not
+14:09:28 <leifmadsen> rhallisey: I guess next step is to close, and I'll just file another issue if I see it fail again (or re-open if I find it happens the same way)
+14:09:40 <leifmadsen> something has changed this week to result in it working though
+14:09:40 <rhallisey> leifmadsen, ok, that works for me
+14:09:42 <jmrodri> leifmadsen: okay
+14:10:01 <leifmadsen> but hey... works for me? I guess we can all move along with our lives :)
+14:10:03 <jmrodri> #action leifmadsen close issue #6 on es-apb, reopen if needed
+14:10:03 <brokerbot> jmrodri: Error: "action" is not a valid command.
+14:10:22 <jmrodri> moving on to features
+14:10:25 <jmrodri> #topic Features
+14:10:25 <brokerbot> jmrodri: Error: "topic" is not a valid command.
+14:10:34 <jmrodri> #info Working on getting Automation Broker vendorable
+14:10:34 <brokerbot> jmrodri: Error: "info" is not a valid command.
+14:10:51 <jmrodri> so I've got a task to complete the ability of making the Automation Broker vendorable by other brokers.
+14:11:33 <jmrodri> The idea is if you want to create your own custom adapter or own broker but don't want to completely write a new one, you can vendor the automation broker in your project.
+14:12:20 <jmrodri> this is kind of a short term hack to get this in place. Ultimately, there was talk of creating another library, Hydro, based on the bits in automation broker.
+14:12:30 <jmrodri> that build on top of bundle-lib
+14:12:42 <jmrodri> just wanted to give folks a heads up.
+14:12:51 <rhallisey> +1 jmrodri
+14:12:53 <jmrodri> any questions?
+14:13:04 <jmrodri> if not, I'll move on to the open discussions portion
+14:13:13 <jmrodri> #topic open discussion
+14:13:13 <brokerbot> jmrodri: Error: "topic" is not a valid command.
+14:13:24 <jmrodri> #info Supported ansible modules moving forward? Timeline of moving to dynamic client? Some APB developers are hitting limitations with k8s_raw.
+14:13:24 <brokerbot> jmrodri: Error: "info" is not a valid command.
+14:13:35 <dymurray> Hey I put this here so just my 2 cents... What's the timeline for dynamic client moving forward?
+14:13:57 <dymurray> Just so we can start communicating to APB devs the future modules we will be supporting and what to use
+14:14:01 <fabianvf> I'm working on it now, I've got the dynamic modules built and I'm testing them on existing APBs
+14:14:41 <dymurray> Do we have intention of continuing to push devs to k8s_raw?
+14:14:42 <jmrodri> fabianvf: is this something that will be available in the next week? or longer?
+14:15:00 <fabianvf> If you want to try it out, I have an apb-base at docker.io/fabianvf/apb-base: dynamic
+14:15:03 <dymurray> I have also been asked about the officially supported `oc` module in ansible
+14:15:16 <fabianvf> jmrodri: current plan is to ship with Ansible 2.6
+14:15:17 <dymurray> fabianvf, cool thanks
+14:15:32 <rhallisey> fabianvf, does any migration need to take place from k8s_raw to the new dynamic client?
+14:15:56 <jmrodri> rhallisey: good question
+14:16:05 <jmrodri> fabianvf: re: release +1
+14:16:24 <fabianvf> rhallisey: workarounds for bugs might need to be undone
+14:17:15 <jmrodri> any action items required for this topic? or does this answer your question dymurray ?
+14:17:16 <fabianvf> For example, the current module doesn't always accept the full group version, so apps/v1 is just v1
+14:17:40 <dymurray> jmrodri, just to summarize... communicate to devs that dynamic client will be ready in 2.6 and for now to continue using k8s_raw
+14:17:47 <rhallisey> fabianvf, ok
+14:17:53 <dymurray> I think I'll take an action to investigate `oc` module in ansible 2.4
+14:17:58 <dymurray> Just to see limitations
+14:17:58 <fabianvf> dymurray: it's still k8s_raw
+14:18:02 <jmrodri> fabianvf: that sounds like we'll need a migration document.
+14:18:32 <jmrodri> fabianvf: so it will continue to be named k8s_raw just behave differently?
+14:18:38 <dymurray> fabianvf, oh right! Sorry miscommunicated
+14:18:39 <fabianvf> jmrodri: it'll still work unless there's a collision
+14:19:07 <fabianvf> jmrodri: the behavior should be pretty much identical
+14:19:18 <fabianvf> The apps/v1 thing is actually an open bug
+14:19:31 <jmrodri> okay
+14:19:46 <rhallisey> fabianvf, any status update you have on this put it on the upstream ML so we get the most eyes on it
+14:20:17 <fabianvf> rhallisey: ack, close to putting a PR in to Ansible
+14:20:22 <rhallisey> nice
+14:20:27 <jmrodri> awesome
+14:20:42 <jmrodri> #action fabianvf post any status updates regarding dynamic clients to ML
+14:20:42 <brokerbot> jmrodri: Error: "action" is not a valid command.
+14:20:51 <jmrodri> anything else anyone wants to bring up?
+14:21:01 <fabianvf> dymurray: you can also use them in 2.4 if you import the ansible2.6 branch of ansible-kubernetes-modules
+14:21:25 <dymurray> fabianvf, nice. I will fwd this along to anyone that asks in case they need it now. Thanks!
+14:22:23 <jmrodri> okay, then I'm going to end this meeting.
+14:22:29 <jmrodri> #endmeeting

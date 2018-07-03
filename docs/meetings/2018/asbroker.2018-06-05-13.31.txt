@@ -1,0 +1,181 @@
+========================================
+#asbroker: Automation Broker 6/5 meeting
+========================================
+
+
+Meeting started by jmrodri at 13:31:36 UTC. The full logs are available
+at asbroker/2018/asbroker.2018-06-05-13.31.log.html .
+
+
+
+Meeting summary
+---------------
+* attendance  (jmrodri, 13:32:00)
+
+* News  (jmrodri, 13:33:34)
+  * bundle-lib 0.2.2 released on June 1st  (jmrodri, 13:34:08)
+  * LINK:
+    https://github.com/automationbroker/bundle-lib/releases/tag/0.2.2
+    (jmrodri, 13:34:23)
+  * SouthEast LinuxFest (SELF)  (jmrodri, 13:35:42)
+  * LINK: http://www.southeastlinuxfest.org/   (jmrodri, 13:35:50)
+
+* Review Previous Actions  (jmrodri, 13:38:37)
+  * Binding errors are no longer displayed  (jmrodri, 13:39:17)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/941
+    (jmrodri, 13:39:20)
+  * ACTION: jmrodri test issue 941
+    https://github.com/openshift/ansible-service-broker/issues/941
+    (jmrodri, 13:39:45)
+  * shurley issue 813  (jmrodri, 13:40:06)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/813
+    (jmrodri, 13:40:11)
+  * ACTION: shurley shepherd issue 813
+    https://github.com/openshift/ansible-service-broker/issues/813
+    (jmrodri, 13:41:17)
+  * BindInstance.Parameters use unclear  (jmrodri, 13:41:32)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/692
+    (jmrodri, 13:41:41)
+  * jmrodri move 3.10 aligned features to 3.11 or 3.12  (jmrodri,
+    13:42:51)
+  * jmrodri review PR 96 (bundle-lib)  (jmrodri, 13:43:42)
+  * LINK: https://github.com/automationbroker/bundle-lib/pull/96
+    (jmrodri, 13:43:46)
+  * dymurray play around with the module and update the issue  (jmrodri,
+    13:44:25)
+
+* Bug/Issue Triage  (jmrodri, 13:46:25)
+  * Error: Attempt to list APBs in the broker returned status 503
+    (jmrodri, 13:46:50)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/974
+    (jmrodri, 13:46:52)
+  * ACTION: ernelson to investigate issue 974
+    https://github.com/openshift/ansible-service-broker/issues/974
+    (jmrodri, 13:48:20)
+  * Doc link for complicated parameters  (jmrodri, 13:49:17)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/973
+    (jmrodri, 13:49:19)
+  * ACTION: maleck13 to investigate issue 973
+    https://github.com/openshift/ansible-service-broker/issues/973
+    (jmrodri, 13:52:48)
+  * suggestion: move away from panic in the lib (bundle-lib)  (jmrodri,
+    13:54:48)
+  * LINK: ttps://github.com/automationbroker/bundle-lib/issues/94
+    (jmrodri, 13:54:55)
+  * LINK: https://github.com/automationbroker/bundle-lib/issues/94
+    (jmrodri, 13:54:59)
+  * ACTION: jmrodri to investigate issue 94 on bundle-lib  (jmrodri,
+    13:55:56)
+  * Possible use case for bundle-lib and operator framework  (jmrodri,
+    13:56:41)
+  * LINK: https://github.com/automationbroker/bundle-lib/issues/79
+    (jmrodri, 13:56:43)
+  * ACTION: shurley to comment and close issue 79  (jmrodri, 13:58:51)
+  * bundle package needs better test coverage  (jmrodri, 14:00:05)
+  * LINK: https://github.com/automationbroker/bundle-lib/issues/55
+    (jmrodri, 14:00:12)
+  * ACTION: jmrodri review issue #2 on bundle-lib and verify if there
+    are anymore items to be done  (jmrodri, 14:03:34)
+  * ACTION: shurley work with jmrodri to label and triage bundle-lib
+    issues  (jmrodri, 14:04:22)
+  * ACTION: jmrodri work with shurley to add license to bundle-lib
+    (jmrodri, 14:04:39)
+  * Concept of making the broker aware of managed sharable multi-tenant
+    services  (jmrodri, 14:07:08)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/979
+    (jmrodri, 14:07:13)
+  * ACTION: maleck13 progress the spike around the broker and update the
+    issue with further details  (jmrodri, 14:26:15)
+
+* open discussions  (jmrodri, 14:27:02)
+  * Broker should not fail hard when registry names collide  (jmrodri,
+    14:27:16)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/813
+    (jmrodri, 14:29:52)
+  * ACTION: jmrodri review PR 928  (jmrodri, 14:32:51)
+  * ACTION: shurley review PR 928  (jmrodri, 14:32:56)
+
+Meeting ended at 14:33:06 UTC.
+
+
+
+
+Action Items
+------------
+* jmrodri test issue 941
+  https://github.com/openshift/ansible-service-broker/issues/941
+* shurley shepherd issue 813
+  https://github.com/openshift/ansible-service-broker/issues/813
+* ernelson to investigate issue 974
+  https://github.com/openshift/ansible-service-broker/issues/974
+* maleck13 to investigate issue 973
+  https://github.com/openshift/ansible-service-broker/issues/973
+* jmrodri to investigate issue 94 on bundle-lib
+* shurley to comment and close issue 79
+* jmrodri review issue #2 on bundle-lib and verify if there are anymore
+  items to be done
+* shurley work with jmrodri to label and triage bundle-lib issues
+* jmrodri work with shurley to add license to bundle-lib
+* maleck13 progress the spike around the broker and update the issue
+  with further details
+* jmrodri review PR 928
+* shurley review PR 928
+
+
+
+
+Action Items, by person
+-----------------------
+* ernelson
+  * ernelson to investigate issue 974
+    https://github.com/openshift/ansible-service-broker/issues/974
+* jmrodri
+  * jmrodri test issue 941
+    https://github.com/openshift/ansible-service-broker/issues/941
+  * jmrodri to investigate issue 94 on bundle-lib
+  * jmrodri review issue #2 on bundle-lib and verify if there are
+    anymore items to be done
+  * shurley work with jmrodri to label and triage bundle-lib issues
+  * jmrodri work with shurley to add license to bundle-lib
+  * jmrodri review PR 928
+* maleck13
+  * maleck13 to investigate issue 973
+    https://github.com/openshift/ansible-service-broker/issues/973
+  * maleck13 progress the spike around the broker and update the issue
+    with further details
+* shurley
+  * shurley shepherd issue 813
+    https://github.com/openshift/ansible-service-broker/issues/813
+  * shurley to comment and close issue 79
+  * shurley work with jmrodri to label and triage bundle-lib issues
+  * jmrodri work with shurley to add license to bundle-lib
+  * shurley review PR 928
+* **UNASSIGNED**
+  * (none)
+
+
+
+
+People Present (lines said)
+---------------------------
+* jmrodri (128)
+* brokerbot (57)
+* maleck13 (44)
+* shurley (30)
+* mhrivnak (22)
+* ernelson (10)
+* philipgough (10)
+* dymurray (7)
+* fmontaldo3 (6)
+* dzager (4)
+* dwhatley (1)
+* leifmadsen (1)
+* Jmainguy (1)
+* fabianvf (1)
+
+
+
+
+Generated by `MeetBot`_ 0.1.4
+
+.. _`MeetBot`: http://wiki.debian.org/MeetBot

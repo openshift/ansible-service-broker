@@ -1,0 +1,277 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#asbroker: Automation Broker 5/29/2018</title>
+<style type="text/css">
+/* This is for the .html in the HTML2 writer */
+body {
+    font-family: Helvetica, sans-serif;
+    font-size:14px;
+}
+h1 {
+    text-align: center;
+}
+a {
+    color:navy;
+    text-decoration: none;
+    border-bottom:1px dotted navy;
+}
+a:hover {
+    text-decoration:none;
+    border-bottom: 0;
+    color:#0000B9;
+}
+hr {
+    border: 1px solid #ccc;
+}
+/* The (nick, time) item pairs, and other body text things. */
+.details {
+    font-size: 12px;
+    font-weight:bold;
+}
+/* The 'AGREED:', 'IDEA', etc, prefix to lines. */
+.itemtype {
+    font-style: normal;    /* un-italics it */
+    font-weight: bold;
+}
+/* Example: change single item types.  Capitalized command name.
+/* .TOPIC  {  color:navy;  } */
+/* .AGREED {  color:lime;  } */
+
+</style>
+</head>
+
+<body>
+<h1>#asbroker: Automation Broker 5/29/2018</h1>
+<span class="details">
+Meeting started by jmrodri at 13:30:52 UTC
+(<a href="asbroker.2018-05-29-13.30.log.html">full logs</a>).</span>
+
+<br><br>
+
+
+
+<h3>Meeting summary</h3>
+<ol>
+<li><b class="TOPIC">attendance</b> <span class="details">(<a href='asbroker.2018-05-29-13.30.log.html#l-6'>jmrodri</a>, 13:31:02)</span>
+<br></li>
+<li><b class="TOPIC">News</b> <span class="details">(<a href='asbroker.2018-05-29-13.30.log.html#l-16'>jmrodri</a>, 13:32:51)</span>
+<ol type="a">
+  <li><span class="INFO">ASB master is open for new features</span>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-24'>jmrodri</a>,
+    13:35:11)</span></li>
+</ol>
+<br></li>
+<li><b class="TOPIC">bug/issue triage</b> <span class="details">(<a href='asbroker.2018-05-29-13.30.log.html#l-27'>jmrodri</a>, 13:35:46)</span>
+<ol type="a">
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.10+%7C+release-1.2%22">https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.10+%7C+release-1.2%22</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-29'>jmrodri</a>,
+    13:36:09)</span></li>
+  <li><span class="INFO">Binding errors are no longer displayed</span>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-38'>jmrodri</a>,
+    13:37:35)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/941">https://github.com/openshift/ansible-service-broker/issues/941</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-40'>jmrodri</a>,
+    13:37:37)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">jmrodri take
+    Issue 941, test, fix and or close</span> <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-51'>jmrodri</a>,
+    13:40:11)</span></li>
+  <li><span class="INFO">Consider a configuration switch that will
+    execute APBs in ansible verbose mode for debugging purposes</span>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-58'>jmrodri</a>,
+    13:41:10)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/822">https://github.com/openshift/ansible-service-broker/issues/822</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-60'>jmrodri</a>,
+    13:41:16)</span></li>
+  <li><span class="INFO">ClusterServiceBroker "ansible-service-broker" -
+    Status: 400 -&gt; Description: not found; ResponseError</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-68'>jmrodri</a>,
+    13:42:51)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/813">https://github.com/openshift/ansible-service-broker/issues/813</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-70'>jmrodri</a>,
+    13:42:55)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">shurley to
+    shepherd issue 813</span> <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-83'>jmrodri</a>,
+    13:46:59)</span></li>
+  <li><span class="INFO">Discussion: Broker should not fail hard when
+    registry names collide</span> <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-85'>jmrodri</a>,
+    13:47:15)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/753">https://github.com/openshift/ansible-service-broker/issues/753</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-89'>jmrodri</a>,
+    13:47:29)</span></li>
+  <li><span class="INFO">Should consider using pkg/errors</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-102'>jmrodri</a>,
+    13:51:26)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/717">https://github.com/openshift/ansible-service-broker/issues/717</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-104'>jmrodri</a>,
+    13:51:33)</span></li>
+  <li><span class="INFO">BindInstance.Parameters use unclear</span>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-119'>jmrodri</a>,
+    13:54:52)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/692">https://github.com/openshift/ansible-service-broker/issues/692</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-121'>jmrodri</a>,
+    13:54:58)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">mhrivnak link
+    issue 692 to an existing trello or close</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-138'>jmrodri</a>,
+    13:58:07)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.10+%7C+release-1.2%22">https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.10+%7C+release-1.2%22</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-147'>jmrodri</a>,
+    14:00:58)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">jmrodri move
+    3.10 aligned features to 3.11 or 3.12</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-154'>jmrodri</a>,
+    14:01:47)</span></li>
+  <li><span class="INFO">Unable to deploy an APB with privileged
+    security context</span> <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-156'>jmrodri</a>,
+    14:02:00)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/351">https://github.com/openshift/ansible-service-broker/issues/351</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-158'>jmrodri</a>,
+    14:02:07)</span></li>
+</ol>
+<br></li>
+<li><b class="TOPIC">Features</b> <span class="details">(<a href='asbroker.2018-05-29-13.30.log.html#l-171'>jmrodri</a>, 14:04:59)</span>
+<ol type="a">
+  <li><span class="INFO">rom @maleck13 This now tries to call out to
+    OpenShift to figure out what type of cluster / platform it is
+    running in. … I thought the caller of bundle should be in a position
+    to know / specify where they are running rather than the lib
+    deciding and would mean we could remove the callout in the
+    NewRuntime method?</span> <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-173'>jmrodri</a>,
+    14:05:30)</span></li>
+  <li><a
+    href="https://github.com/ansibleplaybookbundle/ansible-asb-modules/issues/19">https://github.com/ansibleplaybookbundle/ansible-asb-modules/issues/19</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-177'>jmrodri</a>,
+    14:06:33)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">jmrodri
+    review PR 96 on bundle-lib</span> <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-179'>jmrodri</a>,
+    14:07:59)</span></li>
+  <li><span class="INFO">asb_last_operation fails without special
+    permissions</span> <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-199'>jmrodri</a>,
+    14:19:22)</span></li>
+  <li><a
+    href="https://github.com/ansibleplaybookbundle/ansible-asb-modules/issues/19">https://github.com/ansibleplaybookbundle/ansible-asb-modules/issues/19</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-201'>jmrodri</a>,
+    14:19:24)</span></li>
+  <li><a
+    href="https://github.com/ansibleplaybookbundle/ansible-asb-modules/issues/19#issuecomment-391754631">https://github.com/ansibleplaybookbundle/ansible-asb-modules/issues/19#issuecomment-391754631</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-207'>jmrodri</a>,
+    14:21:00)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">dymurray play
+    around with the module and update the issue</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-235'>jmrodri</a>,
+    14:28:09)</span></li>
+  <li><span class="INFO">add errcheck support</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-239'>jmrodri</a>,
+    14:29:03)</span></li>
+  <li><a
+    href="https://github.com/automationbroker/bundle-lib/pull/95/files">https://github.com/automationbroker/bundle-lib/pull/95/files</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-29-13.30.log.html#l-241'>jmrodri</a>,
+    14:29:13)</span></li>
+</ol>
+</li>
+</ol>
+<br><br>
+
+
+
+<span class="details">
+Meeting ended at 14:32:13 UTC
+(<a href="asbroker.2018-05-29-13.30.log.html">full logs</a>).</span>
+
+<br><br>
+
+
+
+<h3>Action items</h3>
+<ol>
+  <li>jmrodri take Issue 941, test, fix and or close</li>
+  <li>shurley to shepherd issue 813</li>
+  <li>mhrivnak link issue 692 to an existing trello or close</li>
+  <li>jmrodri move 3.10 aligned features to 3.11 or 3.12</li>
+  <li>jmrodri review PR 96 on bundle-lib</li>
+  <li>dymurray play around with the module and update the issue</li>
+</ol>
+<br><br>
+
+
+
+<h3>Action items, by person</h3>
+<ol>
+  <li> dymurray <ol>
+    <li>dymurray play around with the module and update the issue</li>
+  </ol></li>
+  <li> jmrodri <ol>
+    <li>jmrodri take Issue 941, test, fix and or close</li>
+    <li>jmrodri move 3.10 aligned features to 3.11 or 3.12</li>
+    <li>jmrodri review PR 96 on bundle-lib</li>
+  </ol></li>
+  <li> mhrivnak <ol>
+    <li>mhrivnak link issue 692 to an existing trello or close</li>
+  </ol></li>
+  <li> shurley <ol>
+    <li>shurley to shepherd issue 813</li>
+  </ol></li>
+</ol>
+<br><br>
+
+
+
+<h3>People present (lines said)</h3>
+<ol>
+  <li>jmrodri (119)</li>
+  <li>shurley (40)</li>
+  <li>brokerbot (38)</li>
+  <li>mhrivnak (21)</li>
+  <li>dymurray (17)</li>
+  <li>ernelson (13)</li>
+  <li>dzager (3)</li>
+  <li>jmontleon (1)</li>
+  <li>fabianvf (1)</li>
+</ol>
+<br><br>
+
+
+
+<span class="details">Generated by <a href="http://wiki.debian.org/MeetBot">MeetBot</a> 0.1.4.</span>
+</body></html>
