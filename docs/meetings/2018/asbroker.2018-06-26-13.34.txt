@@ -1,0 +1,91 @@
+====================================
+#asbroker: Automation Broker 6-26-18
+====================================
+
+Meeting started by jmrodri at 13:33:00 UTC.
+
+Meeting summary
+---------------
+* Attendance (jmrodri, 13:34)
+
+* News (jmrodri, 13:35)
+  * mhrivnak in China at OpenInfraDays and LinuxCon
+  * Service class and instance loop PRs merged into Service Catalog
+  * maleck13 to share a doc on shared services
+  * dymurray merged PR 115 into ansible-asb-modules
+
+* Review Previous Actions (jmrodri, 13:39)
+  * errors no longer displayed (jmrodri, 13:39)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/941
+    (jmrodri, 13:39)
+  * Attempt to list APBs in broker returns 503 (jmrodri, 13:40)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/974
+    (jmrodri, 13:40)
+  * determine places we use panic (jmrodri, 13:42)
+  * LINK: https://github.com/automationbroker/bundle-lib/issues/94
+    (jmrodri, 13:42)
+  * Possible use case for bundle-lib and operator framework (jmrodri, 13:43)
+  * LINK: https://github.com/automationbroker/bundle-lib/issues/79
+    (jmrodri, 13:43)
+  * Make registry more consumable (jmrodri, 13:43)
+  * LINK: https://github.com/automationbroker/bundle-lib/issues/2
+
+* Bugs/issues triage (jmrodri 13:46)
+  * LINK: https://github.com/ansibleplaybookbundle/ansible-playbook-bundle/issues/188
+    (jmrodri, 13:46)
+  * LINK: https://github.com/automationbroker/sbcli/issues/57
+    (jmrodri, 13:47)
+  * LINK: https://github.com/openshift/ansible-service-broker/issues/979
+    (jmrodri, 13:49)
+
+* features (jmrodri, 13:57)
+  * Test Cases for bundle lib/bundle package ~0% -> 52% want to get to ~100%
+    (jmrodri 13:57)
+  * ACTION: jmrodri write tests for bind/unbind in bundle-lib (jmrodri, 13:58)
+  * philipgough would like to get PR 926 merged (philipgough, 13:59)
+  * LINK: https://github.com/openshift/ansible-service-broker/pull/926
+  * ACTION: dzager jmrodri shurley work to get PR 926 on broker merged :
+    debuggable image (jmrodri, 14:01)
+  * ACTION: shurley work to get PR 70 into bundle-lib, cut release for philipgough
+    (jmrodri, 14:04)
+
+Action Items
+------------
+* ernelson to look at Issue #974
+* jmrodri determine the places we use panic from bundle-lib, add to
+  the issue.
+* jmrodri write tests for bind/unbind in bundle-lib
+* dzager jmrodri shurley work to get PR 926 on broker merged :
+  debuggable image (jmrodri, 14:01)
+* shurley work to get PR 70 into bundle-lib, cut release for philipgough
+
+Action Items, by person
+-----------------------
+* ernelson
+  * ernelson to look at Issue #974
+* jmrodri
+  * jmrodri determine the places we use panic from bundle-lib, add to
+    the issue.
+  * jmrodri write tests for bind/unbind in bundle-lib
+* dzager
+  * dzager jmrodri shurley work to get PR 926 on broker merged :
+    debuggable image
+* shurley
+  * shurley work to get PR 70 into bundle-lib, cut release for philipgough
+
+People Present
+--------------
+* jmrodri
+* shurley
+* maleck13
+* philipgough
+* ernelson
+* dymurray
+
+* open discussions (jmrodri, 14:04)
+  * removing subject rules review auth (jmrodri, 14:04)
+  * LINK: https://github.com/openshift/ansible-service-broker/pull/995
+    (jmrodri, 14:04)
+
+
+Meeting ended at 14:17 UTC.

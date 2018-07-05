@@ -1,0 +1,225 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#asbroker: asbroker community meeting 20180501</title>
+<style type="text/css">
+/* This is for the .html in the HTML2 writer */
+body {
+    font-family: Helvetica, sans-serif;
+    font-size:14px;
+}
+h1 {
+    text-align: center;
+}
+a {
+    color:navy;
+    text-decoration: none;
+    border-bottom:1px dotted navy;
+}
+a:hover {
+    text-decoration:none;
+    border-bottom: 0;
+    color:#0000B9;
+}
+hr {
+    border: 1px solid #ccc;
+}
+/* The (nick, time) item pairs, and other body text things. */
+.details {
+    font-size: 12px;
+    font-weight:bold;
+}
+/* The 'AGREED:', 'IDEA', etc, prefix to lines. */
+.itemtype {
+    font-style: normal;    /* un-italics it */
+    font-weight: bold;
+}
+/* Example: change single item types.  Capitalized command name.
+/* .TOPIC  {  color:navy;  } */
+/* .AGREED {  color:lime;  } */
+
+</style>
+</head>
+
+<body>
+<h1>#asbroker: asbroker community meeting 20180501</h1>
+<span class="details">
+Meeting started by jmrodri at 13:32:00 UTC
+(<a href="asbroker.2018-05-01-13.32.log.html">full logs</a>).</span>
+
+<br><br>
+
+
+
+<h3>Meeting summary</h3>
+<ol>
+<li><b class="TOPIC">attendance</b> <span class="details">(<a href='asbroker.2018-05-01-13.32.log.html#l-6'>jmrodri</a>, 13:32:22)</span>
+<br></li>
+<li><b class="TOPIC">news</b> <span class="details">(<a href='asbroker.2018-05-01-13.32.log.html#l-28'>jmrodri</a>, 13:34:27)</span>
+<br></li>
+<li><b class="TOPIC">bugs/issues triage</b> <span class="details">(<a href='asbroker.2018-05-01-13.32.log.html#l-40'>jmrodri</a>, 13:35:56)</span>
+<ol type="a">
+  <li><span class="INFO">https://github.com/openshift/ansible-servicered
+    hat summ-broker/issues/917</span> <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-42'>jmrodri</a>,
+    13:36:09)</span></li>
+  <li><a
+    href="https://github.com/automationbroker/bundle-lib/issues/30">https://github.com/automationbroker/bundle-lib/issues/30</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-44'>jmrodri</a>,
+    13:36:38)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">maleck13
+    shurley investigate all the places clients are used and move to
+    runtime</span> <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-110'>jmrodri</a>,
+    13:50:29)</span></li>
+  <li><span
+    class="INFO">https://github.com/automationbroker/bundle-lib/issues/30</span>
+    <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-113'>jmrodri</a>,
+    13:50:54)</span></li>
+  <li><span class="INFO">Incorrect version check in
+    run_latest_build.sh</span> <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-116'>jmrodri</a>,
+    13:51:08)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/912">https://github.com/openshift/ansible-service-broker/issues/912</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-118'>jmrodri</a>,
+    13:51:19)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">dzager work
+    with jmatthews to determine if that is a feasible change</span>
+    <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-143'>jmrodri</a>,
+    13:55:56)</span></li>
+  <li><span class="INFO">Ansible ServiceInstance CRD colliding with
+    Service Catalog #link
+    https://github.com/openshift/ansible-service-broker/issues/914</span>
+    <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-168'>jmrodri</a>,
+    13:59:34)</span></li>
+  <li><span class="INFO">What is the meaning of AA in the documentation,
+    other acronyms are explained #link
+    https://github.com/openshift/ansible-service-broker/issues/917</span>
+    <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-177'>jmrodri</a>,
+    14:01:08)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">ernelson
+    update design.md doc to not use AA :)</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-188'>jmrodri</a>,
+    14:02:41)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/917">https://github.com/openshift/ansible-service-broker/issues/917</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-190'>jmrodri</a>,
+    14:02:50)</span></li>
+  <li><span class="INFO">Why is `from` failing in the ES-APB within
+    OpenShift REST client</span> <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-192'>jmrodri</a>,
+    14:03:11)</span></li>
+  <li><a
+    href="https://github.com/ansibleplaybookbundle/es-apb/issues/6">https://github.com/ansibleplaybookbundle/es-apb/issues/6</a>
+    <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-195'>jmrodri</a>,
+    14:03:19)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">leifmadsen
+    close issue #6 on es-apb, reopen if needed</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-220'>jmrodri</a>,
+    14:10:03)</span></li>
+</ol>
+<br></li>
+<li><b class="TOPIC">Features</b> <span class="details">(<a href='asbroker.2018-05-01-13.32.log.html#l-223'>jmrodri</a>, 14:10:25)</span>
+<ol type="a">
+  <li><span class="INFO">Working on getting Automation Broker
+    vendorable</span> <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-225'>jmrodri</a>,
+    14:10:34)</span></li>
+</ol>
+<br></li>
+<li><b class="TOPIC">open discussion</b> <span class="details">(<a href='asbroker.2018-05-01-13.32.log.html#l-235'>jmrodri</a>, 14:13:13)</span>
+<ol type="a">
+  <li><span class="INFO">Supported ansible modules moving forward?
+    Timeline of moving to dynamic client? Some APB developers are
+    hitting limitations with k8s_raw.</span> <span class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-237'>jmrodri</a>,
+    14:13:24)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">fabianvf post
+    any status updates regarding dynamic clients to ML</span> <span
+    class="details">(<a
+    href='asbroker.2018-05-01-13.32.log.html#l-270'>jmrodri</a>,
+    14:20:42)</span></li>
+</ol>
+</li>
+</ol>
+<br><br>
+
+
+
+<span class="details">
+Meeting ended at 14:22:29 UTC
+(<a href="asbroker.2018-05-01-13.32.log.html">full logs</a>).</span>
+
+<br><br>
+
+
+
+<h3>Action items</h3>
+<ol>
+  <li>maleck13 shurley investigate all the places clients are used and move to runtime</li>
+  <li>dzager work with jmatthews to determine if that is a feasible change</li>
+  <li>ernelson update design.md doc to not use AA :)</li>
+  <li>leifmadsen close issue #6 on es-apb, reopen if needed</li>
+  <li>fabianvf post any status updates regarding dynamic clients to ML</li>
+</ol>
+<br><br>
+
+
+
+<h3>Action items, by person</h3>
+<ol>
+  <li> dzager <ol>
+    <li>dzager work with jmatthews to determine if that is a feasible change</li>
+  </ol></li>
+  <li> ernelson <ol>
+    <li>ernelson update design.md doc to not use AA :)</li>
+  </ol></li>
+  <li> fabianvf <ol>
+    <li>fabianvf post any status updates regarding dynamic clients to ML</li>
+  </ol></li>
+  <li> leifmadsen <ol>
+    <li>leifmadsen close issue #6 on es-apb, reopen if needed</li>
+  </ol></li>
+  <li> maleck13 <ol>
+    <li>maleck13 shurley investigate all the places clients are used and move to runtime</li>
+  </ol></li>
+  <li> shurley <ol>
+    <li>maleck13 shurley investigate all the places clients are used and move to runtime</li>
+  </ol></li>
+</ol>
+<br><br>
+
+
+
+<h3>People present (lines said)</h3>
+<ol>
+  <li>jmrodri (92)</li>
+  <li>shurley (31)</li>
+  <li>rhallisey (27)</li>
+  <li>brokerbot (27)</li>
+  <li>leifmadsen (25)</li>
+  <li>ernelson (18)</li>
+  <li>dymurray (16)</li>
+  <li>maleck13 (15)</li>
+  <li>fabianvf (12)</li>
+  <li>dzager (12)</li>
+  <li>ron1 (1)</li>
+</ol>
+<br><br>
+
+
+
+<span class="details">Generated by <a href="http://wiki.debian.org/MeetBot">MeetBot</a> 0.1.4.</span>
+</body></html>

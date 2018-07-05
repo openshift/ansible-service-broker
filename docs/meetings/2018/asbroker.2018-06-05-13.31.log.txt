@@ -1,0 +1,322 @@
+13:31:36 <jmrodri> #startmeeting Automation Broker 6/5 meeting
+13:31:36 <brokerbot> Meeting started Tue Jun  5 13:31:36 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+13:31:36 <brokerbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+13:31:36 <brokerbot> The meeting name has been set to 'automation_broker_6/5_meeting'
+13:31:36 <brokerbot> jmrodri: startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+13:32:00 <jmrodri> #topic attendance
+13:32:00 <brokerbot> jmrodri: topic
+13:32:15 <dzager> o/
+13:32:16 <mhrivnak> o/
+13:32:17 <maleck13> hey
+13:32:19 <jmrodri> here
+13:32:21 <philipgough> hi
+13:32:23 <dwhatley> hello
+13:32:28 <dymurray> hello
+13:33:18 <shurley> o/
+13:33:32 <jmrodri> Alright, let's move on to the news
+13:33:34 <jmrodri> #topic News
+13:33:34 <brokerbot> jmrodri: topic
+13:33:50 <jmrodri> #item bundle-lib 0.2.2 released on June 1st
+13:33:50 <brokerbot> jmrodri: Error: "item" is not a valid command.
+13:34:08 <jmrodri> #info bundle-lib 0.2.2 released on June 1st
+13:34:08 <brokerbot> jmrodri: info
+13:34:12 <leifmadsen> o/
+13:34:23 <jmrodri> #link https://github.com/automationbroker/bundle-lib/releases/tag/0.2.2
+13:34:23 <brokerbot> jmrodri: link
+13:34:50 <jmrodri> we're trying to do regular releases of bundle-lib, well more like as needed releases.
+13:35:05 <maleck13> sounds good
+13:35:24 <jmrodri> Usually if there's an important feature required to support automation broker, operator or sbcli efforts. Or if there is just critical mass of features to warrant a release.
+13:35:42 <jmrodri> #info SouthEast LinuxFest (SELF)
+13:35:42 <brokerbot> jmrodri: info
+13:35:50 <jmrodri> #link http://www.southeastlinuxfest.org/
+13:35:50 <brokerbot> jmrodri: link
+13:36:17 <jmrodri> For those on the east coast (especially in NC), SouthEast LinuxFest is happening this weekend in Charlotte, NC USA
+13:36:31 <jmrodri> Our very own mhrivnak will be presenting
+13:36:33 <Jmainguy> and its freeeeeeee
+13:36:38 <mhrivnak> We have a broker talk on Saturday morning.
+13:36:48 <jmrodri> ernelson: are you also attending?
+13:36:54 <jmrodri> Jmainguy: +1
+13:37:22 <jmrodri> Anyone else have any other news items?
+13:38:05 <jmrodri> If not, I'd like to take the next 5 minutes to check in on last weeks action items. I just need to know if they're done, or if we need more time
+13:38:37 <jmrodri> #topic Review Previous Actions
+13:38:37 <brokerbot> jmrodri: topic
+13:38:42 <ernelson> jmrodri: hola
+13:39:03 <ernelson> starbucks line was long :P
+13:39:17 <jmrodri> #info Binding errors are no longer displayed
+13:39:17 <brokerbot> jmrodri: info
+13:39:20 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/941
+13:39:20 <brokerbot> jmrodri: link
+13:39:34 <jmrodri> I have not tested this yet, got sidetracked by other bugs
+13:39:45 <jmrodri> #action jmrodri test issue 941 https://github.com/openshift/ansible-service-broker/issues/941
+13:39:45 <brokerbot> jmrodri: action
+13:40:06 <jmrodri> #info shurley issue 813
+13:40:06 <brokerbot> jmrodri: info
+13:40:11 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/813
+13:40:11 <brokerbot> jmrodri: link
+13:40:17 <jmrodri> shurley: any movement on that issue?
+13:41:17 <jmrodri> #action shurley shepherd issue 813 https://github.com/openshift/ansible-service-broker/issues/813
+13:41:17 <brokerbot> jmrodri: action
+13:41:32 <jmrodri> #info BindInstance.Parameters use unclear
+13:41:32 <brokerbot> jmrodri: info
+13:41:41 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/692
+13:41:41 <brokerbot> jmrodri: link
+13:41:45 <mhrivnak> I did link this to the bigger effort.
+13:41:47 <jmrodri> mhrivnak: this was apparently assigned to you
+13:41:56 <jmrodri> ah okay cool
+13:42:20 <jmrodri> mhrivnak: thanks. So it will get covered as we progress with the bundle contract and parameter effort.
+13:42:23 <jmrodri> thanks
+13:42:51 <jmrodri> #info jmrodri move 3.10 aligned features to 3.11 or 3.12
+13:42:51 <brokerbot> jmrodri: info
+13:42:58 <jmrodri> this was done, albeit this morning :)
+13:43:42 <jmrodri> #info jmrodri review PR 96 (bundle-lib)
+13:43:42 <brokerbot> jmrodri: info
+13:43:46 <jmrodri> #link https://github.com/automationbroker/bundle-lib/pull/96
+13:43:46 <brokerbot> jmrodri: link
+13:44:02 <jmrodri> I did not do this, but it looks like others reviewed and merged. So marking this actino as done
+13:44:25 <jmrodri> #info dymurray play around with the module and update the issue
+13:44:25 <brokerbot> jmrodri: info
+13:44:36 <jmrodri> dymurray: I honestly don't remember what this was about.
+13:44:44 <jmrodri> asb module or runtime package in bundle-lib
+13:45:01 <dymurray> jmrodri, uhh... I'm sorry I don't remember either :)
+13:45:14 <maleck13> :)
+13:45:16 <jmrodri> dymurray: yeah poor note taking by the meeting chair.
+13:45:22 * jmrodri looks up whistling
+13:45:27 <dymurray> Probably runtime pkg for bundle-lib since I've been working on that
+13:45:49 <jmrodri> I'll look to see later today in my logs.
+13:45:59 <jmrodri> that's all the past actions. And the timeer just went off.
+13:46:10 <jmrodri> Okay let's triage some bugs
+13:46:25 <jmrodri> #topic Bug/Issue Triage
+13:46:25 <brokerbot> jmrodri: topic
+13:46:50 <jmrodri> #info Error: Attempt to list APBs in the broker returned status 503
+13:46:50 <brokerbot> jmrodri: info
+13:46:52 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/974
+13:46:52 <brokerbot> jmrodri: link
+13:47:09 <jmrodri> this looks like minishift and apb
+13:47:16 <ernelson> checking
+13:47:42 <jmrodri> I just need an assignee for this one. We can then investigate
+13:47:56 <ernelson> jmrodri: put me on it
+13:47:59 <ernelson> I just emailed him on the list
+13:48:03 <jmrodri> ernelson: okay perfect
+13:48:20 <jmrodri> #action ernelson to investigate issue 974 https://github.com/openshift/ansible-service-broker/issues/974
+13:48:20 <brokerbot> jmrodri: action
+13:48:22 <ernelson> I'm not sure that he's actually using the minishift addon or the correct account
+13:48:57 <jmrodri> that's fine, just wanted an assignee for the issue so it is tracked. thanks for volunteering
+13:49:17 <jmrodri> #info Doc link for complicated parameters
+13:49:17 <brokerbot> jmrodri: info
+13:49:18 <shurley> hey back sorry
+13:49:19 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/973
+13:49:19 <brokerbot> jmrodri: link
+13:49:38 <maleck13> this is more of a feature request I think than bug
+13:49:44 <jmrodri> this one looks related to something that came up recently.
+13:50:00 <jmrodri> the discussion about possibly moving apb.yml to using jsonschema for parameters
+13:50:16 <jmrodri> shurley: fabianvf dymurray does this issue look related to the above?
+13:50:39 <mhrivnak> seems like that may not help with this request.
+13:50:50 <dymurray> jmrodri, uhh not directly related but will be relevant when we talk about changing the spec down the line
+13:51:06 <shurley> jmrodri: I think it probably does fit into that overall discussion IMO . The problem is can the UI deal with json schema and if that is something we can fix?
+13:51:06 <dymurray> jmrodri, mhrivnak yeah seems like this would be an additional change unrelated to that
+13:51:30 <mhrivnak> This would need coordination with UI devs.
+13:51:58 <jmrodri> anyone want to volunteer for this issue?
+13:52:08 <maleck13> I think thats fine. Similar to what we did for the cond params
+13:52:14 <maleck13> jmontleon: I can take it
+13:52:19 <maleck13> jmrodri: ^
+13:52:34 <jmrodri> okay
+13:52:48 <jmrodri> #action maleck13 to investigate issue 973 https://github.com/openshift/ansible-service-broker/issues/973
+13:52:48 <brokerbot> jmrodri: action
+13:52:53 <maleck13> jmrodri: I will get in touch with the UI team and see how they feel on it
+13:53:17 <jmrodri> maleck13: done thanks.
+13:53:57 <jmrodri> okay moving on to bundle-lib issues
+13:53:59 <shurley> maleck13: on that one, we may want to see if we could pass in something like markdown for them to render in the description of the parameter
+13:54:15 <shurley> that might the most flexable way to get everything that people could want?
+13:54:15 <maleck13> shurley: interesting idea
+13:54:48 <jmrodri> #info suggestion: move away from panic in the lib (bundle-lib)
+13:54:48 <brokerbot> jmrodri: info
+13:54:55 <jmrodri> #link ttps://github.com/automationbroker/bundle-lib/issues/94
+13:54:55 <brokerbot> jmrodri: link
+13:54:59 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/94
+13:54:59 <brokerbot> jmrodri: link
+13:55:27 <dymurray> +1 to this issue. It's caused issues in sbcli as well
+13:55:43 <jmrodri> I can take a look at this one
+13:55:56 <jmrodri> #action jmrodri to investigate issue 94 on bundle-lib
+13:55:56 <brokerbot> jmrodri: action
+13:56:03 <shurley> +1 this is a good idea
+13:56:41 <jmrodri> #info Possible use case for bundle-lib and operator framework
+13:56:41 <brokerbot> jmrodri: info
+13:56:43 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/79
+13:56:43 <brokerbot> jmrodri: link
+13:56:52 <jmrodri> maleck13 wrote this one up
+13:57:13 <maleck13> heh yes it was a general thought experiment
+13:57:14 <jmrodri> shurley: is this something related to your current efforts?
+13:57:20 <shurley> I think we are exploring this w/ the automation-operator #link https://github.com/automationbroker/automation-operator
+13:57:53 <jmrodri> shurley: can I assign issue 79 to you? I think it is very related to the above
+13:58:04 <maleck13> I think we can close the issue though. It was a general thought and concept that I dont expect we will do anything with on bundle lib but perhaps somewhere else at some point
+13:58:16 <shurley> +1
+13:58:18 <jmrodri> maleck13: okay that's fine
+13:58:21 <mhrivnak> Yeah, this sounds like what we're working on. :)
+13:58:33 <shurley> maleck13: if you want I can give you overview after of what we are thinking w/ bundle lib
+13:58:38 <jmrodri> shurley: can you close it with a comment and possible link with the automation-operator?
+13:58:40 <shurley> sorry automation operator
+13:58:42 * maleck13 will take a look at the operator
+13:58:51 <jmrodri> #action shurley to comment and close issue 79
+13:58:51 <brokerbot> jmrodri: action
+13:58:53 <maleck13> shurley: that sounds great
+13:59:42 <jmrodri> man thank goodness for mosh, because my internet has "paused" a few times during this meeting
+14:00:05 <jmrodri> #info bundle package needs better test coverage
+14:00:05 <brokerbot> jmrodri: info
+14:00:12 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/55
+14:00:12 <brokerbot> jmrodri: link
+14:00:48 <jmrodri> shurley: are there some higher priority issues in bundle-lib we should assign/tackle? I'm just going down the list but so far they seem more like tech-debt issues
+14:01:28 <shurley> I have not been through the issues in awhile
+14:01:31 <maleck13> prob could be linked with this issue https://github.com/automationbroker/bundle-lib/issues/30
+14:02:00 <shurley> would love test coverage for bundle package
+14:03:34 <jmrodri> #action jmrodri review issue #2 on bundle-lib and verify if there are anymore items to be done
+14:03:34 <brokerbot> jmrodri: action
+14:03:55 <jmrodri> we have about a minute left in triage.
+14:04:20 <shurley> the license for the probject seems like something we should do
+14:04:22 <jmrodri> #action shurley work with jmrodri to label and triage bundle-lib issues
+14:04:22 <brokerbot> jmrodri: action
+14:04:23 * dymurray brb
+14:04:39 <jmrodri> #action jmrodri work with shurley to add license to bundle-lib
+14:04:39 <brokerbot> jmrodri: action
+14:04:54 <jmrodri> I'm going to assume apache 2.0 like we did with broker
+14:05:19 <jmrodri> unless folks want something different, let me know
+14:06:15 <jmrodri> okay times up for triage
+14:06:33 <jmrodri> next item on the agenda is features
+14:07:08 <jmrodri> #info Concept of making the broker aware of managed sharable multi-tenant services
+14:07:08 <brokerbot> jmrodri: info
+14:07:13 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/979
+14:07:13 <brokerbot> jmrodri: link
+14:07:23 <jmrodri> maleck13 brought this one up
+14:07:28 <maleck13> I can discuss futher
+14:07:36 <jmrodri> okay
+14:07:44 <maleck13> we are looking at how a managed service would work
+14:08:04 <maleck13> IE Keycloak is provisioned somewhere and managed by our ops team
+14:08:25 <maleck13> and then a "slice" of that is provisioned on demand by a user
+14:09:00 <maleck13> It is a spike I am progressing. One option would be to do something like our own broker using bundle-lib
+14:09:32 <maleck13> but I thought I would raise the idea here and see what ppl thought to having the concept of a sharable service. Not sure if I explained it well enough
+14:10:22 <mhrivnak> I think I understand the general idea. I wonder what specific things are blocking this right now.
+14:10:23 <jmrodri> I guess this would be useful for someone wanting to host a PostgreSQL database
+14:10:34 <maleck13> effectively it is a way to share credentials between service instances
+14:10:46 <maleck13> mhrivnak: ^ getting the original credentials is the issue
+14:10:51 <shurley> I really like this idea, I would love to see the outcomes of the spike and also a proposal on how to deal with the negative scenarios (already provisioned too many times, what happens if it fails to create the new “slice”….), also what parameters would the spec need to allow this
+14:11:19 <maleck13> shurley: yeah sure. That would be part of any proposal after the spike
+14:11:30 <mhrivnak> maleck13 yeah, it seems like you need to separate the idea of deploying the backing service, vs making it available as a "service class".
+14:11:38 <shurley> maleck13: another question I have, is how does this compare to using async bind
+14:12:09 <jmrodri> shurley: good question
+14:12:12 <maleck13> so using bind to provison the slice
+14:12:35 <shurley> This sounds like the case for async bind and serivce bindngs and I would like to see if we may already have some of the infrustructure to deal with this
+14:12:35 <maleck13> so we would have multiple types of bindings then and lots of params
+14:12:36 <mhrivnak> async bind will presumably only work within a single namespace. Would that meet the use case?
+14:12:42 <dzager> maleck13: "getting the original credentials is the issue" could you explain this more?
+14:13:07 <fmontaldo3> hi
+14:13:22 <maleck13> if dones via a provision, you wouldn't have access to the original credentials of the first service instance. dzager
+14:13:31 <fmontaldo3> I need some guidance to troubleeshoot an isuee under minishift with ansible broker
+14:13:37 <maleck13> mhrivnak: correct only works in a given namespace also
+14:13:41 <shurley> mhrivnak: I don’t think it has to work in only a single namespace, if the RBAC rules are set up correctly??? that might require UI changes though your right
+14:13:54 <maleck13> you need the service instance in the namespace to bind against it
+14:14:04 <dzager> fmontaldo3: you arrived in the middle of our weekly IRC meeting
+14:14:10 <jmrodri> fmontaldo3: hey there. We're currently having our irc community meeting right now. Feel free to lurk for a few minutes. We should be done by 10:30am ET.
+14:14:25 <shurley> ernelson: are the service bindings the localobject reference to the instance?
+14:14:28 <fmontaldo3> ok
+14:14:36 <mhrivnak> Yeah. I'd start by independently provisioning a service, like a DBMS, then make a separate "service class" that provisions a slice of the underlying service, such as a specific database.
+14:14:37 <jmrodri> fmontaldo3: someone will be able to assist you at that point. Thanks for your patience.
+14:14:42 <ernelson> shurley: I'm not sure, I can check 1 sec
+14:15:02 <maleck13> shurley:  unless something changed, it def had to be in the same namespace.
+14:15:11 <ernelson> maleck13: +1
+14:15:23 <ernelson> I don't think catalog has ever supported cross namespace, paul explicitly said that
+14:15:32 <mhrivnak> Right.
+14:15:37 <shurley> Ok my bad
+14:15:41 <maleck13> in general cross namespace is not a thing in k8s
+14:16:05 <maleck13> so effectively the provison would get the parent creds
+14:16:17 <maleck13> and set up the service instance so that bindings could also happen
+14:16:17 <ernelson> shurley: yes they are localobjectreferences
+14:17:16 <maleck13> so it seems like something the broker might be interested in seeing progressed?
+14:17:30 <jmrodri> I think so
+14:17:40 <mhrivnak> maleck13 I think so, but what do you think of this idea of starting with them as separate steps/APBs?
+14:18:04 <maleck13> mhrivnak: hadn't considered that yet
+14:18:04 <maleck13> will give it some thought
+14:18:12 <mhrivnak> I think it would be good to nail down the use case: a service already exists *somehow*, now we need an APB that can give out slices of stuff that the service provides.
+14:18:41 <maleck13> yes
+14:19:03 <shurley> but how do I know if it already has been provisioned? as a user
+14:19:04 <maleck13> mhrivnak: although I would add
+14:19:42 <maleck13> in our use case the user doing the provisioning shouldn't know the details of this service
+14:19:52 <mhrivnak> shurley maybe as a user, you need to provide a simple reference to the existing service, like a hostname.
+14:19:52 <jmrodri> we have about 2 minutes left in this feature discussion section.
+14:20:15 <fabianvf> shurley: it could add a new spec to the broker when the parent service is provisioned
+14:20:21 <maleck13> mhrivnak: we did something similar already. But the user also had to provide credentials
+14:20:28 <mhrivnak> Otherwise you might have to assume that if a cluster owner is making the APB available in the cluster, the backing service exists.
+14:21:04 <mhrivnak> fabianvf an APB that gives birth to another APB... ;)
+14:21:22 <shurley> fabianvf: that is a decent option mhrivnak providing the host name has the same issue this is trying to fix IMO
+14:21:24 <maleck13> mhrivnak: right
+14:21:47 <mhrivnak> shurley what problem is that?
+14:22:02 <shurley> what maleck13 said about providing the creds
+14:22:11 <maleck13> we want to avoid the user needing to know the specifics of the service
+14:22:11 <mhrivnak> I thought the problem was more centered around the end user not having access to the "root" creds for that service.
+14:22:27 <jmrodri> mhrivnak: that's also what I understood
+14:22:52 <shurley> I thought that was a problem. Another problem is why do they need to know the underlying coordinates of the service
+14:22:55 <mhrivnak> There are two options then: 1) assume the service exists and blame the admin if it doesn't. 2) make the user aware of a service out-of-band and make them provide some kind of reference.
+14:22:56 <shurley> they just wan tto use it
+14:22:58 <maleck13> shurley: mhrivnak that is the main problem but it would be good to avoid the user needing to know any specifics
+14:23:04 <shurley> and how does the APB expose the coordinates
+14:23:34 <mhrivnak> This sounds similar to what AWS is doing.
+14:23:47 <jmrodri> mhrivnak: +1
+14:24:30 <maleck13> not familiar with that
+14:25:11 <jmrodri> so what's the take on this discussion now?
+14:25:16 <mhrivnak> maleck13 summary is: they use our broker to make AWS services available inside openshift. They have APBs that do basically what you want to do.
+14:25:25 <shurley> I think do the spike and see what they find?
+14:25:36 <mhrivnak> And those APBs make an assumption that the underlying service already exist and are running all the time.
+14:25:36 <maleck13> So the action here is for me to progress the spike around the broker and update the issue with further details
+14:25:49 <jmrodri> maleck13: that sounds reasonable
+14:25:57 <jmrodri> #action maleck13 progress the spike around the broker and update the issue with
+14:25:57 <brokerbot> jmrodri: action
+14:26:07 <jmrodri> #undo
+14:26:07 <brokerbot> Removing item from minutes: ACTION by jmrodri at 14:25:57 : maleck13 progress the spike around the broker and update the issue with
+14:26:15 <jmrodri> #action maleck13 progress the spike around the broker and update the issue with further details
+14:26:15 <brokerbot> jmrodri: action
+14:26:24 * jmrodri learned a new command
+14:26:31 <jmrodri> okay that's all the time we have for features
+14:26:38 <shurley> really quick re: ASB issue 813 dzager is this fixed by the APB?
+14:26:41 <jmrodri> #info open discussions
+14:26:41 <brokerbot> jmrodri: info
+14:26:55 <jmrodri> #undo
+14:26:55 <brokerbot> Removing item from minutes: INFO by jmrodri at 14:26:41 : open discussions
+14:27:02 <jmrodri> #topic open discussions
+14:27:02 <brokerbot> jmrodri: topic
+14:27:16 <jmrodri> #info Broker should not fail hard when registry names collide
+14:27:16 <brokerbot> jmrodri: info
+14:27:21 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/753
+14:27:21 <brokerbot> jmrodri: link
+14:27:28 <jmrodri> shurley: that's what you're referring to right? ^^
+14:28:00 <dzager> shurley: isn't 813 related to openshift-ansible? the apb wouldn't fix that
+14:29:03 <shurley> dzager: your right
+14:29:28 <shurley> still working on that item my bas
+14:29:31 <shurley> *bad
+14:29:37 <jmrodri> #undo
+14:29:37 <brokerbot> Removing item from minutes: <MeetBot.items.Link object at 0x7f9a8b2df6d0>
+14:29:52 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/813
+14:29:52 <brokerbot> jmrodri: link
+14:30:30 <jmrodri> well that's all the time we have, I think we have another call to get on.
+14:30:39 <philipgough> Just wanted to bring up https://github.com/openshift/ansible-service-broker/pull/928
+14:30:41 <jmrodri> I'll move any open discussion items that we didn't get to
+14:30:42 <philipgough> If we have time?
+14:30:57 <fmontaldo3> so now I can ask regarding minishfit ansible broker issue
+14:30:59 <fmontaldo3> ?
+14:31:15 <jmrodri> philipgough: I think most folks left to go to our scrum call.
+14:31:23 <philipgough> jmrodri: ok np
+14:31:32 <jmrodri> philipgough: Is that PR needing review?
+14:31:46 <jmrodri> it was marked as WIP so I don't htink anyone has been looknig at it
+14:31:46 <fmontaldo3> apb list Contacting the ansible-service-broker at: https://asb-1338-ansible-service-broker.192.168.42.120.nip.io/openshift-automation-service-broker/v2/catalog ERROR: Failed broker request (get) https://asb-1338-ansible-service-broker.192.168.42.120.nip.io/openshift-automation-service-broker/v2/catalog Exception occurred! local variable 'InsecureRequestWarning' referenced before assignment
+14:31:49 <philipgough> jmrodri: Thats what i was going to bring up :)
+14:32:00 <philipgough> A review and some feedback would be great
+14:32:13 <philipgough> if anyone has the time
+14:32:21 <jmrodri> philipgough: if you want it reviewed remove the WIP: :) most folks ignore things marked as WIP unless someone asks :)
+14:32:38 <jmrodri> it won't get merged until folks are happy with it.
+14:32:46 <philipgough> Ah ok, i had removed it from the description but not title
+14:32:51 <jmrodri> #action jmrodri review PR 928
+14:32:51 <brokerbot> jmrodri: action
+14:32:54 <philipgough> done
+14:32:56 <jmrodri> #action shurley review PR 928
+14:32:56 <brokerbot> jmrodri: action
+14:32:59 <jmrodri> philipgough: thanks
+14:33:04 <jmrodri> okay that concludes today's meeting
+14:33:06 <philipgough> jmrodri: thanks a lot
+14:33:06 <jmrodri> #endmeeting
