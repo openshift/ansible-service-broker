@@ -54,6 +54,17 @@ data:
           - {{ item | quote }}
 {%     endfor %}
 {% endif %}
+{% if broker_quay_enabled | bool %}
+      - type: quay
+        name: {{ broker_quay_name }}
+        url: {{ broker_quay_url }}
+        org: {{ broker_quay_org | quote }}
+        tag: {{ broker_quay_tag | quote }}
+        white_list:
+{%     for item in broker_quay_white_list %}
+          - {{ item | quote }}
+{%     endfor %}
+{% endif %}
     dao:
       type: {{ broker_dao_type | quote }}
 {% if broker_dao_type == 'etcd' %}

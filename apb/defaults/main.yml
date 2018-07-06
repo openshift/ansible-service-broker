@@ -83,3 +83,12 @@ broker_galaxy_url: https://galaxy.ansible.com
 broker_galaxy_org: ansibleplaybookbundle
 broker_galaxy_runner: docker.io/ansibleplaybookbundle/apb-base:latest
 broker_galaxy_white_list: [ ".*" ]
+
+# Quay registry options
+broker_quay_enabled: false
+broker_quay_name: quay
+broker_quay_url: https://quay.io
+broker_quay_org: redhat
+broker_quay_tag: latest
+broker_quay_token: none
+broker_quay_white_list: [ ".*-apb$" ]

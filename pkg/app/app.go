@@ -201,6 +201,7 @@ func CreateApp(args Args, regs []registries.Registry) App {
 				URL:           config.GetString("url"),
 				User:          config.GetString("user"),
 				Pass:          config.GetString("pass"),
+				Token:         config.GetString("token"),
 				Org:           config.GetString("org"),
 				Tag:           config.GetString("tag"),
 				Type:          config.GetString("type"),
