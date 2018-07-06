@@ -47,6 +47,11 @@ func (_m *MockDao) BatchGetSpecs(_a0 string) ([]*apb.Spec, error) {
 	return r0, r1
 }
 
+// BatchGetBundleInstances a noop
+func (_m *MockDao) BatchGetBundleInstances() ([]*apb.ServiceInstance, error) {
+	return nil, nil
+}
+
 // BatchSetSpecs provides a mock function with given fields: _a0
 func (_m *MockDao) BatchSetSpecs(_a0 apb.SpecManifest) error {
 	ret := _m.Called(_a0)
@@ -59,6 +64,11 @@ func (_m *MockDao) BatchSetSpecs(_a0 apb.SpecManifest) error {
 	}
 
 	return r0
+}
+
+// BatchUpdateSpecs provides a mock function with given fields: _a0
+func (_m *MockDao) BatchUpdateSpecs(_a0 apb.SpecManifest) error {
+	return nil
 }
 
 // DeleteBindInstance provides a mock function with given fields: _a0

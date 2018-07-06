@@ -100,6 +100,25 @@ func (d *Dao) SetSpec(id string, spec *bundle.Spec) error {
 	return err
 }
 
+// updateSpec - update a spec for an id in the kvp API and overwrite the
+// existing spec.
+func (d *Dao) updateSpec(id string, spec *bundle.Spec) error {
+	defer d.bundleLock.Unlock()
+	d.bundleLock.Lock()
+	log.Debugf("update spec: %v", id)
+	bundleSpec, err := crd.ConvertSpecToBundle(spec)
+	if err != nil {
+		return err
+	}
+	b, err := d.client.Bundles(d.namespace).Get(id, metav1.GetOptions{})
+	if err != nil {
+		log.Debugf("get spec: %v", id)
+	}
+	b.Spec = bundleSpec
+	_, err = d.client.Bundles(d.namespace).Update(b)
+	return err
+}
+
 // DeleteSpec - Delete the spec for a given spec id.
 func (d *Dao) DeleteSpec(specID string) error {
 	log.Debugf("Dao::DeleteSpec-> [ %s ]", specID)
@@ -112,6 +131,18 @@ func (d *Dao) BatchSetSpecs(specs bundle.SpecManifest) error {
 		err := d.SetSpec(id, spec)
 		if err != nil {
 			log.Warningf("Error loading SPEC '%v'", spec.FQName)
+			log.Debugf("SPEC '%v' error: %v", spec.FQName, err)
+		}
+	}
+	return nil
+}
+
+// BatchUpdateSpecs - update specs based on SpecManifest in the kvp API
+func (d *Dao) BatchUpdateSpecs(specs bundle.SpecManifest) error {
+	for id, spec := range specs {
+		err := d.updateSpec(id, spec)
+		if err != nil {
+			log.Warningf("Error updating SPEC '%v'", spec.FQName)
 			log.Debugf("SPEC '%v' error: %v", spec.FQName, err)
 		}
 	}
@@ -141,6 +172,32 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*bundle.Spec, error) {
 		return specs, errs
 	}
 	return specs, nil
+}
+
+//BatchGetBundleInstances - get list of bundleinstances
+func (d *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
+	log.Debugf("Dao::BatchGetBundleInstances")
+	bl, err := d.client.BundleInstances(d.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		log.Errorf("unable to get batch bundleinstances - %v", err)
+		return nil, err
+	}
+	bundleInstances := make([]*bundle.ServiceInstance, len(bl.Items))
+	for index, bundleInstance := range bl.Items {
+
+		spec, err := d.GetSpec(bundleInstance.Spec.Bundle.Name)
+		if err != nil {
+			return nil, err
+		}
+		s, err := crd.ConvertServiceInstanceToAPB(bundleInstance, spec, bundleInstance.GetName())
+		if err != nil {
+			log.Errorf("unable to convert service instance to bundle instance - %v", err)
+			return nil, err
+		}
+
+		bundleInstances[index] = s
+	}
+	return bundleInstances, nil
 }
 
 // BatchDeleteSpecs - set specs based on SpecManifest in the kvp API.
