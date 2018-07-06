@@ -208,6 +208,27 @@ The partner registry requires authentication for pulling images.  This can be ac
 docker --config=/var/lib/origin/.docker login -u <registry-user> -p <registry-password> registry.connect.redhat.com
 ```
 
+### API V2 Registry
+
+Registries that implements the Docker [Registry HTTP API V2](https://docs.docker.com/registry/spec/api/) protocol can be configured with the `apiv2` registry adapter as follows
+
+```yaml
+registry:
+  - name: <registry_name>
+    type: apiv2
+    url:  <registry_url>
+    user: <registry-user>
+    pass: <registry-password>
+    white_list:
+      - ".*-apb$"
+```
+
+If the registry requires authentication for pulling images, this can be achieved by running the following command on every node in your existing cluster:
+
+```bash
+docker --config=/var/lib/origin/.docker login -u <registry-user> -p <registry-password> <registry_url>
+```
+
 ### Multiple Registries Example
 You can use more then one registry to separate APBs into logical organizations and be able to manage them from the same broker. The main thing here is that the registries must have a unique non-empty name. If there is no unique name the service broker will fail to start with an error message alerting you to the problem.
 
