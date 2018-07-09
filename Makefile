@@ -77,7 +77,7 @@ prep-local: ## Prepares the local dev environment
 	@./scripts/prep_local_devel_env.sh
 
 build-dev: ## Build a docker image with the broker binary for development
-	docker run --rm -v ${BUILD_DIR}:/tmp/artifact docker.io/philipgough/dlv:centos cp /go/bin/dlv /tmp/artifact
+	docker cp $(shell docker create docker.io/philipgough/dlv:centos):/go/bin/dlv ${BUILD_DIR}
 	env GOOS=linux go build -i -gcflags="-N -l" -o ${BUILD_DIR}/broker ./cmd/broker
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/migration ./cmd/migration
 	env GOOS=linux go build -i -ldflags="-s -s" -o ${BUILD_DIR}/dashboard-redirector ./cmd/dashboard-redirector
