@@ -95,6 +95,8 @@ build-image: ## Build the broker (from canary)
 build-apb: ## Build the broker apb
 ifeq ($(TAG),canary)
 	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+else ifeq ($(TAG),nightly)
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
 else ifneq (,$(findstring release,$(TAG)))
 	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
 else
@@ -126,7 +128,7 @@ undeploy: build-apb ## Uninstall a deployed broker from a running cluster
 	APB_IMAGE=${APB_IMAGE} BROKER_IMAGE=${BROKER_IMAGE} ACTION="deprovision" ./scripts/deploy.sh
 
 ## Continuous integration stuff
-ci: build-image build-apb ##Run the broker ci
+ci: ## Run the broker ci
 	APB_IMAGE=${APB_IMAGE} BROKER_IMAGE=${BROKER_IMAGE} ACTION="test" ./scripts/deploy.sh
 
 help: ## Show this help screen
