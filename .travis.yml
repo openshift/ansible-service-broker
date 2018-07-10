@@ -76,11 +76,5 @@ script:
   # Setup cluster
   - setup_cluster
 
-  # Provision Broker
-  - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make deploy
-
   # Run CI
   - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make ci
-
-  # Deprovision Broker
-  - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make undeploy
