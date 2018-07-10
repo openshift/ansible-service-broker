@@ -95,6 +95,8 @@ build-image: ## Build the broker (from canary)
 build-apb: ## Build the broker apb
 ifeq ($(TAG),canary)
 	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+else ifeq ($(TAG),nightly)
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
 else ifneq (,$(findstring release,$(TAG)))
 	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
 else
