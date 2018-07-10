@@ -46,7 +46,8 @@ func (e *executor) Bind(
 		e.actionStarted()
 		// Create namespace name that will be used to generate a name.
 		ns := fmt.Sprintf("%s-%.4s-", instance.Spec.FQName, bindAction)
-		// Determine if we should be using the context namespace from the executor config.
+		// Determine if we should be using the context namespace from the
+		// executor config.
 		if e.skipCreateNS {
 			ns = instance.Context.Namespace
 		}

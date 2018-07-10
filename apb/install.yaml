@@ -36,6 +36,6 @@ spec:
   containers:
     - name: apb
       image: docker.io/automationbroker/automation-broker-apb:latest
-      args: [ "provision", "-e create_broker_namespace=true" ]
+      args: [ "provision", "--extra-vars", '{ "create_broker_namespace":"true" }' ]
       imagePullPolicy: IfNotPresent
   restartPolicy: Never

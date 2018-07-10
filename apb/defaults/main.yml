@@ -34,7 +34,7 @@ etcd_port: "2379"
 etcd_persist_storage: "true"
 
 # Whether or not to keep the sandbox namespace
-broker_keep_namespace: "false"
+broker_keep_namespace: "true"
 broker_keep_namespace_on_error: "true"
 
 # Special broker config options
@@ -53,8 +53,6 @@ broker_basic_auth_username: "admin"
 broker_basic_auth_password: "admin"
 
 # Broker dockerhub registry options
-# TODO: Support multiple dockerhub registries
-# https://github.com/automationbroker/automation-broker-apb/issues/2
 broker_dockerhub_enabled: true
 broker_dockerhub_name: dh
 broker_dockerhub_url: https://registry.hub.docker.com
@@ -63,8 +61,6 @@ broker_dockerhub_tag: latest
 broker_dockerhub_white_list: [ ".*-apb$" ]
 
 # Broker local openshift registry options
-# TODO: Support multiple local openshift registries
-# https://github.com/automationbroker/automation-broker-apb/issues/2
 broker_local_openshift_enabled: ""
 broker_local_openshift_name: localregistry
 broker_local_openshift_namespaces: [ "openshift" ]
@@ -74,10 +70,15 @@ broker_local_openshift_namespaces: [ "openshift" ]
 broker_local_openshift_white_list: [ ".*" ]
 
 # Broker helm registry options
-# TODO: Support multiple helm type registries
-# https://github.com/automationbroker/automation-broker-apb/issues/2
 broker_helm_enabled: false
 broker_helm_name: stable
 broker_helm_url: https://kubernetes-charts.storage.googleapis.com
 broker_helm_runner: docker.io/automationbroker/helm-runner:latest
 broker_helm_white_list: [ ".*" ]
+
+# Broker galaxy registry options
+broker_galaxy_enabled: true
+broker_galaxy_name: galaxy-qa
+#broker_galaxy_url: https://galaxy-qa.ansible.com
+broker_galaxy_runner: docker.io/djzager/apb-base:runner
+broker_galaxy_white_list: [ ".*" ]

@@ -73,8 +73,9 @@ type BundleSpec struct {
 	// Store the metadata as a json encoded string to preserve the genericness
 	Metadata string `json:"metadata"`
 	// Store the alpha map as a json encoded string to preserve the genericness
-	Alpha string
-	Plans []Plan `json:"plans"`
+	Alpha  string
+	Plans  []Plan `json:"plans"`
+	Delete bool   `json:"delete"`
 }
 
 // Status - The status for the bundle

@@ -32,6 +32,7 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  branch = "master"
   name = "github.com/automationbroker/broker-client-go"
   packages = [
     "client/clientset/versioned",
@@ -40,10 +41,10 @@
     "pkg/apis/automationbroker",
     "pkg/apis/automationbroker/v1alpha1"
   ]
-  revision = "6918e8ae55fc54e0b69c5d17afd77d07efd5dc23"
-  version = "0.1.2"
+  revision = "bf1c2b52e55d67b4c3a917daaadee9b86a6c66e0"
 
 [[projects]]
+  branch = "galaxy-adapter"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "bundle",
@@ -54,8 +55,8 @@
     "registries/adapters/oauth",
     "runtime"
   ]
-  revision = "d86f8bb04dd1f8ac69cd58bae38716ed8180a065"
-  version = "0.2.3"
+  revision = "6447553ca5ff37e00d8a56aa483dced3a2b51214"
+  source = "https://github.com/djzager/bundle-lib.git"
 
 [[projects]]
   branch = "master"
@@ -363,14 +364,33 @@
   revision = "cca7078d478f8520f85629ad7c68962d31ed7682"
 
 [[projects]]
-  branch = "master"
   name = "github.com/openshift/api"
   packages = [
     "authorization/v1",
+    "image/docker10",
+    "image/dockerpre012",
+    "image/v1",
     "network/v1",
-    "pkg/serialization"
+    "pkg/serialization",
+    "route/v1"
   ]
-  revision = "dca24d1902afee9d2be02425a2d7c9f910063631"
+  revision = "0d921e363e951d89f583292c60d013c318df64dc"
+  version = "v3.9.0"
+
+[[projects]]
+  name = "github.com/openshift/client-go"
+  packages = [
+    "authorization/clientset/versioned/scheme",
+    "authorization/clientset/versioned/typed/authorization/v1",
+    "image/clientset/versioned/scheme",
+    "image/clientset/versioned/typed/image/v1",
+    "network/clientset/versioned/scheme",
+    "network/clientset/versioned/typed/network/v1",
+    "route/clientset/versioned/scheme",
+    "route/clientset/versioned/typed/route/v1"
+  ]
+  revision = "1fa528d3be060e4c7178eb69e76d37cf7e699e3c"
+  version = "v3.9.0"
 
 [[projects]]
   name = "github.com/pborman/uuid"
@@ -920,6 +940,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9d87c68fb045f83a79c67163d2cd0aec9041c1ea012e4f8efe922206605d780d"
+  inputs-digest = "c1c2120deae4eac03ec474b496e653784abb0c2d86cdfa6a43b986da2f2fb0f8"
   solver-name = "gps-cdcl"
   solver-version = 1

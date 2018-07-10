@@ -13,7 +13,7 @@ else
 fi
 
 # sed magic to make it possible to reuse install.yaml to deploy and wait for the broker
-ARGS="[ \"${ACTION}\", \"-e create_broker_namespace=true\", \"-e wait_for_broker=true\", \"-e broker_image=${BROKER_IMAGE}\" ]"
+ARGS="[ \"${ACTION}\", \"--extra-vars\", '{ \"create_broker_namespace\": \"true\", \"wait_for_broker\": \"true\", \"broker_image\": \"${BROKER_IMAGE}\" }' ]"
 APB_YAML=$(sed "s%\(image:\).*%\1 ${APB_IMAGE}%; s%\(args:\).*%\1 ${ARGS}%" ${PROJECT_ROOT}/apb/install.yaml)
 
 echo "${APB_YAML}" | ${CMD} create -f -
