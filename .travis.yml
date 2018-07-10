@@ -65,8 +65,8 @@ jobs:
         - PUBLISH=1 make publish
 
 script:
-  - export apb_name="automation-broker-apb:${TRAVIS_BUILD_ID}"
-  - export broker_image="ansible-service-broker:${TRAVIS_BUILD_ID}"
+  - export BROKER_IMAGE="ansible-service-broker:${TRAVIS_BUILD_ID}"
+  - export APB_IMAGE="automation-broker-apb:${TRAVIS_BUILD_ID}"
 
   # Download test shim.
   - wget -O ${PWD}/apb-test.sh https://raw.githubusercontent.com/ansibleplaybookbundle/apb-test-shim/master/apb-test.sh
@@ -76,5 +76,9 @@ script:
   # Setup cluster
   - setup_cluster
 
+  # Build the broker + broker-apb
+  - make build-image
+  - make build-apb
+
   # Run CI
-  - BROKER_IMAGE=$broker_image APB_IMAGE=$apb_name make ci
+  - make ci
