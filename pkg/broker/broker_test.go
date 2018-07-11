@@ -22,13 +22,13 @@ import (
 	"testing"
 	"time"
 
+	"encoding/json"
 	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/registries"
 	"github.com/automationbroker/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao/mocks"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
-	"encoding/json"
 	"os"
 )
 
@@ -233,12 +233,13 @@ func TestGetMarkedSpecs(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
+	var specs []*bundle.Spec
 	d := json.NewDecoder(f)
-	specs := make([]*bundle.Spec, 3)
-	if err = d.Decode(&specs); err != nil {
+	d.Decode(&specs)
+	defer f.Close()
+	if err != nil {
 		t.Fail()
 	}
-	f.Close()
 	m := getMarkedSpecs(specs)
 	if _, ok := m["1dda1477cace09730bd8ed7a6505607e"]; !ok {
 		t.Fail()
@@ -247,33 +248,9 @@ func TestGetMarkedSpecs(t *testing.T) {
 		t.Fail()
 	}
 }
-//
-//func TestGetSafeToDeleteSpecs(t *testing.T) {
-//	a, err := NewAnsibleBroker(&mocks.Dao{}, []registries.Registry{}, *NewWorkEngine(20, 2*time.Minute, &mocks.Dao{}), &config.Config{}, "new-space", NewWorkFactory())
-//	if err != nil {
-//		t.Fail()
-//	}
-//	f, err := os.Open("./testdata/specs.json")
-//	if err != nil {
-//		t.Fail()
-//	}
-//	d := json.NewDecoder(f)
-//	specs := make([]*bundle.Spec, 3)
-//	if err = d.Decode(&specs); err != nil {
-//		t.Fail()
-//	}
-//	f.Close()
-//	m := getMarkedSpecs(specs)
-//	s := getSafeToDeleteSpecs(*a, m)
-//	if len(s) != 1 {
-//		t.Fail()
-//	}
-//	if s[0].ID != "f86f8e54b99f9332e7610df228fc11d3" {
-//		t.Fail()
-//	}
-//}
 
-func TestConvertSpecListToMap(t *testing.T) {
+func TestGetSafeToDeleteSpecs(t *testing.T) {
+	a := AnsibleBroker{dao: &mocks.Dao{}}
 	f, err := os.Open("./testdata/specs.json")
 	if err != nil {
 		t.Fail()
@@ -284,8 +261,29 @@ func TestConvertSpecListToMap(t *testing.T) {
 		t.Fail()
 	}
 	f.Close()
+	m := getMarkedSpecs(specs)
+	s := getSafeToDeleteSpecs(a, m)
+	if len(s) != 1 {
+		t.Fail()
+	}
+	if s[0].ID != "f86f8e54b99f9332e7610df228fc11d3" {
+		t.Fail()
+	}
+}
+
+func TestConvertSpecListToMap(t *testing.T) {
+	f, err := os.Open("./testdata/specs.json")
+	if err != nil {
+		t.Fail()
+	}
+	d := json.NewDecoder(f)
+	var specs []*bundle.Spec
+	if err = d.Decode(&specs); err != nil {
+		t.Fail()
+	}
+	defer f.Close()
 	sMap := convertSpecListToMap(specs)
-	for _, spec := range specs{
+	for _, spec := range specs {
 		if _, ok := sMap[spec.ID]; !ok {
 			t.Fail()
 		}
@@ -297,28 +295,23 @@ func TestGetNewAndUpdatedSpecs(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
+	var specs []*bundle.Spec
+	var newSpecs []*bundle.Spec
 	d := json.NewDecoder(f)
-	specs := make([]*bundle.Spec, 3)
 	if err = d.Decode(&specs); err != nil {
 		t.Fail()
 	}
-	f.Close()
+	defer f.Close()
 	daoSpecs := convertSpecListToMap(specs)
-	for _, spec := range specs{
-		if _, ok := daoSpecs[spec.ID]; !ok {
-			t.Fail()
-		}
-	}
 	newF, err := os.Open("./testdata/updatedSpecs.json")
 	if err != nil {
 		t.Fail()
 	}
 	newD := json.NewDecoder(newF)
-	newSpecs := make([]*bundle.Spec, 3)
 	if err = newD.Decode(&newSpecs); err != nil {
 		t.Fail()
 	}
-	newF.Close()
+	defer newF.Close()
 	n, u := getNewAndUpdatedSpecs(daoSpecs, newSpecs)
 	if _, ok := n["0e991006d21029e47abe71acc255e807"]; !ok {
 		t.Fail()
@@ -337,27 +330,22 @@ func TestMarkSpecsForDeletion(t *testing.T) {
 		t.Fail()
 	}
 	d := json.NewDecoder(f)
-	specs := make([]*bundle.Spec, 3)
+	var specs []*bundle.Spec
+	var newSpecs []*bundle.Spec
 	if err = d.Decode(&specs); err != nil {
 		t.Fail()
 	}
-	f.Close()
+	defer f.Close()
 	daoSpecs := convertSpecListToMap(specs)
-	for _, spec := range specs{
-		if _, ok := daoSpecs[spec.ID]; !ok {
-			t.Fail()
-		}
-	}
 	newF, err := os.Open("./testdata/updatedSpecs.json")
 	if err != nil {
 		t.Fail()
 	}
 	newD := json.NewDecoder(newF)
-	newSpecs := make([]*bundle.Spec, 3)
 	if err = newD.Decode(&newSpecs); err != nil {
 		t.Fail()
 	}
-	newF.Close()
+	defer newF.Close()
 	specManifest := convertSpecListToMap(newSpecs)
 	markSpecsForDeletion(daoSpecs, specManifest)
 	for id, spec := range daoSpecs {

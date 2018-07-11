@@ -10,6 +10,21 @@ type Dao struct {
 	mock.Mock
 }
 
+func (_m *Dao) BatchUpdateSpecs(bundle.SpecManifest) error {
+	return nil
+}
+
+func (_m *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
+	b := &bundle.ServiceInstance{
+		Spec: &bundle.Spec{
+			ID: "1dda1477cace09730bd8ed7a6505607e",
+		},
+	}
+	l := make([]*bundle.ServiceInstance, 0)
+	l = append(l, b)
+	return l, nil
+}
+
 // BatchDeleteSpecs provides a mock function with given fields: _a0
 func (_m *Dao) BatchDeleteSpecs(_a0 []*bundle.Spec) error {
 	ret := _m.Called(_a0)
