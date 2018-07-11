@@ -1,0 +1,253 @@
+13:33:11 <jmrodri> #startmeeting Automation Broker 7/10/2018
+13:33:11 <brokerbot> Meeting started Tue Jul 10 13:33:11 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+13:33:11 <brokerbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+13:33:11 <brokerbot> The meeting name has been set to 'automation_broker_7/10/2018'
+13:33:11 <brokerbot> jmrodri: startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+13:33:15 <jmrodri> okay that's better ;)
+13:33:17 <mhrivnak> heh
+13:33:19 <jmrodri> sorry about that :)
+13:33:22 <jmrodri> #topic Attendance
+13:33:22 <brokerbot> jmrodri: topic
+13:33:36 <shurley> Hi!!
+13:33:39 <mhrivnak> o/
+13:33:41 <dymurray> Hey!
+13:33:45 <philipgough> Hi
+13:33:45 <ernelson> Hi!
+13:33:50 <fabianvf> Hi
+13:34:39 <jmrodri> hello everyone. Glad to see everyone.
+13:34:44 <jmrodri> #topic News
+13:34:44 <brokerbot> jmrodri: topic
+13:35:03 <jmrodri> #info bundle-lib 0.2.4 release to happen today (pending a couple PRs)
+13:35:03 <brokerbot> jmrodri: info
+13:35:30 <jmrodri> we plan on doing a bundle-lib release today. THere are a couple PRs outstanding that we will merge before doing the release.
+13:35:57 <jmrodri> #info apb 2.0.0 alpha? release tomorrow (deprecating python tool -> golang). Working to make it available in Copr
+13:35:57 <brokerbot> jmrodri: info
+13:36:03 <jmrodri> dymurray: is this yours?
+13:36:14 <dymurray> jmrodri, yes. Should have an RPM available on Copr today
+13:36:23 <dymurray> its the new apb CLI tool written in go
+13:36:24 <jmrodri> excellent
+13:36:31 <jmrodri> \o/
+13:36:49 <dymurray> Definitely invite everyone to check it out :)
+13:36:50 <jmrodri> #link https://github.com/automationbroker/apb
+13:36:50 <brokerbot> jmrodri: link
+13:36:56 <jmrodri> adding a link to the new repo
+13:37:14 <jmrodri> dymurray: so this will replace the current python apb tool, correct?
+13:37:53 <dymurray> jmrodri, yes. A dnf upgrade of the apb package will erase the python components and install the go binary. Some commands have been deprecated or slgihtly modified but it should spit out what to do if you type an old command
+13:38:11 <jmrodri> awesome! great work. looking forward to it.
+13:38:20 <jmrodri> any other news items folks would like to share?
+13:38:51 <jmrodri> #info OSB F2F and service-catalog F2F happening this week in Sunnyvale, CA
+13:38:51 <brokerbot> jmrodri: info
+13:39:07 <jmrodri> I believe if you are on any of those calls they'll have an agenda and a dialin.
+13:39:26 <jmrodri> THe OSB weekly call is canceled this week
+13:39:37 <jmrodri> moving on to previous actions
+13:39:43 <jmrodri> #topic review previous actions
+13:39:43 <brokerbot> jmrodri: topic
+13:40:07 <jmrodri> #info attempt to list APBs in broker returned status 503
+13:40:07 <brokerbot> jmrodri: info
+13:40:11 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/974
+13:40:11 <brokerbot> jmrodri: link
+13:40:27 <jmrodri> ernelson: this is assigned to you, not sure if you have the cycles for it. Might need someone to retest this.
+13:40:54 <jmrodri> hrm is this minishift related or something different? or is that just a coincidence
+13:40:59 <ernelson> jmrodri: Basically had some time free up with the catalog work done and waiting for it to hit origin, so I'll look into this
+13:41:06 <ernelson> I need to update the minishift addon as well to use the APB
+13:41:11 <jmrodri> ernelson: okay thanks
+13:41:31 <jmrodri> #info move away from panic in the lib
+13:41:31 <brokerbot> jmrodri: info
+13:41:36 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/94
+13:41:36 <brokerbot> jmrodri: link
+13:41:50 <jmrodri> this is assigned to me, I looked into this last week.
+13:42:11 <jmrodri> we have 9 calls to panic(..) , 5 are from clients
+13:42:44 <jmrodri> the panic lives inside the once.FOO.Do() call
+13:42:55 <jmrodri> func Kubernetes() (*KubernetesClient, error) {
+13:42:55 <jmrodri> once.Kubernetes.Do(func() {
+13:42:55 <jmrodri> client, err := newKubernetes()
+13:42:55 <jmrodri> if err != nil {
+13:42:55 <jmrodri> log.Error(err.Error())
+13:42:57 <jmrodri> panic(err.Error())
+13:43:00 <jmrodri> }
+13:43:03 <jmrodri> instances.Kubernetes = client
+13:43:05 <jmrodri> })
+13:43:13 <jmrodri> actually let's put this in the discussion section
+13:43:27 <shurley> Yeah, I thik we may need to do a recover function and then return an error
+13:43:30 <jmrodri> the status of it right now is I've investigated but not sure how to move forward.
+13:43:39 <jmrodri> shurley: let's move that to the discussion
+13:43:50 <shurley> +1
+13:44:05 <jmrodri> #info Binding errors are no longer displayed
+13:44:05 <brokerbot> jmrodri: info
+13:44:10 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/941
+13:44:10 <brokerbot> jmrodri: link
+13:44:17 <jmrodri> assigned to me, still needs testing.
+13:44:29 <jmrodri> I do not think it is an issue anymore, just need to verify that.
+13:44:48 <jmrodri> #info Add parsing of param dependencies
+13:44:48 <brokerbot> jmrodri: info
+13:44:50 <jmrodri> #link https://github.com/openshift/ansible-service-broker/pull/928
+13:44:50 <brokerbot> jmrodri: link
+13:44:58 <jmrodri> hrm this was assigned to shurley and myself.
+13:45:08 <jmrodri> Oh just needs a review
+13:45:17 <jmrodri> okay DEFINITELY will do this today
+13:45:30 <jmrodri> #action jmrodri review PR 928 on service broker.
+13:45:30 <brokerbot> jmrodri: action
+13:45:47 <shurley> re running travis on it
+13:45:55 <jmrodri> #info allow dependencies to be defined on params
+13:45:55 <brokerbot> jmrodri: info
+13:46:01 <jmrodri> #link https://github.com/automationbroker/bundle-lib/pull/70
+13:46:01 <brokerbot> jmrodri: link
+13:46:10 <jmrodri> YAY! that has merged
+13:46:25 <jmrodri> that will be released in today's 0.2.4 build of bundle-lib
+13:47:07 <jmrodri> #info assign bundle-lib issue 118
+13:47:07 <brokerbot> jmrodri: info
+13:47:13 <jmrodri> that was mine, I did that last week.
+13:47:14 <jmrodri> DONE
+13:47:36 <jmrodri> #info consider renmaing a few things for readability
+13:47:36 <brokerbot> jmrodri: info
+13:47:39 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/104
+13:47:39 <brokerbot> jmrodri: link
+13:47:51 <jmrodri> I closed this issue. not going to fix it at this time.
+13:48:18 <jmrodri> #info bundle package should have a errors sub package
+13:48:18 <brokerbot> jmrodri: info
+13:48:20 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/111
+13:48:20 <brokerbot> jmrodri: link
+13:48:39 <jmrodri> shurley: this is assigned to both of us. No movement on it yet
+13:48:46 <jmrodri> #assign jmrodri issue 111
+13:48:46 <brokerbot> jmrodri: Error: "assign" is not a valid command.
+13:48:52 <jmrodri> #assign shurley issue 111
+13:48:52 <brokerbot> jmrodri: Error: "assign" is not a valid command.
+13:48:59 <jmrodri> #action jmrodri issue 111
+13:48:59 <brokerbot> jmrodri: action
+13:49:03 <shurley> Yeah it is alittle further down on my todo list
+13:49:05 <jmrodri> #action shurley issue 111
+13:49:05 <brokerbot> jmrodri: action
+13:49:10 <jmrodri> shurley: understood
+13:49:20 <jmrodri> okay sorry went over time on that section today.
+13:49:35 <jmrodri> looks like we have few things that got done this week. that's great to see.
+13:49:47 <jmrodri> #topic bugs/issue triage
+13:49:47 <brokerbot> jmrodri: topic
+13:49:58 <jmrodri> #info bundle-lib issues
+13:49:58 <brokerbot> jmrodri: info
+13:50:00 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues
+13:50:00 <brokerbot> jmrodri: link
+13:50:20 <jmrodri> I think only one new issue there, issue 999
+13:50:30 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/999
+13:50:30 <brokerbot> jmrodri: link
+13:50:37 <jmrodri> maleck13: is this related to the shared service discussion?
+13:51:15 <jmrodri> #action jmrodri read and comment on bundle-lib issue 999
+13:51:15 <brokerbot> jmrodri: action
+13:52:42 <jmrodri> s/bundle-lib/broker
+13:52:57 <jmrodri> sorry I was mistakenly calling these bundle-lib issues when they are all infact broker issues
+13:54:36 <jmrodri> we have 29 open issues against release-1.3 of the broker
+13:54:49 <jmrodri> we'll have to go through that to see what will get moved and what will get punted.
+13:54:57 <shurley> should be move this to the discussion. I don’t know where the shared services stuff is at
+13:55:12 <jmrodri> shurley: sure
+13:56:04 <jmrodri> #action jmrodri review 3.11/release 1.3 broker bug list.
+13:56:04 <brokerbot> jmrodri: action
+13:56:19 <jmrodri> #info bundle-lib bug list (for realz this time)
+13:56:19 <brokerbot> jmrodri: info
+13:56:27 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues
+13:56:27 <brokerbot> jmrodri: link
+13:56:43 <jmrodri> looks like one new issue posted in the last 5 days.
+13:56:57 <jmrodri> #info bundle.Spec needs a mark for deletion field
+13:56:57 <brokerbot> jmrodri: info
+13:56:59 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/120
+13:56:59 <brokerbot> jmrodri: link
+13:57:12 <jmrodri> this is assigned to alay, I believe he's working on a PR for this
+13:57:21 <jmrodri> #action alay post PR for issue #120
+13:57:21 <brokerbot> jmrodri: action
+13:58:21 <jmrodri> I don't see any that are huge blockers at the moment.
+13:58:35 <shurley> Hey why are we doing that?
+13:58:50 <jmrodri> that deletion thing?
+13:58:58 <shurley> kubernetes objects have a marked for deletion flag already in the metadata section
+13:59:10 <jmrodri> shurley: if so then we can use that.
+13:59:39 <jmrodri> it will most likely change his other PR when it gets posted.
+13:59:44 <jmrodri> shurley: thanks for that
+13:59:46 <shurley> https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta
+14:00:23 <jmrodri> shurley: I added that to the issue
+14:00:26 <jmrodri> thanks
+14:01:38 <jmrodri> okay not a lot of movement on issues right now in terms of new ones coming in. That's good I guess, everything must be working :)
+14:01:41 <jmrodri> hehe
+14:02:03 <jmrodri> anyone have any features they need to discuss today?
+14:02:10 <jmrodri> #topic features
+14:02:10 <brokerbot> jmrodri: topic
+14:02:35 <jmrodri> if not, we can go straight to the open discussion piece of the meeting.
+14:02:56 <shurley> maleck13: philipgough wondering how multi tenant stuff is going
+14:04:06 <philipgough> Hey shurley, maleck13 is afk as far as I can see. Still progressing some spikes around that currently. maleck13 would be able to give you more insight into overall progress
+14:04:36 <shurley> ok thanks!
+14:05:13 <jmrodri> awesome
+14:05:21 <philipgough> shurley: It is in hand and still ongoing with PoC's, that is as much as I can give you :)
+14:05:38 <jmrodri> thanks philipgough
+14:06:01 <jmrodri> any other questions or information about features anyone wants to share at the moment?
+14:06:22 <philipgough> Just on the topic of the conditional params feature we had bee working on
+14:06:31 <jmrodri> okay
+14:06:39 <philipgough> I guess we can progress that and fix the build when bundle-lib is released
+14:06:59 <philipgough> So we will be keen to see that one out asap at that point
+14:07:57 <jmrodri> yes, looks like the supporting PR for that was merged. And the release will be done today.
+14:08:04 <philipgough> I'll update that dep and progress that, hoping to land it by end of sprint, next wednesday as I am moving teams in red hat
+14:08:29 <philipgough> jmrodri: Yep cool, thats what I assumed, just clarifying where we are at with that re deadlines
+14:09:13 <shurley> Yeah we actually need it in by tomorrow
+14:09:28 <shurley> I think we have a feature freeze for our code. So we need to get this in
+14:09:34 <jmrodri> +1
+14:09:42 <philipgough> shurley: Ok thats good to know then. Great
+14:09:52 <philipgough> ping maleck13 ^^
+14:10:05 <philipgough> Thanks shurley
+14:11:10 <jmrodri> okay moving onto the open discussions
+14:11:14 <jmrodri> #topic open discussion
+14:11:14 <brokerbot> jmrodri: topic
+14:11:24 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/94
+14:11:24 <brokerbot> jmrodri: link
+14:11:30 <jmrodri> okay this is the panic story
+14:11:54 <jmrodri> so like I posted earlier 5 of the 9 are in clients with a paradigm that looks like this
+14:11:57 <jmrodri> func Kubernetes() (*KubernetesClient, error) {
+14:12:00 <jmrodri> once.Kubernetes.Do(func() {
+14:12:02 <jmrodri> client, err := newKubernetes()
+14:12:05 <jmrodri> if err != nil {
+14:12:07 <jmrodri> log.Error(err.Error())
+14:12:10 <jmrodri> panic(err.Error())
+14:12:12 <jmrodri> }
+14:12:15 <jmrodri> instances.Kubernetes = client
+14:12:17 <jmrodri> })
+14:12:20 <jmrodri> if instances.Kubernetes == nil {
+14:12:22 <jmrodri> return nil, errors.New("Kubernetes client instance is nil")
+14:12:25 <jmrodri> }
+14:12:27 <jmrodri> return instances.Kubernetes, nil
+14:12:30 <jmrodri> }
+14:12:32 <jmrodri> I wanted to make this return an error but then realized once.XXX.Do() does not return an error :)
+14:12:37 <jmrodri> the other 4 panic uses are different
+14:13:00 <jmrodri> they occur in the NewRuntime() method
+14:13:37 <jmrodri> https://github.com/automationbroker/bundle-lib/blob/master/runtime/runtime.go#L102-L127
+14:13:37 <shurley> I think that, we should use a recover function
+14:13:49 <shurley> and have that return the error
+14:13:49 <jmrodri> for all of them?
+14:14:51 <shurley> Oh wait that might not work the way I want it too
+14:14:53 <jmrodri> but recover docs state
+14:14:55 <jmrodri> Recover is a built-in function that regains control of a panicking goroutine. Recover is only useful inside deferred functions. During normal execution, a call to recover will return nil and have no other effect. If the current goroutine is panicking, a call to recover will capture the value given to panic and resume normal execution.
+14:15:38 <jmrodri> so part of me says if I'm using this library and I use it wrong I'd like for it to panic LOUDLY
+14:16:05 <jmrodri> so for example NewRuntime, if that fails "we're done I'm out"
+14:16:32 <jmrodri> but I can also see that if I was the use of this library I'd like to know this was failing and try to handle it. Maybe I need more user interaction etc
+14:17:22 <shurley> Yeah, I think it makes sense to return an error and have the caller deal with if it should panic or not
+14:17:36 <shurley> > For a real-world example of panic and recover, see the json package from the Go standard library. It decodes JSON-encoded data with a set of recursive functions. When malformed JSON is encountered, the parser calls panic to unwind the stack to the top-level function call, which recovers from the panic and returns an appropriate error value (see the 'error' and 'unmarshal' methods of the decodeState type in decode.go).
+14:17:48 <shurley> from the recover docs
+14:18:15 <jmrodri> oh I see that
+14:18:29 <ernelson> shurley: +1
+14:18:50 <jmrodri> shurley: okay so for NewRuntime, we should make it return error. Then for the clients panic and recover?
+14:18:53 <jmrodri> is that what I'm hearing?
+14:18:59 <jmrodri> s/hearing/reading
+14:19:19 <jmrodri> (though with all the clicky keyboards in here, I guess I am hearing the words as they are typed) :D
+14:19:28 <jmrodri> #longlivetheclick
+14:19:28 <brokerbot> jmrodri: Error: "longlivetheclick" is not a valid command.
+14:19:38 <ernelson> we make a lot of noise in this corner
+14:20:03 <jmrodri> and light, sensory overload.
+14:20:10 <shurley> jmrodri: +1 that makes sense to me
+14:20:12 * jmrodri puts on subglasses and headphones :)
+14:20:32 <jmrodri> shurley: okay I can look going down that path. It won't be in today's release though
+14:22:25 <shurley> no worries from me
+14:23:28 * ernelson wonders what are "subglasses"
+14:23:33 <ernelson> :)
+14:24:04 <jmrodri> ernelson: that's when you have a cold in the summer
+14:24:19 <jmrodri> shurley: summarized in the issue: https://github.com/automationbroker/bundle-lib/issues/94#issuecomment-403841080
+14:24:44 <shurley> +_1
+14:24:47 <jmrodri> okay that's all I had on this topic
+14:24:55 <jmrodri> anyone else have anything they'd like to discuss?
+14:24:59 <jmrodri> comments? questions?
+14:25:05 <jmrodri> we have 6 minutes left
+14:25:33 <shurley> none from me thansk jmrodri !
+14:25:49 <jmrodri> if not, then we can end a little early.
+14:26:33 <jmrodri> #endmeeting
