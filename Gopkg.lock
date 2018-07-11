@@ -54,8 +54,8 @@
     "registries/adapters/oauth",
     "runtime"
   ]
-  revision = "d86f8bb04dd1f8ac69cd58bae38716ed8180a065"
-  version = "0.2.3"
+  revision = "6b13aa1285fd32855c61277a55e3cf9da4d448c3"
+  version = "0.2.4"
 
 [[projects]]
   branch = "master"
@@ -363,14 +363,33 @@
   revision = "cca7078d478f8520f85629ad7c68962d31ed7682"
 
 [[projects]]
-  branch = "master"
   name = "github.com/openshift/api"
   packages = [
     "authorization/v1",
+    "image/docker10",
+    "image/dockerpre012",
+    "image/v1",
     "network/v1",
-    "pkg/serialization"
+    "pkg/serialization",
+    "route/v1"
   ]
-  revision = "dca24d1902afee9d2be02425a2d7c9f910063631"
+  revision = "0d921e363e951d89f583292c60d013c318df64dc"
+  version = "v3.9.0"
+
+[[projects]]
+  name = "github.com/openshift/client-go"
+  packages = [
+    "authorization/clientset/versioned/scheme",
+    "authorization/clientset/versioned/typed/authorization/v1",
+    "image/clientset/versioned/scheme",
+    "image/clientset/versioned/typed/image/v1",
+    "network/clientset/versioned/scheme",
+    "network/clientset/versioned/typed/network/v1",
+    "route/clientset/versioned/scheme",
+    "route/clientset/versioned/typed/route/v1"
+  ]
+  revision = "1fa528d3be060e4c7178eb69e76d37cf7e699e3c"
+  version = "v3.9.0"
 
 [[projects]]
   name = "github.com/pborman/uuid"
@@ -920,6 +939,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9d87c68fb045f83a79c67163d2cd0aec9041c1ea012e4f8efe922206605d780d"
+  inputs-digest = "e605107f1b0e82128df431c080b74858f4dafa6bc510dc79c86afd4054845e3d"
   solver-name = "gps-cdcl"
   solver-version = 1

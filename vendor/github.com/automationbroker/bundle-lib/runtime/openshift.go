@@ -45,7 +45,7 @@ func (o openshift) shouldJoinNetworks() (bool, PostSandboxCreate, PostSandboxDes
 	if err != nil {
 		// The plugins could not be defined. ex: when using oc cluster up
 		// or a pure k8s cluster. Therefore making this a notice.
-		log.Infof("unable to retrieve the network plugin, defaulting to not joining networks - %v", err)
+		log.Debugf("unable to retrieve the network plugin, defaulting to not joining networks - %v", err)
 		// Defaulting to not join the networks.
 		return false, nil, nil
 	}

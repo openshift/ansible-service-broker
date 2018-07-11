@@ -18,12 +18,12 @@ package broker
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
-	"testing"
-
 	"strings"
+	"testing"
 
 	apb "github.com/automationbroker/bundle-lib/bundle"
 	schema "github.com/lestrrat/go-jsschema"
@@ -473,4 +473,103 @@ func TestInitMetadataCopy(t *testing.T) {
 			ft.AssertTrue(t, eq, "maps do not match")
 		})
 	}
+}
+
+func TestExtractDependencies(t *testing.T) {
+	params := []apb.ParameterDescriptor{
+		{
+			Name:    "eg_enum_param",
+			Type:    "enum",
+			Title:   "Conditional Example",
+			Default: "Yes",
+			Enum:    []string{"Yes", "No", "Maybe"},
+		},
+		{
+			Name:  "eg_conditional_one",
+			Type:  "string",
+			Title: "Example Shown If 'Yes' or 'Maybe'",
+			Dependencies: []apb.Dependency{
+				{
+					Key:   "eg_enum_param",
+					Value: []interface{}{"Yes", "Maybe"},
+				},
+			},
+		},
+		{
+			Name:  "eg_conditional_two",
+			Type:  "string",
+			Title: "Example Shown If 'No'",
+			Dependencies: []apb.Dependency{
+				{
+					Key:   "eg_enum_param",
+					Value: "No",
+				},
+			},
+		},
+		{
+			Name:  "eg_boolean_param",
+			Type:  "boolean",
+			Title: "Conditional Example Boolean",
+		},
+		{
+			Name:  "eg_conditional_boolean_one",
+			Type:  "string",
+			Title: "Example Shown When True",
+			Dependencies: []apb.Dependency{
+				{
+					Key: "eg_boolean_param",
+				},
+			},
+		},
+		{
+			Name:  "eg_conditional_boolean_two",
+			Type:  "string",
+			Title: "Example Also Shown When True",
+			Dependencies: []apb.Dependency{
+				{
+					Key: "eg_boolean_param",
+				},
+			},
+		},
+	}
+
+	expectDependencyJSON := `
+{"eg_boolean_param":{"properties":
+{"eg_conditional_boolean_one":{"title":"Example Shown When True","type":"string"},
+"eg_conditional_boolean_two":{"title":"Example Also Shown When True","type":"string"}},
+"required":["eg_conditional_boolean_one","eg_conditional_boolean_two"]},
+"eg_enum_param":{"oneOf":[{"properties":{"eg_conditional_one":{"title":"Example Shown If 'Yes' or 'Maybe'","type":"string"},
+"eg_enum_param":{"enum":["Yes","Maybe"]}},"required":["eg_conditional_one"]},
+{"properties":{"eg_conditional_two":{"title":"Example Shown If 'No'","type":"string"},
+"eg_enum_param":{"enum":["No"]}},"required":["eg_conditional_two"]}]}}
+`
+
+	properties, err := extractProperties(params)
+	if err != nil {
+		t.Fatal("Error extracting properties when dependencies defined on parameters")
+	}
+	dependencySchema := extractDependencies(params, properties)
+	testSchema := &schema.Schema{
+		Dependencies: dependencySchema,
+	}
+	marshaledDependecies, err := json.Marshal(testSchema.Dependencies.Schemas)
+	if err != nil {
+		t.Fatal("Error marshalling dependencies from dependency map")
+	}
+	if string(marshaledDependecies) != strings.Replace(expectDependencyJSON, "\n", "", -1) {
+		t.Fatal("Unexpected marshal result for dependency schema")
+	}
+
+	expectPropsPostExtraction := `
+{"eg_boolean_param":{"title":"Conditional Example Boolean","type":"boolean"},
+"eg_enum_param":{"default":"Yes","enum":["Yes","No","Maybe"],"title":"Conditional Example","type":"string"}}
+`
+	propertiesPostExtraction, err := json.Marshal(properties)
+	if err != nil {
+		t.Fatal("Error marshalling properties after dependency extraction")
+	}
+	if string(propertiesPostExtraction) != strings.Replace(expectPropsPostExtraction, "\n", "", -1) {
+		t.Fatal("Unexpected marshal result for pruned properties")
+	}
+
 }

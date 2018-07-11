@@ -240,7 +240,7 @@ func (r DockerHubAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("DockerHubAdapter::error handling dockerhub registery response %s", err)
 	}
-	return imageToSpec(body, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
+	return responseToSpec(body, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
 }
 
 func (r DockerHubAdapter) getBearerToken(imageName string) (string, error) {
