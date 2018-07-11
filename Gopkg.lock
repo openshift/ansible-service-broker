@@ -44,7 +44,6 @@
   version = "0.1.2"
 
 [[projects]]
-  branch = "add-k8s-authorizer"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "authorization",
@@ -930,19 +929,17 @@
   ]
   revision = "50ae88d24ede7b8bad68e23c805b5d3da5c8abaf"
 
-[[projects]]
-  name = "k8s.io/kubernetes"
-  packages = ["pkg/apis/rbac"]
-  revision = "9f8ebd171479bec0ada837d7ee641dec2f8c6dd1"
-  version = "v1.9.6"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
+<<<<<<< HEAD
 <<<<<<< HEAD
   inputs-digest = "e605107f1b0e82128df431c080b74858f4dafa6bc510dc79c86afd4054845e3d"
 =======
   inputs-digest = "336f09daf9d42ea10d2852f1d0a244580f9d849886f05c965ab21651606c3b9a"
 >>>>>>> removing subject rules review auth and using aggregated rules.
+=======
+  inputs-digest = "6f57c4c177ab3ef7293d369e39b09429135ad3f3d1e5ce95db2de5213ca0386f"
+>>>>>>> updating vendor and using new bundle lib
   solver-name = "gps-cdcl"
   solver-version = 1
