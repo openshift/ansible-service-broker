@@ -274,11 +274,11 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 
 func markSpecsForDeletion(daoSpecs map[string]*bundle.Spec, specManifest bundle.SpecManifest) map[string]*bundle.Spec {
 	markedSpecs := make(map[string]*bundle.Spec)
-	for specId, spec := range daoSpecs {
-		if _, ok := specManifest[specId]; !ok {
-			log.Infof("spec '%v' marked for deletion", specId)
+	for specID, spec := range daoSpecs {
+		if _, ok := specManifest[specID]; !ok {
+			log.Infof("spec '%v' marked for deletion", specID)
 			spec.MarkDelete()
-			markedSpecs[specId] = spec
+			markedSpecs[specID] = spec
 		}
 	}
 	return markedSpecs

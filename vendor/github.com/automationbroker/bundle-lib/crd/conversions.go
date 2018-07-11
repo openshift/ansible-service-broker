@@ -74,6 +74,7 @@ func ConvertSpecToBundle(spec *bundle.Spec) (v1alpha1.BundleSpec, error) {
 		Metadata:    string(metadataBytes),
 		Alpha:       string(alphaBytes),
 		Plans:       plans,
+		Delete:      spec.Delete,
 	}, nil
 }
 
@@ -126,6 +127,7 @@ func ConvertBundleToSpec(spec v1alpha1.BundleSpec, id string) (*bundle.Spec, err
 		Metadata:    metadataMap,
 		Alpha:       alphaMap,
 		Plans:       plans,
+		Delete:      spec.Delete,
 	}, nil
 }
 

@@ -32,6 +32,7 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  branch = "deletion-field"
   name = "github.com/automationbroker/broker-client-go"
   packages = [
     "client/clientset/versioned",
@@ -40,11 +41,12 @@
     "pkg/apis/automationbroker",
     "pkg/apis/automationbroker/v1alpha1"
   ]
-  revision = "6918e8ae55fc54e0b69c5d17afd77d07efd5dc23"
-  version = "0.1.2"
+  revision = "61725f20b1cb91d7c55d58b92b8fd7969bf5ed23"
+  source = "github.com/alaypatel07/broker-client-go"
 
 [[projects]]
   name = "github.com/automationbroker/bundle-lib"
+  branch = "deletion-field"
   packages = [
     "authorization",
     "authorization/k8s",
@@ -56,8 +58,8 @@
     "registries/adapters/oauth",
     "runtime"
   ]
-  revision = "6b13aa1285fd32855c61277a55e3cf9da4d448c3"
-  version = "0.2.4"
+  revision = "0d9ddc769fd5cc82f19465ca8254cd0dbbc2d326"
+  source = "github.com/alaypatel07/bundle-lib"
 
 [[projects]]
   branch = "master"
