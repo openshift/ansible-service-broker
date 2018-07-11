@@ -79,19 +79,22 @@ func (e *executor) Deprovision(instance *ServiceInstance) <-chan StatusMessage {
 			Location:   namespace,
 		}
 		ec, err = e.executeApb(ec, instance, instance.Parameters)
+
+		defer runtime.Provider.DestroySandbox(
+			ec.BundleName,
+			ec.Location,
+			ec.Targets,
+			clusterConfig.Namespace,
+			clusterConfig.KeepNamespace,
+			clusterConfig.KeepNamespaceOnError,
+		)
+
 		defer func() {
 			if err := e.stateManager.DeleteState(e.stateManager.MasterName(instance.ID.String())); err != nil {
 				log.Errorf("failed to delete state for instance %s : %v ", instance.ID.String(), err)
 			}
-			runtime.Provider.DestroySandbox(
-				ec.BundleName,
-				ec.Location,
-				ec.Targets,
-				clusterConfig.Namespace,
-				clusterConfig.KeepNamespace,
-				clusterConfig.KeepNamespaceOnError,
-			)
 		}()
+
 		if err != nil {
 			log.Errorf("Problem executing bundle [%s] deprovision", ec.BundleName)
 			e.actionFinishedWithError(err)

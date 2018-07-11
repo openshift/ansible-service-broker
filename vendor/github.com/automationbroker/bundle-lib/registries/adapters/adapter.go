@@ -58,11 +58,32 @@ type Configuration struct {
 	Namespaces    []string
 	Tag           string
 	SkipVerifyTLS bool
+	AdapterName   string
 }
 
 type registryResponseError struct {
 	code    int
 	message string
+}
+
+type imageLabel struct {
+	Spec          string `json:"com.redhat.apb.spec"`
+	Runtime       string `json:"com.redhat.apb.runtime"`
+	BundleRuntime string `json:"com.redhat.bundle.runtime"`
+}
+
+type config struct {
+	Label  imageLabel `json:"Labels"`
+	Digest string     `json:"digest"`
+}
+
+type manifestResponse struct {
+	SchemaVersion int                 `json:"schemaVersion"`
+	History       []map[string]string `json:"history"`
+}
+
+type manifestConfig struct {
+	Config config `json:"config"`
 }
 
 func (rre *registryResponseError) Error() string {
@@ -85,87 +106,70 @@ func registryResponseHandler(resp *http.Response) ([]byte, error) {
 	return body, nil
 }
 
-// Retrieve the spec from a registry manifest request
-func imageToSpec(imageDetails []byte, image string) (*bundle.Spec, error) {
-	log.Debug("Registry::imageToSpec")
+// Retrieve the spec from a manifest response
+func responseToSpec(response []byte, image string) (*bundle.Spec, error) {
+	log.Debug("Registry::responseToSpec")
+	mResp := manifestResponse{}
+
+	r := bytes.NewReader(response)
+	if err := json.NewDecoder(r).Decode(&mResp); err != nil {
+		log.Errorf("Error grabbing JSON body from manifest response: %s", err)
+		return nil, err
+	}
+	return configToSpec([]byte(mResp.History[0]["v1Compatibility"]), image)
+}
+
+// Retrieve the spec from manifest config
+func configToSpec(config []byte, image string) (*bundle.Spec, error) {
+	log.Debug("Registry::configToSpec")
 	spec := &bundle.Spec{}
-	type label struct {
-		Spec             string `json:"com.redhat.apb.spec"`
-		LegacyAPBRuntime string `json:"com.redhat.apb.runtime"`
-		BundleRuntime    string `json:"com.redhat.bundle.runtime"`
-	}
+	mConf := manifestConfig{}
 
-	type config struct {
-		Label label `json:"Labels"`
-	}
-
-	hist := struct {
-		History []map[string]string `json:"history"`
-	}{}
-
-	conf := struct {
-		Config *config `json:"config"`
-	}{}
-
-	r := bytes.NewReader(imageDetails)
-	if err := json.NewDecoder(r).Decode(&hist); err != nil {
-		log.Errorf("Error grabbing JSON body from response: %s", err)
+	r := bytes.NewReader(config)
+	err := json.NewDecoder(r).Decode(&mConf)
+	if err != nil {
+		log.Errorf("Failed to unmarshal config object for image [%s]: %s", image, err)
 		return nil, err
 	}
 
-	if hist.History == nil {
-		log.Errorf("V1 Schema Manifest does not exist in registry")
-		return nil, nil
-	}
-
-	if err := json.Unmarshal([]byte(hist.History[0]["v1Compatibility"]), &conf); err != nil {
-		log.Errorf("Error unmarshalling intermediary JSON response: %s", err)
-		return nil, err
-	}
-	if conf.Config == nil {
-		log.Infof("Did not find v1 Manifest in image history. Skipping image")
-		return nil, nil
-	}
-	if conf.Config.Label.Spec == "" {
+	// encoded spec
+	if mConf.Config.Label.Spec == "" {
 		log.Infof("Didn't find encoded Spec label. Assuming image is not APB and skipping")
 		return nil, nil
 	}
 
-	encodedSpec := conf.Config.Label.Spec
-	decodedSpecYaml, err := b64.StdEncoding.DecodeString(encodedSpec)
+	decodedSpecYaml, err := b64.StdEncoding.DecodeString(mConf.Config.Label.Spec)
 	if err != nil {
-		log.Errorf("Something went wrong decoding spec from label")
+		log.Errorf("Something went wrong decoding spec from label for '%s' : %s", image, err)
 		return nil, err
 	}
-
 	if err = yaml.Unmarshal(decodedSpecYaml, spec); err != nil {
-		log.Errorf("Something went wrong loading decoded spec yaml, %s", err)
+		log.Errorf("Something went wrong loading decoded spec yaml for '%s' : %s", image, err)
 		return nil, err
 	}
-
-	version := conf.Config.Label.LegacyAPBRuntime
 
 	// prefer bundle runtime
-	if conf.Config.Label.BundleRuntime != "" {
+	version := mConf.Config.Label.Runtime
+	if mConf.Config.Label.BundleRuntime != "" {
 		log.Debugf("bundle runtime present using this over apb runtime")
-		version = conf.Config.Label.BundleRuntime
+		version = mConf.Config.Label.BundleRuntime
 	}
 	spec.Runtime, err = getAPBRuntimeVersion(version)
 	if err != nil {
 		return nil, err
 	}
 
+	// image name to be pulled during provision
 	spec.Image = image
 
-	log.Debugf("adapter::imageToSpec -> Got plans %+v", spec.Plans)
+	log.Debugf("adapter::configToSpec -> Got plans %+v", spec.Plans)
 	log.Debugf("Successfully converted Image %s into Spec", spec.Image)
-	log.Infof("adapter::imageToSpec -> Image %s runtime is %d", spec.Image, spec.Runtime)
+	log.Infof("adapter::configToSpec -> Image %s runtime is %d", spec.Image, spec.Runtime)
 
 	return spec, nil
 }
 
 func getAPBRuntimeVersion(version string) (int, error) {
-
 	if version == "" {
 		log.Infof("No runtime label found. Set runtime=1. Will use 'exec' to gather bind credentials")
 		return 1, nil
@@ -177,4 +181,15 @@ func getAPBRuntimeVersion(version string) (int, error) {
 		return 0, err
 	}
 	return runtime, nil
+}
+
+// manifest schema version
+func getSchemaVersion(response []byte) (int, error) {
+	mResp := manifestResponse{}
+	r := bytes.NewReader(response)
+	if err := json.NewDecoder(r).Decode(&mResp); err != nil {
+		log.Errorf("Error getting schemaVersion", err)
+		return 0, err
+	}
+	return mResp.SchemaVersion, nil
 }

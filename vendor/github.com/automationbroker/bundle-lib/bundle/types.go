@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"reflect"
 
+	schema "github.com/lestrrat/go-jsschema"
 	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -66,11 +67,39 @@ type ParameterDescriptor struct {
 	Minimum          *NilableNumber `json:"minimum,omitempty"`
 	ExclusiveMinimum *NilableNumber `json:"exclusiveMinimum,omitempty" yaml:"exclusive_minimum,omitempty"`
 
-	Enum         []string `json:"enum,omitempty"`
-	Required     bool     `json:"required"`
-	Updatable    bool     `json:"updatable"`
-	DisplayType  string   `json:"displayType,omitempty" yaml:"display_type,omitempty"`
-	DisplayGroup string   `json:"displayGroup,omitempty" yaml:"display_group,omitempty"`
+	Enum         []string     `json:"enum,omitempty"`
+	Required     bool         `json:"required"`
+	Updatable    bool         `json:"updatable"`
+	DisplayType  string       `json:"displayType,omitempty" yaml:"display_type,omitempty"`
+	DisplayGroup string       `json:"displayGroup,omitempty" yaml:"display_group,omitempty"`
+	Dependencies []Dependency `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+}
+
+// Dependency - a parameter dependency
+type Dependency struct {
+	Key   string      `json:"key,omitempty" yaml:"key,omitempty"`
+	Value interface{} `json:"value,omitempty" yaml:"value,omitempty"`
+}
+
+// Schema  - Schema to be returned
+// based on 2.13 of the open service broker api. https://github.com/avade/servicebroker/blob/cda8c57b6a4bb7eaee84be20bb52dc155269758a/spec.md
+type Schema struct {
+	ServiceInstance ServiceInstanceSchema `json:"service_instance"`
+	ServiceBinding  ServiceBindingSchema  `json:"service_binding"`
+}
+
+// ServiceInstanceSchema - Schema definitions for creating and updating a service instance.
+// Toyed with the idea of making an InputParameters
+// that was a *schema.Schema
+// based on 2.13 of the open service broker api. https://github.com/avade/servicebroker/blob/cda8c57b6a4bb7eaee84be20bb52dc155269758a/spec.md
+type ServiceInstanceSchema struct {
+	Create map[string]*schema.Schema `json:"create"`
+	Update map[string]*schema.Schema `json:"update"`
+}
+
+// ServiceBindingSchema - Schema definitions for creating a service binding.
+type ServiceBindingSchema struct {
+	Create map[string]*schema.Schema `json:"create"`
 }
 
 // Plan - Plan object describing an APB deployment plan and associated parameters
@@ -84,6 +113,18 @@ type Plan struct {
 	Parameters     []ParameterDescriptor  `json:"parameters"`
 	BindParameters []ParameterDescriptor  `json:"bind_parameters,omitempty" yaml:"bind_parameters,omitempty"`
 	UpdatesTo      []string               `json:"updates_to,omitempty" yaml:"updates_to,omitempty"`
+}
+
+// SchemaPlan - Plan object describing an APB deployment plan and associated parameters
+type SchemaPlan struct {
+	ID          string                 `json:"id" yaml:"-"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Free        bool                   `json:"free,omitempty"`
+	Bindable    bool                   `json:"bindable,omitempty"`
+	UpdatesTo   []string               `json:"updates_to,omitempty" yaml:"updates_to,omitempty"`
+	Schemas     Schema                 `json:"schema,omitempty"`
 }
 
 // GetParameter - retrieves a reference to a ParameterDescriptor from a plan by name. Will return

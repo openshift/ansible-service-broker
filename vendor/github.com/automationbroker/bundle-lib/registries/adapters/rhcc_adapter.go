@@ -149,5 +149,5 @@ func (r RHCCAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 		return nil, fmt.Errorf("RHCCAdapter::error handling openshift registery response %s", err)
 	}
 
-	return imageToSpec(body, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
+	return responseToSpec(body, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
 }

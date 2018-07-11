@@ -348,8 +348,8 @@ func (p provider) CreateSandbox(podName string,
 	}
 	log.Debugf("Successfully created network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 
-	log.Infof("Successfully created apb sandbox: [ %s ], with %s permissions in namespace %s", podName, apbRole, namespace)
-	log.Info("Running post create sandbox functions if defined.")
+	log.Infof("Successfully created apb sandbox: [ %s ], with %s permissions in namespace [ %s ]", podName, apbRole, namespace)
+	log.Debug("Running post create sandbox functions if defined.")
 	for i, f := range p.postSandboxCreate {
 		log.Debugf("Running post create sandbox function: %v", i+1)
 		err := f(podName, namespace, targets, apbRole)
