@@ -79,30 +79,6 @@ type ParameterDescriptor struct {
 type Dependency struct {
 	Key   string      `json:"key,omitempty" yaml:"key,omitempty"`
 	Value interface{} `json:"value,omitempty" yaml:"value,omitempty"`
-<<<<<<< HEAD
-}
-
-// Schema  - Schema to be returned
-// based on 2.13 of the open service broker api. https://github.com/avade/servicebroker/blob/cda8c57b6a4bb7eaee84be20bb52dc155269758a/spec.md
-type Schema struct {
-	ServiceInstance ServiceInstanceSchema `json:"service_instance"`
-	ServiceBinding  ServiceBindingSchema  `json:"service_binding"`
-}
-
-// ServiceInstanceSchema - Schema definitions for creating and updating a service instance.
-// Toyed with the idea of making an InputParameters
-// that was a *schema.Schema
-// based on 2.13 of the open service broker api. https://github.com/avade/servicebroker/blob/cda8c57b6a4bb7eaee84be20bb52dc155269758a/spec.md
-type ServiceInstanceSchema struct {
-	Create map[string]*schema.Schema `json:"create"`
-	Update map[string]*schema.Schema `json:"update"`
-}
-
-// ServiceBindingSchema - Schema definitions for creating a service binding.
-type ServiceBindingSchema struct {
-	Create map[string]*schema.Schema `json:"create"`
-=======
->>>>>>> updating vendor and using new bundle lib
 }
 
 // Schema  - Schema to be returned
