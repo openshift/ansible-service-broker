@@ -26,6 +26,8 @@
 %global provider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path %{provider_prefix}
 
+%global gopath /usr/share/gocode
+
 %if 0%{?copr}
 %define build_timestamp .%(date +"%Y%m%d%H%M%%S")
 %else
@@ -47,8 +49,7 @@ Source0: %{name}-%{version}.tar.gz
 # e.g. el6 has ppc64 arch without gcc-go, so EA tag is required
 #ExclusiveArch: %%{?go_arches:%%{go_arches}}%%{!?go_arches:%%{ix86} x86_64 %{arm}}
 ExclusiveArch: %{ix86} x86_64 %{arm} aarch64 ppc64le %{mips} s390x
-# If go_compiler is not set to 1, there is no virtual provide. Use golang instead.
-BuildRequires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
+BuildRequires: golang
 
 Requires(pre): shadow-utils
 Requires: %{name}-selinux
@@ -114,7 +115,7 @@ exit 0
 Summary: %{summary}
 BuildArch: noarch
 
-Requires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
+Requires: golang
 Requires: device-mapper-devel
 Requires: btrfs-progs-devel
 
@@ -126,8 +127,7 @@ devel for %{name}
 %if 0%{?with_unit_test} && 0%{?with_devel}
 %package unit-test
 Summary: Unit tests for %{name} package
-# If go_compiler is not set to 1, there is no virtual provide. Use golang instead.
-BuildRequires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
+BuildRequires: golang
 
 %if 0%{?with_check}
 #Here comes all BuildRequires: PACKAGE the unit tests
