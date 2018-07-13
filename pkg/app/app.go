@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	apirbac "k8s.io/api/rbac/v1beta1"
+	k8sauthorization "github.com/automationbroker/bundle-lib/authorization/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -35,7 +35,6 @@ import (
 	"k8s.io/apiserver/pkg/server/routes"
 	"k8s.io/client-go/informers"
 	authenticationclient "k8s.io/client-go/kubernetes/typed/authentication/v1beta1"
-	"k8s.io/kubernetes/pkg/apis/rbac"
 
 	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
@@ -371,16 +370,7 @@ func (a *App) Start() {
 		panic(servererr)
 	}
 
-	rules := []rbac.PolicyRule{}
-	if !a.config.GetBool("broker.auto_escalate") {
-		rules, err = retrieveClusterRoleRules(a.config.GetString("openshift.sandbox_role"))
-		if err != nil {
-			log.Errorf("Unable to retrieve cluster roles rules from cluster\n"+
-				" You must be using OpenShift 3.7 to use the User rules check.\n%v", err)
-			os.Exit(1)
-		}
-	}
-
+	authorizer, err := k8sauthorization.NewAuthorizer("automationbroker.io", "access", "create")
 	var clusterURL string
 	if a.config.GetString("broker.cluster_url") != "" {
 		if !strings.HasPrefix("/", a.config.GetString("broker.cluster_url")) {
@@ -394,7 +384,7 @@ func (a *App) Start() {
 
 	daHandler := prometheus.InstrumentHandler(
 		"ansible-service-broker",
-		handler.NewHandler(a.broker, a.config, clusterURL, providers, rules),
+		handler.NewHandler(a.broker, a.config, clusterURL, providers, authorizer),
 	)
 
 	if clusterURL == "/" {
@@ -460,41 +450,6 @@ func initClients(c *config.Config) error {
 	}
 
 	return nil
-}
-
-func retrieveClusterRoleRules(clusterRole string) ([]rbac.PolicyRule, error) {
-	k8scli, err := clients.Kubernetes()
-	if err != nil {
-		return nil, err
-	}
-
-	// Retrieve Cluster Role that has been defined.
-	k8sRole, err := k8scli.Client.RbacV1beta1().ClusterRoles().Get(clusterRole, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return convertAPIRbacToK8SRbac(k8sRole).Rules, nil
-}
-
-// convertAPIRbacToK8SRbac - because we are using the kubernetes validation,
-// and they have not started using the authoritative api package for their own
-// types, we need to do some conversion here now that we are on client-go 5.0.X
-func convertAPIRbacToK8SRbac(apiRole *apirbac.ClusterRole) *rbac.ClusterRole {
-	rules := []rbac.PolicyRule{}
-	for _, pr := range apiRole.Rules {
-		rules = append(rules, rbac.PolicyRule{
-			Verbs:           pr.Verbs,
-			APIGroups:       pr.APIGroups,
-			Resources:       pr.Resources,
-			ResourceNames:   pr.ResourceNames,
-			NonResourceURLs: pr.NonResourceURLs,
-		})
-	}
-	return &rbac.ClusterRole{
-		TypeMeta:   apiRole.TypeMeta,
-		ObjectMeta: apiRole.ObjectMeta,
-		Rules:      rules,
-	}
 }
 
 func validateRegistryNames(registrys []registries.Registry) {

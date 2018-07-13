@@ -24,6 +24,7 @@ import (
 	schema "github.com/lestrrat/go-jsschema"
 	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
+	authv1 "k8s.io/api/authentication/v1"
 )
 
 const (
@@ -276,11 +277,11 @@ type ServiceInstanceResponse struct {
 
 // UserInfo - holds information about the user that created a resource.
 type UserInfo struct {
-	Username string              `json:"username"`
-	UID      string              `json:"uid"`
-	Groups   []string            `json:"groups,omitempty"`
-	Scopes   []string            `json:"scopes.authorization.openshift.io"`
-	Extra    map[string][]string `json:"extra,omitempty"`
+	Username string                       `json:"username"`
+	UID      string                       `json:"uid"`
+	Groups   []string                     `json:"groups,omitempty"`
+	Scopes   []string                     `json:"scopes.authorization.openshift.io"`
+	Extra    map[string]authv1.ExtraValue `json:"extra,omitempty"`
 }
 
 // JobMsg - Message to be returned from the various jobs

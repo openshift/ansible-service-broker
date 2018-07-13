@@ -28,9 +28,9 @@ import (
 	"strings"
 
 	yaml "gopkg.in/yaml.v1"
-	"k8s.io/kubernetes/pkg/apis/rbac"
-	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 
+	"github.com/automationbroker/bundle-lib/authorization"
+	k8sauthorization "github.com/automationbroker/bundle-lib/authorization/k8s"
 	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/automationbroker/config"
@@ -38,10 +38,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/openshift/ansible-service-broker/pkg/auth"
 	"github.com/openshift/ansible-service-broker/pkg/broker"
-	"github.com/openshift/ansible-service-broker/pkg/origin"
 	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/pborman/uuid"
 	log "github.com/sirupsen/logrus"
+	authv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -59,10 +59,10 @@ const (
 )
 
 type handler struct {
-	router           mux.Router
-	broker           broker.Broker
-	brokerConfig     *config.Config
-	clusterRoleRules []rbac.PolicyRule
+	router       mux.Router
+	broker       broker.Broker
+	brokerConfig *config.Config
+	authorizer   authorization.Authorizer
 }
 
 // authHandler - does the authentication for the routes
@@ -155,12 +155,12 @@ func createVarHandler(r VarHandler) GorillaRouteHandler {
 
 // NewHandler - Create a new handler by attaching the routes and setting logger and broker.
 func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
-	providers []auth.Provider, clusterRoleRules []rbac.PolicyRule) http.Handler {
+	providers []auth.Provider, a authorization.Authorizer) http.Handler {
 	h := handler{
-		router:           *mux.NewRouter(),
-		broker:           b,
-		brokerConfig:     brokerConfig,
-		clusterRoleRules: clusterRoleRules,
+		router:       *mux.NewRouter(),
+		broker:       b,
+		brokerConfig: brokerConfig,
+		authorizer:   a,
 	}
 	var s *mux.Router
 	if prefix == "/" {
@@ -864,28 +864,22 @@ func (h handler) printRequest(req *http.Request) {
 // the rules for the user in the namespace to determine if the user's roles
 // can cover the  all of the cluster role's rules.
 func (h handler) validateUser(userInfo broker.UserInfo, namespace string) (bool, int, error) {
-	openshiftClient, err := clients.Openshift()
+	u := k8sauthorization.AuthorizationUser{
+		UserInfo: authv1.UserInfo{
+			Username: userInfo.Username,
+			Extra:    userInfo.Extra,
+			Groups:   userInfo.Groups,
+			UID:      userInfo.UID,
+		},
+	}
+
+	decision, err := h.authorizer.Authorize(&u, namespace)
+	log.Debugf("authorize decision: %v", decision)
 	if err != nil {
 		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
 	}
-	// Retrieving the rules for the user in the namespace.
-	s := userInfo.Scopes
-	if userInfo.Extra != nil {
-		scope, ok := userInfo.Extra["scopes.authorization.openshift.io"]
-		switch {
-		case ok && userInfo.Scopes != nil:
-			log.Infof("Unable to determine correct scope to use. Found both top level scope and scope in extras.")
-			return false, http.StatusForbidden, fmt.Errorf("unable to determine correct scope to use")
-		case ok:
-			s = scope
-		}
+	if decision == authorization.DecisionAllowed {
+		return true, http.StatusOK, nil
 	}
-	prs, err := openshiftClient.SubjectRulesReview(userInfo.Username, userInfo.Groups, s, namespace)
-	if err != nil {
-		return false, http.StatusInternalServerError, fmt.Errorf("Unable to connect to the cluster")
-	}
-	if covered, _ := validation.Covers(origin.ConvertAPIPolicyRulesToRBACPolicyRules(prs), h.clusterRoleRules); !covered {
-		return false, http.StatusForbidden, fmt.Errorf("User does not have sufficient permissions")
-	}
-	return true, http.StatusOK, nil
+	return false, http.StatusForbidden, fmt.Errorf("User does not have sufficient permissions")
 }
