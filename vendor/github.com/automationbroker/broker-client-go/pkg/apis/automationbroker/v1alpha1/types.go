@@ -75,7 +75,7 @@ type BundleSpec struct {
 	// Store the alpha map as a json encoded string to preserve the genericness
 	Alpha  string
 	Plans  []Plan `json:"plans"`
-	Delete bool   `json:delete`
+	Delete bool   `json:"delete"`
 }
 
 // Status - The status for the bundle

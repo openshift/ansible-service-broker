@@ -277,7 +277,7 @@ func markSpecsForDeletion(daoSpecs map[string]*bundle.Spec, specManifest bundle.
 	for specID, spec := range daoSpecs {
 		if _, ok := specManifest[specID]; !ok {
 			log.Infof("spec '%v' marked for deletion", specID)
-			spec.MarkDelete()
+			spec.Delete = true
 			markedSpecs[specID] = spec
 		}
 	}

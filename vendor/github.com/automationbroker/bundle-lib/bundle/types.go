@@ -155,18 +155,6 @@ type Spec struct {
 	Delete      bool                   `json:"delete"`
 }
 
-// MarkDelete - marks the spec for deletion, which indicates that the spec
-// will eventually be deleted from the datastore
-func (s *Spec) MarkDelete() {
-	s.Delete = true
-}
-
-// UnMarkDelete - un-marks the spec for deletion, which indicates that the
-// spec is in the registry and will be saved in datastore
-func (s *Spec) UnMarkDelete() {
-	s.Delete = false
-}
-
 // GetPlan - retrieves a plan from a spec by name. Will return
 // empty plan and false if the requested plan does not exist.
 func (s *Spec) GetPlan(name string) (Plan, bool) {
