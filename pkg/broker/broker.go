@@ -315,11 +315,15 @@ func getSafeToDeleteSpecs(a AnsibleBroker, markedSpecs map[string]*bundle.Spec) 
 	safeToDeleteSpecs := make([]*bundle.Spec, 0)
 	bundleInstances, err := a.dao.BatchGetBundleInstances()
 	if err != nil {
+		log.Errorf("error getting bundle instances '%+v'", err)
+		// returning nil because the instead of checking the error,
+		// the broker can simply ignore to delete the specs and hope
+		// that the error wont repeat during next bootstrap cycle
 		return nil
 	}
 	log.Debugf("markedSpecs: %+v\n", markedSpecs)
 	for _, bundleInstance := range bundleInstances {
-		log.Debugf("Bundleinstance: %+v\n", bundleInstance)
+		log.Debugf("bundle instance: %+v\n", bundleInstance.ID)
 		if _, ok := markedSpecs[bundleInstance.Spec.ID]; ok {
 			log.Debugf("spec '%v' not safe to delete", bundleInstance.Spec.ID)
 			delete(markedSpecs, bundleInstance.Spec.ID)

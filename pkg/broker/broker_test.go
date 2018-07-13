@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"encoding/json"
+	"errors"
 	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/registries"
 	"github.com/automationbroker/config"
@@ -59,6 +60,7 @@ func TestGetServiceInstance(t *testing.T) {
 	u := uuid.NewUUID()
 	errIsNotFound := fmt.Errorf("is not found")
 	unknownError := fmt.Errorf("is not found")
+	//example of testcase
 	testCases := []struct {
 		name            string
 		dao             *mocks.Dao
@@ -250,24 +252,66 @@ func TestGetMarkedSpecs(t *testing.T) {
 }
 
 func TestGetSafeToDeleteSpecs(t *testing.T) {
-	a := AnsibleBroker{dao: &mocks.Dao{}}
 	f, err := os.Open("./testdata/specs.json")
 	if err != nil {
 		t.Fail()
 	}
 	d := json.NewDecoder(f)
-	specs := make([]*bundle.Spec, 3)
+	var specs []*bundle.Spec
 	if err = d.Decode(&specs); err != nil {
 		t.Fail()
 	}
 	f.Close()
 	m := getMarkedSpecs(specs)
-	s := getSafeToDeleteSpecs(a, m)
-	if len(s) != 1 {
-		t.Fail()
+
+	// array of scenarios
+	dao := mocks.Dao{}
+	a := AnsibleBroker{dao: &dao}
+	tc := []struct {
+		name           string
+		dao            *mocks.Dao
+		returnArgSI    []*bundle.ServiceInstance
+		returnArgErr   error
+		expectedOutput []*bundle.Spec
+	}{
+		{
+			name: "1 instance provisioned",
+			dao:  &mocks.Dao{},
+			returnArgSI: []*bundle.ServiceInstance{
+				{
+					Spec: &bundle.Spec{
+						ID: "1dda1477cace09730bd8ed7a6505607e",
+					},
+				},
+			},
+			returnArgErr:   nil,
+			expectedOutput: append([]*bundle.Spec{}, m["f86f8e54b99f9332e7610df228fc11d3"]),
+		},
+		{
+			name:         "0 instance privisioned",
+			dao:          &mocks.Dao{},
+			returnArgSI:  []*bundle.ServiceInstance{},
+			returnArgErr: nil,
+			expectedOutput: append([]*bundle.Spec{},
+				m["f86f8e54b99f9332e7610df228fc11d3"],
+				m["1dda1477cace09730bd8ed7a6505607e"]),
+		},
+		{
+			name:           "error in getting bundle instances",
+			dao:            &mocks.Dao{},
+			returnArgSI:    nil,
+			returnArgErr:   errors.New("Cannot connect to datastore"),
+			expectedOutput: nil,
+		},
 	}
-	if s[0].ID != "f86f8e54b99f9332e7610df228fc11d3" {
-		t.Fail()
+	for _, _t := range tc {
+		m := getMarkedSpecs(specs)
+		_t.dao.On("BatchGetBundleInstances").Return(_t.returnArgSI, _t.returnArgErr)
+		a.dao = _t.dao
+		s := getSafeToDeleteSpecs(a, m)
+		if !reflect.DeepEqual(convertSpecListToMap(s), convertSpecListToMap(_t.expectedOutput)) {
+			t.Fatalf("invalid safe to delete specs in '%s', expected %#v, actual %#v", _t.name, _t.expectedOutput, s)
+		}
 	}
 }
 
