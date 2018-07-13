@@ -10,21 +10,6 @@ type Dao struct {
 	mock.Mock
 }
 
-func (_m *Dao) BatchUpdateSpecs(bundle.SpecManifest) error {
-	return nil
-}
-
-func (_m *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
-	b := &bundle.ServiceInstance{
-		Spec: &bundle.Spec{
-			ID: "1dda1477cace09730bd8ed7a6505607e",
-		},
-	}
-	l := make([]*bundle.ServiceInstance, 0)
-	l = append(l, b)
-	return l, nil
-}
-
 // BatchDeleteSpecs provides a mock function with given fields: _a0
 func (_m *Dao) BatchDeleteSpecs(_a0 []*bundle.Spec) error {
 	ret := _m.Called(_a0)
@@ -37,6 +22,29 @@ func (_m *Dao) BatchDeleteSpecs(_a0 []*bundle.Spec) error {
 	}
 
 	return r0
+}
+
+// BatchGetBundleInstances provides a mock function with given fields:
+func (_m *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
+	ret := _m.Called()
+
+	var r0 []*bundle.ServiceInstance
+	if rf, ok := ret.Get(0).(func() []*bundle.ServiceInstance); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*bundle.ServiceInstance)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // BatchGetSpecs provides a mock function with given fields: _a0
@@ -64,6 +72,20 @@ func (_m *Dao) BatchGetSpecs(_a0 string) ([]*bundle.Spec, error) {
 
 // BatchSetSpecs provides a mock function with given fields: _a0
 func (_m *Dao) BatchSetSpecs(_a0 bundle.SpecManifest) error {
+	ret := _m.Called(_a0)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(bundle.SpecManifest) error); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// BatchUpdateSpecs provides a mock function with given fields: _a0
+func (_m *Dao) BatchUpdateSpecs(_a0 bundle.SpecManifest) error {
 	ret := _m.Called(_a0)
 
 	var r0 error
