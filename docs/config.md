@@ -30,6 +30,7 @@ for APBs. All the registry config options are defined below
 | white_list    | The list of regular expressions used to define which image names should be allowed through. Must have a white list to allow APBs to be added to the catalog. The most permissive regular expression that you can use is `.*-apb$` if you would want to retrieve all APBs in a registry.                                     |     N    |
 | black_list    | The list of regular expressions used to define which images names should never be allowed through.                               |     N    |
 | images        | The list of images to be used with OpenShift Registry.                                                                           |     N    |
+| tag           | The tag to define which version of the images should be pulled. Default is `latest`, can be set to `canary` to pull most recent but unstable images. |     N    |
 
 For filter please look at the [filtering documentation](filtering_apbs.md).
 
