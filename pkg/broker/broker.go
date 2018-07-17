@@ -249,21 +249,16 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, errors.New("all registries failed on bootstrap")
 	}
 
-	specManifest, updateSpecManifest := getNewAndUpdatedSpecs(daoSpecs, specs)
+	specManifest := getUpdatedSpecs(daoSpecs, specs)
+	markedSpecs = markSpecsForDeletion(daoSpecs, specManifest)
 
-	// Add new specs to dao
+	// Update specs in datastore
 	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
-	// Update already existing specs in dao
-	if err := a.dao.BatchUpdateSpecs(updateSpecManifest); err != nil {
-		return nil, err
-	}
 
-	//Mark specs in datastore but not in registry for deletion
-	markedSpecs = markSpecsForDeletion(daoSpecs, specManifest)
-	// Update already existing specs in dao but not in registry
-	if err := a.dao.BatchUpdateSpecs(markedSpecs); err != nil {
+	//Update specs that are marked for deletion
+	if err := a.dao.BatchSetSpecs(markedSpecs); err != nil {
 		return nil, err
 	}
 
@@ -284,15 +279,15 @@ func markSpecsForDeletion(daoSpecs map[string]*bundle.Spec, specManifest bundle.
 	return markedSpecs
 }
 
-func getNewAndUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) (bundle.SpecManifest,
-	bundle.SpecManifest) {
-	updateSpecManifest := make(map[string]*bundle.Spec)
+func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bundle.SpecManifest {
 	specManifest := make(map[string]*bundle.Spec)
 
 	for _, s := range specs {
+		// If condition is just for logging. It is useful information
+		// as to which specs were added and which were updated
 		if _, ok := daoSpecs[s.ID]; ok {
 			log.Debugf("spec '%v' needs to be updated", s.ID)
-			updateSpecManifest[s.ID] = s
+			specManifest[s.ID] = s
 		} else {
 			log.Debugf("spec '%v' needs to be added", s.ID)
 			specManifest[s.ID] = s
@@ -307,7 +302,7 @@ func getNewAndUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spe
 			}
 		}
 	}
-	return specManifest, updateSpecManifest
+	return specManifest
 }
 
 // getSafeToDeleteSpecs - will check if any bundle instance spe

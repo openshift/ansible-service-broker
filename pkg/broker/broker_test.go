@@ -356,14 +356,14 @@ func TestGetNewAndUpdatedSpecs(t *testing.T) {
 		t.Fail()
 	}
 	defer newF.Close()
-	n, u := getNewAndUpdatedSpecs(daoSpecs, newSpecs)
+	n := getUpdatedSpecs(daoSpecs, newSpecs)
 	if _, ok := n["0e991006d21029e47abe71acc255e807"]; !ok {
 		t.Fail()
 	}
 	if _, ok := n["11bbd6c120e197ea6acacf7165749629"]; !ok {
 		t.Fail()
 	}
-	if _, ok := u["1dda1477cace09730bd8ed7a6505607e"]; !ok {
+	if _, ok := n["1dda1477cace09730bd8ed7a6505607e"]; !ok {
 		t.Fail()
 	}
 }

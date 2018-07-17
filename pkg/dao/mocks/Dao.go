@@ -84,20 +84,6 @@ func (_m *Dao) BatchSetSpecs(_a0 bundle.SpecManifest) error {
 	return r0
 }
 
-// BatchUpdateSpecs provides a mock function with given fields: _a0
-func (_m *Dao) BatchUpdateSpecs(_a0 bundle.SpecManifest) error {
-	ret := _m.Called(_a0)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(bundle.SpecManifest) error); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteBindInstance provides a mock function with given fields: _a0
 func (_m *Dao) DeleteBindInstance(_a0 string) error {
 	ret := _m.Called(_a0)

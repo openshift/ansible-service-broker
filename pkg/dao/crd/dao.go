@@ -84,11 +84,24 @@ func (d *Dao) GetSpec(id string) (*bundle.Spec, error) {
 func (d *Dao) SetSpec(id string, spec *bundle.Spec) error {
 	defer d.bundleLock.Unlock()
 	d.bundleLock.Lock()
-	log.Debugf("set spec: %v", id)
 	bundleSpec, err := crd.ConvertSpecToBundle(spec)
 	if err != nil {
 		return err
 	}
+
+	// Get the spec from datastore
+	if s, err := d.client.Bundles(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
+		log.Infof("update spec: %v to crd", id)
+		s.Spec = bundleSpec
+		if _, err = d.client.Bundles(d.namespace).Update(s); err != nil {
+			log.Errorf("error updating spec '%v', %v", id, err)
+			return err
+		}
+		return nil
+	}
+
+	// Could not get the spec, try to add it
+	log.Infof("add spec: %v", id)
 	b := v1.Bundle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
@@ -96,27 +109,12 @@ func (d *Dao) SetSpec(id string, spec *bundle.Spec) error {
 		},
 		Spec: bundleSpec,
 	}
-	_, err = d.client.Bundles(d.namespace).Create(&b)
-	return err
-}
+	if _, err = d.client.Bundles(d.namespace).Create(&b); err != nil {
+		log.Errorf("error adding spec '%v', %v", id, err)
+	}
 
-// updateSpec - update a spec for an id in the kvp API and overwrite the
-// existing spec.
-func (d *Dao) updateSpec(id string, spec *bundle.Spec) error {
-	defer d.bundleLock.Unlock()
-	d.bundleLock.Lock()
-	log.Debugf("update spec: %v", id)
-	bundleSpec, err := crd.ConvertSpecToBundle(spec)
-	if err != nil {
-		return err
-	}
-	b, err := d.client.Bundles(d.namespace).Get(id, metav1.GetOptions{})
-	if err != nil {
-		log.Debugf("get spec: %v", id)
-	}
-	b.Spec = bundleSpec
-	_, err = d.client.Bundles(d.namespace).Update(b)
 	return err
+
 }
 
 // DeleteSpec - Delete the spec for a given spec id.
@@ -131,18 +129,6 @@ func (d *Dao) BatchSetSpecs(specs bundle.SpecManifest) error {
 		err := d.SetSpec(id, spec)
 		if err != nil {
 			log.Warningf("Error loading SPEC '%v'", spec.FQName)
-			log.Debugf("SPEC '%v' error: %v", spec.FQName, err)
-		}
-	}
-	return nil
-}
-
-// BatchUpdateSpecs - update specs based on SpecManifest in the kvp API
-func (d *Dao) BatchUpdateSpecs(specs bundle.SpecManifest) error {
-	for id, spec := range specs {
-		err := d.updateSpec(id, spec)
-		if err != nil {
-			log.Warningf("Error updating SPEC '%v'", spec.FQName)
 			log.Debugf("SPEC '%v' error: %v", spec.FQName, err)
 		}
 	}

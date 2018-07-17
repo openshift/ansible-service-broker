@@ -49,9 +49,6 @@ type Dao interface {
 	// BatchSetSpecs - set specs based on SpecManifest in the kvp API.
 	BatchSetSpecs(bundle.SpecManifest) error
 
-	// BatchUpdateSpecs - update specs based on SpecManifest in kvp API
-	BatchUpdateSpecs(bundle.SpecManifest) error
-
 	// BatchGetSpecs - Retrieve all the specs for dir.
 	BatchGetSpecs(string) ([]*bundle.Spec, error)
 
