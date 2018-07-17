@@ -199,7 +199,10 @@ func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[st
 	defer r.Body.Close()
 	h.printRequest(r)
 	go func() {
-		h.broker.Bootstrap()
+		_, err := h.broker.Bootstrap()
+		if err != nil {
+			log.Errorf("Bootstrap failed because '%v'", err)
+		}
 	}()
 	resp := map[string]string{
 		"msg": "Bootstrap job started",
