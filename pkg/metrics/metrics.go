@@ -33,19 +33,25 @@ var (
 			Help:      "Gauge of all sandbox namespaces that are active.",
 		})
 
-	specsLoaded = prometheus.NewGaugeVec(
+	specsLoaded = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Subsystem: subsystem,
 			Name:      "specs_loaded",
-			Help:      "Specs loaded from registries, partitioned by registry name.",
-		}, []string{"registry_name"})
-
-	specsReset = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Subsystem: subsystem,
-			Name:      "specs_reset",
-			Help:      "Counter of how many times the specs have been reset.",
+			Help:      "Specs loaded from registries.",
 		})
+
+	specsMarkedForDeletion = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Subsystem: subsystem,
+			Name:      "specs_marked_for_deletion",
+			Help:      "Specs removed from registry.",
+		})
+
+	specsDeleted = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "specs_deleted",
+		Help:      "Specs deleted from data-store.",
+	})
 
 	provisionJob = prometheus.NewGauge(
 		prometheus.GaugeOpts{
@@ -93,7 +99,8 @@ var (
 func init() {
 	prometheus.MustRegister(sandbox)
 	prometheus.MustRegister(specsLoaded)
-	prometheus.MustRegister(specsReset)
+	prometheus.MustRegister(specsMarkedForDeletion)
+	prometheus.MustRegister(specsDeleted)
 	prometheus.MustRegister(provisionJob)
 	prometheus.MustRegister(deprovisionJob)
 	prometheus.MustRegister(updateJob)
@@ -109,42 +116,22 @@ func recoverMetricPanic() {
 	}
 }
 
-// SandboxCreated - Counter for how many sandbox created.
-func SandboxCreated() {
+// SpecsLoaded - Will add the count of specs.
+func SpecsLoaded(specCount int) {
 	defer recoverMetricPanic()
-	sandbox.Inc()
+	specsLoaded.Add(float64(specCount))
 }
 
-// SandboxDeleted - Counter for how many sandbox deleted.
-func SandboxDeleted() {
+// SpecsMarkedForDeletion - will add the number of specs marked for deletion
+func SpecsMarkedForDeletion(specCount int) {
 	defer recoverMetricPanic()
-	sandbox.Dec()
+	specsMarkedForDeletion.Add(float64(specCount))
 }
 
-// SpecsLoaded - Will add the count of specs. (The value can be negative,
-// resulting in a decrease of the specs loaded).
-func SpecsLoaded(registryName string, specCount int) {
+// SpecsDeleted - will add the number of specs deleted from the data-store
+func SpecsDeleted(specCount int) {
 	defer recoverMetricPanic()
-	specsLoaded.With(prometheus.Labels{"registry_name": registryName}).Add(float64(specCount))
-}
-
-// SpecsUnloaded - Will remove the count of specs. (The value can be negative,
-// resulting in a increase in the number of specs loaded).
-func SpecsUnloaded(registryName string, specCount int) {
-	defer recoverMetricPanic()
-	specsLoaded.With(prometheus.Labels{"registry_name": registryName}).Sub(float64(specCount))
-}
-
-// SpecsLoadedReset - Will reset all the values in in the gauge.
-func SpecsLoadedReset() {
-	defer recoverMetricPanic()
-	specsLoaded.Reset()
-}
-
-// SpecsReset - Counter for how many times the specs are reloaded.
-func SpecsReset() {
-	defer recoverMetricPanic()
-	specsReset.Inc()
+	specsDeleted.Add(float64(specCount))
 }
 
 // ProvisionJobStarted - Add a provision job to the counter.

@@ -211,6 +211,9 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, err
 	}
 
+	log.Infof("%v specs deleted", len(unwantedSpecs))
+	metrics.SpecsDeleted(len(unwantedSpecs))
+
 	// Getting specs again so that deleted specs does not end up in further comparisons
 	specs, err = a.dao.BatchGetSpecs(dir)
 	if err != nil {
@@ -220,10 +223,6 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 
 	daoSpecs := convertSpecListToMap(specs)
 	specs = []*bundle.Spec{}
-
-	//Metrics calls.
-	metrics.SpecsLoadedReset()
-	metrics.SpecsReset()
 
 	// Load Specs for each registry
 	registryErrors := []error{}
@@ -241,7 +240,6 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		imageCount += count
 		// this will also update the plan id
 		addNameAndIDForSpec(s, r.RegistryName())
-		metrics.SpecsLoaded(r.RegistryName(), len(s))
 		specs = append(specs, s...)
 	}
 
@@ -249,10 +247,13 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, errors.New("all registries failed on bootstrap")
 	}
 
-	specManifest := getUpdatedSpecs(daoSpecs, specs)
+	specManifest, newSpecsCount := getUpdatedSpecs(daoSpecs, specs)
 	markedSpecs = markSpecsForDeletion(daoSpecs, specManifest)
 
-	// Update specs in datastore
+	metrics.SpecsLoaded(newSpecsCount)
+	metrics.SpecsMarkedForDeletion(len(markedSpecs))
+
+	// Update specs in data-store
 	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
 		return nil, err
 	}
@@ -279,8 +280,9 @@ func markSpecsForDeletion(daoSpecs map[string]*bundle.Spec, specManifest bundle.
 	return markedSpecs
 }
 
-func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bundle.SpecManifest {
+func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) (bundle.SpecManifest, int) {
 	specManifest := make(map[string]*bundle.Spec)
+	newSpecsCount := 0
 
 	for _, s := range specs {
 		// If condition is just for logging. It is useful information
@@ -291,6 +293,7 @@ func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bun
 		} else {
 			log.Debugf("spec '%v' needs to be added", s.ID)
 			specManifest[s.ID] = s
+			newSpecsCount++
 		}
 
 		// each of the plans from all of the specs gets its own uuid. even
@@ -302,7 +305,7 @@ func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bun
 			}
 		}
 	}
-	return specManifest
+	return specManifest, newSpecsCount
 }
 
 // getSafeToDeleteSpecs - will check if any bundle instance spe
@@ -1014,9 +1017,9 @@ func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UU
 			// unknown error
 			case err != nil && !a.dao.IsNotFoundError(err):
 				return nil, false, err
-			// If there is a job in "succeeded" state, or no job at all, or
-			// the referenced job no longer exists (we assume it got
-			// cleaned up eventually), assume everything is complete.
+				// If there is a job in "succeeded" state, or no job at all, or
+				// the referenced job no longer exists (we assume it got
+				// cleaned up eventually), assume everything is complete.
 			case createJob.State == bundle.StateSucceeded, existingBI.CreateJobKey == "", a.dao.IsNotFoundError(err):
 				log.Debug("already have this binding instance, returning 200")
 				resp, err := NewBindResponse(provExtCreds, bindExtCreds)
@@ -1024,10 +1027,10 @@ func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UU
 					return nil, false, err
 				}
 				return resp, false, ErrorBindingExists
-			// If there is a job in any other state, send client through async flow.
+				// If there is a job in any other state, send client through async flow.
 			case len(createJob.State) > 0:
 				return &BindResponse{Operation: createJob.Token}, true, nil
-			// This should not happen unless there is bad data in the data store.
+				// This should not happen unless there is bad data in the data store.
 			default:
 				err = errors.New("found a JobState with no value for field State")
 				log.Error(err.Error())
@@ -1551,7 +1554,7 @@ func (a AnsibleBroker) AddSpec(spec bundle.Spec) (*CatalogResponse, error) {
 		log.Debugf("spec was not added due to issue with transformation to service - %v", err)
 		return nil, err
 	}
-	metrics.SpecsLoaded(apbPushRegName, 1)
+	metrics.SpecsLoaded(1)
 	return &CatalogResponse{Services: []Service{service}}, nil
 }
 
@@ -1570,7 +1573,7 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 		log.Errorf("Something went real bad trying to delete spec... - %v", err)
 		return err
 	}
-	metrics.SpecsUnloaded(apbPushRegName, 1)
+	metrics.SpecsDeleted(1)
 	return nil
 }
 
@@ -1587,6 +1590,6 @@ func (a AnsibleBroker) RemoveSpecs() error {
 		log.Errorf("Something went real bad trying to delete batch specs... - %v", err)
 		return err
 	}
-	metrics.SpecsLoadedReset()
+	metrics.SpecsDeleted(len(specs))
 	return nil
 }
