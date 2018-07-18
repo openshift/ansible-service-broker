@@ -290,10 +290,12 @@ func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) (bu
 		if _, ok := daoSpecs[s.ID]; ok {
 			log.Debugf("spec '%v' needs to be updated", s.ID)
 			specManifest[s.ID] = s
+			s.Delete = false
 		} else {
 			log.Debugf("spec '%v' needs to be added", s.ID)
 			specManifest[s.ID] = s
 			newSpecsCount++
+			s.Delete = false
 		}
 
 		// each of the plans from all of the specs gets its own uuid. even
