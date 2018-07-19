@@ -1,0 +1,5 @@
+FROM ansibleplaybookbundle/apb-base:nightly
+
+RUN yum -y install automation-broker-apb-role && yum clean all
+
+USER apb
