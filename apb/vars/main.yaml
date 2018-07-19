@@ -26,3 +26,12 @@ cluster_service_broker_query: "{{
     resource_name=broker_name
   ) | json_query(ready_status_query)
 }}"
+service_broker_query: "{{
+  lookup(
+    'k8s',
+    api_version='servicecatalog.k8s.io/v1beta1',
+    kind='ServiceBroker',
+    resource_name=broker_name,
+    namespace=broker_namespace
+  ) | json_query(ready_status_query)
+}}"

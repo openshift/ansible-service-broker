@@ -10,5 +10,5 @@ subjects:
   namespace: {{ broker_namespace }}
 roleRef:
   kind: ClusterRole
-  name: access-{{ broker_name }}-role
+  name: access-{{ broker_namespace }}-role
   apiGroup: rbac.authorization.k8s.io
