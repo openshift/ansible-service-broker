@@ -33,19 +33,15 @@ var (
 			Help:      "Gauge of all sandbox namespaces that are active.",
 		})
 
-	specsLoaded = prometheus.NewGauge(
+	specs = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Subsystem: subsystem,
-			Name:      "specs_loaded",
-			Help:      "Specs loaded from registries.",
-		})
-
-	specsMarkedForDeletion = prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Subsystem: subsystem,
-			Name:      "specs_marked_for_deletion",
-			Help:      "Specs removed from registry.",
-		})
+			Name:      "source",
+			Help:      "Spec count of different registries and marked for deletion.",
+		}, []string{
+			"source",
+		},
+	)
 
 	specsDeleted = prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystem,
@@ -98,8 +94,7 @@ var (
 
 func init() {
 	prometheus.MustRegister(sandbox)
-	prometheus.MustRegister(specsLoaded)
-	prometheus.MustRegister(specsMarkedForDeletion)
+	prometheus.MustRegister(specs)
 	prometheus.MustRegister(specsDeleted)
 	prometheus.MustRegister(provisionJob)
 	prometheus.MustRegister(deprovisionJob)
@@ -117,15 +112,15 @@ func recoverMetricPanic() {
 }
 
 // SpecsLoaded - Will add the count of specs.
-func SpecsLoaded(specCount int) {
+func SpecsLoaded(registryName string, specCount int) {
 	defer recoverMetricPanic()
-	specsLoaded.Add(float64(specCount))
+	specs.With(map[string]string{"source": registryName}).Set(float64(specCount))
 }
 
 // SpecsMarkedForDeletion - will add the number of specs marked for deletion
 func SpecsMarkedForDeletion(specCount int) {
 	defer recoverMetricPanic()
-	specsMarkedForDeletion.Add(float64(specCount))
+	specs.With(map[string]string{"source": "marked_for_deletion"}).Set(float64(specCount))
 }
 
 // SpecsDeleted - will add the number of specs deleted from the data-store

@@ -198,7 +198,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	dir := "/spec"
 	specs, err = a.dao.BatchGetSpecs(dir)
 	if err != nil {
-		log.Errorf("Something went real bad trying to retrieve batch specs for reconciliation... - %v", err)
+		log.Errorf("Something went real bad trying to retrieve batch specs... - %v", err)
 		return nil, err
 	}
 	// Get list of marked specs in datastore
@@ -217,7 +217,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	// Getting specs again so that deleted specs does not end up in further comparisons
 	specs, err = a.dao.BatchGetSpecs(dir)
 	if err != nil {
-		log.Errorf("Something went real bad trying to retrieve batch specs for reconciliation... - %v", err)
+		log.Errorf("Something went real bad trying to retrieve batch specs... - %v", err)
 		return nil, err
 	}
 
@@ -241,16 +241,17 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		// this will also update the plan id
 		addNameAndIDForSpec(s, r.RegistryName())
 		specs = append(specs, s...)
+
+		metrics.SpecsLoaded(r.RegistryName(), len(s))
 	}
 
 	if len(registryErrors) == len(a.registry) {
 		return nil, errors.New("all registries failed on bootstrap")
 	}
 
-	specManifest, newSpecsCount := getUpdatedSpecs(daoSpecs, specs)
+	specManifest := getSpecManifest(daoSpecs, specs)
 	markedSpecs = markSpecsForDeletion(daoSpecs, specManifest)
 
-	metrics.SpecsLoaded(newSpecsCount)
 	metrics.SpecsMarkedForDeletion(len(markedSpecs))
 
 	// Update specs in data-store
@@ -280,9 +281,8 @@ func markSpecsForDeletion(daoSpecs map[string]*bundle.Spec, specManifest bundle.
 	return markedSpecs
 }
 
-func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) (bundle.SpecManifest, int) {
+func getSpecManifest(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bundle.SpecManifest {
 	specManifest := make(map[string]*bundle.Spec)
-	newSpecsCount := 0
 
 	for _, s := range specs {
 		// If condition is just for logging. It is useful information
@@ -294,7 +294,6 @@ func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) (bu
 		} else {
 			log.Debugf("spec '%v' needs to be added", s.ID)
 			specManifest[s.ID] = s
-			newSpecsCount++
 			s.Delete = false
 		}
 
@@ -307,7 +306,7 @@ func getUpdatedSpecs(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) (bu
 			}
 		}
 	}
-	return specManifest, newSpecsCount
+	return specManifest
 }
 
 // getSafeToDeleteSpecs - will check if any bundle instance spe
@@ -1556,7 +1555,7 @@ func (a AnsibleBroker) AddSpec(spec bundle.Spec) (*CatalogResponse, error) {
 		log.Debugf("spec was not added due to issue with transformation to service - %v", err)
 		return nil, err
 	}
-	metrics.SpecsLoaded(1)
+	metrics.SpecsLoaded(apbPushRegName, 1)
 	return &CatalogResponse{Services: []Service{service}}, nil
 }
 

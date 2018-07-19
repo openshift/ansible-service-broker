@@ -334,7 +334,7 @@ func TestConvertSpecListToMap(t *testing.T) {
 	}
 }
 
-func TestGetNewAndUpdatedSpecs(t *testing.T) {
+func TestGetSpecManifest(t *testing.T) {
 	f, err := os.Open("./testdata/specs.json")
 	if err != nil {
 		t.Fail()
@@ -356,7 +356,7 @@ func TestGetNewAndUpdatedSpecs(t *testing.T) {
 		t.Fail()
 	}
 	defer newF.Close()
-	n, count := getUpdatedSpecs(daoSpecs, newSpecs)
+	n := getSpecManifest(daoSpecs, newSpecs)
 	if _, ok := n["0e991006d21029e47abe71acc255e807"]; !ok {
 		t.Fail()
 	}
@@ -364,9 +364,6 @@ func TestGetNewAndUpdatedSpecs(t *testing.T) {
 		t.Fail()
 	}
 	if _, ok := n["1dda1477cace09730bd8ed7a6505607e"]; !ok {
-		t.Fail()
-	}
-	if count != 2 {
 		t.Fail()
 	}
 }
