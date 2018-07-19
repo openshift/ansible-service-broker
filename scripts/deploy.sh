@@ -3,7 +3,7 @@
 PROJECT_ROOT=$(dirname "${BASH_SOURCE}")/..
 BROKER_IMAGE=${BROKER_IMAGE:-"docker.io/ansibleplaybookbundle/origin-ansible-service-broker:latest"}
 APB_NAME=${APB_NAME:-"automation-broker-apb"}
-APB_IMAGE=${APB_IMAGE:-"docker.io/automation-broker/automation-broker-apb:latest"}
+APB_IMAGE=${APB_IMAGE:-"docker.io/automationbroker/automation-broker-apb:latest"}
 ACTION=${ACTION:-"provision"}
 
 if which kubectl; then
