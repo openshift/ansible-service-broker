@@ -61,6 +61,13 @@ BuildRequires: btrfs-progs-devel
 %description
 %{summary}
 
+%package -n automation-broker-apb-role
+Summary: APB Role for the broker
+BuildArch: noarch
+
+%description -n automation-broker-apb-role
+APB role for the broker
+
 %package container-scripts
 Summary: scripts required for running ansible-service-broker in a container
 BuildArch: noarch
@@ -182,6 +189,10 @@ install -d -p %{buildroot}%{_bindir}
 install -p -m 755 broker %{buildroot}%{_bindir}/asbd
 install -p -m 755 migration %{buildroot}%{_bindir}/migration
 install -p -m 755 dashboard-redirector %{buildroot}%{_bindir}/dashboard-redirector
+# broker apb
+mkdir -p %{buildroot}/opt/apb/ %{buildroot}/opt/ansible/roles/automation-broker-apb
+mv apb/playbooks %{buildroot}/opt/apb/actions
+mv apb/defaults apb/files apb/tasks apb/templates apb/vars %{buildroot}/opt/ansible/roles/automation-broker-apb
 install -p -m 755 build/entrypoint.sh %{buildroot}%{_bindir}/entrypoint.sh
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 644 etc/example-config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
@@ -291,6 +302,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %{_libexecdir}/%{name}
 %attr(750, ansibleservicebroker, ansibleservicebroker) %dir %{_var}/log/%{name}
 %attr(640, ansibleservicebroker, ansibleservicebroker) %{_var}/log/%{name}/asb.log
+
+%files -n automation-broker-apb-role
+/opt/apb/actions
+/opt/ansible/roles
 
 %files container-scripts
 %{_bindir}/entrypoint.sh
