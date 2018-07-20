@@ -7,7 +7,6 @@
     cluster: "{{ _cluster_type }}"
     broker_auto_escalate: "{{ 'true' if _cluster_type == 'kubernetes' else 'false' }}"
     broker_local_openshift_enabled: "{{ 'true' if _cluster_type == 'openshift' else 'false' }}"
-    broker_ready_query: "{{ service_broker_query if broker_kind == 'ServiceBroker' else cluster_service_broker_query }}"
   vars:
     _cluster_type: '{{ "openshift" if "openshift" in lookup("k8s", cluster_info="version") else "kubernetes" }}'
 
@@ -64,10 +63,18 @@
     - name: broker.deployment.yaml
     - name: broker.servicecatalog.yaml
 
-- name: Wait for broker to become ready
+- name: Wait for clusterservicebroker to become ready
   debug:
-    msg: "Broker ready status: {{ broker_ready_query }}"
+    msg: "Broker ready status: {{ cluster_service_broker_query }}"
   retries: 60
   delay: 10
-  until: broker_ready_query | length > 0 and broker_ready_query | first == "True"
-  when: state == 'present' and wait_for_broker
+  until: cluster_service_broker_query | length > 0 and cluster_service_broker_query | first == "True"
+  when: broker_kind == 'ClusterServiceBroker' and state == 'present' and wait_for_broker
+
+- name: Wait for servicebroker to become ready
+  debug:
+    msg: "Broker ready status: {{ service_broker_query }}"
+  retries: 60
+  delay: 10
+  until: service_broker_query | length > 0 and service_broker_query | first == "True"
+  when: broker_kind == 'ServiceBroker' and state == 'present' and wait_for_broker
