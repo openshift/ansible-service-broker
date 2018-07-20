@@ -130,17 +130,6 @@ func (d *Dao) BatchSetSpecs(specs bundle.SpecManifest) error {
 	return nil
 }
 
-// BatchUpdateSpecs - update specs based on SpecManifest in the kvp API
-func (d *Dao) BatchUpdateSpecs(specs bundle.SpecManifest) error {
-	for id, spec := range specs {
-		err := d.SetSpec(id, spec)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // BatchGetSpecs - Retrieve all the specs for dir.
 func (d *Dao) BatchGetSpecs(dir string) ([]*bundle.Spec, error) {
 	payloads, err := d.BatchGetRaw(dir)
