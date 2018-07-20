@@ -52,6 +52,7 @@ type Configuration struct {
 	URL           *url.URL
 	User          string
 	Pass          string
+	Token         string
 	Org           string
 	Runner        string
 	Images        []string
@@ -181,15 +182,4 @@ func getAPBRuntimeVersion(version string) (int, error) {
 		return 0, err
 	}
 	return runtime, nil
-}
-
-// manifest schema version
-func getSchemaVersion(response []byte) (int, error) {
-	mResp := manifestResponse{}
-	r := bytes.NewReader(response)
-	if err := json.NewDecoder(r).Decode(&mResp); err != nil {
-		log.Errorf("Error getting schemaVersion", err)
-		return 0, err
-	}
-	return mResp.SchemaVersion, nil
 }
