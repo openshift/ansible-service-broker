@@ -6,8 +6,8 @@ metadata:
   name: access-{{ broker_name }}-role
 rules:
 - nonResourceURLs:
-    - "/{{ broker_name }}"
-    - "/{{ broker_name }}/*"
+    - "/{{ broker_namespace }}"
+    - "/{{ broker_namespace }}/*"
   verbs:
     - "get"
     - "post"

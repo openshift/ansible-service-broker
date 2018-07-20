@@ -69,4 +69,12 @@
   retries: 60
   delay: 10
   until: cluster_service_broker_query | length > 0 and cluster_service_broker_query | first == "True"
-  when: state == 'present' and wait_for_broker
+  when: broker_kind == 'ClusterServiceBroker' and state == 'present' and wait_for_broker
+
+- name: Wait for servicebroker to become ready
+  debug:
+    msg: "Broker ready status: {{ service_broker_query }}"
+  retries: 60
+  delay: 10
+  until: service_broker_query | length > 0 and service_broker_query | first == "True"
+  when: broker_kind == 'ServiceBroker' and state == 'present' and wait_for_broker

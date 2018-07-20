@@ -4,9 +4,12 @@ apiVersion: servicecatalog.k8s.io/v1beta1
 kind: {{ broker_kind }}
 metadata:
   name: {{ broker_name }}
+{% if broker_kind == 'ServiceBroker' %}
+  namespace: {{ broker_namespace }}
+{% endif %}
 {% if state == 'present' %}
 spec:
-  url: https://{{ broker_name }}.{{ broker_namespace }}.svc:1338/{{ broker_name }}/
+  url: https://{{ broker_name }}.{{ broker_namespace }}.svc:1338/{{ broker_namespace }}/
   authInfo:
     bearer:
       secretRef:
