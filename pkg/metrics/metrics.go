@@ -33,10 +33,10 @@ var (
 			Help:      "Gauge of all sandbox namespaces that are active.",
 		})
 
-	specs = prometheus.NewGaugeVec(
+	specsTotal = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Subsystem: subsystem,
-			Name:      "source",
+			Name:      "specs_total",
 			Help:      "Spec count of different registries and marked for deletion.",
 		}, []string{
 			"source",
@@ -94,7 +94,7 @@ var (
 
 func init() {
 	prometheus.MustRegister(sandbox)
-	prometheus.MustRegister(specs)
+	prometheus.MustRegister(specsTotal)
 	prometheus.MustRegister(specsDeleted)
 	prometheus.MustRegister(provisionJob)
 	prometheus.MustRegister(deprovisionJob)
@@ -114,13 +114,13 @@ func recoverMetricPanic() {
 // SpecsLoaded - Will add the count of specs.
 func SpecsLoaded(registryName string, specCount int) {
 	defer recoverMetricPanic()
-	specs.With(map[string]string{"source": registryName}).Set(float64(specCount))
+	specsTotal.With(map[string]string{"source": registryName}).Set(float64(specCount))
 }
 
 // SpecsMarkedForDeletion - will add the number of specs marked for deletion
 func SpecsMarkedForDeletion(specCount int) {
 	defer recoverMetricPanic()
-	specs.With(map[string]string{"source": "marked_for_deletion"}).Set(float64(specCount))
+	specsTotal.With(map[string]string{"source": "marked_for_deletion"}).Set(float64(specCount))
 }
 
 // SpecsDeleted - will add the number of specs deleted from the data-store

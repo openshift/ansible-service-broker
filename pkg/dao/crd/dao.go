@@ -160,7 +160,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*bundle.Spec, error) {
 	return specs, nil
 }
 
-//BatchGetBundleInstances - get list of bundleinstances
+// BatchGetBundleInstances - get list of bundleinstances
 func (d *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
 	log.Debugf("Dao::BatchGetBundleInstances")
 	bl, err := d.client.BundleInstances(d.namespace).List(metav1.ListOptions{})

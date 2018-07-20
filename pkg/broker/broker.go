@@ -214,7 +214,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	log.Infof("%v specs deleted", len(unwantedSpecs))
 	metrics.SpecsDeleted(len(unwantedSpecs))
 
-	// Getting specs again so that deleted specs does not end up in further comparisons
+	// Getting specs again so that deleted specs do not end up in further comparisons
 	specs, err = a.dao.BatchGetSpecs(dir)
 	if err != nil {
 		log.Errorf("Something went real bad trying to retrieve batch specs... - %v", err)
@@ -259,7 +259,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		return nil, err
 	}
 
-	//Update specs that are marked for deletion
+	// Update specs that are marked for deletion
 	if err := a.dao.BatchSetSpecs(markedSpecs); err != nil {
 		return nil, err
 	}
@@ -309,15 +309,15 @@ func getSpecManifest(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bun
 	return specManifest
 }
 
-// getSafeToDeleteSpecs - will check if any bundle instance spe
+// getSafeToDeleteSpecs - will return a list of specs that are safe to delete.
 func getSafeToDeleteSpecs(a AnsibleBroker, markedSpecs map[string]*bundle.Spec) []*bundle.Spec {
 	safeToDeleteSpecs := make([]*bundle.Spec, 0)
 	bundleInstances, err := a.dao.BatchGetBundleInstances()
 	if err != nil {
 		log.Errorf("error getting bundle instances '%+v'", err)
-		// returning nil because the instead of checking the error,
+		// returning nil instead of checking the error,
 		// the broker can simply ignore to delete the specs and hope
-		// that the error wont repeat during next bootstrap cycle
+		// that the error won't repeat during next bootstrap cycle
 		return nil
 	}
 	log.Debugf("markedSpecs: %+v\n", markedSpecs)
@@ -326,6 +326,9 @@ func getSafeToDeleteSpecs(a AnsibleBroker, markedSpecs map[string]*bundle.Spec) 
 		if _, ok := markedSpecs[bundleInstance.Spec.ID]; ok {
 			log.Debugf("spec '%v' not safe to delete", bundleInstance.Spec.ID)
 			delete(markedSpecs, bundleInstance.Spec.ID)
+			if len(markedSpecs) == 0 {
+				break
+			}
 		}
 	}
 	for _, spec := range markedSpecs {
@@ -1018,9 +1021,9 @@ func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UU
 			// unknown error
 			case err != nil && !a.dao.IsNotFoundError(err):
 				return nil, false, err
-				// If there is a job in "succeeded" state, or no job at all, or
-				// the referenced job no longer exists (we assume it got
-				// cleaned up eventually), assume everything is complete.
+			// If there is a job in "succeeded" state, or no job at all, or
+			// the referenced job no longer exists (we assume it got
+			// cleaned up eventually), assume everything is complete.
 			case createJob.State == bundle.StateSucceeded, existingBI.CreateJobKey == "", a.dao.IsNotFoundError(err):
 				log.Debug("already have this binding instance, returning 200")
 				resp, err := NewBindResponse(provExtCreds, bindExtCreds)
@@ -1028,10 +1031,10 @@ func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UU
 					return nil, false, err
 				}
 				return resp, false, ErrorBindingExists
-				// If there is a job in any other state, send client through async flow.
+			// If there is a job in any other state, send client through async flow.
 			case len(createJob.State) > 0:
 				return &BindResponse{Operation: createJob.Token}, true, nil
-				// This should not happen unless there is bad data in the data store.
+			// This should not happen unless there is bad data in the data store.
 			default:
 				err = errors.New("found a JobState with no value for field State")
 				log.Error(err.Error())

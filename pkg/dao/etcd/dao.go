@@ -151,7 +151,7 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*bundle.Spec, error) {
 	return specs, nil
 }
 
-//BatchGetBundleInstances - get list of bundleinstances
+// BatchGetBundleInstances - get list of bundleinstances
 func (d *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
 	bundleInstances := []*bundle.ServiceInstance{}
 	siJSONStrs, err := d.BatchGetRaw("/service_instance")
