@@ -31,6 +31,8 @@ import (
 const (
 	apiV2ManifestURL = "%v/v2/%v/manifests/%v"
 	apiV2CatalogURL  = "%v/v2/_catalog"
+	schema1Ct        = "application/vnd.docker.distribution.manifest.v1+json"
+	schema2Ct        = "application/vnd.docker.distribution.manifest.v2+json"
 )
 
 // OpenShiftAdapter - OpenShift Adapter
@@ -247,6 +249,7 @@ func (r APIV2Adapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("accept", fmt.Sprintf("%s,%s", schema1Ct, schema2Ct))
 
 	resp, err := r.client.Do(req)
 	if err != nil {
@@ -263,7 +266,7 @@ func (r APIV2Adapter) loadSpec(imageName string) (*bundle.Spec, error) {
 		registryName = fmt.Sprintf("%s:%s", r.config.URL.Hostname(), r.config.URL.Port())
 	}
 
-	schemaVersion, err := getSchemaVersion(body)
+	schemaVersion, err := getSchemaVersion(resp.Header.Get("content-type"))
 	if err != nil {
 		return nil, err
 	}
@@ -301,5 +304,18 @@ func (r APIV2Adapter) loadSpec(imageName string) (*bundle.Spec, error) {
 		return configToSpec(body, fmt.Sprintf("%s/%s:%s", registryName, imageName, r.config.Tag))
 	default:
 		return nil, errors.New("unsupported schema version")
+	}
+}
+
+func getSchemaVersion(ct string) (int, error) {
+	switch ct {
+	case "":
+		return 0, errors.New("content-type is empty")
+	case schema1Ct:
+		return 1, nil
+	case schema2Ct:
+		return 2, nil
+	default:
+		return 0, errors.New("unsupported schema version")
 	}
 }

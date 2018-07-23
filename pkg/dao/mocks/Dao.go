@@ -24,6 +24,29 @@ func (_m *Dao) BatchDeleteSpecs(_a0 []*bundle.Spec) error {
 	return r0
 }
 
+// BatchGetBundleInstances provides a mock function with given fields:
+func (_m *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
+	ret := _m.Called()
+
+	var r0 []*bundle.ServiceInstance
+	if rf, ok := ret.Get(0).(func() []*bundle.ServiceInstance); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*bundle.ServiceInstance)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // BatchGetSpecs provides a mock function with given fields: _a0
 func (_m *Dao) BatchGetSpecs(_a0 string) ([]*bundle.Spec, error) {
 	ret := _m.Called(_a0)

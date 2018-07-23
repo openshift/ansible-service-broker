@@ -198,8 +198,16 @@ func NewHandler(b broker.Broker, brokerConfig *config.Config, prefix string,
 func (h handler) bootstrap(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	defer r.Body.Close()
 	h.printRequest(r)
-	resp, err := h.broker.Bootstrap()
-	writeDefaultResponse(w, http.StatusOK, resp, err)
+	go func() {
+		_, err := h.broker.Bootstrap()
+		if err != nil {
+			log.Errorf("Bootstrap failed because '%v'", err)
+		}
+	}()
+	resp := map[string]string{
+		"msg": "Bootstrap job started",
+	}
+	writeDefaultResponse(w, http.StatusOK, resp, nil)
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

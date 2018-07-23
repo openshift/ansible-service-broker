@@ -22,12 +22,15 @@ import (
 	"testing"
 	"time"
 
+	"encoding/json"
+	"errors"
 	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/registries"
 	"github.com/automationbroker/config"
 	"github.com/openshift/ansible-service-broker/pkg/dao/mocks"
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
 	"github.com/pborman/uuid"
+	"os"
 )
 
 func TestAddNameAndIDForSpecStripsTailingDash(t *testing.T) {
@@ -57,6 +60,7 @@ func TestGetServiceInstance(t *testing.T) {
 	u := uuid.NewUUID()
 	errIsNotFound := fmt.Errorf("is not found")
 	unknownError := fmt.Errorf("is not found")
+	//example of testcase
 	testCases := []struct {
 		name            string
 		dao             *mocks.Dao
@@ -223,5 +227,176 @@ func TestGetServiceInstance(t *testing.T) {
 				t.Fatalf("Invalid Service Instance dashboard URL \nexpected: %#v\nactual:%#v", tc.dashboardURL, si.DashboardURL)
 			}
 		})
+	}
+}
+
+func TestGetMarkedSpecs(t *testing.T) {
+	f, err := os.Open("./testdata/specs.json")
+	if err != nil {
+		t.Fail()
+	}
+	var specs []*bundle.Spec
+	d := json.NewDecoder(f)
+	d.Decode(&specs)
+	defer f.Close()
+	if err != nil {
+		t.Fail()
+	}
+	m := getMarkedSpecs(specs)
+	if _, ok := m["1dda1477cace09730bd8ed7a6505607e"]; !ok {
+		t.Fail()
+	}
+	if _, ok := m["f86f8e54b99f9332e7610df228fc11d3"]; !ok {
+		t.Fail()
+	}
+}
+
+func TestGetSafeToDeleteSpecs(t *testing.T) {
+	f, err := os.Open("./testdata/specs.json")
+	if err != nil {
+		t.Fail()
+	}
+	d := json.NewDecoder(f)
+	var specs []*bundle.Spec
+	if err = d.Decode(&specs); err != nil {
+		t.Fail()
+	}
+	f.Close()
+	m := getMarkedSpecs(specs)
+
+	// array of scenarios
+	dao := mocks.Dao{}
+	a := AnsibleBroker{dao: &dao}
+	tc := []struct {
+		name           string
+		dao            *mocks.Dao
+		returnArgSI    []*bundle.ServiceInstance
+		returnArgErr   error
+		expectedOutput []*bundle.Spec
+	}{
+		{
+			name: "1 instance provisioned",
+			dao:  &mocks.Dao{},
+			returnArgSI: []*bundle.ServiceInstance{
+				{
+					Spec: &bundle.Spec{
+						ID: "1dda1477cace09730bd8ed7a6505607e",
+					},
+				},
+			},
+			returnArgErr:   nil,
+			expectedOutput: append([]*bundle.Spec{}, m["f86f8e54b99f9332e7610df228fc11d3"]),
+		},
+		{
+			name:         "0 instance privisioned",
+			dao:          &mocks.Dao{},
+			returnArgSI:  []*bundle.ServiceInstance{},
+			returnArgErr: nil,
+			expectedOutput: append([]*bundle.Spec{},
+				m["f86f8e54b99f9332e7610df228fc11d3"],
+				m["1dda1477cace09730bd8ed7a6505607e"]),
+		},
+		{
+			name:           "error in getting bundle instances",
+			dao:            &mocks.Dao{},
+			returnArgSI:    nil,
+			returnArgErr:   errors.New("Cannot connect to datastore"),
+			expectedOutput: nil,
+		},
+	}
+	for _, _t := range tc {
+		m := getMarkedSpecs(specs)
+		_t.dao.On("BatchGetBundleInstances").Return(_t.returnArgSI, _t.returnArgErr)
+		a.dao = _t.dao
+		s := getSafeToDeleteSpecs(a, m)
+		if !reflect.DeepEqual(convertSpecListToMap(s), convertSpecListToMap(_t.expectedOutput)) {
+			t.Fatalf("invalid safe to delete specs in '%s', expected %#v, actual %#v", _t.name, _t.expectedOutput, s)
+		}
+	}
+}
+
+func TestConvertSpecListToMap(t *testing.T) {
+	f, err := os.Open("./testdata/specs.json")
+	if err != nil {
+		t.Fail()
+	}
+	d := json.NewDecoder(f)
+	var specs []*bundle.Spec
+	if err = d.Decode(&specs); err != nil {
+		t.Fail()
+	}
+	defer f.Close()
+	sMap := convertSpecListToMap(specs)
+	for _, spec := range specs {
+		if _, ok := sMap[spec.ID]; !ok {
+			t.Fail()
+		}
+	}
+}
+
+func TestGetSpecManifest(t *testing.T) {
+	f, err := os.Open("./testdata/specs.json")
+	if err != nil {
+		t.Fail()
+	}
+	var specs []*bundle.Spec
+	var newSpecs []*bundle.Spec
+	d := json.NewDecoder(f)
+	if err = d.Decode(&specs); err != nil {
+		t.Fail()
+	}
+	defer f.Close()
+	daoSpecs := convertSpecListToMap(specs)
+	newF, err := os.Open("./testdata/updatedSpecs.json")
+	if err != nil {
+		t.Fail()
+	}
+	newD := json.NewDecoder(newF)
+	if err = newD.Decode(&newSpecs); err != nil {
+		t.Fail()
+	}
+	defer newF.Close()
+	n := getSpecManifest(daoSpecs, newSpecs)
+	if _, ok := n["0e991006d21029e47abe71acc255e807"]; !ok {
+		t.Fail()
+	}
+	if _, ok := n["11bbd6c120e197ea6acacf7165749629"]; !ok {
+		t.Fail()
+	}
+	if _, ok := n["1dda1477cace09730bd8ed7a6505607e"]; !ok {
+		t.Fail()
+	}
+}
+
+func TestMarkSpecsForDeletion(t *testing.T) {
+	f, err := os.Open("./testdata/specs.json")
+	if err != nil {
+		t.Fail()
+	}
+	d := json.NewDecoder(f)
+	var specs []*bundle.Spec
+	var newSpecs []*bundle.Spec
+	if err = d.Decode(&specs); err != nil {
+		t.Fail()
+	}
+	defer f.Close()
+	daoSpecs := convertSpecListToMap(specs)
+	newF, err := os.Open("./testdata/updatedSpecs.json")
+	if err != nil {
+		t.Fail()
+	}
+	newD := json.NewDecoder(newF)
+	if err = newD.Decode(&newSpecs); err != nil {
+		t.Fail()
+	}
+	defer newF.Close()
+	specManifest := convertSpecListToMap(newSpecs)
+	markSpecsForDeletion(daoSpecs, specManifest)
+	for id, spec := range daoSpecs {
+		if id == "f6c4486b7fb0cdac4b58e193607f7011" || id == "1dda1477cace09730bd8ed7a6505607e" {
+			if !spec.Delete {
+				t.Fail()
+			}
+		}
 	}
 }

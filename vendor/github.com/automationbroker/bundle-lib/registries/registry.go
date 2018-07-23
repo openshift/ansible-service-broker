@@ -47,6 +47,7 @@ type Config struct {
 	AuthName   string `yaml:"auth_name"`
 	User       string
 	Pass       string
+	Token      string
 	Org        string
 	Tag        string
 	Type       string
@@ -77,7 +78,9 @@ func (c Config) Validate() bool {
 			return false
 		}
 	case "config":
-		if c.User == "" || c.Pass == "" {
+		if c.Type == "quay" && c.Token == "" {
+			return false
+		} else if c.User == "" || c.Pass == "" {
 			return false
 		}
 	case "":
@@ -196,6 +199,7 @@ func NewCustomRegistry(configuration Config, adapter adapters.Adapter, asbNamesp
 			URL:           u,
 			User:          configuration.User,
 			Pass:          configuration.Pass,
+			Token:         configuration.Token,
 			Org:           configuration.Org,
 			Runner:        configuration.Runner,
 			Images:        configuration.Images,
@@ -222,6 +226,10 @@ func NewCustomRegistry(configuration Config, adapter adapters.Adapter, asbNamesp
 			adapter, err = adapters.NewPartnerRhccAdapter(c)
 		case "apiv2":
 			adapter, err = adapters.NewAPIV2Adapter(c)
+		case "quay":
+			adapter, err = adapters.NewQuayAdapter(c)
+		case "galaxy":
+			adapter = &adapters.GalaxyAdapter{Config: c}
 		default:
 			log.Errorf("Unknown registry type - %s", configuration.Type)
 			return Registry{}, errors.New("Unknown registry type")
@@ -340,64 +348,77 @@ func validateSpecFormat(spec *bundle.Spec) (bool, string) {
 }
 
 func retrieveRegistryAuth(reg Config, asbNamespace string) (Config, error) {
-	var username, password string
+	var username, password, token string
 	var err error
 	switch reg.AuthType {
 	case "secret":
-		username, password, err = readSecret(reg.AuthName, asbNamespace)
-		if err != nil {
-			return Config{}, err
+		if reg.Type == "quay" {
+			token, err = readSecret(reg.AuthName, asbNamespace, "token")
+			if err != nil {
+				return Config{}, err
+			}
+		} else {
+			username, err = readSecret(reg.AuthName, asbNamespace, "username")
+			if err != nil {
+				return Config{}, err
+			}
+			password, err = readSecret(reg.AuthName, asbNamespace, "password")
+			if err != nil {
+				return Config{}, err
+			}
 		}
 	case "file":
-		username, password, err = readFile(reg.AuthName)
+		username, password, token, err = readFile(reg.AuthName)
 		if err != nil {
 			return Config{}, err
 		}
 	case "config":
-		if reg.User == "" || reg.Pass == "" {
+		if reg.Type == "quay" && reg.Token == "" {
+			return Config{}, fmt.Errorf("Failed to find token in config")
+		} else if reg.User == "" || reg.Pass == "" {
 			return Config{}, fmt.Errorf("Failed to find registry credentials in config")
 		}
 		return reg, nil
 	case "":
 		// Assuming that the user has either no credentials or defined them in the config
-		username = reg.User
-		password = reg.Pass
+		log.Info("Empty AuthType. Assuming credentials are defined in the config... ")
 	default:
 		return Config{}, fmt.Errorf("Unrecognized registry AuthType: %s", reg.AuthType)
 	}
 	reg.User = username
 	reg.Pass = password
+	reg.Token = token
 	return reg, nil
 }
 
-func readFile(fileName string) (string, string, error) {
+func readFile(fileName string) (string, string, string, error) {
 	regCred := struct {
 		Username string
 		Password string
+		Token    string
 	}{}
 
 	dat, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return "", "", fmt.Errorf("Failed to read registry credentials from file: %s", fileName)
+		return "", "", "", fmt.Errorf("Failed to read registry credentials from file: %s", fileName)
 	}
 	err = yaml.Unmarshal(dat, &regCred)
 	if err != nil {
-		return "", "", fmt.Errorf("Failed to unmarshal registry credentials from file: %s", fileName)
+		return "", "", "", fmt.Errorf("Failed to unmarshal registry credentials from file: %s", fileName)
 	}
-	return regCred.Username, regCred.Password, nil
+	return regCred.Username, regCred.Password, regCred.Token, nil
 }
 
-func readSecret(secretName string, namespace string) (string, string, error) {
+func readSecret(secretName string, namespace string, key string) (string, error) {
 	data, err := clients.GetSecretData(secretName, namespace)
 	if err != nil {
-		return "", "", fmt.Errorf("Failed to find Dockerhub credentials in secret: %s", secretName)
-	}
-	var username = strings.TrimSpace(string(data["username"]))
-	var password = strings.TrimSpace(string(data["password"]))
-
-	if username == "" || password == "" {
-		return username, password, fmt.Errorf("Secret: %s did not contain username/password credentials", secretName)
+		return "", fmt.Errorf("Failed to find '%s' in secret: %s", key, secretName)
 	}
 
-	return username, password, nil
+	value := strings.TrimSpace(string(data[key]))
+	if value == "" {
+		return "", fmt.Errorf("Secret: %s: value for '%s' is empty", secretName, key)
+	}
+
+	return value, nil
 }

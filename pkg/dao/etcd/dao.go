@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	"encoding/json"
+
 	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
 	"github.com/coreos/etcd/client"
@@ -147,6 +149,28 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*bundle.Spec, error) {
 	}
 
 	return specs, nil
+}
+
+// BatchGetBundleInstances - get list of bundleinstances
+func (d *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
+	bundleInstances := []*bundle.ServiceInstance{}
+	siJSONStrs, err := d.BatchGetRaw("/service_instance")
+	if err != nil && !d.IsNotFoundError(err) {
+		log.Errorf("Unable to get the service instances - %v", err)
+		return nil, err
+	}
+	if siJSONStrs != nil {
+		for _, str := range *siJSONStrs {
+			si := bundle.ServiceInstance{}
+			err := json.Unmarshal([]byte(str), &si)
+			if err != nil {
+				log.Errorf("Unable to convert the service instances json unmarshal error - %v", err)
+				return nil, err
+			}
+			bundleInstances = append(bundleInstances, &si)
+		}
+	}
+	return bundleInstances, nil
 }
 
 // BatchDeleteSpecs - set specs based on SpecManifest in the kvp API.

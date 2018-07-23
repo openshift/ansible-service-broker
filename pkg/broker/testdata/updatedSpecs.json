@@ -1,0 +1,68 @@
+[
+  {
+    "id": "1dda1477cace09730bd8ed7a6505607e",
+    "runtime": 2,
+    "version": "1.0",
+    "name": "dh-postgresql-apb",
+    "image": "docker.io/ansibleplaybookbundle/postgresql-apb:latest",
+    "tags": [
+      "database",
+      "postgresql"
+    ],
+    "bindable": true,
+    "description": "SCL PostgreSQL apb implementation",
+    "metadata": {
+      "console.openshift.io/iconClass": "icon-postgresql",
+      "dependencies": [
+        "registry.access.redhat.com/rhscl/postgresql-94-rhel7",
+        "registry.access.redhat.com/rhscl/postgresql-95-rhel7",
+        "registry.access.redhat.com/rhscl/postgresql-96-rhel7"
+      ],
+      "displayName": "PostgreSQL (APB)",
+      "documentationUrl": "https://www.postgresql.org/docs/",
+      "longDescription": "An apb that deploys postgresql 9.4, 9.5, or 9.6.",
+      "providerDisplayName": "Red Hat, Inc."
+    },
+    "async": "optional",
+    "plans": [],
+    "delete": false
+  },
+  {
+    "id": "0e991006d21029e47abe71acc255e807",
+    "runtime": 2,
+    "version": "1.0",
+    "name": "dh-pyzip-demo-apb",
+    "image": "docker.io/ansibleplaybookbundle/pyzip-demo-apb:latest",
+    "tags": null,
+    "bindable": false,
+    "description": "Python Zip Demo APB Implementation",
+    "metadata": {
+      "dependencies": [
+        "docker.io/ansibleplaybookbundle/py-zip-demo:latest"
+      ],
+      "displayName": "Pyzip Demo (APB)",
+      "documentationUrl": "https://github.com/fusor/apb-examples/tree/master/pyzip-demo-apb",
+      "longDescription": "APB Implementation of the Python webapp, https://github.com/fusor/py-zip-demo",
+      "providerDisplayName": "Red Hat, Inc."
+    },
+    "async": "optional",
+    "plans": [],
+    "delete": false
+  },
+  {
+    "id": "11bbd6c120e197ea6acacf7165749629",
+    "runtime": 2,
+    "version": "1.0",
+    "name": "dh-openshift-logging-apb",
+    "image": "docker.io/ansibleplaybookbundle/openshift-logging-apb:latest",
+    "tags": null,
+    "bindable": false,
+    "description": "This APB will deploy openshift-logging. Please see https://github.com/ansibleplaybookbundles/openshift-logging-apb before attempting to run it as it has special pre-requisites.",
+    "metadata": {
+      "displayName": "openshift-logging"
+    },
+    "async": "optional",
+    "plans": [],
+    "delete": false
+  }
+]

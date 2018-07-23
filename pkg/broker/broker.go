@@ -194,33 +194,35 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 	var specs []*bundle.Spec
 	var imageCount int
 
-	// Remove all non apb-push sourced specs that have been saved.
-	pushedSpecs := []*bundle.Spec{}
+	// Get specs from datastore
 	dir := "/spec"
 	specs, err = a.dao.BatchGetSpecs(dir)
 	if err != nil {
-		log.Errorf("Something went real bad trying to retrieve batch specs for deletion... - %v", err)
+		log.Errorf("Something went real bad trying to retrieve batch specs... - %v", err)
 		return nil, err
 	}
-	// Save all apb-push sourced specs
-	for _, spec := range specs {
-		if strings.HasPrefix(spec.FQName, "apb-push") {
-			log.Infof("Saving apb-push sourced spec to prevent deletion: %v", spec.FQName)
-			pushedSpecs = append(pushedSpecs, spec)
-		}
-	}
-
-	err = a.dao.BatchDeleteSpecs(specs)
-	if err != nil {
+	// Get list of marked specs in datastore
+	markedSpecs := getMarkedSpecs(specs)
+	// Get list of specs safe to delete
+	unwantedSpecs := getSafeToDeleteSpecs(a, markedSpecs)
+	// Delete the unwanted specs
+	if err := a.dao.BatchDeleteSpecs(unwantedSpecs); err != nil {
 		log.Errorf("Something went real bad trying to delete batch specs... - %v", err)
 		return nil, err
 	}
+
+	log.Infof("%v specs deleted", len(unwantedSpecs))
+	metrics.SpecsDeleted(len(unwantedSpecs))
+
+	// Getting specs again so that deleted specs do not end up in further comparisons
+	specs, err = a.dao.BatchGetSpecs(dir)
+	if err != nil {
+		log.Errorf("Something went real bad trying to retrieve batch specs... - %v", err)
+		return nil, err
+	}
+
+	daoSpecs := convertSpecListToMap(specs)
 	specs = []*bundle.Spec{}
-	//Metrics calls.
-	metrics.SpecsLoadedReset()
-	metrics.SpecsReset()
-	//re-add the apb-push metrics.
-	metrics.SpecsLoaded(apbPushRegName, len(pushedSpecs))
 
 	// Load Specs for each registry
 	registryErrors := []error{}
@@ -238,21 +240,62 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		imageCount += count
 		// this will also update the plan id
 		addNameAndIDForSpec(s, r.RegistryName())
-		metrics.SpecsLoaded(r.RegistryName(), len(s))
 		specs = append(specs, s...)
+
+		metrics.SpecsLoaded(r.RegistryName(), len(s))
 	}
-	// Add apb-push sourced specs back to the list
-	for _, spec := range pushedSpecs {
-		specs = append(specs, spec)
-	}
+
 	if len(registryErrors) == len(a.registry) {
 		return nil, errors.New("all registries failed on bootstrap")
 	}
-	specManifest := map[string]*bundle.Spec{}
-	planNameManifest := map[string]string{}
+
+	specManifest := getSpecManifest(daoSpecs, specs)
+	markedSpecs = markSpecsForDeletion(daoSpecs, specManifest)
+
+	metrics.SpecsMarkedForDeletion(len(markedSpecs))
+
+	// Update specs in data-store
+	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
+		return nil, err
+	}
+
+	// Update specs that are marked for deletion
+	if err := a.dao.BatchSetSpecs(markedSpecs); err != nil {
+		return nil, err
+	}
+
+	bundle.AddSecrets(specs)
+
+	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
+}
+
+func markSpecsForDeletion(daoSpecs map[string]*bundle.Spec, specManifest bundle.SpecManifest) map[string]*bundle.Spec {
+	markedSpecs := make(map[string]*bundle.Spec)
+	for specID, spec := range daoSpecs {
+		if _, ok := specManifest[specID]; !ok {
+			log.Infof("spec '%v' marked for deletion", specID)
+			spec.Delete = true
+			markedSpecs[specID] = spec
+		}
+	}
+	return markedSpecs
+}
+
+func getSpecManifest(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bundle.SpecManifest {
+	specManifest := make(map[string]*bundle.Spec)
 
 	for _, s := range specs {
-		specManifest[s.ID] = s
+		// If condition is just for logging. It is useful information
+		// as to which specs were added and which were updated
+		if _, ok := daoSpecs[s.ID]; ok {
+			log.Debugf("spec '%v' needs to be updated", s.ID)
+			specManifest[s.ID] = s
+			s.Delete = false
+		} else {
+			log.Debugf("spec '%v' needs to be added", s.ID)
+			specManifest[s.ID] = s
+			s.Delete = false
+		}
 
 		// each of the plans from all of the specs gets its own uuid. even
 		// though the names may be the same we want them to be globally unique.
@@ -261,16 +304,60 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 				log.Errorf("We have a plan that did not get its id generated: %v", p.Name)
 				continue
 			}
-			planNameManifest[p.ID] = p.Name
 		}
 	}
-	if err := a.dao.BatchSetSpecs(specManifest); err != nil {
-		return nil, err
+	return specManifest
+}
+
+// getSafeToDeleteSpecs - will return a list of specs that are safe to delete.
+func getSafeToDeleteSpecs(a AnsibleBroker, markedSpecs map[string]*bundle.Spec) []*bundle.Spec {
+	safeToDeleteSpecs := make([]*bundle.Spec, 0)
+	bundleInstances, err := a.dao.BatchGetBundleInstances()
+	if err != nil {
+		log.Errorf("error getting bundle instances '%+v'", err)
+		// returning nil instead of checking the error,
+		// the broker can simply ignore to delete the specs and hope
+		// that the error won't repeat during next bootstrap cycle
+		return nil
 	}
+	log.Debugf("markedSpecs: %+v\n", markedSpecs)
+	for _, bundleInstance := range bundleInstances {
+		log.Debugf("bundle instance: %+v\n", bundleInstance.ID)
+		if _, ok := markedSpecs[bundleInstance.Spec.ID]; ok {
+			log.Debugf("spec '%v' not safe to delete", bundleInstance.Spec.ID)
+			delete(markedSpecs, bundleInstance.Spec.ID)
+			if len(markedSpecs) == 0 {
+				break
+			}
+		}
+	}
+	for _, spec := range markedSpecs {
+		log.Debugf("spec '%v' safe to delete", spec.ID)
+		safeToDeleteSpecs = append(safeToDeleteSpecs, spec)
+	}
+	return safeToDeleteSpecs
+}
 
-	bundle.AddSecrets(specs)
+// convertSpecListToMap - will convert list of specs into a map, mapping
+// specID to actual spec.
+func convertSpecListToMap(specs []*bundle.Spec) map[string]*bundle.Spec {
+	specMap := make(map[string]*bundle.Spec)
+	for _, spec := range specs {
+		log.Debugf("spec '%v' converted to map", spec.ID)
+		specMap[spec.ID] = spec
+	}
+	return specMap
+}
 
-	return &BootstrapResponse{SpecCount: len(specs), ImageCount: imageCount}, nil
+func getMarkedSpecs(specs []*bundle.Spec) map[string]*bundle.Spec {
+	markedSpecs := make(map[string]*bundle.Spec)
+	for _, spec := range specs {
+		if spec.Delete {
+			log.Debugf("spec '%v' marked for deletion", spec.ID)
+			markedSpecs[spec.ID] = spec
+		}
+	}
+	return markedSpecs
 }
 
 // addNameAndIDForSpec - will create the unique spec name and id
@@ -466,8 +553,10 @@ func (a AnsibleBroker) Catalog() (*CatalogResponse, error) {
 			if ser.Bindable && a.brokerConfig.LaunchApbOnBind {
 				ser.BindingsRetrievable = true
 			}
-
-			services = append(services, ser)
+			if !spec.Delete {
+				// add only the specs that are not marked for deletion.
+				services = append(services, ser)
+			}
 		}
 	}
 
@@ -549,6 +638,11 @@ func (a AnsibleBroker) Provision(instanceUUID uuid.UUID, req *ProvisionRequest, 
 		}
 		// otherwise unknown error bubble it up
 		return nil, err
+	}
+	// If the spec is marked for Deletion, send the same
+	// error as Spec Not Found
+	if spec.Delete {
+		return nil, ErrorNotFound
 	}
 
 	context := &req.Context
@@ -1483,7 +1577,7 @@ func (a AnsibleBroker) RemoveSpec(specID string) error {
 		log.Errorf("Something went real bad trying to delete spec... - %v", err)
 		return err
 	}
-	metrics.SpecsUnloaded(apbPushRegName, 1)
+	metrics.SpecsDeleted(1)
 	return nil
 }
 
@@ -1500,6 +1594,6 @@ func (a AnsibleBroker) RemoveSpecs() error {
 		log.Errorf("Something went real bad trying to delete batch specs... - %v", err)
 		return err
 	}
-	metrics.SpecsLoadedReset()
+	metrics.SpecsDeleted(len(specs))
 	return nil
 }

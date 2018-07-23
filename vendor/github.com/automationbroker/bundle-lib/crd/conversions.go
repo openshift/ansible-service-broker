@@ -74,6 +74,7 @@ func ConvertSpecToBundle(spec *bundle.Spec) (v1alpha1.BundleSpec, error) {
 		Metadata:    string(metadataBytes),
 		Alpha:       string(alphaBytes),
 		Plans:       plans,
+		Delete:      spec.Delete,
 	}, nil
 }
 
@@ -126,6 +127,7 @@ func ConvertBundleToSpec(spec v1alpha1.BundleSpec, id string) (*bundle.Spec, err
 		Metadata:    metadataMap,
 		Alpha:       alphaMap,
 		Plans:       plans,
+		Delete:      spec.Delete,
 	}, nil
 }
 
@@ -359,9 +361,11 @@ func convertPlanToCRD(plan bundle.Plan) (v1alpha1.Plan, error) {
 		}
 		bindParams = append(bindParams, param)
 	}
+
 	if len(errs) > 0 {
-		return v1alpha1.Plan{}, err
+		return v1alpha1.Plan{}, errs
 	}
+
 	return v1alpha1.Plan{
 		ID:             plan.ID,
 		Name:           plan.Name,
@@ -384,22 +388,22 @@ func convertParametersToCRD(param bundle.ParameterDescriptor) (v1alpha1.Paramete
 
 	var v1Max *v1alpha1.NilableNumber
 	if param.Maximum != nil {
-		n := v1alpha1.NilableNumber(reflect.ValueOf(param.Maximum).Float())
+		n := v1alpha1.NilableNumber(reflect.ValueOf(*param.Maximum).Float())
 		v1Max = &n
 	}
 	var v1exMax *v1alpha1.NilableNumber
 	if param.ExclusiveMaximum != nil {
-		n := v1alpha1.NilableNumber(reflect.ValueOf(param.ExclusiveMaximum).Float())
+		n := v1alpha1.NilableNumber(reflect.ValueOf(*param.ExclusiveMaximum).Float())
 		v1exMax = &n
 	}
 	var v1Min *v1alpha1.NilableNumber
 	if param.Minimum != nil {
-		n := v1alpha1.NilableNumber(reflect.ValueOf(param.Minimum).Float())
+		n := v1alpha1.NilableNumber(reflect.ValueOf(*param.Minimum).Float())
 		v1Min = &n
 	}
 	var v1exMin *v1alpha1.NilableNumber
 	if param.ExclusiveMinimum != nil {
-		n := v1alpha1.NilableNumber(reflect.ValueOf(param.ExclusiveMinimum).Float())
+		n := v1alpha1.NilableNumber(reflect.ValueOf(*param.ExclusiveMinimum).Float())
 		v1exMin = &n
 	}
 
@@ -467,6 +471,11 @@ func convertPlanToAPB(plan v1alpha1.Plan) (bundle.Plan, error) {
 		}
 		bindParams = append(bindParams, param)
 	}
+
+	if len(errs) > 0 {
+		return bundle.Plan{}, errs
+	}
+
 	return bundle.Plan{
 		ID:             plan.ID,
 		Name:           plan.Name,
@@ -492,22 +501,22 @@ func convertParametersToAPB(param v1alpha1.Parameter) (bundle.ParameterDescripto
 
 	var v1Max *bundle.NilableNumber
 	if param.Maximum != nil {
-		n := bundle.NilableNumber(reflect.ValueOf(param.Maximum).Float())
+		n := bundle.NilableNumber(reflect.ValueOf(*param.Maximum).Float())
 		v1Max = &n
 	}
 	var v1exMax *bundle.NilableNumber
 	if param.ExclusiveMaximum != nil {
-		n := bundle.NilableNumber(reflect.ValueOf(param.ExclusiveMaximum).Float())
+		n := bundle.NilableNumber(reflect.ValueOf(*param.ExclusiveMaximum).Float())
 		v1exMax = &n
 	}
 	var v1Min *bundle.NilableNumber
 	if param.Minimum != nil {
-		n := bundle.NilableNumber(reflect.ValueOf(param.Minimum).Float())
+		n := bundle.NilableNumber(reflect.ValueOf(*param.Minimum).Float())
 		v1Min = &n
 	}
 	var v1exMin *bundle.NilableNumber
 	if param.ExclusiveMinimum != nil {
-		n := bundle.NilableNumber(reflect.ValueOf(param.ExclusiveMinimum).Float())
+		n := bundle.NilableNumber(reflect.ValueOf(*param.ExclusiveMinimum).Float())
 		v1exMin = &n
 	}
 

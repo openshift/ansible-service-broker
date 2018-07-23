@@ -1,0 +1,72 @@
+[
+  {
+    "id": "1dda1477cace09730bd8ed7a6505607e",
+    "runtime": 2,
+    "version": "1.0",
+    "name": "dh-postgresql-apb",
+    "image": "docker.io/ansibleplaybookbundle/postgresql-apb:latest",
+    "tags": [
+      "database",
+      "postgresql"
+    ],
+    "bindable": true,
+    "description": "SCL PostgreSQL apb implementation",
+    "metadata": {
+      "console.openshift.io/iconClass": "icon-postgresql",
+      "dependencies": [
+        "registry.access.redhat.com/rhscl/postgresql-94-rhel7",
+        "registry.access.redhat.com/rhscl/postgresql-95-rhel7",
+        "registry.access.redhat.com/rhscl/postgresql-96-rhel7"
+      ],
+      "displayName": "PostgreSQL (APB)",
+      "documentationUrl": "https://www.postgresql.org/docs/",
+      "longDescription": "An apb that deploys postgresql 9.4, 9.5, or 9.6.",
+      "providerDisplayName": "Red Hat, Inc."
+    },
+    "async": "optional",
+    "plans": [],
+    "delete": true
+  },
+  {
+    "id": "f6c4486b7fb0cdac4b58e193607f7011",
+    "runtime": 2,
+    "version": "1.0",
+    "name": "dh-mediawiki-apb",
+    "image": "docker.io/ansibleplaybookbundle/mediawiki-apb:latest",
+    "tags": null,
+    "bindable": false,
+    "description": "Mediawiki apb implementation",
+    "metadata": {
+      "console.openshift.io/iconClass": "icon-mediawiki",
+      "dependencies": [
+        "docker.io/ansibleplaybookbundle/mediawiki:latest"
+      ],
+      "displayName": "Mediawiki (APB)",
+      "documentationUrl": "https://www.mediawiki.org/wiki/Documentation",
+      "longDescription": "An apb that deploys Mediawiki",
+      "providerDisplayName": "Red Hat, Inc."
+    },
+    "async": "optional",
+    "plans": [],
+    "delete": false
+  },
+  {
+    "id": "f86f8e54b99f9332e7610df228fc11d3",
+    "runtime": 2,
+    "version": "1.0",
+    "name": "dh-windowsvm-apb",
+    "image": "docker.io/ansibleplaybookbundle/windows-apb:latest",
+    "tags": [
+      "virtualmachine"
+    ],
+    "bindable": false,
+    "description": "APB for managing Windows Virtual Machine",
+    "metadata": {
+      "displayName": "Windows Virtual Machine",
+      "imageUrl": "https://raw.githubusercontent.com/ansibleplaybookbundle/windows-apb/master/docs/imgs/icon.png"
+    },
+    "async": "optional",
+    "plans": [],
+    "delete": true
+  }
+]

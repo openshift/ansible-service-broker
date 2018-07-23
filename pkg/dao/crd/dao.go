@@ -84,11 +84,24 @@ func (d *Dao) GetSpec(id string) (*bundle.Spec, error) {
 func (d *Dao) SetSpec(id string, spec *bundle.Spec) error {
 	defer d.bundleLock.Unlock()
 	d.bundleLock.Lock()
-	log.Debugf("set spec: %v", id)
 	bundleSpec, err := crd.ConvertSpecToBundle(spec)
 	if err != nil {
 		return err
 	}
+
+	// Get the spec from datastore
+	if s, err := d.client.Bundles(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
+		log.Infof("update spec: %v to crd", id)
+		s.Spec = bundleSpec
+		if _, err = d.client.Bundles(d.namespace).Update(s); err != nil {
+			log.Errorf("error updating spec '%v', %v", id, err)
+			return err
+		}
+		return nil
+	}
+
+	// Could not get the spec, try to add it
+	log.Infof("add spec: %v", id)
 	b := v1.Bundle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
@@ -96,8 +109,12 @@ func (d *Dao) SetSpec(id string, spec *bundle.Spec) error {
 		},
 		Spec: bundleSpec,
 	}
-	_, err = d.client.Bundles(d.namespace).Create(&b)
+	if _, err = d.client.Bundles(d.namespace).Create(&b); err != nil {
+		log.Errorf("error adding spec '%v', %v", id, err)
+	}
+
 	return err
+
 }
 
 // DeleteSpec - Delete the spec for a given spec id.
@@ -141,6 +158,32 @@ func (d *Dao) BatchGetSpecs(dir string) ([]*bundle.Spec, error) {
 		return specs, errs
 	}
 	return specs, nil
+}
+
+// BatchGetBundleInstances - get list of bundleinstances
+func (d *Dao) BatchGetBundleInstances() ([]*bundle.ServiceInstance, error) {
+	log.Debugf("Dao::BatchGetBundleInstances")
+	bl, err := d.client.BundleInstances(d.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		log.Errorf("unable to get batch bundleinstances - %v", err)
+		return nil, err
+	}
+	bundleInstances := make([]*bundle.ServiceInstance, len(bl.Items))
+	for index, bundleInstance := range bl.Items {
+
+		spec, err := d.GetSpec(bundleInstance.Spec.Bundle.Name)
+		if err != nil {
+			return nil, err
+		}
+		s, err := crd.ConvertServiceInstanceToAPB(bundleInstance, spec, bundleInstance.GetName())
+		if err != nil {
+			log.Errorf("unable to convert service instance to bundle instance - %v", err)
+			return nil, err
+		}
+
+		bundleInstances[index] = s
+	}
+	return bundleInstances, nil
 }
 
 // BatchDeleteSpecs - set specs based on SpecManifest in the kvp API.

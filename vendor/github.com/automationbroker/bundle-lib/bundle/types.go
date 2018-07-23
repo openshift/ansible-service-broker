@@ -152,6 +152,7 @@ type Spec struct {
 	Async       string                 `json:"async"`
 	Plans       []Plan                 `json:"plans"`
 	Alpha       map[string]interface{} `json:"alpha,omitempty"`
+	Delete      bool                   `json:"delete"`
 }
 
 // GetPlan - retrieves a plan from a spec by name. Will return

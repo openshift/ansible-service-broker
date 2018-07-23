@@ -272,6 +272,33 @@ func (p provider) CreateSandbox(podName string,
 		}
 		//Sandbox (i.e Namespace) was created.
 		namespace = ns.ObjectMeta.Name
+
+		// Must create a Network policy to allow for communication from the APB pod to the target namespace.
+		networkPolicy := &networkingv1.NetworkPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: podName,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					networkingv1.NetworkPolicyIngressRule{
+						From: []networkingv1.NetworkPolicyPeer{
+							networkingv1.NetworkPolicyPeer{
+								NamespaceSelector: metav1.AddLabelToSelector(&metav1.LabelSelector{}, "apb-pod-name", podName),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		log.Debugf("Creating network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+		_, err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Create(networkPolicy)
+		if err != nil {
+			log.Errorf("unable to create network policy object - %v", err)
+			return "", "", err
+		}
+		log.Debugf("Successfully created network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 	}
 
 	for i, f := range p.preSandboxCreate {
@@ -320,33 +347,6 @@ func (p provider) CreateSandbox(podName string,
 			}
 		}
 	}
-
-	// Must create a Network policy to allow for communication from the APB pod to the target namespace.
-	networkPolicy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: podName,
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{
-				networkingv1.NetworkPolicyIngressRule{
-					From: []networkingv1.NetworkPolicyPeer{
-						networkingv1.NetworkPolicyPeer{
-							NamespaceSelector: metav1.AddLabelToSelector(&metav1.LabelSelector{}, "apb-pod-name", podName),
-						},
-					},
-				},
-			},
-		},
-	}
-
-	log.Debugf("Creating network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
-	_, err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Create(networkPolicy)
-	if err != nil {
-		log.Errorf("unable to create network policy object - %v", err)
-		return "", "", err
-	}
-	log.Debugf("Successfully created network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 
 	log.Infof("Successfully created apb sandbox: [ %s ], with %s permissions in namespace [ %s ]", podName, apbRole, namespace)
 	log.Debug("Running post create sandbox functions if defined.")
@@ -442,14 +442,16 @@ func (p provider) DestroySandbox(podName string,
 		log.Infof("Successfully deleted rolebinding %s, namespace %s", podName, target)
 	}
 
-	log.Debugf("Deleting network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
-	// Must clean up the network policy that allowed communication from the APB pod to the target namespace.
-	err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Delete(podName, &metav1.DeleteOptions{})
-	if err != nil {
-		log.Errorf("unable to delete the network policy object - %v", err)
-		return
+	if !isNamespaceInTargets(namespace, targets) {
+		log.Debugf("Deleting network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+		// Must clean up the network policy that allowed communication from the APB pod to the target namespace.
+		err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Delete(podName, &metav1.DeleteOptions{})
+		if err != nil {
+			log.Errorf("unable to delete the network policy object - %v", err)
+			return
+		}
+		log.Debugf("Successfully deleted network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 	}
-	log.Debugf("Successfully deleted network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 
 	log.Debugf("Running post sandbox destroy hooks")
 	for i, f := range p.postSandboxDestroy {
