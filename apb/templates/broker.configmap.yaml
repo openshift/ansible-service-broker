@@ -47,6 +47,7 @@ data:
       - type: galaxy
         name: {{ broker_galaxy_name }}
         url: {{ broker_galaxy_url }}
+        org: {{ broker_galaxy_org | quote }}
         runner: {{ broker_galaxy_runner }}
         white_list:
 {%     for item in broker_galaxy_white_list %}

@@ -80,5 +80,6 @@ broker_helm_white_list: [ ".*" ]
 broker_galaxy_enabled: true
 broker_galaxy_name: galaxy
 broker_galaxy_url: https://galaxy.ansible.com
+broker_galaxy_org: ansibleplaybookbundle
 broker_galaxy_runner: docker.io/ansibleplaybookbundle/apb-base:latest
 broker_galaxy_white_list: [ ".*" ]
