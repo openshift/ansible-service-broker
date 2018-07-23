@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.4
+Version: 1.3.5
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -327,6 +327,29 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Jul 23 2018 David Zager <david.j.zager@gmail.com> 1.3.5-1
+- Enhance spec reconciliation, using async bootstrap (#1008)
+  (alay1431@gmail.com)
+- Add tag field to ASB registry configuration doc (#1012)
+  (mario.loriedo@gmail.com)
+- Add ns broker support to the broker's apb (#1015) (ernelson@redhat.com)
+- Broker apb rpm (#1014) (dzager@redhat.com)
+- remove golang macros (#1011) (jmontleo@redhat.com)
+- Fix default APB_IMAGE (#1013) (ernelson@redhat.com)
+- removing subject rules review auth and using aggregated rules. (#995)
+  (smhurley00@gmail.com)
+- Add parsing of param dependencies (#928) (pgough@redhat.com)
+- Automation Broker meeting 7/10/2018 (#1004) (jmrodri@gmail.com)
+- Simple ci (#1005) (dzager@redhat.com)
+- Use broker-apb test playbook to test the broker (#990) (dzager@redhat.com)
+- Use docker cp instead of mounting host volume (#1000) (dzager@redhat.com)
+- Add IRC meeting notes (#1001) (jmrodri@gmail.com)
+- Update docs for helm adapter (#998) (dzager@redhat.com)
+- adds docs and plumbing for the skip_verify_tls setting on the rhcc adapter
+  (#989) (mhrivnak@hrivnak.org)
+- Support building a debuggable image for development (#926)
+  (pgough@redhat.com)
+
 * Wed Jun 20 2018 David Zager <david.j.zager@gmail.com> 1.3.4-1
 - Login for deploy on tag (#994) (dzager@redhat.com)
 
