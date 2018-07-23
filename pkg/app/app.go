@@ -46,6 +46,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/dao"
 	"github.com/openshift/ansible-service-broker/pkg/handler"
 	logutil "github.com/openshift/ansible-service-broker/pkg/util/logging"
+	"github.com/openshift/ansible-service-broker/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
@@ -160,6 +161,8 @@ func CreateApp(args Args, regs []registries.Registry) App {
 		os.Exit(1)
 	}
 
+	// Show version in logs for better debugging
+	log.Infof("Ansible Service Broker Version: %v\n", version.Version)
 	// Initializing clients as soon as we have deps ready.
 	err = initClients(app.config)
 	if err != nil {
