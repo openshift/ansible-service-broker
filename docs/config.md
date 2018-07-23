@@ -153,6 +153,23 @@ registry:
 well suited for OpenShift. For more information see
 [here](https://github.com/ansibleplaybookbundle/helm2bundle/wiki/Known-Issues).
 
+### Ansible Galaxy Registry
+
+Using the [Ansible Galaxy](https://galaxy.ansible.com) will allow you to
+consume APB roles in Galaxy. The configuration would look like:
+
+```yaml
+registry:
+  - type: galaxy
+    name: galaxy
+    url: https://galaxy.ansible.com
+    # Optional:
+    # org: ansibleplaybookbundle
+    runner: docker.io/ansibleplaybookbundle/apb-base:latest
+    white_list:
+      - ".*"
+```
+
 ### Red Hat Container Catalog (RHCC) Registry
 Using the RHCC (Red Hat Container Catalog) registry will allow you to load APBs that are published to this type of [registry](https://access.redhat.com/containers).
 
