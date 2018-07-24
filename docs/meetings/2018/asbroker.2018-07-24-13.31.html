@@ -1,0 +1,337 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#asbroker: Automation Broker 7/24/2018</title>
+<style type="text/css">
+/* This is for the .html in the HTML2 writer */
+body {
+    font-family: Helvetica, sans-serif;
+    font-size:14px;
+}
+h1 {
+    text-align: center;
+}
+a {
+    color:navy;
+    text-decoration: none;
+    border-bottom:1px dotted navy;
+}
+a:hover {
+    text-decoration:none;
+    border-bottom: 0;
+    color:#0000B9;
+}
+hr {
+    border: 1px solid #ccc;
+}
+/* The (nick, time) item pairs, and other body text things. */
+.details {
+    font-size: 12px;
+    font-weight:bold;
+}
+/* The 'AGREED:', 'IDEA', etc, prefix to lines. */
+.itemtype {
+    font-style: normal;    /* un-italics it */
+    font-weight: bold;
+}
+/* Example: change single item types.  Capitalized command name.
+/* .TOPIC  {  color:navy;  } */
+/* .AGREED {  color:lime;  } */
+
+</style>
+</head>
+
+<body>
+<h1>#asbroker: Automation Broker 7/24/2018</h1>
+<span class="details">
+Meeting started by jmrodri at 13:31:30 UTC
+(<a href="asbroker.2018-07-24-13.31.log.html">full logs</a>).</span>
+
+<br><br>
+
+
+
+<h3>Meeting summary</h3>
+<ol>
+<li><b class="TOPIC">Attendance</b> <span class="details">(<a href='asbroker.2018-07-24-13.31.log.html#l-6'>jmrodri</a>, 13:31:43)</span>
+<br></li>
+<li><b class="TOPIC">news</b> <span class="details">(<a href='asbroker.2018-07-24-13.31.log.html#l-15'>jmrodri</a>, 13:34:03)</span>
+<ol type="a">
+  <li><span class="INFO">Automation Broker has a new bootstrap
+    reconcilation loop</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-18'>jmrodri</a>,
+    13:34:24)</span></li>
+  <li><span class="INFO">Kubernetes Multitenancy working group</span>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-24'>jmrodri</a>,
+    13:35:39)</span></li>
+  <li><a
+    href="https://github.com/kubernetes/community/tree/master/wg-multitenancy">https://github.com/kubernetes/community/tree/master/wg-multitenancy</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-26'>jmrodri</a>,
+    13:35:47)</span></li>
+  <li><span class="INFO">Coverage increased on bundle-lib</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-33'>jmrodri</a>,
+    13:36:56)</span></li>
+  <li><a
+    href="https://coveralls.io/github/automationbroker/bundle-lib">https://coveralls.io/github/automationbroker/bundle-lib</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-35'>jmrodri</a>,
+    13:37:04)</span></li>
+</ol>
+<br></li>
+<li><b class="TOPIC">review previous actions</b> <span class="details">(<a href='asbroker.2018-07-24-13.31.log.html#l-48'>jmrodri</a>, 13:39:53)</span>
+<ol type="a">
+  <li><span class="INFO">issue 941 for broker still needs to be tested.
+    I was going to do it yesterday, ran into some infra issues.
+    HOpefully it will be tested and closed by next meeting.</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-50'>jmrodri</a>,
+    13:40:26)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">jmrodri test
+    issue 941</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-52'>jmrodri</a>,
+    13:40:36)</span></li>
+  <li><span class="INFO">bundle package errors</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-54'>jmrodri</a>,
+    13:40:58)</span></li>
+  <li><a
+    href="https://github.com/automationbroker/bundle-lib/issues/111">https://github.com/automationbroker/bundle-lib/issues/111</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-56'>jmrodri</a>,
+    13:41:04)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">shurley write
+    up brief comment on issue 111</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-60'>jmrodri</a>,
+    13:41:50)</span></li>
+</ol>
+<br></li>
+<li><b class="TOPIC">bugs/issues triage</b> <span class="details">(<a href='asbroker.2018-07-24-13.31.log.html#l-63'>jmrodri</a>, 13:42:27)</span>
+<ol type="a">
+  <li><span class="INFO">bundle-lib issues</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-66'>jmrodri</a>,
+    13:42:44)</span></li>
+  <li><a
+    href="https://github.com/automationbroker/bundle-lib/issues/148">https://github.com/automationbroker/bundle-lib/issues/148</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-69'>jmrodri</a>,
+    13:43:16)</span></li>
+  <li><span class="INFO">configToSpec debug log is noisy</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-71'>jmrodri</a>,
+    13:43:24)</span></li>
+  <li><span class="INFO">bundles filtered log is hard to read</span>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-77'>jmrodri</a>,
+    13:44:31)</span></li>
+  <li><a
+    href="https://github.com/automationbroker/bundle-lib/issues/147">https://github.com/automationbroker/bundle-lib/issues/147</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-79'>jmrodri</a>,
+    13:44:33)</span></li>
+  <li><span class="INFO">automation broker issues</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-84'>jmrodri</a>,
+    13:46:08)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.11+%7C+release-1.3%22">https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.11+%7C+release-1.3%22</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-86'>jmrodri</a>,
+    13:46:20)</span></li>
+  <li><span class="INFO">Error attempting to list APBs in broker
+    returned 503</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-90'>jmrodri</a>,
+    13:47:37)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/974">https://github.com/openshift/ansible-service-broker/issues/974</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-92'>jmrodri</a>,
+    13:47:41)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">ernelson
+    investigate issue 974, close if not a broker issue</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-105'>jmrodri</a>,
+    13:49:59)</span></li>
+  <li><span class="INFO">dock link for complicated parameters</span>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-107'>jmrodri</a>,
+    13:50:08)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/973">https://github.com/openshift/ansible-service-broker/issues/973</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-109'>jmrodri</a>,
+    13:50:11)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">maleck13
+    advise what to do with issue 974</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-114'>jmrodri</a>,
+    13:51:06)</span></li>
+  <li><span class="INFO">binding errors are no longer displayed</span>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-121'>jmrodri</a>,
+    13:52:47)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/941">https://github.com/openshift/ansible-service-broker/issues/941</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-123'>jmrodri</a>,
+    13:52:50)</span></li>
+  <li><span class="INFO">link broker in deployment</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-126'>jmrodri</a>,
+    13:53:52)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/938">https://github.com/openshift/ansible-service-broker/issues/938</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-128'>jmrodri</a>,
+    13:53:58)</span></li>
+  <li><span class="INFO">broker should define owner reference on
+    CRs</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-132'>jmrodri</a>,
+    13:54:50)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/936">https://github.com/openshift/ansible-service-broker/issues/936</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-134'>jmrodri</a>,
+    13:54:52)</span></li>
+  <li><span class="INFO">too many apb's causes bootstrap route to
+    timeout</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-141'>jmrodri</a>,
+    13:57:26)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/876">https://github.com/openshift/ansible-service-broker/issues/876</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-143'>jmrodri</a>,
+    13:57:29)</span></li>
+  <li><span class="INFO">randomize object names to avoid clashes</span>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-148'>jmrodri</a>,
+    13:58:45)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/853">https://github.com/openshift/ansible-service-broker/issues/853</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-150'>jmrodri</a>,
+    13:58:48)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">dzager to
+    update and close out issue 853</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-156'>jmrodri</a>,
+    13:59:53)</span></li>
+  <li><span class="INFO">bindable apb provision fails if credentials are
+    not created</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-158'>jmrodri</a>,
+    14:00:22)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/847">https://github.com/openshift/ansible-service-broker/issues/847</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-160'>jmrodri</a>,
+    14:00:24)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">jmrodri
+    assign issue 847 to someone</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-168'>jmrodri</a>,
+    14:03:01)</span></li>
+  <li><span class="INFO">discussion: broekr should not fail hard when
+    registry names collide</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-170'>jmrodri</a>,
+    14:03:11)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/753">https://github.com/openshift/ansible-service-broker/issues/753</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-172'>jmrodri</a>,
+    14:03:13)</span></li>
+  <li><span class="INFO">define a firmer error checking policy for
+    registry adapters</span> <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-189'>jmrodri</a>,
+    14:07:37)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/684">https://github.com/openshift/ansible-service-broker/issues/684</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-191'>jmrodri</a>,
+    14:07:38)</span></li>
+  <li><span class="INFO">expose user/cluster information to APBs</span>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-196'>jmrodri</a>,
+    14:09:08)</span></li>
+  <li><a
+    href="https://github.com/openshift/ansible-service-broker/issues/470">https://github.com/openshift/ansible-service-broker/issues/470</a>
+    <span class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-198'>jmrodri</a>,
+    14:09:11)</span></li>
+  <li><i class="itemtype">ACTION</i>: <span class="ACTION">jmrodri
+    determine if 470 needs to remain open</span> <span
+    class="details">(<a
+    href='asbroker.2018-07-24-13.31.log.html#l-209'>jmrodri</a>,
+    14:12:04)</span></li>
+</ol>
+</li>
+</ol>
+<br><br>
+
+
+
+<span class="details">
+Meeting ended at 14:15:21 UTC
+(<a href="asbroker.2018-07-24-13.31.log.html">full logs</a>).</span>
+
+<br><br>
+
+
+
+<h3>Action items</h3>
+<ol>
+  <li>jmrodri test issue 941</li>
+  <li>shurley write up brief comment on issue 111</li>
+  <li>ernelson investigate issue 974, close if not a broker issue</li>
+  <li>maleck13 advise what to do with issue 974</li>
+  <li>dzager to update and close out issue 853</li>
+  <li>jmrodri assign issue 847 to someone</li>
+  <li>jmrodri determine if 470 needs to remain open</li>
+</ol>
+<br><br>
+
+
+
+<h3>Action items, by person</h3>
+<ol>
+  <li> dzager <ol>
+    <li>dzager to update and close out issue 853</li>
+  </ol></li>
+  <li> ernelson <ol>
+    <li>ernelson investigate issue 974, close if not a broker issue</li>
+  </ol></li>
+  <li> jmrodri <ol>
+    <li>jmrodri test issue 941</li>
+    <li>jmrodri assign issue 847 to someone</li>
+    <li>jmrodri determine if 470 needs to remain open</li>
+  </ol></li>
+  <li> maleck13 <ol>
+    <li>maleck13 advise what to do with issue 974</li>
+  </ol></li>
+  <li> shurley <ol>
+    <li>shurley write up brief comment on issue 111</li>
+  </ol></li>
+</ol>
+<br><br>
+
+
+
+<h3>People present (lines said)</h3>
+<ol>
+  <li>jmrodri (124)</li>
+  <li>brokerbot (52)</li>
+  <li>shurley (16)</li>
+  <li>ernelson (9)</li>
+  <li>dzager (8)</li>
+  <li>dymurray (5)</li>
+  <li>maleck13 (2)</li>
+  <li>alpatel (2)</li>
+  <li>rhallisey (1)</li>
+  <li>fabianvf (1)</li>
+</ol>
+<br><br>
+
+
+
+<span class="details">Generated by <a href="http://wiki.debian.org/MeetBot">MeetBot</a> 0.1.4.</span>
+</body></html>
