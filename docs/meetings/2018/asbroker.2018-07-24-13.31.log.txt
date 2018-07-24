@@ -1,0 +1,220 @@
+13:31:30 <jmrodri> #startmeeting Automation Broker 7/24/2018
+13:31:30 <brokerbot> Meeting started Tue Jul 24 13:31:30 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+13:31:30 <brokerbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+13:31:30 <brokerbot> The meeting name has been set to 'automation_broker_7/24/2018'
+13:31:30 <brokerbot> jmrodri: startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+13:31:43 <jmrodri> #topic Attendance
+13:31:43 <brokerbot> jmrodri: topic
+13:31:56 <jmrodri> Good morning everyone, welcome to this weeks automation broker community meeting
+13:32:04 <jmrodri> raise your hand if you are here
+13:32:44 <rhallisey> o/
+13:33:02 <fabianvf> Hi
+13:33:40 <ernelson> Morning
+13:33:52 <jmrodri> keep them coming.
+13:33:53 <dymurray> hello
+13:34:03 <jmrodri> #topic news
+13:34:03 <brokerbot> jmrodri: topic
+13:34:03 <alpatel> hello
+13:34:24 <jmrodri> #info Automation Broker has a new bootstrap reconcilation loop
+13:34:24 <brokerbot> jmrodri: info
+13:34:55 <jmrodri> alpatel: has gotten his PR approved and committed. Should be in the next broker release (already in master)
+13:35:21 <jmrodri> should fix a bunch of the bugs that were caused by the bootstrap deleting specs during during reconcilation.
+13:35:24 <jmrodri> thanks alpatel
+13:35:38 <ernelson> Nice work!
+13:35:39 <jmrodri> #info Kubernetes Multitenancy working group
+13:35:39 <brokerbot> jmrodri: info
+13:35:47 <jmrodri> #link https://github.com/kubernetes/community/tree/master/wg-multitenancy
+13:35:47 <brokerbot> jmrodri: link
+13:35:51 <shurley> +1 good job alex913
+13:35:55 <shurley> alpatel:
+13:36:13 <jmrodri> not directly related to the automation broker, but I wanted to share it as I found out about this working group yesterday
+13:36:43 <jmrodri> they're working on adding multi-tenancy to kubernetes. not sure where they are at in that process but feel free to join if interested
+13:36:51 <alpatel> thanks everyone for helping out
+13:36:56 <jmrodri> #info Coverage increased on bundle-lib
+13:36:56 <brokerbot> jmrodri: info
+13:37:04 <jmrodri> #link https://coveralls.io/github/automationbroker/bundle-lib
+13:37:04 <brokerbot> jmrodri: link
+13:37:26 <shurley> +1 thanks jmrodri !
+13:37:28 <jmrodri> so for some time we've been slacking on unit tests. I've setup coveralls to show the coverage, and we're currently at 63%
+13:37:41 <jmrodri> it's not awesome but considering where we were just 2 weeks ago, it's a HUGE improvement.
+13:37:48 <dzager> nice work jmrodri
+13:37:49 <dymurray> +1 great work
+13:37:54 <jmrodri> also I'm now a fan of table driven golang tests :)
+13:38:25 <jmrodri> that's all I have for the news. Anyone have anything they want to share? any conferences coming up? talks? projects? releases?
+13:38:41 <ernelson> There has been a la croix shortage in RDU
+13:38:45 <ernelson> mass hysteria, etc.
+13:39:31 <jmrodri> ernelson: hahahaha
+13:39:38 * jmrodri pictures fire on glenwood
+13:39:53 <jmrodri> #topic review previous actions
+13:39:53 <brokerbot> jmrodri: topic
+13:40:26 <jmrodri> #info issue 941 for broker still needs to be tested. I was going to do it yesterday, ran into some infra issues. HOpefully it will be tested and closed by next meeting.
+13:40:26 <brokerbot> jmrodri: info
+13:40:36 <jmrodri> #action jmrodri test issue 941
+13:40:36 <brokerbot> jmrodri: action
+13:40:58 <jmrodri> #info bundle package errors
+13:40:58 <brokerbot> jmrodri: info
+13:41:04 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/111
+13:41:04 <brokerbot> jmrodri: link
+13:41:14 <jmrodri> shurley: I have this down as you :) well looks like me too
+13:41:41 <jmrodri> can you write up a brief comment on the issue of your thoughts. Might be something we can knock out or someone might be able to.
+13:41:50 <jmrodri> #action shurley write up brief comment on issue 111
+13:41:50 <brokerbot> jmrodri: action
+13:42:05 <shurley> sounds good
+13:42:27 <jmrodri> #topic bugs/issues triage
+13:42:27 <brokerbot> jmrodri: topic
+13:42:35 <jmrodri> this could take a bit, not sure yet
+13:42:44 <jmrodri> #info bundle-lib issues
+13:42:44 <brokerbot> jmrodri: info
+13:43:06 <jmrodri> only 2 new issues and they're both assigned to me  :) they're really really low hanging fruit but I noticed it during a broker test yesterday
+13:43:16 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/148
+13:43:16 <brokerbot> jmrodri: link
+13:43:24 <jmrodri> #info configToSpec debug log is noisy
+13:43:24 <brokerbot> jmrodri: info
+13:43:44 <jmrodri> we have a debug line which prints out the plans and when debug is on, it is super noisy.
+13:43:51 <jmrodri> I had a 1.4M log file from the broker.
+13:43:56 <jmrodri> 1.1M was configToSpec logging
+13:44:04 <jmrodri> so the plan is remove that debug line
+13:44:31 <jmrodri> #info bundles filtered log is hard to read
+13:44:31 <brokerbot> jmrodri: info
+13:44:33 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/147
+13:44:33 <brokerbot> jmrodri: link
+13:44:51 <jmrodri> I have a fix for this one already posted (pending more unit tests, gotta keep those coverage numbers up)
+13:45:08 <jmrodri> we logged bundles that passed one by one, very easy to read and grep.
+13:45:24 <jmrodri> but for some reason the filtered ones we put on a single line. It is hard to read and inconsistent with the others.
+13:46:08 <jmrodri> #info automation broker issues
+13:46:08 <brokerbot> jmrodri: info
+13:46:20 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.11+%7C+release-1.3%22
+13:46:20 <brokerbot> jmrodri: link
+13:46:35 <jmrodri> we have 17 broker issues aligned to release-1.3 (aka 3.11)
+13:47:07 <jmrodri> I'm going to be looking at the 2 async bind issues this week. so those will remain on 3.11
+13:47:37 <jmrodri> #info Error attempting to list APBs in broker returned 503
+13:47:37 <brokerbot> jmrodri: info
+13:47:41 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/974
+13:47:41 <brokerbot> jmrodri: link
+13:48:05 <jmrodri> ernelson: that is currently assigned to you. keep on 1.3 or punt to 1.4?
+13:48:15 <ernelson> checking
+13:48:20 <jmrodri> mentions minishift
+13:48:29 <jmrodri> probably why I assigned it to you.
+13:48:55 <ernelson> yeah minishift needs to get updated and I haven't had the time to do it. I would keep 1.3
+13:48:57 <ernelson> for now
+13:49:07 <jmrodri> okay thanks
+13:49:08 <ernelson> at first glance, I don't think that's a broker issue
+13:49:21 <jmrodri> ernelson: even better
+13:49:37 <ernelson> I may apply that to the minishift addon repo and close this if true.
+13:49:44 <jmrodri> +1
+13:49:59 <jmrodri> #action ernelson investigate issue 974, close if not a broker issue
+13:49:59 <brokerbot> jmrodri: action
+13:50:08 <jmrodri> #info dock link for complicated parameters
+13:50:08 <brokerbot> jmrodri: info
+13:50:11 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/973
+13:50:11 <brokerbot> jmrodri: link
+13:50:25 <jmrodri> maleck13: this one is assigned to you via proxy :)
+13:50:43 <jmrodri> I think this requires ui changes in openshift which may or may not be possible.
+13:50:53 <jmrodri> maleck13: do we keep aligned for this release or punt to next release?
+13:51:06 <jmrodri> #action maleck13 advise what to do with issue 974
+13:51:06 <brokerbot> jmrodri: action
+13:51:10 <maleck13> jmrodri: next release is fine
+13:51:18 <jmrodri> maleck13: thanks
+13:51:50 <maleck13> jmrodri: sorry had another meeting so couldn't attend this commuity mtg
+13:51:57 <jmrodri> maleck13: no problem.
+13:52:01 <jmrodri> thanks for the response
+13:52:47 <jmrodri> #info binding errors are no longer displayed
+13:52:47 <brokerbot> jmrodri: info
+13:52:50 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/941
+13:52:50 <brokerbot> jmrodri: link
+13:52:53 <jmrodri> this is the one I need to test
+13:53:52 <jmrodri> #info link broker in deployment
+13:53:52 <brokerbot> jmrodri: info
+13:53:58 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/938
+13:53:58 <brokerbot> jmrodri: link
+13:54:05 <jmrodri> PR posted for that, it remains on 1.3
+13:54:30 <dzager> nice.
+13:54:50 <jmrodri> #info broker should define owner reference on CRs
+13:54:50 <brokerbot> jmrodri: info
+13:54:52 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/936
+13:54:52 <brokerbot> jmrodri: link
+13:55:03 <jmrodri> shurley: is that something we should do in release 1.3 or next release?
+13:55:29 <shurley> next release
+13:55:54 <jmrodri> done thanks
+13:56:03 <shurley> I think it will take some work to get that done correctly
+13:56:38 <shurley> and greater alignment with the broker behaving like a controller/operator
+13:57:26 <jmrodri> #info too many apb's causes bootstrap route to timeout
+13:57:26 <brokerbot> jmrodri: info
+13:57:29 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/876
+13:57:29 <brokerbot> jmrodri: link
+13:57:39 <shurley> fixed by alay right?
+13:57:40 <jmrodri> I think this should be fixed by alpatel changes
+13:57:48 * jmrodri closes
+13:58:45 <jmrodri> #info randomize object names to avoid clashes
+13:58:45 <brokerbot> jmrodri: info
+13:58:48 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/853
+13:58:48 <brokerbot> jmrodri: link
+13:59:06 <jmrodri> dzager: you commented on this, something we can do this release or punt?
+13:59:27 <dzager> this is done.
+13:59:37 <dzager> I can act on this one
+13:59:41 <jmrodri> okay
+13:59:53 <jmrodri> #action dzager to update and close out issue 853
+13:59:53 <brokerbot> jmrodri: action
+14:00:22 <jmrodri> #info bindable apb provision fails if credentials are not created
+14:00:22 <brokerbot> jmrodri: info
+14:00:24 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/847
+14:00:24 <brokerbot> jmrodri: link
+14:00:46 <jmrodri> dzager: you opened this one, not sure what our answer is for this
+14:01:25 <dzager> this is that issue that artem was running into
+14:01:34 <jmrodri> ah
+14:01:49 <jmrodri> I'll keep it on for 1.3 release, maybe we can do something with it.
+14:02:02 <jmrodri> anyone want it? it's not currently assigned
+14:02:32 <jmrodri> doesn't mean you have to fix it, just drive it to make sure it gets fixed by someone or moved to another release for consideration
+14:03:01 <jmrodri> #action jmrodri assign issue 847 to someone
+14:03:01 <brokerbot> jmrodri: action
+14:03:11 <jmrodri> #info discussion: broekr should not fail hard when registry names collide
+14:03:11 <brokerbot> jmrodri: info
+14:03:13 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/753
+14:03:13 <brokerbot> jmrodri: link
+14:03:18 <jmrodri> shurley: this was opened by you.
+14:03:24 <jmrodri> did we fix this?
+14:03:29 <shurley> no
+14:03:50 <shurley> I personally don’t think we should
+14:04:15 <jmrodri> should we close it then? I mean this one seems to have been kicked down the road a bit.
+14:04:20 <shurley> we relay pretty heavily on the name being unique to make our names unique. If that is not true very odd things could happen
+14:04:38 <shurley> I think Jian
+14:04:40 <jmrodri> and I'm all for misconfiguration causing the broker to STOP
+14:04:48 <dzager> we could just drop a second registry with the same name
+14:05:04 <dzager> but I think it's probably better to just stop
+14:05:05 <jmrodri> dzager: drop and log?
+14:05:06 <shurley> wanted a discussion around it. if you don’t think it needs one close it. I just have not heard any user actually complain about this
+14:05:26 <jmrodri> shurley: then I will close :)
+14:05:34 <dzager> jmrodri: I was suggesting a drop and log. But I think with having the broker-apb this isn't as much of an issue
+14:05:47 <jmrodri> dzager: fair, closing
+14:07:37 <jmrodri> #info define a firmer error checking policy for registry adapters
+14:07:37 <brokerbot> jmrodri: info
+14:07:38 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/684
+14:07:38 <brokerbot> jmrodri: link
+14:07:49 <jmrodri> rhallisey opened this one.
+14:08:02 <jmrodri> I think we should look at this, not sure it is fixable in this release
+14:08:05 <jmrodri> punting to 1.4
+14:09:08 <jmrodri> #info expose user/cluster information to APBs
+14:09:08 <brokerbot> jmrodri: info
+14:09:11 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/470
+14:09:11 <brokerbot> jmrodri: link
+14:09:16 <jmrodri> I swear this was fixed already
+14:09:43 <dymurray> Don't we have apb_last_requested_user? or something?
+14:09:59 <jmrodri> dymurray: that's why I thought this was fixed.
+14:10:24 <shurley> we dont pass the dns suffix
+14:10:34 <shurley> of the cluster I think that is why that is still open
+14:10:46 <shurley> and I have no idea how to get the dns suffix to even pass it
+14:11:00 <dymurray> Don't we have apb_last_requested_user? or something?
+14:11:18 <dymurray> sorry... but yeah looks like thats all thats left
+14:11:50 <jmrodri> okay I'll see if we need to keep this going or not.
+14:12:04 <jmrodri> #action jmrodri determine if 470 needs to remain open
+14:12:04 <brokerbot> jmrodri: action
+14:12:29 <jmrodri> okay that's awesome. at the beginning of this triage we had 17 issues for 1.3.
+14:12:33 <jmrodri> we now have 8
+14:12:38 <jmrodri> thanks for your time on this :)
+14:12:42 <jmrodri> \o/
+14:13:17 <jmrodri> that was all the items on the agenda.
+14:13:37 <jmrodri> anyone have anything they'd like to talk about in the features or open discussion section?
+14:13:49 <jmrodri> we have 17 minutes left in the meeting
+14:14:47 <jmrodri> if no one has anything, I will call the meeting adjourned.
+14:15:19 <jmrodri> I'll send out the notes shortly, and post them in the repo as well
+14:15:21 <jmrodri> #endmeeting
