@@ -288,11 +288,11 @@ func getSpecManifest(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bun
 		// If condition is just for logging. It is useful information
 		// as to which specs were added and which were updated
 		if _, ok := daoSpecs[s.ID]; ok {
-			log.Debugf("spec '%v' needs to be updated", s.ID)
+			log.Debugf("spec '%v|%v' needs to be updated", s.ID, s.FQName)
 			specManifest[s.ID] = s
 			s.Delete = false
 		} else {
-			log.Debugf("spec '%v' needs to be added", s.ID)
+			log.Debugf("spec '%v|%v' needs to be added", s.ID, s.FQName)
 			specManifest[s.ID] = s
 			s.Delete = false
 		}
