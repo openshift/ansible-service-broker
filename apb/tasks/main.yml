@@ -63,18 +63,25 @@
     - name: broker.deployment.yaml
     - name: broker.servicecatalog.yaml
 
-- name: Wait for clusterservicebroker to become ready
-  debug:
-    msg: "Broker ready status: {{ cluster_service_broker_query }}"
-  retries: 60
-  delay: 10
-  until: cluster_service_broker_query | length > 0 and cluster_service_broker_query | first == "True"
-  when: broker_kind == 'ClusterServiceBroker' and state == 'present' and wait_for_broker
+- name: Wait for broker
+  when: state == 'present' and wait_for_broker
+  block:
+    - name: Wait for {{ broker_kind }} to become ready
+      debug:
+        msg: "Broker ready status: {{ service_broker_ready_status }}"
+      retries: 60
+      delay: 10
+      until: service_broker_ready_status | length > 0 and service_broker_ready_status | first == "True"
+  rescue:
+    - name: Show {{ broker_kind }} from service catalog
+      debug:
+        var: service_broker_query
 
-- name: Wait for servicebroker to become ready
-  debug:
-    msg: "Broker ready status: {{ service_broker_query }}"
-  retries: 60
-  delay: 10
-  until: service_broker_query | length > 0 and service_broker_query | first == "True"
-  when: broker_kind == 'ServiceBroker' and state == 'present' and wait_for_broker
+    - name: Show broker pod logs
+      vars:
+        pod: "{{ lookup('k8s', kind='Pod', label_selector='app=' + broker_name) }}"
+      debug:
+        var: pod
+
+    - fail:
+        msg: The service catalog never marked the broker as ready

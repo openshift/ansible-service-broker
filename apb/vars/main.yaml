@@ -18,20 +18,14 @@ etcd_tls_name: "{{ etcd_name }}-tls"
 etcd_host: "{{ etcd_name }}.{{ broker_namespace }}.svc"
 
 ready_status_query: "status.conditions[?type == 'Ready'].status"
-cluster_service_broker_query: "{{
-  lookup(
-    'k8s',
-    api_version='servicecatalog.k8s.io/v1beta1',
-    kind='ClusterServiceBroker',
-    resource_name=broker_name
-  ) | json_query(ready_status_query)
-}}"
+service_broker_query_namespace: "{{ None if broker_kind == 'ClusterServiceBroker' else broker_namespace }}"
 service_broker_query: "{{
   lookup(
     'k8s',
     api_version='servicecatalog.k8s.io/v1beta1',
-    kind='ServiceBroker',
+    kind=broker_kind,
     resource_name=broker_name,
-    namespace=broker_namespace
-  ) | json_query(ready_status_query)
+    namespace=service_broker_query_namespace
+  )
 }}"
+service_broker_ready_status: "{{ service_broker_query | json_query(ready_status_query) }}"
