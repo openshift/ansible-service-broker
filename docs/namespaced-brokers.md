@@ -2,9 +2,9 @@
 
 In the Service Catalog, brokers that conform to the Open Service Broker spec
 can now be registered with the catalog as either a cluster-scoped
-`ClusterServiceBroker`, or a namespace-scoped `ServiceBroker` kind. Namespaced
-brokers will have their services and plans created and offered, likewise, on
-a cluster wide, or namespaced basis. This enables a number of interesting use
+`ClusterServiceBroker`, or a namespace-scoped `ServiceBroker` kind. Depending
+on the broker's scope, its services and plans will be available to the entire
+cluster, or scoped to a specific namespace. This enables a number of interesting use
 cases. For example, a cluster administrator may want to control access to
 certain services and plans, so they are able to do so by creating a namespaced
 service broker that will only expose these to users that have access to that
@@ -64,7 +64,7 @@ spec:
   containers:
     - name: apb
       image: docker.io/automationbroker/automation-broker-apb:latest
-      args: [ "provision", "-e broker_kind=ServiceBroker" ]
+      args: [ "provision", "--extra-vars", '{ "broker_kind": "ServiceBroker" }' ]
       imagePullPolicy: IfNotPresent
 restartPolicy: Never
 ```
@@ -77,12 +77,12 @@ By default, the broker will be installed to the `automation-broker` namespace,
 although it's likely users may wish to specify the namespace where the broker
 will be installed. This can be specified by tweaking the APB's arguments:
 
-`args: [ "provision", "-e broker_kind=ServiceBroker", "-e broker_namespace=my_namespace" ]`
+`args: [ "provision", "--extra-vars", '{ "broker_kind": "ServiceBroker", "broker_namespace": "my_namespace" }' ]`
 
 Additionally, if the namespace does not already exist, the APB can automatically
 create it as part of provision:
 
-`args: [ "provision", "-e broker_kind=ServiceBroker", "-e broker_namespace=my_namespace", "-e create_broker_namespace=true"]`
+`args: [ "provision", "--extra-vars", '{ "broker_kind": "ServiceBroker", "broker_namespace": "my_namespace", "create_broker_namespace": true }' ]`
 
 ## Usage
 
