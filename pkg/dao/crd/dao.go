@@ -91,7 +91,7 @@ func (d *Dao) SetSpec(id string, spec *bundle.Spec) error {
 
 	// Get the spec from datastore
 	if s, err := d.client.Bundles(d.namespace).Get(id, metav1.GetOptions{}); err == nil {
-		log.Infof("update spec: %v to crd", id)
+		log.Infof("update spec: %v|%v to crd", id, spec.FQName)
 		s.Spec = bundleSpec
 		if _, err = d.client.Bundles(d.namespace).Update(s); err != nil {
 			log.Errorf("error updating spec '%v', %v", id, err)
@@ -101,7 +101,7 @@ func (d *Dao) SetSpec(id string, spec *bundle.Spec) error {
 	}
 
 	// Could not get the spec, try to add it
-	log.Infof("add spec: %v", id)
+	log.Infof("add spec: %v|%v", id, spec.FQName)
 	b := v1.Bundle{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,

@@ -288,11 +288,11 @@ func getSpecManifest(daoSpecs map[string]*bundle.Spec, specs []*bundle.Spec) bun
 		// If condition is just for logging. It is useful information
 		// as to which specs were added and which were updated
 		if _, ok := daoSpecs[s.ID]; ok {
-			log.Debugf("spec '%v' needs to be updated", s.ID)
+			log.Debugf("spec '%v|%v' needs to be updated", s.ID, s.FQName)
 			specManifest[s.ID] = s
 			s.Delete = false
 		} else {
-			log.Debugf("spec '%v' needs to be added", s.ID)
+			log.Debugf("spec '%v|%v' needs to be added", s.ID, s.FQName)
 			specManifest[s.ID] = s
 			s.Delete = false
 		}
@@ -343,9 +343,9 @@ func getSafeToDeleteSpecs(a AnsibleBroker, markedSpecs map[string]*bundle.Spec) 
 func convertSpecListToMap(specs []*bundle.Spec) map[string]*bundle.Spec {
 	specMap := make(map[string]*bundle.Spec)
 	for _, spec := range specs {
-		log.Debugf("spec '%v' converted to map", spec.ID)
 		specMap[spec.ID] = spec
 	}
+	log.Debugf("converting []*Spec to SpecManifest successful")
 	return specMap
 }
 
