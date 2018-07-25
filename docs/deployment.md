@@ -27,12 +27,3 @@ The following is the template used to deploy the ASB:
 
 ### Launch APB on Bind Parameter
 Currently, we are ***disabling*** running an APB on `Bind()` due to the lack of async support of bind in the Open Service Broker API.  This is achieved via `launchapbonbind` which is currently set to `false`.  You may enable launching of APB on Bind by changing it to `true`.  However, since there is a timeout of ~15 seconds asserted from the Service Catalog, you will likely see failures running an APB.
-
-## Run Deployment Script
-The script below sets the parameter values that the deployment template expects, and deploys the Ansible Service Broker to the cluster.
- * [run_template.sh](../templates/run_template.sh)
-
-To run the script, edit the script file, and modify the parameter values, then execute the script
-```bash
-./templates/run_template.sh
-```
