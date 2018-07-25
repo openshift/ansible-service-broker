@@ -100,6 +100,38 @@ var PlanBindParams = []apb.ParameterDescriptor{
 	},
 }
 
+var PlanParamsNoUpdate = []apb.ParameterDescriptor{
+	{
+		Name:        "email_address",
+		Title:       "Email Address",
+		Type:        "enum",
+		Description: "example enum parameter",
+		Enum:        []string{"google@gmail.com", "redhat@redhat.com"},
+		Default:     float64(9001),
+	},
+	{
+		Name:        "password",
+		Title:       "Password",
+		Type:        "string",
+		Description: "example string parameter with a display type",
+		DisplayType: "password",
+	},
+	{
+		Name:         "first_name",
+		Title:        "First Name",
+		Type:         "string",
+		Description:  "example grouped string parameter",
+		DisplayGroup: "User Information",
+	},
+	{
+		Name:         "last_name",
+		Title:        "Last Name",
+		Type:         "string",
+		Description:  "example grouped string parameter",
+		DisplayGroup: "User Information",
+	},
+}
+
 var p = apb.Plan{
 	ID:             "55822a921d2c4858fe6e58f5522429c2", // md5(dh-sns-apb-dev)
 	Name:           PlanName,
@@ -108,6 +140,17 @@ var p = apb.Plan{
 	Free:           PlanFree,
 	Bindable:       PlanBindable,
 	Parameters:     PlanParams,
+	BindParameters: PlanBindParams,
+}
+
+var pNotUpdatable = apb.Plan{
+	ID:             "55822a921d2c4858fe6e58f5522429c2", // md5(dh-sns-apb-dev)
+	Name:           PlanName,
+	Description:    PlanDescription,
+	Metadata:       PlanMetadata,
+	Free:           PlanFree,
+	Bindable:       PlanBindable,
+	Parameters:     PlanParamsNoUpdate,
 	BindParameters: PlanBindParams,
 }
 
@@ -177,7 +220,25 @@ func TestUpdateMetadata(t *testing.T) {
 	verifyInstanceFormDefinition(t, planMetadata, []string{"schemas", "service_instance", "create"})
 
 	updateFormDefnMap := verifyMapPath(t, planMetadata, []string{"schemas", "service_instance", "update"})
-	ft.AssertEqual(t, len(updateFormDefnMap), 0, "schemas.service_instance.update is not empty")
+	ft.AssertEqual(t, len(updateFormDefnMap), 1, "schemas.service_instance.update is empty")
+
+	formDefnMetadata, _ := updateFormDefnMap["openshift_form_definition"].([]interface{})
+	ft.AssertEqual(t, len(formDefnMetadata), 1, "schemas.service_instance.update is not empty")
+
+	verifyBindingFormDefinition(t, planMetadata, []string{"schemas", "service_binding", "create"})
+}
+
+func TestNotUpdatableMetadata(t *testing.T) {
+	planMetadata := extractBrokerPlanMetadata(pNotUpdatable)
+	ft.AssertNotNil(t, planMetadata, "plan metadata is empty")
+
+	verifyInstanceFormDefinition(t, planMetadata, []string{"schemas", "service_instance", "create"})
+
+	updateFormDefnMap := verifyMapPath(t, planMetadata, []string{"schemas", "service_instance", "update"})
+	ft.AssertEqual(t, len(updateFormDefnMap), 1, "schemas.service_instance.update is not empty")
+
+	formDefnMetadata, _ := updateFormDefnMap["openshift_form_definition"].([]interface{})
+	ft.AssertEqual(t, len(formDefnMetadata), 0, "schemas.service_instance.update is not empty")
 
 	verifyBindingFormDefinition(t, planMetadata, []string{"schemas", "service_binding", "create"})
 }
