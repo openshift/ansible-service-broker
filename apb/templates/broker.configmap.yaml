@@ -43,6 +43,16 @@ data:
           - {{ item | quote }}
 {%     endfor %}
 {% endif %}
+{% if broker_galaxy_enabled | bool %}
+      - type: galaxy
+        name: {{ broker_galaxy_name }}
+{# url: {{ broker_galaxy_url }} #}
+        runner: {{ broker_galaxy_runner }}
+        white_list:
+{%     for item in broker_galaxy_white_list %}
+          - {{ item | quote }}
+{%     endfor %}
+{% endif %}
     dao:
       type: {{ broker_dao_type | quote }}
 {% if broker_dao_type == 'etcd' %}
