@@ -343,9 +343,9 @@ func getSafeToDeleteSpecs(a AnsibleBroker, markedSpecs map[string]*bundle.Spec) 
 func convertSpecListToMap(specs []*bundle.Spec) map[string]*bundle.Spec {
 	specMap := make(map[string]*bundle.Spec)
 	for _, spec := range specs {
-		log.Debugf("spec '%v' converted to map", spec.ID)
 		specMap[spec.ID] = spec
 	}
+	log.Debugf("converting []*Spec to SpecManifest successful")
 	return specMap
 }
 
