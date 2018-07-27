@@ -240,10 +240,32 @@ registry:
       - ".*-apb$"
 ```
 
+
 If the registry requires authentication for pulling images, this can be achieved by running the following command on every node in your existing cluster:
 
 ```bash
 docker --config=/var/lib/origin/.docker login -u <registry-user> -p <registry-password> <registry_url>
+```
+
+### Quay Registry
+
+Using the Quay registry will allow you to load APBs that are published to the [CoreOS Quay Registry](https://quay.io/about/).  If an authentication `token` is provided, private repositories (*which the token is configured to access*) will also load as well as any public repositories in the specified `org`.
+
+```yaml
+registry:
+  - name: quay_reg
+    type: quay
+    url:  https://quay.io
+    token: <for_private_repos>
+    org: <your_org>
+    white_list:
+      - ".*-apb$"
+```
+
+The Quay registry requires authentication for pulling images.  This can be achieved by running the following command on every node in your existing cluster:
+
+```bash
+docker --config=/var/lib/origin/.docker login -u <registry-user> -p <registry-password> quay.io
 ```
 
 ### Multiple Registries Example
