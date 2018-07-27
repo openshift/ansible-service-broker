@@ -78,12 +78,17 @@ func (c Config) Validate() bool {
 			return false
 		}
 	case "config":
-		if c.Type == "quay" && c.Token == "" {
-			return false
+		if c.Type == "quay" {
+			// quay requires a token
+			return c.Token != ""
 		} else if c.User == "" || c.Pass == "" {
 			return false
 		}
 	case "":
+		if c.Type == "quay" {
+			// no auth is okay for quay
+			return true
+		}
 		if c.AuthName != "" {
 			return false
 		}
@@ -123,9 +128,9 @@ func (r Registry) LoadSpecs() ([]*bundle.Spec, int, error) {
 
 	if len(filteredNames) != 0 {
 		var buffer bytes.Buffer
-		buffer.WriteString("Bundles filtered by white/blacklist filter:")
+		buffer.WriteString("Bundles filtered by white/blacklist filter:\n")
 		for _, name := range filteredNames {
-			buffer.WriteString(fmt.Sprintf("-> %s", name))
+			buffer.WriteString(fmt.Sprintf("\t-> %s\n", name))
 		}
 		log.Infof(buffer.String())
 	}
@@ -227,7 +232,7 @@ func NewCustomRegistry(configuration Config, adapter adapters.Adapter, asbNamesp
 		case "apiv2":
 			adapter, err = adapters.NewAPIV2Adapter(c)
 		case "quay":
-			adapter, err = adapters.NewQuayAdapter(c)
+			adapter = adapters.NewQuayAdapter(c)
 		case "galaxy":
 			adapter = &adapters.GalaxyAdapter{Config: c}
 		default:

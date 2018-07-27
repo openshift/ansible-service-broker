@@ -145,12 +145,6 @@ func (r *GalaxyAdapter) GetImageNames() ([]string, error) {
 // FetchSpecs - retrieve the spec for the image names.
 func (r GalaxyAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error) {
 
-	// default galaxy url
-	if r.Config.URL.Host == "" {
-		log.Debugf("Using default galaxy url: %v", defaultURL)
-		r.Config.URL, _ = url.Parse(defaultURL)
-	}
-
 	specs := []*bundle.Spec{}
 	for _, imageName := range imageNames {
 		spec, err := r.loadSpec(imageName)
@@ -258,6 +252,15 @@ func (r GalaxyAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	// Override the name, or else APBs from galaxy will be indistinguishable from dockerhub
 	spec.Metadata["displayName"] = fmt.Sprintf("%s (galaxy)", roleName)
 
+	urlParam := bundle.ParameterDescriptor{
+		Name:      "galaxy_url",
+		Title:     "Galaxy URL",
+		Type:      "string",
+		Updatable: false,
+		Required:  true,
+		Default:   r.Config.URL.String(),
+		Pattern:   fmt.Sprintf("^%s$", r.Config.URL.String()),
+	}
 	roleParam := bundle.ParameterDescriptor{
 		Name:      "role_name",
 		Title:     "Galaxy Role Name",
@@ -277,7 +280,7 @@ func (r GalaxyAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 		Pattern:   fmt.Sprintf("^%s$", roleResp.Summary.Namespace.Name),
 	}
 	for key, plan := range spec.Plans {
-		plan.Parameters = append([]bundle.ParameterDescriptor{roleParam, namespaceParam}, plan.Parameters...)
+		plan.Parameters = append([]bundle.ParameterDescriptor{urlParam, roleParam, namespaceParam}, plan.Parameters...)
 		spec.Plans[key].Parameters = plan.Parameters
 	}
 
