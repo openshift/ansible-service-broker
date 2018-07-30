@@ -163,7 +163,6 @@ func configToSpec(config []byte, image string) (*bundle.Spec, error) {
 	// image name to be pulled during provision
 	spec.Image = image
 
-	log.Debugf("adapter::configToSpec -> Got plans %+v", spec.Plans)
 	log.Debugf("Successfully converted Image %s into Spec", spec.Image)
 	log.Infof("adapter::configToSpec -> Image %s runtime is %d", spec.Image, spec.Runtime)
 

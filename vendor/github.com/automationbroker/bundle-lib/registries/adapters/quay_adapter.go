@@ -53,7 +53,7 @@ type quayImageResponse struct {
 }
 
 // NewQuayAdapter - creates and returns a QuayAdapter ready to use.
-func NewQuayAdapter(config Configuration) (QuayAdapter, error) {
+func NewQuayAdapter(config Configuration) QuayAdapter {
 	a := QuayAdapter{
 		config: config,
 	}
@@ -63,7 +63,7 @@ func NewQuayAdapter(config Configuration) (QuayAdapter, error) {
 		a.config.Tag = "latest"
 	}
 
-	return a, nil
+	return a
 }
 
 // RegistryName - Retrieve the registry name

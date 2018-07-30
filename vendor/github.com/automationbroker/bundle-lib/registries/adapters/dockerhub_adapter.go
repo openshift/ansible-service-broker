@@ -28,10 +28,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const dockerhubName = "docker.io"
-const dockerHubLoginURL = "https://hub.docker.com/v2/users/login/"
-const dockerHubRepoImages = "https://hub.docker.com/v2/repositories/%v/?page_size=100"
-const dockerHubManifestURL = "https://registry.hub.docker.com/v2/%v/manifests/%v"
+var (
+	dockerhubName        = "docker.io"
+	dockerHubLoginURL    = "https://hub.docker.com/v2/users/login/"
+	dockerHubRepoImages  = "https://hub.docker.com/v2/repositories/%v/?page_size=100"
+	dockerHubManifestURL = "https://registry.hub.docker.com/v2/%v/manifests/%v"
+	dockerBearerTokenURL = "https://auth.docker.io/token"
+)
 
 // DockerHubAdapter - Docker Hub Adapter
 type DockerHubAdapter struct {
@@ -121,19 +124,14 @@ func (r DockerHubAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, error
 
 // getDockerHubToken - will retrieve the docker hub token.
 func (r DockerHubAdapter) getDockerHubToken() (string, error) {
-	type Payload struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-
 	type TokenResponse struct {
 		Token string `json:"token"`
 	}
-	data := Payload{
-		Username: r.Config.User,
-		Password: r.Config.Pass,
-	}
-	payloadBytes, err := json.Marshal(data)
+
+	payloadBytes, err := json.Marshal(map[string]string{
+		"username": r.Config.User,
+		"password": r.Config.Pass,
+	})
 	if err != nil {
 		return "", err
 	}
@@ -222,20 +220,25 @@ func (r DockerHubAdapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(dockerHubManifestURL, imageName, r.Config.Tag), nil)
-	if err != nil {
-		return nil, err
-	}
+
 	token, err := r.getBearerToken(imageName)
 	if err != nil {
 		return nil, err
 	}
+
+	req, err := http.NewRequest("GET", fmt.Sprintf(dockerHubManifestURL, imageName, r.Config.Tag), nil)
+	if err != nil {
+		return nil, err
+	}
+
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
 	req.Header.Add("Accept", "application/json")
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
 	body, err := registryResponseHandler(resp)
 	if err != nil {
 		return nil, fmt.Errorf("DockerHubAdapter::error handling dockerhub registery response %s", err)
@@ -248,14 +251,15 @@ func (r DockerHubAdapter) getBearerToken(imageName string) (string, error) {
 	var req *http.Request
 	if r.Config.User == "" {
 		req, err = http.NewRequest("GET",
-			fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%v:pull", imageName), nil)
+			fmt.Sprintf("%s?service=registry.docker.io&scope=repository:%v:pull",
+				dockerBearerTokenURL, imageName), nil)
 		if err != nil {
 			return "", err
 		}
 	} else {
 		req, err = http.NewRequest("GET",
-			fmt.Sprintf("https://auth.docker.io/token?grant_type=password&service=registry.docker.io&scope=repository:%v:pull", imageName),
-			nil)
+			fmt.Sprintf("%s?grant_type=password&service=registry.docker.io&scope=repository:%v:pull",
+				dockerBearerTokenURL, imageName), nil)
 		if err != nil {
 			return "", err
 		}

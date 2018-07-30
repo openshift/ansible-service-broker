@@ -291,7 +291,7 @@ func SpecLogDump(spec *Spec) {
 	for _, plan := range spec.Plans {
 		log.Debugf("Plan: %s", plan.Name)
 		for _, param := range plan.Parameters {
-			log.Debugf("  Name: %#v", param.Name)
+			log.Debugf("  Name: %s", param.Name)
 			log.Debugf("  Title: %s", param.Title)
 			log.Debugf("  Type: %s", param.Type)
 			log.Debugf("  Description: %s", param.Description)
@@ -300,12 +300,12 @@ func SpecLogDump(spec *Spec) {
 			log.Debugf("  MaxLength: %d", param.MaxLength)
 			log.Debugf("  MinLength: %d", param.MinLength)
 			log.Debugf("  Pattern: %s", param.Pattern)
-			log.Debugf("  MultipleOf: %d", param.MultipleOf)
+			log.Debugf("  MultipleOf: %f", param.MultipleOf)
 			log.Debugf("  Minimum: %#v", param.Minimum)
 			log.Debugf("  Maximum: %#v", param.Maximum)
 			log.Debugf("  ExclusiveMinimum: %#v", param.ExclusiveMinimum)
 			log.Debugf("  ExclusiveMaximum: %#v", param.ExclusiveMaximum)
-			log.Debugf("  Required: %s", param.Required)
+			log.Debugf("  Required: %t", param.Required)
 			log.Debugf("  Enum: %v", param.Enum)
 		}
 	}

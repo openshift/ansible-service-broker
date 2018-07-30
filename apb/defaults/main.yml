@@ -77,7 +77,7 @@ broker_helm_runner: docker.io/automationbroker/helm-runner:latest
 broker_helm_white_list: [ ".*" ]
 
 # Broker galaxy registry options
-broker_galaxy_enabled: true
+broker_galaxy_enabled: false
 broker_galaxy_name: galaxy
 broker_galaxy_url: https://galaxy.ansible.com
 broker_galaxy_org: ansibleplaybookbundle
