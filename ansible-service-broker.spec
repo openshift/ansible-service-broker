@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.5
+Version: 1.3.6
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -327,6 +327,19 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Jul 31 2018 David Zager <david.j.zager@gmail.com> 1.3.6-1
+- Update galaxy-adapter to include galaxy URL (#1023) (dzager@redhat.com)
+- update for quay adapter (#1002) (jkim@redhat.com)
+- Add galaxy adapter (#1016) (dzager@redhat.com)
+- Add namespaced broker docs (#1021) (ernelson@redhat.com)
+- update obj form definition (#954) (2183506+odra@users.noreply.github.com)
+- Improve logging when wait_for_broker fails (#1020) (dzager@redhat.com)
+- Show broker version in logs for easier debugging (#1017) (jmrodri@gmail.com)
+- 938 - remove run_template from docs (#1018) (jmrodri@gmail.com)
+- add documentation for API v2 adapter usage (#1003) (jkim@redhat.com)
+- include FQName in spec logging, ID isn't useful enough (#1022)
+  (jmrodri@gmail.com)
+
 * Mon Jul 23 2018 David Zager <david.j.zager@gmail.com> 1.3.5-1
 - Enhance spec reconciliation, using async bootstrap (#1008)
   (alay1431@gmail.com)
