@@ -17,6 +17,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -27,6 +28,11 @@ import (
 )
 
 func main() {
+
+	// next line will prevent `ERROR: logging before flag.Parse:` errors from
+	// glog (used by k8s' apiserver package) see
+	// https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
+	flag.CommandLine.Parse([]string{})
 
 	var args app.Args
 	var err error
