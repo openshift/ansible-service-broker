@@ -162,7 +162,7 @@ func CreateApp(args Args, regs []registries.Registry) App {
 	}
 
 	// Show version in logs for better debugging
-	log.Infof("Ansible Service Broker Version: %v\n", version.Version)
+	log.Infof("Ansible Service Broker Version: %v", version.Version)
 	// Initializing clients as soon as we have deps ready.
 	err = initClients(app.config)
 	if err != nil {
