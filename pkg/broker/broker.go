@@ -99,7 +99,6 @@ type Config struct {
 	SSLCert             string `yaml:"ssl_cert"`
 	RefreshInterval     string `yaml:"refresh_interval"`
 	AutoEscalate        bool   `yaml:"auto_escalate"`
-	ClusterURL          string `yaml:"cluster_url"`
 	DashboardRedirector string `yaml:"dashboard_redirector"`
 }
 
@@ -142,7 +141,6 @@ func NewAnsibleBroker(dao dao.Dao,
 			SSLCert:             brokerConfig.GetString("ssl_cert"),
 			RefreshInterval:     brokerConfig.GetString("refresh_interval"),
 			AutoEscalate:        brokerConfig.GetBool("auto_escalate"),
-			ClusterURL:          brokerConfig.GetString("cluster_url"),
 			DashboardRedirector: brokerConfig.GetString("dashboard_redirector"),
 		},
 		namespace:   namespace,
