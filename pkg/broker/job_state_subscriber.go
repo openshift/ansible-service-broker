@@ -110,6 +110,13 @@ func (jss *JobStateSubscriber) cleanupAfterDeprovision(msg JobMsg) error {
 		}
 		return deleteErr
 	}
+
+	// Attempt to delete extracted credentials created from provision. The creds
+	// should only be deleted if the instance was successfully deleted, otherwise
+	// we will end up in a corrupt state.
+	if err := bundle.DeleteExtractedCredentials(msg.InstanceUUID); err != nil {
+		log.Infof("Attempted to delete extracted credentials from a provision but could not: %s", err.Error())
+	}
 	return nil
 }
 
