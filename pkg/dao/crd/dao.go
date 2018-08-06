@@ -429,31 +429,31 @@ func (d *Dao) GetState(id string, token string) (bundle.JobState, error) {
 	var job v1.Job
 	bi, err := d.client.BundleBindings(d.namespace).Get(id, metav1.GetOptions{})
 	if err != nil && !d.IsNotFoundError(err) {
-		log.Errorf("Could not find binding %v associated with job state %v - %v", id, token, err)
+		log.Debugf("Could not find binding %v associated with job state %v - %v", id, token, err)
 		return bundle.JobState{}, fmt.Errorf("Could not find binding %v associated with job state %v",
 			id, token)
 	} else if d.IsNotFoundError(err) {
 		si, err := d.client.BundleInstances(d.namespace).Get(id, metav1.GetOptions{})
 		if err != nil || si.Status.Jobs == nil {
-			log.Errorf("Could not find instance %v associated with job state %v - %v",
+			log.Debugf("Could not find instance %v associated with job state %v - %v",
 				id, token, err)
 
 			return bundle.JobState{}, err
 		}
 		j, ok := si.Status.Jobs[token]
 		if !ok {
-			log.Errorf("Unable to get the job state: %v - %v", token, err)
+			log.Debugf("Unable to get the job state: %v - %v", token, err)
 			return bundle.JobState{}, fmt.Errorf("unable to find job state %v", token)
 		}
 		job = j
 	} else {
 		if bi.Status.Jobs == nil {
-			log.Errorf("binding %v has no associated job states: %v - %v", id, token, err)
+			log.Debugf("binding %v has no associated job states: %v - %v", id, token, err)
 			return bundle.JobState{}, err
 		}
 		j, ok := bi.Status.Jobs[token]
 		if !ok {
-			log.Errorf("binding %v does not have job state: %v - %v", id, token, err)
+			log.Debugf("binding %v does not have job state: %v - %v", id, token, err)
 			return bundle.JobState{}, fmt.Errorf("unable to find job state %v", token)
 		}
 
@@ -473,7 +473,9 @@ func (d *Dao) GetState(id string, token string) (bundle.JobState, error) {
 func (d *Dao) GetStateByKey(key string) (bundle.JobState, error) {
 	bi, err := d.client.BundleBindings(d.namespace).Get(key, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("Unable to get the job state: %v - %v", key, err)
+		if !d.IsNotFoundError(err) {
+			log.Errorf("Unable to get the job state: %v - %v", key, err)
+		}
 		return bundle.JobState{}, err
 	}
 	for token, j := range bi.Status.Jobs {
@@ -501,13 +503,17 @@ func (d *Dao) FindJobStateByState(state bundle.State) ([]bundle.RecoverStatus, e
 
 	sis, err := d.client.BundleInstances(d.namespace).List(metav1.ListOptions{})
 	if err != nil {
-		log.Errorf("unable to get instance jobs for the state: %v - %v", state, err)
+		if !d.IsNotFoundError(err) {
+			log.Errorf("unable to get instance jobs for the state: %v - %v", state, err)
+		}
 		return nil, err
 	}
 
 	bis, err := d.client.BundleBindings(d.namespace).List(metav1.ListOptions{})
 	if err != nil {
-		log.Errorf("unable to get binding jobs for the state: %v - %v", state, err)
+		if !d.IsNotFoundError(err) {
+			log.Errorf("unable to get binding jobs for the state: %v - %v", state, err)
+		}
 		return nil, err
 	}
 
