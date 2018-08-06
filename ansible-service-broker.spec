@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.6
+Version: 1.3.7
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -327,6 +327,14 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Aug 06 2018 David Zager <david.j.zager@gmail.com> 1.3.7-1
+- Bug 1583587 - lower loglevel to debug, wrap others (#1030)
+  (jmrodri@gmail.com)
+- Bug 1577797 - call flag...Parse to prevent logging error (#1027)
+  (jmrodri@gmail.com)
+- Bug 1585951 - Delete prov creds on deprovision (#1024) (ernelson@redhat.com)
+- remove newline from version log (#1026) (jmrodri@gmail.com)
+
 * Tue Jul 31 2018 David Zager <david.j.zager@gmail.com> 1.3.6-1
 - Update galaxy-adapter to include galaxy URL (#1023) (dzager@redhat.com)
 - update for quay adapter (#1002) (jkim@redhat.com)
