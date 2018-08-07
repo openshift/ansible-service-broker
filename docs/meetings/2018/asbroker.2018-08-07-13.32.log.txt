@@ -1,0 +1,160 @@
+13:32:58 <jmrodri> #startmeeting Automation Broker Community Meeting Aug 7, 2018
+13:32:58 <brokerbot> Meeting started Tue Aug  7 13:32:58 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+13:32:58 <brokerbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+13:32:58 <brokerbot> The meeting name has been set to 'automation_broker_community_meeting_aug_7,_2018'
+13:32:58 <brokerbot> jmrodri: startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+13:33:02 <jmrodri> much better
+13:33:07 <jmrodri> #topic attendance
+13:33:07 <brokerbot> jmrodri: topic
+13:33:13 <mhrivnak> o/
+13:33:25 <jmrodri> Hello all, welcome to the August 7th Automation broker community meeting
+13:33:40 <jmrodri> the agenda link is seen above
+13:36:15 <dymurray> hello
+13:37:12 <jmrodri> #topic News
+13:37:12 <brokerbot> jmrodri: topic
+13:37:23 <jmrodri> anyone have anything they'd like to share?
+13:38:37 <jmrodri> #info bundle-lib 0.2.7 released July 27th
+13:38:37 <brokerbot> jmrodri: info
+13:38:41 <jmrodri> #link https://github.com/automationbroker/bundle-lib/releases/tag/0.2.7
+13:38:41 <brokerbot> jmrodri: link
+13:39:02 <jmrodri> we'll probably do another release this week
+13:39:46 <jmrodri> #topic automation broker build 1.3.7-1 was done yesterday
+13:39:46 <brokerbot> jmrodri: topic
+13:40:07 <jmrodri> Okay moving on to previous actions
+13:40:20 <jmrodri> #topic Preview Actions
+13:40:20 <brokerbot> jmrodri: topic
+13:40:35 <jmrodri> #info jmrodri to test issue 941
+13:40:35 <brokerbot> jmrodri: info
+13:40:45 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/941
+13:40:45 <brokerbot> jmrodri: link
+13:41:02 <jmrodri> status: DONE! I tested this and determined it has been fixed in a recent release
+13:41:07 * dzager darn freenode making me re-login, I guess that I should set this up on the bouncer...
+13:41:29 <jmrodri> dzager: are you having trouble joining this channel?
+13:41:37 <jmrodri> maybe because it's +r now to prevent spammers
+13:42:10 <dzager> it's really just me forgetting that I have to identify
+13:42:10 <jmrodri> #info shurley write up brief comment on issue 111
+13:42:10 <brokerbot> jmrodri: info
+13:42:19 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/111
+13:42:19 <brokerbot> jmrodri: link
+13:42:27 <jmrodri> shurley: any status on issue 111 above?
+13:42:42 <jmrodri> I think we just needed a comment or writeup for it
+13:43:43 <jmrodri> I'll leave it open
+13:43:53 <jmrodri> #info ernelson investigate issue 974, close if not a broker issue
+13:43:53 <brokerbot> jmrodri: info
+13:44:04 <jmrodri> https://github.com/openshift/ansible-service-broker/issues/974
+13:44:09 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/974
+13:44:09 <brokerbot> jmrodri: link
+13:44:34 <ernelson> jmrodri: haven't had a chance to look into this one, I'll add it to my TODO today
+13:44:41 <jmrodri> perfect
+13:44:42 <jmrodri> thanks
+13:44:52 <jmrodri> #info dzager to update and close out issue 853
+13:44:52 <brokerbot> jmrodri: info
+13:45:00 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/853
+13:45:00 <brokerbot> jmrodri: link
+13:45:05 <jmrodri> dzager: looks like that's done.
+13:45:11 <jmrodri> excellent
+13:45:16 * dzager whew
+13:45:41 <jmrodri> issue 847 was assigned to myself as part of other binding work I'm looking into
+13:45:54 <jmrodri> #info jmrodri determine if 470 needs to remain open
+13:45:54 <brokerbot> jmrodri: info
+13:46:00 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/470
+13:46:00 <brokerbot> jmrodri: link
+13:46:13 <jmrodri> #action jmrodri determine if issue 470 is still an issue https://github.com/openshift/ansible-service-broker/issues/470
+13:46:13 <brokerbot> jmrodri: action
+13:46:21 <jmrodri> that's all for the old action items
+13:46:28 <jmrodri> #topic Bugs/Issue triage
+13:46:28 <brokerbot> jmrodri: topic
+13:46:36 <jmrodri> #topic bundle-lib issues
+13:46:36 <brokerbot> jmrodri: topic
+13:46:46 <jmrodri> there are no new bundle-lib issues open at this time.
+13:46:49 <jmrodri> \o/
+13:46:55 <jmrodri> #topic automation broker
+13:46:55 <brokerbot> jmrodri: topic
+13:47:18 <jmrodri> #info 2 new issues were created
+13:47:18 <brokerbot> jmrodri: info
+13:47:55 <jmrodri> #info Failed provision will automatically trigger continous deprovision
+13:47:55 <brokerbot> jmrodri: info
+13:48:01 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1010
+13:48:01 <brokerbot> jmrodri: link
+13:48:33 <jmrodri> so this issue states that if we fail during provision, the service-catalog triggers continuous deprovisions
+13:49:05 <jmrodri> it's my understanding that the catalog will attempt to do orphan mitigation and try to deprovision the instance. If the deprovision fails, it will continue to try.
+13:49:26 <ernelson> yeah that's expected catalog behavior
+13:49:37 <dymurray> Even though it's expected.... its incredibly ugly
+13:49:51 <dymurray> had an APB that failed and I had to go delete 28 namespaces
+13:50:30 <ernelson> we probably want to explore ways to mitigate that on our side
+13:50:48 <ernelson> if a deprovision has been failing with enough frequency, we stop trying
+13:50:56 <jmrodri> I think shurley mentioned at some point we'll need a way to back off the requests after a certain number
+13:51:02 <jmrodri> ernelson: yeah
+13:51:04 <ernelson> for some period of time, or at least some strategy to not completely overwhelm
+13:51:09 <jmrodri> a rate limiter is what shurley called it
+13:51:51 <jmrodri> okay I'll leave this issue open, and add a comment that possibly a rate limiter with some sort of backoff or limited number of tries that we can configure might be useful.
+13:52:01 <dzager> like a backoff?
+13:52:18 <dzager> how do you tell the service-catalog, nah..I'm good ask later?
+13:52:28 <ernelson> you don't, the catalog doesn't support that
+13:52:39 <ernelson> but we can report failures without actually running the apb
+13:52:44 <jmrodri> by back off I mean we accept the request but basically drop it on the floor
+13:52:45 <dzager> just ignore them for some period of time?
+13:53:18 <jmrodri> so say at first we act on them each time. then if we get say 10 back to back, we don't run the apb for at least 5 minutes.
+13:53:26 <ernelson> it's still somewhat at odds with our default choice to keep failed namespaces around
+13:53:49 <dzager> maybe remove that default?
+13:53:52 <ernelson> because the user is still going to have to go in and manually clean those up, unless the broker also has some kind of cleanup strategy coupled with the backoff
+13:53:56 <jmrodri> if we keep getting requests and it's been 5 minutes, we try again. if that fails, we increase the time. Until we hit a configured time where we stop trying altogheter and just return failed
+13:54:34 <ernelson> well, if you're someone who has a broken deprovision, you probably need those around to debug
+13:54:35 <jmrodri> dzager: yep, we could also add a feature to reap those namespaces right?
+13:54:46 <jmrodri> ernelson: yeah for debugging
+13:54:47 <ernelson> but it's also obnoxious that there are a ton of them to manually clean
+13:54:49 <dwhatley> we could remove each namespace except for the final one that fails
+13:55:06 <jmrodri> dwhatley: that's a good option
+13:55:21 <ernelson> +1, could be an additional configuration cleanup "mode"
+13:55:26 <dymurray> yeah I would like that
+13:55:28 <dymurray> +1
+13:55:46 <jmrodri> so the take away for this issue is 1) looking to adding some sort of rate limiter 2) consider a mechanism to handle left around namespaces from failed actions
+13:56:14 <jmrodri> #action jmrodri add notes from this irc discussion to issue 1010 https://github.com/openshift/ansible-service-broker/issues/1010
+13:56:14 <brokerbot> jmrodri: action
+13:56:26 <jmrodri> okay moving on to the next one
+13:56:34 <jmrodri> #info Multiline secrets are not correctly parsed
+13:56:34 <brokerbot> jmrodri: info
+13:56:40 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1028
+13:56:40 <brokerbot> jmrodri: link
+13:57:10 <jmrodri> basically this one states the user created a multiline secret and we don't parse it correctly.
+13:57:21 <jmrodri> as if we are using newline as the delimiter
+13:57:30 <jmrodri> I have not verified this.
+13:57:39 <jmontleon> can i get an ack please: https://github.com/fusor/catasb/pull/253/files
+13:57:55 <jmrodri> jmontleon: done
+13:58:02 <jmontleon> thanks jmrodri
+13:58:08 <jmrodri> anyone want to volunteer for issue 1028?
+13:58:56 <jmrodri> #action jmrodri assign issue 1028 to someone https://github.com/openshift/ansible-service-broker/issues/1028
+13:58:56 <brokerbot> jmrodri: action
+13:59:24 <jmrodri> #info 5 release 1.3 issues open
+13:59:24 <brokerbot> jmrodri: info
+13:59:27 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.11+%7C+release-1.3%22
+13:59:27 <brokerbot> jmrodri: link
+13:59:49 <jmrodri> 3 of them assigned to me and related to bindings, I'm hoping to get those done this week while I investigate another binding issue
+14:00:15 <jmrodri> the 4th one is ernelson issue 974. We just need to determine if that's something that will be fixed in this release or not.
+14:00:25 <jmrodri> #action ernelson get an answer on issue 974
+14:00:25 <brokerbot> jmrodri: action
+14:00:52 <darkmagic> Christel just posted this "denial" on the freenode blog https://freenode.net/news/spam-shake Why does this blog post mention "10.2 million" THREE times?
+14:01:57 <jmrodri> wow spam bots STILL going on
+14:02:14 <jmrodri> okay that's it for the issues
+14:02:21 <jmrodri> No features topic
+14:02:30 <jmrodri> #topic open discussion
+14:02:30 <brokerbot> jmrodri: topic
+14:02:41 <jmrodri> #info consider making this IRC meeting bi-weekly or monthly
+14:02:41 <brokerbot> jmrodri: info
+14:03:12 <jmrodri> right now this IRC meeting is scheduled weekly. I think that's too often and we're not getting a good set of topics to discuss
+14:03:36 <jmrodri> I was thinking of moving the meeting to bi-weekly (every 2 weeks, aka twice a month)
+14:03:43 <jmrodri> roughly twice a month
+14:03:50 <jmrodri> anyone object to that?
+14:04:00 <ernelson> sounds good to me
+14:04:01 * jmrodri thinks I'm having the meeting by myself this week :)
+14:04:02 <dymurray> +1
+14:04:08 <matzew> hi, I try the OKD 3.10 install, but getting -> "error: update acceptor rejected openshift-automation-service-broker-1: pods for rc 'openshift-automation-service-broker/openshift-automation-service-broker-1' took longer than 600 seconds to become available
+14:04:10 <matzew> "
+14:04:40 <jmrodri> ernelson: dymurray okay I'm going to do bi-weekly to start.
+14:04:56 <jmrodri> #action jmrodri update meeting invite to be bi-weekly, send out email to asb list to announce it
+14:04:56 <brokerbot> jmrodri: action
+14:05:05 <jmrodri> #action jmrodri send out meeting minutes for today
+14:05:05 <brokerbot> jmrodri: action
+14:05:13 <jmrodri> anyone else have anything they'd like to discuss?
+14:07:26 <jmrodri> Okay then I will adjourn the meeting. Thanks everyone
+14:07:28 <jmrodri> #endmeeting
