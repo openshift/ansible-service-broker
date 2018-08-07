@@ -61,8 +61,6 @@ var (
 	ErrorParameterUnknownEnum = errors.New("unknown enum parameter value requested")
 	// ErrorPlanUpdateNotPossible - Error when a Plan Update request cannot be satisfied
 	ErrorPlanUpdateNotPossible = errors.New("plan update not possible")
-	// ErrorNoUpdateRequested - Error for when no valid updates are requested
-	ErrorNoUpdateRequested = errors.New("no valid updates requested")
 	// ErrorUnbindingInProgress - Error when unbind is called that has an unbinding job in progress
 	ErrorUnbindingInProgress = errors.New("unbinding in progress")
 )
@@ -1413,12 +1411,6 @@ func (a AnsibleBroker) Update(instanceUUID uuid.UUID, req *UpdateRequest, async 
 	req.Parameters, err = a.validateRequestedUpdateParams(req.Parameters, toPlan, prevParams, si)
 	if err != nil {
 		return nil, err
-	}
-
-	if fromPlan.Name == toPlan.Name && len(req.Parameters) == 0 {
-		log.Warningf("Returning without running the APB. No changes were actually requested")
-
-		return &UpdateResponse{}, ErrorNoUpdateRequested
 	}
 
 	// Parameters look good, update the ServiceInstance values

@@ -370,10 +370,6 @@ func (h handler) update(w http.ResponseWriter, r *http.Request, params map[strin
 			writeResponse(w, http.StatusAccepted, resp)
 		case broker.ErrorNotFound:
 			writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: err.Error()})
-		case broker.ErrorNoUpdateRequested:
-			writeResponse(w, http.StatusOK, resp)
-		case broker.ErrorNoUpdateRequested:
-			writeResponse(w, http.StatusOK, resp)
 		case broker.ErrorPlanNotFound,
 			broker.ErrorParameterNotUpdatable,
 			broker.ErrorParameterNotFound,
