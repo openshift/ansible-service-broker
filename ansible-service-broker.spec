@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.7
+Version: 1.3.8
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -327,6 +327,14 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Aug 10 2018 David Zager <david.j.zager@gmail.com> 1.3.8-1
+- Standardize broker endpoints (#1029) (dzager@redhat.com)
+- Add mock for the call to DeleteExtractedCredential (#1039)
+  (jmrodri@gmail.com)
+- Add route timeout annotation (#1033) (jmontleo@redhat.com)
+- Bug 1583503 Always run updates (#1032) (jmontleo@redhat.com)
+- Add 2018-08-07 meeting notes (#1031) (jmrodri@gmail.com)
+
 * Mon Aug 06 2018 David Zager <david.j.zager@gmail.com> 1.3.7-1
 - Bug 1583587 - lower loglevel to debug, wrap others (#1030)
   (jmrodri@gmail.com)
