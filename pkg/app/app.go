@@ -59,8 +59,8 @@ var (
 )
 
 const (
-	// defaultClusterURLPreFix - prefix for the ansible service broker.
-	defaultClusterURLPreFix = "/ansible-service-broker"
+	// ClusterURLPreFix - prefix for the ansible service broker.
+	ClusterURLPreFix = "/osb"
 	// MsgBufferSize - The buffer for the message channel.
 	MsgBufferSize = 20
 	// SubscriberTimeout - the amount of time in seconds that subscribers have to complete their action
@@ -375,27 +375,14 @@ func (a *App) Start() {
 	}
 
 	authorizer, err := k8sauthorization.NewAuthorizer("automationbroker.io", "access", "create")
-	var clusterURL string
-	if a.config.GetString("broker.cluster_url") != "" {
-		if !strings.HasPrefix("/", a.config.GetString("broker.cluster_url")) {
-			clusterURL = "/" + a.config.GetString("broker.cluster_url")
-		} else {
-			clusterURL = a.config.GetString("broker.cluster_url")
-		}
-	} else {
-		clusterURL = defaultClusterURLPreFix
-	}
+	var clusterURL = ClusterURLPreFix
 
 	daHandler := prometheus.InstrumentHandler(
 		"ansible-service-broker",
 		handler.NewHandler(a.broker, a.config, clusterURL, providers, authorizer),
 	)
 
-	if clusterURL == "/" {
-		genericserver.Handler.NonGoRestfulMux.HandlePrefix("/", daHandler)
-	} else {
-		genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
-	}
+	genericserver.Handler.NonGoRestfulMux.HandlePrefix(fmt.Sprintf("%v/", clusterURL), daHandler)
 
 	defaultMetrics := routes.DefaultMetrics{}
 	defaultMetrics.Install(genericserver.Handler.NonGoRestfulMux)
