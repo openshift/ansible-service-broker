@@ -10,6 +10,7 @@ import (
 	"github.com/openshift/ansible-service-broker/pkg/broker"
 	"github.com/openshift/ansible-service-broker/pkg/mock"
 	"github.com/pborman/uuid"
+	tmock "github.com/stretchr/testify/mock"
 )
 
 type mockCredentialsDelete struct {
@@ -68,14 +69,17 @@ func TestJobStateSubscriber(t *testing.T) {
 		return js
 	}
 
-	cases := []struct {
-		Name   string
-		JobMsg []broker.JobMsg
-		DAO    func() (*mock.SubscriberDAO, map[string]int)
+	cases := []*struct {
+		Name            string
+		JobMsg          []broker.JobMsg
+		DAO             func() (*mock.SubscriberDAO, map[string]int)
+		rt              runtime.MockRuntime
+		addExpectations func(rt *runtime.MockRuntime)
 	}{
 		{
 			Name:   "job state subscriber should always set state for job msg",
 			JobMsg: allStates(),
+			rt:     *new(runtime.MockRuntime),
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{}
@@ -84,6 +88,9 @@ func TestJobStateSubscriber(t *testing.T) {
 					"SetState": 1,
 				}
 				return dao, expectedCalls
+			},
+			addExpectations: func(rt *runtime.MockRuntime) {
+				rt.On("DeleteExtractedCredential", tmock.Anything, tmock.Anything).Return(nil)
 			},
 		},
 		{
@@ -96,6 +103,7 @@ func TestJobStateSubscriber(t *testing.T) {
 						Method: apb.JobMethodUnbind,
 					}},
 			},
+			rt: *new(runtime.MockRuntime),
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{ID: uID}
@@ -115,6 +123,9 @@ func TestJobStateSubscriber(t *testing.T) {
 				}
 				return dao, expectedCalls
 			},
+			addExpectations: func(rt *runtime.MockRuntime) {
+				rt.On("DeleteExtractedCredential", tmock.Anything, tmock.Anything).Return(nil)
+			},
 		},
 		{
 			Name: "after successful deprovision the service instance should be removed",
@@ -124,6 +135,7 @@ func TestJobStateSubscriber(t *testing.T) {
 					Method: apb.JobMethodDeprovision,
 				},
 			}},
+			rt: *new(runtime.MockRuntime),
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.AssertOn["SetState"] = func(args ...interface{}) error {
@@ -142,6 +154,9 @@ func TestJobStateSubscriber(t *testing.T) {
 				}
 				return dao, expectedCalls
 			},
+			addExpectations: func(rt *runtime.MockRuntime) {
+				rt.On("DeleteExtractedCredential", tmock.Anything, tmock.Anything).Return(nil)
+			},
 		},
 		{
 			Name: "after successful deprovision if there is an error cleaning up the job state should be set to failed",
@@ -151,6 +166,7 @@ func TestJobStateSubscriber(t *testing.T) {
 					Method: apb.JobMethodDeprovision,
 				},
 			}},
+			rt: *new(runtime.MockRuntime),
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.Errs["DeleteServiceInstance"] = errors.New("failed")
@@ -175,6 +191,9 @@ func TestJobStateSubscriber(t *testing.T) {
 				}
 				return dao, expectedCalls
 			},
+			addExpectations: func(rt *runtime.MockRuntime) {
+				rt.On("DeleteExtractedCredential", tmock.Anything, tmock.Anything).Return(nil)
+			},
 		},
 		{
 			Name: "after successful unbind if there is an error cleaning up the job state should be set to failed",
@@ -184,6 +203,7 @@ func TestJobStateSubscriber(t *testing.T) {
 					Method: apb.JobMethodUnbind,
 				},
 			}},
+			rt: *new(runtime.MockRuntime),
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{}
@@ -210,6 +230,9 @@ func TestJobStateSubscriber(t *testing.T) {
 				}
 				return dao, expectedCalls
 			},
+			addExpectations: func(rt *runtime.MockRuntime) {
+				rt.On("DeleteExtractedCredential", tmock.Anything, tmock.Anything).Return(nil)
+			},
 		},
 		{
 			Name: "Message state error action not found and bind",
@@ -220,6 +243,7 @@ func TestJobStateSubscriber(t *testing.T) {
 					Error:  runtime.ErrorActionNotFound.Error(),
 				},
 			}},
+			rt: *new(runtime.MockRuntime),
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{}
@@ -245,6 +269,9 @@ func TestJobStateSubscriber(t *testing.T) {
 				}
 				return dao, expectedCalls
 			},
+			addExpectations: func(rt *runtime.MockRuntime) {
+				rt.On("DeleteExtractedCredential", tmock.Anything, tmock.Anything).Return(nil)
+			},
 		},
 		{
 			Name: "Message state set dashboard url",
@@ -255,6 +282,7 @@ func TestJobStateSubscriber(t *testing.T) {
 				},
 				DashboardURL: "https://google.com",
 			}},
+			rt: *new(runtime.MockRuntime),
 			DAO: func() (*mock.SubscriberDAO, map[string]int) {
 				dao := mock.NewSubscriberDAO()
 				dao.Object["GetServiceInstance"] = &apb.ServiceInstance{}
@@ -282,11 +310,18 @@ func TestJobStateSubscriber(t *testing.T) {
 				}
 				return dao, expectedCalls
 			},
+			addExpectations: func(rt *runtime.MockRuntime) {
+				rt.On("DeleteExtractedCredential", tmock.Anything, tmock.Anything).Return(nil)
+			},
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
+			runtime.Provider = &tc.rt
+			if tc.addExpectations != nil {
+				tc.addExpectations(&tc.rt)
+			}
 			for _, jmsg := range tc.JobMsg {
 				dao, calls := tc.DAO()
 				sub := broker.NewJobStateSubscriber(dao)
