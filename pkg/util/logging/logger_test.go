@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	ft "github.com/openshift/ansible-service-broker/pkg/fusortest"
@@ -59,6 +60,7 @@ func TestInitializeLog(t *testing.T) {
 		Config      LogConfig
 		ShouldError bool
 		Name        string
+		CleanupLog  bool
 	}{
 		{
 			Config: LogConfig{
@@ -69,6 +71,7 @@ func TestInitializeLog(t *testing.T) {
 			},
 			ShouldError: false,
 			Name:        "logDoesNotExist",
+			CleanupLog:  true,
 		},
 		{
 			Config: LogConfig{
@@ -103,6 +106,11 @@ func TestInitializeLog(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("test - %v", tc.Name), func(t *testing.T) {
 			err := InitializeLog(tc.Config)
+			if tc.CleanupLog {
+				if ferr := os.Remove(tc.Config.LogFile); ferr != nil {
+					t.Logf("did not cleanup %s\n", tc.Config.LogFile)
+				}
+			}
 			if err != nil && !tc.ShouldError {
 				t.Fail()
 			}
