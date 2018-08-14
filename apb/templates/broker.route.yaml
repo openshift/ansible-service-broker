@@ -9,7 +9,7 @@ metadata:
   namespace: {{ broker_namespace }}
   labels:
     app: {{ broker_name }}
-    service: {{ broker_name }}
+    service: broker
 spec:
   to:
     kind: Service

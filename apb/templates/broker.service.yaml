@@ -7,7 +7,7 @@ metadata:
   namespace: {{ broker_namespace }}
   labels:
     app: {{ broker_name }}
-    service: {{ broker_name }}
+    service: broker
 {% if cluster == 'openshift' %}
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: {{ broker_tls_name }}
@@ -24,4 +24,4 @@ spec:
       protocol: TCP
   selector:
     app: {{ broker_name }}
-    service: {{ broker_name }}
+    service: broker
