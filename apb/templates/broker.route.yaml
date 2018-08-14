@@ -13,7 +13,7 @@ metadata:
 spec:
   to:
     kind: Service
-    name: {{ broker_name }}
+    name: broker
   port:
     targetPort: port-1338
   tls:
