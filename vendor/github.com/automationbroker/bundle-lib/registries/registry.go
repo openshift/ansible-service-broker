@@ -386,6 +386,8 @@ func retrieveRegistryAuth(reg Config, asbNamespace string) (Config, error) {
 		return reg, nil
 	case "":
 		// Assuming that the user has either no credentials or defined them in the config
+		username = reg.User
+		password = reg.Pass
 		log.Info("Empty AuthType. Assuming credentials are defined in the config... ")
 	default:
 		return Config{}, fmt.Errorf("Unrecognized registry AuthType: %s", reg.AuthType)

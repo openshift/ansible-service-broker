@@ -42,7 +42,7 @@ func (e *executor) Provision(instance *ServiceInstance) <-chan StatusMessage {
 		}
 		// Provision can not have extracted credentials.
 		if e.extractedCredentials != nil {
-			labels := map[string]string{"apbAction": string(executionMethodProvision), "apbName": instance.Spec.FQName}
+			labels := map[string]string{"bundleAction": string(executionMethodProvision), "bundleName": instance.Spec.FQName}
 			err := runtime.Provider.CreateExtractedCredential(instance.ID.String(), clusterConfig.Namespace, e.extractedCredentials.Credentials, labels)
 			if err != nil {
 				log.Errorf("apb::%v error occurred - %v", executionMethodProvision, err)

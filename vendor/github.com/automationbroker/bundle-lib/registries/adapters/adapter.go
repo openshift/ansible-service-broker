@@ -109,7 +109,6 @@ func registryResponseHandler(resp *http.Response) ([]byte, error) {
 
 // Retrieve the spec from a manifest response
 func responseToSpec(response []byte, image string) (*bundle.Spec, error) {
-	log.Debug("Registry::responseToSpec")
 	mResp := manifestResponse{}
 
 	r := bytes.NewReader(response)
@@ -122,7 +121,6 @@ func responseToSpec(response []byte, image string) (*bundle.Spec, error) {
 
 // Retrieve the spec from manifest config
 func configToSpec(config []byte, image string) (*bundle.Spec, error) {
-	log.Debug("Registry::configToSpec")
 	spec := &bundle.Spec{}
 	mConf := manifestConfig{}
 

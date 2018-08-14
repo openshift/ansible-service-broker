@@ -120,7 +120,8 @@ func (r APIV2Adapter) GetImageNames() ([]string, error) {
 	// discover images from URL
 	discoveredImages, err := r.discoverImages(fmt.Sprintf(apiV2CatalogURL, r.config.URL))
 	if err != nil && len(imageList) == 0 {
-		return nil, err
+		// This means no images specified in config and discovered no images. Erroring out
+		return nil, fmt.Errorf("failed to fetch catalog response: [%v] and failed to find images in configuration", err)
 	}
 	if len(discoveredImages) > 0 {
 		log.Debugf("Discovered images: %v", discoveredImages)
@@ -209,7 +210,7 @@ func (r APIV2Adapter) getNextImages(url string) (*apiV2CatalogResponse, string, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		log.Errorf("Failed to fetch catalog response from '%s'. Expected a 200 status and got: %v", url, resp.Status)
+		log.Warnf("Failed to fetch catalog response from '%s'. Expected a 200 status and got: %v", url, resp.Status)
 		return nil, "", errors.New(resp.Status)
 	}
 
