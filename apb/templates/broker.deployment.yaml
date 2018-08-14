@@ -12,20 +12,20 @@ metadata:
   namespace: {{ broker_namespace }}
   labels:
     app: {{ broker_name }}
-    service: {{ broker_name }}
+    service: broker
 spec:
   replicas: 1
 {% if cluster == 'kubernetes' %}
   selector:
     matchLabels:
       app: {{ broker_name }}
-      service: {{ broker_name }}
+      service: broker
   strategy:
     type: RollingUpdate
 {% else %}
   selector:
     app: {{ broker_name }}
-    service: {{ broker_name }}
+    service: broker
   strategy:
     type: Rolling
 {% endif %}
@@ -36,7 +36,7 @@ spec:
     metadata:
       labels:
         app: {{ broker_name }}
-        service: {{ broker_name }}
+        service: broker
     spec:
       serviceAccount: {{ broker_name }}
       containers:
