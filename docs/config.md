@@ -17,20 +17,21 @@ for APBs. All the registry config options are defined below
 
 | field         | description                                                                                                                      | required |
 |---------------|----------------------------------------------------------------------------------------------------------------------------------|----------|
-| name          | The name of the registry. Used by the broker to identify APBs from this registry.                                                |     Y    |
-| auth_type     | How the broker should read the credentials                                                                                       |     N    |
-| auth_name     | Name of secret/file credentials should be read from. Used when auth_type is set to `secret` or `file`                            |     N    |
-| user          | The username for authenticating to the registry                                                                                  |     N    |
-| pass          | The password for authenticating to the registry                                                                                  |     N    |
-| org           | The namespace/organization that the image is contained in                                                                        |     N    |
-| type          | The type of registry. The only adapters so far are mock, RHCC, openshift, dockerhub, and local_openshift.                        |     Y    |
-| namespaces    | The list of namespaces to configure the local_openshift registry adapter with. By default a user should use `openshift`          |     N    |
-| url           | The url that is used to retrieve image information. Used extensively for RHCC while the docker hub adapter uses hard-coded URLs. |     N    |
-| fail_on_error | Should this registry fail the bootstrap request if it fails. will stop the execution of other registries loading.                |     N    |
-| white_list    | The list of regular expressions used to define which image names should be allowed through. Must have a white list to allow APBs to be added to the catalog. The most permissive regular expression that you can use is `.*-apb$` if you would want to retrieve all APBs in a registry.                                     |     N    |
-| black_list    | The list of regular expressions used to define which images names should never be allowed through.                               |     N    |
-| images        | The list of images to be used with OpenShift Registry.                                                                           |     N    |
-| tag           | The tag to define which version of the images should be pulled. Default is `latest`, can be set to `canary` to pull most recent but unstable images. |     N    |
+| name            | The name of the registry. Used by the broker to identify APBs from this registry.                                                |     Y    |
+| auth_type       | How the broker should read the credentials                                                                                       |     N    |
+| auth_name       | Name of secret/file credentials should be read from. Used when auth_type is set to `secret` or `file`                            |     N    |
+| user            | The username for authenticating to the registry                                                                                  |     N    |
+| pass            | The password for authenticating to the registry                                                                                  |     N    |
+| org             | The namespace/organization that the image is contained in                                                                        |     N    |
+| type            | The type of registry. The only adapters so far are mock, RHCC, openshift, dockerhub, and local_openshift.                        |     Y    |
+| namespaces      | The list of namespaces to configure the local_openshift registry adapter with. By default a user should use `openshift`          |     N    |
+| url             | The url that is used to retrieve image information. Used extensively for RHCC while the docker hub adapter uses hard-coded URLs. |     N    |
+| fail_on_error   | Should this registry fail the bootstrap request if it fails. will stop the execution of other registries loading.                |     N    |
+| white_list      | The list of regular expressions used to define which image names should be allowed through. Must have a white list to allow APBs to be added to the catalog. The most permissive regular expression that you can use is `.*-apb$` if you would want to retrieve all APBs in a registry.                                     |     N    |
+| black_list      | The list of regular expressions used to define which images names should never be allowed through.                               |     N    |
+| skip_verify_tls | Should this registry verify TLS with connections. | |    N     |
+| images          | The list of images to be used with OpenShift Registry.                                                                           |     N    |
+| tag             | The tag to define which version of the images should be pulled. Default is `latest`, can be set to `canary` to pull most recent but unstable images. |     N    |
 
 For filter please look at the [filtering documentation](filtering_apbs.md).
 
