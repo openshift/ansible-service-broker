@@ -49,7 +49,7 @@ func RecoverExtractCredentials(podname, ns, fqname, id string, method JobMethod,
 		log.Errorf("bundle unable to build extracted credentials - %v", err)
 		return err
 	}
-	labels := map[string]string{"apbAction": string(method), "apbName": fqname}
+	labels := map[string]string{"bundleAction": string(method), "bundleName": fqname}
 	err = runtime.Provider.CreateExtractedCredential(id, clusterConfig.Namespace, creds.Credentials, labels)
 	if err != nil {
 		log.Errorf("Bundle unable to save extracted credentials - %v", err)

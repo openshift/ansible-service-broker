@@ -116,6 +116,7 @@ func (r LocalOpenShiftAdapter) FetchSpecs(imageNames []string) ([]*bundle.Spec, 
 			log.Errorf("Failed to get image for imagestream [%v]: %v", image, err)
 			continue
 		}
+
 		spec, err := r.loadSpec(imTag.Image)
 		if err != nil {
 			log.Errorf("Failed to load spec for [%v]: %v", image, err)
@@ -157,7 +158,15 @@ func (r LocalOpenShiftAdapter) loadSpec(image v1image.Image) (*bundle.Spec, erro
 		log.Errorf("Failed to parse image runtime version")
 		return nil, errRuntimeNotFound
 	}
-	spec.Image = strings.Split(image.DockerImageReference, "@")[0]
+
+	if r.Config.Tag != "" {
+		spec.Image = fmt.Sprintf("%s:%s",
+			strings.Split(image.DockerImageReference, "@")[0],
+			r.Config.Tag)
+	} else {
+		spec.Image = strings.Split(image.DockerImageReference, "@")[0]
+	}
+
 	return spec, nil
 }
 

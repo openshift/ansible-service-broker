@@ -41,7 +41,7 @@ func (e *executor) Update(instance *ServiceInstance) <-chan StatusMessage {
 			return
 		}
 		if e.extractedCredentials != nil {
-			labels := map[string]string{"apbAction": string(executionMethodUpdate), "apbName": instance.Spec.FQName}
+			labels := map[string]string{"bundleAction": string(executionMethodUpdate), "bundleName": instance.Spec.FQName}
 			err := runtime.Provider.UpdateExtractedCredential(instance.ID.String(), clusterConfig.Namespace, e.extractedCredentials.Credentials, labels)
 			if err != nil {
 				log.Errorf("apb::%v error occurred - %v", executionMethodUpdate, err)

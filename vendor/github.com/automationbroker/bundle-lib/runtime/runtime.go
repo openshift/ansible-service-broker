@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/automationbroker/bundle-lib/clients"
+	"github.com/automationbroker/bundle-lib/metrics"
 
 	log "github.com/sirupsen/logrus"
 	apicorev1 "k8s.io/api/core/v1"
@@ -349,6 +350,8 @@ func (p provider) CreateSandbox(podName string,
 	}
 
 	log.Infof("Successfully created apb sandbox: [ %s ], with %s permissions in namespace [ %s ]", podName, apbRole, namespace)
+	metrics.SandboxCreated()
+
 	log.Debug("Running post create sandbox functions if defined.")
 	for i, f := range p.postSandboxCreate {
 		log.Debugf("Running post create sandbox function: %v", i+1)
@@ -452,6 +455,8 @@ func (p provider) DestroySandbox(podName string,
 		}
 		log.Debugf("Successfully deleted network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 	}
+
+	metrics.SandboxDeleted()
 
 	log.Debugf("Running post sandbox destroy hooks")
 	for i, f := range p.postSandboxDestroy {
