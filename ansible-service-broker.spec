@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.8
+Version: 1.3.9
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -327,6 +327,14 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Aug 15 2018 David Zager <david.j.zager@gmail.com> 1.3.9-1
+- Add bundle-lib metrics registration (#1034) (ernelson@redhat.com)
+- Update bundle-lib (#1045) (dzager@redhat.com)
+- Fix broker route to line up with service (#1043) (dzager@redhat.com)
+- Bug 1599522 - Include skip_verify_tls doc info for registries (#1040)
+  (dymurray@redhat.com)
+- fix coverage to fail when tests fail (#1038) (jmrodri@gmail.com)
+
 * Fri Aug 10 2018 David Zager <david.j.zager@gmail.com> 1.3.8-1
 - Standardize broker endpoints (#1029) (dzager@redhat.com)
 - Add mock for the call to DeleteExtractedCredential (#1039)
