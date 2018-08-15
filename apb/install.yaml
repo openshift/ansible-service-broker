@@ -37,7 +37,7 @@ spec:
       serviceAccount: automation-broker-apb
       containers:
         - name: apb
-          image: docker.io/automationbroker/automation-broker-apb:latest
+          image: docker.io/automationbroker/automation-broker-apb:release-1.2
           args: [ "provision", "-e create_broker_namespace=true" ]
       restartPolicy: Never
   backoffLimit: 4
