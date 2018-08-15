@@ -1,0 +1,12 @@
+broker_namespace: '{{ broker_config.openshift.namespace }}'
+
+broker_config_map:
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: broker-config
+    namespace: '{{ broker_namespace }}'
+    labels:
+      app: '{{ broker_name }}'
+  data:
+    broker-config: '{{ broker_config | to_nice_yaml }}'

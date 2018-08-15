@@ -1,0 +1,11 @@
+---
+
+- name: automation-broker-operator
+  hosts: localhost
+  become: false
+  gather_facts: false
+  connection: local
+  roles:
+  - role: automation-broker
+  vars:
+    state: present

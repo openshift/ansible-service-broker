@@ -1,0 +1,44 @@
+---
+
+dao_backends:
+  etcd:
+    type: etcd
+    etcd_host: '{{ etcd_host }}'
+    etcd_port: '{{ etcd_port }}'
+    etcd_ca_file: '{{ "/var/run/etcd-ca/ca.crt" if cluster == "kubernetes" else "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt" }}'
+    etcd_client_cert: /var/run/etcd-auth/client.crt
+    etcd_client_key: /var/run/etcd-auth/client.key
+  crd:
+    type: crd
+
+broker_config:
+  registry: "{{ registries }}"
+  dao: '{{ dao_backends[broker_dao_type] }}'
+  log:
+    logfile: /var/log/ansible-service-broker/asb.log
+    stdout: true
+    level: '{{ loglevel }}'
+    color: true
+  openshift:
+    host: ''
+    ca_file: ''
+    bearer_token_file: ''
+    image_pull_policy: '{{ broker_image_pull_policy }}'
+    sandbox_role: '{{ broker_sandbox_role }}'
+    namespace: '{{ broker_namespace }}'
+    keep_namespace: '{{ broker_keep_namespace | bool }}'
+    keep_namespace_on_error: '{{ broker_keep_namespace_on_error | bool }}'
+  broker:
+    dev_broker: '{{ broker_dev | bool }}'
+    bootstrap_on_startup: '{{ broker_bootstrap_on_startup | bool }}'
+    refresh_interval: '{{ broker_refresh_interval  }}'
+    launch_apb_on_bind: '{{ broker_launch_apb_on_bind | bool }}'
+    output_request: '{{ broker_output_request | bool }}'
+    recovery: '{{ broker_recovery | bool }}'
+    ssl_cert_key: /etc/tls/private/tls.key
+    ssl_cert: /etc/tls/private/tls.crt
+    auto_escalate: '{{ broker_auto_escalate | bool }}'
+    cluster_url: '{{ broker_namespace }}'
+    auth:
+      - type: basic
+        enabled: '{{ broker_basic_auth_enabled | bool }}'

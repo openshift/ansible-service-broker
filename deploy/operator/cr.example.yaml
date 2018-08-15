@@ -1,0 +1,55 @@
+---
+apiVersion: "automationbroker.io/v1alpha1"
+kind: "AutomationBroker"
+metadata:
+  name: broker-operator
+  namespace: automation-broker
+spec:
+  brokerName: automation-broker
+  brokerImage: "ansibleplaybookbundle/origin-ansible-service-broker"
+  brokerImagePullPolicy: Always
+  createBrokerNamespace: false
+
+  brokerNodeSelector: ""
+  brokerKind: ClusterServiceBroker
+  brokerClusterRole: admin
+
+  waitForBroker: false
+  brokerConfig:
+    dao:
+      type: crd
+    log:
+      logfile: /var/log/ansible-service-broker/asb.log
+      stdout: true
+      level: debug
+      color: true
+    openshift:
+      host: ''
+      ca_file: ''
+      bearer_token_file: ''
+      image_pull_policy: Always
+      sandbox_role: edit
+      namespace: automation-broker
+      keep_namespace: false
+      keep_namespace_on_error: true
+    broker:
+      dev_broker: false
+      bootstrap_on_startup: true
+      refresh_interval: 60s
+      launch_apb_on_bind: false
+      output_request: false
+      recovery: true
+      ssl_cert_key: /etc/tls/private/tls.key
+      ssl_cert: /etc/tls/private/tls.crt
+      auto_escalate: true
+      cluster_url: automation-broker
+      auth:
+        - type: basic
+          enabled: false
+    registry:
+      - type: dockerhub
+        name: hc
+        url: https://registry.hub.docker.com
+        org: homecluster
+        tag: latest
+        white_list: [ ".*" ]
