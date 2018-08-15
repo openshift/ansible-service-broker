@@ -38,6 +38,7 @@ import (
 
 	"github.com/automationbroker/bundle-lib/bundle"
 	"github.com/automationbroker/bundle-lib/clients"
+	blmetrics "github.com/automationbroker/bundle-lib/metrics"
 	"github.com/automationbroker/bundle-lib/registries"
 	agnosticruntime "github.com/automationbroker/bundle-lib/runtime"
 	"github.com/automationbroker/config"
@@ -386,6 +387,8 @@ func (a *App) Start() {
 
 	defaultMetrics := routes.DefaultMetrics{}
 	defaultMetrics.Install(genericserver.Handler.NonGoRestfulMux)
+
+	blmetrics.RegisterCollector()
 
 	log.Infof("Listening on https://%s", genericserver.SecureServingInfo.Listener.Addr().String())
 
