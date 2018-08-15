@@ -1,34 +1,36 @@
 ---
-version: 1.0
+
+version: 1.0.0
 name: automation-broker-apb
-description: deploys automation broker for the service-catalog
+description: Deploys automation broker
 bindable: "False"
 async: optional
 metadata:
   displayName: Automation Broker (APB)
   longDescription:
     An APB for managing the automation broker in a cluster
+    WARNING - Use of this APB through the service-catalog is
+    not supported.
   dependencies: []
   providerDisplayName: "Red Hat, Inc."
 plans:
   - name: main
     description: Manage the automation broker in a cluster
     free: "True"
+    default: "True"
     metadata:
       displayName: Default
-      longDescription:
-        This plan deploys the automation broker
       cost: $0.00
     parameters:
       - name: broker_name
-        title: Name of the broker
-        type: string
         default: automation-broker
-      - name: broker_namespace
-        title: Namespace of the broker
         type: string
-        default: automation-broker
-      - name: broker_image
-        title: Container image for the broker
+        description: Name of the broker
+        title: Broker Name
+        required: true
+      - name: broker_kind
+        default: ServiceBroker
         type: string
-        default: ansibleplaybookbundle/origin-ansible-service-broker:latest
+        description: Kind of the broker
+        title: Broker Kind
+        required: true
