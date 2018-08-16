@@ -2,7 +2,7 @@ REGISTRY         ?= docker.io
 ORG              ?= ansibleplaybookbundle
 TAG              ?= $(shell git rev-parse --short HEAD)
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker:${TAG}
-DEPLOY_DIR       ?= deploy
+ROLE_DIR       ?= ansible_role
 APB_IMAGE        ?= ${REGISTRY}/automationbroker/automation-broker-apb:${TAG}
 OPERATOR_IMAGE   ?= ${REGISTRY}/automationbroker/automation-broker-operator:${TAG}
 VARS             ?= ""
@@ -96,17 +96,17 @@ build-image: ## Build the broker (from canary)
 
 build-apb: ## Build the broker apb
 ifeq ($(TAG),canary)
-	docker build -f ${DEPLOY_DIR}/apb/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${DEPLOY_DIR}
+	docker build -f ${ROLE_DIR}/apb/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ROLE_DIR}
 else ifeq ($(TAG),nightly)
-	docker build -f ${DEPLOY_DIR}/apb/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${DEPLOY_DIR}
+	docker build -f ${ROLE_DIR}/apb/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ROLE_DIR}
 else ifneq (,$(findstring release,$(TAG)))
-	docker build -f ${DEPLOY_DIR}/apb/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${DEPLOY_DIR}
+	docker build -f ${ROLE_DIR}/apb/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ROLE_DIR}
 else
-	docker build -f ${DEPLOY_DIR}/apb/Dockerfile --build-arg VERSION=${TAG} -t ${APB_IMAGE} ${DEPLOY_DIR}
+	docker build -f ${ROLE_DIR}/apb/Dockerfile --build-arg VERSION=${TAG} -t ${APB_IMAGE} ${ROLE_DIR}
 endif
 
 build-operator: ## Build the broker operator
-	docker build -f ${DEPLOY_DIR}/operator/Dockerfile -t ${OPERATOR_IMAGE} ${DEPLOY_DIR}
+	docker build -f ${ROLE_DIR}/operator/Dockerfile -t ${OPERATOR_IMAGE} ${ROLE_DIR}
 
 publish: build-image build-apb
 ifdef PUBLISH
