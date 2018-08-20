@@ -1,6 +1,6 @@
 ---
 # Install by default
-apb_action: provision
+state: present
 cluster: "kubernetes"
 
 # Broker configuration values
@@ -20,7 +20,8 @@ broker_node_selector: ""
 # The kind of broker, useful in the case the service-catalog
 # supports namespaced service brokers
 broker_kind: ClusterServiceBroker
-broker_clusterrole: admin
+broker_cluster_role: admin
+broker_clusterrole: '{{ broker_cluster_role }}'
 broker_sandbox_role: edit
 
 # How does broker save state? crd | etcd
@@ -53,6 +54,8 @@ broker_basic_auth_username: "admin"
 broker_basic_auth_password: "admin"
 
 # Broker dockerhub registry options
+# TODO: Support multiple dockerhub registries
+# https://github.com/automationbroker/automation-broker-apb/issues/2
 broker_dockerhub_enabled: true
 broker_dockerhub_name: dh
 broker_dockerhub_url: https://registry.hub.docker.com
@@ -61,6 +64,8 @@ broker_dockerhub_tag: latest
 broker_dockerhub_white_list: [ ".*-apb$" ]
 
 # Broker local openshift registry options
+# TODO: Support multiple local openshift registries
+# https://github.com/automationbroker/automation-broker-apb/issues/2
 broker_local_openshift_enabled: ""
 broker_local_openshift_name: localregistry
 broker_local_openshift_namespaces: [ "openshift" ]
@@ -70,6 +75,8 @@ broker_local_openshift_namespaces: [ "openshift" ]
 broker_local_openshift_white_list: [ ".*" ]
 
 # Broker helm registry options
+# TODO: Support multiple helm type registries
+# https://github.com/automationbroker/automation-broker-apb/issues/2
 broker_helm_enabled: false
 broker_helm_name: stable
 broker_helm_url: https://kubernetes-charts.storage.googleapis.com
@@ -92,3 +99,43 @@ broker_quay_org: redhat
 broker_quay_tag: latest
 broker_quay_token: none
 broker_quay_white_list: [ ".*-apb$" ]
+
+dockerhub_registry:
+  type: dockerhub
+  name: '{{ broker_dockerhub_name }}'
+  url: '{{ broker_dockerhub_url }}'
+  org: '{{ broker_dockerhub_org | quote }}'
+  tag: '{{ broker_dockerhub_tag | quote }}'
+  white_list: '{{ broker_dockerhub_white_list }}'
+
+local_openshift_registry:
+  type: local_openshift
+  name: '{{ broker_local_openshift_name }}'
+  namespaces: '{{ broker_local_openshift_namespaces }}'
+  white_list: '{{ broker_local_openshift_white_list }}'
+
+helm_registry:
+  type: helm
+  name: '{{ broker_helm_name }}'
+  url: '{{ broker_helm_url }}'
+  runner: '{{ broker_helm_runner }}'
+  white_list: '{{ broker_helm_white_list }}'
+
+galaxy_registry:
+  type: galaxy
+  name: '{{ broker_galaxy_name }}'
+  url: '{{ broker_galaxy_url }}'
+  org: '{{ broker_galaxy_org | quote }}'
+  runner: '{{ broker_galaxy_runner }}'
+  white_list: '{{ broker_galaxy_white_list }}'
+
+quay_registry:
+  type: quay
+  name: '{{ broker_quay_name }}'
+  url: '{{ broker_quay_url }}'
+  org: '{{ broker_quay_org | quote }}'
+  tag: '{{ broker_quay_tag | quote }}'
+  white_list: '{{ broker_quay_white_list }}'
+
+# conditionally set later based on Cluster configuration
+default_registries: []

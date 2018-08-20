@@ -1,0 +1,30 @@
+---
+
+- when: registries is not defined
+  delegate_to: localhost
+  block:
+  - name: Create default registry configuration
+    set_fact:
+      default_registries: '{{ default_registries + [item.value] }}'
+    when: item.condition
+    loop:
+    - condition: '{{ broker_dockerhub_enabled | bool }}'
+      value: '{{ dockerhub_registry }}'
+    - condition: '{{ broker_local_openshift_enabled | bool }}'
+      value: '{{ local_openshift_registry }}'
+    - condition: '{{ broker_helm_enabled | bool }}'
+      value: '{{ helm_registry }}'
+    - condition: '{{ broker_galaxy_enabled | bool }}'
+      value: '{{ galaxy_registry }}'
+    - condition: '{{ broker_quay_enabled | bool }}'
+      value: '{{ quay_registry }}'
+
+  - name: Set registry configuration to default registries
+    set_fact:
+      registries: '{{ default_registries }}'
+
+- include_vars: config.yml
+  when: broker_config is not defined
+  delegate_to: localhost
+
+- include_vars: configmap.yml

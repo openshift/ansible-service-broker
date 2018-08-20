@@ -1,0 +1,7 @@
+---
+
+- name: AutomationBroker
+  version: v1alpha1
+  group: automationbroker.io
+  kind: AutomationBroker
+  path: /opt/ansible/deploy.yml
