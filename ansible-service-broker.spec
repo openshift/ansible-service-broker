@@ -62,6 +62,12 @@ BuildRequires: btrfs-progs-devel
 %description
 %{summary}
 
+%prep
+%setup -q -n %{name}-%{version}
+%if !0%{?copr}
+patch -p1 < downstream.patch
+%endif
+
 %package -n automation-broker-apb-role
 Summary: APB Role for the broker
 BuildArch: noarch
