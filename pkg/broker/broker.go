@@ -1003,6 +1003,7 @@ func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UU
 	// if binding instance exists, and the parameters are different return: 409.
 	//
 	// return 201 when we're done.
+
 	provExtCreds, err := bundle.GetExtractedCredentials(instance.ID.String())
 	if err != nil && err != bundle.ErrExtractedCredentialsNotFound {
 		log.Warningf("unable to retrieve provision time credentials - %v", err)
@@ -1022,8 +1023,8 @@ func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UU
 			}
 
 			switch {
-			// unknown error
-			case err != nil && !a.dao.IsNotFoundError(err):
+			// unknown error; added check for ErrExtractedCredentialsNotFound
+			case err != nil && !a.dao.IsNotFoundError(err) && err != bundle.ErrExtractedCredentialsNotFound:
 				return nil, false, err
 			// If there is a job in "succeeded" state, or no job at all, or
 			// the referenced job no longer exists (we assume it got
