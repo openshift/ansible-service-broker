@@ -5,7 +5,7 @@ cluster: "kubernetes"
 
 # Broker configuration values
 broker_name: automation-broker
-broker_namespace: "{{ broker_name }}"
+broker_namespace: "{{ namespace | default(broker_name, true) }}"
 
 create_broker_namespace: false
 wait_for_broker: false # By default, we do not wait for the broker to be available
