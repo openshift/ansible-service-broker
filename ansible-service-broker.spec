@@ -15,11 +15,11 @@
 %if 0%{?with_debug}
 %global _dwz_low_mem_die_limit 0
 %else
-%global	debug_package	%{nil}
+%global debug_package %{nil}
 %endif
 
-%global	provider github
-%global	provider_tld com
+%global provider github
+%global provider_tld com
 %global project openshift
 %global repo ansible-service-broker
 
@@ -44,10 +44,10 @@ Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
 URL: https://%{provider_prefix}
-Source0: %{name}-%{version}.tar.gz
+Source0: https://%{provider_prefix}/archive/%{name}-%{version}-1.tar.gz
 
 # e.g. el6 has ppc64 arch without gcc-go, so EA tag is required
-#ExclusiveArch: %%{?go_arches:%%{go_arches}}%%{!?go_arches:%%{ix86} x86_64 %{arm}}
+#ExclusiveArch: %%{?go_arches:%%{go_arches}}%%{!?go_arches:%%{ix86} x86_64 % {arm}}
 ExclusiveArch: %{ix86} x86_64 %{arm} aarch64 ppc64le %{mips} s390x
 BuildRequires: golang
 
@@ -61,12 +61,6 @@ BuildRequires: btrfs-progs-devel
 
 %description
 %{summary}
-
-%prep
-%setup -q -n %{name}-%{version}
-%if !0%{?copr}
-patch -p1 < downstream.patch
-%endif
 
 %package -n automation-broker-apb-role
 Summary: APB Role for the broker
@@ -156,6 +150,10 @@ unit-test for %{name}
 
 %prep
 %setup -q -n %{repo}-%{version}
+%if !0%{?copr}
+patch -p1 < downstream.patch
+%endif
+
 ln -sf vendor src
 mkdir -p src/github.com/openshift/ansible-service-broker
 cp -r pkg src/github.com/openshift/ansible-service-broker
@@ -274,8 +272,8 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 #%%gotest %%{import_path}/libcontainer
 %gotest %{import_path}/libcontainer/cgroups
 # --- FAIL: TestInvalidCgroupPath (0.00s)
-#	apply_raw_test.go:16: couldn't get cgroup root: mountpoint for cgroup not found
-#	apply_raw_test.go:25: couldn't get cgroup data: mountpoint for cgroup not found
+#  apply_raw_test.go:16: couldn't get cgroup root: mountpoint for cgroup not found
+#  apply_raw_test.go:25: couldn't get cgroup data: mountpoint for cgroup not found
 #%%gotest %%{import_path}/libcontainer/cgroups/fs
 %gotest %{import_path}/libcontainer/configs
 %gotest %{import_path}/libcontainer/devices
