@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#asbroker log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">13:30:31</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#startmeeting </span><span class="cmdline">Automation Broker IRC Community Meeting 8/21/2018</span>
+<a name="l-2"></a><span class="tm">13:30:31</span><span class="nk"> &lt;brokerbot&gt;</span> Meeting started Tue Aug 21 13:30:31 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">13:30:31</span><span class="nk"> &lt;brokerbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">13:30:31</span><span class="nk"> &lt;brokerbot&gt;</span> The meeting name has been set to 'automation_broker_irc_community_meeting_8/21/2018'
+<a name="l-5"></a><span class="tm">13:30:31</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+<a name="l-6"></a><span class="tm">13:30:41</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">Attendance</span>
+<a name="l-7"></a><span class="tm">13:30:41</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-8"></a><span class="tm">13:30:52</span><span class="nk"> &lt;alpatel&gt;</span> Hello
+<a name="l-9"></a><span class="tm">13:31:14</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">alpatel:</span> hey there
+<a name="l-10"></a><span class="tm">13:31:17</span><span class="nk"> &lt;ernelson&gt;</span> o/
+<a name="l-11"></a><span class="tm">13:32:07</span><span class="nk"> &lt;jmrodri&gt;</span> might be another quick meeting today
+<a name="l-12"></a><span class="tm">13:32:15</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">News</span>
+<a name="l-13"></a><span class="tm">13:32:15</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-14"></a><span class="tm">13:32:49</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">we released bundle-lib 0.2.9, will probably do another release this week</span>
+<a name="l-15"></a><span class="tm">13:32:49</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-16"></a><span class="tm">13:32:49</span><span class="nk"> &lt;dzager&gt;</span> o/
+<a name="l-17"></a><span class="tm">13:32:58</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/automationbroker/bundle-lib/releases/tag/0.2.9</span>
+<a name="l-18"></a><span class="tm">13:32:58</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-19"></a><span class="tm">13:33:47</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">automation-broker 1.3.9-1 was released last night. Just checkout that tag if you want to build it from source. Or grab one of the nightly images</span>
+<a name="l-20"></a><span class="tm">13:33:47</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-21"></a><span class="tm">13:34:01</span><span class="nk"> &lt;jmrodri&gt;</span> anyone else have any news they'd like to share?
+<a name="l-22"></a><span class="tm">13:35:50</span><span class="nk"> &lt;jmrodri&gt;</span> that's it for the news. Moving on to previous actions
+<a name="l-23"></a><span class="tm">13:35:56</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">review previous actions</span>
+<a name="l-24"></a><span class="tm">13:35:56</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-25"></a><span class="tm">13:36:21</span><span class="nk"> &lt;jmrodri&gt;</span> Looking at the agenda looks like we got quite a bit done
+<a name="l-26"></a><span class="tm">13:36:52</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">issue 470 was closed as complete.</span>
+<a name="l-27"></a><span class="tm">13:36:52</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-28"></a><span class="tm">13:36:58</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/470</span>
+<a name="l-29"></a><span class="tm">13:36:58</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-30"></a><span class="tm">13:37:02</span><span class="nk"> &lt;jmrodri&gt;</span> so that's good
+<a name="l-31"></a><span class="tm">13:37:18</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">issue 1028 assigned to jmrodri</span>
+<a name="l-32"></a><span class="tm">13:37:18</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-33"></a><span class="tm">13:37:28</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1028</span>
+<a name="l-34"></a><span class="tm">13:37:28</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-35"></a><span class="tm">13:37:34</span><span class="nk"> &lt;jmrodri&gt;</span> it was also moved to release-1.4
+<a name="l-36"></a><span class="tm">13:37:52</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">issue 974 reassigned to jmrodri</span>
+<a name="l-37"></a><span class="tm">13:37:52</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-38"></a><span class="tm">13:38:13</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">switch irc meeting to bi-weekly.</span>
+<a name="l-39"></a><span class="tm">13:38:13</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-40"></a><span class="tm">13:38:24</span><span class="nk"> &lt;jmrodri&gt;</span> that's done, we switched on 8/7 to a bi-weekly format.
+<a name="l-41"></a><span class="tm">13:38:46</span><span class="nk"> &lt;jmrodri&gt;</span> While we're on that topic, the next meeting will be Tuesday September 4th.
+<a name="l-42"></a><span class="tm">13:39:07</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">Failed provision triggers continuous deprovision</span>
+<a name="l-43"></a><span class="tm">13:39:07</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-44"></a><span class="tm">13:39:09</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1010</span>
+<a name="l-45"></a><span class="tm">13:39:09</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-46"></a><span class="tm">13:39:14</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">dzager:</span> you commented on this
+<a name="l-47"></a><span class="tm">13:39:23</span><span class="nk"> &lt;jmrodri&gt;</span> in the agenda i have a not to CLOSE NOT A BUG
+<a name="l-48"></a><span class="tm">13:39:37</span><span class="nk"> &lt;jmrodri&gt;</span> is this something we could actually fix?
+<a name="l-49"></a><span class="tm">13:40:01</span><span class="nk"> &lt;jmrodri&gt;</span> oh looks like we discussed this in the last meeting.
+<a name="l-50"></a><span class="tm">13:40:02</span><span class="nk"> &lt;dzager&gt;</span> I guess we could
+<a name="l-51"></a><span class="tm">13:40:05</span><span class="nk"> &lt;jmrodri&gt;</span> https://github.com/openshift/ansible-service-broker/blob/master/docs/meetings/2018/asbroker.2018-08-07-13.32.log.txt#L75-L114
+<a name="l-52"></a><span class="tm">13:40:09</span><span class="nk"> &lt;dzager&gt;</span> yeah. that's in there :0
+<a name="l-53"></a><span class="tm">13:40:20</span><span class="nk"> &lt;jmrodri&gt;</span> though not sure what the final outcome was
+<a name="l-54"></a><span class="tm">13:40:38</span><span class="nk"> &lt;jmrodri&gt;</span> oh it needs a new feature like a rate limiter
+<a name="l-55"></a><span class="tm">13:40:49</span><span class="nk"> &lt;jmrodri&gt;</span> okay, so it stays open until the next release.
+<a name="l-56"></a><span class="tm">13:41:04</span><span class="nk"> &lt;jmrodri&gt;</span> I'll create an issue to add a rate limiter to the API.
+<a name="l-57"></a><span class="tm">13:41:19</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">jmrodri create issue for rate limiter feature</span>
+<a name="l-58"></a><span class="tm">13:41:19</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-59"></a><span class="tm">13:41:34</span><span class="nk"> &lt;jmrodri&gt;</span> okay that's it for past action items
+<a name="l-60"></a><span class="tm">13:41:40</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">bugs/issue triage</span>
+<a name="l-61"></a><span class="tm">13:41:40</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-62"></a><span class="tm">13:42:06</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">bundle-lib has 9 issues still, hasn't changed since the last meeting</span>
+<a name="l-63"></a><span class="tm">13:42:06</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-64"></a><span class="tm">13:42:29</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/automationbroker/bundle-lib/issues</span>
+<a name="l-65"></a><span class="tm">13:42:29</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-66"></a><span class="tm">13:42:53</span><span class="nk"> &lt;jmrodri&gt;</span> are any of them pressing? something we need to fix asap?
+<a name="l-67"></a><span class="tm">13:43:11</span><span class="nk"> &lt;ernelson&gt;</span> none that i'm aware of
+<a name="l-68"></a><span class="tm">13:43:11</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">dymurray:</span> is there something you need from bundle-lib for apb?
+<a name="l-69"></a><span class="tm">13:44:21</span><span class="nk"> &lt;dymurrayRH&gt;</span> jmrodri, nothing off the top of my head
+<a name="l-70"></a><span class="tm">13:44:36</span><span class="nk"> &lt;jmrodri&gt;</span> okay thanks
+<a name="l-71"></a><span class="tm">13:44:37</span><span class="nk"> &lt;ernelson&gt;</span> I *might* have a change coming in, but I'm pretty sure the bz should already be fixed
+<a name="l-72"></a><span class="tm">13:44:48</span><span class="nk"> &lt;jmrodri&gt;</span> okay, cool
+<a name="l-73"></a><span class="tm">13:44:59</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">automation broker issues</span>
+<a name="l-74"></a><span class="tm">13:44:59</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-75"></a><span class="tm">13:45:14</span><span class="nk"> &lt;jmrodri&gt;</span> the broker has 5 issues against release 1.3.
+<a name="l-76"></a><span class="tm">13:45:21</span><span class="nk"> &lt;jmrodri&gt;</span> https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.11+%7C+release-1.3%22
+<a name="l-77"></a><span class="tm">13:45:26</span><span class="nk"> &lt;jmrodri&gt;</span> they're all asigned to me :)
+<a name="l-78"></a><span class="tm">13:45:31</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.11+%7C+release-1.3%22</span>
+<a name="l-79"></a><span class="tm">13:45:31</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-80"></a><span class="tm">13:46:03</span><span class="nk"> &lt;jmrodri&gt;</span> the two async bind issues will be fixed. I need to test them today as I put in a couple PRs to fix other binding issues late last week.
+<a name="l-81"></a><span class="tm">13:46:20</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">jmrodri test the 2 async bind issues in automation-broker: 1007 and 1006</span>
+<a name="l-82"></a><span class="tm">13:46:22</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-83"></a><span class="tm">13:46:53</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">Importing APBs fail if an image repo in the dockerhub org doesn't have any tags</span>
+<a name="l-84"></a><span class="tm">13:46:53</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-85"></a><span class="tm">13:47:00</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1037</span>
+<a name="l-86"></a><span class="tm">13:47:00</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-87"></a><span class="tm">13:47:06</span><span class="nk"> &lt;jmrodri&gt;</span> that's the new broker issue
+<a name="l-88"></a><span class="tm">13:47:19</span><span class="nk"> &lt;jmrodri&gt;</span> anyone have any thoughts on that?
+<a name="l-89"></a><span class="tm">13:48:29</span><span class="nk"> &lt;dymurrayRH&gt;</span> Hm... its reported in 3.9. Why would one APB without the tag prevent the other APBs from being bootstrapped?
+<a name="l-90"></a><span class="tm">13:48:55</span><span class="nk"> &lt;ernelson&gt;</span> sounds like a weird corner case, would have to trace it
+<a name="l-91"></a><span class="tm">13:50:05</span><span class="nk"> &lt;dzager&gt;</span> does seem strange
+<a name="l-92"></a><span class="tm">13:51:51</span><span class="nk"> &lt;jmrodri&gt;</span> I couldn't tell if that was a single image or not.
+<a name="l-93"></a><span class="tm">13:52:00</span><span class="nk"> &lt;jmrodri&gt;</span> "If one of the image repositories in the Docker Hub organization"
+<a name="l-94"></a><span class="tm">13:52:15</span><span class="nk"> &lt;jmrodri&gt;</span> I read that as if one of the REPOSITORIES has no tags
+<a name="l-95"></a><span class="tm">13:52:23</span><span class="nk"> &lt;jmrodri&gt;</span> not even sure that's a thing
+<a name="l-96"></a><span class="tm">13:53:33</span><span class="nk"> &lt;jmrodri&gt;</span> I'm going to mark that for 3.11 to at least investigate
+<a name="l-97"></a><span class="tm">13:53:38</span><span class="nk"> &lt;jmrodri&gt;</span> anyone have any cycles for it?
+<a name="l-98"></a><span class="tm">13:53:47</span><span class="nk"> &lt;dymurrayRH&gt;</span> I can take it
+<a name="l-99"></a><span class="tm">13:53:53</span><span class="nk"> &lt;dzager&gt;</span> if a single image in the organization doesn't have the specified tag
+<a name="l-100"></a><span class="tm">13:54:01</span><span class="nk"> &lt;dzager&gt;</span> that's how I read it
+<a name="l-101"></a><span class="tm">13:54:36</span><span class="nk"> &lt;jmrodri&gt;</span> okay, that seems to make more sense :)
+<a name="l-102"></a><span class="tm">13:54:58</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">dymurrayRH to investigate broker issue 1037</span>
+<a name="l-103"></a><span class="tm">13:54:58</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-104"></a><span class="tm">13:55:14</span><span class="nk"> &lt;jmrodri&gt;</span> that's it for issues at the moment
+<a name="l-105"></a><span class="tm">13:55:37</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">features</span>
+<a name="l-106"></a><span class="tm">13:55:37</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-107"></a><span class="tm">13:55:46</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">none at this moment</span>
+<a name="l-108"></a><span class="tm">13:55:46</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-109"></a><span class="tm">13:55:55</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">open discussion</span>
+<a name="l-110"></a><span class="tm">13:55:55</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-111"></a><span class="tm">13:56:02</span><span class="nk"> &lt;jmrodri&gt;</span> anyone have anything they'd like to discuss?
+<a name="l-112"></a><span class="tm">13:56:14</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">postgresql-apb latest</span>
+<a name="l-113"></a><span class="tm">13:56:14</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-114"></a><span class="tm">13:56:30</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">dzager:</span> you said that canary psql apb works, but latest has that pvc error
+<a name="l-115"></a><span class="tm">13:56:41</span><span class="nk"> &lt;jmrodri&gt;</span> do you know when canary will migrate to latest?
+<a name="l-116"></a><span class="tm">13:56:59</span><span class="nk"> &lt;jmrodri&gt;</span> jboyd hit the issue recently
+<a name="l-117"></a><span class="tm">13:57:22</span><span class="nk"> &lt;dzager&gt;</span> <span class="hi">jmrodri:</span> I advised dymurrayRH to refrain from rebuilding latest APBs until jmontleon's PRs to the oc client are merged in
+<a name="l-118"></a><span class="tm">13:58:07</span><span class="nk"> &lt;dzager&gt;</span> since I think the error on upgrade to postgresql is less annoying than `oc cluster up --enable auto-borker` failing
+<a name="l-119"></a><span class="tm">13:58:08</span><span class="nk"> &lt;jmrodri&gt;</span> so is there a way to go back to a previous psql-apb? or just retag canary as latest for psql?
+<a name="l-120"></a><span class="tm">13:58:25</span><span class="nk"> &lt;dzager&gt;</span> <span class="hi">jmrodri:</span> we could do that
+<a name="l-121"></a><span class="tm">13:58:30</span><span class="nk"> &lt;dzager&gt;</span> like one off?
+<a name="l-122"></a><span class="tm">13:58:37</span><span class="nk"> &lt;jmrodri&gt;</span> it's just weird to have it busted
+<a name="l-123"></a><span class="tm">13:58:41</span><span class="nk"> &lt;dzager&gt;</span> that's totally reasonable
+<a name="l-124"></a><span class="tm">13:58:42</span><span class="nk"> &lt;jmrodri&gt;</span> yeah was thinking as a one off
+<a name="l-125"></a><span class="tm">13:59:25</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">dzager investigate how best to repair psql -apb latest image without rebuilding the world</span>
+<a name="l-126"></a><span class="tm">13:59:25</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-127"></a><span class="tm">13:59:53</span><span class="nk"> &lt;dzager&gt;</span> yeah. now I wish I was smart enough to have thought of one-offs
+<a name="l-128"></a><span class="tm">14:02:01</span><span class="nk"> &lt;jmrodri&gt;</span> anyone else have any discussion topics/
+<a name="l-129"></a><span class="tm">14:02:18</span><span class="nk"> &lt;jmrodri&gt;</span> if not, I'll adjourn the meeting. You can have 30 minutes of your life back.
+<a name="l-130"></a><span class="tm">14:02:25</span><span class="nk"> &lt;jmrodri&gt;</span> well 28 minutes :)
+<a name="l-131"></a><span class="tm">14:02:28</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
