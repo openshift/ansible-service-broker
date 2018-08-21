@@ -39,7 +39,10 @@ type authResponse struct {
 // NewClient - creates and returns a *Client ready to use. If skipVerify is
 // true, it will skip verification of the remote TLS certificate.
 func NewClient(user, pass string, skipVerify bool, url *url.URL) *Client {
-	transport := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify}}
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
+		Proxy:           http.ProxyFromEnvironment,
+	}
 	if skipVerify == true {
 		log.Warn("skipping verification of registry TLS certificate per adapter configuration")
 	}

@@ -85,3 +85,9 @@ func DeleteExtractedCredentials(id string) error {
 func SetExtractedCredentials(id string, creds *ExtractedCredentials) error {
 	return runtime.Provider.CreateExtractedCredential(id, clusterConfig.Namespace, creds.Credentials, nil)
 }
+
+// SetExtractedCredentialsWithLabels - Will set new credentials for an id and add specified labels
+// Please use this method with caution.
+func SetExtractedCredentialsWithLabels(id string, creds *ExtractedCredentials, labels map[string]string) error {
+	return runtime.Provider.CreateExtractedCredential(id, clusterConfig.Namespace, creds.Credentials, labels)
+}
