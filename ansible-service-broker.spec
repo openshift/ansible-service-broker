@@ -149,12 +149,11 @@ unit-test for %{name}
 %endif
 
 %prep
-%setup -q -n %{name}-%{version}
+%setup -q -n %{repo}-%{version}
 %if !0%{?copr}
 patch -p1 < downstream.patch
 %endif
 
-%setup -q -n %{repo}-%{version}
 ln -sf vendor src
 mkdir -p src/github.com/openshift/ansible-service-broker
 cp -r pkg src/github.com/openshift/ansible-service-broker
