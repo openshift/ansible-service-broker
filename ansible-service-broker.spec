@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.10
+Version: 1.3.11
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -331,6 +331,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Aug 21 2018 Dylan Murray <dymurray@redhat.com> 1.3.11-1
+- Update source0 in rpm spec (#1055) (dymurray@redhat.com)
+
 * Tue Aug 21 2018 Dylan Murray <dymurray@redhat.com> 1.3.10-1
 - Bug 1581106 - Add bind labels to extcred secret (#1054) (ernelson@redhat.com)
 - Fix broker rpm spec (#1053) (dzager@redhat.com)
