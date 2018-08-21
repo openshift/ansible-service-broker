@@ -1107,7 +1107,8 @@ func (a AnsibleBroker) Bind(instance bundle.ServiceInstance, bindingUUID uuid.UU
 		log.Warning("Broker configured to *NOT* launch and run APB bind")
 		// Create a credentials for the binding using the provision credentials
 		bindExtCreds = provExtCreds
-		err := bundle.SetExtractedCredentials(bindingUUID.String(), bindExtCreds)
+		labels := map[string]string{"bundleAction": "bind", "bundleName": instance.Spec.FQName}
+		err := bundle.SetExtractedCredentialsWithLabels(bindingUUID.String(), bindExtCreds, labels)
 		if err != nil {
 			log.Errorf("Unable to create new binding extracted creds from provision creds - %v", err)
 			return nil, false, err
