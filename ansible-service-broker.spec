@@ -62,12 +62,6 @@ BuildRequires: btrfs-progs-devel
 %description
 %{summary}
 
-%prep
-%setup -q -n %{name}-%{version}
-%if !0%{?copr}
-patch -p1 < downstream.patch
-%endif
-
 %package -n automation-broker-apb-role
 Summary: APB Role for the broker
 BuildArch: noarch
@@ -155,6 +149,11 @@ unit-test for %{name}
 %endif
 
 %prep
+%setup -q -n %{name}-%{version}
+%if !0%{?copr}
+patch -p1 < downstream.patch
+%endif
+
 %setup -q -n %{repo}-%{version}
 ln -sf vendor src
 mkdir -p src/github.com/openshift/ansible-service-broker
