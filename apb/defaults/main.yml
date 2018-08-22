@@ -59,6 +59,7 @@ broker_dockerhub_url: https://registry.hub.docker.com
 broker_dockerhub_org: ansibleplaybookbundle
 broker_dockerhub_tag: latest
 broker_dockerhub_white_list: [ ".*-apb$" ]
+broker_dockerhub_black_list: [ ".*automation-broker-apb$" ]
 
 # Broker local openshift registry options
 broker_local_openshift_enabled: ""

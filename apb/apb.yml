@@ -21,7 +21,6 @@ plans:
   - name: main
     description: Manage the automation broker in a cluster
     free: "True"
-    default: "True"
     metadata:
       displayName: Default
       cost: $0.00
@@ -38,3 +37,91 @@ plans:
         description: Kind of the broker
         title: Broker Kind
         required: true
+      - name: broker_registry_type
+        default: dockerhub
+        enum:
+          - rhcc
+          - openshift
+          - local_openshift
+          - partner_rhcc
+          - dockerhub
+          - quay
+          - apiv2
+          - helm
+          - galaxy
+        type: enum
+        description: Type of broker's registry
+        title: Registry Type
+        required: true
+        updatable: false
+      - name: broker_registry_name
+        default: dh
+        type: string
+        description: Name of broker's registry
+        title: Registry Name
+        required: true
+        updatable: false
+      - name: broker_registry_user
+        default: ''
+        type: string
+        description: (If authenticated) User name of broker's registry
+        title: Registry User
+        required: false
+        updatable: false
+      - name: broker_registry_pass
+        default: ''
+        type: string
+        display_type: password
+        description: (If authenticated) User password of broker's registry
+        title: Registry Pass
+        required: false
+        updatable: false
+      - name: broker_registry_url
+        default: ''
+        type: string
+        description: Url of broker's registry
+        title: Registry URL
+        required: false
+        updatable: false
+      - name: broker_registry_skip_verify_tls
+        default: false
+        type: boolean
+        description: Skip verify TLS
+        title: Registry skip_verify_tls
+        required: false
+        updatable: false
+      - name: broker_registry_org
+        default: 'ansibleplaybookbundle'
+        type: string
+        description: Organization of broker's registry
+        title: Registry Org
+        required: false
+        updatable: false
+      - name: broker_registry_namespace
+        default: ''
+        type: string
+        description: (If local_openshift) Namespace to check for APBs
+        title: Registry Namespaces (Only for local_openshift)
+        required: false
+        updatable: false
+      - name: broker_registry_runner
+        default: ''
+        type: string
+        description: (If helm|galaxy) runner image to complete action
+        title: Registry Runner (Only for helm|galaxy)
+        required: false
+        updatable: false
+      - name: broker_registry_tag
+        default: 'latest'
+        type: string
+        description: Tag of broker's registry
+        title: Registry Tag
+        required: false
+        updatable: false
+      - name: broker_registry_images
+        default: ''
+        type: string
+        description: (If apiv2|openshift) list of APB images
+        title: Registry Images (Only for apiv2|openshift)
+        required: false
+        updatable: false

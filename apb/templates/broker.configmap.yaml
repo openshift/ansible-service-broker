@@ -20,6 +20,10 @@ data:
 {%     for item in broker_dockerhub_white_list %}
           - {{ item | quote }}
 {%     endfor %}
+        black_list:
+{%     for item in broker_dockerhub_black_list %}
+          - {{ item | quote }}
+{%     endfor %}
 {% endif  %}
 {% if broker_local_openshift_enabled | bool %}
       - type: local_openshift
@@ -62,6 +66,24 @@ data:
         tag: {{ broker_quay_tag | quote }}
         white_list:
 {%     for item in broker_quay_white_list %}
+          - {{ item | quote }}
+{%     endfor %}
+{% endif %}
+{% if broker_registry_type | default(False) %}
+      - type: {{ broker_registry_type }}
+        name: {{ broker_registry_name }}
+        user: {{ broker_registry_user }}
+        pass: {{ broker_registry_pass }}
+        url: {{ broker_registry_url }}
+        skip_verify_tls: {{ broker_registry_skip_verify_tls }}
+        org: {{ broker_registry_org }}
+        namespaces: [ {{ broker_registry_namespace }} ]
+        runner: {{ broker_registry_runner }}
+        tag: {{ broker_registry_tag }}
+        white_list: [ ".*" ]
+        black_list: [ ".*automation-broker-apb$" ]
+        images:
+{%     for item in broker_registry_images.split(",") %}
           - {{ item | quote }}
 {%     endfor %}
 {% endif %}
