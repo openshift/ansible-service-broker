@@ -87,7 +87,7 @@
               mediawiki_site_name: "Mediawiki-CI"
               mediawiki_site_lang: "en"
               mediawiki_admin_user: "ci-user"
-          mediawiki_admin_pass: "admin"
+              mediawiki_admin_pass: "admin"
 
     - name: Wait for mediawiki service instance
       debug:
@@ -113,7 +113,7 @@
               postgresql_database: "admin"
               postgresql_password: "admin"
               postgresql_user: "admin"
-          postgresql_version: "9.6"
+              postgresql_version: "9.6"
 
     - name: Wait for postgresql service instance
       debug:
