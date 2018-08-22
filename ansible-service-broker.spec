@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.11
+Version: 1.3.12
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -331,6 +331,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Aug 22 2018 David Zager <david.j.zager@gmail.com> 1.3.12-1
+- Bug 1615787 - Make a registry configurable via apb (#1057)
+  (dzager@redhat.com)
+
 * Tue Aug 21 2018 Dylan Murray <dymurray@redhat.com> 1.3.11-1
 - Update source0 in rpm spec (#1055) (dymurray@redhat.com)
 
