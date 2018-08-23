@@ -23,7 +23,7 @@ spec:
             resource_name=broker_name + '-client'
           ).secrets | map(attribute='name') | select('match', broker_name + '-client-token*') | first
         }}
-{%   if cluster == 'kubernetes' %}
+{%   if 'route.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
   caBundle: {{
     lookup(
       'k8s',

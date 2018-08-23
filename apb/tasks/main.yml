@@ -1,19 +1,8 @@
 ---
 
-# These can always be overridden at the command line
-# http://docs.ansible.com/ansible/devel/user_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable
-- name: 'Set facts'
-  set_fact:
-    cluster: "{{ _cluster_type }}"
-    broker_auto_escalate: "{{ 'true' if _cluster_type == 'kubernetes' else 'false' }}"
-    broker_local_openshift_enabled: "{{ 'true' if _cluster_type == 'openshift' else 'false' }}"
-  vars:
-    _cluster_type: '{{ "openshift" if "openshift" in lookup("k8s", cluster_info="version") else "kubernetes" }}'
-
 - name: Debug important facts
   debug:
     msg:
-      - "Cluster: {{ cluster }}"
       - "broker_auto_escalate {{ broker_auto_escalate }}"
       - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
 
@@ -35,7 +24,7 @@
 
 - include_tasks: "dao_{{ broker_dao_type }}.yaml"
 - include_tasks: "generate_certificate.yaml"
-  when: cluster == 'kubernetes'
+  when: ('route.openshift.io' not in lookup('k8s', cluster_info='api_groups')) | bool
 
 - name: 'Set broker objects state={{ state }}'
   k8s:
@@ -45,9 +34,9 @@
   loop:
     - name: broker.service.yaml
     - name: broker.route.yaml
-      apply: "{{ True if cluster == 'openshift' else False }}"
+      apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
     - name: broker-redirector.route.yaml
-      apply: "{{ True if cluster == 'openshift' else False }}"
+      apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
     - name: broker.serviceaccount.yaml
     - name: broker.clusterrolebinding.yaml
     - name: broker.configmap.yaml
@@ -60,7 +49,9 @@
     - name: broker-auth.secret.yaml
       apply: "{{ True if broker_basic_auth_enabled else False }}"
     - name: broker.deployment.yaml
+    # Useful in the case we don't want to require the servicecatalog exist
     - name: broker.servicecatalog.yaml
+      apply: "{{ ('servicecatalog.k8s.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
 
 - name: Wait for broker
   when: state == 'present' and wait_for_broker
