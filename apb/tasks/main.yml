@@ -3,7 +3,6 @@
 - name: Debug important facts
   debug:
     msg:
-      - "broker_auto_escalate {{ broker_auto_escalate }}"
       - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
 
 - name: 'Set broker namespace state={{ state }}'
@@ -48,6 +47,7 @@
     - name: broker-access.clusterrole.yaml
     - name: broker-auth.secret.yaml
       apply: "{{ True if broker_basic_auth_enabled else False }}"
+    - name: broker-user-auth.clusterrole.yaml
     - name: broker.deployment.yaml
     # Useful in the case we don't want to require the servicecatalog exist
     - name: broker.servicecatalog.yaml

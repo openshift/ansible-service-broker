@@ -44,7 +44,7 @@ broker_refresh_interval: "600s"
 broker_launch_apb_on_bind: "false"
 broker_output_request: "true"
 broker_recovery: "true"
-broker_auto_escalate: "false"
+broker_auto_escalate: "true"
 broker_client_secret: ""
 
 # Basic auth configuration, disabled by default
