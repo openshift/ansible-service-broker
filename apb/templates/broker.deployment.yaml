@@ -1,11 +1,11 @@
 ---
 
-{% if cluster == 'kubernetes' %}
-apiVersion: apps/v1
-kind: Deployment
-{% else %}
+{% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
+{% else %}
+apiVersion: apps/v1
+kind: Deployment
 {% endif %}
 metadata:
   name: {{ broker_name }}
@@ -15,19 +15,19 @@ metadata:
     service: broker
 spec:
   replicas: 1
-{% if cluster == 'kubernetes' %}
+{% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
+  selector:
+    app: {{ broker_name }}
+    service: broker
+  strategy:
+    type: Rolling
+{% else %}
   selector:
     matchLabels:
       app: {{ broker_name }}
       service: broker
   strategy:
     type: RollingUpdate
-{% else %}
-  selector:
-    app: {{ broker_name }}
-    service: broker
-  strategy:
-    type: Rolling
 {% endif %}
 {% if broker_node_selector != "" %}
   nodeSelector: '{{ broker_node_selector }}'
@@ -84,7 +84,7 @@ spec:
 {% if broker_dao_type == 'etcd' %}
             - name: etcd-auth
               mountPath: /var/run/etcd-auth
-{%   if cluster == 'kubernetes' %}
+{%   if 'route.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
             - name: etcd-ca
               mountPath: /var/run/etcd-ca
 {%   endif %}
@@ -108,7 +108,7 @@ spec:
         - name: etcd-auth
           secret:
             secretName: etcd-auth
-{%   if cluster == 'kubernetes' %}
+{%   if 'route.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
         - name: etcd-ca
           secret:
             secretName: etcd-ca

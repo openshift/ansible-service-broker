@@ -22,7 +22,7 @@
         creates: '{{ broker_etcd_certs_dir }}/cert.pem'
 
     - name: Create tls secret
-      when: cluster == 'kubernetes' and state == 'present'
+      when: ('route.openshift.io' not in lookup('k8s', cluster_info='api_groups')) | bool
       command: >
         kubectl create secret tls -n {{ broker_namespace }} {{ etcd_tls_name }}
         --cert="{{ broker_etcd_certs_dir }}/cert.pem"

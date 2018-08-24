@@ -38,8 +38,8 @@
     mediawiki_deployment: "{{
       lookup(
         'k8s',
-        api_version='apps/v1' if cluster == 'kubernetes' else 'apps.openshift.io/v1',
-        kind='Deployment' if cluster == 'kubernetes' else 'DeploymentConfig',
+        api_version='apps.openshift.io/v1' if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') else 'apps/v1',
+        kind='DeploymentConfig' if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') else 'Deployment',
         namespace=test_namespace,
         resource_name='mediawiki'
       )
@@ -64,8 +64,8 @@
       k8s:
         state: present
         definition:
-          apiVersion: "{{ 'v1' if cluster == 'kubernetes' else 'project.openshift.io/v1' }}"
-          kind: "{{ 'Namespace' if cluster == 'kubernetes' else 'ProjectRequest' }}"
+          apiVersion: "{{ 'v1' if 'project.openshift.io' not in lookup('k8s', cluster_info='api_groups') else 'project.openshift.io/v1' }}"
+          kind: "{{ 'Namespace' if 'project.openshift.io' not in lookup('k8s', cluster_info='api_groups') else 'ProjectRequest' }}"
           metadata:
             name: "{{ test_namespace }}"
 
@@ -147,8 +147,8 @@
       k8s:
         state: present
         definition:
-          apiVersion: "{{ 'apps/v1' if cluster == 'kubernetes' else 'apps.openshift.io/v1' }}"
-          kind: "{{ 'Deployment' if cluster == 'kubernetes' else 'DeploymentConfig' }}"
+          apiVersion: "{{ 'apps.openshift.io/v1' if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') else 'apps/v1' }}"
+          kind: "{{ 'DeploymentConfig' if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') else 'Deployment' }}"
           metadata:
             name: mediawiki
             namespace: "{{ test_namespace }}"
@@ -242,8 +242,8 @@
       k8s:
         state: absent
         definition:
-          apiVersion: "{{ 'v1' if cluster == 'kubernetes' else 'project.openshift.io/v1' }}"
-          kind: "{{ 'Namespace' if cluster == 'kubernetes' else 'Project' }}"
+          apiVersion: "{{ 'v1' if 'project.openshift.io' not in lookup('k8s', cluster_info='api_groups') else 'project.openshift.io/v1' }}"
+          kind: "{{ 'Namespace' if 'project.openshift.io' not in lookup('k8s', cluster_info='api_groups') else 'Project' }}"
           metadata:
             name: "{{ test_namespace }}"
 

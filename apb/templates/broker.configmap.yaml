@@ -92,7 +92,7 @@ data:
 {% if broker_dao_type == 'etcd' %}
       etcd_host: {{ etcd_host }}
       etcd_port: {{ etcd_port }}
-{%   if cluster == 'kubernetes' %}
+{%   if 'route.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
       etcd_ca_file: /var/run/etcd-ca/ca.crt
 {%   else %}
       etcd_ca_file: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
@@ -124,7 +124,7 @@ data:
       ssl_cert_key: /etc/tls/private/tls.key
       ssl_cert: /etc/tls/private/tls.crt
       auto_escalate: {{ broker_auto_escalate }}
-{% if cluster == 'openshift' %}
+{% if 'route.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
       dashboard_redirector: http://{{
         lookup(
           'k8s',

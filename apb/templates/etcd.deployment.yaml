@@ -1,11 +1,11 @@
 ---
 
-{% if cluster == 'kubernetes' %}
-apiVersion: apps/v1
-kind: Deployment
-{% else %}
+{% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
+{% else %}
+apiVersion: apps/v1
+kind: Deployment
 {% endif %}
 metadata:
   name: {{ etcd_name }}
@@ -15,19 +15,19 @@ metadata:
     service: {{ etcd_name }}
 spec:
   replicas: 1
-{% if cluster == 'kubernetes' %}
+{% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
+  selector:
+    app: {{ etcd_name }}
+    service: {{ etcd_name }}
+  strategy:
+    type: Rolling
+{% else %}
   selector:
     matchLabels:
       app: {{ etcd_name }}
       service: {{ etcd_name }}
   strategy:
     type: RollingUpdate
-{% else %}
-  selector:
-    app: {{ etcd_name }}
-    service: {{ etcd_name }}
-  strategy:
-    type: Rolling
 {% endif %}
 {% if broker_node_selector != "" %}
   nodeSelector: '{{ broker_node_selector }}'
