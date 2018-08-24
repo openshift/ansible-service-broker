@@ -243,7 +243,7 @@
         state: absent
         definition:
           apiVersion: "{{ 'v1' if 'project.openshift.io' not in lookup('k8s', cluster_info='api_groups') else 'project.openshift.io/v1' }}"
-          kind: "{{ 'Namespace' if 'project.openshift.io' not in lookup('k8s', cluster_info='api_groups') else 'ProjectRequest' }}"
+          kind: "{{ 'Namespace' if 'project.openshift.io' not in lookup('k8s', cluster_info='api_groups') else 'Project' }}"
           metadata:
             name: "{{ test_namespace }}"
 
