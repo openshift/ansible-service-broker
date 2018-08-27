@@ -11,8 +11,10 @@ create_broker_namespace: false
 wait_for_broker: false # By default, we do not wait for the broker to be available
 
 # The image to use for the broker
+broker_image_registry_url: docker.io
+broker_image_registry_org: ansibleplaybookbundle
 broker_image_tag: latest
-broker_image: "ansibleplaybookbundle/origin-ansible-service-broker:{{ broker_image_tag }}"
+broker_image: "{{ broker_image_registry_url }}/{{ broker_image_registry_org }}/origin-ansible-service-broker:{{ broker_image_tag }}"
 broker_image_pull_policy: "IfNotPresent"
 broker_probe_initial_delay: 120
 broker_node_selector: ""
