@@ -1,5 +1,5 @@
 diff --git a/apb/apb.yml b/apb/apb.yml
-index d7610ca9..73833fc8 100644
+index c1885a4ae..854b1a4a4 100644
 --- a/apb/apb.yml
 +++ b/apb/apb.yml
 @@ -14,7 +14,7 @@ metadata:
@@ -12,21 +12,25 @@ index d7610ca9..73833fc8 100644
    providerDisplayName: "Red Hat, Inc."
  plans:
 diff --git a/apb/defaults/main.yml b/apb/defaults/main.yml
-index 0ff227b3..247fe7b1 100644
+index 10633c472..8ed478b06 100644
 --- a/apb/defaults/main.yml
 +++ b/apb/defaults/main.yml
-@@ -11,8 +11,8 @@ create_broker_namespace: false
+@@ -11,10 +11,10 @@ create_broker_namespace: false
  wait_for_broker: false # By default, we do not wait for the broker to be available
  
  # The image to use for the broker
+-broker_image_registry_url: docker.io
+-broker_image_registry_org: ansibleplaybookbundle
 -broker_image_tag: latest
--broker_image: "ansibleplaybookbundle/origin-ansible-service-broker:{{ broker_image_tag }}"
+-broker_image: "{{ broker_image_registry_url }}/{{ broker_image_registry_org }}/origin-ansible-service-broker:{{ broker_image_tag }}"
++broker_image_registry_url: registry.redhat.io
++broker_image_registry_org: openshift3
 +broker_image_tag: v3.11
-+broker_image: "openshift3/ose-ansible-service-broker:{{ broker_image_tag }}"
++broker_image: "{{ broker_image_registry_url }}/{{ broker_image_registry_org }}/ose-ansible-service-broker:{{ broker_image_tag }}"
  broker_image_pull_policy: "IfNotPresent"
  broker_probe_initial_delay: 120
  broker_node_selector: ""
-@@ -53,7 +53,7 @@ broker_basic_auth_username: "admin"
+@@ -55,7 +55,7 @@ broker_basic_auth_username: "admin"
  broker_basic_auth_password: "admin"
  
  # Broker dockerhub registry options
@@ -35,8 +39,8 @@ index 0ff227b3..247fe7b1 100644
  broker_dockerhub_name: dh
  broker_dockerhub_url: https://registry.hub.docker.com
  broker_dockerhub_org: ansibleplaybookbundle
-@@ -61,7 +61,7 @@ broker_dockerhub_tag: latest
- broker_dockerhub_white_list: [ ".*-apb$" ]
+@@ -64,7 +64,7 @@ broker_dockerhub_white_list: [ ".*-apb$" ]
+ broker_dockerhub_black_list: [ ".*automation-broker-apb$" ]
  
  # Broker local openshift registry options
 -broker_local_openshift_enabled: ""
