@@ -8,7 +8,7 @@ metadata:
   labels:
     app: {{ etcd_name }}
     service: {{ etcd_name }}
-{% if cluster == 'openshift' %}
+{% if 'route.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: {{ etcd_tls_name }}
 {% endif %}
