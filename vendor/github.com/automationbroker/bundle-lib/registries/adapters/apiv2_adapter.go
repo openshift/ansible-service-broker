@@ -29,10 +29,10 @@ import (
 )
 
 const (
-	apiV2ManifestURL = "%v/v2/%v/manifests/%v"
-	apiV2CatalogURL  = "%v/v2/_catalog"
-	schema1Ct        = "application/vnd.docker.distribution.manifest.v1+json"
-	schema2Ct        = "application/vnd.docker.distribution.manifest.v2+json"
+	apiV2ManifestPath = "/v2/%v/manifests/%v"
+	apiV2CatalogURL   = "%v/v2/_catalog"
+	schema1Ct         = "application/vnd.docker.distribution.manifest.v1+json"
+	schema2Ct         = "application/vnd.docker.distribution.manifest.v2+json"
 )
 
 // OpenShiftAdapter - OpenShift Adapter
@@ -246,7 +246,7 @@ func (r APIV2Adapter) getNextImageURL(link string) string {
 func (r APIV2Adapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	log.Debugf("%s - LoadSpec", r.config.AdapterName)
 
-	req, err := r.client.NewRequest(fmt.Sprintf(apiV2ManifestURL, r.config.URL, imageName, r.config.Tag))
+	req, err := r.client.NewRequest(fmt.Sprintf(apiV2ManifestPath, imageName, r.config.Tag))
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +290,7 @@ func (r APIV2Adapter) loadSpec(imageName string) (*bundle.Spec, error) {
 		digest := mConf.Config.Digest
 
 		// get response with digest
-		req, err = r.client.NewRequest(fmt.Sprintf("%s/v2/%s/blobs/%s", r.config.URL, imageName, digest))
+		req, err = r.client.NewRequest(fmt.Sprintf("/v2/%s/blobs/%s", imageName, digest))
 		if err != nil {
 			return nil, err
 		}
