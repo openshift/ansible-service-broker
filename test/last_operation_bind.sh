@@ -35,4 +35,4 @@ curl \
     -H "Content-type: application/json" \
     -H "Accept: application/json" \
     -H "X-Broker-API-Originating-Identity: " \
-    "https://broker-automation-broker.$HOSTNAME.nip.io/automation-broker/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID/last_operation?operation=$OPERATION&service_id=$SERVICE_UUID&plan_id=$PLAN_UUID"
+    "https://broker-automation-broker.$HOSTNAME.nip.io/osb/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID/last_operation?operation=$OPERATION&service_id=$SERVICE_UUID&plan_id=$PLAN_UUID"
