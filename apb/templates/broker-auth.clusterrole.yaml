@@ -22,14 +22,18 @@ rules:
     # attributeRestrictions: null
     resources: ["bundles", "bundlebindings", "bundleinstances"]
     verbs: ["*"]
-{% if cluster == 'openshift' %}
+{% if 'authorization.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
   - apiGroups: ["authorization.openshift.io"]
     resources: ["subjectrulesreview"]
     verbs: ["create"]
+{% endif %}
+{% if 'image.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
   - apiGroups: ["image.openshift.io", ""]
     # attributeRestrictions: null
     resources: ["images"]
     verbs: ["get", "list"]
+{% endif %}
+{% if 'network.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
   - apiGroups: ["network.openshift.io", ""]
     # attributeRestrictions: null
     resources: ["clusternetworks", "netnamespaces"]

@@ -46,7 +46,7 @@ broker_refresh_interval: "600s"
 broker_launch_apb_on_bind: "false"
 broker_output_request: "true"
 broker_recovery: "true"
-broker_auto_escalate: ""
+broker_auto_escalate: "false"
 broker_client_secret: ""
 
 # Basic auth configuration, disabled by default
@@ -64,7 +64,7 @@ broker_dockerhub_white_list: [ ".*-apb$" ]
 broker_dockerhub_black_list: [ ".*automation-broker-apb$" ]
 
 # Broker local openshift registry options
-broker_local_openshift_enabled: ""
+broker_local_openshift_enabled: "{{ ('image.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
 broker_local_openshift_name: localregistry
 broker_local_openshift_namespaces: [ "openshift" ]
 # NOTE TO ADMINS: The default whitelist policy here will pass *all* APBs
