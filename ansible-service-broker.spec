@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.13
+Version: 1.3.14
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -331,6 +331,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Aug 28 2018 Dylan Murray <dymurray@redhat.com> 1.3.14-1
+- Update bundle-lib to 0.2.11 (#1065) (dymurray@redhat.com)
+- use the new osb prefix (#1064) (jmrodri@gmail.com)
+- Fix downstream patch for capabilities check (#1063) (jmontleo@redhat.com)
+
 * Tue Aug 28 2018 Dylan Murray <dymurray@redhat.com> 1.3.13-1
 - Check for capabilities instead of openshift during APB install (#1060)
   (jmontleo@redhat.com)
