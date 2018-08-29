@@ -40,14 +40,17 @@
     - name: broker.clusterrolebinding.yaml
     - name: broker.configmap.yaml
     - name: broker-auth.clusterrole.yaml
+      apply: "{{ state == 'present' or (state == 'absent' and broker_destroy_shared_resources) }}"
     - name: broker-auth.clusterrolebinding.yaml
     - name: broker-client.serviceaccount.yaml
     - name: broker-client.secret.yaml
     - name: broker-client.clusterrolebinding.yaml
     - name: broker-access.clusterrole.yaml
+      apply: "{{ state == 'present' or (state == 'absent' and broker_destroy_shared_resources) }}"
     - name: broker-auth.secret.yaml
       apply: "{{ True if broker_basic_auth_enabled else False }}"
     - name: broker-user-auth.clusterrole.yaml
+      apply: "{{ state == 'present' or (state == 'absent' and broker_destroy_shared_resources) }}"
     - name: broker.deployment.yaml
     # Useful in the case we don't want to require the servicecatalog exist
     - name: broker.servicecatalog.yaml
