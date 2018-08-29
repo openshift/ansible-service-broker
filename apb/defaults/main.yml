@@ -22,6 +22,12 @@ broker_node_selector: ""
 # The kind of broker, useful in the case the service-catalog
 # supports namespaced service brokers
 broker_kind: ClusterServiceBroker
+# Whether or not the APB should destroy cluster level resources
+# that are potentially shared by more than one broker in a cluster.
+# Default behavior is to NOT delete these resources to prevent
+# unintended breakages. Cluster admins can flip this to true and
+# rerun deprovision in order to explicitly clean them up.
+broker_destroy_shared_resources: False
 broker_clusterrole: admin
 broker_sandbox_role: edit
 
