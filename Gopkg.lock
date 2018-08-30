@@ -57,8 +57,8 @@
     "registries/adapters/oauth",
     "runtime"
   ]
-  revision = "65190a08b5d6ff953b02c43883030ec550ab072e"
-  version = "0.2.11"
+  revision = "e90ffdb11ccda31176c4e4aca89bd0159a4e1051"
+  version = "0.2.12"
 
 [[projects]]
   branch = "master"
@@ -929,6 +929,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bf6a19aff96a9008476835a142ca1857925490e3381ff8441b2b081fcc8091f6"
+  inputs-digest = "154f73d29ded86fdae51cf89c9b6d15aa21ee051af4d4ce57a66e56087f1a15c"
   solver-name = "gps-cdcl"
   solver-version = 1

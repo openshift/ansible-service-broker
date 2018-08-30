@@ -32,6 +32,7 @@ const (
 	apiV2ManifestPath = "/v2/%v/manifests/%v"
 	apiV2CatalogURL   = "%v/v2/_catalog"
 	schema1Ct         = "application/vnd.docker.distribution.manifest.v1+json"
+	schema1CtSigned   = "application/vnd.docker.distribution.manifest.v1+prettyjws"
 	schema2Ct         = "application/vnd.docker.distribution.manifest.v2+json"
 )
 
@@ -108,6 +109,14 @@ func (r APIV2Adapter) RegistryName() string {
 func (r APIV2Adapter) GetImageNames() ([]string, error) {
 	log.Debugf("%s - GetImageNames", r.config.AdapterName)
 	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
+
+	// Need to call GetV2() here to ensure we don't have a stale token
+	// GetImageNames() is the first call in LoadSpecs which is called at beginning of Bootstrap
+	err := r.client.Getv2()
+	if err != nil {
+		log.Errorf("Failed to GET /v2 at %s - %v", r.config.URL, err)
+		return nil, err
+	}
 
 	var imageList []string
 
@@ -250,7 +259,7 @@ func (r APIV2Adapter) loadSpec(imageName string) (*bundle.Spec, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("accept", fmt.Sprintf("%s,%s", schema1Ct, schema2Ct))
+	req.Header.Set("accept", fmt.Sprintf("%s,%s,%s", schema1Ct, schema1CtSigned, schema2Ct))
 
 	resp, err := r.client.Do(req)
 	if err != nil {
@@ -309,10 +318,13 @@ func (r APIV2Adapter) loadSpec(imageName string) (*bundle.Spec, error) {
 }
 
 func getSchemaVersion(ct string) (int, error) {
+	// See below links for more information on accepted media types for Docker manifests
+	// https://docs.docker.com/registry/spec/manifest-v2-1/
+	// https://docs.docker.com/registry/spec/manifest-v2-2/
 	switch ct {
 	case "":
 		return 0, errors.New("content-type is empty")
-	case schema1Ct:
+	case schema1Ct, schema1CtSigned:
 		return 1, nil
 	case schema2Ct:
 		return 2, nil
