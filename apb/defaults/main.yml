@@ -28,6 +28,15 @@ broker_kind: ClusterServiceBroker
 # unintended breakages. Cluster admins can flip this to true and
 # rerun deprovision in order to explicitly clean them up.
 broker_destroy_shared_resources: False
+# Deprovisioning a broker that has outstanding service instances or bindings
+# will leak their underlying services as well as the k8s objects themselves.
+# This effectively throws the related resources into what appears to be a
+# perpetually terminating state that the cluster admin must clean up.
+# By default, the broker's APB will refuse to deprovision a broker that is
+# recognized to have outstanding instances, but switching
+# broker_force_deprovision to true will deprovision the broker regardless
+# of the presence of outstanding instances.
+broker_force_deprovision: False
 broker_clusterrole: admin
 broker_sandbox_role: edit
 

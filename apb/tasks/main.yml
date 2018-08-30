@@ -5,6 +5,15 @@
     msg:
       - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
 
+- name: Verify the broker has no outstanding service instances if deprovisioning
+  assert:
+    that:
+      - "lookup('k8s', kind='BundleInstance', namespace=broker_namespace, api_version='automationbroker.io/v1alpha1') | length == 0"
+    msg: |
+      The requested broker cannot be deprovisioned because it has outstanding service instances.
+      Please deprovision any services originally provisioned by this broker before deprovisioning the broker itself.
+  when: state == 'absent' and not broker_force_deprovision
+
 - name: 'Set broker namespace state={{ state }}'
   k8s:
     state: '{{ state }}'
