@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.14
+Version: 1.3.15
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -331,6 +331,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Aug 30 2018 Dylan Murray <dymurray@redhat.com> 1.3.15-1
+- Update bundle-lib release to 0.2.12 (#1068) (dymurray@redhat.com)
+- Prevent deprovision of brokers with instances (#1067) (ernelson@redhat.com)
+- Default to NOT deleting shared broker resources (#1066) (ernelson@redhat.com)
+
 * Tue Aug 28 2018 Dylan Murray <dymurray@redhat.com> 1.3.14-1
 - Update bundle-lib to 0.2.11 (#1065) (dymurray@redhat.com)
 - use the new osb prefix (#1064) (jmrodri@gmail.com)
