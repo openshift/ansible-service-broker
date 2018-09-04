@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.15
+Version: 1.3.16
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -331,6 +331,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Sep 04 2018 Dylan Murray <dymurray@redhat.com> 1.3.16-1
+- Bump bundle-lib release to 0.2.13 (#1070) (dymurray@redhat.com)
+
 * Thu Aug 30 2018 Dylan Murray <dymurray@redhat.com> 1.3.15-1
 - Update bundle-lib release to 0.2.12 (#1068) (dymurray@redhat.com)
 - Prevent deprovision of brokers with instances (#1067) (ernelson@redhat.com)
