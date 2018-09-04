@@ -255,6 +255,11 @@ func getProxyConfig() *runtime.ProxyConfig {
 		return nil
 	}
 
+	if (httpProxyPresent && httpProxy == "") || (httpsProxyPresent && httpsProxy == "") {
+		log.Warning("Proxy env vars found, but no values configured.")
+		return nil
+	}
+
 	return &runtime.ProxyConfig{
 		HTTPProxy:  httpProxy,
 		HTTPSProxy: httpsProxy,
