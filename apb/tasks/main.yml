@@ -1,9 +1,14 @@
 ---
 
-- name: Debug important facts
-  debug:
-    msg:
-      - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
+- name: Verify preconditions
+  assert:
+    that:
+      - '"servicecatalog.k8s.io" in lookup("k8s", cluster_info="api_groups")'
+      - 'lookup("k8s", kind="Namespace", resource_name=broker_namespace) is defined'
+    msg: |
+      Service Catalog must be installed in the cluster
+      The broker namespace must exist
+  when: state == 'present'
 
 - name: Verify the broker has no outstanding service instances if deprovisioning
   assert:
@@ -14,21 +19,16 @@
       Please deprovision any services originally provisioned by this broker before deprovisioning the broker itself.
   when: state == 'absent' and not broker_force_deprovision
 
+- name: Debug important facts
+  debug:
+    msg:
+      - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
+
 - name: 'Set broker namespace state={{ state }}'
   k8s:
     state: '{{ state }}'
     definition: "{{ lookup('template', 'broker.namespace.yaml') | from_yaml }}"
   when: create_broker_namespace
-
-- name: Verify preconditions
-  assert:
-    that:
-      - '"servicecatalog.k8s.io" in lookup("k8s", cluster_info="api_groups")'
-      - 'lookup("k8s", kind="Namespace", resource_name=broker_namespace) is defined'
-    msg: |
-      Service Catalog must be installed in the cluster
-      The broker namespace must exist
-  when: state == 'present'
 
 - include_tasks: "dao_{{ broker_dao_type }}.yaml"
 - include_tasks: "generate_certificate.yaml"
