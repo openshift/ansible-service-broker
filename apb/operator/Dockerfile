@@ -18,5 +18,4 @@ RUN mkdir -p /opt/ansible ${BASE_DIR}/.ansible/tmp \
  && chown -R ${USER_NAME}:0 ${BASE_DIR} \
  && chmod -R g=u  ${BASE_DIR} /etc/passwd
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 USER ${USER_NAME}
