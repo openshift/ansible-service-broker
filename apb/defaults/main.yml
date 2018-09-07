@@ -55,6 +55,7 @@ broker_keep_namespace: "false"
 broker_keep_namespace_on_error: "false"
 
 # Special broker config options
+broker_log_level: "debug"
 broker_dev: "true"
 broker_bootstrap_on_startup: "true"
 broker_refresh_interval: "600s"
@@ -110,3 +111,45 @@ broker_quay_org: redhat
 broker_quay_tag: latest
 broker_quay_token: none
 broker_quay_white_list: [ ".*-apb$" ]
+
+dockerhub_registry:
+  type: dockerhub
+  name: '{{ broker_dockerhub_name }}'
+  url: '{{ broker_dockerhub_url }}'
+  org: '{{ broker_dockerhub_org | quote }}'
+  tag: '{{ broker_dockerhub_tag | quote }}'
+  white_list: '{{ broker_dockerhub_white_list }}'
+  black_list: '{{ broker_dockerhub_black_list }}'
+
+local_openshift_registry:
+  type: local_openshift
+  name: '{{ broker_local_openshift_name }}'
+  namespaces: '{{ broker_local_openshift_namespaces }}'
+  white_list: '{{ broker_local_openshift_white_list }}'
+
+helm_registry:
+  type: helm
+  name: '{{ broker_helm_name }}'
+  url: '{{ broker_helm_url }}'
+  runner: '{{ broker_helm_runner }}'
+  white_list: '{{ broker_helm_white_list }}'
+
+galaxy_registry:
+  type: galaxy
+  name: '{{ broker_galaxy_name }}'
+  url: '{{ broker_galaxy_url }}'
+  org: '{{ broker_galaxy_org | quote }}'
+  runner: '{{ broker_galaxy_runner }}'
+  white_list: '{{ broker_galaxy_white_list }}'
+
+quay_registry:
+  type: quay
+  name: '{{ broker_quay_name }}'
+  url: '{{ broker_quay_url }}'
+  org: '{{ broker_quay_org | quote }}'
+  tag: '{{ broker_quay_tag | quote }}'
+  token: '{{ broker_quay_token | quote }}'
+  white_list: '{{ broker_quay_white_list }}'
+
+# conditionally set later based on Cluster configuration
+default_registries: []

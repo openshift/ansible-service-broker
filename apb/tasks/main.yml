@@ -19,10 +19,14 @@
       Please deprovision any services originally provisioned by this broker before deprovisioning the broker itself.
   when: state == 'absent' and not broker_force_deprovision
 
+- name: Create broker config map
+  import_tasks: build_config.yaml
+
 - name: Debug important facts
   debug:
     msg:
       - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
+      - "{{ broker_config | to_nice_yaml }}"
 
 - name: 'Set broker namespace state={{ state }}'
   k8s:
@@ -30,9 +34,30 @@
     definition: "{{ lookup('template', 'broker.namespace.yaml') | from_yaml }}"
   when: create_broker_namespace
 
-- include_tasks: "dao_{{ broker_dao_type }}.yaml"
+- include_tasks: "dao_{{ broker_config.dao.type }}.yaml"
 - include_tasks: "generate_certificate.yaml"
   when: ('route.openshift.io' not in lookup('k8s', cluster_info='api_groups')) | bool
+
+- name: 'Set broker config map state={{ state }}'
+  k8s:
+    state: '{{ state }}'
+    definition: '{{ broker_config_map }}'
+  register: result
+
+- name: Redeploy the broker if the configmap changed
+  k8s:
+    state: absent
+    kind: Pod
+    api_version: v1
+    namespace: '{{ broker_namespace }}'
+    name: '{{ pod.metadata.name }}'
+  vars:
+    pod: '{{ lookup("k8s", kind="Pod", api_version="v1", namespace=broker_namespace, label_selector=("app=" + broker_name)) }}'
+    kind: '{{ "Deployment" if cluster == "kubernetes" else "DeploymentConfig" }}'
+    api_version: '{{ "apps/v1" if cluster == "kubernetes" else "apps.openshift.io/v1" }}'
+  when:
+  - result.changed
+  - pod
 
 - name: 'Set broker objects state={{ state }}'
   k8s:
@@ -47,7 +72,6 @@
       apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
     - name: broker.serviceaccount.yaml
     - name: broker.clusterrolebinding.yaml
-    - name: broker.configmap.yaml
     - name: broker-auth.clusterrole.yaml
       apply: "{{ state == 'present' or (state == 'absent' and (broker_destroy_shared_resources | bool)) }}"
     - name: broker-auth.clusterrolebinding.yaml
@@ -57,7 +81,7 @@
     - name: broker-access.clusterrole.yaml
       apply: "{{ state == 'present' or (state == 'absent' and (broker_destroy_shared_resources | bool)) }}"
     - name: broker-auth.secret.yaml
-      apply: "{{ True if broker_basic_auth_enabled else False }}"
+      apply: "{{ (broker_config.broker.auth[0].enabled | default(False)) | bool }}"
     - name: broker-user-auth.clusterrole.yaml
       apply: "{{ state == 'present' or (state == 'absent' and (broker_destroy_shared_resources | bool)) }}"
     - name: broker.deployment.yaml
