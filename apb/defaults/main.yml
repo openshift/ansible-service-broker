@@ -37,7 +37,7 @@ broker_destroy_shared_resources: False
 # broker_force_deprovision to true will deprovision the broker regardless
 # of the presence of outstanding instances.
 broker_force_deprovision: False
-broker_clusterrole: admin
+broker_cluster_role: admin
 broker_sandbox_role: edit
 
 # How does broker save state? crd | etcd
