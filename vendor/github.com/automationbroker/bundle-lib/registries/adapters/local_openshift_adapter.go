@@ -42,6 +42,7 @@ type containerConfig struct {
 
 type imageMetadata struct {
 	ContainerConfig containerConfig `json:"ContainerConfig"`
+	Config          containerConfig `json:"Config"`
 }
 
 const localOpenShiftName = "openshift-registry"
@@ -143,7 +144,17 @@ func (r LocalOpenShiftAdapter) loadSpec(image v1image.Image) (*bundle.Spec, erro
 	}
 	spec := &bundle.Spec{}
 
-	decodedSpecYaml, err := b64.StdEncoding.DecodeString(i.ContainerConfig.Labels.Spec)
+	metadataSpec := i.ContainerConfig.Labels.Spec
+	if metadataSpec == "" {
+		log.Debugf("Failed to find spec label in containerConfig metadata, checking Config")
+		if i.Config.Labels.Spec == "" {
+			log.Errorf("Failed to find spec label")
+			return nil, errors.New("spec label not found in metadata")
+		}
+		metadataSpec = i.Config.Labels.Spec
+	}
+
+	decodedSpecYaml, err := b64.StdEncoding.DecodeString(metadataSpec)
 	if err != nil {
 		log.Errorf("Failed to decode spec: %v", err)
 		return nil, err
