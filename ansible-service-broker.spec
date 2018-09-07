@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.16
+Version: 1.3.17
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -331,6 +331,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Sep 07 2018 Dylan Murray <dymurray@redhat.com> 1.3.17-1
+- Bump bundle-lib release to 0.2.14 (#1074) (dymurray@redhat.com)
+- Add 2018-09-04 meeting notes (#1069) (jmrodri@gmail.com)
+- Bug 1625809 - accept quoted apb argument (#1072) (ernelson@redhat.com)
+
 * Tue Sep 04 2018 Dylan Murray <dymurray@redhat.com> 1.3.16-1
 - Bump bundle-lib release to 0.2.13 (#1070) (dymurray@redhat.com)
 
