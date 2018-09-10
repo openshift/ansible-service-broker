@@ -52,7 +52,7 @@ etcd_persist_storage: "true"
 
 # Whether or not to keep the sandbox namespace
 broker_keep_namespace: "false"
-broker_keep_namespace_on_error: "true"
+broker_keep_namespace_on_error: "false"
 
 # Special broker config options
 broker_dev: "true"
