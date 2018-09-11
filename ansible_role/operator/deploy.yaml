@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: automation-broker-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: automation-broker-operator
+  template:
+    metadata:
+      labels:
+        name: automation-broker-operator
+    spec:
+      containers:
+        - name: automation-broker-operator
+          image: docker.io/eriknelson/automation-broker-operator:testing
+          imagePullPolicy: IfNotPresent
