@@ -4,7 +4,11 @@ TAG              ?= $(shell git rev-parse --short HEAD)
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker:${TAG}
 ANSIBLE_ROLE_DIR ?= ansible_role
 APB_DIR          ?= ${ANSIBLE_ROLE_DIR}/apb
-APB_IMAGE        ?= ${REGISTRY}/automationbroker/automation-broker-apb:${TAG}
+OPERATOR_DIR     ?= ${ANSIBLE_ROLE_DIR}/operator
+APB_ORG          ?= automationbroker
+APB_IMAGE        ?= ${REGISTRY}/${APB_ORG}/automation-broker-apb:${TAG}
+OPERATOR_ORG     ?= automationbroker
+OPERATOR_IMAGE   ?= ${REGISTRY}/${OPERATOR_ORG}/automation-broker-operator:${TAG}
 VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
@@ -104,6 +108,9 @@ else ifneq (,$(findstring release,$(TAG)))
 else
 	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 endif
+
+build-operator: ## Build the broker operator image
+	docker build -f ${OPERATOR_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
 
 publish: build-image build-apb
 ifdef PUBLISH
