@@ -23,9 +23,6 @@
     set_fact:
       registries: '{{ default_registries }}'
 
-  - debug:
-      msg: "default registries -- {{ registries }}"
-
 - include_vars: config.yaml
   when: broker_config is not defined
   delegate_to: localhost
