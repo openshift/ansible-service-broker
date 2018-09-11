@@ -2,7 +2,8 @@ REGISTRY         ?= docker.io
 ORG              ?= ansibleplaybookbundle
 TAG              ?= $(shell git rev-parse --short HEAD)
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker:${TAG}
-APB_DIR          ?= apb
+ANSIBLE_ROLE_DIR ?= ansible_role
+APB_DIR          ?= ${ANSIBLE_ROLE_DIR}/apb
 APB_IMAGE        ?= ${REGISTRY}/automationbroker/automation-broker-apb:${TAG}
 VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
@@ -95,13 +96,13 @@ build-image: ## Build the broker (from canary)
 
 build-apb: ## Build the broker apb
 ifeq ($(TAG),canary)
-	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 else ifeq ($(TAG),nightly)
-	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 else ifneq (,$(findstring release,$(TAG)))
-	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 else
-	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} -t ${APB_IMAGE} ${APB_DIR}
+	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 endif
 
 publish: build-image build-apb
