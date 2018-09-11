@@ -4,4 +4,4 @@
   version: v1alpha1
   group: automationbroker.io
   kind: AutomationBroker
-  path: /opt/ansible/deploy.yml
+  path: /opt/ansible/deploy.yaml
