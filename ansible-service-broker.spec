@@ -39,7 +39,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.4.0
+Version: 1.4.1
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -331,6 +331,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Sep 11 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.4.1-1
+- Prepare for 1.4 release (#1079) (jmrodri@gmail.com)
+- add operation and param validation (#1077) (jmrodri@gmail.com)
+- Disable keeping namespace on error in ASB (#1075) (jmontleo@redhat.com)
+
 * Fri Sep 07 2018 Dylan Murray <dymurray@redhat.com> 1.3.17-1
 - Bump bundle-lib release to 0.2.14 (#1074) (dymurray@redhat.com)
 - Add 2018-09-04 meeting notes (#1069) (jmrodri@gmail.com)
