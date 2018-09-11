@@ -17,16 +17,16 @@ fi
 validate_param() {
   if [ "$1" = "" ]
   then
-    echo "Usage: $0 <instance uuid> <binding uuid> <plan uuid> <service uuid>"
+    echo "Usage: $0 <instance uuid> <binding uuid> <operation> <plan uuid> <service uuid>"
     exit
   fi
 }
 
-#validate_param "$INSTANCE_ID"
-#validate_param "$BINDING_ID"
-#validate_param "$OPERATION"
-#validate_param "$PLAN_UUID"
-#validate_param "$SERVICE_UUID"
+validate_param "$INSTANCE_ID"
+validate_param "$BINDING_ID"
+validate_param "$OPERATION"
+validate_param "$PLAN_UUID"
+validate_param "$SERVICE_UUID"
 
 curl \
     -k \
