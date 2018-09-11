@@ -173,7 +173,7 @@ information see our [version document](docs/versioning.md).
 |    1.9     |    3.9    |       release-1.1      |    2018/1/4    |   2018/3/28  |
 |    1.10    |    3.10   |       release-1.2      |    2018/4/4    |   2018/7/4*  |
 |    1.11    |    3.11   |       release-1.3      |    2018/7/4*   |   2018/10/4* |
-|    1.12    |    3.12   |       release-1.4      |    2018/10/4*  |   2019/1/4*  |
+|    1.12    |    4.0    |       release-1.4      |    2018/10/4*  |   2019/1/4*  |
 
 
 # Compatibility
