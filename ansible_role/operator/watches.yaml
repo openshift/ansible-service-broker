@@ -5,3 +5,8 @@
   group: automationbroker.io
   kind: AutomationBroker
   playbook: /opt/ansible/deploy.yaml
+  finalizer:
+    name: finalizer.automationbroker.io
+    vars:
+      action: deprovision
+      broker_destroy_shared_resources: true
