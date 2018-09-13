@@ -7,9 +7,10 @@ metadata:
 spec:
   brokerImagePullPolicy: IfNotPresent
   createBrokerNamespace: false
-  brokerKind: ClusterServiceBroker
   waitForBroker: false
-
+################################################################################
+# Some other example overrides, in general most defaults will work.
+################################################################################
   #brokerName: automation-broker
   #brokerImage: "ansibleplaybookbundle/origin-ansible-service-broker"
   #brokerClusterRole: admin
