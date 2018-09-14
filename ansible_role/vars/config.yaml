@@ -39,6 +39,7 @@ broker_config:
     ssl_cert: /etc/tls/private/tls.crt
     auto_escalate: '{{ broker_auto_escalate | bool }}'
     cluster_url: '{{ broker_namespace }}'
+    user_auth_rule: '{{ broker_user_auth_rule }}'
     auth:
       - type: basic
         enabled: '{{ broker_basic_auth_enabled | bool }}'

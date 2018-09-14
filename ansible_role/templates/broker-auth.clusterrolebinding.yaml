@@ -6,7 +6,7 @@ metadata:
   name: "{{ broker_name }}-{{ broker_namespace }}-auth-bind"
 roleRef:
   kind: ClusterRole
-  name: {{ broker_name }}-auth
+  name: {{ broker_name }}-{{ broker_namespace }}-auth
   apiGroup: rbac.authorization.k8s.io
 subjects:
 - kind: ServiceAccount

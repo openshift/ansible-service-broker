@@ -375,7 +375,13 @@ func (a *App) Start() {
 		panic(servererr)
 	}
 
-	authorizer, err := k8sauthorization.NewAuthorizer("automationbroker.io", "access", "create")
+	userAuthRuleToCheck := a.config.GetString("broker.user_auth_rule")
+	if userAuthRuleToCheck == "" {
+		// Maintains backwards compatibility if the new user_auth_rule config value
+		// is missing. Previously, we simply checked for "access".
+		userAuthRuleToCheck = "access"
+	}
+	authorizer, err := k8sauthorization.NewAuthorizer("automationbroker.io", userAuthRuleToCheck, "create")
 	var clusterURL = ClusterURLPreFix
 
 	daHandler := prometheus.InstrumentHandler(
