@@ -17,6 +17,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -485,6 +486,11 @@ func (h handler) getbind(w http.ResponseWriter, r *http.Request, params map[stri
 		return
 	}
 
+	if bytes.Compare(instanceUUID, bindingUUID) == 0 {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "instance_uuid and binding_uuid cannot be the same"})
+		return
+	}
+
 	serviceInstance, err := h.broker.GetServiceInstance(instanceUUID)
 	if err != nil {
 		switch err {
@@ -525,6 +531,11 @@ func (h handler) bind(w http.ResponseWriter, r *http.Request, params map[string]
 	bindingUUID := uuid.Parse(params["binding_uuid"])
 	if bindingUUID == nil {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
+		return
+	}
+
+	if bytes.Compare(instanceUUID, bindingUUID) == 0 {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "instance_uuid and binding_uuid cannot be the same"})
 		return
 	}
 
@@ -609,6 +620,12 @@ func (h handler) unbind(w http.ResponseWriter, r *http.Request, params map[strin
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "invalid binding_uuid"})
 		return
 	}
+
+	if bytes.Compare(instanceUUID, bindingUUID) == 0 {
+		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "instance_uuid and binding_uuid cannot be the same"})
+		return
+	}
+
 	planID := r.FormValue("plan_id")
 	if planID == "" {
 		writeResponse(w, http.StatusBadRequest, broker.ErrorResponse{Description: "unbind request missing plan_id query parameter"})

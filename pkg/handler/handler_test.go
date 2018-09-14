@@ -347,26 +347,26 @@ func TestBindBadBindRequest(t *testing.T) {
 		fmt.Sprintf("/v2/service_instance/%s/service_bindings/%s", testuuid, testuuid), nil)
 	r.Header.Add("Content-Type", "application/json")
 
-	testhandler, w, _, params := buildBindHandler(testuuid, broker.ErrorDuplicate)
+	testhandler, w, _, params := buildBindHandler(uuid.New(), testuuid, broker.ErrorDuplicate)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 500, "should've been an internal server error")
 }
 
 func TestBindDuplicate(t *testing.T) {
-	testhandler, w, r, params := buildBindHandler(uuid.New(), broker.ErrorDuplicate)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), uuid.New(), broker.ErrorDuplicate)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 409, "should've been a conflict")
 	ft.AssertError(t, w.Body, "")
 }
 
 func TestBindAlreadyProvisioned(t *testing.T) {
-	testhandler, w, r, params := buildBindHandler(uuid.New(), broker.ErrorBindingExists)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), uuid.New(), broker.ErrorBindingExists)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 200, "should've been an OK ")
 }
 
 func TestBindNotFound(t *testing.T) {
-	testhandler, w, r, params := buildBindHandler(uuid.New(), nil)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), uuid.New(), nil)
 	testhandler.broker = MockBroker{Name: "testbroker", Err: nil, getServiceInstanceErr: broker.ErrorNotFound}
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "should've been a bad request for error not found")
@@ -374,23 +374,31 @@ func TestBindNotFound(t *testing.T) {
 }
 
 func TestBindOtherError(t *testing.T) {
-	testhandler, w, r, params := buildBindHandler(uuid.New(), errors.New("random error"))
+	testhandler, w, r, params := buildBindHandler(uuid.New(), uuid.New(), errors.New("random error"))
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 400, "should've been a bad request for error not found")
 	ft.AssertError(t, w.Body, "random error")
 }
 
 func TestBindCreated(t *testing.T) {
-	testhandler, w, r, params := buildBindHandler(uuid.New(), nil)
+	testhandler, w, r, params := buildBindHandler(uuid.New(), uuid.New(), nil)
 	testhandler.bind(w, r, params)
 	ft.AssertEqual(t, w.Code, 201, "should've been a created")
 	ft.AssertError(t, w.Body, "")
 }
 
 func TestBindInvalidInstance(t *testing.T) {
-	testhandler, w, r, _ := buildBindHandler(uuid.New(), nil)
+	testhandler, w, r, _ := buildBindHandler(uuid.New(), uuid.New(), nil)
 	testhandler.bind(w, r, nil)
 	ft.AssertEqual(t, w.Code, 400, "code not equal")
+}
+
+func TestBindDuplicateUUIDs(t *testing.T) {
+	sameuuid := uuid.New()
+	testhandler, w, r, params := buildBindHandler(sameuuid, sameuuid, broker.ErrorDuplicate)
+	testhandler.bind(w, r, params)
+	ft.AssertEqual(t, w.Code, 400, "should've been a badrequest, same uuids")
+	ft.AssertError(t, w.Body, "instance_uuid and binding_uuid cannot be the same")
 }
 
 // LastOperation tests
@@ -477,20 +485,20 @@ func buildLastOperationHandler(testuuid string, err error) (handler, *httptest.R
 	return testhandler, w, r, params
 }
 
-func buildBindHandler(testuuid string, err error) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
+func buildBindHandler(instanceuuid string, bindinguuid string, err error) (handler, *httptest.ResponseRecorder, *http.Request, map[string]string) {
 
 	testb := MockBroker{Name: "testbroker", Err: err}
 	c, _ := config.CreateConfig("testdata/broker.yaml")
 	testhandler := handler{*mux.NewRouter(), testb, c, nil}
-	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", testuuid, testuuid)}
+	trr := TestRequest{Msg: fmt.Sprintf("{\"plan_id\": \"%s\",\"service_id\": \"%s\"}", uuid.New(), uuid.New())}
 	r := httptest.NewRequest("PUT",
-		fmt.Sprintf("/v2/service_instance/%s/service_bindings/%s", testuuid, testuuid), trr)
+		fmt.Sprintf("/v2/service_instance/%s/service_bindings/%s", instanceuuid, bindinguuid), trr)
 	r.Header.Add("Content-Type", "application/json")
 	r = r.WithContext(context.WithValue(r.Context(), UserInfoContext, broker.UserInfo{Username: "admin"}))
 	w := httptest.NewRecorder()
 	params := map[string]string{
-		"instance_uuid": testuuid,
-		"binding_uuid":  testuuid,
+		"instance_uuid": instanceuuid,
+		"binding_uuid":  bindinguuid,
 	}
 	return testhandler, w, r, params
 }
