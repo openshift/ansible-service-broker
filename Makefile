@@ -112,7 +112,7 @@ endif
 
 build-operator: ## Build the broker operator image
 ifeq ($(OPERATOR_OLM),true)
-	docker build -f ${OPERATOR_DIR}/Dockerfile-olm -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
+	docker build -f ${OPERATOR_DIR}/Dockerfile --build-arg OLM_MANAGED=true -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
 else
 	docker build -f ${OPERATOR_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
 endif
