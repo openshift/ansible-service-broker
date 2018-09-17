@@ -9,6 +9,7 @@ APB_ORG          ?= automationbroker
 APB_IMAGE        ?= ${REGISTRY}/${APB_ORG}/automation-broker-apb:${TAG}
 OPERATOR_ORG     ?= automationbroker
 OPERATOR_IMAGE   ?= ${REGISTRY}/${OPERATOR_ORG}/automation-broker-operator:${TAG}
+OPERATOR_OLM     ?= false
 VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
@@ -110,7 +111,11 @@ else
 endif
 
 build-operator: ## Build the broker operator image
+ifeq ($(OPERATOR_OLM),true)
+	docker build -f ${OPERATOR_DIR}/Dockerfile-olm -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
+else
 	docker build -f ${OPERATOR_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
+endif
 
 publish: build-image build-apb
 ifdef PUBLISH
