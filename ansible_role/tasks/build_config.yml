@@ -23,7 +23,7 @@
     set_fact:
       registries: '{{ default_registries }}'
 
-- include_vars: config.yaml
+- include_vars: config.yml
   when: broker_config is not defined
   delegate_to: localhost
 
@@ -40,4 +40,4 @@
       set_fact:
         broker_config: "{{ broker_config | combine({'broker': _merged_broker_config_section }) }}"
 
-- include_vars: configmap.yaml
+- include_vars: configmap.yml

@@ -4,7 +4,7 @@
   version: v1alpha1
   group: automationbroker.io
   kind: AutomationBroker
-  playbook: /opt/ansible/deploy.yaml
+  playbook: /opt/ansible/deploy.yml
   finalizer:
     name: finalizer.automationbroker.io
     vars:
