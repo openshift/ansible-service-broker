@@ -25,6 +25,14 @@
       Please deprovision any services originally provisioned by this broker before deprovisioning the broker itself.
   when: state == 'absent' and not broker_force_deprovision
 
+# Executed as an early task since the broker's configmap generation and creation
+# rely on this for the dashboard redirector
+- name: Create dashboard redirector route if OpenShift
+  k8s:
+    state: '{{ state }}'
+    definition: "{{ lookup('template', 'broker-redirector.route.yaml') | from_yaml }}"
+  when: ('route.openshift.io' in lookup('k8s', cluster_info='api_groups'))
+
 - name: Create broker config map
   import_tasks: build_config.yaml
 
@@ -62,8 +70,6 @@
   loop:
     - name: broker.service.yaml
     - name: broker.route.yaml
-      apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
-    - name: broker-redirector.route.yaml
       apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
     - name: broker.serviceaccount.yaml
     - name: broker.clusterrolebinding.yaml
