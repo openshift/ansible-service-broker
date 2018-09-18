@@ -195,8 +195,8 @@ install -p -m 755 migration %{buildroot}%{_bindir}/migration
 install -p -m 755 dashboard-redirector %{buildroot}%{_bindir}/dashboard-redirector
 # broker apb
 mkdir -p %{buildroot}/opt/apb/ %{buildroot}/opt/ansible/roles/automation-broker-apb
-mv apb/playbooks %{buildroot}/opt/apb/actions
-mv apb/defaults apb/files apb/tasks apb/templates apb/vars %{buildroot}/opt/ansible/roles/automation-broker-apb
+mv ansible_role/playbooks %{buildroot}/opt/apb/actions
+mv ansible_role/defaults ansible_role/files ansible_role/tasks ansible_role/templates ansible_role/vars %{buildroot}/opt/ansible/roles/automation-broker-apb
 install -p -m 755 build/entrypoint.sh %{buildroot}%{_bindir}/entrypoint.sh
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 644 etc/example-config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
