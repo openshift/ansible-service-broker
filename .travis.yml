@@ -10,10 +10,12 @@ branches:
   - /^release-.*$/
   - /^ansible-service-broker-([0-9.-]+)$/
 
+#- OPENSHIFT_VERSION=v3.10.0
+#- KUBERNETES_VERSION=v1.10.0
+#- KUBERNETES_VERSION=v1.9.0
+
 env:
-  #- OPENSHIFT_VERSION=v3.10.0
   - OPENSHIFT_VERSION=v3.9.0
-  #- KUBERNETES_VERSION=v1.10.0
   - KUBERNETES_VERSION=v1.9.0
 
 matrix:
@@ -21,6 +23,7 @@ matrix:
   allow_failures:
     - env: OPENSHIFT_VERSION=v3.10.0
     - env: KUBERNETES_VERSION=v1.10.0
+    - env: KUBERNETES_VERSION=v1.9.0
 
 before_install:
   - | # Copied from https://github.com/facebook/react/pull/2000
