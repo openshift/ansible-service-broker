@@ -1,7 +1,7 @@
-diff --git a/apb/apb.yml b/apb/apb.yml
+diff --git a/ansible_role/apb.yml b/ansible_role/apb.yml
 index c1885a4ae..854b1a4a4 100644
---- a/apb/apb.yml
-+++ b/apb/apb.yml
+--- a/ansible_role/apb.yml
++++ b/ansible_role/apb.yml
 @@ -14,7 +14,7 @@ metadata:
      WARNING!!! Use of this APB through the service-catalog is
      not supported.
@@ -11,10 +11,10 @@ index c1885a4ae..854b1a4a4 100644
    displayName: Automation Broker (APB)
    providerDisplayName: "Red Hat, Inc."
  plans:
-diff --git a/apb/defaults/main.yml b/apb/defaults/main.yml
+diff --git a/ansible_role/defaults/main.yml b/ansible_role/defaults/main.yml
 index 10633c472..8ed478b06 100644
---- a/apb/defaults/main.yml
-+++ b/apb/defaults/main.yml
+--- a/ansible_role/defaults/main.yml
++++ b/ansible_role/defaults/main.yml
 @@ -11,10 +11,10 @@ create_broker_namespace: false
  wait_for_broker: false # By default, we do not wait for the broker to be available
  
