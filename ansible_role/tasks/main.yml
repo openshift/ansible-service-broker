@@ -1,19 +1,5 @@
 ---
 
-- name: Debug important facts
-  debug:
-    msg:
-      - "broker_local_openshift_enabled {{ broker_local_openshift_enabled }}"
-
-- name: Verify the broker has no outstanding service instances if deprovisioning
-  assert:
-    that:
-      - "lookup('k8s', kind='BundleInstance', namespace=broker_namespace, api_version='automationbroker.io/v1alpha1') | length == 0"
-    msg: |
-      The requested broker cannot be deprovisioned because it has outstanding service instances.
-      Please deprovision any services originally provisioned by this broker before deprovisioning the broker itself.
-  when: state == 'absent' and not broker_force_deprovision
-
 - name: 'Set broker namespace state={{ state }}'
   k8s:
     state: '{{ state }}'
@@ -30,9 +16,51 @@
       The broker namespace must exist
   when: state == 'present'
 
-- include_tasks: "dao_{{ broker_dao_type }}.yaml"
-- include_tasks: "generate_certificate.yaml"
+- name: Verify the broker has no outstanding service instances if deprovisioning
+  assert:
+    that:
+      - "lookup('k8s', kind='BundleInstance', namespace=broker_namespace, api_version='automationbroker.io/v1alpha1') | length == 0"
+    msg: |
+      The requested broker cannot be deprovisioned because it has outstanding service instances.
+      Please deprovision any services originally provisioned by this broker before deprovisioning the broker itself.
+  when: state == 'absent' and not broker_force_deprovision
+
+# Executed as an early task since the broker's configmap generation and creation
+# rely on this for the dashboard redirector
+- name: Create dashboard redirector route if OpenShift
+  k8s:
+    state: '{{ state }}'
+    definition: "{{ lookup('template', 'broker-redirector.route.yaml') | from_yaml }}"
+  when: ('route.openshift.io' in lookup('k8s', cluster_info='api_groups'))
+
+- name: Create broker config map
+  import_tasks: build_config.yml
+
+- name: Print the generated broker config
+  debug: var=broker_config
+
+- include_tasks: "dao_{{ broker_config.dao.type }}.yml"
+- include_tasks: "generate_certificate.yml"
   when: ('route.openshift.io' not in lookup('k8s', cluster_info='api_groups')) | bool
+
+- name: 'Set broker config map state={{ state }}'
+  k8s:
+    state: '{{ state }}'
+    definition: '{{ broker_config_map }}'
+  register: configmap_result
+
+- name: Redeploy the broker if the configmap changed
+  k8s:
+    state: absent
+    kind: Pod
+    api_version: v1
+    namespace: '{{ broker_namespace }}'
+    name: '{{ pod.metadata.name }}'
+  vars:
+    pod: '{{ lookup("k8s", kind="Pod", api_version="v1", namespace=broker_namespace, label_selector=("app=" + broker_name)) }}'
+  when:
+  - configmap_result.changed
+  - pod
 
 - name: 'Set broker objects state={{ state }}'
   k8s:
@@ -43,23 +71,17 @@
     - name: broker.service.yaml
     - name: broker.route.yaml
       apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
-    - name: broker-redirector.route.yaml
-      apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
     - name: broker.serviceaccount.yaml
     - name: broker.clusterrolebinding.yaml
-    - name: broker.configmap.yaml
     - name: broker-auth.clusterrole.yaml
-      apply: "{{ state == 'present' or (state == 'absent' and (broker_destroy_shared_resources | bool)) }}"
     - name: broker-auth.clusterrolebinding.yaml
     - name: broker-client.serviceaccount.yaml
     - name: broker-client.secret.yaml
     - name: broker-client.clusterrolebinding.yaml
     - name: broker-access.clusterrole.yaml
-      apply: "{{ state == 'present' or (state == 'absent' and (broker_destroy_shared_resources | bool)) }}"
     - name: broker-auth.secret.yaml
-      apply: "{{ True if broker_basic_auth_enabled else False }}"
+      apply: "{{ (broker_config.broker.auth[0].enabled | default(False)) | bool }}"
     - name: broker-user-auth.clusterrole.yaml
-      apply: "{{ state == 'present' or (state == 'absent' and (broker_destroy_shared_resources | bool)) }}"
     - name: broker.deployment.yaml
     # Useful in the case we don't want to require the servicecatalog exist
     - name: broker.servicecatalog.yaml

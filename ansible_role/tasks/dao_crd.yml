@@ -4,7 +4,7 @@
   k8s:
     state: '{{ state }}'
     definition: "{{ lookup('file', item) | from_yaml }}"
-  when: state == 'present' or (state == 'absent' and (broker_destroy_shared_resources | bool))
+  when: not olm_managed and (state == 'present' or (state == 'absent' and (broker_destroy_shared_resources | bool)))
   with_items:
     - bundle.crd.yaml
     - bundlebindings.crd.yaml

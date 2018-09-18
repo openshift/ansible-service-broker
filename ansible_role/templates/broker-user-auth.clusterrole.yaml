@@ -14,5 +14,5 @@ metadata:
 {% endif %}
 rules:
 - apiGroups: ["automationbroker.io"]
-  resources: ["access"]
+  resources: ["{{ broker_user_auth_rule }}"]
   verbs: ["create"]

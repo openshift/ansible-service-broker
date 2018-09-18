@@ -1,0 +1,43 @@
+---
+
+- when: registries is not defined
+  delegate_to: localhost
+  block:
+  - name: Create default registry configuration
+    set_fact:
+      default_registries: '{{ default_registries + [item.value] }}'
+    when: item.condition
+    loop:
+    - condition: '{{ broker_helm_enabled | bool }}'
+      value: '{{ helm_registry }}'
+    - condition: '{{ broker_quay_enabled | bool }}'
+      value: '{{ quay_registry }}'
+    - condition: '{{ broker_galaxy_enabled | bool }}'
+      value: '{{ galaxy_registry }}'
+    - condition: '{{ broker_dockerhub_enabled | bool }}'
+      value: '{{ dockerhub_registry }}'
+    - condition: '{{ broker_local_openshift_enabled | bool }}'
+      value: '{{ local_openshift_registry }}'
+
+  - name: Set registry configuration to default registries
+    set_fact:
+      registries: '{{ default_registries }}'
+
+- include_vars: config.yml
+  when: broker_config is not defined
+  delegate_to: localhost
+
+- name: Add dashboard redirector URL to configmap if OpenShift
+  when: ('route.openshift.io' in lookup('k8s', cluster_info='api_groups'))
+  block:
+    - name: Lookup dashboard redirector URL
+      set_fact:
+        dashboard_redirector_url: "http://{{ lookup('k8s', api_version='route.openshift.io/v1', kind='Route', namespace=broker_namespace, resource_name='broker-redirector') | json_query('spec.host') }}"
+    - name: Create merged broker config
+      set_fact:
+        _merged_broker_config_section: "{{ broker_config.broker | combine({'dashboard_redirector': dashboard_redirector_url}) }}"
+    - name: Set merged broker config
+      set_fact:
+        broker_config: "{{ broker_config | combine({'broker': _merged_broker_config_section }) }}"
+
+- include_vars: configmap.yml

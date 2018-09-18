@@ -42,14 +42,14 @@ spec:
       containers:
         - name: broker-redirector
           image: {{ broker_image }}
-          imagePullPolicy: {{ broker_image_pull_policy }}
+          imagePullPolicy: {{ broker_image_pull_policy | default(broker_config.openshift.image_pull_policy) }}
           ports:
             - containerPort: 1337
               protocol: TCP
           command: [ 'dashboard-redirector' ]
         - name: broker
           image: {{ broker_image }}
-          imagePullPolicy: {{ broker_image_pull_policy }}
+          imagePullPolicy: {{ broker_image_pull_policy | default(broker_config.openshift.image_pull_policy) }}
           ports:
             - containerPort: 1338
               protocol: TCP

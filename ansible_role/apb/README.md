@@ -18,7 +18,7 @@ Requirements
 Role Variables
 --------------
 
-See [defaults/main.yaml](defaults/main.yaml).
+See [defaults/main.yml](defaults/main.yml).
 
 Usage
 -----

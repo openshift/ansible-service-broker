@@ -3,6 +3,11 @@
 apb_action: provision
 cluster: "kubernetes"
 
+# Indicates whether the ansible will be run by an operator deployed by OLM.
+# In particular, OLM is responsible for installing CRDs in this case, not the
+# broker's ansible.
+olm_managed: false
+
 # Broker configuration values
 broker_name: automation-broker
 broker_namespace: "{{ namespace | default(broker_name, true) }}"
@@ -37,8 +42,14 @@ broker_destroy_shared_resources: False
 # broker_force_deprovision to true will deprovision the broker regardless
 # of the presence of outstanding instances.
 broker_force_deprovision: False
-broker_clusterrole: admin
+broker_clusterrole: admin # DEPRECATED: Leaving this here for backwards compat
+broker_cluster_role: "{{ broker_clusterrole }}"
 broker_sandbox_role: edit
+# broker_user_auth_rule parameterizes the rule that the broker uses to perform
+# SAR checks on the originating user's info, as passed from the service catalog.
+# The user_auth_rule is dynamically provided to the broker via
+# broker.user_auth_rule in its config map.
+broker_user_auth_rule: "{{ broker_name }}-{{ broker_namespace }}-user-access"
 
 # How does broker save state? crd | etcd
 # TODO: Support etcd https://github.com/automationbroker/automation-broker-apb/issues/1
@@ -55,6 +66,7 @@ broker_keep_namespace: "false"
 broker_keep_namespace_on_error: "false"
 
 # Special broker config options
+broker_log_level: "debug"
 broker_dev: "true"
 broker_bootstrap_on_startup: "true"
 broker_refresh_interval: "600s"
@@ -110,3 +122,45 @@ broker_quay_org: redhat
 broker_quay_tag: latest
 broker_quay_token: none
 broker_quay_white_list: [ ".*-apb$" ]
+
+dockerhub_registry:
+  type: dockerhub
+  name: '{{ broker_dockerhub_name }}'
+  url: '{{ broker_dockerhub_url }}'
+  org: '{{ broker_dockerhub_org | quote }}'
+  tag: '{{ broker_dockerhub_tag | quote }}'
+  white_list: '{{ broker_dockerhub_white_list }}'
+  black_list: '{{ broker_dockerhub_black_list }}'
+
+local_openshift_registry:
+  type: local_openshift
+  name: '{{ broker_local_openshift_name }}'
+  namespaces: '{{ broker_local_openshift_namespaces }}'
+  white_list: '{{ broker_local_openshift_white_list }}'
+
+helm_registry:
+  type: helm
+  name: '{{ broker_helm_name }}'
+  url: '{{ broker_helm_url }}'
+  runner: '{{ broker_helm_runner }}'
+  white_list: '{{ broker_helm_white_list }}'
+
+galaxy_registry:
+  type: galaxy
+  name: '{{ broker_galaxy_name }}'
+  url: '{{ broker_galaxy_url }}'
+  org: '{{ broker_galaxy_org | quote }}'
+  runner: '{{ broker_galaxy_runner }}'
+  white_list: '{{ broker_galaxy_white_list }}'
+
+quay_registry:
+  type: quay
+  name: '{{ broker_quay_name }}'
+  url: '{{ broker_quay_url }}'
+  org: '{{ broker_quay_org | quote }}'
+  tag: '{{ broker_quay_tag | quote }}'
+  token: '{{ broker_quay_token | quote }}'
+  white_list: '{{ broker_quay_white_list }}'
+
+# conditionally set later based on Cluster configuration
+default_registries: []
