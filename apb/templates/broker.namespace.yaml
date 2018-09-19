@@ -1,0 +1,11 @@
+---
+
+{% if 'project.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
+apiVersion: project.openshift.io/v1
+kind: {{ 'ProjectRequest' if state == 'present' else 'Project' }}
+{% else %}
+apiVersion: v1
+kind: Namespace
+{% endif %}
+metadata:
+  name: {{ broker_namespace }}

@@ -1,0 +1,112 @@
+---
+# Install by default
+apb_action: provision
+cluster: "kubernetes"
+
+# Broker configuration values
+broker_name: automation-broker
+broker_namespace: "{{ namespace | default(broker_name, true) }}"
+
+create_broker_namespace: false
+wait_for_broker: false # By default, we do not wait for the broker to be available
+
+# The image to use for the broker
+broker_image_registry_url: docker.io
+broker_image_registry_org: ansibleplaybookbundle
+broker_image_tag: latest
+broker_image: "{{ broker_image_registry_url }}/{{ broker_image_registry_org }}/origin-ansible-service-broker:{{ broker_image_tag }}"
+broker_image_pull_policy: "IfNotPresent"
+broker_probe_initial_delay: 120
+broker_node_selector: ""
+
+# The kind of broker, useful in the case the service-catalog
+# supports namespaced service brokers
+broker_kind: ClusterServiceBroker
+# Whether or not the APB should destroy cluster level resources
+# that are potentially shared by more than one broker in a cluster.
+# Default behavior is to NOT delete these resources to prevent
+# unintended breakages. Cluster admins can flip this to true and
+# rerun deprovision in order to explicitly clean them up.
+broker_destroy_shared_resources: False
+# Deprovisioning a broker that has outstanding service instances or bindings
+# will leak their underlying services as well as the k8s objects themselves.
+# This effectively throws the related resources into what appears to be a
+# perpetually terminating state that the cluster admin must clean up.
+# By default, the broker's APB will refuse to deprovision a broker that is
+# recognized to have outstanding instances, but switching
+# broker_force_deprovision to true will deprovision the broker regardless
+# of the presence of outstanding instances.
+broker_force_deprovision: False
+broker_clusterrole: admin
+broker_sandbox_role: edit
+
+# How does broker save state? crd | etcd
+# TODO: Support etcd https://github.com/automationbroker/automation-broker-apb/issues/1
+broker_dao_type: crd
+
+# ETCD configuration (ignored unless dao_type is 'etcd')
+etcd_image: quay.io/coreos/etcd:latest
+etcd_path: /usr/local/bin/etcd
+etcd_port: "2379"
+etcd_persist_storage: "true"
+
+# Whether or not to keep the sandbox namespace
+broker_keep_namespace: "false"
+broker_keep_namespace_on_error: "false"
+
+# Special broker config options
+broker_dev: "true"
+broker_bootstrap_on_startup: "true"
+broker_refresh_interval: "600s"
+broker_launch_apb_on_bind: "false"
+broker_output_request: "true"
+broker_recovery: "true"
+broker_auto_escalate: "false"
+broker_client_secret: ""
+
+# Basic auth configuration, disabled by default
+broker_basic_auth_enabled: false
+broker_basic_auth_username: "admin"
+broker_basic_auth_password: "admin"
+
+# Broker dockerhub registry options
+broker_dockerhub_enabled: true
+broker_dockerhub_name: dh
+broker_dockerhub_url: https://registry.hub.docker.com
+broker_dockerhub_org: ansibleplaybookbundle
+broker_dockerhub_tag: latest
+broker_dockerhub_white_list: [ ".*-apb$" ]
+broker_dockerhub_black_list: [ ".*automation-broker-apb$" ]
+
+# Broker local openshift registry options
+broker_local_openshift_enabled: "{{ ('image.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
+broker_local_openshift_name: localregistry
+broker_local_openshift_namespaces: [ "openshift" ]
+# NOTE TO ADMINS: The default whitelist policy here will pass *all* APBs
+# found in the local openshift registry. If this is not desired,
+# manipulate the following regex to only match APBs you wish to be made available.
+broker_local_openshift_white_list: [ ".*" ]
+
+# Broker helm registry options
+broker_helm_enabled: false
+broker_helm_name: stable
+broker_helm_url: https://kubernetes-charts.storage.googleapis.com
+broker_helm_runner: docker.io/automationbroker/helm-runner:latest
+broker_helm_white_list: [ ".*" ]
+
+# Broker galaxy registry options
+broker_galaxy_enabled: false
+broker_galaxy_name: galaxy
+broker_galaxy_url: https://galaxy.ansible.com
+broker_galaxy_org: ansibleplaybookbundle
+broker_galaxy_runner: docker.io/ansibleplaybookbundle/apb-base:latest
+broker_galaxy_white_list: [ ".*" ]
+
+# Quay registry options
+broker_quay_enabled: false
+broker_quay_name: quay
+broker_quay_url: https://quay.io
+broker_quay_org: redhat
+broker_quay_tag: latest
+broker_quay_token: none
+broker_quay_white_list: [ ".*-apb$" ]

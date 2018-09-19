@@ -1,0 +1,31 @@
+---
+services: docker
+sudo: required
+language: python
+python:
+  - '2.7'
+
+env:
+  - OPENSHIFT_VERSION=latest
+  - OPENSHIFT_VERSION=v3.9
+  - KUBERNETES_VERSION=latest
+  - KUBERNETES_VERSION=v1.9.0
+
+matrix:
+  # Allow failures on oc latest
+  # TODO: re-enable latest when it isn't busted
+  allow_failures:
+    - env: OPENSHIFT_VERSION=latest
+
+script:
+  # Configure test values
+  - export apb_name='automation-broker-apb'
+  - export cluster_role='cluster-admin'
+  - export binding='clusterrolebinding'
+
+  # Download test shim.
+  - wget -O ${PWD}/apb-test.sh https://raw.githubusercontent.com/ansibleplaybookbundle/apb-test-shim/master/apb-test.sh
+  - chmod +x ${PWD}/apb-test.sh
+
+  # Run tests.
+  - ${PWD}/apb-test.sh
