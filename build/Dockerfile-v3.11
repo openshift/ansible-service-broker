@@ -1,7 +1,7 @@
 FROM centos:7
 MAINTAINER Ansible Service Broker Community
 
-RUN curl https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker-1.2.0-openshift-3.10/repo/epel-7/group_ansible-service-broker-ansible-service-broker-1.3.0-openshift-3.11-epel-7.repo -o /etc/yum.repos.d/asb.repo
+RUN curl https://copr.fedorainfracloud.org/coprs/g/ansible-service-broker/ansible-service-broker-1.3.0-openshift-3.11/repo/epel-7/group_ansible-service-broker-ansible-service-broker-1.3.0-openshift-3.11-epel-7.repo -o /etc/yum.repos.d/asb.repo
 
 ENV USER_NAME=ansibleservicebroker \
     USER_UID=1001 \
