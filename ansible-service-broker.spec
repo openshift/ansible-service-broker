@@ -22,6 +22,7 @@
 %global provider_tld com
 %global project openshift
 %global repo ansible-service-broker
+%global openshift_release v3.11
 
 %global provider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path %{provider_prefix}
@@ -197,6 +198,10 @@ install -p -m 755 dashboard-redirector %{buildroot}%{_bindir}/dashboard-redirect
 mkdir -p %{buildroot}/opt/apb/ %{buildroot}/opt/ansible/roles/automation-broker-apb
 mv apb/playbooks %{buildroot}/opt/apb/actions
 mv apb/defaults apb/files apb/tasks apb/templates apb/vars %{buildroot}/opt/ansible/roles/automation-broker-apb
+sed -i "s/\(broker_image_tag:\).*/\1 %{openshift_release}/" \
+    %{buildroot}/opt/ansible/roles/automation-broker-apb/defaults/main.yml
+sed -i "s/\(broker_dockerhub_tag:\).*/\1 %{openshift_release}/" \
+    %{buildroot}/opt/ansible/roles/automation-broker-apb/defaults/main.yml
 install -p -m 755 build/entrypoint.sh %{buildroot}%{_bindir}/entrypoint.sh
 install -d -p %{buildroot}%{_sysconfdir}/%{name}
 install -p -m 644 etc/example-config.yaml %{buildroot}%{_sysconfdir}/%{name}/config.yaml
