@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.17
+Version: 1.2.18
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -332,6 +332,12 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Sep 20 2018 Jason Montleon <jmontleo@redhat.com> 1.2.18-1
+- backport apb to 1.2 (#1088) (jmontleo@redhat.com)
+- Update 1.2 copr releaser (#1082) (jmontleo@redhat.com)
+- Fix broker install yaml for release-1.2 (#1046) (dzager@redhat.com)
+- Set new location for service-broker-ci git repo (#1025) (jmontleo@redhat.com)
+
 * Mon Jun 04 2018 David Zager <david.j.zager@gmail.com> 1.2.17-1
 - Bug 1585649 - wait group should be added to before go function is kicked off
   (#976) (smhurley00@gmail.com)
