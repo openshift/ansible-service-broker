@@ -6,8 +6,8 @@ metadata:
   name: access-{{ broker_name }}-role
 rules:
 - nonResourceURLs:
-    - "/osb"
-    - "/osb/*"
+    - "/ansible-service-broker"
+    - "/ansible-service-broker/*"
   verbs:
     - "get"
     - "post"
