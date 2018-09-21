@@ -69,6 +69,6 @@ aW9uOiAoSWYgYXBpdjJ8b3BlbnNoaWZ0KSBsaXN0IG9mIEFQQiBpbWFnZXMKICAgICAgICB0aXRs\
 ZTogUmVnaXN0cnkgSW1hZ2VzIChPbmx5IGZvciBhcGl2MnxvcGVuc2hpZnQpCiAgICAgICAgcmVx\
 dWlyZWQ6IGZhbHNlCiAgICAgICAgdXBkYXRhYmxlOiBmYWxzZQo="
 
-RUN yum -y install automation-broker-apb-role && yum clean all
+RUN yum -y downgrade apb-base-scripts && yum -y install automation-broker-apb-role && yum clean all
 
 USER apb
