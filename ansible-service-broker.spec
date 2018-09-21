@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.18
+Version: 1.2.19
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -332,6 +332,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Sep 21 2018 Jason Montleon <jmontleo@redhat.com> 1.2.19-1
+- fix the broker url for v3.10 apb (#1096) (jmontleo@redhat.com)
+
 * Thu Sep 20 2018 Jason Montleon <jmontleo@redhat.com> 1.2.18-1
 - backport apb to 1.2 (#1088) (jmontleo@redhat.com)
 - Update 1.2 copr releaser (#1082) (jmontleo@redhat.com)
