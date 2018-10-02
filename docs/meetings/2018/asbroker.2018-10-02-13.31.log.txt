@@ -1,0 +1,132 @@
+13:31:54 <jmrodri> #startmeeting Automation broker 10/2
+13:31:54 <brokerbot> Meeting started Tue Oct  2 13:31:54 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+13:31:54 <brokerbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+13:31:54 <brokerbot> The meeting name has been set to 'automation_broker_10/2'
+13:31:54 <brokerbot> jmrodri: startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+13:32:25 <jmrodri> Welcome to the October 2nd Automation Broker IRC community meeting
+13:33:01 <dymurray> hello
+13:33:11 <jmrodri> #topic News
+13:33:11 <brokerbot> jmrodri: topic
+13:34:14 <jmrodri> #info bundle-lib release 0.2.14 was released on Sept 7, 2018.
+13:34:14 <brokerbot> jmrodri: info
+13:34:23 <jmrodri> #link https://github.com/automationbroker/bundle-lib/releases/tag/0.2.14
+13:34:23 <brokerbot> jmrodri: link
+13:34:56 <jmrodri> #info automation-broker 1.3.19-1 released
+13:34:56 <brokerbot> jmrodri: info
+13:35:09 <jmrodri> #undo
+13:35:09 <brokerbot> Removing item from minutes: INFO by jmrodri at 13:34:56 : automation-broker 1.3.19-1 released
+13:35:19 <jmrodri> #info automation-broker 1.3.19-1 released Sept 20, 2018
+13:35:19 <brokerbot> jmrodri: info
+13:35:33 <jmrodri> #info 1.3 is now in release-1.3 branch
+13:35:33 <brokerbot> jmrodri: info
+13:35:40 <jmrodri> #info master is now the 4.0 tree
+13:35:40 <brokerbot> jmrodri: info
+13:36:17 <jmrodri> Anyone have any news they would like to share?
+13:36:29 <ernelson> hi o/
+13:36:46 <ernelson> I guess I do?
+13:36:59 <jmrodri> ernelson: go for it
+13:37:35 <ernelson> We've been working on operators for the automation broker and the template broker, both operators exist now. You might have noticed the apb directly moved to "ansible_role"
+13:38:06 <ernelson> The ansible is being used for both APB deployments and operator deployments. There's an operator/ dir in ansible_role that has the operator specific stuff, and a make build-operator target now that will build the image
+13:38:40 <jmrodri> that's awesome
+13:38:42 <ernelson> additionally for catasb users, you can flip some switches and get a cluster with OLM and a catalog with these operators available. I'm still in the midst of figuring out the permissions, but if you're interested, ping me
+13:39:16 <ernelson> </break>
+13:39:30 <jmrodri> #info work has been done on operators for the automation broker and the template broker.
+13:39:30 <brokerbot> jmrodri: info
+13:39:39 <jmrodri> #info apb directory moved to ansible_role
+13:39:39 <brokerbot> jmrodri: info
+13:39:57 <jmrodri> #info new make target build-operator
+13:39:57 <brokerbot> jmrodri: info
+13:40:16 <jmrodri> #info catasb users can flip some switches to get OLM cluster
+13:40:16 <brokerbot> jmrodri: info
+13:40:20 <jmrodri> ernelson: thanks for sharing
+13:40:31 <jmrodri> added it to the beeting log
+13:40:36 <jmrodri> s/beeting/meeting
+13:40:47 <jmrodri> anyone else have any news to share?
+13:41:00 <jmrodri> if not, moving on to bug/triage.
+13:41:10 <jmrodri> #topic Previous Actions
+13:41:10 <brokerbot> jmrodri: topic
+13:41:15 <jmrodri> #info none to review, moving along
+13:41:15 <brokerbot> jmrodri: info
+13:41:20 <jmrodri> #topic bugs/issues triage
+13:41:20 <brokerbot> jmrodri: topic
+13:41:33 <jmrodri> #info bundle-lib has 1 new issue
+13:41:33 <brokerbot> jmrodri: info
+13:41:42 <jmrodri> #info Make `Organization` registry config section a list
+13:41:42 <brokerbot> jmrodri: info
+13:41:49 <jmrodri> #link https://github.com/automationbroker/bundle-lib/issues/166
+13:41:49 <brokerbot> jmrodri: link
+13:42:20 <jmrodri> dymurray: looks like you wrote this up. That does sound like a great feature.
+13:42:53 <jmrodri> it would be very useful as I often want to run against ansibleplaybookbundle org and my own
+13:43:13 <jmrodri> #action jmrodri add bundle-lib issue to a release target
+13:43:13 <brokerbot> jmrodri: action
+13:43:25 <jmrodri> #info automation broker
+13:43:25 <brokerbot> jmrodri: info
+13:43:34 <jmrodri> #undo
+13:43:34 <brokerbot> Removing item from minutes: INFO by jmrodri at 13:43:25 : automation broker
+13:43:39 <dymurray> jmrodri, +1 definitely seems like it would be easy to do
+13:43:40 <jmrodri> #info automation broker has 4 new issues
+13:43:40 <brokerbot> jmrodri: info
+13:43:57 <jmrodri> #info APIV2 adapter should accept token with name "token"
+13:43:57 <brokerbot> jmrodri: info
+13:44:03 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1097
+13:44:03 <brokerbot> jmrodri: link
+13:44:08 <dymurray> Just been distracted elsewhere... will make sure I prioritize above
+13:45:04 <dymurray> issue 1097 seems like it would be nice to add too
+13:45:09 <dymurray> Doesn't seem too hard
+13:45:25 <jmrodri> dymurray: so the above seems doable?
+13:45:34 <jmrodri> I can align it to the 4.0 release
+13:45:59 <jmrodri> #info Documentation recommendation to use --routing-suffix/--hostname with oc cluster up is broken for Mac
+13:45:59 <brokerbot> jmrodri: info
+13:46:03 <dymurray> jmrodri, looks like we just need to support access_token with oauth
+13:46:12 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1087
+13:46:12 <brokerbot> jmrodri: link
+13:46:30 <jmrodri> dymurray: okay that's how I read it, but didn't know if that was a huge change or not
+13:46:49 <jmrodri> ah this one looks like a simple docs change.
+13:46:55 <jmrodri> I'll look into this one
+13:47:10 <jmrodri> #action jmrodri take issue 1087 on broker side
+13:47:10 <brokerbot> jmrodri: action
+13:47:27 <jmrodri> #info minishift can't start using origin 3.10 + OAB
+13:47:27 <brokerbot> jmrodri: info
+13:47:34 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1076
+13:47:34 <brokerbot> jmrodri: link
+13:47:58 <jmrodri> ernelson: another minishift issue. Is this new? or something that is known?
+13:48:04 <ernelson> checking
+13:48:18 <jmrodri> I swear seems like minishift is always broken for some reason. And we're always playing catchup
+13:49:02 <dymurray> unsure... I saw some discussion yesterday on IRC that there was some issues
+13:49:10 <dymurray> but Jason wasn't able to reproduce
+13:49:30 <ernelson> yeah there are a lot of ways people get the broker into minishift, or try to
+13:49:44 <ernelson> I'm not sure about that one, I'll see if I can reproduce and if not, I'll close that one jmrodri
+13:49:58 <jmrodri> ernelson: okay. I'll assign it to you
+13:50:03 <ernelson> +1
+13:50:15 <jmrodri> #action ernelson to look at minishift issue against broker (1076)
+13:50:15 <brokerbot> jmrodri: action
+13:50:42 <jmrodri> #info apb CLI command returns status 404 for all sub commands
+13:50:42 <brokerbot> jmrodri: info
+13:50:48 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1071
+13:50:48 <brokerbot> jmrodri: link
+13:51:00 <jmrodri> dymurray: this was already assigned to you.
+13:51:10 <jmrodri> 404 using apb tool
+13:51:51 <jmrodri> I've moved it to release-1.4 (4.0)
+13:52:01 <jmrodri> #action dymurray look into issue 1071
+13:52:01 <brokerbot> jmrodri: action
+13:52:14 <jmrodri> #info RFE: add rate limiter to the broker’s API handler
+13:52:14 <brokerbot> jmrodri: info
+13:52:21 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1098
+13:52:21 <brokerbot> jmrodri: link
+13:52:47 <jmrodri> I added an RFE to do the rate limiter / keep only the last failed pod feature
+13:53:02 <dymurray> jmrodri, thanks
+13:53:05 <jmrodri> I'll write up a proposal for it and submit for review this week
+13:53:19 <jmrodri> #action jmrodri write up proposal for rate limiter feature
+13:53:19 <brokerbot> jmrodri: action
+13:54:00 <jmrodri> #info Right now there are 28 upstream issues against the broker marked for release 1.4 (aka OCP 4.0)
+13:54:00 <brokerbot> jmrodri: info
+13:54:14 <jmrodri> that's it for the issues
+13:54:23 <jmrodri> #topic Features
+13:54:23 <brokerbot> jmrodri: topic
+13:54:32 <jmrodri> #info None at the moment
+13:54:32 <brokerbot> jmrodri: info
+13:54:39 <jmrodri> #topic Open Discussion
+13:54:39 <brokerbot> jmrodri: topic
+13:54:46 <jmrodri> anyone have anything they would like to discuss?
+13:57:02 <jmrodri> Okay this concludes this weeks Automation Broker meeting
+13:57:04 <jmrodri> #endmeeting
