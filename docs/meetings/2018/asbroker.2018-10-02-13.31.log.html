@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#asbroker log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">13:31:54</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#startmeeting </span><span class="cmdline">Automation broker 10/2</span>
+<a name="l-2"></a><span class="tm">13:31:54</span><span class="nk"> &lt;brokerbot&gt;</span> Meeting started Tue Oct  2 13:31:54 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">13:31:54</span><span class="nk"> &lt;brokerbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">13:31:54</span><span class="nk"> &lt;brokerbot&gt;</span> The meeting name has been set to 'automation_broker_10/2'
+<a name="l-5"></a><span class="tm">13:31:54</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+<a name="l-6"></a><span class="tm">13:32:25</span><span class="nk"> &lt;jmrodri&gt;</span> Welcome to the October 2nd Automation Broker IRC community meeting
+<a name="l-7"></a><span class="tm">13:33:01</span><span class="nk"> &lt;dymurray&gt;</span> hello
+<a name="l-8"></a><span class="tm">13:33:11</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">News</span>
+<a name="l-9"></a><span class="tm">13:33:11</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-10"></a><span class="tm">13:34:14</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">bundle-lib release 0.2.14 was released on Sept 7, 2018.</span>
+<a name="l-11"></a><span class="tm">13:34:14</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-12"></a><span class="tm">13:34:23</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/automationbroker/bundle-lib/releases/tag/0.2.14</span>
+<a name="l-13"></a><span class="tm">13:34:23</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-14"></a><span class="tm">13:34:56</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">automation-broker 1.3.19-1 released</span>
+<a name="l-15"></a><span class="tm">13:34:56</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-16"></a><span class="tm">13:35:09</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#undo</span><span class="cmdline"></span>
+<a name="l-17"></a><span class="tm">13:35:09</span><span class="nk"> &lt;brokerbot&gt;</span> Removing item from minutes: INFO by jmrodri at 13:34:56 : automation-broker 1.3.19-1 released
+<a name="l-18"></a><span class="tm">13:35:19</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">automation-broker 1.3.19-1 released Sept 20, 2018</span>
+<a name="l-19"></a><span class="tm">13:35:19</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-20"></a><span class="tm">13:35:33</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">1.3 is now in release-1.3 branch</span>
+<a name="l-21"></a><span class="tm">13:35:33</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-22"></a><span class="tm">13:35:40</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">master is now the 4.0 tree</span>
+<a name="l-23"></a><span class="tm">13:35:40</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-24"></a><span class="tm">13:36:17</span><span class="nk"> &lt;jmrodri&gt;</span> Anyone have any news they would like to share?
+<a name="l-25"></a><span class="tm">13:36:29</span><span class="nk"> &lt;ernelson&gt;</span> hi o/
+<a name="l-26"></a><span class="tm">13:36:46</span><span class="nk"> &lt;ernelson&gt;</span> I guess I do?
+<a name="l-27"></a><span class="tm">13:36:59</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">ernelson:</span> go for it
+<a name="l-28"></a><span class="tm">13:37:35</span><span class="nk"> &lt;ernelson&gt;</span> We've been working on operators for the automation broker and the template broker, both operators exist now. You might have noticed the apb directly moved to "ansible_role"
+<a name="l-29"></a><span class="tm">13:38:06</span><span class="nk"> &lt;ernelson&gt;</span> The ansible is being used for both APB deployments and operator deployments. There's an operator/ dir in ansible_role that has the operator specific stuff, and a make build-operator target now that will build the image
+<a name="l-30"></a><span class="tm">13:38:40</span><span class="nk"> &lt;jmrodri&gt;</span> that's awesome
+<a name="l-31"></a><span class="tm">13:38:42</span><span class="nk"> &lt;ernelson&gt;</span> additionally for catasb users, you can flip some switches and get a cluster with OLM and a catalog with these operators available. I'm still in the midst of figuring out the permissions, but if you're interested, ping me
+<a name="l-32"></a><span class="tm">13:39:16</span><span class="nk"> &lt;ernelson&gt;</span> &lt;/break&gt;
+<a name="l-33"></a><span class="tm">13:39:30</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">work has been done on operators for the automation broker and the template broker.</span>
+<a name="l-34"></a><span class="tm">13:39:30</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-35"></a><span class="tm">13:39:39</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">apb directory moved to ansible_role</span>
+<a name="l-36"></a><span class="tm">13:39:39</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-37"></a><span class="tm">13:39:57</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">new make target build-operator</span>
+<a name="l-38"></a><span class="tm">13:39:57</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-39"></a><span class="tm">13:40:16</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">catasb users can flip some switches to get OLM cluster</span>
+<a name="l-40"></a><span class="tm">13:40:16</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-41"></a><span class="tm">13:40:20</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">ernelson:</span> thanks for sharing
+<a name="l-42"></a><span class="tm">13:40:31</span><span class="nk"> &lt;jmrodri&gt;</span> added it to the beeting log
+<a name="l-43"></a><span class="tm">13:40:36</span><span class="nk"> &lt;jmrodri&gt;</span> s/beeting/meeting
+<a name="l-44"></a><span class="tm">13:40:47</span><span class="nk"> &lt;jmrodri&gt;</span> anyone else have any news to share?
+<a name="l-45"></a><span class="tm">13:41:00</span><span class="nk"> &lt;jmrodri&gt;</span> if not, moving on to bug/triage.
+<a name="l-46"></a><span class="tm">13:41:10</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">Previous Actions</span>
+<a name="l-47"></a><span class="tm">13:41:10</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-48"></a><span class="tm">13:41:15</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">none to review, moving along</span>
+<a name="l-49"></a><span class="tm">13:41:15</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-50"></a><span class="tm">13:41:20</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">bugs/issues triage</span>
+<a name="l-51"></a><span class="tm">13:41:20</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-52"></a><span class="tm">13:41:33</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">bundle-lib has 1 new issue</span>
+<a name="l-53"></a><span class="tm">13:41:33</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-54"></a><span class="tm">13:41:42</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">Make `Organization` registry config section a list</span>
+<a name="l-55"></a><span class="tm">13:41:42</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-56"></a><span class="tm">13:41:49</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/automationbroker/bundle-lib/issues/166</span>
+<a name="l-57"></a><span class="tm">13:41:49</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-58"></a><span class="tm">13:42:20</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">dymurray:</span> looks like you wrote this up. That does sound like a great feature.
+<a name="l-59"></a><span class="tm">13:42:53</span><span class="nk"> &lt;jmrodri&gt;</span> it would be very useful as I often want to run against ansibleplaybookbundle org and my own
+<a name="l-60"></a><span class="tm">13:43:13</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">jmrodri add bundle-lib issue to a release target</span>
+<a name="l-61"></a><span class="tm">13:43:13</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-62"></a><span class="tm">13:43:25</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">automation broker</span>
+<a name="l-63"></a><span class="tm">13:43:25</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-64"></a><span class="tm">13:43:34</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#undo</span><span class="cmdline"></span>
+<a name="l-65"></a><span class="tm">13:43:34</span><span class="nk"> &lt;brokerbot&gt;</span> Removing item from minutes: INFO by jmrodri at 13:43:25 : automation broker
+<a name="l-66"></a><span class="tm">13:43:39</span><span class="nk"> &lt;dymurray&gt;</span> jmrodri, +1 definitely seems like it would be easy to do
+<a name="l-67"></a><span class="tm">13:43:40</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">automation broker has 4 new issues</span>
+<a name="l-68"></a><span class="tm">13:43:40</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-69"></a><span class="tm">13:43:57</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">APIV2 adapter should accept token with name "token"</span>
+<a name="l-70"></a><span class="tm">13:43:57</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-71"></a><span class="tm">13:44:03</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1097</span>
+<a name="l-72"></a><span class="tm">13:44:03</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-73"></a><span class="tm">13:44:08</span><span class="nk"> &lt;dymurray&gt;</span> Just been distracted elsewhere... will make sure I prioritize above
+<a name="l-74"></a><span class="tm">13:45:04</span><span class="nk"> &lt;dymurray&gt;</span> issue 1097 seems like it would be nice to add too
+<a name="l-75"></a><span class="tm">13:45:09</span><span class="nk"> &lt;dymurray&gt;</span> Doesn't seem too hard
+<a name="l-76"></a><span class="tm">13:45:25</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">dymurray:</span> so the above seems doable?
+<a name="l-77"></a><span class="tm">13:45:34</span><span class="nk"> &lt;jmrodri&gt;</span> I can align it to the 4.0 release
+<a name="l-78"></a><span class="tm">13:45:59</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">Documentation recommendation to use --routing-suffix/--hostname with oc cluster up is broken for Mac</span>
+<a name="l-79"></a><span class="tm">13:45:59</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-80"></a><span class="tm">13:46:03</span><span class="nk"> &lt;dymurray&gt;</span> jmrodri, looks like we just need to support access_token with oauth
+<a name="l-81"></a><span class="tm">13:46:12</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1087</span>
+<a name="l-82"></a><span class="tm">13:46:12</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-83"></a><span class="tm">13:46:30</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">dymurray:</span> okay that's how I read it, but didn't know if that was a huge change or not
+<a name="l-84"></a><span class="tm">13:46:49</span><span class="nk"> &lt;jmrodri&gt;</span> ah this one looks like a simple docs change.
+<a name="l-85"></a><span class="tm">13:46:55</span><span class="nk"> &lt;jmrodri&gt;</span> I'll look into this one
+<a name="l-86"></a><span class="tm">13:47:10</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">jmrodri take issue 1087 on broker side</span>
+<a name="l-87"></a><span class="tm">13:47:10</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-88"></a><span class="tm">13:47:27</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">minishift can't start using origin 3.10 + OAB</span>
+<a name="l-89"></a><span class="tm">13:47:27</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-90"></a><span class="tm">13:47:34</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1076</span>
+<a name="l-91"></a><span class="tm">13:47:34</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-92"></a><span class="tm">13:47:58</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">ernelson:</span> another minishift issue. Is this new? or something that is known?
+<a name="l-93"></a><span class="tm">13:48:04</span><span class="nk"> &lt;ernelson&gt;</span> checking
+<a name="l-94"></a><span class="tm">13:48:18</span><span class="nk"> &lt;jmrodri&gt;</span> I swear seems like minishift is always broken for some reason. And we're always playing catchup
+<a name="l-95"></a><span class="tm">13:49:02</span><span class="nk"> &lt;dymurray&gt;</span> unsure... I saw some discussion yesterday on IRC that there was some issues
+<a name="l-96"></a><span class="tm">13:49:10</span><span class="nk"> &lt;dymurray&gt;</span> but Jason wasn't able to reproduce
+<a name="l-97"></a><span class="tm">13:49:30</span><span class="nk"> &lt;ernelson&gt;</span> yeah there are a lot of ways people get the broker into minishift, or try to
+<a name="l-98"></a><span class="tm">13:49:44</span><span class="nk"> &lt;ernelson&gt;</span> I'm not sure about that one, I'll see if I can reproduce and if not, I'll close that one jmrodri
+<a name="l-99"></a><span class="tm">13:49:58</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">ernelson:</span> okay. I'll assign it to you
+<a name="l-100"></a><span class="tm">13:50:03</span><span class="nk"> &lt;ernelson&gt;</span> +1
+<a name="l-101"></a><span class="tm">13:50:15</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">ernelson to look at minishift issue against broker (1076)</span>
+<a name="l-102"></a><span class="tm">13:50:15</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-103"></a><span class="tm">13:50:42</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">apb CLI command returns status 404 for all sub commands</span>
+<a name="l-104"></a><span class="tm">13:50:42</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-105"></a><span class="tm">13:50:48</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1071</span>
+<a name="l-106"></a><span class="tm">13:50:48</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-107"></a><span class="tm">13:51:00</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="hi">dymurray:</span> this was already assigned to you.
+<a name="l-108"></a><span class="tm">13:51:10</span><span class="nk"> &lt;jmrodri&gt;</span> 404 using apb tool
+<a name="l-109"></a><span class="tm">13:51:51</span><span class="nk"> &lt;jmrodri&gt;</span> I've moved it to release-1.4 (4.0)
+<a name="l-110"></a><span class="tm">13:52:01</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">dymurray look into issue 1071</span>
+<a name="l-111"></a><span class="tm">13:52:01</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-112"></a><span class="tm">13:52:14</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">RFE: add rate limiter to the broker’s API handler</span>
+<a name="l-113"></a><span class="tm">13:52:14</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-114"></a><span class="tm">13:52:21</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1098</span>
+<a name="l-115"></a><span class="tm">13:52:21</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-116"></a><span class="tm">13:52:47</span><span class="nk"> &lt;jmrodri&gt;</span> I added an RFE to do the rate limiter / keep only the last failed pod feature
+<a name="l-117"></a><span class="tm">13:53:02</span><span class="nk"> &lt;dymurray&gt;</span> jmrodri, thanks
+<a name="l-118"></a><span class="tm">13:53:05</span><span class="nk"> &lt;jmrodri&gt;</span> I'll write up a proposal for it and submit for review this week
+<a name="l-119"></a><span class="tm">13:53:19</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">jmrodri write up proposal for rate limiter feature</span>
+<a name="l-120"></a><span class="tm">13:53:19</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-121"></a><span class="tm">13:54:00</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">Right now there are 28 upstream issues against the broker marked for release 1.4 (aka OCP 4.0)</span>
+<a name="l-122"></a><span class="tm">13:54:00</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-123"></a><span class="tm">13:54:14</span><span class="nk"> &lt;jmrodri&gt;</span> that's it for the issues
+<a name="l-124"></a><span class="tm">13:54:23</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">Features</span>
+<a name="l-125"></a><span class="tm">13:54:23</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-126"></a><span class="tm">13:54:32</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">None at the moment</span>
+<a name="l-127"></a><span class="tm">13:54:32</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-128"></a><span class="tm">13:54:39</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">Open Discussion</span>
+<a name="l-129"></a><span class="tm">13:54:39</span><span class="nk"> &lt;brokerbot&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-130"></a><span class="tm">13:54:46</span><span class="nk"> &lt;jmrodri&gt;</span> anyone have anything they would like to discuss?
+<a name="l-131"></a><span class="tm">13:57:02</span><span class="nk"> &lt;jmrodri&gt;</span> Okay this concludes this weeks Automation Broker meeting
+<a name="l-132"></a><span class="tm">13:57:04</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
