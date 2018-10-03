@@ -101,13 +101,13 @@ build-image: ## Build the broker (from canary)
 
 build-apb: ## Build the broker apb
 ifeq ($(TAG),canary)
-	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
+	docker build -f ${APB_DIR}/Dockerfile-canary --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 else ifeq ($(TAG),nightly)
-	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
+	docker build -f ${APB_DIR}/Dockerfile-nightly --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 else ifneq (,$(findstring release,$(TAG)))
-	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
+	docker build -f ${APB_DIR}/Dockerfile-canary --build-arg VERSION=${TAG} --build-arg APB=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 else
-	docker build -f ${APB_DIR}/Dockerfile --build-arg VERSION=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
+	docker build -f ${APB_DIR}/Dockerfile-canary --build-arg VERSION=${TAG} -t ${APB_IMAGE} ${ANSIBLE_ROLE_DIR}
 endif
 
 build-operator: ## Build the broker operator image
