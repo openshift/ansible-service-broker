@@ -69,4 +69,13 @@ dWlyZWQ6IGZhbHNlCiAgICAgICAgdXBkYXRhYmxlOiBmYWxzZQo="
 
 RUN yum -y install automation-broker-apb-role && yum clean all
 
+ARG VERSION=nightly
+ARG APB=nightly
+
+# Replace the broker version and apb tag
+RUN sed -i "s/\(broker_image_tag:\).*/\1 ${VERSION}/" \
+    /opt/ansible/roles/automation-broker-apb/defaults/main.yml
+RUN sed -i "s/\(broker_dockerhub_tag:\).*/\1 ${APB}/" \
+    /opt/ansible/roles/automation-broker-apb/defaults/main.yml
+
 USER apb
