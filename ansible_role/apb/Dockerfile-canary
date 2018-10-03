@@ -1,4 +1,4 @@
-FROM ansibleplaybookbundle/apb-base:latest
+FROM ansibleplaybookbundle/apb-base:canary
 
 LABEL "com.redhat.apb.spec"=\
 "LS0tCgp2ZXJzaW9uOiAxLjAuMApuYW1lOiBhdXRvbWF0aW9uLWJyb2tlci1hcGIKZGVzY3JpcHRp\
@@ -67,8 +67,8 @@ aW9uOiAoSWYgYXBpdjJ8b3BlbnNoaWZ0KSBsaXN0IG9mIEFQQiBpbWFnZXMKICAgICAgICB0aXRs\
 ZTogUmVnaXN0cnkgSW1hZ2VzIChPbmx5IGZvciBhcGl2MnxvcGVuc2hpZnQpCiAgICAgICAgcmVx\
 dWlyZWQ6IGZhbHNlCiAgICAgICAgdXBkYXRhYmxlOiBmYWxzZQo="
 
-ARG VERSION=latest
-ARG APB=latest
+ARG VERSION=canary
+ARG APB=canary
 
 RUN yum -y install epel-release openssl && yum clean all
 
