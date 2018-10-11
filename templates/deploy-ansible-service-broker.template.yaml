@@ -378,7 +378,7 @@ parameters:
 - description: Service Broker url prefix for the cluster
   displayname: ASB Url Prefix
   name: BROKER_URL_PREFIX
-  value: "/ansible-service-broker"
+  value: "/osb"
 
 - description: Broker Auth Info
   displayname: Broker Auth Info
