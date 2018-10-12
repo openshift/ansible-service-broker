@@ -47,6 +47,9 @@ spec:
             - containerPort: 1337
               protocol: TCP
           command: [ 'dashboard-redirector' ]
+          args:
+            - --namespace
+            - "{{ broker_namespace }}"
         - name: broker
           image: {{ broker_image }}
           imagePullPolicy: {{ broker_image_pull_policy | default(broker_config.openshift.image_pull_policy) }}
