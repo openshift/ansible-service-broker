@@ -12,6 +12,7 @@ function cluster-setup () {
 ---
 dockerhub_org: ansibleplaybookbundle
 broker_tag: release-1.1
+broker_version: v3.9
 apb_tag: release-1.1
 broker_kind: ClusterServiceBroker
 use_ssl: false
