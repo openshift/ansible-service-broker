@@ -12,7 +12,7 @@ jobs:
     - stage: "OpenShift and Kubernetes CI"
       before_install:
         - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
-        - ./scripts/travis.sh before_install
+          #- ./scripts/travis.sh before_install
       install:
         - ./scripts/travis.sh install
       before_script:
