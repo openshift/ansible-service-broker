@@ -18,6 +18,7 @@ broker_kind: ClusterServiceBroker
 use_ssl: false
 update_cgroup_driver: false
 use_custom_config: false
+origin_image_tag: v3.9
 EOF
 
     # Multiple gates use this script. Only the broker travis gate
