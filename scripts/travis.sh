@@ -48,7 +48,8 @@ elif [[ "$action" == "install" ]]; then
   sudo mv $(find /tmp -name "glide") /usr/bin
 
   # install golint
-  go get -u github.com/golang/lint/golint
+  go get -u golang.org/x/lint/golint
+
 
   # install goveralls for coveralls integration
   go get github.com/mattn/goveralls

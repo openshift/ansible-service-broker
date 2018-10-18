@@ -12,11 +12,13 @@ function cluster-setup () {
 ---
 dockerhub_org: ansibleplaybookbundle
 broker_tag: release-1.1
+broker_version: v3.9
 apb_tag: release-1.1
 broker_kind: ClusterServiceBroker
 use_ssl: false
 update_cgroup_driver: false
 use_custom_config: false
+origin_image_tag: v3.9
 EOF
 
     # Multiple gates use this script. Only the broker travis gate
