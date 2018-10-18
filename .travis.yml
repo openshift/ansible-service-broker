@@ -27,13 +27,13 @@ jobs:
       script:
         - ./scripts/travis.sh ci
         - ./scripts/broker-ci/gather-logs.sh
-    -
-      before_install:
-        - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
-      before_script:
-        - ./scripts/travis.sh setup-minikube
-        - ./scripts/travis.sh k8s-catalog
-        - ./scripts/travis.sh k8s-broker
-      script:
-        - ./scripts/travis.sh k8s-ci
-        - ./scripts/broker-ci/gather-logs.sh
+    # -
+    #   before_install:
+    #     - ./scripts/travis.sh docs; if [ $? -eq 9 ]; then exit 0; fi
+    #   before_script:
+    #     - ./scripts/travis.sh setup-minikube
+    #     - ./scripts/travis.sh k8s-catalog
+    #     - ./scripts/travis.sh k8s-broker
+    #   script:
+    #     - ./scripts/travis.sh k8s-ci
+    #     - ./scripts/broker-ci/gather-logs.sh
