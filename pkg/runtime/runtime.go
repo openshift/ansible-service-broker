@@ -147,6 +147,10 @@ func (p provider) CreateSandbox(podName string,
 	targets []string,
 	apbRole string) (string, error) {
 
+	if len(targets) < 1 {
+		return "", fmt.Errorf("Must supply at least one target namespace")
+	}
+
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return "", err
@@ -250,6 +254,11 @@ func (p provider) DestroySandbox(podName string,
 	keepNamespaceOnError bool) {
 
 	log.Info("Destroying APB sandbox...")
+	if len(targets) < 1 {
+		log.Error("Must supply at least one target namespace")
+		return
+	}
+
 	if podName == "" {
 		log.Info("Requested destruction of APB sandbox with empty handle, skipping.")
 		return
