@@ -6,8 +6,26 @@ metadata:
   namespace: automation-broker
 spec:
   brokerImagePullPolicy: IfNotPresent
+  # TODO: Need to default these to false when building for OLM
   createBrokerNamespace: false
   waitForBroker: false
+  # TODO: Currently, this must match the namespace that catasb creates the
+  # admin binding for SA in (at least until operator bundles become available
+  # with OLM
+  # TODO: Want to update the ansible to accept an env var so that the OLM
+  # deployment can actually pass this through, rather than forcing the user
+  # to specify it
+  brokerNamespace: automation-broker
+  # TODO: The existing default is way out of date, need to update. This is
+  # acceptable for now
+  brokerImage: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.11
+  ##############################################################################
+  # TODO: Need to figure out why ansible runner keeps locking up while
+  # building the broker_config. In the meantime, forcing this to be true will
+  # allow the ansible to run
+  brokerLocalOpenshiftEnabled: true
+  ##############################################################################
+
 ################################################################################
 # Some other example overrides, in general most defaults will work.
 ################################################################################
