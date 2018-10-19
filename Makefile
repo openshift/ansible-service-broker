@@ -45,11 +45,12 @@ fmtcheck: ## Check go formatting
 test: ## Run unit tests
 	@go test -cover ./pkg/...
 
-coverage-all.out: $(SOURCES)
-	@echo "mode: count" > coverage-all.out
-	@$(foreach pkg,$(PACKAGES),\
-		go test -coverprofile=coverage.out -covermode=count $(pkg);\
-		tail -n +2 coverage.out >> coverage-all.out;)
+coverage-all.out: $(PACKAGES)
+	@grep -q -F 'mode: count' coverage-all.out || sed -i '1i mode: count' coverage-all.out
+
+$(PACKAGES): $(SOURCES)
+	@touch coverage.out
+	@go test -coverprofile=coverage.out -covermode=count $@ && tail -n +2 coverage.out >> coverage-all.out;
 
 test-coverage-html: coverage-all.out ## checkout the coverage locally of your tests
 	@go tool cover -html=coverage-all.out
