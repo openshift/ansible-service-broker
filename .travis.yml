@@ -43,7 +43,7 @@ jobs:
     - script:
         - make vet
     - script:
-        - go get -u github.com/golang/lint/golint
+        - go get -u golang.org/x/lint/golint
         - make lint
     - stage: build
       script:
