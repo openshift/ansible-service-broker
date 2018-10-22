@@ -23,7 +23,6 @@ matrix:
   allow_failures:
     - env: OPENSHIFT_VERSION=v3.10.0
     - env: KUBERNETES_VERSION=v1.10.0
-    - env: KUBERNETES_VERSION=v1.9.0
 
 before_install:
   - | # Copied from https://github.com/facebook/react/pull/2000
