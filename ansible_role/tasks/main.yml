@@ -63,6 +63,20 @@
   - configmap_result.changed
   - pod
 
+- name: 'Set broker rbac object state={{ state }}'
+  k8s:
+    state: '{{ state }}'
+    definition: "{{ lookup('template', item.name) | from_yaml }}"
+  when: not olm_managed
+  loop:
+    - name: broker.serviceaccount.yaml
+    - name: broker.clusterrolebinding.yaml
+    - name: broker-auth.clusterrole.yaml
+    - name: broker-auth.clusterrolebinding.yaml
+    - name: broker-client.serviceaccount.yaml
+    - name: broker-client.clusterrolebinding.yaml
+    - name: broker-access.clusterrole.yaml
+
 - name: 'Set broker application object state={{ state }}'
   k8s:
     state: '{{ state }}'
@@ -78,20 +92,6 @@
     - name: broker.deployment.yaml
     - name: broker.servicecatalog.yaml
       apply: "{{ ('servicecatalog.k8s.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
-
-- name: 'Set broker rbac object state={{ state }}'
-  k8s:
-    state: '{{ state }}'
-    definition: "{{ lookup('template', item.name) | from_yaml }}"
-  when: not olm_managed
-  loop:
-    - name: broker.serviceaccount.yaml
-    - name: broker.clusterrolebinding.yaml
-    - name: broker-auth.clusterrole.yaml
-    - name: broker-auth.clusterrolebinding.yaml
-    - name: broker-client.serviceaccount.yaml
-    - name: broker-client.clusterrolebinding.yaml
-    - name: broker-access.clusterrole.yaml
 
 ################################################################################
 # TODO: If olm_managed, OLM should be responsible for creating this aggregated
