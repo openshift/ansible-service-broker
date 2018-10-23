@@ -16,6 +16,7 @@ KUBERNETES_FILES := $(addprefix $(SVC_ACCT_DIR)/,ca.crt token tls.crt tls.key)
 COVERAGE_SVC     := travis-ci
 .DEFAULT_GOAL    := build
 ASB_DEBUG_PORT   := 9000
+AUTO_ESCALATE    ?= false
 
 vendor: ## Install or update project dependencies
 	@dep ensure
