@@ -7,6 +7,7 @@ BROKER_NAME=${BROKER_NAME:-"ansible-service-broker"}
 BROKER_IMAGE="docker.io/ansibleplaybookbundle/origin-ansible-service-broker:${TAG}"
 BROKER_NAMESPACE=${BROKER_NAMESPACE:-"ansible-service-broker"}
 HELM=${HELM:-"false"}
+AUTO_ESCALATE=${AUTO_ESCALATE:-"true"}
 
 function ansible-service-broker {
     if [ "$TAG" == "canary" ]; then
@@ -26,7 +27,8 @@ function ansible-service-broker {
             -e broker_image_tag=$TAG \
             -e broker_image=$BROKER_IMAGE \
             -e broker_name=$BROKER_NAME \
-            -e broker_helm_enabled=$HELM
+            -e broker_helm_enabled=$HELM \
+            -e broker_auto_escalate=$AUTO_ESCALATE
     kubectl delete pod $APB_NAME --namespace $BROKER_NAMESPACE
     kubectl delete serviceaccount $APB_NAME --namespace $BROKER_NAMESPACE
     kubectl delete clusterrolebinding $APB_NAME
