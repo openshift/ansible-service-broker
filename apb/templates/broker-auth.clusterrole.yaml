@@ -17,7 +17,7 @@ rules:
   - apiGroups: ["networking.k8s.io", ""]
     # attributeRestrictions: null
     resources: ["networkpolicies"]
-    verbs: ["create", "delete"]
+    verbs: ["create", "delete", "list"]
   - apiGroups: ["automationbroker.io"]
     # attributeRestrictions: null
     resources: ["bundles", "bundlebindings", "bundleinstances"]

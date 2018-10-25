@@ -271,35 +271,48 @@ func (p provider) CreateSandbox(podName string,
 		if err != nil {
 			return "", "", err
 		}
-		//Sandbox (i.e Namespace) was created.
+		// Sandbox (i.e Namespace) was created.
 		namespace = ns.ObjectMeta.Name
 
-		// Must create a Network policy to allow for communication from the APB pod to the target namespace.
-		networkPolicy := &networkingv1.NetworkPolicy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: podName,
-			},
-			Spec: networkingv1.NetworkPolicySpec{
-				PodSelector: metav1.LabelSelector{},
-				Ingress: []networkingv1.NetworkPolicyIngressRule{
-					networkingv1.NetworkPolicyIngressRule{
-						From: []networkingv1.NetworkPolicyPeer{
-							networkingv1.NetworkPolicyPeer{
-								NamespaceSelector: metav1.AddLabelToSelector(&metav1.LabelSelector{}, "apb-pod-name", podName),
+		// Check to see if there are already namespaces available before
+		// creating ours
+		policies, err := k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).List(metav1.ListOptions{})
+		if err != nil {
+			return "", "", err
+		}
+
+		// If there are already network policies, let's add one to allow for
+		// communication from the APB pod to the target namespace
+		if len(policies.Items) > 0 {
+			networkPolicy := &networkingv1.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: podName,
+				},
+				Spec: networkingv1.NetworkPolicySpec{
+					PodSelector: metav1.LabelSelector{},
+					Ingress: []networkingv1.NetworkPolicyIngressRule{
+						networkingv1.NetworkPolicyIngressRule{
+							From: []networkingv1.NetworkPolicyPeer{
+								networkingv1.NetworkPolicyPeer{
+									NamespaceSelector: metav1.AddLabelToSelector(
+										&metav1.LabelSelector{}, "apb-pod-name", podName),
+								},
 							},
 						},
 					},
 				},
-			},
-		}
+			}
 
-		log.Debugf("Creating network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
-		_, err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Create(networkPolicy)
-		if err != nil {
-			log.Errorf("unable to create network policy object - %v", err)
-			return "", "", err
+			log.Debugf("Creating network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+			_, err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Create(networkPolicy)
+			if err != nil {
+				log.Errorf("unable to create network policy object - %v", err)
+				return "", "", err
+			}
+			log.Debugf("Successfully created network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+		} else {
+			log.Info("No network policies found. Assuming things are open, skip network policy creation")
 		}
-		log.Debugf("Successfully created network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 	}
 
 	for i, f := range p.preSandboxCreate {
@@ -367,6 +380,10 @@ func (p provider) CreateSandbox(podName string,
 }
 
 func validateTargets(targets []string) error {
+	if len(targets) < 1 {
+		return fmt.Errorf("Must supply at least one target namespace")
+	}
+
 	k8scli, err := clients.Kubernetes()
 	if err != nil {
 		return err
