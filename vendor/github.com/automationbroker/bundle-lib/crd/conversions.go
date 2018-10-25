@@ -346,9 +346,11 @@ func convertPlanToCRD(plan apb.Plan) (v1alpha1.Plan, error) {
 		}
 		bindParams = append(bindParams, param)
 	}
+
 	if len(errs) > 0 {
-		return v1alpha1.Plan{}, err
+		return v1alpha1.Plan{}, errs
 	}
+
 	return v1alpha1.Plan{
 		ID:             plan.ID,
 		Name:           plan.Name,
@@ -371,22 +373,22 @@ func convertParametersToCRD(param apb.ParameterDescriptor) (v1alpha1.Parameter, 
 
 	var v1Max *v1alpha1.NilableNumber
 	if param.Maximum != nil {
-		n := v1alpha1.NilableNumber(reflect.ValueOf(param.Maximum).Float())
+		n := v1alpha1.NilableNumber(reflect.ValueOf(*param.Maximum).Float())
 		v1Max = &n
 	}
 	var v1exMax *v1alpha1.NilableNumber
 	if param.ExclusiveMaximum != nil {
-		n := v1alpha1.NilableNumber(reflect.ValueOf(param.ExclusiveMaximum).Float())
+		n := v1alpha1.NilableNumber(reflect.ValueOf(*param.ExclusiveMaximum).Float())
 		v1exMax = &n
 	}
 	var v1Min *v1alpha1.NilableNumber
 	if param.Minimum != nil {
-		n := v1alpha1.NilableNumber(reflect.ValueOf(param.Minimum).Float())
+		n := v1alpha1.NilableNumber(reflect.ValueOf(*param.Minimum).Float())
 		v1Min = &n
 	}
 	var v1exMin *v1alpha1.NilableNumber
 	if param.ExclusiveMinimum != nil {
-		n := v1alpha1.NilableNumber(reflect.ValueOf(param.ExclusiveMinimum).Float())
+		n := v1alpha1.NilableNumber(reflect.ValueOf(*param.ExclusiveMinimum).Float())
 		v1exMin = &n
 	}
 
@@ -454,6 +456,11 @@ func convertPlanToAPB(plan v1alpha1.Plan) (apb.Plan, error) {
 		}
 		bindParams = append(bindParams, param)
 	}
+
+	if len(errs) > 0 {
+		return apb.Plan{}, errs
+	}
+
 	return apb.Plan{
 		ID:             plan.ID,
 		Name:           plan.Name,
@@ -479,22 +486,22 @@ func convertParametersToAPB(param v1alpha1.Parameter) (apb.ParameterDescriptor, 
 
 	var v1Max *apb.NilableNumber
 	if param.Maximum != nil {
-		n := apb.NilableNumber(reflect.ValueOf(param.Maximum).Float())
+		n := apb.NilableNumber(reflect.ValueOf(*param.Maximum).Float())
 		v1Max = &n
 	}
 	var v1exMax *apb.NilableNumber
 	if param.ExclusiveMaximum != nil {
-		n := apb.NilableNumber(reflect.ValueOf(param.ExclusiveMaximum).Float())
+		n := apb.NilableNumber(reflect.ValueOf(*param.ExclusiveMaximum).Float())
 		v1exMax = &n
 	}
 	var v1Min *apb.NilableNumber
 	if param.Minimum != nil {
-		n := apb.NilableNumber(reflect.ValueOf(param.Minimum).Float())
+		n := apb.NilableNumber(reflect.ValueOf(*param.Minimum).Float())
 		v1Min = &n
 	}
 	var v1exMin *apb.NilableNumber
 	if param.ExclusiveMinimum != nil {
-		n := apb.NilableNumber(reflect.ValueOf(param.ExclusiveMinimum).Float())
+		n := apb.NilableNumber(reflect.ValueOf(*param.ExclusiveMinimum).Float())
 		v1exMin = &n
 	}
 
