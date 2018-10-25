@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.17
+Version: 1.1.18
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,14 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Oct 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.1.18-1
+- Bug 1613280 - only create netpolicy if one already exists (#1102) (jmrodri@gmail.com)
+- Fix travis (#1107) (jmrodri@gmail.com)
+- Fix 1.1 copr releaser (#1094) (jmontleo@redhat.com)
+- Lock the version of deploy template to correct branch (#944) (smhurley00@gmail.com)
+- Add install.yaml for release-1.1 broker (#922) (dzager@redhat.com)
+- Lock version in template (#884) (dzager@redhat.com)
+
 * Mon Mar 26 2018 David Zager <david.j.zager@gmail.com> 1.1.17-1
 - Bug 1558472 - Update openshift registry to use www-auth redirect header
   (#852) (dymurray@redhat.com)
