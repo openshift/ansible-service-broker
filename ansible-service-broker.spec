@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.19
+Version: 1.2.20
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -332,6 +332,11 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Oct 25 2018 Jason Montleon <jmontleo@redhat.com> 1.2.20-1
+- Update networkpolicy permissions for kubernetes (#1121) (jmontleo@redhat.com)
+- fix 1.2 auto escalate setting (#1120) (jmontleo@redhat.com)
+- Use the correct golint url (release-1.2) (#1115) (jmrodri@gmail.com)
+
 * Fri Sep 21 2018 Jason Montleon <jmontleo@redhat.com> 1.2.19-1
 - fix the broker url for v3.10 apb (#1096) (jmontleo@redhat.com)
 
