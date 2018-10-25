@@ -40,7 +40,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.3.19
+Version: 1.3.20
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -336,6 +336,12 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Oct 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.3.20-1
+- Bug 1643301 - Update to bundle-lib 0.2.15 to fix net-policy issue (#1112) (jmrodri@gmail.com)
+- Use the correct golint url (#1114) (jmrodri@gmail.com)
+- Fix kubernetes tests (#1119) (jmontleo@redhat.com)
+- Fix deploy template default value (#1104) (jmontleo@redhat.com)
+
 * Thu Sep 20 2018 Jason Montleon <jmontleo@redhat.com> 1.3.19-1
 - make the apb install the correct broker release (#1089) (jmontleo@redhat.com)
 - Update 1.3 copr releaser (#1083) (jmontleo@redhat.com)
