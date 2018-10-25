@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.20
+Version: 1.2.21
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -332,6 +332,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Oct 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.21-1
+- Bug 1643300 - Update to bundle-lib 0.1.9 to fix net-policy issue (#1113) (jmrodri@gmail.com)
+- Fix release-1.2 CI log collection (#1122) (jmontleo@redhat.com)
+
 * Thu Oct 25 2018 Jason Montleon <jmontleo@redhat.com> 1.2.20-1
 - Update networkpolicy permissions for kubernetes (#1121) (jmontleo@redhat.com)
 - fix 1.2 auto escalate setting (#1120) (jmontleo@redhat.com)
