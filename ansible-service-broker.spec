@@ -40,7 +40,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.4.1
+Version: 1.4.2
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -336,6 +336,27 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Oct 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.4.2-1
+- Bug 1643303 - Update to bundle-lib 0.2.15 to fix net-policy issue (#1111) (jmrodri@gmail.com)
+- Fix kubernetes test failures (#1118) (jmontleo@redhat.com)
+- Fix APB/Operator ansible task order. (#1116) (jmontleo@redhat.com)
+- Use 3.11 instead of latest for ansible-service-broker image (#1108) (jmontleo@redhat.com)
+- Additional OLM support (#1106) (ernelson@redhat.com)
+- Get golint changed upstream. (#1109) (bas.meijer@me.com)
+- Fix deploy template default value (#1103) (jmontleo@redhat.com)
+- Fix Makefile (#1101) (jmontleo@redhat.com)
+- Fix canary, use same tag for canary/nightly broker and apb's (#1100) (jmontleo@redhat.com)
+- Automation broker meeting logs 10/02/2018 (#1099) (jmrodri@gmail.com)
+- Fix v3.10 automation-broker-apb Dockerfile (#1095) (jmontleo@redhat.com)
+- add v3.9 Dockerfile (#1093) (jmontleo@redhat.com)
+- Fix dockerfile typo (#1091) (jmontleo@redhat.com)
+- Update rpm spec and add apb Dockerfiles (#1090) (jmontleo@redhat.com)
+- Fix RPM build (#1086) (ernelson@redhat.com)
+- Add broker operator support (#1078) (ernelson@redhat.com)
+- Disable travis kube until it can be fixed (#1085) (ernelson@redhat.com)
+- Add dockerfiles for old releases (#1084) (jmontleo@redhat.com)
+- Use the 4.0 releaser branch (#1080) (jmrodri@gmail.com)
+
 * Tue Sep 11 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.4.1-1
 - Prepare for 1.4 release (#1079) (jmrodri@gmail.com)
 - add operation and param validation (#1077) (jmrodri@gmail.com)
