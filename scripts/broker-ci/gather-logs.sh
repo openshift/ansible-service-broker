@@ -36,7 +36,7 @@ function secret-logs {
 
 function broker-logs {
     log-header "broker-logs"
-    kubectl logs $(kubectl get pods -o name -l service=asb --all-namespaces | cut -f 2 -d '/') -c asb -n ansible-service-broker
+    kubectl logs $(kubectl get pods -o name -l service=broker --all-namespaces | cut -f 2 -d '/') -c broker -n ansible-service-broker
     sleep 10
     log-footer "broker-logs"
 }
