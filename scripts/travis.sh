@@ -67,7 +67,7 @@ elif [[ "$action" == "lint" ]]; then
   echo "              Lint               "
   echo "================================="
   # install golint
-  go get -u golang.org/x/lint/golint
+  go get golang.org/x/lint/golint
 
   make lint
 elif [[ "$action" == "format" ]]; then
