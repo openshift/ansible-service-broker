@@ -1,0 +1,65 @@
+14:03:02 <jmrodri> #startmeeting Automation Broker IRC meeting
+14:03:02 <brokerbot> Meeting started Tue Oct 30 14:03:02 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+14:03:02 <brokerbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+14:03:02 <brokerbot> The meeting name has been set to 'automation_broker_irc_meeting'
+14:03:02 <brokerbot> jmrodri: startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+14:03:09 <jmrodri> #topic Attendance
+14:03:09 <brokerbot> jmrodri: topic
+14:03:16 <jmrodri> Good morning, NOW we can start the meeting :)
+14:03:20 <jmrodri> sorry about all the confusion
+14:04:22 <jmrodri> #topic News
+14:04:22 <brokerbot> jmrodri: topic
+14:04:34 <jmrodri> #item Automation Broker IRC meeting time change, it will not be from 10:00am ET to 10:30am ET.
+14:04:34 <brokerbot> jmrodri: Error: "item" is not a valid command.
+14:04:50 <jmrodri> #info Automation Broker IRC meeting time change, it will not be from 10:00am ET to 10:30am ET.
+14:04:50 <brokerbot> jmrodri: info
+14:05:31 <jmrodri> The previous time conflicted with other meetings. We also haven't needed the full hour in a long time. Half hour meeting seems good enough
+14:05:44 <jmrodri> #info bundle-lib release 0.2.15 and 0.1.9
+14:05:44 <brokerbot> jmrodri: info
+14:05:55 <jmrodri> #link https://github.com/automationbroker/bundle-lib/releases/tag/0.2.15
+14:05:55 <brokerbot> jmrodri: link
+14:06:03 <jmrodri> #link https://github.com/automationbroker/bundle-lib/releases/tag/0.1.9
+14:06:03 <brokerbot> jmrodri: link
+14:06:35 <jmrodri> #info automation-broker 1.4.2-1 released 10/25
+14:06:35 <brokerbot> jmrodri: info
+14:06:47 <jmrodri> #info Fixed a network policy bug in release 1.1 (OCP 3.9), 1.2 (OCP 3.10), 1.3 (OCP 3.11), and master (4.0)
+14:06:47 <brokerbot> jmrodri: info
+14:07:11 <jmrodri> That's all the news I have regarding the broker and bundle-lib for today.
+14:07:21 <jmrodri> #topic Review Previous Actions
+14:07:21 <brokerbot> jmrodri: topic
+14:07:34 <jmrodri> from our last meeting, no progress was made on the action items.
+14:07:40 <jmrodri> Here they are as a refresher
+14:07:47 <jmrodri> #info jmrodri add bundle-lib issue to a release target - NO CHANGE
+14:07:47 <brokerbot> jmrodri: info
+14:07:54 <jmrodri> #info jmrodri take issue 1087 on broker side - NO CHANGE
+14:07:54 <brokerbot> jmrodri: info
+14:08:02 <jmrodri> #info ernelson to look at minishift issue against broker (1076) - NO CHANGE
+14:08:02 <brokerbot> jmrodri: info
+14:08:09 <jmrodri> #info dymurray look into issue 1071 - NO CHANGE
+14:08:09 <brokerbot> jmrodri: info
+14:08:15 <jmrodri> #info jmrodri write up proposal for rate limiter feature - NO CHANGE
+14:08:15 <brokerbot> jmrodri: info
+14:08:32 <jmrodri> #topic Bugs/Issue Triage
+14:08:32 <brokerbot> jmrodri: topic
+14:08:46 <jmrodri> #info there were no new issues that came in for bundle-lib
+14:08:46 <brokerbot> jmrodri: info
+14:08:56 <jmrodri> #info automation broker has 1 new issue
+14:08:56 <brokerbot> jmrodri: info
+14:09:03 <jmrodri> #info Broker ansible locks up determining if local_openshift_enabled
+14:09:03 <brokerbot> jmrodri: info
+14:09:12 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1105
+14:09:12 <brokerbot> jmrodri: link
+14:09:50 <jmrodri> I've assigned it to jmontleon as he started to investigate it. I've aligned it to release-1.4 (OCP 4.0)
+14:10:12 <jmrodri> We currently have 32 issues against release 1.4.
+14:10:19 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.12+%7C+release-1.4%22
+14:10:19 <brokerbot> jmrodri: link
+14:10:46 <jmrodri> #action jmrodri close old broker issues
+14:10:46 <brokerbot> jmrodri: action
+14:11:07 <jmrodri> That's it for the bug triage.
+14:11:17 <jmrodri> #topic Open Discussion
+14:11:17 <brokerbot> jmrodri: topic
+14:11:25 <jmrodri> #info Github found a security vulnerability. I would think we should remove asbcli from the repo to fix this. It’s not used by anything anymore.
+14:11:25 <brokerbot> jmrodri: info
+14:11:58 <jmrodri> With the low attendance at today's meeting I will email the mailing list to discuss this further. I'll post a PR as well.
+14:12:45 <jmrodri> That's it for today's meeting. Thanks for listening.
+14:12:48 <jmrodri> #endmeeting
