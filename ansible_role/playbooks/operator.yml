@@ -9,3 +9,5 @@
   - role: automation-broker
   vars:
     state: present
+    broker_name: "{{ meta.name }}"
+    broker_namespace: "{{ meta.namespace }}"
