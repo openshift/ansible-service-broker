@@ -1,5 +1,5 @@
 FROM quay.io/water-hole/ansible-operator
-ARG OLM_MANAGED=false
+ARG OLM_MANAGED=true
 ARG VERSION=v3.11
 ARG APB=v3.11
 
