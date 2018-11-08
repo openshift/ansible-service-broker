@@ -48,20 +48,7 @@
   k8s:
     state: '{{ state }}'
     definition: '{{ broker_config_map }}'
-  register: configmap_result
-
-- name: Redeploy the broker if the configmap changed
-  k8s:
-    state: absent
-    kind: Pod
-    api_version: v1
-    namespace: '{{ broker_namespace }}'
-    name: '{{ pod.metadata.name }}'
-  vars:
-    pod: '{{ lookup("k8s", kind="Pod", api_version="v1", namespace=broker_namespace, label_selector=("app=" + broker_name)) }}'
-  when:
-  - configmap_result.changed
-  - pod
+  notify: Redeploy the broker if the configmap changed
 
 - name: 'Set broker rbac object state={{ state }}'
   k8s:
@@ -125,5 +112,6 @@
       debug:
         var: pod
 
-    - fail:
+    - name: Fail if the broker does not reach ready state.
+      fail:
         msg: The service catalog never marked the broker as ready

@@ -162,4 +162,25 @@ wtf: ## Use this target to help you diagnose development problems
 	@echo "in the head for some comic relief."
 	@echo ""
 
-.PHONY: run build-image clean deploy undeploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf
+openshift-ci-test-container:
+	yum -y install ansible-lint
+	mkdir -p /opt/ansible/roles/
+	cp -r ansible_role /opt/ansible/roles/automation-broker
+	cp -r ansible_role/operator/watches.yaml /opt/ansible/watches.yaml
+	cp -r ansible_role/playbooks/operator.yml /opt/ansible/deploy.yml
+	go get -u github.com/golang/dep/cmd/dep
+	make vendor
+
+openshift-ci-operator-lint:
+	ansible-lint /opt/ansible/deploy.yml
+
+openshift-ci-make-rpm:
+	yum -y install tito yum-utils
+	yum-builddep -y ./ansible-service-broker.spec
+	tito build --test --rpm
+	mkdir /tmp/rpms
+	cp /tmp/tito/noarch/ansible-service-broker-selinux* /tmp/rpms/ansible-service-broker-selinux.rpm
+	cp /tmp/tito/noarch/ansible-service-broker-container-scripts* /tmp/rpms/ansible-service-broker-container-scripts.rpm
+	cp /tmp/tito/x86_64/ansible-service-broker-* /tmp/rpms/ansible-service-broker.rpm
+
+.PHONY: run build-image clean deploy undeploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf openshift-ci-test-container openshift-ci-operator-lint openshift-ci-make-rpm

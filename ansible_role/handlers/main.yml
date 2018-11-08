@@ -1,0 +1,11 @@
+---
+- name: Redeploy the broker if the configmap changed
+  k8s:
+    state: absent
+    kind: Pod
+    api_version: v1
+    namespace: '{{ broker_namespace }}'
+    name: '{{ pod.metadata.name }}'
+  vars:
+    pod: '{{ lookup("k8s", kind="Pod", api_version="v1", namespace=broker_namespace, label_selector=("app=" + broker_name)) }}'
+  when: pod
