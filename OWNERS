@@ -1,5 +1,6 @@
 reviewers:
   - eriknelson
+  - djzager
   - jwmatthews
   - jmontleon
   - jmrodri
@@ -7,6 +8,7 @@ reviewers:
   - shawn-hurley
 approvers:
   - eriknelson
+  - djzager
   - jwmatthews
   - jmontleon
   - jmrodri
