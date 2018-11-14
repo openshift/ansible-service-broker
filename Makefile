@@ -172,7 +172,7 @@ openshift-ci-test-container:
 	make vendor
 
 openshift-ci-operator-lint:
-	ansible-lint /opt/ansible/deploy.yml
+	ANSIBLE_LOCAL_TEMP=/tmp/.ansible ansible-lint /opt/ansible/deploy.yml
 
 openshift-ci-make-rpm:
 	yum -y install tito yum-utils
