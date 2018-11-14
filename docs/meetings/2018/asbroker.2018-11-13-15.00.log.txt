@@ -1,0 +1,55 @@
+15:00:48 <jmrodri> #startmeeting Automation Broker Community meeting 11/13
+15:00:48 <brokerbot> Meeting started Tue Nov 13 15:00:48 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+15:00:48 <brokerbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+15:00:48 <brokerbot> The meeting name has been set to 'automation_broker_community_meeting_11/13'
+15:00:48 <brokerbot> jmrodri: startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+15:01:04 <jmrodri> Good morning. Welcome to another edition of the Automation Broker IRC meeting.
+15:01:09 <jmrodri> #topic attendance
+15:01:09 <brokerbot> jmrodri: topic
+15:01:24 <jmrodri> for those attending today, raise your hand.
+15:02:32 <jmrodri> #info We updated the calendar invite to be correct, it was set to 2pm UTC which caused the meeting to be 9am ET. I updated it to be 3pm UTC (10am ET).
+15:02:32 <brokerbot> jmrodri: info
+15:02:42 <jmrodri> #topic news
+15:02:42 <brokerbot> jmrodri: topic
+15:03:31 <jmrodri> #info no new news this week. The last release of bundle-lib was 0.2.15 and 0.1.9 and the automation-broker build was 1.4.2-1.
+15:03:31 <brokerbot> jmrodri: info
+15:03:42 <jmrodri> #info We are looking at integrating prow into the ansible service broker repo
+15:03:42 <brokerbot> jmrodri: info
+15:04:03 <jmrodri> #info a fair amount of work was done to create an ansible operator to install the broker in openshift 4.0
+15:04:03 <brokerbot> jmrodri: info
+15:04:57 <jmrodri> #topic previous actions
+15:04:57 <brokerbot> jmrodri: topic
+15:05:14 <jmontleon> Prow PR https://github.com/openshift/release/pull/2098 - I have one outstanding question I need answered before it should be ready for merge. The associated Makefile additions for OAB and TSB Operator repos are merged
+15:06:49 <jmrodri> #info jmrodri take issue 1087 on broker side - Issue has been closed as oc cluster up is going away
+15:06:49 <brokerbot> jmrodri: info
+15:07:38 <jmrodri> #info ernelson to look at minishift issue against broker (1076) - Issue closed as it was deemed a temporary issue.
+15:07:38 <brokerbot> jmrodri: info
+15:08:15 <jmrodri> #info dymurray look into issue 1071 - Issue closed, fixed in latest release of apb tool
+15:08:15 <brokerbot> jmrodri: info
+15:08:41 <jmrodri> #info jmrodri write up proposal for rate limiter feature - NO CHANGE, still TBD
+15:08:41 <brokerbot> jmrodri: info
+15:08:54 <jmrodri> #topic bugs and triage
+15:08:54 <brokerbot> jmrodri: topic
+15:09:05 <jmrodri> #info no new issues against the bundle-lib project to triage
+15:09:05 <brokerbot> jmrodri: info
+15:09:33 <jmrodri> #info ansible service broker has 13 issues aligned to release-1.4
+15:09:33 <brokerbot> jmrodri: info
+15:09:35 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+is%3Aopen+label%3A%223.12+%7C+release-1.4%22
+15:09:35 <brokerbot> jmrodri: link
+15:10:29 <jmrodri> of those 13, we have created bugzilla's for 3 of them which are deemed highly important:
+15:10:34 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues?q=is%3Aissue+label%3Ahas-bugzilla+is%3Aclosed
+15:10:34 <brokerbot> jmrodri: link
+15:11:14 <jmrodri> IF time permits we will try to see if we can pull in more of the 13 aligned to the release.
+15:11:28 <jmrodri> That's it for bugs.
+15:11:36 <jmrodri> #topic features
+15:11:36 <brokerbot> jmrodri: topic
+15:11:43 <jmrodri> #info nothing to discuss on the agenda
+15:11:43 <brokerbot> jmrodri: info
+15:11:53 <jmrodri> #topic open discussion
+15:11:53 <brokerbot> jmrodri: topic
+15:11:58 <jmrodri> #info nothing to discuss on the agenda
+15:11:58 <brokerbot> jmrodri: info
+15:12:57 <jmrodri> #info Forgot to mention asbcli has been removed from the repo. \o/ there was a security vulnerability found in one of the libraries. since the code was no longer maintained we deemed it reasonable to simply remove.
+15:12:57 <brokerbot> jmrodri: info
+15:13:15 <jmrodri> That's it for today. Thanks for watching
+15:13:17 <jmrodri> #endmeeting
