@@ -10,10 +10,6 @@ branches:
   - /^release-.*$/
   - /^ansible-service-broker-([0-9.-]+)$/
 
-#- OPENSHIFT_VERSION=v3.10.0
-#- KUBERNETES_VERSION=v1.10.0
-#- KUBERNETES_VERSION=v1.9.0
-
 env:
   - OPENSHIFT_VERSION=v3.9.0
   - KUBERNETES_VERSION=v1.9.0
@@ -32,25 +28,14 @@ before_install:
       }
 
 stages:
-  - lint
   - build
-  - test
   - deploy
 
 jobs:
   include:
-    - stage: lint
-      script:
-        - make fmtcheck
-    - script:
-        - make vet
-    - script:
-        - go get golang.org/x/lint/golint
-        - make lint
     - stage: build
       script:
         - go get -u github.com/golang/dep/cmd/dep
-        - make build
         - go get github.com/mattn/goveralls
         - make ci-test-coverage
     - stage: deploy
