@@ -83,10 +83,80 @@ exponentially. We take n calls with no limit, once those n are exhausted we take
 every 3rd call, then we back that off to every 5th call. After m failed attempts
 we stop executing APBs and simply return failure always.
 
-New configuration items:
+At first I thought we'd have a time limit as well but the exponential backoff
+seems like a better idea to apply across the board.  A new configuration item
+includes a list of action handlers we want to limit.
 
 ```yaml
 rate_limit:
-  timeout: in seconds, default to 300
   handler: ["all", "provision", "deprovision", "bind", "unbind" ]
 ```
+
+To be clear, this rate limiter will not control how often the API is called by
+the platform, but it will control how often the broker launches an APB to
+perform the action on failed cases.
+
+#### Rate limited scenario
+
+##### Today
+
+- provision API called
+  - provision APB launched, failed
+  - return failed status to platform
+- deprovision API called first time on above instance
+  - deprovision APB launched, failed
+  - deprovision 1st namespace remains
+  - return failed status to platform
+- deprovision API called second time on above instance
+  - deprovision APB launched, failed
+  - deprovision 2nd namespace remains
+  - return failed status to platform
+  ...
+- deprovision API called nth time on above instance
+  - deprovision APB launched, failed
+  - deprovision nth namespace remains
+  - return failed status to platform
+
+This will continue forever or until the clusters resources are exhausted. The
+only way to stop this is to remove the finalizer on the serviceinstance from the
+platform so that the deprovision stops getting called.
+
+##### Proposed scenario
+
+- provision API called
+  - provision APB launched, failed
+  - return failed status to platform
+- deprovision API called first time on above instance
+  - deprovision APB launched, failed
+  - deprovision 1st namespace remains
+  - return failed status to platform
+- deprovision API called second time on above instance
+  - deprovision APB launched, failed
+  - 1st namespace is removed (based on rules from first portion of proposal)
+  - deprovision 2nd namespace remains (until next call)
+  - return failed status to platform
+- deprovision API called third time on above instance
+  - rate limit rule triggered, skip launching deprovision APB
+  - last deprovision namespace remains
+  - return failed status to platform
+- deprovision API called 4th time on above instance
+  - rate limit rule triggered, skip launching deprovision APB
+  - last deprovision namespace remains
+  - return failed status to platform
+- deprovision API called 5th time on above instance
+  - rate limit rule triggered, skip launching deprovision APB
+  - last deprovision namespace remains
+  - return failed status to platform
+- deprovision API called 6th time on above instance
+  - rate limit rule triggered, ALLOW deprovision APB to run
+  - last deprovision namespace removed
+  - return failed status to platform
+- Repeat the above scenarios a few times.
+  ...
+- deprovision API called nth time on above instance
+  - after a few rounds finally stop launching APBs
+  - rate limit ruled exhausted, skip launching deprovision APB
+  - last deprovision namespace removed
+  - return failed status to platform
+
+We can tweak how many times we skip the APB vs launching it.
