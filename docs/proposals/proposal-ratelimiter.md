@@ -32,10 +32,10 @@ able to remove the namespace at the end of the action. Because the names are
 generated it isn't feasible to go searching for all "action" jobs.
 
 I think we need to add a new attribute, `LastSandbox`, to
-`BundleInstanceStatus`. It will be a string containing the last sandbox
-namespace.
+`BundleInstanceStatus` and `BundleBindingStatus`. It will be a string
+containing the last sandbox namespace.
 
-```
+```golang
   // BundleInstanceStatus status is a service instance status.
     Bindings        []LocalObjectReference `json:"bindings"`
     State           State                  `json:"state"`
@@ -43,6 +43,16 @@ namespace.
     Jobs            map[string]Job         `json:"jobs"`
     LastSandbox     string                 `json:"lastSandbox"`
   }
+```
+
+```golang
+// BundleBindingStatus - status of the bundle
+type BundleBindingStatus struct {
+    State           State          `json:"state"`
+    LastDescription string         `json:"lastDescription,omitempty"`
+    Jobs            map[string]Job `json:"jobs"`
+    LastSandbox     string         `json:"lastSandbox"`
+}
 ```
 
 When we start the action, we should set the namespace in the
