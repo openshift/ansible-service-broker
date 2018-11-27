@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#asbroker log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">15:03:16</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#startmeeting </span><span class="cmdline">Automation broker IRC meeting</span>
+<a name="l-2"></a><span class="tm">15:03:16</span><span class="nk"> &lt;brokerbot`&gt;</span> Meeting started Tue Nov 27 15:03:16 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">15:03:16</span><span class="nk"> &lt;brokerbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">15:03:16</span><span class="nk"> &lt;brokerbot`&gt;</span> The meeting name has been set to 'automation_broker_irc_meeting'
+<a name="l-5"></a><span class="tm">15:03:16</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+<a name="l-6"></a><span class="tm">15:04:08</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">Attendance</span>
+<a name="l-7"></a><span class="tm">15:04:08</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-8"></a><span class="tm">15:04:22</span><span class="nk"> &lt;jmontleon&gt;</span> dymurrayRH, ACK'd
+<a name="l-9"></a><span class="tm">15:04:23</span><span class="nk"> &lt;jmrodri&gt;</span> for those attending the meeting say hi :)
+<a name="l-10"></a><span class="tm">15:04:30</span><span class="nk"> &lt;jmrodri&gt;</span> here :)
+<a name="l-11"></a><span class="tm">15:04:36</span><span class="nk"> &lt;jmontleon&gt;</span> hi
+<a name="l-12"></a><span class="tm">15:05:06</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">News</span>
+<a name="l-13"></a><span class="tm">15:05:06</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-14"></a><span class="tm">15:05:39</span><span class="nk"> &lt;jmrodri&gt;</span> No new news this meeting. We haven't done any new builds of the broker or bundle-lib since October 25.
+<a name="l-15"></a><span class="tm">15:05:45</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">No new news this meeting. We haven't done any new builds of the broker or bundle-lib since October 25.</span>
+<a name="l-16"></a><span class="tm">15:05:45</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-17"></a><span class="tm">15:06:15</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">We'll hopefully be cleaning up some of the open issues for release 1.4 (ack OCP 4.0).</span>
+<a name="l-18"></a><span class="tm">15:06:15</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-19"></a><span class="tm">15:07:25</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">Previous Actions</span>
+<a name="l-20"></a><span class="tm">15:07:25</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-21"></a><span class="tm">15:07:37</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">according to the logs from last meeting we had no new open actions.</span>
+<a name="l-22"></a><span class="tm">15:07:37</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-23"></a><span class="tm">15:07:56</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">Bugs/Issues Triage</span>
+<a name="l-24"></a><span class="tm">15:07:56</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-25"></a><span class="tm">15:08:06</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">broker issues</span>
+<a name="l-26"></a><span class="tm">15:08:06</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-27"></a><span class="tm">15:08:26</span><span class="nk"> &lt;jmrodri&gt;</span> Looks like we have 4 new issues in the broker
+<a name="l-28"></a><span class="tm">15:08:37</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">need apiVersion 2 of ansible servcie broker</span>
+<a name="l-29"></a><span class="tm">15:08:37</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-30"></a><span class="tm">15:08:41</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1136</span>
+<a name="l-31"></a><span class="tm">15:08:41</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-32"></a><span class="tm">15:09:00</span><span class="nk"> &lt;jmrodri&gt;</span> Looks like we have a user trying to use the broker with Cloud Foundry.
+<a name="l-33"></a><span class="tm">15:09:30</span><span class="nk"> &lt;jmrodri&gt;</span> From what I've read in the issue it seems related to authentication between Cloud Foundry and the broker.
+<a name="l-34"></a><span class="tm">15:10:25</span><span class="nk"> &lt;jmrodri&gt;</span> I've added a comment for the user on how to configure basic auth to use with Cloud Foundry as it seems the broker is running in OpenShift and just being controlled by Cloud Foundry
+<a name="l-35"></a><span class="tm">15:10:35</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1136#issuecomment-441287030</span>
+<a name="l-36"></a><span class="tm">15:10:35</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-37"></a><span class="tm">15:10:54</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">Can't start minishift with ASB</span>
+<a name="l-38"></a><span class="tm">15:10:54</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-39"></a><span class="tm">15:10:56</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1137</span>
+<a name="l-40"></a><span class="tm">15:10:56</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-41"></a><span class="tm">15:11:10</span><span class="nk"> &lt;jmrodri&gt;</span> I'm not entirely sure about what's going on with this one.
+<a name="l-42"></a><span class="tm">15:11:41</span><span class="nk"> &lt;jmrodri&gt;</span> I'll see if I can get erik to look at it
+<a name="l-43"></a><span class="tm">15:12:04</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">jmrodri take a look at Issue 1137</span>
+<a name="l-44"></a><span class="tm">15:12:04</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-45"></a><span class="tm">15:12:25</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">Creating default "automationbroker" CR results in frozen ASB operator stuck on "injecting owner reference"</span>
+<a name="l-46"></a><span class="tm">15:12:25</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-47"></a><span class="tm">15:12:30</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1138</span>
+<a name="l-48"></a><span class="tm">15:12:30</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-49"></a><span class="tm">15:13:00</span><span class="nk"> &lt;jmrodri&gt;</span> derek took it
+<a name="l-50"></a><span class="tm">15:13:20</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#info </span><span class="cmdline">Security error in provision new bundle</span>
+<a name="l-51"></a><span class="tm">15:13:20</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> info
+<a name="l-52"></a><span class="tm">15:13:25</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/openshift/ansible-service-broker/issues/1139</span>
+<a name="l-53"></a><span class="tm">15:13:25</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> link
+<a name="l-54"></a><span class="tm">15:16:57</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="topic">#topic </span><span class="topicline">Open Discussion</span>
+<a name="l-55"></a><span class="tm">15:16:57</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> topic
+<a name="l-56"></a><span class="tm">15:17:26</span><span class="nk"> &lt;jmrodri&gt;</span> I think we should cancel these IRC meetings. The attendance has dropped to nil and I'm not sure anyone is getting anything out of it.
+<a name="l-57"></a><span class="tm">15:17:41</span><span class="nk"> &lt;jmrodri&gt;</span> I will send an email to ansible-service-broker list to start the discussion.
+<a name="l-58"></a><span class="tm">15:18:00</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#action </span><span class="cmdline">jmrodri email ansible-service-broker list to discussion canceling IRC meetings going forward</span>
+<a name="l-59"></a><span class="tm">15:18:00</span><span class="nk"> &lt;brokerbot`&gt;</span> <span class="hi">jmrodri:</span> action
+<a name="l-60"></a><span class="tm">15:18:04</span><span class="nk"> &lt;jmrodri&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

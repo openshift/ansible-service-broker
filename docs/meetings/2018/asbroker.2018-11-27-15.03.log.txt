@@ -1,0 +1,60 @@
+15:03:16 <jmrodri> #startmeeting Automation broker IRC meeting
+15:03:16 <brokerbot`> Meeting started Tue Nov 27 15:03:16 2018 UTC.  The chair is jmrodri. Information about MeetBot at http://wiki.debian.org/MeetBot.
+15:03:16 <brokerbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+15:03:16 <brokerbot`> The meeting name has been set to 'automation_broker_irc_meeting'
+15:03:16 <brokerbot`> jmrodri: startmeeting Meeting Agenda https://docs.google.com/document/d/1Mj7bVYJ8NK-TwU_mxeZLprmBBZZ-xOq-Hg4CiD3E6pM/edit?usp=sharing
+15:04:08 <jmrodri> #topic Attendance
+15:04:08 <brokerbot`> jmrodri: topic
+15:04:22 <jmontleon> dymurrayRH, ACK'd
+15:04:23 <jmrodri> for those attending the meeting say hi :)
+15:04:30 <jmrodri> here :)
+15:04:36 <jmontleon> hi
+15:05:06 <jmrodri> #topic News
+15:05:06 <brokerbot`> jmrodri: topic
+15:05:39 <jmrodri> No new news this meeting. We haven't done any new builds of the broker or bundle-lib since October 25.
+15:05:45 <jmrodri> #info No new news this meeting. We haven't done any new builds of the broker or bundle-lib since October 25.
+15:05:45 <brokerbot`> jmrodri: info
+15:06:15 <jmrodri> #info We'll hopefully be cleaning up some of the open issues for release 1.4 (ack OCP 4.0).
+15:06:15 <brokerbot`> jmrodri: info
+15:07:25 <jmrodri> #topic Previous Actions
+15:07:25 <brokerbot`> jmrodri: topic
+15:07:37 <jmrodri> #info according to the logs from last meeting we had no new open actions.
+15:07:37 <brokerbot`> jmrodri: info
+15:07:56 <jmrodri> #topic Bugs/Issues Triage
+15:07:56 <brokerbot`> jmrodri: topic
+15:08:06 <jmrodri> #info broker issues
+15:08:06 <brokerbot`> jmrodri: info
+15:08:26 <jmrodri> Looks like we have 4 new issues in the broker
+15:08:37 <jmrodri> #info need apiVersion 2 of ansible servcie broker
+15:08:37 <brokerbot`> jmrodri: info
+15:08:41 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1136
+15:08:41 <brokerbot`> jmrodri: link
+15:09:00 <jmrodri> Looks like we have a user trying to use the broker with Cloud Foundry.
+15:09:30 <jmrodri> From what I've read in the issue it seems related to authentication between Cloud Foundry and the broker.
+15:10:25 <jmrodri> I've added a comment for the user on how to configure basic auth to use with Cloud Foundry as it seems the broker is running in OpenShift and just being controlled by Cloud Foundry
+15:10:35 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1136#issuecomment-441287030
+15:10:35 <brokerbot`> jmrodri: link
+15:10:54 <jmrodri> #info Can't start minishift with ASB
+15:10:54 <brokerbot`> jmrodri: info
+15:10:56 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1137
+15:10:56 <brokerbot`> jmrodri: link
+15:11:10 <jmrodri> I'm not entirely sure about what's going on with this one.
+15:11:41 <jmrodri> I'll see if I can get erik to look at it
+15:12:04 <jmrodri> #action jmrodri take a look at Issue 1137
+15:12:04 <brokerbot`> jmrodri: action
+15:12:25 <jmrodri> #info Creating default "automationbroker" CR results in frozen ASB operator stuck on "injecting owner reference"
+15:12:25 <brokerbot`> jmrodri: info
+15:12:30 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1138
+15:12:30 <brokerbot`> jmrodri: link
+15:13:00 <jmrodri> derek took it
+15:13:20 <jmrodri> #info Security error in provision new bundle
+15:13:20 <brokerbot`> jmrodri: info
+15:13:25 <jmrodri> #link https://github.com/openshift/ansible-service-broker/issues/1139
+15:13:25 <brokerbot`> jmrodri: link
+15:16:57 <jmrodri> #topic Open Discussion
+15:16:57 <brokerbot`> jmrodri: topic
+15:17:26 <jmrodri> I think we should cancel these IRC meetings. The attendance has dropped to nil and I'm not sure anyone is getting anything out of it.
+15:17:41 <jmrodri> I will send an email to ansible-service-broker list to start the discussion.
+15:18:00 <jmrodri> #action jmrodri email ansible-service-broker list to discussion canceling IRC meetings going forward
+15:18:00 <brokerbot`> jmrodri: action
+15:18:04 <jmrodri> #endmeeting
