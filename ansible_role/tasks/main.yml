@@ -93,7 +93,7 @@
 ################################################################################
 
 - name: Wait for broker
-  when: state == 'present' and wait_for_broker
+  when: state == 'present' and wait_for_broker | bool
   block:
     - name: Wait for {{ broker_kind }} to become ready
       debug:
