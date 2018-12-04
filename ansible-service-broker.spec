@@ -41,7 +41,7 @@
 
 Name: %{repo}
 Epoch: 1
-Version: 1.4.2
+Version: 1.4.3
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -337,6 +337,23 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Dec 04 2018 Jason Montleon <jmontleo@redhat.com> 1.4.3-1
+- Add epoch to package (#1141) (jmontleo@redhat.com)
+- Filter to bool when waiting for broker (#1140) (dzager@redhat.com)
+- Clean up .travis.yml and remove duplicate tests (#1133) (jmontleo@redhat.com)
+- Add djzager to OWNERS (#1134) (dzager@redhat.com)
+- Add jmontleon to OWNERS (#1132) (jmontleo@redhat.com)
+- Fix operator lint task in openshift CI (#1131) (jmontleo@redhat.com)
+- Automation Broker meeting 20181113 (#1129) (jmrodri@gmail.com)
+- add linting for operator role (#1128) (jmontleo@redhat.com)
+- Set OLM_MANAGED to true by default in the operator Dockerfile (#1127)
+  (jmontleo@redhat.com)
+- Operator should use meta from AO (#1126) (dzager@redhat.com)
+- Remove unused asbcli. (#1125) (jmrodri@gmail.com)
+- 2018-10-30 Automation Broker IRC meeting logs (#1124) (jmrodri@gmail.com)
+- 1062 - disallow the SAME UUID for instance and bindings (#1081)
+  (jmrodri@gmail.com)
+
 * Thu Oct 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.4.2-1
 - Bug 1643303 - Update to bundle-lib 0.2.15 to fix net-policy issue (#1111) (jmrodri@gmail.com)
 - Fix kubernetes test failures (#1118) (jmontleo@redhat.com)
