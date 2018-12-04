@@ -40,6 +40,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
+Epoch: 1
 Version: 1.3.20
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
