@@ -41,7 +41,7 @@
 
 Name: %{repo}
 Epoch: 1
-Version: 1.3.20
+Version: 1.3.21
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -337,6 +337,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Dec 04 2018 Jason Montleon <jmontleo@redhat.com> 1.3.21-1
+- Add epoch to rpm spec (#1142) (jmontleo@redhat.com)
+
 * Thu Oct 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.3.20-1
 - Bug 1643301 - Update to bundle-lib 0.2.15 to fix net-policy issue (#1112) (jmrodri@gmail.com)
 - Use the correct golint url (#1114) (jmrodri@gmail.com)
