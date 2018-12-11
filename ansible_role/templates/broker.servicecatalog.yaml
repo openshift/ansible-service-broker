@@ -41,7 +41,7 @@ spec:
       api_version='v1',
       namespace=broker_namespace,
       resource_name='broker-service-ca-bundle'
-    ) | json_query('data."service-ca.crt"')
+    ) | json_query('data."service-ca.crt"') | b64encode
   }}
 {%   endif %}
 {% endif %}
