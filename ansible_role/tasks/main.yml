@@ -74,6 +74,8 @@
     - name: broker.route.yaml
       apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
     - name: broker-client.secret.yaml
+    - name: broker-service-ca-bundle.configmap.yaml
+      apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
     - name: broker-auth.secret.yaml
       apply: "{{ (broker_config.broker.auth[0].enabled | default(False)) | bool }}"
     - name: broker.deployment.yaml
