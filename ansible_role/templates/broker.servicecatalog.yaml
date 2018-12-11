@@ -33,6 +33,16 @@ spec:
       resource_name=broker_tls_name
     ) | json_query('data."tls.crt"')
   }}
+{%   elif 'servicecertsigneroperatorconfigs.servicecertsigner.config.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
+  caBundle: {{
+    lookup(
+      'k8s',
+      kind='Secret',
+      api_version='v1',
+      namespace=broker_namespace,
+      resource_name=broker_name + '-client'
+    ) | json_query('data."service-ca.crt"')
+  }}
 {%   else %}
   caBundle: {{
     lookup(
