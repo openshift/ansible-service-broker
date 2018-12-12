@@ -33,7 +33,7 @@ spec:
       resource_name=broker_tls_name
     ) | json_query('data."tls.crt"')
   }}
-{%   else %}
+{%   elif 'servicecertsigner.config.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
   caBundle: {{
     lookup(
       'k8s',
@@ -42,6 +42,16 @@ spec:
       namespace=broker_namespace,
       resource_name=broker_name + '-client'
     ) | json_query('data."service-ca.crt"')
+  }}
+{%   else %}
+  caBundle: {{
+    lookup(
+      'k8s',
+      kind='ConfigMap',
+      api_version='v1',
+      namespace=broker_namespace,
+      resource_name='broker-service-ca-bundle'
+    ) | json_query('data."service-ca.crt"') | b64encode
   }}
 {%   endif %}
 {% endif %}
