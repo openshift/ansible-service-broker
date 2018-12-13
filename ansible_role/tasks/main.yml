@@ -75,7 +75,8 @@
       apply: "{{ ('route.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
     - name: broker-client.secret.yaml
     - name: broker-service-ca-bundle.configmap.yaml
-      apply: "{{ ('servicecertsigner.config.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
+      apply: "{{ (('servicecertsigner.config.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool )
+                and not (lookup('k8s', api_version='v1', kind='ConfigMap', namespace=broker_namespace,resource_name='broker-service-ca-bundle') | bool) }}"
     - name: broker-auth.secret.yaml
       apply: "{{ (broker_config.broker.auth[0].enabled | default(False)) | bool }}"
     - name: broker.deployment.yaml
