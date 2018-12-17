@@ -329,9 +329,11 @@ data:
                     serviceAccountName: automation-broker-operator
                     containers:
                     - name: automation-broker-operator
-                      image: docker.io/djwhatle/asb-operator:4.0-fix
+                      image: docker.io/automationbroker/automation-broker-operator:latest
                       imagePullPolicy: IfNotPresent
                       env:
+                      - name: IMAGE
+                        value: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:latest
                       - name: WATCH_NAMESPACE
                         valueFrom:
                           fieldRef:
