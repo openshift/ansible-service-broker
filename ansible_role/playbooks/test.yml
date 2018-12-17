@@ -5,6 +5,7 @@
   gather_facts: false
   connection: local
   vars:
+    test_broker_install: true
     test_namespace: broker-test
     ready_status_query: "status.conditions[?type == 'Ready'].status"
     available_status_query: "status.conditions[?type == 'Available'].status"
@@ -52,6 +53,7 @@
   tasks:
     # Test crd
     - name: Provision test with CRDs
+      when: test_broker_install | bool
       include_role:
         name: automation-broker-apb
       vars:
@@ -258,6 +260,7 @@
         - not namespace_lookup
 
     - name: Deprovision test with CRDs
+      when: test_broker_install | bool
       include_role:
         name: automation-broker-apb
       vars:
@@ -266,6 +269,7 @@
         broker_dao_type: crd
 
     - name: Wait for namespace to be destroyed
+      when: test_broker_install | bool
       vars:
         namespace_lookup: "{{ lookup('k8s', kind='Namespace', resource_name='automation-broker') }}"
       set_fact:
