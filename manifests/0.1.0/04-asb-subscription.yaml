@@ -4,7 +4,7 @@ metadata:
   generateName: automationbroker-
   namespace: automation-broker
 spec:
-  source: osb-operators
+  source: asb-operator
   name: automationbroker
   startingCSV: automationbrokeroperator.v0.1.0
   channel: alpha
