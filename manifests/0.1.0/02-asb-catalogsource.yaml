@@ -1,10 +1,10 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: osb-operators
+  name: asb-operator
   namespace: openshift-operator-lifecycle-manager
 spec:
-  configMap: osb-operators
-  displayName: Open Service Brokers
+  configMap: asb-operator
+  displayName: Automation Broker
   publisher: Red Hat
   sourceType: internal
