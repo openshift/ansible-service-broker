@@ -183,4 +183,17 @@ openshift-ci-make-rpm:
 	cp /tmp/tito/noarch/ansible-service-broker-container-scripts* /tmp/rpms/ansible-service-broker-container-scripts.rpm
 	cp /tmp/tito/x86_64/ansible-service-broker-* /tmp/rpms/ansible-service-broker.rpm
 
-.PHONY: run build-image clean deploy undeploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf openshift-ci-test-container openshift-ci-operator-lint openshift-ci-make-rpm
+openshift-ci-e2e:
+	git clone https://github.com/fusor/catbrokers4
+	pushd catbrokers4; ./run-playbook.sh; popd
+	rm -rf catbrokers4
+	echo -ne 'apiVersion: v1\nkind: PersistentVolume\nmetadata:\n  name: mw\nspec:\n  capacity:\n    storage: 1Gi\n  accessModes:\n    - ReadWriteOnce\n  hostPath:\n    path: /srv' >pv
+	oc create -f pv
+	sleep 5m
+	oc create -f ansible_role/apb/test_manifest.yaml
+	while true; do STAT=$$(oc get po -n automation-broker-apb automation-broker-apb -o go-template='{{ .status.phase }}'); if [ "$${STAT}" == "Running" ]; then break; fi; sleep 1; done
+	oc logs -f -n automation-broker-apb automation-broker-apb
+	EXIT_CODE=$$(oc get pod -n automation-broker-apb automation-broker-apb -o go-template="{{ range .status.containerStatuses }}{{.state.terminated.exitCode}}{{ end }}")
+	exit $${EXIT_CODE}
+
+.PHONY: run build-image clean deploy undeploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf openshift-ci-test-container openshift-ci-operator-lint openshift-ci-make-rpm openshift-ci-e2e
