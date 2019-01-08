@@ -14,9 +14,9 @@
     - name: Validation
       assert:
         that:
-          - broker_name is defined
-          - broker_namespace is defined
-          - broker_image is defined
+          - broker_name
+          - broker_namespace
+          - broker_image
         msg: |
           broker_name broker_namespace broker_image must be defined
           The IMAGE environment variable must provide the broker's image name
