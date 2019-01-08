@@ -12,3 +12,5 @@ spec:
     singular: automationbroker
   scope: Namespaced
   version: v1alpha1
+  subresources:
+    status: {}

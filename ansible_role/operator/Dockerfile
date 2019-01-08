@@ -1,4 +1,4 @@
-FROM quay.io/water-hole/ansible-operator
+FROM quay.io/operator-framework/ansible-operator:master
 ARG OLM_MANAGED=true
 ARG VERSION=v3.11
 ARG APB=v3.11
