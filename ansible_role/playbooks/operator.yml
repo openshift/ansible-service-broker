@@ -13,11 +13,8 @@
   tasks:
     - name: Validation
       assert:
-        that:
-          - broker_name
-          - broker_namespace
-          - broker_image
-        msg: |
+        that: broker_name and broker_namespace and broker_image
+        fail_msg: >
           broker_name broker_namespace broker_image must be defined
           The IMAGE environment variable must provide the broker's image name
           and should be specified in the operator's deployment specification.
