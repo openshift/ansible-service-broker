@@ -1,7 +1,0 @@
-apiVersion: automationbroker.io/v1alpha1
-kind: AutomationBroker
-metadata:
-  name: automation-broker
-  namespace: automation-broker
-spec:
-  createBrokerNamespace: 'false'
