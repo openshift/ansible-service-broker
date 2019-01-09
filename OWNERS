@@ -1,6 +1,7 @@
 reviewers:
   - eriknelson
   - djzager
+  - djwhatley
   - jwmatthews
   - jmontleon
   - jmrodri
@@ -9,6 +10,7 @@ reviewers:
 approvers:
   - eriknelson
   - djzager
+  - djwhatley
   - jwmatthews
   - jmontleon
   - jmrodri
