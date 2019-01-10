@@ -284,7 +284,7 @@ spec:
                 imagePullPolicy: IfNotPresent
                 env:
                 - name: IMAGE
-                  value: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:latest
+                  value: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.11
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
