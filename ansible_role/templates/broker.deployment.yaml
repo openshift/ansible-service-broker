@@ -8,7 +8,7 @@ apiVersion: apps/v1
 kind: Deployment
 {% endif %}
 metadata:
-  name: {{ broker_name }}
+  name: {{ broker_deployment_name }}
   namespace: {{ broker_namespace }}
   labels:
     app: {{ broker_name }}

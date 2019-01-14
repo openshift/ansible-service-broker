@@ -11,6 +11,7 @@ olm_managed: false
 # Broker configuration values
 broker_name: ansible-service-broker
 broker_namespace: openshift-ansible-service-broker
+broker_deployment_name: asb
 
 create_broker_namespace: false
 wait_for_broker: false # By default, we do not wait for the broker to be available
