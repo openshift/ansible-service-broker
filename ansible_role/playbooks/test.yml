@@ -57,6 +57,7 @@
         name: automation-broker-apb
       vars:
         apb_action: provision
+        broker_namespace: test-openshift-ansible-service-broker
         create_broker_namespace: true
         wait_for_broker: true
         broker_dao_type: crd
