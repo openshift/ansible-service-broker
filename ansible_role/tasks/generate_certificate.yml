@@ -15,7 +15,7 @@
         -keyout {{ broker_tls_cert_dir }}/key.pem
         -out {{ broker_tls_cert_dir }}/cert.pem
         -days 365
-        -subj "/CN=broker.{{ broker_namespace }}.svc"
+        -subj "/CN={{ broker_service_name }}.{{ broker_namespace }}.svc"
       args:
         creates: "{{ broker_tls_cert_dir }}/cert.pem"
 
