@@ -12,20 +12,20 @@ metadata:
   namespace: {{ broker_namespace }}
   labels:
     app: {{ broker_name }}
-    service: broker
+    service: {{ broker_service_name }}
 spec:
   replicas: 1
 {% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
   selector:
     app: {{ broker_name }}
-    service: broker
+    service: {{ broker_service_name }}
   strategy:
     type: Rolling
 {% else %}
   selector:
     matchLabels:
       app: {{ broker_name }}
-      service: broker
+      service: {{ broker_service_name }}
   strategy:
     type: RollingUpdate
 {% endif %}
@@ -36,7 +36,7 @@ spec:
     metadata:
       labels:
         app: {{ broker_name }}
-        service: broker
+        service: {{ broker_service_name }}
     spec:
       serviceAccount: {{ broker_name }}
       containers:

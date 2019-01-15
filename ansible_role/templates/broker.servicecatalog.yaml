@@ -9,7 +9,7 @@ metadata:
 {% endif %}
 {% if state == 'present' %}
 spec:
-  url: https://broker.{{ broker_namespace }}.svc:1338/osb/
+  url: https://{{ broker_service_name }}.{{ broker_namespace }}.svc:1338/osb/
   authInfo:
     bearer:
       secretRef:
