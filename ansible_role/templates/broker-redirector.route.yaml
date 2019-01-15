@@ -3,7 +3,7 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: broker-redirector
+  name: {{ dashboard_redirector_route_name }}
   namespace: {{ broker_namespace }}
   labels:
     app: {{ broker_name }}
