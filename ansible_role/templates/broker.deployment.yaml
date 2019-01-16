@@ -40,7 +40,7 @@ spec:
     spec:
       serviceAccount: {{ broker_name }}
       containers:
-        - name: broker-redirector
+        - name: dashboard-redirector
           image: {{ broker_image }}
           imagePullPolicy: {{ broker_image_pull_policy | default(broker_config.openshift.image_pull_policy) }}
           ports:
@@ -50,7 +50,7 @@ spec:
           args:
             - --namespace
             - "{{ broker_namespace }}"
-        - name: broker
+        - name: asb
           image: {{ broker_image }}
           imagePullPolicy: {{ broker_image_pull_policy | default(broker_config.openshift.image_pull_policy) }}
           ports:
