@@ -1,0 +1,13 @@
+---
+
+- name: Verify the broker has no outstanding service instances if deprovisioning
+  assert:
+    that: "lookup(
+             'k8s',
+             kind='BundleInstance',
+             namespace=broker_namespace,
+             api_version='automationbroker.io/v1alpha1'
+          ) | length == 0"
+    msg: |
+      The requested broker cannot be deprovisioned because it has outstanding service instances.
+      Please deprovision any services originally provisioned by this broker before deprovisioning the broker itself.

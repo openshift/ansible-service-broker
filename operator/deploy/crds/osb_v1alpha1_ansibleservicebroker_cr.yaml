@@ -1,0 +1,7 @@
+apiVersion: osb.openshift.io/v1alpha1
+kind: AnsibleServiceBroker
+metadata:
+  name: ansible-service-broker
+  namespace: openshift-ansible-service-broker
+  namespace: REPLACE_NAMESPACE
+spec: {}

@@ -1,0 +1,27 @@
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ broker_service_name }}
+  namespace: {{ broker_namespace }}
+  labels:
+    app: {{ broker_name }}
+    service: {{ broker_service_name }}
+{% if 'route.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: {{ broker_tls_name }}
+{% endif %}
+spec:
+  ports:
+    - name: port-1337
+      port: 1337
+      targetPort: 1337
+      protocol: TCP
+    - name: port-1338
+      port: 1338
+      targetPort: 1338
+      protocol: TCP
+  selector:
+    app: {{ broker_name }}
+    service: {{ broker_service_name }}

@@ -1,0 +1,29 @@
+---
+
+# Make sure we were given everything needed for us to run
+- name: Environment Validation
+  assert:
+    that: broker_name and broker_namespace and broker_image
+    fail_msg: >
+      broker_name broker_namespace broker_image must be defined
+      The IMAGE environment variable must provide the broker's image name
+      and should be specified in the operator's deployment specification.
+
+# We depend on the service catalog
+#- name: Verify service catalog is installed
+#  assert:
+#    that: "'servicecatalog.k8s.io' in api_groups"
+#    fail_msg: Service Catalog must be installed
+
+- name: Write default config to CR and exit if not defined
+  when: broker_config is not defined
+  set_fact:
+    broker_config: "{{ _broker_config }}"
+#  block:
+#    - name: Write broker-config into CR
+#      k8s:
+#        state: "{{ state }}"
+#        definition: "{{ lookup('template', 'broker.ansibleservicebroker.yaml.j2' ) | from_yaml }}"
+#
+#    - name: Exit if broker_config not defined
+#      meta: end_play

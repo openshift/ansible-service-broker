@@ -1,0 +1,92 @@
+---
+
+{% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+{% else %}
+apiVersion: apps/v1
+kind: Deployment
+{% endif %}
+metadata:
+  name: {{ broker_deployment_name }}
+  namespace: {{ broker_namespace }}
+  labels:
+    app: {{ broker_name }}
+    service: {{ broker_service_name }}
+spec:
+  replicas: 1
+{% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
+  selector:
+    app: {{ broker_name }}
+    service: {{ broker_service_name }}
+  strategy:
+    type: Rolling
+{% else %}
+  selector:
+    matchLabels:
+      app: {{ broker_name }}
+      service: {{ broker_service_name }}
+  strategy:
+    type: RollingUpdate
+{% endif %}
+{% if broker_node_selector != "" %}
+  nodeSelector: '{{ broker_node_selector }}'
+{% endif %}
+  template:
+    metadata:
+      labels:
+        app: {{ broker_name }}
+        service: {{ broker_service_name }}
+    spec:
+      serviceAccount: {{ broker_name }}
+      containers:
+        - name: dashboard-redirector
+          image: {{ broker_image }}
+          imagePullPolicy: {{ broker_image_pull_policy }}
+          ports:
+            - containerPort: 1337
+              protocol: TCP
+          command: [ 'dashboard-redirector' ]
+          args:
+            - --namespace
+            - "{{ broker_namespace }}"
+        - name: asb
+          image: {{ broker_image }}
+          imagePullPolicy: {{ broker_image_pull_policy }}
+          ports:
+            - containerPort: 1338
+              protocol: TCP
+          env:
+            - name: BROKER_CONFIG
+              value: /etc/{{ broker_name }}/config.yaml
+          resources: {}
+          terminationMessagePath: /tmp/termination-log
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 1338
+              scheme: HTTPS
+            initialDelaySeconds: {{ broker_probe_initial_delay }}
+            timeoutSeconds: 1
+          livenessProbe:
+            httpGet:
+              port: 1338
+              path: /healthz
+              scheme: HTTPS
+            initialDelaySeconds: {{ broker_probe_initial_delay }}
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/{{ broker_name }}
+            - name: broker-tls
+              mountPath: /etc/tls/private
+      volumes:
+        - name: config-volume
+          configMap:
+            name: broker-config
+            items:
+            - key: broker-config
+              path: config.yaml
+        - name: broker-tls
+          secret:
+            secretName: {{ broker_tls_name }}

@@ -1,0 +1,16 @@
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: broker-config
+  namespace: {{ broker_namespace }}
+  labels:
+    app: {{ broker_name }}
+{% if state == "present" %}
+data:
+  broker-config: |
+{{ broker_config | to_nice_yaml | indent(4, true) }}
+{% else %}
+data: {}
+{% endif %}

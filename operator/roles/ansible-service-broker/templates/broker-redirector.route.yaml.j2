@@ -1,0 +1,16 @@
+---
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ dashboard_redirector_route_name }}
+  namespace: {{ broker_namespace }}
+  labels:
+    app: {{ broker_name }}
+    service: {{ broker_service_name }}
+spec:
+  to:
+    kind: Service
+    name: {{ broker_service_name }}
+  port:
+    targetPort: port-1337

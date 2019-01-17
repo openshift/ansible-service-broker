@@ -4,12 +4,14 @@ TAG              ?= $(shell git rev-parse --short HEAD)
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker:${TAG}
 ANSIBLE_ROLE_DIR ?= ansible_role
 APB_DIR          ?= ${ANSIBLE_ROLE_DIR}/apb
-OPERATOR_DIR     ?= ${ANSIBLE_ROLE_DIR}/operator
+OPERATOR_DIR     ?= operator
+OP_BUILD_DIR     ?= ${OPERATOR_DIR}/build
+OP_DEPLOY_DIR    ?= ${OPERATOR_DIR}/deploy
+OP_CRD_DIR       ?= ${OP_DEPLOY_DIR}/crds
 APB_ORG          ?= automationbroker
 APB_IMAGE        ?= ${REGISTRY}/${APB_ORG}/automation-broker-apb:${TAG}
 OPERATOR_ORG     ?= automationbroker
 OPERATOR_IMAGE   ?= ${REGISTRY}/${OPERATOR_ORG}/automation-broker-operator:${TAG}
-OPERATOR_OLM     ?= false
 VARS             ?= ""
 BUILD_DIR        = "${GOPATH}/src/github.com/openshift/ansible-service-broker/build"
 PREFIX           ?= /usr/local
@@ -23,6 +25,12 @@ COVERAGE_SVC     := travis-ci
 .DEFAULT_GOAL    := build
 ASB_DEBUG_PORT   := 9000
 AUTO_ESCALATE    ?= false
+NAMESPACE        ?= openshift-ansible-service-broker
+TEMPLATE_CMD      = sed 's|REPLACE_IMAGE|${IMAGE}|g; s|REPLACE_NAMESPACE|${NAMESPACE}|g; s|Always|IfNotPresent|'
+DEPLOY_OBJECTS    = ${OP_DEPLOY_DIR}/namespace.yaml ${OP_DEPLOY_DIR}/service_account.yaml ${OP_DEPLOY_DIR}/role.yaml ${OP_DEPLOY_DIR}/role_binding.yaml
+DEPLOY_OPERATOR   = ${OP_DEPLOY_DIR}/operator.yaml
+DEPLOY_CRDS       = ${OP_CRD_DIR}/osb_v1alpha1_ansibleservicebroker_crd.yaml ${OP_CRD_DIR}/bundlebindings.crd.yaml ${OP_CRD_DIR}/bundle.crd.yaml ${OP_CRD_DIR}/bundleinstances.crd.yaml
+DEPLOY_CRS        = ${OP_CRD_DIR}/osb_v1alpha1_ansibleservicebroker_cr.yaml
 
 vendor: ## Install or update project dependencies
 	@dep ensure
@@ -112,11 +120,22 @@ else
 endif
 
 build-operator: ## Build the broker operator image
-ifeq ($(OPERATOR_OLM),true)
-	docker build -f ${OPERATOR_DIR}/Dockerfile --build-arg OLM_MANAGED=true -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
-else
-	docker build -f ${OPERATOR_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
-endif
+	docker build -f ${OP_BUILD_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${OPERATOR_DIR}
+
+$(DEPLOY_OBJECTS) $(DEPLOY_CRDS) $(DEPLOY_OPERATOR) $(DEPLOY_CRS):
+	@${TEMPLATE_CMD} $@ | kubectl create -f - ||:
+
+deploy-objects: $(DEPLOY_OBJECTS) ## Create the operator namespace and RBAC in cluster
+
+deploy-crds: $(DEPLOY_CRDS) ## Create operator's custom resources
+	sleep 1
+
+deploy-cr: $(DEPLOY_CRS) ## Create a CR for the operator
+
+deploy-operator: deploy-objects deploy-crds $(DEPLOY_OPERATOR) deploy-cr ## Deploy everything for the operator in cluster
+
+undeploy-operator: ## Delete everything for the operator from the cluster
+	@${TEMPLATE_CMD} $(DEPLOY_OBJECTS) $(DEPLOY_OPERATOR) $(DEPLOY_CRDS) $(DEPLOY_CRS) | kubectl delete -f - ||:
 
 publish: build-image build-apb
 ifdef PUBLISH
@@ -183,4 +202,4 @@ openshift-ci-make-rpm:
 	cp /tmp/tito/noarch/ansible-service-broker-container-scripts* /tmp/rpms/ansible-service-broker-container-scripts.rpm
 	cp /tmp/tito/x86_64/ansible-service-broker-* /tmp/rpms/ansible-service-broker.rpm
 
-.PHONY: run build-image clean deploy undeploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf openshift-ci-test-container openshift-ci-operator-lint openshift-ci-make-rpm
+.PHONY: run build-image clean deploy undeploy ci cleanup-ci lint build vendor fmt fmtcheck test vet help test-cover-html prep-local wtf openshift-ci-test-container openshift-ci-operator-lint openshift-ci-make-rpm $(DEPLOY_OBJECTS) $(DEPLOY_OPERATOR) $(DEPLOY_CRDS) $(DEPLOY_CRS)
