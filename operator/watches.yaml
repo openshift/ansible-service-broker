@@ -2,9 +2,8 @@
 - version: v1alpha1
   group: osb.openshift.io
   kind: AnsibleServiceBroker
-#  playbook: /opt/ansible/playbook.yaml
-  playbook: /home/dzager/go/src/github.com/openshift/ansible-service-broker/operator/playbook.yaml
-#  finalizer:
-#    name: finalizer.osb.openshift.io
-#    vars:
-#      state: absent
+  playbook: /opt/ansible/playbook.yaml
+  finalizer:
+    name: finalizer.osb.openshift.io
+    vars:
+      state: absent
