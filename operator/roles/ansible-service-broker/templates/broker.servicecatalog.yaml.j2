@@ -1,0 +1,57 @@
+---
+
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: {{ broker_kind }}
+metadata:
+  name: {{ broker_name }}
+{% if broker_kind == 'ServiceBroker' %}
+  namespace: {{ broker_namespace }}
+{% endif %}
+{% if state == 'present' %}
+spec:
+  url: https://{{ broker_service_name }}.{{ broker_namespace }}.svc:1338/osb/
+  authInfo:
+    bearer:
+      secretRef:
+        kind: Secret
+        namespace: {{ broker_namespace }}
+        name: {{
+          lookup(
+            'k8s',
+            kind='ServiceAccount',
+            namespace=broker_namespace,
+            resource_name=broker_name + '-client'
+          ).secrets | map(attribute='name') | select('match', broker_name + '-client-token*') | first
+        }}
+{%   if 'route.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
+  caBundle: {{
+    lookup(
+      'k8s',
+      kind='Secret',
+      api_version='v1',
+      namespace=broker_namespace,
+      resource_name=broker_tls_name
+    ) | json_query('data."tls.crt"')
+  }}
+{%   elif 'servicecertsigner.config.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
+  caBundle: {{
+    lookup(
+      'k8s',
+      kind='Secret',
+      api_version='v1',
+      namespace=broker_namespace,
+      resource_name=broker_name + '-client'
+    ) | json_query('data."service-ca.crt"')
+  }}
+{%   else %}
+  caBundle: {{
+    lookup(
+      'k8s',
+      kind='ConfigMap',
+      api_version='v1',
+      namespace=broker_namespace,
+      resource_name='broker-service-ca-bundle'
+    ) | json_query('data."service-ca.crt"') | b64encode
+  }}
+{%   endif %}
+{% endif %}

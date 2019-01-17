@@ -1,0 +1,13 @@
+---
+
+broker_tls_name: "{{ broker_name }}-tls"
+broker_tls_cert_dir: "/tmp/{{ broker_name }}-cert"
+
+dashboard_redirector_url: "{{ 'http://' + lookup(
+    'k8s',
+    api_version='route.openshift.io/v1',
+    kind='Route',
+    namespace=broker_namespace,
+    resource_name=dashboard_redirector_route_name
+  ) | json_query('spec.host')
+}}"

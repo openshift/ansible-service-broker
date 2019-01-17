@@ -1,0 +1,20 @@
+---
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    haproxy.router.openshift.io/timeout: 300s
+  name: {{ broker_route_name }}
+  namespace: {{ broker_namespace }}
+  labels:
+    app: {{ broker_name }}
+    service: {{ broker_service_name }}
+spec:
+  to:
+    kind: Service
+    name: {{ broker_service_name }}
+  port:
+    targetPort: port-1338
+  tls:
+    termination: reencrypt

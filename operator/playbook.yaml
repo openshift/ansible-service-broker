@@ -1,0 +1,13 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  connection: local
+  vars:
+    state: present
+    broker_name: "{{ meta.name }}"
+    broker_namespace: "{{ meta.namespace }}"
+    broker_image: "{{ lookup('env', 'IMAGE') }}"
+  tasks:
+  - import_role:
+      name: ansible-service-broker

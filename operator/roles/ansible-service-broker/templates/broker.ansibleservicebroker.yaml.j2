@@ -1,0 +1,10 @@
+---
+
+apiVersion: osb.openshift.io/v1alpha1
+kind: AnsibleServiceBroker
+metadata:
+  name: {{ broker_name }}
+  namespace: {{ broker_namespace }}
+spec:
+  broker_config:
+{{ _broker_config | to_nice_yaml | indent(4, true) }}

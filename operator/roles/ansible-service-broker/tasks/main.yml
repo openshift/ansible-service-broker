@@ -1,0 +1,53 @@
+---
+
+# Only want to do this once per execution of role
+- name: Get cluster api_groups
+  set_fact:
+    api_groups: "{{ lookup('k8s', cluster_info='api_groups') }}"
+
+# Push validation into separate task files
+- name:  Validate pre-requisites for {{ state }}
+  import_tasks: "validate_{{ state }}.yml"
+
+- name: Set up for TLS in k8s
+  import_tasks: tls_k8s.yml
+  when: "'route.openshift.io' not in api_groups"
+
+
+- name: Dashboard redirector
+  when: "'route.openshift.io' in api_groups"
+  block:
+    - name: Set dashboard redirector state={{ state }}
+      k8s:
+        state: "{{ state }}"
+        definition: "{{ lookup('template', 'broker-redirector.route.yaml.j2') | from_yaml }}"
+
+    - name: Add redirector to broker config object
+      when: state == "present"
+      set_fact:
+        broker: "{{ broker_config.broker | combine({'dashboard_redirector': dashboard_redirector_url}) }}"
+
+- name: ConfigMap for Broker
+  k8s:
+    state: "{{ state }}"
+    definition: "{{ lookup('template', 'broker-config.configmap.yaml.j2') | from_yaml }}"
+  notify: Redeploy the broker if the configmap changed
+
+- name: Broker application objects state={{ state }}
+  when: item.condition | default(True)
+  k8s:
+    state: "{{ state }}"
+    definition: "{{ lookup('template', item.value) | from_yaml }}"
+  loop:
+    - value: broker.serviceaccount.yaml.j2
+    - value: broker.clusterrolebinding.yaml.j2
+    - value: broker-client.serviceaccount.yaml.j2
+    - value: broker-client.clusterrolebinding.yaml.j2
+    - value: broker.service.yaml.j2
+    - value: broker.route.yaml.j2
+      condition: "{{ 'route.openshift.io' in api_groups }}"
+    - value: broker-client.secret.yaml.j2
+    - value: broker-service-ca-bundle.configmap.yaml.j2
+    - value: broker.deployment.yaml.j2
+    - value: broker.servicecatalog.yaml.j2
+      condition: "{{ 'servicecatalog.k8s.io' in api_groups }}"
