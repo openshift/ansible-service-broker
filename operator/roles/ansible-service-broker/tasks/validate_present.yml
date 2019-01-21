@@ -14,14 +14,3 @@
   assert:
     that: "'servicecatalog.k8s.io' in api_groups"
     fail_msg: Service Catalog must be installed
-
-- name: Write default config to CR and exit if not defined
-  when: broker_config is not defined
-  block:
-    - name: Write broker-config into CR
-      k8s:
-        state: "{{ state }}"
-        definition: "{{ lookup('template', 'broker.ansibleservicebroker.yaml.j2' ) | from_yaml }}"
-
-    - name: Exit if broker_config not defined
-      meta: end_play

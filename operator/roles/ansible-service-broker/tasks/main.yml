@@ -13,7 +13,6 @@
   import_tasks: tls_k8s.yml
   when: "'route.openshift.io' not in api_groups"
 
-
 - name: Dashboard redirector
   when: "'route.openshift.io' in api_groups"
   block:
@@ -22,10 +21,9 @@
         state: "{{ state }}"
         definition: "{{ lookup('template', 'broker-redirector.route.yaml.j2') | from_yaml }}"
 
-    - name: Add redirector to broker config object
-      when: state == "present"
+    - name: Set dashboard redirector host
       set_fact:
-        broker: "{{ broker_config.broker | combine({'dashboard_redirector': dashboard_redirector_url}) }}"
+        dashboard_redirector_host: "{{ lookup('k8s', api_version='route.openshift.io/v1', kind='Route', namespace=broker_namespace, resource_name=dashboard_redirector_route_name).spec.host }}"
 
 - name: ConfigMap for Broker
   k8s:
@@ -40,14 +38,16 @@
     definition: "{{ lookup('template', item.value) | from_yaml }}"
   loop:
     - value: broker.serviceaccount.yaml.j2
+    - value: broker.clusterrole.yaml.j2
     - value: broker.clusterrolebinding.yaml.j2
-    - value: broker-client.serviceaccount.yaml.j2
-    - value: broker-client.clusterrolebinding.yaml.j2
     - value: broker.service.yaml.j2
+    - value: broker.deployment.yaml.j2
     - value: broker.route.yaml.j2
       condition: "{{ 'route.openshift.io' in api_groups }}"
+    - value: broker-client.serviceaccount.yaml.j2
+    - value: broker-client.clusterrole.yaml.j2
+    - value: broker-client.clusterrolebinding.yaml.j2
     - value: broker-client.secret.yaml.j2
     - value: broker-service-ca-bundle.configmap.yaml.j2
-    - value: broker.deployment.yaml.j2
     - value: broker.servicecatalog.yaml.j2
       condition: "{{ 'servicecatalog.k8s.io' in api_groups }}"

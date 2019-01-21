@@ -5,7 +5,7 @@ kind: ClusterRoleBinding
 metadata:
   name: "{{ broker_name }}-{{ broker_namespace }}"
 roleRef:
-  name: admin
+  name: "{{ broker_name }}-{{ broker_namespace }}"
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
 subjects:

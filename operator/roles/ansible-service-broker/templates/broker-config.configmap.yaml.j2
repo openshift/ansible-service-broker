@@ -7,10 +7,46 @@ metadata:
   namespace: {{ broker_namespace }}
   labels:
     app: {{ broker_name }}
-{% if state == "present" %}
 data:
   broker-config: |
-{{ broker_config | to_nice_yaml | indent(4, true) }}
-{% else %}
-data: {}
+    registry:
+      - type: dockerhub
+        name: dh
+        url: https://registry.hub.docker.com
+        org: ansibleplaybookbundle
+        tag: latest
+        white_list:
+          - ".*-apb$"
+        black_list:
+          - ".*automation-broker-apb$"
+    dao:
+      type: crd
+    log:
+      logfile: /var/log/ansible-service-broker/asb.log
+      stdout: true
+      level: "{{ log_level }}"
+      color: true
+    openshift:
+      host: ''
+      ca_file: ''
+      bearer_token_file: ''
+      image_pull_policy: "{{ apb_pull_policy }}"
+      sandbox_role: "{{ sandbox_role }}"
+      namespace: "{{ broker_namespace | quote }}"
+      keep_namespace: {{ keep_namespace }}
+      keep_namespace_on_error: {{ keep_namespace_on_error }}
+    broker:
+{% if dashboard_redirector_host is defined %}
+      dashboard_redirector: https://{{ dashboard_redirector_host }}
 {% endif %}
+      bootstrap_on_startup: {{ bootstrap_on_startup }}
+      refresh_interval: "{{ refresh_interval }}"
+      launch_apb_on_bind: {{ launch_apb_on_bind }}
+      output_request: true
+      recovery: true
+      ssl_cert_key: /etc/tls/private/tls.key
+      ssl_cert: /etc/tls/private/tls.crt
+      auto_escalate: {{ auto_escalate }}
+      auth:
+        - type: basic
+          enabled: false

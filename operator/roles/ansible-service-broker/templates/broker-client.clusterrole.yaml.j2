@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "access-{{ broker_name }}-{{ broker_namespace }}-role"
+rules:
+- nonResourceURLs:
+  - "/osb"
+  - "/osb/*"
+  verbs:
+  - get
+  - post
+  - put
+  - patch
+  - delete
