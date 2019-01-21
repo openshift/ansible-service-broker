@@ -1,7 +1,7 @@
 ---
 - version: v1alpha1
   group: osb.openshift.io
-  kind: AnsibleServiceBroker
+  kind: AutomationBroker
   playbook: /opt/ansible/playbook.yaml
   finalizer:
     name: finalizer.osb.openshift.io

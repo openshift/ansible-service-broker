@@ -1,59 +1,57 @@
 ---
 
+############################################################
+# Supported public CR API
+############################################################
+# broker_name: Name used to identify the broker instance.
 broker_name: ansible-service-broker
+# broker_namespace - Namespace where the broker resides.
 broker_namespace: openshift-ansible-service-broker
+# broker_image - Fully qualified image used for the broker.
+broker_image: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.11
+# broker_image_pull_policy - Pull policy used for the broker image itself.
+broker_image_pull_policy: "IfNotPresent"
+# broker_node_selector - Node selector string used for the broker's deployment.
+broker_node_selector: ""
+# log_level - Log level used for the broker's logs.
+# accepts: debug, info, warn, error
+log_level: info
+# apb_pull_policy - The pull policy used for apb pods.
+apb_pull_policy: "IfNotPresent"
+# sandbox_role - The role granted to the service account used to execute apbs.
+# accepts: edit, admin
+sandbox_role: "edit"
+# keep_namespace - Controls whether the broker should delete the transient
+# namespace created to run the apb or not after the conclusion of the apb,
+# regardless of the result. Useful for debug purposes.
+keep_namespace: false
+# keep_namespace_on_error - Similar to keep_namespace, but just controls
+# whether or not the namespace is deleted in the event of an error result from
+# the apb. Can be used to say "Only keep the namespace around if something
+# went wrong".
+keep_namespace_on_error: false
+# bootstrap_on_startup - Indicates whether or not the broker should run its
+# bootstrap routine on startup.
+bootstrap_on_startup: true
+# refresh_interval - The interval of time between broker bootstraps, refreshing
+# its inventory of apbs. Defaults to "600s".
+refresh_interval: 600s
+# launch_apb_on_bind - EXPERIMENTAL FEATURE: Enable/disables the broker executing
+# apbs on bind operations.
+launch_apb_on_bind: false
+# auto_escalate - Automatically tells the broker to escalate the permissions of
+# a user while running the apb. This typically should remain false.
+auto_escalate: false
 
+############################################################
+# Private configuration
+############################################################
 # 3.11 compatible names
 broker_deployment_name: asb
 broker_service_name: asb
 broker_route_name: asb-1338
 dashboard_redirector_route_name: dr-1337
 
-broker_image: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.11
-
+# Used to set namespaced broker (ServiceBroker)
 broker_kind: ClusterServiceBroker
-broker_image_pull_policy: "IfNotPresent"
 broker_probe_initial_delay: 120
-broker_node_selector: ""
-broker_basic_auth_enabled: false
-
-_broker_config:
-  registry:
-    - type: dockerhub
-      name: dh
-      url: https://registry.hub.docker.com
-      org: ansibleplaybookbundle
-      tag: latest
-      white_list:
-        - ".*-apb$"
-      black_list:
-        - ".*automation-broker-apb$"
-  dao:
-    type: crd
-  log:
-    logfile: /var/log/ansible-service-broker/asb.log
-    stdout: true
-    level: debug
-    color: true
-  openshift:
-    host: ''
-    ca_file: ''
-    bearer_token_file: ''
-    image_pull_policy: "IfNotPresent"
-    sandbox_role: "edit"
-    namespace: "{{ broker_namespace | quote }}"
-    keep_namespace: "false"
-    keep_namespace_on_error: "false"
-  broker:
-    dev_broker: "true"
-    bootstrap_on_startup: "true"
-    refresh_interval: "600s"
-    launch_apb_on_bind: "false"
-    output_request: "true"
-    recovery: "true"
-    ssl_cert_key: /etc/tls/private/tls.key
-    ssl_cert: /etc/tls/private/tls.crt
-    auto_escalate: "false"
-  auth:
-    - type: basic
-      enabled: false
