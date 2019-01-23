@@ -22,6 +22,7 @@
         definition: "{{ lookup('template', 'broker-redirector.route.yaml.j2') | from_yaml }}"
 
     - name: Set dashboard redirector host
+      when: state != "absent"
       set_fact:
         dashboard_redirector_host: "{{ lookup('k8s', api_version='route.openshift.io/v1', kind='Route', namespace=broker_namespace, resource_name=dashboard_redirector_route_name).spec.host }}"
 
