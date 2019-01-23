@@ -9,16 +9,7 @@ metadata:
     app: {{ broker_name }}
 data:
   broker-config: |
-    registry:
-      - type: dockerhub
-        name: dh
-        url: https://registry.hub.docker.com
-        org: ansibleplaybookbundle
-        tag: latest
-        white_list:
-          - ".*-apb$"
-        black_list:
-          - ".*automation-broker-apb$"
+    registry: {{ registries | to_json }}
     dao:
       type: crd
     log:
