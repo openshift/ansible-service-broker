@@ -5,6 +5,31 @@
   set_fact:
     api_groups: "{{ lookup('k8s', cluster_info='api_groups') }}"
 
+# reconciled_generation - the last reconciled spec generation of a given CR
+# generation - the current generation of a given CR
+# These values are useful because if the current generation value is different
+# than the reconciled_generation value, we know that the CR's spec has been
+# changed, requiring a bounce of the broker's pod to accept new configuration.
+- name: Set reconciled_generation and generation facts
+  set_fact:
+    generation: "{{
+      lookup('k8s',
+      api_version='osb.openshift.io/v1alpha1',
+      kind='AutomationBroker',
+      namespace=broker_namespace,
+      resource_name=broker_name).metadata.generation
+    }}"
+    reconciled_generation: "{{
+      lookup('k8s',
+      api_version='osb.openshift.io/v1alpha1',
+      kind='AutomationBroker',
+      namespace=broker_namespace,
+      resource_name=broker_name).status.reconciledGeneration | default('')
+    }}"
+
+- set_fact:
+    pending_config_changes: "{{ generation != reconciled_generation }}"
+
 # Push validation into separate task files
 - name:  Validate pre-requisites for {{ state }}
   import_tasks: "validate_{{ state }}.yml"
@@ -24,7 +49,13 @@
     - name: Set dashboard redirector host
       when: state != "absent"
       set_fact:
-        dashboard_redirector_host: "{{ lookup('k8s', api_version='route.openshift.io/v1', kind='Route', namespace=broker_namespace, resource_name=dashboard_redirector_route_name).spec.host }}"
+        dashboard_redirector_host: "{{
+          lookup('k8s',
+          api_version='route.openshift.io/v1',
+          kind='Route',
+          namespace=broker_namespace,
+          resource_name=dashboard_redirector_route_name).spec.host
+        }}"
 
 - name: ConfigMap for Broker
   k8s:
@@ -52,3 +83,33 @@
     - value: broker-service-ca-bundle.configmap.yaml.j2
     - value: broker.servicecatalog.yaml.j2
       condition: "{{ 'servicecatalog.k8s.io' in api_groups }}"
+
+- name: Redeploy the broker's pod if pending config changes
+  k8s:
+    state: absent
+    kind: Pod
+    api_version: v1
+    namespace: broker_namespace
+    name: pod.metadata.name
+  vars:
+    pod: "{{
+      lookup('k8s',
+      kind='Pod',
+      api_version='v1',
+      namespace=broker_namespace,
+      label_selector=('app=' + broker_name))
+    }}"
+  when:
+    - pending_config_changes
+    - reconciled_generation != ''
+    - pod
+
+- name: Write generation to status as reconciled generation
+  when: pending_config_changes
+  k8s_status:
+    api_version: osb.openshift.io/v1alpha1
+    kind: AutomationBroker
+    namespace: "{{ broker_namespace }}"
+    name: "{{ broker_name }}"
+    status:
+      reconciledGeneration: "{{ generation }}"
