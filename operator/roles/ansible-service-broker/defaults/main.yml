@@ -13,7 +13,7 @@ broker_image: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.1
 broker_image_pull_policy: "IfNotPresent"
 # broker_node_selector - Node selector string used for the broker's deployment.
 broker_node_selector: ""
-# registires - expressed as a yaml list of broker registry configs, allowing
+# registries - expressed as a yaml list of broker registry configs, allowing
 # the user to configure the image registries the broker will discover and
 # source its apbs from.
 registries:
