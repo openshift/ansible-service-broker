@@ -27,7 +27,8 @@
       resource_name=broker_name).status.reconciledGeneration | default('')
     }}"
 
-- set_fact:
+- name: Set pending_config_changes fact
+  set_fact:
     pending_config_changes: "{{ generation != reconciled_generation }}"
 
 # Push validation into separate task files
