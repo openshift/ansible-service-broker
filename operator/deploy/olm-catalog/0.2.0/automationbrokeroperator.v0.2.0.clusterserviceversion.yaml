@@ -2,7 +2,7 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: automationbrokeroperator.v0.1.0
+  name: automationbrokeroperator.v0.2.0
   namespace: placeholder
   annotations:
     alm-examples: '[{"apiVersion":"osb.openshift.io/v1alpha1","kind":"AutomationBroker","metadata":{"name":"ansible-service-broker","namespace":"openshift-ansible-service-broker"},"spec":{"createBrokerNamespace":"false","waitForBroker":"false"}}]'
@@ -17,7 +17,7 @@ spec:
 
     Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM9c?list=PLEGSLwUsxfEh4TE2GDU4oygCB-tmShkSn&t=4732)
   keywords: ['ansible', 'automation', 'broker', 'open service broker']
-  version: 0.1.0
+  version: 0.2.0
   maturity: alpha
   maintainers:
   - name: Red Hat, Inc.
