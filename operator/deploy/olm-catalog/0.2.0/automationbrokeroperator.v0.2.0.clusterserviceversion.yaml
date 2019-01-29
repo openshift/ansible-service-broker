@@ -42,7 +42,7 @@ spec:
       mediatype: image/png
   installModes:
   - type: OwnNamespace
-    supported: false
+    supported: true
   - type: SingleNamespace
     supported: true
   - type: MultiNamespace
