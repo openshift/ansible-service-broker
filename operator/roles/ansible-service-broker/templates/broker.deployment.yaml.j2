@@ -1,6 +1,6 @@
 ---
 
-{% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
+{% if 'apps.openshift.io' in api_groups %}
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
 {% else %}
@@ -15,7 +15,7 @@ metadata:
     service: {{ broker_service_name }}
 spec:
   replicas: 1
-{% if 'apps.openshift.io' in lookup('k8s', cluster_info='api_groups') %}
+{% if 'apps.openshift.io' in api_groups %}
   selector:
     app: {{ broker_name }}
     service: {{ broker_service_name }}
