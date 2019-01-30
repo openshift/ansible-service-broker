@@ -23,7 +23,7 @@ spec:
             resource_name=broker_name + '-client'
           ).secrets | map(attribute='name') | select('match', broker_name + '-client-token*') | first
         }}
-{%   if 'route.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
+{%   if 'route.openshift.io' not in api_groups %}
   caBundle: {{
     lookup(
       'k8s',
@@ -33,7 +33,7 @@ spec:
       resource_name=broker_tls_name
     ) | json_query('data."tls.crt"')
   }}
-{%   elif 'servicecertsigner.config.openshift.io' not in lookup('k8s', cluster_info='api_groups') %}
+{%   elif 'servicecertsigner.config.openshift.io' not in api_groups %}
   caBundle: {{
     lookup(
       'k8s',

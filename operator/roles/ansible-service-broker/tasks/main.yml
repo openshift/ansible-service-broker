@@ -3,7 +3,7 @@
 # Only want to do this once per execution of role
 - name: Get cluster api_groups
   set_fact:
-    api_groups: "{{ lookup('k8s', cluster_info='api_groups') }}"
+    api_groups: "{{ lookup('k8s', cluster_info='api_groups'), kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG') }}"
 
 # reconciled_generation - the last reconciled spec generation of a given CR
 # generation - the current generation of a given CR
