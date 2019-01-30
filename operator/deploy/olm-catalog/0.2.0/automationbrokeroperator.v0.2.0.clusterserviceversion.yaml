@@ -201,7 +201,7 @@ spec:
               containers:
               - name: automation-broker-operator
                 image: docker.io/automationbroker/automation-broker-operator:latest
-                imagePullPolicy: IfNotPresent
+                imagePullPolicy: Always
                 env:
                 - name: IMAGE
                   value: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.11
