@@ -4,9 +4,7 @@ TAG              ?= $(shell git rev-parse --short HEAD)
 BROKER_IMAGE     ?= $(REGISTRY)/$(ORG)/origin-ansible-service-broker:${TAG}
 ANSIBLE_ROLE_DIR ?= ansible_role
 APB_DIR          ?= ${ANSIBLE_ROLE_DIR}/apb
-# TODO: Use previous oeprator dir until the new operator rewrite is stable
-#OPERATOR_DIR     ?= operator
-OPERATOR_DIR     ?= ${ANSIBLE_ROLE_DIR}/operator
+OPERATOR_DIR     ?= operator
 OP_BUILD_DIR     ?= ${OPERATOR_DIR}/build
 OP_DEPLOY_DIR    ?= ${OPERATOR_DIR}/deploy
 OP_CRD_DIR       ?= ${OP_DEPLOY_DIR}/crds
@@ -122,11 +120,7 @@ else
 endif
 
 build-operator: ## Build the broker operator image
-ifeq ($(OPERATOR_OLM),true)
-	docker build -f ${OPERATOR_DIR}/Dockerfile --build-arg OLM_MANAGED=true -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
-else
-	docker build -f ${OPERATOR_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${ANSIBLE_ROLE_DIR}
-endif
+	docker build -f ${OP_BUILD_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${OPERATOR_DIR}
 
 $(DEPLOY_OBJECTS) $(DEPLOY_CRDS) $(DEPLOY_OPERATOR) $(DEPLOY_CRS):
 	@${TEMPLATE_CMD} $@ | kubectl create -f - ||:
