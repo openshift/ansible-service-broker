@@ -205,6 +205,12 @@ spec:
                 env:
                 - name: IMAGE
                   value: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.11
+                - name: OPERATOR_NAME
+                  value: automation-broker-operator
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
