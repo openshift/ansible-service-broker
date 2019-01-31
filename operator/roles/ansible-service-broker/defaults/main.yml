@@ -68,3 +68,9 @@ dashboard_redirector_route_name: dr-1337
 # Used to set namespaced broker (ServiceBroker)
 broker_kind: ClusterServiceBroker
 broker_probe_initial_delay: 120
+#
+# broker_user_auth_rule parameterizes the rule that the broker uses to perform
+# SAR checks on the originating user's info, as passed from the service catalog.
+# The user_auth_rule is dynamically provided to the broker via
+# broker.user_auth_rule in its config map.
+broker_user_auth_rule: "{{ broker_name }}-{{ broker_namespace }}-user-auth"

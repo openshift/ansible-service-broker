@@ -74,6 +74,7 @@
     definition: "{{ lookup('template', item.value) | from_yaml }}"
   loop:
     - value: broker.serviceaccount.yaml.j2
+    - value: broker-admin.clusterrolebinding.yaml.j2
     - value: broker.clusterrole.yaml.j2
     - value: broker.clusterrolebinding.yaml.j2
     - value: broker.service.yaml.j2
@@ -85,6 +86,7 @@
     - value: broker-client.clusterrolebinding.yaml.j2
     - value: broker-client.secret.yaml.j2
     - value: broker-service-ca-bundle.configmap.yaml.j2
+    - value: broker-user-auth.clusterrole.yaml.j2
     - value: broker.servicecatalog.yaml.j2
       condition: "{{ 'servicecatalog.k8s.io' in api_groups }}"
 
