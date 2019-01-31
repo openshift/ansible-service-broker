@@ -20,6 +20,7 @@ spec:
             'k8s',
             kind='ServiceAccount',
             namespace=broker_namespace,
+            kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
             resource_name=broker_name + '-client'
           ).secrets | map(attribute='name') | select('match', broker_name + '-client-token*') | first
         }}
@@ -30,6 +31,7 @@ spec:
       kind='Secret',
       api_version='v1',
       namespace=broker_namespace,
+      kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
       resource_name=broker_tls_name
     ) | json_query('data."tls.crt"')
   }}
@@ -40,6 +42,7 @@ spec:
       kind='Secret',
       api_version='v1',
       namespace=broker_namespace,
+      kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
       resource_name=broker_name + '-client'
     ) | json_query('data."service-ca.crt"')
   }}
@@ -50,6 +53,7 @@ spec:
       kind='ConfigMap',
       api_version='v1',
       namespace=broker_namespace,
+      kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
       resource_name='broker-service-ca-bundle'
     ) | json_query('data."service-ca.crt"') | b64encode
   }}

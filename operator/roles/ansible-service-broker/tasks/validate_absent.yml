@@ -5,6 +5,7 @@
     that: "lookup(
              'k8s',
              kind='BundleInstance',
+             kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
              namespace=broker_namespace,
              api_version='automationbroker.io/v1alpha1'
           ) | length == 0"

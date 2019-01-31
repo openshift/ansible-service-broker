@@ -3,7 +3,7 @@
 # Only want to do this once per execution of role
 - name: Get cluster api_groups
   set_fact:
-    api_groups: "{{ lookup('k8s', cluster_info='api_groups'), kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG') }}"
+    api_groups: "{{ lookup('k8s', cluster_info='api_groups', kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG')) }}"
 
 # reconciled_generation - the last reconciled spec generation of a given CR
 # generation - the current generation of a given CR
@@ -16,6 +16,7 @@
       lookup('k8s',
       api_version='osb.openshift.io/v1alpha1',
       kind='AutomationBroker',
+      kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
       namespace=broker_namespace,
       resource_name=broker_name).metadata.generation
     }}"
@@ -23,6 +24,7 @@
       lookup('k8s',
       api_version='osb.openshift.io/v1alpha1',
       kind='AutomationBroker',
+      kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
       namespace=broker_namespace,
       resource_name=broker_name).status.reconciledGeneration | default('')
     }}"
@@ -54,6 +56,7 @@
           lookup('k8s',
           api_version='route.openshift.io/v1',
           kind='Route',
+          kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
           namespace=broker_namespace,
           resource_name=dashboard_redirector_route_name).spec.host
         }}"
@@ -97,6 +100,7 @@
       lookup('k8s',
       kind='Pod',
       api_version='v1',
+      kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
       namespace=broker_namespace,
       label_selector=('app=' + broker_name))
     }}"
