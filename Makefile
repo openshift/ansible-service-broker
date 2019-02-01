@@ -184,14 +184,14 @@ wtf: ## Use this target to help you diagnose development problems
 openshift-ci-test-container:
 	yum -y install ansible-lint
 	mkdir -p /opt/ansible/roles/
-	cp -r ansible_role /opt/ansible/roles/automation-broker
-	cp -r ansible_role/operator/watches.yaml /opt/ansible/watches.yaml
-	cp -r ansible_role/playbooks/operator.yml /opt/ansible/deploy.yml
+	cp -r operator/roles/ansible-service-broker /opt/ansible/roles/ansible-service-broker
+	cp -r operator/watches.yaml /opt/ansible/watches.yaml
+	cp -r operator/playbook.yaml /opt/ansible/playbook.yaml
 	go get -u github.com/golang/dep/cmd/dep
 	make vendor
 
 openshift-ci-operator-lint:
-	ANSIBLE_LOCAL_TEMP=/tmp/.ansible ansible-lint /opt/ansible/deploy.yml
+	ANSIBLE_LOCAL_TEMP=/tmp/.ansible ansible-lint /opt/ansible/playbook.yaml
 
 openshift-ci-make-rpm:
 	yum -y install tito yum-utils
