@@ -41,7 +41,7 @@
 
 Name: %{repo}
 Epoch: 1
-Version: 1.4.3
+Version: 1.4.4
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -337,6 +337,60 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Fri Feb 01 2019 Jason Montleon <jmontleo@redhat.com> 1.4.4-1
+- Adding 2018-11-27 meeting notes (#1176) (jmrodri@gmail.com)
+- Tweaks (erik@nsk.io)
+- Add more operator related RBAC (erik@nsk.io)
+- Explicitly set kubeconfig on lookups (erik@nsk.io)
+- Add missing operator env vars (erik@nsk.io)
+- Bump csv version (#1170) (dzager@redhat.com)
+- Fix typo (erik@nsk.io)
+- Add missing task name (erik@nsk.io)
+- Disable reconcile period (erik@nsk.io)
+- Redeploy broker on config changes (erik@nsk.io)
+- Add configurable registries (erik@nsk.io)
+- Add OLM support to new operator (erik@nsk.io)
+- Use old operator builds until new one stabalizes (erik@nsk.io)
+- bundle-lib 0.2.16 release (erik@nsk.io)
+- Simple fixes (david.j.zager@gmail.com)
+- Rewrite asb operator for operator-sdk (david.j.zager@gmail.com)
+- Update container names for 311 back compat (erik@nsk.io)
+- Update test to use non openshift prefixed ns (erik@nsk.io)
+- Update dr & asb route names for 311 (erik@nsk.io)
+- Update svc and route name for 311 backwards compat (erik@nsk.io)
+- Update dc for 311 compat (erik@nsk.io)
+- Update for 311 backwards compat (erik@nsk.io)
+- Use 3.11 version of asb image (david.j.zager@gmail.com)
+- Put all the olm bits in olm-catalog (david.j.zager@gmail.com)
+- Add install modes (david.j.zager@gmail.com)
+- Add operator csv (#1160) (dzager@redhat.com)
+- Update OWNERS (ernelson@redhat.com)
+- Add Derek to OWNERS file (erik@nsk.io)
+- Fix ansible assertion syntax (#1159) (dzager@redhat.com)
+- Revert "Add ASB operator deployment manifest assets." (#1156)
+  (dzager@redhat.com)
+- Check for truthy since these values are always defined
+  (david.j.zager@gmail.com)
+- Update operator Dockerfile to use AO master, add subresource in CRD
+  (derekwhatley@gmail.com)
+- Make it possible to run tests only (jmontleo@redhat.com)
+- Add Dockerfile link to prepare for automated downstream builds
+  (jmontleo@redhat.com)
+- Fix downstream container builds (jmontleo@redhat.com)
+- Fix operator image and add "IMAGE" environment variable.
+  (derekwhatley@gmail.com)
+- Move ASB operator manifests from /manifests/0.1.0 to /manifests
+  (derekwhatley@gmail.com)
+- Fix ASB catalogsource configmap (derekwhatley@gmail.com)
+- Change name/source values in CatalogSource and Subscription
+  (derekwhatley@gmail.com)
+- Add ASB operator 0.1.0 deployment manifest assets. (derekwhatley@gmail.com)
+- Update operator playbook to use IMAGE from environment (#1150)
+  (dzager@redhat.com)
+- Check if ca-bundle configmap already exists to avoid contention with cert-
+  signer operator (#1147) (derekwhatley@gmail.com)
+- Fix caBundle population for 4.0 deploys (#1146) (derekwhatley@gmail.com)
+
 * Tue Dec 04 2018 Jason Montleon <jmontleo@redhat.com> 1.4.3-1
 - Add epoch to package (#1141) (jmontleo@redhat.com)
 - Filter to bool when waiting for broker (#1140) (dzager@redhat.com)
