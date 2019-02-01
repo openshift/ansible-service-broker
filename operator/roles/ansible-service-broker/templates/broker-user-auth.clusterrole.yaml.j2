@@ -5,10 +5,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: "{{ broker_name }}-{{ broker_namespace }}-user-auth"
   labels:
-{% if broker_sandbox_role == 'admin' %}
+{% if sandbox_role == 'admin' %}
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 {% endif %}
-{%if broker_sandbox_role == 'edit' %}
+{%if sandbox_role == 'edit' %}
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
 {% endif %}
