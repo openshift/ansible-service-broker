@@ -9,5 +9,6 @@
     broker_namespace: "{{ meta.namespace }}"
     broker_image: "{{ lookup('env', 'IMAGE') }}"
   tasks:
-  - import_role:
-      name: ansible-service-broker
+    - name: Run ansible-service-broker role
+      import_role:
+        name: ansible-service-broker
