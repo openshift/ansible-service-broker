@@ -10,6 +10,7 @@
   * [Troubleshooting](troubleshooting.md)
   * [Running behind a proxy](proxy.md)
   * [Namespaced Brokers](namespaced-brokers.md)
+  * [Operator Management](operator.md)
 * Ansible Playbook Bundle
   * [Design](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle/blob/master/docs/design.md)
   * [Service Bundle Contract](service-bundle.md)
