@@ -2,7 +2,7 @@
 
 The Automation Broker may be installed and managed by its operator, which is built using
 [operator-sdk](https://github.com/operator-framework/operator-sdk) ansible support. The operator source can be found in [operator/](..operator)
-at the root our project. Once this image is built and deployed, either manually or
+at the root of our project. Once this image is built and deployed, either manually or
 through OLM, the broker can be deployed by creating a CR of the `automationbroker.osb.openshift.io`
 CRD.
 
@@ -10,7 +10,7 @@ When deploying a broker that is managed by the operator, users should configure 
 by setting supported options in the `spec` of the CR. The operator will pick up these values and
 intelligently apply them to the operator.
 
-Note: if you make any changes to the broker's config
+**Note:** if you make any changes to the broker's config
 directly, the operator will overwrite them and they will be lost. If you must make changes
 directly, you will need to scale down your operator so that the broker is no longer managed.
 You may then edit the config directly, and must redeploy the pod so that the config re-mounts
