@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.18
+Version: 1.1.19
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Feb 07 2019 jesus m. rodriguez <jesusr@redhat.com> 1.1.19-1
+- Bug 1643303 - only delete netpol if they exist (#1179) (jmrodri@gmail.com)
+
 * Thu Oct 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.1.18-1
 - Bug 1613280 - only create netpolicy if one already exists (#1102) (jmrodri@gmail.com)
 - Fix travis (#1107) (jmrodri@gmail.com)
