@@ -37,6 +37,17 @@
 - name:  Validate pre-requisites for {{ state }}
   import_tasks: "validate_{{ state }}.yml"
 
+- name: Set broker admin cluster rolebinding state={{ state }}
+  k8s:
+    state: "{{ state }}"
+    definition: "{{ lookup('template', 'broker-admin.clusterrolebinding.yaml.j2') | from_yaml }}"
+  register: crb_status
+  ignore_errors: yes
+
+- fail:
+    msg: "Operator does not have sufficient permissions to create RBAC policy for the broker, please check the documentation."
+  when: crb_status.status is defined and crb_status.status == 403
+
 - name: Set up for TLS in k8s
   import_tasks: tls_k8s.yml
   when: "'route.openshift.io' not in api_groups"
@@ -74,7 +85,6 @@
     definition: "{{ lookup('template', item.value) | from_yaml }}"
   loop:
     - value: broker.serviceaccount.yaml.j2
-    - value: broker-admin.clusterrolebinding.yaml.j2
     - value: broker.clusterrole.yaml.j2
     - value: broker.clusterrolebinding.yaml.j2
     - value: broker.service.yaml.j2
