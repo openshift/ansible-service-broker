@@ -31,9 +31,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// authResponse - holds the response data from an oauth2 token request
-type authResponse struct {
+// oauth2Response - holds the response data from an oauth2 token request
+type oauth2Response struct {
 	Token string `json:"access_token"`
+}
+
+// dockerResponse - holds the response data from a docker token request
+type dockerResponse struct {
+	Token string `json:"token"`
 }
 
 // NewClient - creates and returns a *Client ready to use. If skipVerify is
@@ -187,12 +192,11 @@ func (c *Client) getToken(wwwauth string) error {
 		return err
 	}
 
-	authResp := authResponse{}
-	err = json.Unmarshal(body, &authResp)
+	c.token, err = parseAuthToken(body)
 	if err != nil {
 		return err
 	}
-	c.token = authResp.Token
+
 	log.Debugf("new token: %s", c.token)
 	return nil
 }
@@ -233,4 +237,27 @@ func parseAuthHeader(value string) (*url.URL, error) {
 	}
 
 	return u, nil
+}
+
+// parseAuthToken - parses a token from a http response body in json format.
+// The token can be located in the fields "access_token" or "token" of the json
+// response. This method returns the value of one of those fields (favouring
+// "access_token" if both are set) or an empty string if non of the fields is set.
+func parseAuthToken(body []byte) (string, error) {
+	oauth2Resp := oauth2Response{}
+	err := json.Unmarshal(body, &oauth2Resp)
+	if err != nil {
+		return "", err
+	}
+
+	if oauth2Resp.Token != "" {
+		return oauth2Resp.Token, nil
+	}
+
+	dockerResp := dockerResponse{}
+	err = json.Unmarshal(body, &dockerResp)
+	if err != nil {
+		return "", err
+	}
+	return dockerResp.Token, nil
 }
