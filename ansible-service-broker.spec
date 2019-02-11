@@ -41,7 +41,7 @@
 
 Name: %{repo}
 Epoch: 1
-Version: 1.4.4
+Version: 1.4.5
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -337,6 +337,12 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Feb 11 2019 jesus m. rodriguez <jesusr@redhat.com> 1.4.5-1
+- Bump bundle-lib release to 0.2.17 (#1180) (jmrodri@gmail.com)
+- Use new operator (#1175) (dzager@redhat.com)
+- Nit fixes (erik@nsk.io)
+- Add operator config doc (erik@nsk.io)
+
 * Fri Feb 01 2019 Jason Montleon <jmontleo@redhat.com> 1.4.4-1
 - Adding 2018-11-27 meeting notes (#1176) (jmrodri@gmail.com)
 - Tweaks (erik@nsk.io)
