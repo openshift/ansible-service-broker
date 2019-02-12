@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.21
+Version: 1.2.22
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -332,6 +332,10 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Tue Feb 12 2019 jesus m. rodriguez <jesusr@redhat.com> 1.2.22-1
+- Bug 1643303 - Fixed in bundle-lib 0.1.10 (#1185) (jmrodri@gmail.com)
+- fix missing golint in travis builds (#1123) (jmrodri@gmail.com)
+
 * Thu Oct 25 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.21-1
 - Bug 1643300 - Update to bundle-lib 0.1.9 to fix net-policy issue (#1113) (jmrodri@gmail.com)
 - Fix release-1.2 CI log collection (#1122) (jmontleo@redhat.com)
