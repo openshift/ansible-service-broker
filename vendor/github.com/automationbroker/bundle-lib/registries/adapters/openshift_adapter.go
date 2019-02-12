@@ -53,10 +53,10 @@ func (r OpenShiftAdapter) RegistryName() string {
 // GetImageNames - retrieve the images
 func (r OpenShiftAdapter) GetImageNames() ([]string, error) {
 	log.Debug("OpenShiftAdapter::GetImageNames")
-	log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
+	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
 
 	images := r.Config.Images
-	log.Debug("Configured to use images: %v", images)
+	log.Debugf("Configured to use images: %v", images)
 
 	return images, nil
 }
@@ -66,7 +66,7 @@ func (r OpenShiftAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	log.Debug("OpenShiftAdapter::FetchSpecs")
 	specs := []*apb.Spec{}
 	for _, imageName := range imageNames {
-		log.Debug("%v", imageName)
+		log.Debugf("%v", imageName)
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
 			log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)

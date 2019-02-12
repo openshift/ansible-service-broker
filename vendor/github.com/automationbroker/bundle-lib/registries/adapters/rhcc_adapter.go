@@ -75,7 +75,7 @@ func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 	log.Debug("RHCCAdapter::FetchSpecs")
 	specs := []*apb.Spec{}
 	for _, imageName := range imageNames {
-		log.Debug("%v", imageName)
+		log.Debugf("%v", imageName)
 		spec, err := r.loadSpec(imageName)
 		if err != nil {
 			log.Errorf("Failed to retrieve spec data for image %s - %v", imageName, err)

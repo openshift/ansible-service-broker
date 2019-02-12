@@ -151,7 +151,7 @@ func filterParameters(inParams []ParameterDescriptor, secretKeys []string) []Par
 func paramInSecret(param ParameterDescriptor, secretKeys []string) bool {
 	for _, key := range secretKeys {
 		if key == param.Name {
-			log.Debugf("Param %v matched", param.Name, key)
+			log.Debugf("Param %v matched %v", param.Name, key)
 			return true
 		}
 	}

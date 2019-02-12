@@ -41,7 +41,7 @@ func (r LocalOpenShiftAdapter) RegistryName() string {
 // GetImageNames - retrieve the images
 func (r LocalOpenShiftAdapter) GetImageNames() ([]string, error) {
 	log.Debug("LocalOpenShiftAdapter::GetImageNames")
-	log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
+	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
 
 	openshiftClient, err := clients.Openshift()
 	if err != nil {

@@ -56,7 +56,7 @@
   version = "0.1.2"
 
 [[projects]]
-  digest = "1:bb5002dad6cc9b988092a0cf635436e1b78e41a88f818dc5e38e832552a11b9d"
+  digest = "1:8c26b83160fc04f63e0170e517abb7958eb9fd1325ff64b2fc7d663de338431b"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "apb",
@@ -70,8 +70,8 @@
     "runtime",
   ]
   pruneopts = ""
-  revision = "8d1b9c024b703db9168b4cfcb090decf0e8a41a6"
-  version = "0.1.9"
+  revision = "6207eb7a45ae3aee952d13583e492428dd43fb19"
+  version = "0.1.10"
 
 [[projects]]
   branch = "master"
