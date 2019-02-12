@@ -158,6 +158,6 @@ func translateExitStatus(podName string, podStatus apiv1.PodStatus) error {
 	}
 
 	// exit code was 0 so not really an error
-	log.Warning("Pod was marked as failed but exit code was 0 - %v", status.Message)
+	log.Warningf("Pod was marked as failed but exit code was 0 - %v", status.Message)
 	return nil
 }

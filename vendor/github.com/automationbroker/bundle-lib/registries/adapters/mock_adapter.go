@@ -42,7 +42,7 @@ func (r *MockAdapter) GetImageNames() ([]string, error) {
 
 	specYaml, err := ioutil.ReadFile(MockFile)
 	if err != nil {
-		log.Debug("Failed to read registry data from %s", MockFile)
+		log.Debugf("Failed to read registry data from %s", MockFile)
 		return nil, err
 	}
 
@@ -56,9 +56,9 @@ func (r *MockAdapter) GetImageNames() ([]string, error) {
 		return nil, err
 	}
 
-	log.Debug("Loaded Specs: %v", parsedData)
+	log.Debugf("Loaded Specs: %v", parsedData)
 
-	log.Info("Loaded [ %d ] specs from %s registry", len(parsedData.Apps), "Mock")
+	log.Infof("Loaded [ %d ] specs from %s registry", len(parsedData.Apps), "Mock")
 	var names []string
 	r.specs = map[string]*apb.Spec{}
 

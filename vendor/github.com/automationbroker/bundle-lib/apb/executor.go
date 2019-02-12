@@ -125,7 +125,7 @@ func (e *executor) actionFinishedWithError(err error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	log.Debug("executor::actionFinishedWithError[ %v ]", err.Error())
+	log.Debugf("executor::actionFinishedWithError[ %v ]", err.Error())
 
 	if e.statusChan != nil {
 		e.lastStatus.State = StateFailed
@@ -156,11 +156,11 @@ func (e *executor) executeApb(
 	action string, spec *Spec, context *Context, p *Parameters,
 ) (ExecutionContext, error) {
 	log.Debug("ExecutingApb:")
-	log.Debug("name:[ %s ]", spec.FQName)
-	log.Debug("image:[ %s ]", spec.Image)
-	log.Debug("action:[ %s ]", action)
-	log.Debug("pullPolicy:[ %s ]", clusterConfig.PullPolicy)
-	log.Debug("role:[ %s ]", clusterConfig.SandboxRole)
+	log.Debugf("name:[ %s ]", spec.FQName)
+	log.Debugf("image:[ %s ]", spec.Image)
+	log.Debugf("action:[ %s ]", action)
+	log.Debugf("pullPolicy:[ %s ]", clusterConfig.PullPolicy)
+	log.Debugf("role:[ %s ]", clusterConfig.SandboxRole)
 
 	executionContext := ExecutionContext{ProxyConfig: GetProxyConfig()}
 

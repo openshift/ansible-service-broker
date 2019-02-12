@@ -159,7 +159,6 @@ func TestWatchPod(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			var watchErr error
-			var dashURL string
 			podClient, podWatch := tc.PodClient()
 			descriptions := []string{}
 			done := make(chan bool)
@@ -171,10 +170,6 @@ func TestWatchPod(t *testing.T) {
 
 					if newDescription != "" {
 						descriptions = append(descriptions, newDescription)
-					}
-
-					if newDashURL != "" {
-						dashURL = newDashURL
 					}
 				})
 				done <- true

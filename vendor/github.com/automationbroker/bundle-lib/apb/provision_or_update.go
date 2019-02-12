@@ -55,7 +55,7 @@ func (e *executor) provisionOrUpdate(method executionMethod, instance *ServiceIn
 	}
 
 	ns := instance.Context.Namespace
-	log.Info("Checking if namespace %s exists.", ns)
+	log.Infof("Checking if namespace %s exists.", ns)
 	_, err = k8scli.Client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("Project %s does not exist", ns)
