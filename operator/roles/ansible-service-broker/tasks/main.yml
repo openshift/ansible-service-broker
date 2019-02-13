@@ -46,7 +46,11 @@
 
 - fail:
     msg: "Operator does not have sufficient permissions to create RBAC policy for the broker, please check the documentation."
-  when: crb_status.status is defined and crb_status.status == 403
+  when: (not crb_status.failed) and crb_status.status is defined and crb_status != 403
+
+- fail:
+    msg: "Unable to create broker-admin clusterrolebinding"
+  when: crb_status.failed
 
 - name: Set up for TLS in k8s
   import_tasks: tls_k8s.yml
