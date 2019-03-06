@@ -7,9 +7,9 @@ metadata:
   annotations:
     alm-examples: '[{"apiVersion":"osb.openshift.io/v1alpha1","kind":"AutomationBroker","metadata":{"name":"ansible-service-broker","namespace":"ansible-service-broker"},"spec":{"createBrokerNamespace":"false","waitForBroker":"false", "registries": [{"type": "rhcc", "name": "rhcc", "url": "https://registry.redhat.io", "white_list": [".*-apb$"], "auth_type": "secret", "auth_name": "asb-registry-auth"]}}]'
 spec:
-  displayName: Openshift Ansible Servivce Broker Operator
+  displayName: OpenShift Ansible Service Broker Operator
   description: |
-    Openshift Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker)
+    OpenShift Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker)
     that manages applications defined in [Ansible Playbook Bundles](https://github.com/ansibleplaybookbundle/ansible-playbook-bundle).
     Ansible Playbook Bundles (APB) are a method of defining applications via a collection of Ansible Playbooks built into a container
     with an Ansible runtime with the playbooks corresponding to a type of request specified in the
