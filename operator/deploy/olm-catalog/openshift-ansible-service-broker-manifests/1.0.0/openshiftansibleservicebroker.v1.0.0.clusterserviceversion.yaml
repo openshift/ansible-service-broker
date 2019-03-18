@@ -202,7 +202,7 @@ spec:
               containers:
               - name: openshift-ansible-service-broker-operator
                 image: registry.access.redhat.com/openshift/ose-ansible-service-broker-operator:v4.0.0
-                imagePullPolicy: Always
+                imagePullPolicy: IfNotPresent
                 env:
                 - name: IMAGE
                   value: registry.access.redhat.com/openshift/ose-ansible-service-broker:v4.0.0
