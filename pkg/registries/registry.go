@@ -61,9 +61,10 @@ type Config struct {
 	Namespaces []string
 	// Fail will tell the registry that it is ok to fail the bootstrap if
 	// just this registry has failed.
-	Fail      bool     `yaml:"fail_on_error"`
-	WhiteList []string `yaml:"white_list"`
-	BlackList []string `yaml:"black_list"`
+	Fail          bool     `yaml:"fail_on_error"`
+	WhiteList     []string `yaml:"white_list"`
+	BlackList     []string `yaml:"black_list"`
+	SkipVerifyTLS bool     `yaml:"skip_verify_tls"`
 }
 
 // Validate - makes sure the registry config is valid.
@@ -186,20 +187,21 @@ func (r Registry) RegistryName() string {
 func NewRegistry(con *config.Config, asbNamespace string) (Registry, error) {
 	var adapter adapters.Adapter
 	configuration := Config{
-		URL:        con.GetString("url"),
-		User:       con.GetString("user"),
-		Pass:       con.GetString("pass"),
-		Org:        con.GetString("org"),
-		Tag:        con.GetString("tag"),
-		Type:       con.GetString("type"),
-		Name:       con.GetString("name"),
-		Images:     con.GetSliceOfStrings("images"),
-		Namespaces: con.GetSliceOfStrings("namespaces"),
-		Fail:       con.GetBool("fail_on_error"),
-		WhiteList:  con.GetSliceOfStrings("white_list"),
-		BlackList:  con.GetSliceOfStrings("black_list"),
-		AuthType:   con.GetString("auth_type"),
-		AuthName:   con.GetString("auth_name"),
+		URL:           con.GetString("url"),
+		User:          con.GetString("user"),
+		Pass:          con.GetString("pass"),
+		Org:           con.GetString("org"),
+		Tag:           con.GetString("tag"),
+		Type:          con.GetString("type"),
+		Name:          con.GetString("name"),
+		Images:        con.GetSliceOfStrings("images"),
+		Namespaces:    con.GetSliceOfStrings("namespaces"),
+		Fail:          con.GetBool("fail_on_error"),
+		WhiteList:     con.GetSliceOfStrings("white_list"),
+		BlackList:     con.GetSliceOfStrings("black_list"),
+		AuthType:      con.GetString("auth_type"),
+		AuthName:      con.GetString("auth_name"),
+		SkipVerifyTLS: con.GetBool("skip_verify_tls"),
 	}
 	if !configuration.Validate() {
 		return Registry{}, errors.New("unable to validate registry name")
@@ -226,17 +228,20 @@ func NewRegistry(con *config.Config, asbNamespace string) (Registry, error) {
 	if u.Scheme == "" {
 		u.Scheme = "http"
 	}
-	c := adapters.Configuration{URL: u,
-		User:       configuration.User,
-		Pass:       configuration.Pass,
-		Org:        configuration.Org,
-		Images:     configuration.Images,
-		Namespaces: configuration.Namespaces,
-		Tag:        configuration.Tag}
+	c := adapters.Configuration{
+		URL:           u,
+		User:          configuration.User,
+		Pass:          configuration.Pass,
+		Org:           configuration.Org,
+		Images:        configuration.Images,
+		Namespaces:    configuration.Namespaces,
+		Tag:           configuration.Tag,
+		SkipVerifyTLS: configuration.SkipVerifyTLS,
+	}
 
 	switch strings.ToLower(configuration.Type) {
 	case "rhcc":
-		adapter = &adapters.RHCCAdapter{Config: c, Log: log}
+		adapter = adapters.NewRHCCAdapter(c, log)
 	case "dockerhub":
 		adapter = &adapters.DockerHubAdapter{Config: c, Log: log}
 	case "mock":

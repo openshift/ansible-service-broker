@@ -48,22 +48,28 @@ const BundleSpecLabel = "com.redhat.apb.spec"
 // Configuration - Adapter configuration. Contains the info that the adapter
 // would need to complete its request to the images.
 type Configuration struct {
-	URL        *url.URL
-	User       string
-	Pass       string
-	Org        string
-	Images     []string
-	Namespaces []string
-	Tag        string
+	URL           *url.URL
+	User          string
+	Pass          string
+	Org           string
+	Images        []string
+	Namespaces    []string
+	Tag           string
+	SkipVerifyTLS bool
 }
 
 // Retrieve the spec from a registry manifest request
 func imageToSpec(log *logging.Logger, req *http.Request, image string) (*apb.Spec, error) {
+	return imageToSpecWithClient(http.DefaultClient, log, req, image)
+}
+
+// Retrieve the spec from a registry manifest request
+func imageToSpecWithClient(client *http.Client, log *logging.Logger, req *http.Request, image string) (*apb.Spec, error) {
 	log.Debug("Registry::imageToSpec")
 	spec := &apb.Spec{}
 	req.Header.Add("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

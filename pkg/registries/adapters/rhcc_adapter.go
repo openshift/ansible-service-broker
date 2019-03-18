@@ -21,16 +21,26 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 
 	logging "github.com/op/go-logging"
 	"github.com/openshift/ansible-service-broker/pkg/apb"
+	"github.com/openshift/ansible-service-broker/pkg/registries/adapters/oauth"
 )
+
+// NewRHCCAdapter - creates and returns a *RHCCAdapter ready to use.
+func NewRHCCAdapter(config Configuration, log *logging.Logger) *RHCCAdapter {
+	return &RHCCAdapter{
+		Config: config,
+		Log:    log,
+		client: oauth.NewClient(config.User, config.Pass, config.SkipVerifyTLS, config.URL, log),
+	}
+}
 
 // RHCCAdapter - Red Hat Container Catalog Registry
 type RHCCAdapter struct {
 	Config Configuration
 	Log    *logging.Logger
+	client *oauth.Client
 }
 
 // RHCCImage - RHCC Registry Image that is returned from the RHCC Catalog api.
@@ -60,6 +70,7 @@ func (r RHCCAdapter) RegistryName() string {
 
 // GetImageNames - retrieve the images from the registry
 func (r RHCCAdapter) GetImageNames() ([]string, error) {
+	r.client.Getv2()
 	imageList, err := r.loadImages("\"*-apb\"")
 	if err != nil {
 		return nil, err
@@ -89,16 +100,18 @@ func (r RHCCAdapter) FetchSpecs(imageNames []string) ([]*apb.Spec, error) {
 }
 
 // LoadImages - Get all the images for a particular query
-func (r RHCCAdapter) loadImages(Query string) (RHCCImageResponse, error) {
+func (r RHCCAdapter) loadImages(query string) (RHCCImageResponse, error) {
 	r.Log.Debug("RHCCRegistry::LoadImages")
-	r.Log.Debug("Using " + r.Config.URL.String() + " to source APB images using query:" + Query)
-	req, err := http.NewRequest("GET",
-		fmt.Sprintf("%v/v1/search?q=%v", r.Config.URL.String(), Query), nil)
+	req, err := r.client.NewRequest("/v1/search")
 	if err != nil {
 		return RHCCImageResponse{}, err
 	}
+	q := req.URL.Query()
+	q.Set("q", query)
+	req.URL.RawQuery = q.Encode()
+	r.Log.Debugf("Using %s to source APB images", req.URL.String())
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := r.client.Do(req)
 	if err != nil {
 		return RHCCImageResponse{}, err
 	}
@@ -124,11 +137,13 @@ func (r RHCCAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}
-	req, err := http.NewRequest("GET",
-		fmt.Sprintf("%v/v2/%v/manifests/%v", r.Config.URL.String(), imageName, r.Config.Tag), nil)
+	req, err := r.client.NewRequest(fmt.Sprintf("/v2/%v/manifests/%v", imageName, r.Config.Tag))
 	if err != nil {
 		return nil, err
 	}
 
-	return imageToSpec(r.Log, req, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
+	// NOTE: 3.11 patch has a call to
+	req.Header.Add("Accept", "application/json")
+
+	return imageToSpecWithClient(r.client.GetClient(), r.Log, req, fmt.Sprintf("%s/%s:%s", r.RegistryName(), imageName, r.Config.Tag))
 }
