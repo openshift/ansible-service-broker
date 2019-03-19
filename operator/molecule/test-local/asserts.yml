@@ -1,0 +1,32 @@
+- name: Verify
+  hosts: localhost
+  connection: local
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY' }}/deploy"
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_cr.yaml']) || from_yaml }}"
+  tasks:
+    - block:
+        - name: verify cr is created
+          debug:
+            var: cr
+          vars:
+            cr: '{{ lookup("k8s", kind="AutomationBroker",
+              api_version="osb.openshift.io/v1alpha1",
+              namespace=namespace,
+              resource_name="ansible-service-broker",
+            )}}'
+
+        - name: wait for cluster service broker is ready
+          k8s_facts:
+            api_version: servicecatalog.k8s.io/v1beta1
+            kind: ClusterServiceBroker
+            name: "ansible-service-broker"
+          register: csb
+          until:
+          -  "'Ready' in (csb | json_query('resources[].status.conditions[].type'))"
+          delay: 4
+          retries: 10
+
+
+

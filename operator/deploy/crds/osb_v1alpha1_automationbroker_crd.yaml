@@ -1,14 +1,14 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: ansibleservicebrokers.osb.openshift.io
+  name: automationbrokers.osb.openshift.io
 spec:
   group: osb.openshift.io
   names:
-    kind: AnsibleServiceBroker
-    listKind: AnsibleServiceBrokerList
-    plural: ansibleservicebrokers
-    singular: ansibleservicebroker
+    kind: AutomationBroker
+    listKind: AutomationBrokerList
+    plural: automationbrokers
+    singular: automationbroker 
   scope: Namespaced
   version: v1alpha1
   subresources:

@@ -1,0 +1,55 @@
+---
+- import_playbook: ../default/prepare.yml
+
+- name: Prepare operator resources
+  hosts: localhost
+  connection: local
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
+  tasks:
+  - name: Create Custom Resource Definition
+    k8s:
+      definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_crd.yaml'])) }}"
+
+  - name: Create bundle crd
+    k8s:
+      definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/bundle.crd.yaml'])) }}"
+
+  - name: Create bundle bindings crd
+    k8s:
+      definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/bundlebindings.crd.yaml'])) }}"
+
+  - name: Create bundle instance crd
+    k8s:
+      definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/bundleinstances.crd.yaml'])) }}"
+
+  - name: Ensure specified namespace is present
+    k8s:
+      api_version: v1
+      kind: Namespace
+      name: '{{ namespace }}'
+
+  - name: Create RBAC resources
+    k8s:
+      definition: "{{ lookup('template', '/'.join([deploy_dir, item])) }}"
+      namespace: '{{ namespace }}'
+    with_items:
+      - role.yaml
+      - role_binding.yaml
+      - service_account.yaml
+
+  - name: helm init
+    command: helm init
+
+  - name: add tiller permissions
+    command: kubectl create clusterrolebinding tiller-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+
+  - name: wait for tiller
+    pause:
+      seconds: 30
+
+  - name: Install service catalog via helm chart
+    command: helm install svc-cat/catalog --name catalog --namespace catalog
+     
+
