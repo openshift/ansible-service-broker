@@ -1,6 +1,5 @@
 apiVersion: osb.openshift.io/v1alpha1
-kind: AnsibleServiceBroker
+kind: AutomationBroker
 metadata:
   name: ansible-service-broker
-  namespace: REPLACE_NAMESPACE
 spec: {}

@@ -5,7 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: ansible-service-broker-operator
-  namespace: REPLACE_NAMESPACE
+  namespace: {{ namespace }}
 roleRef:
   kind: ClusterRole
   name: ansible-service-broker-operator
