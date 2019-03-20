@@ -1,54 +1,14 @@
 ---
 
-- name: Build Operator in Kubernetes docker container
-  hosts: k8s
-  vars:
-    image_name: osb.openshift.io/testing-operator:testing
-  tasks:
-  # using command so we don't need to install any dependencies
-  - name: Get existing image hash
-    command: docker images -q {{image_name}}
-    register: prev_hash
-    changed_when: false
-
-  - name: Build Operator Image
-    command: docker build -f /build/build/Dockerfile -t {{ image_name }} /build
-    register: build_cmd
-    changed_when: not prev_hash.stdout or (prev_hash.stdout and prev_hash.stdout not in ''.join(build_cmd.stdout_lines[-2:]))
-
 - name: Converge
   hosts: localhost
   connection: local
   vars:
     ansible_python_interpreter: '{{ ansible_playbook_python }}'
     deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
-    operator_image: "osb.openshift.io/testing-operator:testing"
-    operand_image: "docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v4.0"
     custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_cr.yaml'])) | from_yaml }}"
   tasks:
   - block:
-    - name: Delete the Operator Deployment
-      k8s:
-        state: absent
-        namespace: '{{ namespace }}'
-        definition: "{{ lookup('template', '/'.join([deploy_dir, 'operator.yaml.j2'])) }}"
-      register: delete_deployment
-      when: hostvars[groups.k8s.0].build_cmd.changed
-
-    - name: Wait 30s for Operator Deployment to terminate
-      k8s_facts:
-        api_version: '{{ definition.apiVersion }}'
-        kind: '{{ definition.kind }}'
-        namespace: '{{ namespace }}'
-        name: '{{ definition.metadata.name }}'
-      vars:
-        definition: "{{ lookup('template', '/'.join([deploy_dir, 'operator.yaml.j2'])) | from_yaml }}"
-      register: deployment
-      until: not deployment.resources
-      delay: 3
-      retries: 10
-      when: delete_deployment.changed
-
     - name: Create the Operator Deployment
       k8s:
         namespace: '{{ namespace }}'
@@ -91,7 +51,7 @@
       environment:
         KUBECONFIG: '{{ lookup("env", "KUBECONFIG") }}'
       vars:
-        definition: "{{ lookup('template', '/'.join([deploy_dir, 'operator.yaml.j2'])) | from_yaml }}"
+        definition: "{{ lookup('template', '/'.join([deploy_dir, 'operator.yaml'])) | from_yaml }}"
       register: log
 
     - debug: var=log.stdout_lines
@@ -99,4 +59,4 @@
     - fail:
         msg: "Failed on action: converge"
 
-- import_playbook: 'verify.yml'
+- import_playbook: "{{ playbook_dir }}/../test-local/verify.yml"
