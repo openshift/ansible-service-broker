@@ -37,7 +37,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.1.19
+Version: 1.1.20
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -306,6 +306,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Wed Mar 20 2019 jesus m. rodriguez <jesusr@redhat.com> 1.1.20-1
+- Bug 1678158 - backport oauth2 support to rhcc (jesusr@redhat.com)
+
 * Thu Feb 07 2019 jesus m. rodriguez <jesusr@redhat.com> 1.1.19-1
 - Bug 1643303 - only delete netpol if they exist (#1179) (jmrodri@gmail.com)
 
