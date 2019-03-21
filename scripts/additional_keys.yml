@@ -1,0 +1,11 @@
+---
+ACCESS_KEY: blah
+SECRET_KEY: blah
+SWARM_CLUSTER_KEYPAIR: |-
+ -----BEGIN RSA PRIVATE KEY-----
+ blah
+ blah
+ blah
+ -----END RSA PRIVATE KEY-----
+openstack_admin__user: blah
+openstack_admin_password: blah

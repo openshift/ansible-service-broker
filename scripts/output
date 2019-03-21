@@ -1,0 +1,18 @@
+oc create -f /tmp/testname-secret
+Created secret: 
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+    name: testname
+    namespace: broker-ns
+data:
+    "key1": ImhlbGxvIg==
+    "key2": IndvcmxkIg==
+    "ACCESS_KEY": ImJsYWgi
+    "SECRET_KEY": ImJsYWgi
+    "openstack_admin_password": ImJsYWgi
+    "SWARM_CLUSTER_KEYPAIR": Ii0tLS0tQkVHSU4gUlNBIFBSSVZBVEUgS0VZLS0tLS0KYmxhaApibGFoCmJsYWgKLS0tLS1FTkQgUlNBIFBSSVZBVEUgS0VZLS0tLS0i
+    "openstack_admin__user": ImJsYWgi
+
