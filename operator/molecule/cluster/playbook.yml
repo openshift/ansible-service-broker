@@ -20,7 +20,7 @@
         namespace: '{{ namespace }}'
         definition: "{{ custom_resource }}"
 
-    - name: Wait 40s for reconciliation to run
+    - name: Wait 5m for reconciliation to run
       k8s_facts:
         api_version: '{{ custom_resource.apiVersion }}'
         kind: '{{ custom_resource.kind }}'
@@ -29,8 +29,8 @@
       register: cr
       until:
       - "'Successful' in (cr | json_query('resources[].status.conditions[].reason'))"
-      delay: 2
-      retries: 20
+      delay: 10
+      retries: 30
     rescue:
     - name: debug cr
       ignore_errors: yes

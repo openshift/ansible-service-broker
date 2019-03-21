@@ -27,8 +27,8 @@
           until:
           - "'Ready' in (csb | json_query('resources[].status.conditions[].type'))"
           - "'FetchedCatalog' in (csb | json_query('resources[].status.conditions[].reason'))"
-          delay: 4
-          retries: 40
+          delay: 10
+          retries: 60
 
 
 
