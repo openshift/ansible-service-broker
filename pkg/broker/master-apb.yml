@@ -1,0 +1,1134 @@
+---
+# Common Credentials
+_apb_kie_admin_user: &_apb_kie_admin_user
+  name: apb_kie_admin_user
+  title: Admin Username
+  description: Admin user name for Business Central and Process Server
+  required: true
+  type: string
+  default: adminUser
+_apb_kie_admin_pwd: &_apb_kie_admin_pwd
+  name: apb_kie_admin_pwd
+  title: Admin Password
+  description: Admin user password for Business Central and Process Server. Generated if empty
+  required: false
+  type: string
+  display_type: password
+# ImageStreams
+_apb_image_stream_tag: &_apb_image_stream_tag
+  name: apb_image_stream_tag
+  title: Image version
+  description: Tag version of the ImageStream to use. It must exist in the openshift namespace.
+  required: true
+  type: string
+  default: '1.1'
+# HA
+_apb_replicas: &_apb_replicas
+  title: Number of replicas
+  description: Number of Replicas that will be initially deployed
+  required: true
+  type: number
+  default: 3
+# External Maven Repository
+_apb_maven_repo_url: &_apb_maven_repo_url
+  name: apb_maven_repo_url
+  title: Maven Repository URL
+  description: External Maven Repository URL. Leave empty to use the repository provided by Business Central
+  required: false
+  type: string
+  display_group: External Maven Repository
+_apb_maven_repo_user: &_apb_maven_repo_user
+  name: apb_maven_repo_user
+  title: Maven Repository Username
+  description: Username to use to interact with the external Maven repository.
+  required: false
+  type: string
+  display_group: External Maven Repository
+_apb_maven_repo_pwd: &_apb_maven_repo_pwd
+  name: apb_maven_repo_pwd
+  title: Maven Repository Password
+  description: Password to use to interact with the external Maven repository.
+  required: false
+  type: string
+  display_type: password
+  display_group: External Maven Repository
+# Generic Keystore parameters
+_apb_secret_name: &_apb_secret_name
+  title: Secret Name
+  description: Name of the secret containing the keystore to be used by the server to accept HTTPS connections. Generated if empty
+  required: false
+  type: string
+_apb_keystore_name: &_apb_keystore_name
+  title: Keystore File Name
+  description: Name of the keystore file containing the certificate to be used by the server to accept HTTPS connections. If a secret name is not provided, the server generates a secret with this keystore file name.
+  required: true
+  type: string
+  default: keystore.jks
+_apb_keystore_alias: &_apb_keystore_alias
+  title: Keystore certificate alias
+  description: Name of the certificate alias included in the keystore to be used by the server to accept HTTPS connections. If a secret name is not provided, the server generates a seret with this alias.
+  required: true
+  type: string
+  default: jboss
+_apb_keystore_pwd: &_apb_keystore_pwd
+  title: Keystore and Certificate Password
+  description: Password protecting both the Keystore and the Certificate. Generated if empty
+  required: false
+  type: string
+  min_length: 6
+  display_type: password
+_apb_volume_size: &_apb_volume_size
+  title: Workspace Storage Size
+  required: true
+  type: string
+  pattern: "^[0-9]+[mMgGtT]i?$"
+_apb_hostname: &_apb_hostname
+  title: Public Hostname
+  required: false
+  type: string
+# Business Central
+_apb_businesscentral_hostname: &_apb_businesscentral_hostname
+  <<: *_apb_hostname
+  name: apb_businesscentral_hostname
+  description: Public hostname for Business Central. Generated if empty
+# Git Hooks
+_apb_git_hooks_dir: &_apb_git_hooks_dir
+  name: apb_git_hooks_dir
+  title: Git hooks directory
+  description: The directory to use for git hooks, if required. e.g. /opt/eap/standalone/data/kie/git/hooks
+  required: false
+  type: string
+  display_group: Business Central
+_apb_businesscentral_maven_repo_user: &_apb_businesscentral_maven_repo_user
+  name: apb_businesscentral_maven_repo_user
+  title: Maven Repository Username
+  description: Username to use to interact with the Business Central Maven repository.
+  required: false
+  type: string
+  default: mavenUser
+  display_group: Business Central
+_apb_businesscentral_maven_repo_pwd: &_apb_businesscentral_maven_repo_pwd
+  name: apb_businesscentral_maven_repo_pwd
+  title: Maven Repository Password
+  description: Password to use to interact with the Business Central Maven repository. Generated if empty
+  required: false
+  type: string
+  display_type: password
+  display_group: Business Central
+# Process Server
+_apb_kieserver_image_stream_name: &_apb_kieserver_image_stream_name
+  name: apb_kieserver_image_stream_name
+  title: Process Server Image Stream Name
+  description: Image Stream Name to use for Process Server. If you have generated a custom image (for example, to provide a database server driver), you can change this parameter to use it.
+  required: true
+  type: string
+  default: rhpam72-kieserver-openshift
+  display_group: Process Server
+_apb_kieserver_user: &_apb_kieserver_user
+  name: apb_kieserver_user
+  title: Process Server Username
+  description: User to interact with the Process Server using the REST API
+  required: true
+  type: string
+  default: executionUser
+  display_group: Process Server
+_apb_kieserver_pwd: &_apb_kieserver_pwd
+  name: apb_kieserver_pwd
+  title: Process Server Password
+  description: User password to interact with the Process Server using the REST API. Generated if empty
+  required: false
+  type: string
+  display_type: password
+  display_group: Process Server
+_apb_kieserver_hostname: &_apb_kieserver_hostname
+  <<: *_apb_hostname
+  name: apb_kieserver_hostname
+  description: Public hostname for Process Server. Generated if empty
+_apb_kieserver_db_type: &_apb_kieserver_db_type
+  name: apb_kieserver_db_type
+  title: Database Type
+  description: Database Type to persist the Process Server runtime information. DO NOT USE H2 for deploying more than 1 instance of Process Server. For H2, PostgreSQL, and MySQL the database server will be deployed in a pod. To use a database server that is deployed elsewhere, select External.
+  required: true
+  type: enum
+  enum: [ 'H2', 'PostgreSQL', 'MySQL', 'External' ]
+  default: PostgreSQL
+  display_group: Process Server
+_apb_kieserver_db_size: &_apb_kieserver_db_size
+  <<: *_apb_volume_size
+  name: apb_kieserver_db_size
+  title: Database Storage Size
+  description: Persistent Volume Claim size to create for the Database. For example, 1Gi. Ignored if External is selected
+  default: 1Gi
+  display_group: Process Server
+_apb_kieserver_external_db_driver: &_apb_kieserver_external_db_driver
+  name: apb_kieserver_external_db_driver
+  title: Driver name
+  description: Database driver type. Required for External database. For example, mysql or postgresql
+  type: string
+  display_group: External Database (only if Database type is External)
+_apb_kieserver_external_db_dialect: &_apb_kieserver_external_db_dialect
+  name: apb_kieserver_external_db_dialect
+  title: Dialect class
+  description: Hibernate dialect class to use. Required for External database. For example, org.hibernate.dialect.MySQL5Dialect
+  type: string
+  display_group: External Database (only if Database type is External)
+_apb_kieserver_external_db_host: &_apb_kieserver_external_db_host
+  name: apb_kieserver_external_db_host
+  title: Host
+  description: External database server host. Required for External database. For example, 127.0.0.1
+  type: string
+  display_group: External Database (only if Database type is External)
+_apb_kieserver_external_db_port: &_apb_kieserver_external_db_port
+  name: apb_kieserver_external_db_port
+  title: Port
+  description: External database server port. Required for External database. For example, 3306
+  type: string
+  display_group: External Database (only if Database type is External)
+_apb_kieserver_external_db_name: &_apb_kieserver_external_db_name
+  name: apb_kieserver_external_db_name
+  title: Database Name
+  description: External Database name. Required for External database. For example, rhpam
+  type: string
+  display_group: External Database (only if Database type is External)
+_apb_kieserver_external_db_url: &_apb_kieserver_external_db_url
+  name: apb_kieserver_external_db_url
+  title: Database JDBC URL
+  description: External database server JDBC URL. Required for External database. For example, jdbc:mysql:127.0.0.1:3306/rhpam
+  type: string
+  display_group: External Database (only if Database type is External)
+# External Services Integration
+_apb_svc: &_apb_svc
+  title: Service name
+  description: Name of the Service
+  required: false
+  type: string
+_apb_host: &_apb_host
+  title: Host
+  description: Host
+  required: false
+  type: string
+_apb_port: &_apb_port
+  title: Host port
+  description: Host port
+  required: false
+  type: string
+_apb_protocol_type: &_apb_protocol_type
+  title: Host Protocol
+  description: Host protocol (http/https)
+  required: false
+  type: enum
+  enum: [ 'http', 'https' ]
+# Router
+_apb_router_svc: &_apb_router_svc
+  <<: *_apb_svc
+  name: apb_router_svc
+  display_group: Router Integration
+_apb_router_host: &_apb_router_host
+  <<: *_apb_host
+  name: apb_router_host
+  display_group: Router Integration
+_apb_router_port: &_apb_router_port
+  <<: *_apb_port
+  name: apb_router_port
+  display_group: Router Integration
+_apb_router_protocol: &_apb_router_protocol
+  <<: *_apb_protocol_type
+  name: apb_router_protocol
+  display_group: Router Integration
+# Controller
+_apb_controller_svc: &_apb_controller_svc
+  <<: *_apb_svc
+  name: apb_controller_svc
+  display_group: Controller Integration
+_apb_controller_host: &_apb_controller_host
+  <<: *_apb_host
+  name: apb_controller_host
+  display_group: Controller Integration
+_apb_controller_port: &_apb_controller_port
+  <<: *_apb_port
+  name: apb_controller_port
+  display_group: Controller Integration
+_apb_controller_protocol: &_apb_controller_protocol
+  <<: *_apb_protocol_type
+  name: apb_controller_protocol
+  display_group: Controller Integration
+_apb_controller_token: &_apb_controller_token
+  name: apb_controller_token
+  title: Controller Auth Token
+  description: Controller authentication Token
+  required: false
+  type: string
+  display_group: Controller Integration
+_apb_controller_user: &_apb_controller_user
+  name: apb_controller_user
+  title: Controller Username
+  description: Username to access the Controller
+  required: false
+  type: string
+  default: monitorUser
+_apb_controller_pwd: &_apb_controller_pwd
+  name: apb_controller_pwd
+  title: Controller Password
+  description: User password to access the Controller. Generated if empty.
+  required: false
+  type: string
+  display_type: password
+# RH-SSO
+_apb_sso_url: &_apb_sso_url
+  name: apb_sso_url
+  title: RH-SSO URL
+  description: Red Hat Single Sign-On (SSO) URL. Leave empty to avoid using SSO. For example, https://rhsso.example.com/auth
+  required: false
+  type: string
+  display_group: Red Hat - Single Sign-On (Optional)
+_apb_sso_realm: &_apb_sso_realm
+  name: apb_sso_realm
+  title: RH-SSO Realm
+  description: Red Hat Single Sign-On Realm name. For example, rhpam
+  required: false
+  type: string
+  display_group: Red Hat - Single Sign-On (Optional)
+_apb_sso_client: &_apb_sso_client
+  required: false
+  type: string
+  display_group: Red Hat - Single Sign-On (Optional)
+_apb_sso_client_secret: &_apb_sso_client_secret
+  required: false
+  type: string
+  display_type: password
+  display_group: Red Hat - Single Sign-On (Optional)
+_apb_sso_user: &_apb_sso_user
+  name: apb_sso_user
+  title: RH-SSO Admin User
+  description: Red Hat Single Sign-On User to be used to create the Client if it doesn't exist. The user must be able to create secrets on the given realm.
+  required: false
+  type: string
+  display_group: Red Hat - Single Sign-On (Optional)
+_apb_sso_pwd: &_apb_sso_pwd
+  name: apb_sso_pwd
+  title: RH-SSO Admin Password
+  description: Red Hat Single Sign-On Password to use to create the Client if it doesn't exist.
+  required: false
+  type: string
+  display_type: password
+  display_group: Red Hat - Single Sign-On (Optional)
+_apb_sso_disable_ssl_cert_validation: &_apb_sso_disable_ssl_cert_validation
+  name: apb_sso_disable_ssl_cert_validation
+  title: RH-SSO Disable SSL Validation
+  description: Disable SSL Certificate Validation when connecting to RH-SSO
+  required: false
+  type: boolean
+  display_group: Red Hat - Single Sign-On (Optional)
+_apb_sso_principal_attribute: &_apb_sso_principal_attribute
+  name: apb_sso_principal_attribute
+  title: RH-SSO Principal Attribute
+  description: Principal attribute to use as username
+  required: false
+  type: string
+  display_group: Red Hat - Single Sign-On (Optional)
+# LDAP Auth
+_apb_auth_ldap_url: &_apb_auth_ldap_url
+  name: apb_auth_ldap_url
+  title: LDAP Endpoint
+  description: LDAP Endpoint to connect for authentication. e.g. "ldap://myldap.example.com"
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_bind_dn: &_apb_auth_ldap_bind_dn
+  name: apb_auth_ldap_bind_dn
+  title: LDAP Bind DN
+  description: Bind DN used for authentication. e.g. "uid=admin,ou=users,ou=exmample,ou=com"
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_bind_credential: &_apb_auth_ldap_bind_credential
+  name: apb_auth_ldap_bind_credential
+  title: LDAP Bind Credentials
+  description: LDAP Credentials used for authentication
+  required: false
+  type: string
+  display_type: password
+  display_group: LDAP (Optional)
+_apb_auth_ldap_jaas_security_domain: &_apb_auth_ldap_jaas_security_domain
+  name: apb_auth_ldap_jaas_security_domain
+  title: LDAP JAAS Security Domain
+  description: The JMX ObjectName of the JaasSecurityDomain used to decrypt the password.
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_base_ctx_dn: &_apb_auth_ldap_base_ctx_dn
+  name: apb_auth_ldap_base_ctx_dn
+  title: LDAP Base DN
+  description: LDAP Base DN of the top-level context to begin the user search. e.g. "ou=users,ou=example,ou=com"
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_base_filter: &_apb_auth_ldap_base_filter
+  name: apb_auth_ldap_base_filter
+  title: LDAP Base Search filter
+  description: LDAP search filter used to locate the context of the user to authenticate. The input username or userDN obtained from the login module callback is substituted into the filter anywhere a {0} expression is used. A common example for the search filter is (uid={0}).
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_search_scope: &_apb_auth_ldap_search_scope
+  name: apb_auth_ldap_search_scope
+  title: LDAP Search scope
+  description: The search scope to use.
+  required: false
+  type: enum
+  enum: [ 'SUBTREE_SCOPE', 'OBJECT_SCOPE', 'ONELEVEL_SCOPE' ]
+  display_group: LDAP (Optional)
+_apb_auth_ldap_search_time_limit: &_apb_auth_ldap_search_time_limit
+  name: apb_auth_ldap_search_time_limit
+  title: LDAP Search time limit
+  description: The timeout in milliseconds for user or role searches. e.g. "10000"
+  required: false
+  type: number
+  display_group: LDAP (Optional)
+_apb_auth_ldap_distinguished_name_attribute: &_apb_auth_ldap_distinguished_name_attribute
+  name: apb_auth_ldap_distinguished_name_attribute
+  title: LDAP DN attribute
+  description: The name of the attribute in the user entry that contains the DN of the user. This may be necessary if the DN of the user itself contains special characters, backslash for example, that prevent correct user mapping. If the attribute does not exist, the entry’s DN is used.
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_parse_username: &_apb_auth_ldap_parse_username
+  name: apb_auth_ldap_parse_username
+  title: LDAP Parse username
+  description: A flag indicating if the DN is to be parsed for the username. If set to true, the DN is parsed for the username. If set to false the DN is not parsed for the username. This option is used together with usernameBeginString and usernameEndString.
+  required: false
+  type: boolean
+  display_group: LDAP (Optional)
+_apb_auth_ldap_username_begin_string: &_apb_auth_ldap_username_begin_string
+  name: apb_auth_ldap_username_begin_string
+  title: LDAP Username begin string
+  description: Defines the String which is to be removed from the start of the DN to reveal the username. This option is used together with usernameEndString and only taken into account if parseUsername is set to true.
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_username_end_string: &_apb_auth_ldap_username_end_string
+  name: apb_auth_ldap_username_end_string
+  title: LDAP Username end string
+  description: Defines the String which is to be removed from the end of the DN to reveal the username. This option is used together with usernameEndString and only taken into account if parseUsername is set to true.
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_role_attribute_id: &_apb_auth_ldap_role_attribute_id
+  name: apb_auth_ldap_role_attribute_id
+  title: LDAP Role attributeID
+  description: Name of the attribute containing the user roles. e.g. "memberOf"
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_roles_ctx_dn: &_apb_auth_ldap_roles_ctx_dn
+  name: apb_auth_ldap_roles_ctx_dn
+  title: LDAP Roles Search DN
+  description: The fixed DN of the context to search for user roles. This is not the DN where the actual roles are, but the DN where the objects containing the user roles are. For example, in a Microsoft Active Directory server, this is the DN where the user account is.
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_role_filter: &_apb_auth_ldap_role_filter
+  name: apb_auth_ldap_role_filter
+  title: LDAP Role search filter
+  description: A search filter used to locate the roles associated with the authenticated user. The input username or userDN obtained from the login module callback is substituted into the filter anywhere a {0} expression is used. The authenticated userDN is substituted into the filter anywhere a {1} is used. An example search filter that matches on the input username is (member={0}). An alternative that matches on the authenticated userDN is (member={1}).
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_role_recursion: &_apb_auth_ldap_role_recursion
+  name: apb_auth_ldap_role_recursion
+  title: LDAP Role recursion
+  description: The number of levels of recursion the role search will go below a matching context. Disable recursion by setting this to 0.
+  required: false
+  type: number
+  display_group: LDAP (Optional)
+_apb_auth_ldap_default_role: &_apb_auth_ldap_default_role
+  name: apb_auth_ldap_default_role
+  title: LDAP Default role
+  description: A role included for all authenticated users
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_role_name_attribute_id: &_apb_auth_ldap_role_name_attribute_id
+  name: apb_auth_ldap_role_name_attribute_id
+  title: LDAP Role name attribute ID
+  description: Name of the attribute within the roleCtxDN context which contains the role name. If the roleAttributeIsDN property is set to true, this property is used to find the role object’s name attribute.
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_ldap_parse_role_name_from_dn: &_apb_auth_ldap_parse_role_name_from_dn
+  name: apb_auth_ldap_parse_role_name_from_dn
+  title: LDAP Role DN contains roleNameAttributeID
+  description: A flag indicating if the DN returned by a query contains the roleNameAttributeID. If set to true, the DN is checked for the roleNameAttributeID. If set to false, the DN is not checked for the roleNameAttributeID. This flag can improve the performance of LDAP queries.
+  required: false
+  type: boolean
+  display_group: LDAP (Optional)
+_apb_auth_ldap_role_attribute_is_dn: &_apb_auth_ldap_role_attribute_is_dn
+  name: apb_auth_ldap_role_attribute_is_dn
+  title: LDAP Role Attribute ID is DN
+  description: Whether or not the roleAttributeID contains the fully-qualified DN of a role object. If false, the role name is taken from the value of the roleNameAttributeId attribute of the context name. Certain directory schemas, such as Microsoft Active Directory, require this attribute to be set to true.
+  required: false
+  type: boolean
+  display_group: LDAP (Optional)
+_apb_auth_ldap_referral_user_attribute_id_to_check: &_apb_auth_ldap_referral_user_attribute_id_to_check
+  name: apb_auth_ldap_referral_user_attribute_id_to_check
+  title: LDAP Referral user attribute ID
+  description: If you are not using referrals, this option can be ignored. When using referrals, this option denotes the attribute name which contains users defined for a certain role, for example member, if the role object is inside the referral. Users are checked against the content of this attribute name. If this option is not set, the check will always fail, so role objects cannot be stored in a referral tree.
+  required: false
+  type: string
+  display_group: LDAP (Optional)
+_apb_auth_role_mapper_roles_properties: &_apb_auth_role_mapper_roles_properties
+  name: apb_auth_role_mapper_roles_properties
+  title: RoleMapping rolesProperties file path
+  description: When present, the RoleMapping Login Module will be configured to use the provided file. This property defines the fully-qualified file path and name of a properties file or resource which maps roles to replacement roles. The format is original_role=role1,role2,role3
+  required: false
+  type: string
+  display_group: RoleMapping (Optional)
+_apb_auth_role_mapper_replace_role: &_apb_auth_role_mapper_replace_role
+  name: apb_auth_role_mapper_replace_role
+  title: RoleMapping replaceRole property
+  description: Whether to add to the current roles, or replace the current roles with the mapped ones. Replaces if set to true.
+  required: false
+  type: boolean
+  display_group: RoleMapping (Optional)
+
+version: 1.0
+name: rhpam-apb
+description: Red Hat Process Automation Manager (APB)
+bindable: false
+async: unsupported
+metadata:
+  displayName: Red Hat Process Automation Manager (APB)
+  documentationUrl: https://developers.redhat.com/products/bpmsuite/docs-and-apis/
+  longDescription:
+    As a system engineer, you can deploy a Red Hat Process Automation Manager
+    environment on Red Hat OpenShift Container Platform to provide an infrastructure
+    to develop or execute processes and other business assets.
+
+    Make sure the required ImageStreamTags exist in the openshift project. See below for the required images
+  console.openshift.io/iconClass: icon-processserver
+  providerDisplayName: "Red Hat, Inc."
+  serviceName: rhpam
+  dependencies:
+    - 'registry.redhat.io/rhpam-7/rhpam72-kieserver-openshift'
+    - 'registry.redhat.io/rhpam-7/rhpam72-businesscentral-openshift'
+    - 'registry.redhat.io/rhpam-7/rhpam72-controller-openshift'
+    - 'registry.redhat.io/rhpam-7/rhpam72-smartrouter-openshift'
+    - 'registry.redhat.io/rhpam-7/rhpam72-businesscentral-monitoring-openshift'
+    - 'registry.redhat.io/rhscl/postgresql-10-rhel7'
+    - 'registry.redhat.io/rhscl/mysql-57-rhel7'
+tags:
+  - jbpm
+  - rhpam
+  - processserver
+  - authoring
+  - jboss
+plans:
+  - name: trial
+    description:
+      Deploy an ephemeral environment for testing Business Central and Process Server. A default `adminUser` user will be created with the `RedHat` password.
+      In case the generated routes need to be overridden, it is possible to set custom routes for both applications.
+    free: true
+    metadata:
+      displayName: Evaluation Environment
+    parameters:
+      - <<: *_apb_businesscentral_hostname
+        title: Business Central Public Hostname
+      - <<: *_apb_kieserver_hostname
+        title: Process Server Public Hostname
+      - *_apb_image_stream_tag
+
+  - name: authoring
+    description:
+      An environment for creating and modifying processes using Business Central. It consists of
+      pods that provide Business Central for the authoring work and a Process Server for test execution of the processes.
+    free: true
+    metadata:
+      displayName: Authoring
+    parameters:
+      # Common Credentials
+      - *_apb_kie_admin_user
+      - *_apb_kie_admin_pwd
+      - *_apb_image_stream_tag
+
+      # Business Central
+      - <<: *_apb_volume_size
+        name: apb_businesscentral_volume_size
+        description: Specify the Persistent Volume Claim size to create for storing the Workspace. For example, 1Gi
+        default: 1Gi
+        display_group: Business Central
+      # Keystore and Secret
+      - <<: *_apb_secret_name
+        name: apb_businesscentral_secret_name
+        display_group: Business Central
+      - <<: *_apb_keystore_name
+        name: apb_businesscentral_keystore_name
+        display_group: Business Central
+      - <<: *_apb_keystore_alias
+        name: apb_businesscentral_keystore_alias
+        display_group: Business Central
+      - <<: *_apb_keystore_pwd
+        name: apb_businesscentral_keystore_pwd
+        display_group: Business Central
+      # Hostname
+      - <<: *_apb_businesscentral_hostname
+        display_group: Business Central
+      # Git hooks
+      - *_apb_git_hooks_dir
+      # Other users
+      - <<: *_apb_controller_user
+        display_group: Business Central
+      - <<: *_apb_controller_pwd
+        display_group: Business Central
+      - *_apb_businesscentral_maven_repo_user
+      - *_apb_businesscentral_maven_repo_pwd
+
+      # Process Server
+      - *_apb_kieserver_db_type
+      - *_apb_kieserver_db_size
+
+      # Keystore and Secret
+      - <<: *_apb_secret_name
+        name: apb_kieserver_secret_name
+        display_group: Process Server
+      - <<: *_apb_keystore_name
+        name: apb_kieserver_keystore_name
+        display_group: Process Server
+      - <<: *_apb_keystore_alias
+        name: apb_kieserver_keystore_alias
+        display_group: Process Server
+      - <<: *_apb_keystore_pwd
+        name: apb_kieserver_keystore_pwd
+        display_group: Process Server
+
+      - *_apb_kieserver_user
+      - *_apb_kieserver_pwd
+      - <<: *_apb_kieserver_hostname
+        display_group: Process Server
+      - *_apb_kieserver_image_stream_name
+
+      # External Database
+      - *_apb_kieserver_external_db_driver
+      - *_apb_kieserver_external_db_dialect
+      - *_apb_kieserver_external_db_host
+      - *_apb_kieserver_external_db_port
+      - *_apb_kieserver_external_db_name
+      - *_apb_kieserver_external_db_url
+
+      # External Maven Repository
+      - *_apb_maven_repo_url
+      - *_apb_maven_repo_user
+      - *_apb_maven_repo_pwd
+
+      # RH - SSO
+      - *_apb_sso_url
+      - *_apb_sso_realm
+      - <<: *_apb_sso_client
+        name: apb_sso_businesscentral_client
+        title: RH-SSO Business Central - Client
+        description: Red Hat Single Sign-On Client name for Business Central. If the secret, user and password are provided it will be created. For example, businesscentral
+      - <<: *_apb_sso_client_secret
+        name: apb_sso_businesscentral_client_secret
+        title: RH-SSO Business Central - Client Secret
+        description: Red Hat Single Sign-On Client secret for Business Central.
+      - <<: *_apb_sso_client
+        name: apb_kieserver_sso_client
+        title: RH-SSO Process Server - Client
+        description: Red Hat Single Sign-On Client name for Process Server. If the secret, user and password are provided it will be created. For example, kieserver
+      - <<: *_apb_sso_client_secret
+        name: apb_kieserver_sso_client_secret
+        title: RH-SSO Process Server - Client Secret
+        description: Red Hat Single Sign-On Client secret for Process Server.
+      - *_apb_sso_user
+      - *_apb_sso_pwd
+      - *_apb_sso_disable_ssl_cert_validation
+      - *_apb_sso_principal_attribute
+
+      # LDAP
+      - *_apb_auth_ldap_url
+      - *_apb_auth_ldap_bind_dn
+      - *_apb_auth_ldap_bind_credential
+      - *_apb_auth_ldap_jaas_security_domain
+      - *_apb_auth_ldap_base_ctx_dn
+      - *_apb_auth_ldap_base_filter
+      - *_apb_auth_ldap_search_scope
+      - *_apb_auth_ldap_search_time_limit
+      - *_apb_auth_ldap_distinguished_name_attribute
+      - *_apb_auth_ldap_parse_username
+      - *_apb_auth_ldap_username_begin_string
+      - *_apb_auth_ldap_username_end_string
+      - *_apb_auth_ldap_role_attribute_id
+      - *_apb_auth_ldap_roles_ctx_dn
+      - *_apb_auth_ldap_role_filter
+      - *_apb_auth_ldap_role_recursion
+      - *_apb_auth_ldap_default_role
+      - *_apb_auth_ldap_role_name_attribute_id
+      - *_apb_auth_ldap_parse_role_name_from_dn
+      - *_apb_auth_ldap_role_attribute_is_dn
+      - *_apb_auth_ldap_referral_user_attribute_id_to_check
+
+      # RoleMapping
+      - *_apb_auth_role_mapper_roles_properties
+      - *_apb_auth_role_mapper_replace_role
+
+  - name: immutable-kie
+    description:
+      In this environment, when you deploy a Process Server pod, it builds an image that loads and starts
+      a process or group of processes. You cannot stop any process on the pod or add any new process to the pod.
+      If you want to use another version of a process or modify the configuration in any other way, you deploy a new
+      server image and displace the old one.
+    free: true
+    metadata:
+      displayName: Immutable Server - Process Server
+    parameters:
+      # Common Credentials
+      - *_apb_kie_admin_user
+      - *_apb_kie_admin_pwd
+      - *_apb_image_stream_tag
+      # HA
+      - <<: *_apb_replicas
+        name: apb_kieserver_replicas
+        description: Number of Replicas of the Process Server that will be initially deployed
+        default: 2
+
+      # Artifact Source
+      - name: apb_kieserver_container_deployment
+        title: Process Server Container Deployment
+        description: 'Process Server Container deployment configuration in format: containerId=groupId:artifactId:version|c2=g2:a2:v2'
+        required: true
+        type: string
+        display_group: Artifact source
+      - name: apb_kieserver_source_url
+        title: Git Repository URL
+        description: Git source URI for application. For example, https://github.com/jboss-container-images/rhpam-7-openshift-image.git
+        required: true
+        type: string
+        display_group: Artifact source
+      - name: apb_kieserver_source_ref
+        title: Git Repository Reference
+        description: Git branch/tag reference. For example, rhpam72 or master
+        required: true
+        type: string
+        display_group: Artifact source
+      - name: apb_kieserver_source_context
+        title: Git Repository Context Dir
+        description: Path within Git project to build; empty for root project directory. For example, quickstarts/library-process/library
+        required: false
+        type: string
+        display_group: Artifact source
+      - name: apb_kieserver_github_webhook_secret
+        title: Github Webhook Secret
+        description: Secret key to use when configuring a GitHub Webhook. Generated if empty.
+        required: false
+        type: string
+        display_group: Artifact source
+      - name: apb_kieserver_generic_webhook_secret
+        title: Generic Webhook Secret
+        description: Secret key to use when configuring a Generic Webhook. Generated if empty.
+        required: false
+        type: string
+        display_group: Artifact source
+      - name: apb_kieserver_artifact_dir
+        title: Artifact directories
+        description: List of directories from which archives will be copied into the deployment folder. If unspecified, all archives in /target will be copied.
+        required: false
+        type: string
+        display_group: Artifact source
+      - name: apb_kieserver_maven_mirror
+        title: Maven mirror URL
+        description: Maven mirror to use for S2I builds
+        required: false
+        type: string
+        display_group: Artifact source
+
+      # External Maven Repository
+      - *_apb_maven_repo_url
+      - *_apb_maven_repo_user
+      - *_apb_maven_repo_pwd
+
+      - *_apb_kieserver_db_type
+      - *_apb_kieserver_db_size
+      # Keystore and Secret
+      - <<: *_apb_secret_name
+        name: apb_kieserver_secret_name
+        display_group: Process Server
+      - <<: *_apb_keystore_name
+        name: apb_kieserver_keystore_name
+        display_group: Process Server
+      - <<: *_apb_keystore_alias
+        name: apb_kieserver_keystore_alias
+        display_group: Process Server
+      - <<: *_apb_keystore_pwd
+        name: apb_kieserver_keystore_pwd
+        display_group: Process Server
+      - *_apb_kieserver_user
+      - *_apb_kieserver_pwd
+      - <<: *_apb_kieserver_hostname
+        display_group: Process Server
+      - *_apb_kieserver_image_stream_name
+
+      # External Database
+      - *_apb_kieserver_external_db_driver
+      - *_apb_kieserver_external_db_dialect
+      - *_apb_kieserver_external_db_host
+      - *_apb_kieserver_external_db_port
+      - *_apb_kieserver_external_db_name
+      - *_apb_kieserver_external_db_url
+
+      # Router
+      - *_apb_router_svc
+      - *_apb_router_host
+      - *_apb_router_port
+      - *_apb_router_protocol
+
+      # Controller
+      - *_apb_controller_svc
+      - *_apb_controller_host
+      - *_apb_controller_port
+      - *_apb_controller_protocol
+      - *_apb_controller_token
+      - <<: *_apb_controller_user
+        display_group: Controller Integration
+      - <<: *_apb_controller_pwd
+        display_group: Controller Integration
+
+      # RH - SSO
+      - *_apb_sso_url
+      - *_apb_sso_realm
+      - <<: *_apb_sso_client
+        name: apb_kieserver_sso_client
+        title: RH-SSO Process Server - Client
+        description: Red Hat Single Sign-On Client name for Process Server. If the secret, user and password are provided it will be created. For example, kieserver
+      - <<: *_apb_sso_client_secret
+        name: apb_kieserver_sso_client_secret
+        title: RH-SSO Process Server - Client Secret
+        description: Red Hat Single Sign-On Client secret for Process Server.
+      - *_apb_sso_user
+      - *_apb_sso_pwd
+      - *_apb_sso_disable_ssl_cert_validation
+      - *_apb_sso_principal_attribute
+
+      # LDAP
+      - *_apb_auth_ldap_url
+      - *_apb_auth_ldap_bind_dn
+      - *_apb_auth_ldap_bind_credential
+      - *_apb_auth_ldap_jaas_security_domain
+      - *_apb_auth_ldap_base_ctx_dn
+      - *_apb_auth_ldap_base_filter
+      - *_apb_auth_ldap_search_scope
+      - *_apb_auth_ldap_search_time_limit
+      - *_apb_auth_ldap_distinguished_name_attribute
+      - *_apb_auth_ldap_parse_username
+      - *_apb_auth_ldap_username_begin_string
+      - *_apb_auth_ldap_username_end_string
+      - *_apb_auth_ldap_role_attribute_id
+      - *_apb_auth_ldap_roles_ctx_dn
+      - *_apb_auth_ldap_role_filter
+      - *_apb_auth_ldap_role_recursion
+      - *_apb_auth_ldap_default_role
+      - *_apb_auth_ldap_role_name_attribute_id
+      - *_apb_auth_ldap_parse_role_name_from_dn
+      - *_apb_auth_ldap_role_attribute_is_dn
+      - *_apb_auth_ldap_referral_user_attribute_id_to_check
+
+      # RoleMapping
+      - *_apb_auth_role_mapper_roles_properties
+      - *_apb_auth_role_mapper_replace_role
+
+  - name: immutable-mon
+    description:
+      Use Business Central Monitoring to monitor the performance of the environment and to stop and
+      restart some of the process instances in an immutable environment, but not to deploy additional processes to any Process Server or undeploy any existing ones (you can not add or remove containers)
+    free: true
+    metadata:
+      displayName: Immutable Server - Monitor
+    parameters:
+      # Common Credentials
+      - *_apb_kie_admin_user
+      - *_apb_kie_admin_pwd
+      - *_apb_image_stream_tag
+
+      # External Maven Repository
+      - *_apb_maven_repo_url
+      - *_apb_maven_repo_user
+      - *_apb_maven_repo_pwd
+
+      # Business Central Monitoring
+      - <<: *_apb_replicas
+        name: apb_businesscentral_replicas
+        description: Number of Replicas of Business Central Monitoring that will be initially deployed
+        default: 1
+        display_group: Business Central Monitoring
+      - <<: *_apb_volume_size
+        name: apb_businesscentral_volume_size
+        description: Specify the Persistent Volume Claim size to create for storing the user data. For example, 64Mi
+        default: 64Mi
+        display_group: Business Central Monitoring
+      # Keystore and Secret
+      - <<: *_apb_secret_name
+        name: apb_businesscentral_secret_name
+        display_group: Business Central Monitoring
+      - <<: *_apb_keystore_name
+        name: apb_businesscentral_keystore_name
+        display_group: Business Central Monitoring
+      - <<: *_apb_keystore_alias
+        name: apb_businesscentral_keystore_alias
+        display_group: Business Central Monitoring
+      - <<: *_apb_keystore_pwd
+        name: apb_businesscentral_keystore_pwd
+        display_group: Business Central Monitoring
+      - <<: *_apb_businesscentral_hostname
+        description: Public hostname for Business Central Monitoring. Generated if empty
+        display_group: Business Central Monitoring
+      # Other users
+      - <<: *_apb_controller_user
+        display_group: Business Central Monitoring
+      - <<: *_apb_controller_pwd
+        display_group: Business Central Monitoring
+
+      # Smart Router
+      - <<: *_apb_replicas
+        name: apb_smartrouter_replicas
+        description: Number of Replicas of Smart Router that will be initially deployed
+        default: 2
+        display_group: Smart Router
+      - <<: *_apb_volume_size
+        name: apb_smartrouter_volume_size
+        description: Specify the Persistent Volume Claim size to create. For example, 64Mi
+        default: 64Mi
+        display_group: Smart Router
+      - <<: *_apb_hostname
+        name: apb_smartrouter_hostname
+        description: Public hostname for Smart Router. Generated if empty
+        display_group: Smart Router
+      - <<: *_apb_secret_name
+        name: apb_smartrouter_secret_name
+        display_group: Smart Router
+      - <<: *_apb_keystore_name
+        name: apb_smartrouter_keystore_name
+        display_group: Smart Router
+      - <<: *_apb_keystore_alias
+        name: apb_smartrouter_keystore_alias
+        display_group: Smart Router
+      - <<: *_apb_keystore_pwd
+        name: apb_smartrouter_keystore_pwd
+        display_group: Smart Router
+
+      # RH - SSO
+      - *_apb_sso_url
+      - *_apb_sso_realm
+      - <<: *_apb_sso_client
+        name: apb_sso_businesscentral_client
+        title: RH-SSO Business Central Monitoring - Client
+        description: Red Hat Single Sign-On Client name for Business Central Monitoring. If the secret, user and password are provided it will be created. For example, businesscentral
+      - <<: *_apb_sso_client_secret
+        name: apb_sso_businesscentral_client_secret
+        title: RH-SSO Business Central Monitoring - Client Secret
+        description: Red Hat Single Sign-On Client secret for Business Central Monitoring.
+      - *_apb_sso_user
+      - *_apb_sso_pwd
+      - *_apb_sso_disable_ssl_cert_validation
+      - *_apb_sso_principal_attribute
+
+      # LDAP
+      - *_apb_auth_ldap_url
+      - *_apb_auth_ldap_bind_dn
+      - *_apb_auth_ldap_bind_credential
+      - *_apb_auth_ldap_jaas_security_domain
+      - *_apb_auth_ldap_base_ctx_dn
+      - *_apb_auth_ldap_base_filter
+      - *_apb_auth_ldap_search_scope
+      - *_apb_auth_ldap_search_time_limit
+      - *_apb_auth_ldap_distinguished_name_attribute
+      - *_apb_auth_ldap_parse_username
+      - *_apb_auth_ldap_username_begin_string
+      - *_apb_auth_ldap_username_end_string
+      - *_apb_auth_ldap_role_attribute_id
+      - *_apb_auth_ldap_roles_ctx_dn
+      - *_apb_auth_ldap_role_filter
+      - *_apb_auth_ldap_role_recursion
+      - *_apb_auth_ldap_default_role
+      - *_apb_auth_ldap_role_name_attribute_id
+      - *_apb_auth_ldap_parse_role_name_from_dn
+      - *_apb_auth_ldap_role_attribute_is_dn
+      - *_apb_auth_ldap_referral_user_attribute_id_to_check
+
+      # RoleMapping
+      - *_apb_auth_role_mapper_roles_properties
+      - *_apb_auth_role_mapper_replace_role
+
+  - name: managed
+    description:
+      An environment for running existing processes for staging and production purposes.
+      This environment includes several groups of Process Server pods; you can deploy and undeploy
+      processes on every such group and also scale the group up or down as necessary. Use Business
+      Central Monitoring to deploy, run, and stop the processes and to monitor their execution.
+
+    free: true
+    metadata:
+      displayName: Managed Environment
+    parameters:
+      # Common Credentials
+      - *_apb_kie_admin_user
+      - *_apb_kie_admin_pwd
+      - *_apb_image_stream_tag
+
+      # External Maven Repository
+      - <<: *_apb_maven_repo_url
+        required: true
+        description: External Maven Repository URL.
+      - *_apb_maven_repo_user
+      - *_apb_maven_repo_pwd
+
+      # Business Central Monitoring
+      - <<: *_apb_replicas
+        name: apb_businesscentral_replicas
+        default: 1
+        display_group: Business Central Monitoring
+      - <<: *_apb_volume_size
+        name: apb_businesscentral_volume_size
+        description: Specify the Persistent Volume Claim size to create for storing the user data. For example, 64Mi
+        default: 64Mi
+        display_group: Business Central Monitoring
+      ## Keystore and Secret
+      - <<: *_apb_secret_name
+        name: apb_businesscentral_secret_name
+        display_group: Business Central Monitoring
+      - <<: *_apb_keystore_name
+        name: apb_businesscentral_keystore_name
+        display_group: Business Central Monitoring
+      - <<: *_apb_keystore_alias
+        name: apb_businesscentral_keystore_alias
+        display_group: Business Central Monitoring
+      - <<: *_apb_keystore_pwd
+        name: apb_businesscentral_keystore_pwd
+        display_group: Business Central Monitoring
+      - <<: *_apb_businesscentral_hostname
+        description: Public hostname for Business Central Monitoring. Generated if empty
+        display_group: Business Central Monitoring
+      # Other users
+      - <<: *_apb_controller_user
+        display_group: Business Central Monitoring
+      - <<: *_apb_controller_pwd
+        display_group: Business Central Monitoring
+
+      # Smart Router
+      - <<: *_apb_replicas
+        name: apb_smartrouter_replicas
+        default: 2
+        display_group: Smart Router
+      - <<: *_apb_volume_size
+        name: apb_smartrouter_volume_size
+        description: Specify the Persistent Volume Claim size to create. For example, 64Mi
+        default: 64Mi
+        display_group: Smart Router
+      - <<: *_apb_hostname
+        name: apb_smartrouter_hostname
+        description: Public hostname for Smart Router. Generated if empty
+        display_group: Smart Router
+      - <<: *_apb_secret_name
+        name: apb_smartrouter_secret_name
+        display_group: Smart Router
+      - <<: *_apb_keystore_name
+        name: apb_smartrouter_keystore_name
+        display_group: Smart Router
+      - <<: *_apb_keystore_alias
+        name: apb_smartrouter_keystore_alias
+        display_group: Smart Router
+      - <<: *_apb_keystore_pwd
+        name: apb_smartrouter_keystore_pwd
+        display_group: Smart Router
+
+      # Process Server
+      - name: apb_kieserver_sets
+        title: Sets of Process Servers
+        description:
+          Number of sets of Kie Process Server cluster + database that will be deployed.
+          Each set can run separate services and other assets. All sets connect to the same Smart Router
+        default: 2
+        required: true
+        type: number
+        display_group: Process Server
+      - <<: *_apb_replicas
+        name: apb_kieserver_replicas
+        default: 3
+        display_group: Process Server
+      - *_apb_kieserver_db_type
+      - *_apb_kieserver_db_size
+
+      ## Keystore and Secret
+      - <<: *_apb_secret_name
+        name: apb_kieserver_secret_name
+        display_group: Process Server
+      - <<: *_apb_keystore_name
+        name: apb_kieserver_keystore_name
+        display_group: Process Server
+      - <<: *_apb_keystore_alias
+        name: apb_kieserver_keystore_alias
+        display_group: Process Server
+      - <<: *_apb_keystore_pwd
+        name: apb_kieserver_keystore_pwd
+        display_group: Process Server
+      - *_apb_kieserver_user
+      - *_apb_kieserver_pwd
+      - <<: *_apb_kieserver_hostname
+        display_group: Process Server
+      - *_apb_kieserver_image_stream_name
+
+      # External Database
+      - *_apb_kieserver_external_db_driver
+      - *_apb_kieserver_external_db_dialect
+      - *_apb_kieserver_external_db_host
+      - *_apb_kieserver_external_db_port
+      - *_apb_kieserver_external_db_name
+      - *_apb_kieserver_external_db_url
+
+      # RH - SSO
+      - *_apb_sso_url
+      - *_apb_sso_realm
+      - <<: *_apb_sso_client
+        name: apb_sso_businesscentral_client
+        title: RH-SSO Business Central Monitoring - Client
+        description: Red Hat Single Sign-On Client name for Business Central Monitoring. If the secret, user and password are provided it will be created. For example, businesscentral
+      - <<: *_apb_sso_client_secret
+        name: apb_sso_businesscentral_client_secret
+        title: RH-SSO Business Central Monitoring - Client Secret
+        description: Red Hat Single Sign-On Client secret for Business Central Monitoring.
+      - <<: *_apb_sso_client
+        name: apb_kieserver_sso_client
+        title: RH-SSO Process Server - Client
+        description: Red Hat Single Sign-On Client name for Process Server. If the secret, user and password are provided it will be created. For example, kieserver
+      - <<: *_apb_sso_client_secret
+        name: apb_kieserver_sso_client_secret
+        title: RH-SSO Process Server - Client Secret
+        description: Red Hat Single Sign-On Client secret for Process Server.
+      - *_apb_sso_user
+      - *_apb_sso_pwd
+      - *_apb_sso_disable_ssl_cert_validation
+      - *_apb_sso_principal_attribute
+
+      # LDAP
+      - *_apb_auth_ldap_url
+      - *_apb_auth_ldap_bind_dn
+      - *_apb_auth_ldap_bind_credential
+      - *_apb_auth_ldap_jaas_security_domain
+      - *_apb_auth_ldap_base_ctx_dn
+      - *_apb_auth_ldap_base_filter
+      - *_apb_auth_ldap_search_scope
+      - *_apb_auth_ldap_search_time_limit
+      - *_apb_auth_ldap_distinguished_name_attribute
+      - *_apb_auth_ldap_parse_username
+      - *_apb_auth_ldap_username_begin_string
+      - *_apb_auth_ldap_username_end_string
+      - *_apb_auth_ldap_role_attribute_id
+      - *_apb_auth_ldap_roles_ctx_dn
+      - *_apb_auth_ldap_role_filter
+      - *_apb_auth_ldap_role_recursion
+      - *_apb_auth_ldap_default_role
+      - *_apb_auth_ldap_role_name_attribute_id
+      - *_apb_auth_ldap_parse_role_name_from_dn
+      - *_apb_auth_ldap_role_attribute_is_dn
+      - *_apb_auth_ldap_referral_user_attribute_id_to_check
+
+      # RoleMapping
+      - *_apb_auth_role_mapper_roles_properties
+      - *_apb_auth_role_mapper_replace_role
