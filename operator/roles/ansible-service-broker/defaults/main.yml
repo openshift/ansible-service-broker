@@ -33,7 +33,7 @@ log_level: info
 apb_pull_policy: IfNotPresent
 # sandbox_role - The role granted to the service account used to execute apbs.
 # accepts: edit, admin
-sandbox_role: admin
+sandbox_role: edit
 # keep_namespace - Controls whether the broker should delete the transient
 # namespace created to run the apb or not after the conclusion of the apb,
 # regardless of the result. Useful for debug purposes.
