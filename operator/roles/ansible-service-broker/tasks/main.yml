@@ -103,6 +103,12 @@
     - value: broker-user-auth.clusterrole.yaml.j2
     - value: broker.servicecatalog.yaml.j2
       condition: "{{ 'servicecatalog.k8s.io' in api_groups }}"
+    - value: broker.service-monitor.yaml.j2
+      condition: "{{ 'monitoring.coreos.com' in api_groups }}"
+    - value: prometheus.role.yaml.j2
+      condition: "{{ 'monitoring.coreos.com' in api_groups }}"
+    - value: prometheus.role_binding.yaml.j2
+      condition: "{{ 'monitoring.coreos.com' in api_groups }}"
 
 - name: Redeploy the broker's pod if pending config changes
   k8s:
