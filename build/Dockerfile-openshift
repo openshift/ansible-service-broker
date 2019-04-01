@@ -6,11 +6,8 @@ ENV USER_NAME=ansibleservicebroker \
     BASE_DIR=/var/lib/ansibleservicebroker
 ENV HOME=${BASE_DIR}
 
-ADD rpms/rpms/* /tmp/
-
-RUN yum -y update \
- && yum -y install epel-release centos-release-openshift-origin \
- && yum -y install origin-clients /tmp/ansible-service-broker*.rpm \
+RUN yum -y install --setopt=skip_missing_names_on_install=False \
+    atomic-openshift-clients ansible-service-broker-container-scripts ansible-service-broker \
  && yum clean all
 
 RUN mkdir -p ${BASE_DIR} ${BASE_DIR}/etc /var/run/asb-auth \
