@@ -51,3 +51,18 @@
     with_items:
     - ServiceCatalogAPIServer
     - ServiceCatalogControllerManager
+
+  - name: Wait 5m for Service Catalog Controller Manager to be complete
+    k8s_facts:
+      api_version: "operator.openshift.io/v1"
+      kind: "ServiceCatalogControllerManager"
+      namespace: ""
+      name: "cluster"
+    register: svccat_cm
+    until:
+    - "[ \"True\" ] in (svccat_cm | json_query('resources[].status.conditions[?type==`Available`].status'))"
+    delay: 10
+    retries: 30
+
+
+    
