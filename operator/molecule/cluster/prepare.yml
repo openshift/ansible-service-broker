@@ -52,11 +52,14 @@
     - ServiceCatalogAPIServer
     - ServiceCatalogControllerManager
 
+  - name: Wait a couple of seconds because of initial conditions on service catalog
+    pause:
+      seconds: 10
+
   - name: Wait 5m for Service Catalog Controller Manager to be complete
     k8s_facts:
       api_version: "operator.openshift.io/v1"
       kind: "ServiceCatalogControllerManager"
-      namespace: ""
       name: "cluster"
     register: svccat_cm
     until:

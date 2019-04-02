@@ -1,0 +1,141 @@
+---
+
+- name: Prepare operator resources
+  hosts: localhost
+  connection: local
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
+  tasks:
+  # need to pull all the info together into a config map
+  - name: Ensure specified namespace is present
+    k8s:
+      api_version: v1
+      kind: Namespace
+      name: '{{ namespace }}'
+      
+  - name: Set operator Image from Format
+    shell: "echo $IMAGE_FORMAT | envsubst '${component}'"
+    environment:
+      component: ansible-service-broker-operator
+    register: operator_image_raw
+    
+  - name: Set operand Image from Format
+    shell: "echo $IMAGE_FORMAT | envsubst '${component}'"
+    environment:
+      component: ansible-service-broker
+    register: operand_image_raw
+  
+  - name:  Add operator image to csv
+    lineinfile:
+      path: "{{ playbook_dir }}/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests/4.1.0/openshiftansibleservicebroker.v{{ csv_version }}.clusterserviceversion.yaml"
+      regexp: "image: registry.access.redhat.com/openshift/ose-ansible-service-broker-operator:v4.0.0"
+      line: "                image: {{ operator_image_raw.stdout }}"
+ 
+  - name:  Add operand image to csv
+    lineinfile:
+      path: "{{ playbook_dir }}/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests/4.1.0/openshiftansibleservicebroker.v{{ csv_version }}.clusterserviceversion.yaml"
+      regexp: "registry.access.redhat.com/openshift/ose-ansible-service-broker:v4.0.0"
+      line: "                  value: {{ operand_image_raw.stdout }}"
+ 
+ 
+  - name: Create catalog source config map
+    shell: "VERSION={{ csv_version }} {{ playbook_dir}}/e2e-olm.sh"
+    register: olm_cf_cs
+ 
+  - debug:
+      var: cm
+    vars:
+      cm: "{{ olm_cf_cs.stdout | from_yaml  }}"
+ 
+  - name: Create config map
+    k8s:
+      namespace: "{{ namespace }}"
+      definition: "{{ olm_cf_cs.stdout | from_yaml }}"
+ 
+  - name: Create catalog source
+    k8s:
+      api_version: operators.coreos.com/v1alpha1
+      definition:
+        kind: CatalogSource
+        metadata:
+          name: openshift-ansible-broker-operator
+          namespace: "{{ namespace }}"
+        spec:
+          name: openshift-ansible-broker-operator
+          sourceType: internal
+          configMap: openshift-ansible-broker-operator
+          displayName: openshift-ansible-broker-operator
+          publisher: Operator Framework
+  
+  - name: Create operator-group
+    k8s:
+      definition:
+        kind: OperatorGroup
+        apiVersion: operators.coreos.com/v1
+        metadata:
+          name: openshift-ansible-broker-operator
+          namespace: "{{ namespace }}"
+        spec:
+          targetNamespaces:
+          - "{{ namespace }}"
+ 
+  - name: Create subscription
+    k8s:
+      definition:
+        apiVersion: operators.coreos.com/v1alpha1
+        kind: Subscription
+        metadata:
+          name: openshiftansibleservicebroker
+          namespace: "{{ namespace }}"
+        spec:
+          source: openshift-ansible-broker-operator
+          sourceNamespace: "{{ namespace }}"
+          name: openshiftansibleservicebroker
+          startingCSV: openshiftansibleservicebroker.v4.1.0
+          channel: stable
+  
+  - name: Create Cluster Role Binding for operator svc account
+    k8s:
+      definition:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: ansible-service-broker-crb
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io 
+          kind: ClusterRole
+          name: admin
+        subjects:
+        - kind: ServiceAccount
+          name: openshift-ansible-service-broker-operator
+          namespace: "{{ namespace }}"
+
+  - name: Create ServiceCatalog ApiServer and ControllerManager
+    k8s:
+      definition:
+        apiVersion: operator.openshift.io/v1
+        kind: '{{ item }}'
+        metadata:
+          name: cluster
+        spec:
+          logLevel: Normal
+          managementState: Managed
+    with_items:
+    - ServiceCatalogAPIServer
+    - ServiceCatalogControllerManager
+  
+  - name: Wait a couple of seconds because of initial conditions on service catalog
+    pause:
+      seconds: 10
+
+  - name: Wait 5m for Service Catalog Controller Manager to be complete
+    k8s_facts:
+      api_version: "operator.openshift.io/v1"
+      kind: "ServiceCatalogControllerManager"
+      name: "cluster"
+    register: svccat_cm
+    until:
+    - "[ \"True\" ] in (svccat_cm | json_query('resources[].status.conditions[?type==`Available`].status'))"
+    delay: 10
+    retries: 30
