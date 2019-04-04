@@ -1,0 +1,21 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ broker_service_monitor_name }}
+  namespace: {{ broker_service_monitor_namespace }}
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    port: port-1338
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: True
+  namespaceSelector:
+    matchNames:
+    - {{ broker_namespace }}
+  selector:
+    matchLabels:
+      app: {{ broker_name }}
+      service: {{ broker_service_name }}

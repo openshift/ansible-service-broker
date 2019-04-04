@@ -67,6 +67,8 @@ broker_deployment_name: asb
 broker_service_name: asb
 broker_route_name: asb-1338
 dashboard_redirector_route_name: dr-1337
+broker_service_monitor_name: ansible-service-broker
+broker_service_monitor_namespace: openshift-monitoring
 
 # Used to set namespaced broker (ServiceBroker)
 broker_kind: ClusterServiceBroker
