@@ -18,7 +18,7 @@ spec:
     Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM9c?list=PLEGSLwUsxfEh4TE2GDU4oygCB-tmShkSn&t=4732)
 
   keywords: ['ansible', 'automation', 'broker', 'open service broker']
-  version: 1.0.0
+  version: v4.1.0
   maturity: stable
   maintainers:
   - name: Red Hat, Inc.
