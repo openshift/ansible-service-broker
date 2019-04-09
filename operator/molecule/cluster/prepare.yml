@@ -63,6 +63,3 @@
     - "[ \"True\" ] in (svccat_cm | json_query('resources[].status.conditions[?type==`Available`].status'))"
     delay: 10
     retries: 30
-
-
-    
