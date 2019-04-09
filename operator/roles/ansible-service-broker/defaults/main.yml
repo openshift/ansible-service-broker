@@ -59,6 +59,10 @@ auto_escalate: false
 # Users likely want to leave this set to false unless tracing esoteric bugs.
 output_request: false
 
+# service_monitoring - If True, will deploy a ServiceMonitor
+# to allow cluster monitoring to report metrics
+service_monitoring: true
+
 ############################################################
 # Private configuration
 ############################################################
@@ -67,8 +71,7 @@ broker_deployment_name: asb
 broker_service_name: asb
 broker_route_name: asb-1338
 dashboard_redirector_route_name: dr-1337
-broker_service_monitor_name: ansible-service-broker
-broker_service_monitor_namespace: openshift-monitoring
+broker_service_monitor_name: '{{ broker_name }}'
 
 # Used to set namespaced broker (ServiceBroker)
 broker_kind: ClusterServiceBroker

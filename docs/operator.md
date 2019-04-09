@@ -35,6 +35,7 @@ and takes effect.
 | `launchApbOnBind` | **Experimental**: Toggles the broker executing apbs on bind operations | `false` |
 | `autoEscalate` | Automatically tells the broker to escalate the permissions of a user while running the apb. Typically should remain false, since the broker will perform originating user authorization to ensure the user has permissions granted to the apb sandbox | `false` |
 | `outputRequest` | Will output the low level HTTP requests the broker receives | `false` |
+| `serviceMonitoring` | Will deploy a ServiceMonitor to allow cluster monitoring to report metrics | `true` |
 
 [1] Default registries array:
 ```
