@@ -24,7 +24,7 @@ provisioner:
     enabled: False
   env:
     ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/roles
-    K8S_AUTH_KUBECONFIG: ${KUBECONFIG}
+    K8S_AUTH_KUBECONFIG: ${KUBECONFIG:-~/.kube/config}
 scenario:
   name: cluster
   test_sequence:
