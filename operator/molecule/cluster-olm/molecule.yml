@@ -1,0 +1,45 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: delegated
+  options:
+    managed: False
+    ansible_connection_options: {}
+lint:
+  name: yamllint
+  enabled: False
+platforms:
+- name: cluster
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        namespace: ${TEST_NAMESPACE:-osdk-test}
+        csv_version: ${CSV_VERSION:-4.1.0}
+  lint:
+    name: ansible-lint
+    enabled: False
+  env:
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/roles
+    K8S_AUTH_KUBECONFIG: ${KUBECONFIG}
+scenario:
+  name: cluster-olm
+  test_sequence:
+    - lint
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - destroy
+verifier:
+  name: testinfra
+  lint:
+    name: flake8

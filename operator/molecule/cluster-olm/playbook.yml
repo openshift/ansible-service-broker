@@ -1,0 +1,57 @@
+---
+
+- name: Converge
+  hosts: localhost
+  connection: local
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_cr.yaml'])) | from_yaml }}"
+  tasks:
+  - block:
+    - name: Create the osb.openshift.io/v1alpha1.AnsibleServiceBroker
+      k8s:
+        state: present
+        namespace: '{{ namespace }}'
+        definition: "{{ custom_resource }}"
+
+    - name: Wait 5m for reconciliation to run
+      k8s_facts:
+        api_version: '{{ custom_resource.apiVersion }}'
+        kind: '{{ custom_resource.kind }}'
+        namespace: '{{ namespace }}'
+        name: '{{ custom_resource.metadata.name }}'
+      register: cr
+      until:
+      - "'Successful' in (cr | json_query('resources[].status.conditions[].reason'))"
+      delay: 10
+      retries: 30
+    rescue:
+    - name: debug cr
+      ignore_errors: yes
+      failed_when: false
+      debug:
+        var: debug_cr
+      vars:
+        debug_cr: '{{ lookup("k8s",
+          kind=custom_resource.kind,
+          api_version=custom_resource.apiVersion,
+          namespace=namespace,
+          resource_name=custom_resource.metadata.name
+        )}}'
+    - name: get operator logs
+      ignore_errors: yes
+      failed_when: false
+      command: kubectl logs deployment/{{ definition.metadata.name }} -n {{ namespace }}
+      environment:
+        KUBECONFIG: '{{ lookup("env", "KUBECONFIG") }}'
+      vars:
+        definition: "{{ lookup('template', '/'.join([deploy_dir, 'operator.yaml'])) | from_yaml }}"
+      register: log
+
+    - debug: var=log.stdout_lines
+
+    - fail:
+        msg: "Failed on action: converge"
+
+- import_playbook: "{{ playbook_dir }}/../test-local/verify.yml"
