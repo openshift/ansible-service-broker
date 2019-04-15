@@ -262,3 +262,64 @@
           retries: 15
           delay: 10
           until: not mediawiki_query
+      
+      rescue:
+      - name: debug cr
+        ignore_errors: yes
+        failed_when: false
+        debug:
+          var: debug_cr
+        vars:
+          debug_cr: '{{ lookup("k8s", kind="AutomationBroker",
+              api_version="osb.openshift.io/v1alpha1",
+              namespace=test_namespace,
+              resource_name=custom_resource.metadata.name,
+          )}}'
+      
+      - name: "debug pods in {{ test_namespace }}"
+        ignore_errors: yes
+        failed_when: false
+        debug:
+          var: debug_pods
+        vars:
+          debug_pods: '{{ lookup("k8s", kind="pods",
+              api_version="v1",
+              namespace=test_namespace,
+          )}}'
+      
+      - name: "debug pods in {{ namespace }}"
+        ignore_errors: yes
+        failed_when: false
+        debug:
+          var: debug_pods
+        vars:
+          debug_pods: '{{ lookup("k8s", kind="pods",
+              api_version="v1",
+              namespace=namespace,
+          )}}'
+
+      - name: get operator logs
+        ignore_errors: yes
+        failed_when: false
+        command: kubectl logs deployment/{{ definition.metadata.name }} -n {{ namespace }}
+        vars:
+          definition: "{{ lookup('file', '/'.join([deploy_dir, 'operator.yaml'])) | from_yaml }}"
+        register: log
+
+      - debug: var=log.stdout_lines
+      
+#      This needs to wait for 4.1 update to the AO.
+#      - name: get ansible logs
+#        ignore_errors: yes
+#        failed_when: false
+#        command: kubectl logs deployment/{{ definition.metadata.name }} -n {{ namespace }} -c ansible
+#        vars:
+#          definition: "{{ lookup('file', '/'.join([deploy_dir, 'operator.yaml'])) | from_yaml }}"
+#        register: ansible_log
+#
+#      - debug: var=ansible_log.stdout_lines
+
+      - fail:
+          msg: "Failed in asserts.yml"
+
+
