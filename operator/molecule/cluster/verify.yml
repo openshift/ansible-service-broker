@@ -2,7 +2,7 @@
   hosts: localhost
   connection: local
   vars:
-    cluster: kubernetes
+    cluster: openshift 
     ansible_python_interpreter: '{{ ansible_playbook_python }}'
     deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
     custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_cr.yaml'])) | from_yaml }}"
@@ -190,9 +190,20 @@
           delay: 10
           until: mediawiki_available | length > 0 and mediawiki_available | first == "True"
 
+        - name: Retrieve route
+          k8s_facts:
+            api_version: route.openshift.io/v1
+            kind: Route
+            name: "mediawiki"
+            namespace: "{{ test_namespace }}"
+          register: mediawiki_route
+
+        - debug:
+            msg: "{{ mediawiki_route.resources[0] }}"
+
         - name: "Verify mediawiki"
           uri:
-            url: "http://mediawiki.{{ test_namespace }}.svc.cluster.local:8080/index.php/Main_Page"
+            url: "http://{{ mediawiki_route.resources[0].status.ingress[0].host }}/index.php/Main_Page"
             return_content: yes
           retries: 15
           delay: 10
