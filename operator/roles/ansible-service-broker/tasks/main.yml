@@ -14,7 +14,7 @@
   set_fact:
     generation: "{{
       lookup('k8s',
-      api_version='osb.openshift.io/v1alpha1',
+      api_version='osb.openshift.io/v1',
       kind='AutomationBroker',
       kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
       namespace=broker_namespace,
@@ -22,7 +22,7 @@
     }}"
     reconciled_generation: "{{
       lookup('k8s',
-      api_version='osb.openshift.io/v1alpha1',
+      api_version='osb.openshift.io/v1',
       kind='AutomationBroker',
       kubeconfig=lookup('env', 'K8S_AUTH_KUBECONFIG'),
       namespace=broker_namespace,
@@ -130,7 +130,7 @@
 - name: Write generation to status as reconciled generation
   when: pending_config_changes
   k8s_status:
-    api_version: osb.openshift.io/v1alpha1
+    api_version: osb.openshift.io/v1
     kind: AutomationBroker
     namespace: "{{ broker_namespace }}"
     name: "{{ broker_name }}"

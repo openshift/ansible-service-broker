@@ -6,10 +6,10 @@
   vars:
     ansible_python_interpreter: '{{ ansible_playbook_python }}'
     deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
-    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_cr.yaml'])) | from_yaml }}"
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1_automationbroker_cr.yaml'])) | from_yaml }}"
   tasks:
   - block:
-    - name: Create the osb.openshift.io/v1alpha1.AnsibleServiceBroker
+    - name: Create the osb.openshift.io/v1.AnsibleServiceBroker
       k8s:
         state: present
         namespace: '{{ namespace }}'

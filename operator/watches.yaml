@@ -1,5 +1,5 @@
 ---
-- version: v1alpha1
+- version: v1
   group: osb.openshift.io
   kind: AutomationBroker
   playbook: /opt/ansible/playbook.yaml
