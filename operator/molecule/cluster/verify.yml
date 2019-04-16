@@ -1,0 +1,325 @@
+- name: Verify
+  hosts: localhost
+  connection: local
+  vars:
+    cluster: openshift 
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_cr.yaml'])) | from_yaml }}"
+    test_namespace: apb-test
+    ready_status_query: "status.conditions[?type == 'Ready'].status"
+    available_status_query: "status.conditions[?type == 'Available'].status"
+    mediawiki_query: "{{
+      lookup(
+        'k8s',
+        api_version='servicecatalog.k8s.io/v1beta1',
+        kind='ServiceInstance',
+        namespace=test_namespace,
+        resource_name='mediawiki'
+      ) | json_query(ready_status_query)
+    }}"
+    postgresql_query: "{{
+      lookup(
+        'k8s',
+        api_version='servicecatalog.k8s.io/v1beta1',
+        kind='ServiceInstance',
+        namespace=test_namespace,
+        resource_name='postgresql'
+      ) | json_query(ready_status_query)
+    }}"
+    binding_query: "{{
+      lookup(
+        'k8s',
+        api_version='servicecatalog.k8s.io/v1beta1',
+        kind='ServiceBinding',
+        namespace=test_namespace,
+        resource_name='mediawiki-postgresql-binding'
+      ) | json_query(ready_status_query)
+    }}"
+    mediawiki_deployment: "{{
+      lookup(
+        'k8s',
+        api_version='apps/v1' if cluster == 'kubernetes' else 'apps.openshift.io/v1',
+        kind='Deployment' if cluster == 'kubernetes' else 'DeploymentConfig',
+        namespace=test_namespace,
+        resource_name='mediawiki'
+      )
+    }}"
+    mediawiki_ready: "{{ mediawiki_deployment | json_query('status.readyReplicas') }}"
+    mediawiki_replicas: "{{ mediawiki_deployment | json_query('status.replicas') }}"
+    mediawiki_updated: "{{ mediawiki_deployment | json_query('status.updatedReplicas') }}"
+    mediawiki_available: "{{ mediawiki_deployment | json_query(available_status_query) }}"
+
+  tasks:
+    - block:
+        - name: Verify cr is created
+          assert:
+            that:
+            - cr
+          vars:
+            cr: '{{ lookup("k8s", kind="AutomationBroker",
+              api_version="osb.openshift.io/v1alpha1",
+              namespace=namespace,
+              resource_name=custom_resource.metadata.name,
+            )}}'
+
+        - name: Wait until cluster service broker is ready
+          k8s_facts:
+            api_version: servicecatalog.k8s.io/v1beta1
+            kind: ClusterServiceBroker
+            name: "ansible-service-broker"
+          register: csb
+          until:
+          - "'Ready' in (csb | json_query('resources[].status.conditions[].type'))"
+          - "'FetchedCatalog' in (csb | json_query('resources[].status.conditions[].reason'))"
+          delay: 10
+          retries: 60
+
+        - name: Create test namespace for APBs
+          k8s:
+            definition:
+              apiVersion: v1
+              kind: Namespace
+              metadata:
+                name: apb-test
+
+        - name: Provision Mediawiki
+          k8s:
+            state: present
+            definition:
+              apiVersion: servicecatalog.k8s.io/v1beta1
+              kind: ServiceInstance
+              metadata:
+                name: mediawiki
+                namespace: apb-test
+              spec:
+                clusterServiceClassExternalName: dh-mediawiki-apb
+                clusterServicePlanExternalName: default
+                parameters:
+                  app_name: mediawiki
+                  mediawiki_db_schema: "mediawiki"
+                  mediawiki_site_name: "Mediawiki-CI"
+                  mediawiki_site_lang: "en"
+                  mediawiki_admin_user: "ci-user"
+                  mediawiki_admin_pass: "admin"
+
+        - name: Wait for mediawiki service instance
+          debug:
+            msg: "instance ready status: {{ mediawiki_query }}"
+          retries: 15
+          delay: 10
+          until: mediawiki_query | length > 0 and mediawiki_query | first == "True"
+
+        - name: Provision postgresql
+          k8s:
+            state: present
+            definition:
+              apiVersion: servicecatalog.k8s.io/v1beta1
+              kind: ServiceInstance
+              metadata:
+                name: postgresql
+                namespace: apb-test
+              spec:
+                clusterServiceClassExternalName: dh-postgresql-apb
+                clusterServicePlanExternalName: dev
+                parameters:
+                  app_name: "postgresql"
+                  postgresql_database: "admin"
+                  postgresql_password: "admin"
+                  postgresql_user: "admin"
+                  postgresql_version: "9.6"
+
+        - name: Wait for postgresql service instance
+          debug:
+            msg: "Instance ready status: {{ postgresql_query }}"
+          retries: 15
+          delay: 10
+          until: postgresql_query | length > 0 and postgresql_query | first == "True"
+
+        - name: Create binding
+          k8s:
+            state: present
+            definition:
+              apiVersion: servicecatalog.k8s.io/v1beta1
+              kind: ServiceBinding
+              metadata:
+                name: mediawiki-postgresql-binding
+                namespace: apb-test
+              spec:
+                instanceRef:
+                  name: postgresql
+                secretName: mediawiki-postgresql-binding
+
+        - name: Wait for mediawiki-postgresql binding instance
+          debug:
+            msg: "Binding ready status: {{ binding_query }}"
+          retries: 15
+          delay: 10
+          until: binding_query | length > 0 and binding_query | first == "True"
+
+        - name: Update mediawiki deployment(config)
+          k8s:
+            state: present
+            definition:
+              apiVersion: "{{ 'apps/v1' if cluster == 'kubernetes' else 'apps.openshift.io/v1' }}"
+              kind: "{{ 'Deployment' if cluster == 'kubernetes' else 'DeploymentConfig' }}"
+              metadata:
+                name: mediawiki
+                namespace: apb-test
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - name: mediawiki
+                        envFrom:
+                          - secretRef:
+                              name: mediawiki-postgresql-binding
+
+        - name: Wait for mediawiki deployment(config) to be updated
+          debug:
+            msg: "Waiting for mediawiki"
+          retries: 15
+          delay: 10
+          until: mediawiki_replicas == "1" and mediawiki_ready == "1" and mediawiki_updated == "1"
+
+        - name: Wait for mediawiki deployment(config) to be available
+          debug:
+            msg:
+              - "Deployment(config) ready status: {{ mediawiki_available }}"
+          retries: 15
+          delay: 10
+          until: mediawiki_available | length > 0 and mediawiki_available | first == "True"
+
+        - name: Retrieve route
+          k8s_facts:
+            api_version: route.openshift.io/v1
+            kind: Route
+            name: "mediawiki"
+            namespace: "{{ test_namespace }}"
+          register: mediawiki_route
+
+        - debug:
+            msg: "{{ mediawiki_route.resources[0] }}"
+
+        - name: "Verify mediawiki"
+          uri:
+            url: "http://{{ mediawiki_route.resources[0].status.ingress[0].host }}/index.php/Main_Page"
+            return_content: yes
+          retries: 15
+          delay: 10
+          register: webpage
+          until:
+            - webpage.status == 200
+            - "'MediaWiki has been installed.' in webpage.content"
+
+        - name: Delete binding
+          k8s:
+            state: absent
+            definition:
+              apiVersion: servicecatalog.k8s.io/v1beta1
+              kind: ServiceBinding
+              metadata:
+                name: mediawiki-postgresql-binding
+                namespace: "{{ test_namespace }}"
+
+        - name: Wait for mediawiki-postgresql binding instance to be removed
+          debug:
+            msg: "Binding ready status: {{ binding_query }}"
+          retries: 15
+          delay: 10
+          until: not binding_query
+
+        - name: Deprovision postgresql
+          k8s:
+            state: absent
+            definition:
+              apiVersion: servicecatalog.k8s.io/v1beta1
+              kind: ServiceInstance
+              metadata:
+                name: postgresql
+                namespace: "{{ test_namespace }}"
+
+        - name: Wait for postgresql service instance to be removed
+          debug:
+            msg: "Instance ready status: {{ postgresql_query }}"
+          retries: 15
+          delay: 10
+          until: not postgresql_query
+
+        - name: Deprovision mediawiki
+          k8s:
+            state: absent
+            definition:
+              apiVersion: servicecatalog.k8s.io/v1beta1
+              kind: ServiceInstance
+              metadata:
+                name: mediawiki
+                namespace: "{{ test_namespace }}"
+
+        - name: Wait for mediawiki service instance to be removed
+          debug:
+            msg: "Instance ready status: {{ mediawiki_query }}"
+          retries: 15
+          delay: 10
+          until: not mediawiki_query
+      
+      rescue:
+      - name: debug cr
+        ignore_errors: yes
+        failed_when: false
+        debug:
+          var: debug_cr
+        vars:
+          debug_cr: '{{ lookup("k8s", kind="AutomationBroker",
+              api_version="osb.openshift.io/v1alpha1",
+              namespace=test_namespace,
+              resource_name=custom_resource.metadata.name,
+          )}}'
+      
+      - name: "debug pods in {{ test_namespace }}"
+        ignore_errors: yes
+        failed_when: false
+        debug:
+          var: debug_pods
+        vars:
+          debug_pods: '{{ lookup("k8s", kind="pods",
+              api_version="v1",
+              namespace=test_namespace,
+          )}}'
+      
+      - name: "debug pods in {{ namespace }}"
+        ignore_errors: yes
+        failed_when: false
+        debug:
+          var: debug_pods
+        vars:
+          debug_pods: '{{ lookup("k8s", kind="pods",
+              api_version="v1",
+              namespace=namespace,
+          )}}'
+
+      - name: get operator logs
+        ignore_errors: yes
+        failed_when: false
+        command: kubectl logs deployment/{{ definition.metadata.name }} -n {{ namespace }}
+        vars:
+          definition: "{{ lookup('file', '/'.join([deploy_dir, 'operator.yaml'])) | from_yaml }}"
+        register: log
+
+      - debug: var=log.stdout_lines
+      
+#      This needs to wait for 4.1 update to the AO.
+#      - name: get ansible logs
+#        ignore_errors: yes
+#        failed_when: false
+#        command: kubectl logs deployment/{{ definition.metadata.name }} -n {{ namespace }} -c ansible
+#        vars:
+#          definition: "{{ lookup('file', '/'.join([deploy_dir, 'operator.yaml'])) | from_yaml }}"
+#        register: ansible_log
+#
+#      - debug: var=ansible_log.stdout_lines
+
+      - fail:
+          msg: "Failed in asserts.yml"
+
+

@@ -54,4 +54,4 @@
     - fail:
         msg: "Failed on action: converge"
 
-- import_playbook: "{{ playbook_dir }}/../test-local/verify.yml"
+- import_playbook: "{{ playbook_dir }}/../cluster/verify.yml"
