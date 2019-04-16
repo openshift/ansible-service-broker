@@ -18,7 +18,7 @@ spec:
     Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM9c?list=PLEGSLwUsxfEh4TE2GDU4oygCB-tmShkSn&t=4732)
 
   keywords: ['ansible', 'automation', 'broker', 'open service broker']
-  version: 4.1.0
+  version: 4.1.201904160232
   maturity: stable
   maintainers:
   - name: Red Hat, Inc.
@@ -207,11 +207,11 @@ spec:
               serviceAccountName: openshift-ansible-service-broker-operator
               containers:
               - name: openshift-ansible-service-broker-operator
-                image: registry.access.redhat.com/openshift/ose-ansible-service-broker-operator:v4.0.0
+                image: quay.io/openshift/origin-ansible-service-broker-operator
                 imagePullPolicy: IfNotPresent
                 env:
                 - name: IMAGE
-                  value: registry.access.redhat.com/openshift/ose-ansible-service-broker:v4.0.0
+                  value: quay.io/openshift/origin-ansible-service-broker
                 - name: OPERATOR_NAME
                   value: openshift-ansible-service-broker-operator
                 - name: POD_NAME
