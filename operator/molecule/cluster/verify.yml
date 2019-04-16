@@ -5,7 +5,7 @@
     cluster: openshift 
     ansible_python_interpreter: '{{ ansible_playbook_python }}'
     deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
-    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_cr.yaml'])) | from_yaml }}"
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1_automationbroker_cr.yaml'])) | from_yaml }}"
     test_namespace: apb-test
     ready_status_query: "status.conditions[?type == 'Ready'].status"
     available_status_query: "status.conditions[?type == 'Available'].status"
@@ -58,7 +58,7 @@
             - cr
           vars:
             cr: '{{ lookup("k8s", kind="AutomationBroker",
-              api_version="osb.openshift.io/v1alpha1",
+              api_version="osb.openshift.io/v1",
               namespace=namespace,
               resource_name=custom_resource.metadata.name,
             )}}'
@@ -271,7 +271,7 @@
           var: debug_cr
         vars:
           debug_cr: '{{ lookup("k8s", kind="AutomationBroker",
-              api_version="osb.openshift.io/v1alpha1",
+              api_version="osb.openshift.io/v1",
               namespace=test_namespace,
               resource_name=custom_resource.metadata.name,
           )}}'

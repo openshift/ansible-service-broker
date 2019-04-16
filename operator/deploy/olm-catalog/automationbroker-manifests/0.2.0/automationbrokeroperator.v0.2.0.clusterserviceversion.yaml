@@ -5,7 +5,7 @@ metadata:
   name: automationbrokeroperator.v0.2.0
   namespace: placeholder
   annotations:
-    alm-examples: '[{"apiVersion":"osb.openshift.io/v1alpha1","kind":"AutomationBroker","metadata":{"name":"ansible-service-broker","namespace":"openshift-ansible-service-broker"},"spec":{"createBrokerNamespace":"false","waitForBroker":"false"}}]'
+    alm-examples: '[{"apiVersion":"osb.openshift.io/v1","kind":"AutomationBroker","metadata":{"name":"ansible-service-broker","namespace":"openshift-ansible-service-broker"},"spec":{"createBrokerNamespace":"false","waitForBroker":"false"}}]'
 spec:
   displayName: Automation Broker Operator
   description: |
@@ -218,7 +218,7 @@ spec:
   customresourcedefinitions:
     owned:
     - name: automationbrokers.osb.openshift.io
-      version: v1alpha1
+      version: v1
       kind: AutomationBroker
       displayName: Automation Broker
       description: An Open Service Broker supporting management of application bundles

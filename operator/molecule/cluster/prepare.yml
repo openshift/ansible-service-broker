@@ -9,7 +9,7 @@
   tasks:
   - name: Create Custom Resource Definition
     k8s:
-      definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_crd.yaml'])) }}"
+      definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1_automationbroker_crd.yaml'])) }}"
 
   - name: Create bundle crd
     k8s:

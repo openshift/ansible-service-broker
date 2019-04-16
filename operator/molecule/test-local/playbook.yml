@@ -24,7 +24,7 @@
     deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
     operator_image: "osb.openshift.io/testing-operator:testing"
     operand_image: "docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v4.0"
-    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1alpha1_automationbroker_cr.yaml'])) | from_yaml }}"
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/osb_v1_automationbroker_cr.yaml'])) | from_yaml }}"
   tasks:
   - block:
     - name: Delete the Operator Deployment
@@ -54,7 +54,7 @@
         namespace: '{{ namespace }}'
         definition: "{{ lookup('template', '/'.join([deploy_dir, 'operator.yaml.j2'])) }}"
 
-    - name: Create the osb.openshift.io/v1alpha1.AnsibleServiceBroker
+    - name: Create the osb.openshift.io/v1.AnsibleServiceBroker
       k8s:
         state: present
         namespace: '{{ namespace }}'
