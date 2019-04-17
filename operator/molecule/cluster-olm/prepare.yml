@@ -13,46 +13,46 @@
       api_version: v1
       kind: Namespace
       name: '{{ namespace }}'
-      
+
   - name: Set operator Image from Format
     shell: "echo $IMAGE_FORMAT | envsubst '${component}'"
     environment:
       component: ansible-service-broker-operator
     register: operator_image_raw
-    
+
   - name: Set operand Image from Format
     shell: "echo $IMAGE_FORMAT | envsubst '${component}'"
     environment:
       component: ansible-service-broker
     register: operand_image_raw
-  
+
   - name:  Add operator image to csv
     lineinfile:
       path: "{{ playbook_dir }}/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests/4.1.0/openshiftansibleservicebroker.v{{ csv_version }}.clusterserviceversion.yaml"
-      regexp: "image: registry.access.redhat.com/openshift/ose-ansible-service-broker-operator:v4.0.0"
+      regexp: "quay.io/openshift/origin-ansible-service-broker-operator"
       line: "                image: {{ operator_image_raw.stdout }}"
- 
+
   - name:  Add operand image to csv
     lineinfile:
       path: "{{ playbook_dir }}/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests/4.1.0/openshiftansibleservicebroker.v{{ csv_version }}.clusterserviceversion.yaml"
-      regexp: "registry.access.redhat.com/openshift/ose-ansible-service-broker:v4.0.0"
+      regexp: "quay.io/openshift/origin-ansible-service-broker"
       line: "                  value: {{ operand_image_raw.stdout }}"
- 
- 
+
+
   - name: Create catalog source config map
     shell: "VERSION={{ csv_version }} {{ playbook_dir}}/e2e-olm.sh"
     register: olm_cf_cs
- 
+
   - debug:
       var: cm
     vars:
       cm: "{{ olm_cf_cs.stdout | from_yaml  }}"
- 
+
   - name: Create config map
     k8s:
       namespace: "{{ namespace }}"
       definition: "{{ olm_cf_cs.stdout | from_yaml }}"
- 
+
   - name: Create catalog source
     k8s:
       api_version: operators.coreos.com/v1alpha1
@@ -67,7 +67,7 @@
           configMap: openshift-ansible-broker-operator
           displayName: openshift-ansible-broker-operator
           publisher: Operator Framework
-  
+
   - name: Create operator-group
     k8s:
       definition:
@@ -79,7 +79,7 @@
         spec:
           targetNamespaces:
           - "{{ namespace }}"
-  
+
   - name: Create Cluster Role Binding for operator svc account
     k8s:
       definition:
@@ -109,7 +109,7 @@
     with_items:
     - ServiceCatalogAPIServer
     - ServiceCatalogControllerManager
-  
+
   - name: Wait a couple of seconds because of initial conditions on service catalog
     pause:
       seconds: 10
@@ -124,7 +124,7 @@
     - "[ \"True\" ] in (svccat_cm | json_query('resources[].status.conditions[?type==`Available`].status'))"
     delay: 10
     retries: 30
- 
+
   # This must come after the service catalog is working.
   - name: Create subscription
     k8s:
