@@ -207,11 +207,11 @@ spec:
               serviceAccountName: openshift-ansible-service-broker-operator
               containers:
               - name: openshift-ansible-service-broker-operator
-                image: registry.access.redhat.com/openshift/ose-ansible-service-broker-operator:v4.0.0
+                image: quay.io/openshift/origin-ansible-service-broker-operator
                 imagePullPolicy: IfNotPresent
                 env:
                 - name: IMAGE
-                  value: registry.access.redhat.com/openshift/ose-ansible-service-broker:v4.0.0
+                  value: quay.io/openshift/origin-ansible-service-broker
                 - name: OPERATOR_NAME
                   value: openshift-ansible-service-broker-operator
                 - name: POD_NAME

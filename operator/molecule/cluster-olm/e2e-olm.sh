@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 DIR=$(cd $(dirname "$0")/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests && pwd)
-VERSION=${VERSION:-4.1.0}
+VERSION=${VERSION:-4.1}
 
 NAME=${NAME:-openshift-ansible-broker-operator}
 NAMEDISPLAY=${NAME:-"OpenShift Ansible Broker Operator"}
