@@ -5,9 +5,5 @@ RUN yum install -y epel-release \
 
 RUN pip install -U setuptools && pip install -U molecule==2.20.0 jmespath openshift
 
-RUN mkdir -p /go/src/github.com/openshift/ansible-service-broker
-COPY . /go/src/github.com/openshift/ansible-service-broker
-
-
 RUN chmod g+rw /etc/passwd
 
