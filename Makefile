@@ -194,7 +194,7 @@ openshift-ci-operator-lint:
 	ANSIBLE_LOCAL_TEMP=/tmp/.ansible ansible-lint /opt/ansible/playbook.yaml
 
 openshift-ci-make-rpm:
-	yum -y install tito yum-utils
+	yum -y install yum-utils
 	yum-builddep -y ./ansible-service-broker.spec
 	tito build --test --rpm
 	mkdir /tmp/rpms
