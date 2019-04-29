@@ -1,7 +1,7 @@
 FROM openshift/origin-release:golang-1.10
 
 RUN yum install -y epel-release \
-    && yum install -y python-devel python-pip gcc
+    && yum install -y python-devel python-pip gcc python-urllib3
 
 RUN pip install -U setuptools && pip install molecule==2.20.0.0a2 jmespath openshift
 RUN echo $IMAGE_FORMAT
