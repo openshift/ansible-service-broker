@@ -1,10 +1,9 @@
 FROM openshift/origin-release:golang-1.10
 
 RUN yum install -y epel-release \
-    && yum install -y python-devel python-pip gcc python-urllib3
+    && yum install -y python-devel python-pip gcc tito
 
-RUN pip install -U setuptools && pip install molecule==2.20.0.0a2 jmespath openshift
-RUN echo $IMAGE_FORMAT
+RUN pip install -U setuptools && pip install -U --user molecule==2.20.0.0a2 jmespath openshift
 
 
 RUN chmod g+rw /etc/passwd
