@@ -463,24 +463,14 @@ func (p provider) DestroySandbox(podName string,
 	}
 
 	if !isNamespaceInTargets(namespace, targets) {
-		policies, err := k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).List(metav1.ListOptions{})
+		log.Debugf("Deleting network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
+		// Must clean up the network policy that allowed communication from the APB pod to the target namespace.
+		err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Delete(podName, &metav1.DeleteOptions{})
 		if err != nil {
-			log.Errorf("Something went wrong trying to determine if we have network policies! - %v", err)
+			log.Errorf("unable to delete the network policy object - %v", err)
 			return
 		}
-
-		// If there are already network policies, we need to clean up the ones we
-		// created to allow communication from the APB pod to the target namespace.
-		if len(policies.Items) > 0 {
-			log.Debugf("Deleting network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
-			// Must clean up the network policy that allowed communication from the APB pod to the target namespace.
-			err = k8scli.Client.NetworkingV1().NetworkPolicies(targets[0]).Delete(podName, &metav1.DeleteOptions{})
-			if err != nil {
-				log.Errorf("unable to delete the network policy object - %v", err)
-				return
-			}
-			log.Debugf("Successfully deleted network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
-		}
+		log.Debugf("Successfully deleted network policy for pod: %v to grant network access to ns: %v", podName, targets[0])
 	}
 
 	metrics.SandboxDeleted()
