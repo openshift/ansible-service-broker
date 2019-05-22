@@ -1,6 +1,8 @@
 Ansible Service Broker
 ======================
 
+TESTING
+
 [![Build Status](https://travis-ci.org/openshift/ansible-service-broker.svg?branch=master)](https://travis-ci.org/openshift/ansible-service-broker)
 [![Go_Report_Card](https://goreportcard.com/badge/github.com/openshift/ansible-service-broker)](https://goreportcard.com/report/github.com/openshift/ansible-service-broker)
 [![Join the chat at freenode:asbroker](https://img.shields.io/badge/irc-freenode%3A%20%23asbroker-blue.svg)](http://webchat.freenode.net/?channels=%23asbroker)
