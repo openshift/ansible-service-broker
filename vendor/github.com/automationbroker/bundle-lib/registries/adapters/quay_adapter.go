@@ -74,8 +74,8 @@ func (r QuayAdapter) RegistryName() string {
 // GetImageNames - retrieve the images
 func (r QuayAdapter) GetImageNames() ([]string, error) {
 	log.Debug("QuayAdapter::GetImages")
-	log.Debug("BundleSpecLabel: %s", BundleSpecLabel)
-	log.Debug("Loading image list for quay.io Org: [ %v ]", r.config.Org)
+	log.Debugf("BundleSpecLabel: %s", BundleSpecLabel)
+	log.Debugf("Loading image list for quay.io Org: [ %v ]", r.config.Org)
 
 	var imageList []string
 
