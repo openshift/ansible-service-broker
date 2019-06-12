@@ -138,5 +138,5 @@
           source: openshift-ansible-broker-operator
           sourceNamespace: "{{ namespace }}"
           name: openshiftansibleservicebroker
-          startingCSV: openshiftansibleservicebroker.v4.1.1
+          startingCSV: openshiftansibleservicebroker.v4.1.2
           channel: stable
