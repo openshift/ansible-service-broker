@@ -2,11 +2,11 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: openshiftansibleservicebroker.v4.1.1
+  name: openshiftansibleservicebroker.v4.1.2
   namespace: placeholder
   annotations:
     alm-examples: '[{"apiVersion":"osb.openshift.io/v1", "kind":"AutomationBroker", "metadata":{"name":"ansible-service-broker","namespace":"ansible-service-broker"}, "spec":{"createBrokerNamespace":"false","waitForBroker":"false", "registries": [{"type": "rhcc", "name": "rhcc", "url": "https://registry.redhat.io", "white_list": [".*-apb$"], "auth_type": "secret", "auth_name": "asb-registry-auth"}]}}]'
-    olm.skipRange: ">=4.1.0 <4.1.1"
+    olm.skipRange: ">=4.1.0 <4.1.2"
 spec:
   displayName: OpenShift Ansible Service Broker Operator
   description: |
@@ -19,7 +19,7 @@ spec:
     Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM9c?list=PLEGSLwUsxfEh4TE2GDU4oygCB-tmShkSn&t=4732)
 
   keywords: ['ansible', 'automation', 'broker', 'open service broker']
-  version: 4.1.1
+  version: 4.1.2
   maturity: stable
   maintainers:
   - name: Red Hat, Inc.
