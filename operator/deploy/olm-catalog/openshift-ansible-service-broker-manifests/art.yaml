@@ -9,6 +9,6 @@ updates:
       replace: "version: {FULL_VER}"
   - file: "package.yaml"
     update_list:
-    - search: "currentCSV: openshiftansibleservicebroker.v{MAJOR}.{MINOR}.1"
+    - search: "currentCSV: openshiftansibleservicebroker.v{MAJOR}.{MINOR}.0"
       replace: "currentCSV: openshiftansibleservicebroker.{FULL_VER}"
 
