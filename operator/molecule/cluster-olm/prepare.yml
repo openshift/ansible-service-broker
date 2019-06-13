@@ -28,13 +28,13 @@
 
   - name:  Add operator image to csv
     lineinfile:
-      path: "{{ playbook_dir }}/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests/{{ csv_version }}/openshiftansibleservicebroker.v4.1.0.clusterserviceversion.yaml"
+      path: "{{ playbook_dir }}/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests/{{ csv_version }}/openshiftansibleservicebroker.v4.2.0.clusterserviceversion.yaml"
       regexp: "quay.io/openshift/origin-ansible-service-broker-operator"
       line: "                image: {{ operator_image_raw.stdout }}"
 
   - name:  Add operand image to csv
     lineinfile:
-      path: "{{ playbook_dir }}/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests/{{ csv_version }}/openshiftansibleservicebroker.v4.1.0.clusterserviceversion.yaml"
+      path: "{{ playbook_dir }}/../../deploy/olm-catalog/openshift-ansible-service-broker-manifests/{{ csv_version }}/openshiftansibleservicebroker.v4.2.0.clusterserviceversion.yaml"
       regexp: "quay.io/openshift/origin-ansible-service-broker"
       line: "                  value: {{ operand_image_raw.stdout }}"
 
