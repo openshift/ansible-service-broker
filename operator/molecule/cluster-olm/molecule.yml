@@ -19,7 +19,7 @@ provisioner:
     group_vars:
       all:
         namespace: ${TEST_NAMESPACE:-osdk-test}
-        csv_version: ${CSV_VERSION:-4.1}
+        csv_version: ${CSV_VERSION:-4.2}
   lint:
     name: ansible-lint
     enabled: False
