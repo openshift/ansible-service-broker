@@ -1,5 +1,5 @@
 updates:
-  - file: "{MAJOR}.{MINOR}/openshiftansibleservicebroker.v{MAJOR}.{MINOR}.2.clusterserviceversion.yaml" # relative to this file
+  - file: "{MAJOR}.{MINOR}/openshiftansibleservicebroker.v{MAJOR}.{MINOR}.0.clusterserviceversion.yaml" # relative to this file
     update_list:
     # replace metadata.name value
     - search: "openshiftansibleservicebroker.v{MAJOR}.{MINOR}.2"
