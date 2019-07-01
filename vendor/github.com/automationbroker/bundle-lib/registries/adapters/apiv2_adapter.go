@@ -230,6 +230,7 @@ func (r APIV2Adapter) getNextImages(url string) (*apiV2CatalogResponse, string, 
 	}
 	log.Debug("Properly unmarshalled image response")
 
+	log.Debugf("link header [%s]", resp.Header.Get("Link"))
 	return &imageList, resp.Header.Get("Link"), nil
 }
 
@@ -240,6 +241,9 @@ func (r APIV2Adapter) getNextImageURL(link string) string {
 		return ""
 	}
 
+	// rudimentary Link header parser
+	// refer to the full RFC5988 spec if you need more functionality
+	// https://tools.ietf.org/html/rfc5988
 	res := strings.Split(link, ";")
 	if len(res[0]) == 0 {
 		log.Errorf("Invalid Link value")

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -209,8 +210,12 @@ func newKubernetes() (*KubernetesClient, error) {
 	// library
 	clientConfig, err := rest.InClusterConfig()
 	if err != nil {
+		config := os.Getenv("KUBECONFIG")
+		if config == "" {
+			config = homedir.HomeDir() + "/.kube/config"
+		}
 		log.Debug("Checking for a local Cluster Config")
-		clientConfig, err = createClientConfigFromFile(homedir.HomeDir() + "/.kube/config")
+		clientConfig, err = createClientConfigFromFile(config)
 		if err != nil {
 			log.Error("Failed to create LocalClientSet")
 			return nil, err
