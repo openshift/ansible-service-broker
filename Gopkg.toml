@@ -37,7 +37,7 @@
   version = "~1.3.0"
 
 [[constraint]]
-  version = "~0.2.17"
+  version = "~0.2.18"
   name = "github.com/automationbroker/bundle-lib"
 
 [[constraint]]
