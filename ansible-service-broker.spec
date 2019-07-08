@@ -41,7 +41,7 @@
 
 Name: %{repo}
 Epoch: 1
-Version: 1.3.22
+Version: 1.3.23
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -337,6 +337,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Mon Jul 08 2019 jesus m. rodriguez <jesusr@redhat.com> 1.3.23-1
+- Bug 1723422 - fix pagination url, bump bundle-lib (#1234) (jesusr@redhat.com)
+
 * Mon Feb 11 2019 jesus m. rodriguez <jesusr@redhat.com> 1.3.22-1
 - Bump bundle-lib release to 0.2.17 (#1181) (jmrodri@gmail.com)
 
