@@ -59,6 +59,12 @@ spec:
           env:
             - name: BROKER_CONFIG
               value: /etc/{{ broker_name }}/config.yaml
+{% for proxy_envvar in ["HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"] %}
+{% if lookup("env", proxy_envvar) != None %}
+            - name: {{ proxy_envvar }}
+              value: '{{ lookup("env", proxy_envvar) }}'
+{% endif %}
+{% endfor %}
           resources: {}
           terminationMessagePath: /tmp/termination-log
           readinessProbe:
