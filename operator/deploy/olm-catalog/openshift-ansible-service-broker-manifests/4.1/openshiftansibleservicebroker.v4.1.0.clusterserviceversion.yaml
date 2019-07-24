@@ -7,6 +7,9 @@ metadata:
   annotations:
     alm-examples: '[{"apiVersion":"osb.openshift.io/v1", "kind":"AutomationBroker", "metadata":{"name":"ansible-service-broker","namespace":"ansible-service-broker"}, "spec":{"createBrokerNamespace":"false","waitForBroker":"false", "registries": [{"type": "rhcc", "name": "rhcc", "url": "https://registry.redhat.io", "white_list": [".*-apb$"], "auth_type": "secret", "auth_name": "asb-registry-auth"}]}}]'
     olm.skipRange: ">=4.1.0 <4.1.2"
+    description: "OpenShift Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker)"
+    capabilities: "Seamless Upgrades"
+    containerImage: "quay.io/openshift/origin-ansible-service-broker"
 spec:
   displayName: OpenShift Ansible Service Broker Operator
   description: |
