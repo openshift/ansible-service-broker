@@ -143,7 +143,10 @@ registry:
     url: <rhcc url>
     white_list:
       - ".*-apb$"
+    skip_verify_tls: false
 ```
+
+If `skip_verify_tls` is `true`, the TLS certificate of the remote registry will not be verified. Defaults to `false`.
 
 ### OpenShift Registry
 Using the OpenShift registry will allow you to load APBs that are published to this type of [registry](http://www.projectatomic.io/registry/).
