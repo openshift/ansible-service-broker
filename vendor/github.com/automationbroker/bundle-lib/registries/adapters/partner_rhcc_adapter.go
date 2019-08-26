@@ -167,18 +167,33 @@ func (r PartnerRhccAdapter) loadSpec(imageName string) (*apb.Spec, error) {
 	if r.Config.Tag == "" {
 		r.Config.Tag = "latest"
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(partnerManifestURL, r.Config.URL, imageName, r.Config.Tag), nil)
-	if err != nil {
-		return nil, err
-	}
+
 	token, err := r.getAuthToken()
 	if err != nil {
 		return nil, err
 	}
+
+	req, err := http.NewRequest("GET", fmt.Sprintf(partnerManifestURL, r.Config.URL, imageName, r.Config.Tag), nil)
+	if err != nil {
+		return nil, err
+	}
+
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
 	registryName := r.Config.URL.Hostname()
 	if r.Config.URL.Port() != "" {
 		registryName = fmt.Sprintf("%s:%s", r.Config.URL.Hostname(), r.Config.URL.Port())
 	}
-	return imageToSpec(req, fmt.Sprintf("%s/%s:%s", registryName, imageName, r.Config.Tag))
+
+	body, err := registryResponseHandler(resp)
+	if err != nil {
+		return nil, fmt.Errorf("PartnerRhccAdapter::error handling partner RHCC registery response %s", err)
+	}
+	return responseToSpec(body, fmt.Sprintf("%s/%s:%s", registryName, imageName, r.Config.Tag))
 }

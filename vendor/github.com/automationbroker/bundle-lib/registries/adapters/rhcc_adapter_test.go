@@ -138,7 +138,7 @@ func TestGetImages(t *testing.T) {
 		t.Fatal("ERROR: ", err)
 	}
 	config := Configuration{URL: u}
-	adapter := RHCCAdapter{Config: config}
+	adapter := NewRHCCAdapter(config)
 	imageNames, err := adapter.GetImageNames()
 	ft.Equal(t, len(imageNames), 3)
 	ft.NotNil(t, imageNames)

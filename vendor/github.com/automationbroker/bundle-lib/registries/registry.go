@@ -57,9 +57,10 @@ type Config struct {
 	Namespaces []string
 	// Fail will tell the registry that it is ok to fail the bootstrap if
 	// just this registry has failed.
-	Fail      bool     `yaml:"fail_on_error"`
-	WhiteList []string `yaml:"white_list"`
-	BlackList []string `yaml:"black_list"`
+	Fail          bool     `yaml:"fail_on_error"`
+	WhiteList     []string `yaml:"white_list"`
+	BlackList     []string `yaml:"black_list"`
+	SkipVerifyTLS bool     `yaml:"skip_verify_tls"`
 }
 
 // Validate - makes sure the registry config is valid.
@@ -195,19 +196,20 @@ func NewCustomRegistry(configuration Config, adapter adapters.Adapter, asbNamesp
 
 	if adapter == nil {
 		c := adapters.Configuration{
-			URL:        u,
-			User:       configuration.User,
-			Pass:       configuration.Pass,
-			Org:        configuration.Org,
-			Runner:     configuration.Runner,
-			Images:     configuration.Images,
-			Namespaces: configuration.Namespaces,
-			Tag:        configuration.Tag,
+			URL:           u,
+			User:          configuration.User,
+			Pass:          configuration.Pass,
+			Org:           configuration.Org,
+			Runner:        configuration.Runner,
+			Images:        configuration.Images,
+			Namespaces:    configuration.Namespaces,
+			Tag:           configuration.Tag,
+			SkipVerifyTLS: configuration.SkipVerifyTLS,
 		}
 
 		switch strings.ToLower(configuration.Type) {
 		case "rhcc":
-			adapter = &adapters.RHCCAdapter{Config: c}
+			adapter = adapters.NewRHCCAdapter(c)
 		case "dockerhub":
 			adapter = &adapters.DockerHubAdapter{Config: c}
 		case "mock":

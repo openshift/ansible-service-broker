@@ -56,7 +56,7 @@
   version = "0.1.2"
 
 [[projects]]
-  digest = "1:8c26b83160fc04f63e0170e517abb7958eb9fd1325ff64b2fc7d663de338431b"
+  digest = "1:009137cf1345959a4a0877dac5de750870fc2d9ac3720c27155cc192cb42698a"
   name = "github.com/automationbroker/bundle-lib"
   packages = [
     "apb",
@@ -67,11 +67,12 @@
     "origin/copy/user/validation",
     "registries",
     "registries/adapters",
+    "registries/adapters/oauth",
     "runtime",
   ]
   pruneopts = ""
-  revision = "6207eb7a45ae3aee952d13583e492428dd43fb19"
-  version = "0.1.10"
+  revision = "89e1c60c07db8ab987e6bd0da97a6233de64db47"
+  version = "0.1.11"
 
 [[projects]]
   branch = "master"
