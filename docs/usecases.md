@@ -86,7 +86,7 @@ Ansible Service Broker -> ServiceCatalog: return 200 image
 ServiceCatalog -> Service Consumer: ServiceClass
 Service Consumer -> ServiceCatalog: PUT /binding
 ServiceCatalog -> ServiceCatalog: Create binding resource
-Controller -> AnsibleServiceBroker: PUT /binding
+Controller -> Ansible Service Broker: PUT /binding
 Ansible Service Broker -> Controller: return database connection string
 Controller -> Magic: Store binding information for injection later
 ```
@@ -101,8 +101,8 @@ Controller -> Magic: Store binding information for injection later
 ### Sequence diagram source
 ```
 Service Consumer -> ServiceCatalog: POST /instance (Etherpad)
-Controller -> AnsibleServiceBroker: PUT /provision (Etherpad)
-AnsibleServiceBroker -> Go WebApp APB: docker run provision
+Controller -> Ansible Service Broker: PUT /provision (Etherpad)
+Ansible Service Broker -> Go WebApp APB: docker run provision
 Ansible Service Broker -> etcd : get etherpad image
 etcd -> Ansible Service Broker: return image record
 Ansible Service Broker -> Docker Hub: pull etherpad image
@@ -111,7 +111,7 @@ Ansible Service Broker -> Ansible Service Broker: run etherpad image
 Ansible Service Broker -> ServiceCatalog: return 200 OK
 Magic -> Go WebApp APB: INJECT binding information
 Go WebApp APB -> mLab Service: Uses
-AnsibleServiceBroker -> Controller: Go WebApp service instance ready
+Ansible Service Broker -> Controller: Go WebApp service instance ready
 ServiceCatalog -> Service Consumer: Go WebApp instance ready
 ```
 ## Issues
