@@ -230,7 +230,7 @@ func (a AnsibleBroker) Bootstrap() (*BootstrapResponse, error) {
 		}
 		if err != nil {
 			log.Warningf("registry: %v was unable to complete bootstrap - %v",
-				r.RegistryName, err)
+				r.RegistryName(), err)
 			registryErrors = append(registryErrors, err)
 		}
 		imageCount += count
