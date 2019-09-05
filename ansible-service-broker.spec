@@ -38,7 +38,7 @@
 %define modulename ansible-service-broker
 
 Name: %{repo}
-Version: 1.2.22
+Version: 1.2.23
 Release: 1%{build_timestamp}%{?dist}
 Summary: Ansible Service Broker
 License: ASL 2.0
@@ -332,6 +332,9 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 %endif
 
 %changelog
+* Thu Sep 05 2019 jesus m. rodriguez <jesusr@redhat.com> 1.2.23-1
+- Bug 1696113 add oauth and skip_verify_ssl support (#1241) (jottofar@redhat.com)
+
 * Tue Feb 12 2019 jesus m. rodriguez <jesusr@redhat.com> 1.2.22-1
 - Bug 1643303 - Fixed in bundle-lib 0.1.10 (#1185) (jmrodri@gmail.com)
 - fix missing golint in travis builds (#1123) (jmrodri@gmail.com)
