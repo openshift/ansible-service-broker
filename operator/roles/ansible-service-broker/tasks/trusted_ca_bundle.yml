@@ -1,6 +1,6 @@
 ---
 
-- name: check if trusted CA configmap exists
+- name: Check if trusted CA configmap exists
   k8s_facts:
     api_version: v1
     kind: ConfigMap
