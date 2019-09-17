@@ -1,0 +1,69 @@
+---
+
+- name: Check if trusted CA configmap exists
+  k8s_facts:
+    api_version: v1
+    kind: ConfigMap
+    namespace: "{{ broker_namespace }}"
+    name: asb-trusted-ca
+  register: tcab_ca_bundle_cm
+
+- name: Create the trusted CA configmap
+  k8s:
+    state: '{{ state }}'
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: asb-trusted-ca
+        namespace: '{{ broker_namespace }}'
+        labels:
+          config.openshift.io/inject-trusted-cabundle: "true"
+      data:
+        ca-bundle.crt:
+  when: not tcab_ca_bundle_cm.resources
+
+- name: Get trusted CA configmap
+  k8s_facts:
+    api_version: v1
+    kind: ConfigMap
+    namespace: "{{broker_namespace }}"
+    name: asb-trusted-ca
+  register: tcab_ca_bundle_cm
+
+# Append hash will append the hash of the ConfigMap to metadata.name, forcing
+# dependent deployments to roll out if the ConfigMap has changed
+- name: Create the duplicate bundle CM to be mounted
+  k8s:
+    state: '{{ state }}'
+    append_hash: yes
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: asb-trusted-ca
+        namespace: '{{ broker_namespace }}'
+      data: '{{ tcab_ca_bundle_cm.resources.0.data }}'
+  register: tcab_ca_bundle_update_task
+
+- name: Store ca bundle configmap name
+  set_fact:
+    asb_ca_bundle_cm_name: '{{ tcab_ca_bundle_update_task.result.metadata.name }}'
+
+- name: Get the broker deployment
+  k8s_facts:
+    api_version: '{{ "apps.openshift.io/v1" if "apps.openshift.io" in api_groups else "apps/v1" }}'
+    kind: '{{ "DeploymentConfig" if "apps.openshift.io" in api_groups else "Deployment" }}'
+    namespace: '{{ broker_namespace }}'
+    name: '{{ broker_deployment_name }}'
+  register: tcab_asb_deployment
+
+- name: Store the name of the old ca bundle configmap
+  set_fact:
+    old_asb_ca_bundle_cm_name: '{{ cm_block.configMap.name }}'
+  when: 
+  - tcab_ca_bundle_update_task is changed
+  - tcab_asb_deployment.resources
+  vars:
+    cm_block: '{{ tcab_asb_deployment.resources.0.spec.template.spec.volumes | selectattr("name", "equalto", "trusted-ca-bundle") }}'
+  ignore_errors: yes

@@ -86,6 +86,8 @@ spec:
               mountPath: /etc/{{ broker_name }}
             - name: broker-tls
               mountPath: /etc/tls/private
+            - name: trusted-ca-bundle
+              mountPath: /etc/pki/ca-trust/extracted/pem/
       volumes:
         - name: config-volume
           configMap:
@@ -96,3 +98,9 @@ spec:
         - name: broker-tls
           secret:
             secretName: {{ broker_tls_name }}
+        - name: trusted-ca-bundle
+          configMap:
+            name: {{ asb_ca_bundle_cm_name }}
+            items:
+            - key: ca-bundle.crt
+              path: "tls-ca-bundle.pem"
