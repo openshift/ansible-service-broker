@@ -17,6 +17,7 @@
 package oauth
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -103,12 +104,13 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	return c.client.Do(req)
 }
 
-// Getv2 - makes a GET request to the registry's /v2/ endpoint. If a 401
-// Unauthorized response is received, this method attempts to obtain an oauth
-// token and tries again with the new token. If a username and password are
-// available, they are used with Basic Auth in the request to the token
-// service. This method is goroutine-safe.
-func (c *Client) Getv2() error {
+// Getv2WithScope - makes a GET request to the registry's /v2/ endpoint. If a
+// 401 Unauthorized response is received, this method attempts to obtain an
+// oauth token with the given imageNames as scopes and tries again with the
+// new token. If a username and password are available, they are used with
+// Basic Auth in the request to the token service. This method is
+// goroutine-safe.
+func (c *Client) Getv2WithScope(imageNames []string) error {
 	// lock to prevent multiple goroutines from retrieving, and especially
 	// writing, a new token at the same time
 	c.mutex.Lock()
@@ -126,7 +128,10 @@ func (c *Client) Getv2() error {
 	switch resp.StatusCode {
 	case http.StatusUnauthorized:
 		h := resp.Header.Get("www-authenticate")
-		c.getToken(h)
+		err := c.getTokenWithScope(h, imageNames)
+		if err != nil {
+			return err
+		}
 
 		// try the new token
 		tokenReq, err := c.NewRequest("/v2/")
@@ -161,18 +166,39 @@ func (c *Client) Getv2() error {
 	return nil
 }
 
-// getToken - parses a www-authenticate header and uses the information to
-// retrieve an oauth token. The token is stored on the Client and automatically
-// added to future requests.
-func (c *Client) getToken(wwwauth string) error {
+// Getv2 - makes a GET request to the registry's /v2/ endpoint. If a 401
+// Unauthorized response is received, this method attempts to obtain an oauth
+// token and tries again with the new token. If a username and password are
+// available, they are used with Basic Auth in the request to the token
+// service. This method is goroutine-safe.
+func (c *Client) Getv2() error {
+	return c.Getv2WithScope([]string{})
+}
+
+// getTokenWithScope - parses a www-authenticate header and uses the
+// information to retrieve an oauth token. The image names are also used to
+// specify the scope of the token. The token is stored on the Client
+// and automatically added to future requests.
+func (c *Client) getTokenWithScope(wwwauth string, imageNames []string) error {
 	// compute the URL
 	u, err := parseAuthHeader(wwwauth)
 	if err != nil {
 		return err
 	}
 
-	// form the request
-	req, err := http.NewRequest("GET", u.String(), nil)
+	// build up the scopes, if imageNames is empty, the scope will be empty
+	var scope bytes.Buffer
+	for i, imageName := range imageNames {
+		if i > 0 {
+			scope.WriteString(fmt.Sprintf("&scope=repository:%s:pull", imageName))
+		} else {
+			scope.WriteString(fmt.Sprintf("?scope=repository:%s:pull", imageName))
+		}
+	}
+
+	log.Debug("token with scopes: "+fmt.Sprintf("%s%s", u.String(), scope.String()), nil)
+	// form the request, include scope if they exist
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s%s", u.String(), scope.String()), nil)
 	if err != nil {
 		log.Errorf("could not form request: %s", err.Error())
 		return err
