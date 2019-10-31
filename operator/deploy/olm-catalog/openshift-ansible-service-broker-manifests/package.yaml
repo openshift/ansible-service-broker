@@ -1,4 +1,4 @@
 packageName: openshiftansibleservicebroker
 channels:
 - name: stable
-  currentCSV: openshiftansibleservicebroker.v4.2.0
+  currentCSV: openshiftansibleservicebroker.v4.3.0
