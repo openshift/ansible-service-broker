@@ -101,6 +101,13 @@ spec:
           - servicemonitors
           verbs:
           - "*"
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheusrules
+          - servicemonitors
+          verbs:
+          - '*'
       clusterPermissions:
       - serviceAccountName: openshift-ansible-service-broker-operator
         rules:
