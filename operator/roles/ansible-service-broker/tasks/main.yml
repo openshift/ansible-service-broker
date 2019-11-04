@@ -111,6 +111,8 @@
       condition: "{{ service_monitoring and ('monitoring.coreos.com' in api_groups) }}"
     - value: broker.monitor-rolebinding.yaml.j2
       condition: "{{ service_monitoring and ('monitoring.coreos.com' in api_groups) }}"
+    - value: broker.prometheus-alert.yaml.j2
+      condition: "{{ service_monitoring and ('monitoring.coreos.com' in api_groups) }}"
 
 - name: Redeploy the broker's pod if pending config changes
   k8s:

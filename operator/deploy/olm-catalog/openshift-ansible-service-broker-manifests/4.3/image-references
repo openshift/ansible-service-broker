@@ -1,0 +1,12 @@
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+spec:
+  tags:
+  - name: ansible-service-broker
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-ansible-service-broker
+  - name: ansible-service-broker-operator
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-ansible-service-broker-operator
