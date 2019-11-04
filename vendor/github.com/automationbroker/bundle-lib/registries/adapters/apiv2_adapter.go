@@ -46,6 +46,11 @@ type PartnerRhccAdapter struct {
 	APIV2Adapter
 }
 
+// RegistryProxyAdapter - Registry Proxy Adapter
+type RegistryProxyAdapter struct {
+	APIV2Adapter
+}
+
 // APIV2Adapter - API V2 Adapter
 type APIV2Adapter struct {
 	config Configuration
@@ -73,6 +78,35 @@ func NewPartnerRhccAdapter(config Configuration) (PartnerRhccAdapter, error) {
 		return PartnerRhccAdapter{}, err
 	}
 	return PartnerRhccAdapter{apiV2}, nil
+}
+
+// NewRegistryProxyAdapter - create a new Registry Proxy Adapter
+func NewRegistryProxyAdapter(config Configuration) (RegistryProxyAdapter, error) {
+	// we want to use a different token for this adapter, so do not call
+	// NewAPIV2Adapter directly
+	apiv2a := APIV2Adapter{
+		config: config,
+		client: oauth.NewClient(config.User, config.Pass, config.SkipVerifyTLS, config.URL),
+	}
+
+	if len(config.Images) < 1 {
+		return RegistryProxyAdapter{},
+			fmt.Errorf("RegistryProxyAdapter requires at least one configured image")
+	}
+
+	// Authorization
+	err := apiv2a.client.Getv2WithScope(config.Images)
+	if err != nil {
+		log.Errorf("Failed to GET /v2 at %s - %v", config.URL, err)
+		return RegistryProxyAdapter{}, err
+	}
+
+	// set Tag to latest if empty
+	if apiv2a.config.Tag == "" {
+		apiv2a.config.Tag = "latest"
+	}
+
+	return RegistryProxyAdapter{apiv2a}, nil
 }
 
 // NewAPIV2Adapter - creates and returns a APIV2Adapter ready to use.
