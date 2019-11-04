@@ -235,6 +235,8 @@ func NewCustomRegistry(configuration Config, adapter adapters.Adapter, asbNamesp
 			adapter = adapters.NewQuayAdapter(c)
 		case "galaxy":
 			adapter = &adapters.GalaxyAdapter{Config: c}
+		case "registry_proxy":
+			adapter, err = adapters.NewRegistryProxyAdapter(c)
 		default:
 			log.Errorf("Unknown registry type - %s", configuration.Type)
 			return Registry{}, errors.New("Unknown registry type")
