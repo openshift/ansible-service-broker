@@ -7,6 +7,8 @@
 broker_name: ansible-service-broker
 # broker_namespace - Namespace where the broker resides.
 broker_namespace: openshift-ansible-service-broker
+# broker_operator_name: Name used to identify the broker's operator.
+broker_operator_name: {{ broker_name }}-operator
 # broker_image - Fully qualified image used for the broker.
 broker_image: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.11
 # broker_image_pull_policy - Pull policy used for the broker image itself.
@@ -72,6 +74,8 @@ broker_service_name: asb
 broker_route_name: asb-1338
 dashboard_redirector_route_name: dr-1337
 broker_service_monitor_name: '{{ broker_name }}'
+broker_operator_service_monitor_name: '{{ broker_operator_name }}'
+broker_operator_alert_name: '{{ broker_operator_name }}'
 
 # Used to set namespaced broker (ServiceBroker)
 broker_kind: ClusterServiceBroker
