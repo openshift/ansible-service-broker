@@ -121,6 +121,10 @@ endif
 
 build-operator: ## Build the broker operator image
 	docker build -f ${OP_BUILD_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${OPERATOR_DIR}
+	@echo ""
+	@echo "Remember you need to push your image before calling make deploy or updating deployment config"
+	@echo "    docker push ${OPERATOR_IMAGE}"
+	@echo ""
 
 $(DEPLOY_OBJECTS) $(DEPLOY_CRDS) $(DEPLOY_OPERATOR) $(DEPLOY_CRS):
 	@${TEMPLATE_CMD} $@ | kubectl create -f - ||:
