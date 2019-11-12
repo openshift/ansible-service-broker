@@ -126,7 +126,7 @@ build-operator: ## Build the broker operator image
 	@echo "    docker push ${OPERATOR_IMAGE}"
 	@echo ""
 
-$(DEPLOY_OBJECTS) $(DEPLOY_CRDS) $(DEPLOY_OPERATOR) $(DEPLOY_CRS):
+$(DEPLOY_OBJECTS) $(DEPLOY_CRDS) $(DEPLOY_OPERATOR):
 	@${TEMPLATE_CMD} $@ | kubectl create -f - ||:
 
 deploy-objects: $(DEPLOY_OBJECTS) ## Create the operator namespace and RBAC in cluster
@@ -134,7 +134,8 @@ deploy-objects: $(DEPLOY_OBJECTS) ## Create the operator namespace and RBAC in c
 deploy-crds: $(DEPLOY_CRDS) ## Create operator's custom resources
 	sleep 1
 
-deploy-cr: $(DEPLOY_CRS) ## Create a CR for the operator
+deploy-cr: ## Create a CR for the operator
+	@${TEMPLATE_CMD} $(DEPLOY_CRS) | kubectl create -n ${NAMESPACE} -f - ||:
 
 deploy-operator: deploy-objects deploy-crds $(DEPLOY_OPERATOR) deploy-cr ## Deploy everything for the operator in cluster
 
