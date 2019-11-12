@@ -10,7 +10,7 @@ spec:
       rules:
         - alert: AnsibleServiceBrokerEnabled
           annotations:
-            summary: Indicates whether Ansible Service Broker is enabled
+            message: Indicates whether Ansible Service Broker is enabled
           expr: |
             automationbroker_info{namespace="{{ broker_namespace }}",automationbroker="{{ broker_name }}"} > 0
           labels:
