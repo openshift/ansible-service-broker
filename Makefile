@@ -26,11 +26,11 @@ COVERAGE_SVC     := travis-ci
 ASB_DEBUG_PORT   := 9000
 AUTO_ESCALATE    ?= false
 NAMESPACE        ?= openshift-ansible-service-broker
-TEMPLATE_CMD      = sed 's|REPLACE_IMAGE|${IMAGE}|g; s|REPLACE_NAMESPACE|${NAMESPACE}|g; s|Always|IfNotPresent|'
+TEMPLATE_CMD      = sed 's|osb\.openshift\.io\/testing-operator:testing|${OPERATOR_IMAGE}|g; s|{{ namespace }}|${NAMESPACE}|g; s|IfNotPresent|Always|'
 DEPLOY_OBJECTS    = ${OP_DEPLOY_DIR}/namespace.yaml ${OP_DEPLOY_DIR}/service_account.yaml ${OP_DEPLOY_DIR}/role.yaml ${OP_DEPLOY_DIR}/role_binding.yaml
 DEPLOY_OPERATOR   = ${OP_DEPLOY_DIR}/operator.yaml
-DEPLOY_CRDS       = ${OP_CRD_DIR}/osb_v1alpha1_ansibleservicebroker_crd.yaml ${OP_CRD_DIR}/bundlebindings.crd.yaml ${OP_CRD_DIR}/bundle.crd.yaml ${OP_CRD_DIR}/bundleinstances.crd.yaml
-DEPLOY_CRS        = ${OP_CRD_DIR}/osb_v1alpha1_ansibleservicebroker_cr.yaml
+DEPLOY_CRDS       = ${OP_CRD_DIR}/osb_v1_automationbroker_crd.yaml ${OP_CRD_DIR}/bundlebindings.crd.yaml ${OP_CRD_DIR}/bundle.crd.yaml ${OP_CRD_DIR}/bundleinstances.crd.yaml
+DEPLOY_CRS        = ${OP_CRD_DIR}/osb_v1_automationbroker_cr.yaml
 
 vendor: ## Install or update project dependencies
 	@dep ensure
@@ -121,8 +121,12 @@ endif
 
 build-operator: ## Build the broker operator image
 	docker build -f ${OP_BUILD_DIR}/Dockerfile -t ${OPERATOR_IMAGE} ${OPERATOR_DIR}
+	@echo ""
+	@echo "Remember you need to push your image before calling make deploy or updating deployment config"
+	@echo "    docker push ${OPERATOR_IMAGE}"
+	@echo ""
 
-$(DEPLOY_OBJECTS) $(DEPLOY_CRDS) $(DEPLOY_OPERATOR) $(DEPLOY_CRS):
+$(DEPLOY_OBJECTS) $(DEPLOY_CRDS) $(DEPLOY_OPERATOR):
 	@${TEMPLATE_CMD} $@ | kubectl create -f - ||:
 
 deploy-objects: $(DEPLOY_OBJECTS) ## Create the operator namespace and RBAC in cluster
@@ -130,12 +134,13 @@ deploy-objects: $(DEPLOY_OBJECTS) ## Create the operator namespace and RBAC in c
 deploy-crds: $(DEPLOY_CRDS) ## Create operator's custom resources
 	sleep 1
 
-deploy-cr: $(DEPLOY_CRS) ## Create a CR for the operator
+deploy-cr: ## Create a CR for the operator
+	@${TEMPLATE_CMD} $(DEPLOY_CRS) | kubectl create -n ${NAMESPACE} -f - ||:
 
 deploy-operator: deploy-objects deploy-crds $(DEPLOY_OPERATOR) deploy-cr ## Deploy everything for the operator in cluster
 
 undeploy-operator: ## Delete everything for the operator from the cluster
-	@${TEMPLATE_CMD} $(DEPLOY_OBJECTS) $(DEPLOY_OPERATOR) $(DEPLOY_CRDS) $(DEPLOY_CRS) | kubectl delete -f - ||:
+	@${TEMPLATE_CMD} $(DEPLOY_OBJECTS) $(DEPLOY_OPERATOR) $(DEPLOY_CRDS) $(DEPLOY_CRS) | kubectl delete -f - || :
 
 publish: build-image build-apb
 ifdef PUBLISH
