@@ -9,7 +9,7 @@ metadata:
     description: "OpenShift Ansible Service Broker is an implementation of the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker)"
     capabilities: "Seamless Upgrades"
     containerImage: "quay.io/openshift/origin-ansible-service-broker"
-    olm.skipRange: ">=4.1.0 <4.2.0"
+    olm.skipRange: "<4.1.0"
 spec:
   displayName: OpenShift Ansible Service Broker Operator
   description: |
