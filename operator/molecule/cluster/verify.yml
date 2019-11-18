@@ -73,7 +73,7 @@
           - "'Ready' in (csb | json_query('resources[].status.conditions[].type'))"
           - "'FetchedCatalog' in (csb | json_query('resources[].status.conditions[].reason'))"
           delay: 10
-          retries: 60
+          retries: 90
 
         - name: Create test namespace for APBs
           k8s:
@@ -106,7 +106,7 @@
         - name: Wait for mediawiki service instance
           debug:
             msg: "instance ready status: {{ mediawiki_query }}"
-          retries: 15
+          retries: 30
           delay: 10
           until: mediawiki_query | length > 0 and mediawiki_query | first == "True"
 
@@ -132,7 +132,7 @@
         - name: Wait for postgresql service instance
           debug:
             msg: "Instance ready status: {{ postgresql_query }}"
-          retries: 15
+          retries: 30
           delay: 10
           until: postgresql_query | length > 0 and postgresql_query | first == "True"
 
@@ -153,7 +153,7 @@
         - name: Wait for mediawiki-postgresql binding instance
           debug:
             msg: "Binding ready status: {{ binding_query }}"
-          retries: 15
+          retries: 30
           delay: 10
           until: binding_query | length > 0 and binding_query | first == "True"
 
@@ -178,7 +178,7 @@
         - name: Wait for mediawiki deployment(config) to be updated
           debug:
             msg: "Waiting for mediawiki"
-          retries: 15
+          retries: 30
           delay: 10
           until: mediawiki_replicas == "1" and mediawiki_ready == "1" and mediawiki_updated == "1"
 
@@ -186,7 +186,7 @@
           debug:
             msg:
               - "Deployment(config) ready status: {{ mediawiki_available }}"
-          retries: 15
+          retries: 30
           delay: 10
           until: mediawiki_available | length > 0 and mediawiki_available | first == "True"
 
@@ -205,7 +205,7 @@
           uri:
             url: "http://{{ mediawiki_route.resources[0].status.ingress[0].host }}/index.php/Main_Page"
             return_content: yes
-          retries: 15
+          retries: 30
           delay: 10
           register: webpage
           until:
@@ -225,7 +225,7 @@
         - name: Wait for mediawiki-postgresql binding instance to be removed
           debug:
             msg: "Binding ready status: {{ binding_query }}"
-          retries: 15
+          retries: 30
           delay: 10
           until: not binding_query
 
@@ -242,7 +242,7 @@
         - name: Wait for postgresql service instance to be removed
           debug:
             msg: "Instance ready status: {{ postgresql_query }}"
-          retries: 15
+          retries: 30
           delay: 10
           until: not postgresql_query
 
@@ -259,10 +259,10 @@
         - name: Wait for mediawiki service instance to be removed
           debug:
             msg: "Instance ready status: {{ mediawiki_query }}"
-          retries: 15
+          retries: 30
           delay: 10
           until: not mediawiki_query
-      
+
       rescue:
       - name: debug cr
         ignore_errors: yes
@@ -275,7 +275,7 @@
               namespace=test_namespace,
               resource_name=custom_resource.metadata.name,
           )}}'
-      
+
       - name: "debug pods in {{ test_namespace }}"
         ignore_errors: yes
         failed_when: false
