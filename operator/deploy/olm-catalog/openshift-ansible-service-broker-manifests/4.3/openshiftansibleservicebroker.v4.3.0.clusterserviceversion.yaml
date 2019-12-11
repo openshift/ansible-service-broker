@@ -74,6 +74,7 @@ spec:
           - secrets
           - services
           - services/finalizers
+          - endpoints
           verbs:
           - "*"
         - apiGroups:
