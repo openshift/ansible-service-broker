@@ -212,12 +212,12 @@ spec:
           replicas: 1
           selector:
             matchLabels:
-              name: openshift-ansible-service-broker-operator-alm-owned
+              name: openshift-ansible-service-broker-operator
           template:
             metadata:
-              name: openshift-ansible-service-broker-operator-alm-owned
+              name: openshift-ansible-service-broker-operator
               labels:
-                name: openshift-ansible-service-broker-operator-alm-owned
+                name: openshift-ansible-service-broker-operator
             spec:
               serviceAccountName: openshift-ansible-service-broker-operator
               containers:
