@@ -4,7 +4,7 @@ metadata:
   name: ansible-service-broker-operator
 subjects:
 - kind: ServiceAccount
-  name: ansible-service-broker-operator
+  name: openshift-ansible-service-broker-operator
   namespace: {{ namespace }}
 roleRef:
   kind: ClusterRole
