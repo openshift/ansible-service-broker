@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ansible-service-broker-operator
+  name: openshift-ansible-service-broker-operator
   namespace: {{ namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: ansible-service-broker-operator
+      name: openshift-ansible-service-broker-operator
   template:
     metadata:
       labels:
-        name: ansible-service-broker-operator
+        name: openshift-ansible-service-broker-operator
     spec:
-      serviceAccountName: ansible-service-broker-operator
+      serviceAccountName: openshift-ansible-service-broker-operator
       containers:
-        - name: ansible-service-broker-operator
+        - name: openshift-ansible-service-broker-operator
           # Replace this with the built image name
           image: "osb.openshift.io/testing-operator:testing"
           ports:
@@ -30,7 +30,7 @@ spec:
             - name: IMAGE
               value: "docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v4.0"
             - name: OPERATOR_NAME
-              value: "ansible-service-broker-operator"
+              value: "openshift-ansible-service-broker-operator"
             - name: POD_NAME
               valueFrom:
                 fieldRef:
