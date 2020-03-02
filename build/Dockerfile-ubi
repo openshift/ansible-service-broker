@@ -1,4 +1,4 @@
-FROM openshift/origin-release:golang-1.11 AS builder
+FROM openshift/origin-release:golang-1.13 AS builder
 COPY . /go/src/github.com/openshift/ansible-service-broker
 RUN cd /go/src/github.com/openshift/ansible-service-broker \
   && make broker \
