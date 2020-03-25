@@ -53,7 +53,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Sanity check failed! -> %v", err))
 	} else {
-		logrus.Info("Sanity check passed! Loaded specs: %v", specs)
+		logrus.Infof("Sanity check passed! Loaded specs: %v", specs)
 	}
 
 	http.HandleFunc("/", redirect)
@@ -95,7 +95,7 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logrus.Info("Successfully loaded SI: %+v", si)
+	logrus.Infof("Successfully loaded SI: %+v", si)
 
 	if si.DashboardURL == "" {
 		errMsg = fmt.Sprintf("No DashboardURL set for requested instance! %v", id)
