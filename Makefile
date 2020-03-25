@@ -77,7 +77,7 @@ ci-test-coverage: coverage-all.out ## CI test coverage, upload to coveralls
 	@goveralls -coverprofile=coverage-all.out -service $(COVERAGE_SVC)
 
 vet: ## Run go vet
-	@go tool vet ./cmd ./pkg
+	go vet ./...
 
 check: fmtcheck vet lint build test ## Pre-flight checks before creating PR
 
