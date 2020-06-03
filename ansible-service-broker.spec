@@ -692,7 +692,7 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 - Bug 1548311 - Return success on depro extcred miss (#791) (ernelson@redhat.com)
 - Temporarily link to minishift-addons fork (#796) (ernelson@redhat.com)
 - Adds docs for installing the broker in minikube. (#792) (mhrivnak@hrivnak.org)
-- Filter everything when whitelist is empty (#781) (rhallise@redhat.com)
+- Filter everything when allowlist is empty (#781) (rhallise@redhat.com)
 
 * Fri Feb 23 2018 jesus m. rodriguez <jmrodri@gmail.com> 1.2.2-1
 - Bug 1539542 - return bindings_retrievable (#776) (jmrodri@gmail.com)
@@ -813,7 +813,7 @@ export GOPATH=%{buildroot}/%{gopath}:$(pwd)/Godeps/_workspace:%{gopath}
 
 * Mon Jan 08 2018 David Zager <david.j.zager@gmail.com> 1.1.4-1
 - Use the router prefix for apb tool endpoints (#616) (rhallise@redhat.com)
-- Bug 1526887 - Handle case when whitelist/blacklist set to "" (#609)
+- Bug 1526887 - Handle case when allowlist/denylist set to "" (#609)
   (Shawn.Hurley21@gmail.com)
 - Bug 617 - fixing issue with versioning the rbac API. (#618)
   (Shawn.Hurley21@gmail.com)

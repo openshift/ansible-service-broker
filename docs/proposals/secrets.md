@@ -40,7 +40,7 @@ APB.
 
 A `secrets` section will be added to the broker's configuration file. The `secrets` section will
 contain a list of Secrets referred to by name which must exist in the Broker namespace. Each
-referenced Secret will have a list of regexes for whitelisted APBs to apply the Secret to (for first
+referenced Secret will have a list of regexes for allowlisted APBs to apply the Secret to (for first
 iteration it will just be a 1-1 mapping of secret to apb name). It is possible for an APB to be
 referenced in multiple secrets.
 

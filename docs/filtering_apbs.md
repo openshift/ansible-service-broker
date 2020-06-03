@@ -11,14 +11,14 @@ total set of discovered APBs for a given registry, determining matches.
 
 |     present    |                     allowed                     |                blocked               |
 |:--------------:|:-----------------------------------------------:|:------------------------------------:|
-| only whitelist | matches a regex in list                         | *ANY* APB that does not match        |
-| only blacklist | *No* APBs from the registry                     | *All* APBs from that registry        |
-|  both present  | matches regex in whitelist but NOT in blacklist | APBs that match a regex in blacklist |
+| only allowlist | matches a regex in list                         | *ANY* APB that does not match        |
+| only denylist  | *No* APBs from the registry                     | *All* APBs from that registry        |
+|  both present  | matches regex in allowlist but NOT in denylist  | APBs that match a regex in denylist  |
 |  None | *No* APBs from the registry | *All* APBs from that registry |
 
 ### Examples
 
-#### Whitelist Only
+#### Allowlist Only
 
 ```yaml
 white_list:
@@ -29,7 +29,7 @@ white_list:
 Anything matching on `totally-legitimate.*-apb$` and only `my-favorite-apb` will
 be allowed through in this case. All other APBs will be **rejected**.
 
-#### Blacklist Only
+#### Denylist Only
 
 ```yaml
 black_list:
@@ -40,7 +40,7 @@ black_list:
 Anything matching on `definitely-not-malicious.*-apb$`and only `evil-apb` will
 be blocked in this case. All other APBs will be **allowed through**.
 
-#### Whitelist and Blacklist
+#### Allowlist and Denylist
 
 ```yaml
 white_list:
@@ -50,8 +50,8 @@ black_list:
   - "^totally-legitimate-rootkit-apb$"
 ```
 
-Here, `totally-legitimate-rootkit-apb` is specifically blocked by the blacklist
-despite its match in the whitelist because the whitelist match is overridden.
+Here, `totally-legitimate-rootkit-apb` is specifically blocked by the denylist
+despite its match in the allowlist because the allowlist match is overridden.
 
 Otherwise, only those matching on `totally-legitimate.*-apb$` and
 `my-favorite-apb` will be allowed through.

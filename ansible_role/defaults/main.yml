@@ -99,7 +99,7 @@ broker_dockerhub_black_list: [ ".*automation-broker-apb$" ]
 broker_local_openshift_enabled: "{{ ('image.openshift.io' in lookup('k8s', cluster_info='api_groups')) | bool }}"
 broker_local_openshift_name: localregistry
 broker_local_openshift_namespaces: [ "openshift" ]
-# NOTE TO ADMINS: The default whitelist policy here will pass *all* APBs
+# NOTE TO ADMINS: The default allowlist policy here will pass *all* APBs
 # found in the local openshift registry. If this is not desired,
 # manipulate the following regex to only match APBs you wish to be made available.
 broker_local_openshift_white_list: [ ".*" ]

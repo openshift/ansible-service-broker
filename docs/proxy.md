@@ -35,14 +35,14 @@ pods via an `exec` http request, rather than a secret exchange. Unless you
 are running a broker with experimental proxy support in a cluster prior to
 OpenShift 3.9, you probably do not have to worry about this.
 
-**Adapter Whitelists**
+**Adapter Allowlists**
 
 The configured adapters must be able to communicate with their external registries
 in order to bootstrap successfully and load remote APB manifests. These requests
 can be made via the proxy, however, the proxy must ensure that the required remote
 hosts are accessible.
 
-Example required whitelisted hosts:
+Example required allowlisted hosts:
 
 * rhcc - `registry.access.redhat.com`, `access.redhat.com`
 * dh - `docker.io`

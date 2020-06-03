@@ -16,7 +16,7 @@ registry:
       - ".*-apb$"
     black_list:
       - "malicious.*-apb$"
-      - "^specific-blacklist-apb$"
+      - "^specific-denylist-apb$"
   - type: local_openshift
     name: lo
     namespaces:
